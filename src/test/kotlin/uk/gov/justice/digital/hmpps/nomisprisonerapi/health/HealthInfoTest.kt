@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsnomisprisonerapi.health
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.health
 
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test

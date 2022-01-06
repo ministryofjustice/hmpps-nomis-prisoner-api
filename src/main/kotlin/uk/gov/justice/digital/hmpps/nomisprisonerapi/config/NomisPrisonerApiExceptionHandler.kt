@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsnomisprisonerapi.config
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.config
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import javax.validation.ValidationException
 
 @RestControllerAdvice
-class HmppsNomisPrisonerApiExceptionHandler {
+class NomisPrisonerApiExceptionHandler {
   @ExceptionHandler(ValidationException::class)
   fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
     log.info("Validation exception: {}", e.message)
@@ -39,7 +39,7 @@ class HmppsNomisPrisonerApiExceptionHandler {
       )
   }
 
-  companion object {
+  private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 }
