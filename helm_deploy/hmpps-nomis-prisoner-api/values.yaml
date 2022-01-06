@@ -23,12 +23,11 @@ generic-service:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
 
   namespace_secrets:
-    nomis-user-roles-api:
+    hmpps-nomis-prisoner-api:
       APPINSIGHTS_INSTRUMENTATIONKEY: "APPINSIGHTS_INSTRUMENTATIONKEY"
       JDBC_URL: "JDBC_URL"
       DB_USERNAME: "DB_USERNAME"
       DB_PASSWORD: "DB_PASSWORD"
-
 
   # Disabled for DSO AKS cluster
   allowlist: null
