@@ -1,21 +1,22 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
+import io.swagger.v3.parser.OpenAPIV3Parser
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-class OpenApiDocsTest {
-
-  @Autowired
-  lateinit var webTestClient: WebTestClient
+class OpenApiDocsTest : IntegrationTestBase() {
+  @LocalServerPort
+  private var port: Int = 0
 
   @Test
   fun `open api docs are available`() {
@@ -44,6 +45,14 @@ class OpenApiDocsTest {
       .exchange()
       .expectStatus().isOk
       .expectBody().jsonPath("messages").doesNotExist()
+  }
+
+  @Test
+  fun `the open api json is valid and contains documentation`() {
+    val result = OpenAPIV3Parser().readLocation("http://localhost:$port/v3/api-docs", null, null)
+    assertThat(result.messages).isEmpty()
+    // TODO: need to uncomment once we have a path
+    // assertThat(result.openAPI.paths).isNotEmpty
   }
 
   @Test

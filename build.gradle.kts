@@ -33,6 +33,7 @@ dependencies {
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.mockito:mockito-inline:4.2.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.0.29")
 }
 
 java {
