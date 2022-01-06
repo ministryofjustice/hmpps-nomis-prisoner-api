@@ -5,7 +5,7 @@ generic-service:
   replicaCount: 2
 
   ingress:
-    host: nomis-prisoner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk
+    host: nomis-prsner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk
 
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
