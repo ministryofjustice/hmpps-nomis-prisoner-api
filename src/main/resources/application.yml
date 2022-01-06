@@ -1,5 +1,5 @@
 info.app:
-  name: Hmpps Nomis Prisoner Api
+  name: Nomis Prisoner Api
   version: 1.0
 
 spring:

@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsnomisprisonerapi.integration
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.integration
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
