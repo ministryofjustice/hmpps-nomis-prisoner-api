@@ -1,7 +1,7 @@
 # HMPPS NOMIS Prisoner API
 
 [![CircleCI](https://circleci.com/gh/ministryofjustice/court-register/tree/main.svg?style=svg)](https://circleci.com/gh/ministryofjustice/hmpps-nomis-prisoner-api)
-[![API docs](https://img.shields.io/badge/API_docs_-view-85EA2D.svg?logo=swagger)](https://nomis-prisoner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk/swagger-ui/?configUrl=/v3/api-docs)
+[![API docs](https://img.shields.io/badge/API_docs_-view-85EA2D.svg?logo=swagger)](https://nomis-prisoner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk/swagger-ui/index.html?configUrl=/v3/api-docs)
 
 Self-contained fat-jar micro-service to interact with prisoners in the NOMIS database
 
