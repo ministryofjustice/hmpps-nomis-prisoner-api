@@ -70,7 +70,7 @@ workflows:
           env: "preprod"
           context:
             - hmpps-common-vars
-            - nomis-prisoner-api-preprod
+            - hmpps-nomis-prisoner-api-preprod
           requires:
             - request-preprod-approval
 #      - request-prod-approval:
@@ -84,7 +84,7 @@ workflows:
 #          slack_channel_name: << pipeline.parameters.releases-slack-channel >>
 #          context:
 #            - hmpps-common-vars
-#            - nomis-prisoner-api-prod
+#            - hmpps-nomis-prisoner-api-prod
 #          requires:
 #            - request-prod-approval
 
