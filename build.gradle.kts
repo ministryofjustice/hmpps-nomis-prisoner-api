@@ -1,6 +1,16 @@
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.0.1"
   kotlin("plugin.spring") version "1.6.10"
+  kotlin("plugin.jpa") version "1.6.10"
+  idea
+}
+
+allOpen {
+  annotations(
+    "javax.persistence.Entity",
+    "javax.persistence.MappedSuperclass",
+    "javax.persistence.Embeddable"
+  )
 }
 
 configurations {
@@ -29,10 +39,12 @@ dependencies {
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
 
+  testImplementation("org.awaitility:awaitility-kotlin:4.1.1")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.mockito:mockito-inline:4.2.0")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.0.29")
+  testImplementation("org.springframework.security:spring-security-test")
 }
 
 java {
