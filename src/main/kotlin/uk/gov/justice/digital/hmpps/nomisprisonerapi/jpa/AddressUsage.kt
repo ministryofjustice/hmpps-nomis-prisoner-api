@@ -34,12 +34,14 @@ data class AddressUsage(
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
-    value = [JoinColumnOrFormula(
-      formula = JoinFormula(
-        value = "'" + AddressUsageType.ADDRESS_TYPE + "'",
-        referencedColumnName = "domain"
-      )
-    ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_USAGE", referencedColumnName = "code"))]
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + AddressUsageType.ADDRESS_TYPE + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_USAGE", referencedColumnName = "code"))
+    ]
   )
   val addressUsageType: AddressUsageType
 ) {

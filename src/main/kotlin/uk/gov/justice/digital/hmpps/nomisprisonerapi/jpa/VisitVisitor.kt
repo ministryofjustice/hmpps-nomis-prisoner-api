@@ -52,12 +52,14 @@ data class VisitVisitor(
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
-    value = [JoinColumnOrFormula(
-      formula = JoinFormula(
-        value = "'" + EventStatus.EVENT_STS + "'",
-        referencedColumnName = "domain"
-      )
-    ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code"))]
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + EventStatus.EVENT_STS + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code"))
+    ]
   )
   val eventStatus: EventStatus? = null,
 
@@ -67,18 +69,20 @@ data class VisitVisitor(
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
-    value = [JoinColumnOrFormula(
-      formula = JoinFormula(
-        value = "'" + VisitOutcomeReason.VISIT_OUTCOME_REASON + "'",
-        referencedColumnName = "domain"
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + VisitOutcomeReason.VISIT_OUTCOME_REASON + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "OUTCOME_REASON_CODE",
+          referencedColumnName = "code",
+          nullable = false
+        )
       )
-    ), JoinColumnOrFormula(
-      column = JoinColumn(
-        name = "OUTCOME_REASON_CODE",
-        referencedColumnName = "code",
-        nullable = false
-      )
-    )]
+    ]
   )
   val outcomeReason: VisitOutcomeReason? = null,
 
@@ -86,18 +90,20 @@ data class VisitVisitor(
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
-    value = [JoinColumnOrFormula(
-      formula = JoinFormula(
-        value = "'" + EventOutcome.EVENT_OUTCOME + "'",
-        referencedColumnName = "domain"
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + EventOutcome.EVENT_OUTCOME + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "EVENT_OUTCOME",
+          referencedColumnName = "code",
+          nullable = false
+        )
       )
-    ), JoinColumnOrFormula(
-      column = JoinColumn(
-        name = "EVENT_OUTCOME",
-        referencedColumnName = "code",
-        nullable = false
-      )
-    )]
+    ]
   )
   val eventOutcome: EventOutcome? = null,
 ) {

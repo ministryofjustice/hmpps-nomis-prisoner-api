@@ -51,36 +51,42 @@ data class Visit(
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
-    value = [JoinColumnOrFormula(
-      formula = JoinFormula(
-        value = "'" + VisitType.VISIT_TYPE + "'",
-        referencedColumnName = "domain"
-      )
-    ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = false))]
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + VisitType.VISIT_TYPE + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = false))
+    ]
   )
   val visitType: VisitType? = null,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
-    value = [JoinColumnOrFormula(
-      formula = JoinFormula(
-        value = "'" + VisitStatus.VISIT_STATUS + "'",
-        referencedColumnName = "domain"
-      )
-    ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_STATUS", referencedColumnName = "code", nullable = false))]
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + VisitStatus.VISIT_STATUS + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_STATUS", referencedColumnName = "code", nullable = false))
+    ]
   )
   val visitStatus: VisitStatus? = null,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
-    value = [JoinColumnOrFormula(
-      formula = JoinFormula(
-        value = "'" + SearchLevel.SEARCH_LEVEL + "'",
-        referencedColumnName = "domain"
-      )
-    ), JoinColumnOrFormula(column = JoinColumn(name = "SEARCH_TYPE", referencedColumnName = "code", nullable = false))]
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + SearchLevel.SEARCH_LEVEL + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "SEARCH_TYPE", referencedColumnName = "code", nullable = false))
+    ]
   )
 
   val searchLevel: SearchLevel? = null,

@@ -62,7 +62,7 @@ data class AgencyInternalLocation(
     get() = locationType != null && locationType == "CELL"
   val isCellSwap: Boolean
     get() = !certifiedFlag &&
-        active && parentLocation == null && locationCode != null && locationCode == "CSWAP"
+      active && parentLocation == null && locationCode != null && locationCode == "CSWAP"
   val isActiveCell: Boolean
     get() = active && isCell
 

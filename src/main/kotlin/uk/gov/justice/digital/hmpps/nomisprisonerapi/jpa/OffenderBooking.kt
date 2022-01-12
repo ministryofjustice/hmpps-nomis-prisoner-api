@@ -199,10 +199,10 @@ data class OffenderBooking(
 
   override fun toString(): String {
     return javaClass.simpleName + "(" +
-        "bookingId = " + bookingId + ", " +
-        "bookNumber = " + bookNumber + ", " +
-        "bookingSequence = " + bookingSequence + ", " +
-        "active = " + active + ", " +
-        "inOutStatus = " + inOutStatus + ")"
+      "bookingId = " + bookingId + ", " +
+      "bookNumber = " + bookNumber + ", " +
+      "bookingSequence = " + bookingSequence + ", " +
+      "active = " + active + ", " +
+      "inOutStatus = " + inOutStatus + ")"
   }
 }
