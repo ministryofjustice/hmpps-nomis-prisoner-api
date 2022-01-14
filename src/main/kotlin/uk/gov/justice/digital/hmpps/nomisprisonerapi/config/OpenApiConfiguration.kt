@@ -17,9 +17,8 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     .servers(
       listOf(
         Server().url("https://nomis-prisoner.aks-live-1.studio-hosting.service.justice.gov.uk").description("Prod"),
-        Server().url("https://nomis-prisoner-pp.aks-live-1.studio-hosting.service.justice.gov.uk").description("PreProd"),
-        Server().url("https://nomis-prisoner-stage.aks-dev-1.studio-hosting.service.justice.gov.uk").description("Staging"),
-        Server().url("https://nomis-prisoner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk").description("Development"),
+        Server().url("https://nomis-prsner-pp.aks-live-1.studio-hosting.service.justice.gov.uk").description("PreProd"),
+        Server().url("https://nomis-prsner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk").description("Development"),
         Server().url("http://localhost:8080").description("Local"),
       )
     )
