@@ -33,9 +33,6 @@ class VisitRepositoryTest {
   lateinit var repository: VisitRepository
 
   @Autowired
-  lateinit var offenderRepository: OffenderRepository
-
-  @Autowired
   lateinit var offenderBookingRepository: OffenderBookingRepository
 
   @Autowired
@@ -63,12 +60,6 @@ class VisitRepositoryTest {
   lateinit var agencyInternalRepository: AgencyInternalLocationRepository
 
   @Autowired
-  lateinit var agencyVisitSlotRepository: AgencyVisitSlotRepository
-
-  @Autowired
-  lateinit var personRepository: PersonRepository
-
-  @Autowired
   lateinit var offenderVisitBalanceRepository: OffenderVisitBalanceRepository
 
   @Autowired
@@ -85,7 +76,7 @@ class VisitRepositoryTest {
       VisitOrder(
         null, 1L, seedOffenderBooking, LocalDate.now(),
         visitOrderTypeRepository.findById(VisitOrderType.SVO).orElseThrow(),
-        visitStatusRepository.findById(VisitStatus.COMP).orElseThrow()
+        visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
       )
     )
 
@@ -113,22 +104,18 @@ class VisitRepositoryTest {
     val persistedVisit = persistedVisitList[0]
     visitVisitorRepository.save(
       VisitVisitor(
-        null,
-        seedOffenderBooking,
-        persistedVisitList[0].id!!,
-        personRepository.findById(-1L).orElseThrow(),
-        true,
-        true
+        offenderBooking = seedOffenderBooking,
+        visitId = persistedVisitList[0].id!!,
+        personId = -1L,
+        assistedVisit = true,
+        groupLeader = true
       )
     )
     visitVisitorRepository.save(
       VisitVisitor(
-        null,
-        seedOffenderBooking,
-        persistedVisitList[0].id!!,
-        personRepository.findById(-2L).orElseThrow(),
-        false,
-        false
+        offenderBooking = seedOffenderBooking,
+        visitId = persistedVisitList[0].id!!,
+        personId = -2L,
       )
     )
 
@@ -162,13 +149,13 @@ class VisitRepositoryTest {
 //    assertThat(visitOrderVisitorPerson?.id).isEqualTo(-1)
     val visitVisitors = persistedVisit.visitors
     assertThat(visitVisitors.size).isEqualTo(2)
-    val (_, offenderBooking, visitId, person, groupLeader, assistedVisit) = visitVisitors[0]
-    assertThat(offenderBooking.bookingId).isEqualTo(-10L)
-    assertThat(visitId).isEqualTo(visit.id)
+    val (_, offenderBooking, visitId, personId, groupLeader, assistedVisit) = visitVisitors[0]
+    assertThat(offenderBooking?.bookingId).isEqualTo(-10L)
+    assertThat(visitId).isEqualTo(visit.id!!)
     assertThat(groupLeader).isTrue
     assertThat(assistedVisit).isTrue
-    assertThat(person.id).isEqualTo(-1)
-    assertThat(person.firstName).isEqualTo("JESSY")
+    assertThat(personId).isEqualTo(-1)
+    assertThat(visitVisitors[1].personId).isEqualTo(-2)
   }
 
   @Test

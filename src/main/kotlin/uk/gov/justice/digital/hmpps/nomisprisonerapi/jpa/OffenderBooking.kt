@@ -66,6 +66,7 @@ data class OffenderBooking(
   //    @ListIndexBase(1)
   //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
   //    private List<OffenderPropertyContainer> propertyContainers;
+
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val location: AgencyLocation? = null,
@@ -81,6 +82,7 @@ data class OffenderBooking(
   //    @ManyToOne(fetch = FetchType.LAZY)
   //    @JoinColumn(name = "ASSIGNED_STAFF_ID")
   //    private Staff assignedStaff;
+
   @Column(name = "AGENCY_IML_ID")
   val livingUnitMv: Long? = null,
 
