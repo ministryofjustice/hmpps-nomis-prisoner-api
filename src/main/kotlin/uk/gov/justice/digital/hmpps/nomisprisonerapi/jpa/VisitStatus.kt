@@ -8,7 +8,7 @@ import javax.persistence.Entity
 class VisitStatus(code: String, description: String) : ReferenceCode(VISIT_STATUS, code, description) {
   companion object {
     const val VISIT_STATUS = "VIS_STS"
-    val COMP = Pk(VISIT_STATUS, "COMP")
+    val NORM = Pk(VISIT_STATUS, "NORM")
     fun pk(code: String): Pk {
       return Pk(VISIT_STATUS, code)
     }
