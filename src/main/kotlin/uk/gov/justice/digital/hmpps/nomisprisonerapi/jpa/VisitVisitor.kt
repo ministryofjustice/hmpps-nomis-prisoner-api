@@ -8,7 +8,6 @@ import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import org.hibernate.annotations.Type
 import java.util.Objects
-import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -32,7 +31,7 @@ data class VisitVisitor(
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_VISIT_ID", nullable = false)
   val visit: Visit,
 

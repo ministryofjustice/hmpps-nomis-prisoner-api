@@ -25,7 +25,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.function.Supplier
@@ -34,7 +33,6 @@ import java.util.function.Supplier
 @Transactional
 class VisitService(
   private val visitRepository: VisitRepository,
-  private val visitVisitorRepository: VisitVisitorRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository,
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
@@ -57,9 +55,11 @@ class VisitService(
 
     createBalance(visitDto, offenderBooking)
 
-    val visit = visitRepository.save(mapVisitModel(visitDto, offenderBooking))
+    val mappedVisit = mapVisitModel(visitDto, offenderBooking)
 
-    addVisitors(visit, offenderBooking, visitDto)
+    addVisitors(mappedVisit, offenderBooking, visitDto)
+
+    val visit = visitRepository.save(mappedVisit)
 
     telemetryClient.trackEvent("visit-created", mapOf("visitId" to visit.id.toString()), null)
 
@@ -155,22 +155,14 @@ class VisitService(
 
     //  Add dummy visitor row for the offender_booking as is required by the P-Nomis view
 
-    visitVisitorRepository.save(
-      VisitVisitor(
-        visit = visit,
-        offenderBooking = offenderBooking,
-        eventStatus = scheduledEventStatus,
-      )
+    visit.visitors.add(
+      VisitVisitor(visit = visit, offenderBooking = offenderBooking, eventStatus = scheduledEventStatus)
     )
 
     visitDto.visitorPersonIds.forEach {
       val person = personRepository.findById(it).orElseThrow(DataNotFoundException("Person with id=$it does not exist"))
-      visitVisitorRepository.save(
-        VisitVisitor(
-          visit = visit,
-          person = person,
-          eventStatus = scheduledEventStatus,
-        )
+      visit.visitors.add(
+        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus)
       )
     }
   }

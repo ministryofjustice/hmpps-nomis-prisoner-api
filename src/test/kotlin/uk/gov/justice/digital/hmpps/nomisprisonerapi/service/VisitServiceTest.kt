@@ -10,12 +10,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
@@ -30,7 +27,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -39,7 +35,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -54,7 +49,6 @@ private const val roomId = 102L
 internal class VisitServiceTest {
 
   private val visitRepository: VisitRepository = mock()
-  private val visitVisitorRepository: VisitVisitorRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val personRepository: PersonRepository = mock()
   private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository = mock()
@@ -68,7 +62,6 @@ internal class VisitServiceTest {
 
   private val visitService: VisitService = VisitService(
     visitRepository,
-    visitVisitorRepository,
     offenderBookingRepository,
     offenderVisitBalanceRepository,
     offenderVisitBalanceAdjustmentRepository,
@@ -98,33 +91,17 @@ internal class VisitServiceTest {
   @BeforeEach
   fun setup() {
     whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
-      Optional.of(
-        OffenderBooking(
-          bookingId = offenderBookingId,
-          bookingBeginDate = LocalDateTime.now(),
-        )
-      )
+      Optional.of(OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()))
     )
     whenever(personRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(
-        Person(
-          id = it.arguments[0] as Long,
-          firstName = "Hi",
-          lastName = "There",
-        )
-      )
+      return@thenAnswer Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There"))
     }
     whenever(visitTypeRepository.findById(VisitType.pk("SCON"))).thenReturn(Optional.of(visitType))
     whenever(visitStatusRepository.findById(VisitStatus.pk("SCH"))).thenReturn(Optional.of(visitStatus))
     whenever(eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED)).thenReturn(Optional.of(eventStatus))
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.of(AgencyLocation(prisonId, "desc")))
     whenever(agencyInternalLocationRepository.findById(roomId)).thenReturn(
-      Optional.of(
-        AgencyInternalLocation(
-          roomId,
-          true
-        )
-      )
+      Optional.of(AgencyInternalLocation(roomId, true))
     )
 
     whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
@@ -201,15 +178,15 @@ internal class VisitServiceTest {
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
-      val inOrder = Mockito.inOrder(visitVisitorRepository)
-      val visitorArgumentCaptor = ArgumentCaptor.forClass(VisitVisitor::class.java)
-      inOrder.verify(visitVisitorRepository, times(3)).save(visitorArgumentCaptor.capture())
-      assertThat(visitorArgumentCaptor.allValues).extracting(
-        "visit.id", "offenderBooking.bookingId", "person.id", "eventStatus"
-      ).containsExactly(
-        Tuple.tuple(visitId, offenderBookingId, null, eventStatus),
-        Tuple.tuple(visitId, null, 45L, eventStatus),
-        Tuple.tuple(visitId, null, 46L, eventStatus),
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus")
+            .containsExactly(
+              Tuple.tuple(offenderBookingId, null, eventStatus),
+              Tuple.tuple(null, 45L, eventStatus),
+              Tuple.tuple(null, 46L, eventStatus),
+            )
+        }
       )
     }
 

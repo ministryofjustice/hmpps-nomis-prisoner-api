@@ -9,6 +9,7 @@ import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Objects
+import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -108,7 +109,7 @@ data class Visit(
   val visitOrder: VisitOrder? = null,
 
   /* a list of all visitors including those without visitor orders */
-  @OneToMany(mappedBy = "visit")
+  @OneToMany(mappedBy = "visit", cascade = [CascadeType.ALL])
   val visitors: MutableList<VisitVisitor> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {
