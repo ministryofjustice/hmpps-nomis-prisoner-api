@@ -6,9 +6,11 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -22,12 +24,12 @@ private const val offenderNo = "A1234AJ"
 private const val prisonId = "BXI"
 private val createVisitRequest = CreateVisitRequest(
   visitType = "SCON",
-  offenderNo = offenderNo,
-  startTime = LocalDateTime.of(2021, 11, 4, 12, 5),
-  endTime = LocalTime.of(13, 4),
+  startDateTime = LocalDateTime.parse("2021-11-04T12:05"),
+  endTime = LocalTime.parse("13:04"),
   prisonId = prisonId,
   visitorPersonIds = listOf(-7L, -8L, -9L),
   decrementBalances = true,
+  visitRoomId = 14511,
 )
 
 class VisitResourceIntTest : IntegrationTestBase() {
@@ -47,7 +49,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/visits")
+      webTestClient.post().uri("/prisoner/$offenderNo/visit")
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
         .expectStatus().isUnauthorized
@@ -55,7 +57,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.post().uri("/visits")
+      webTestClient.post().uri("/prisoner/$offenderNo/visit")
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
@@ -64,7 +66,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit forbidden with wrong role`() {
-      webTestClient.post().uri("/visits")
+      webTestClient.post().uri("/prisoner/$offenderNo/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
@@ -73,18 +75,54 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit with offender not found`() {
-      webTestClient.post().uri("/visits")
+      webTestClient.post().uri("/prisoner/Z9999ZZ/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .body(BodyInserters.fromValue(createVisitRequest.copy(offenderNo = "Z9999ZZ")))
+        .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
         .expectStatus().isNotFound
     }
 
     @Test
-    fun `create visit success`() {
-      val response = webTestClient.post().uri("/visits")
+    fun `create visit with invalid person`() {
+      val error = webTestClient.post().uri("/prisoner/$offenderNo/visit")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .body(BodyInserters.fromValue(createVisitRequest.copy(visitorPersonIds = listOf(-7L, -99L))))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(error?.userMessage).isEqualTo("Bad request: Person with id=-99 does not exist")
+    }
+
+    @Test
+    fun `create visit with invalid offenderNo`() {
+      webTestClient.post().uri("/prisoner/ZZ000ZZ/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .body(BodyInserters.fromValue(createVisitRequest))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+    }
+
+    @Test
+    fun `create visit success`() {
+      val response = webTestClient.post().uri("/prisoner/$offenderNo/visit")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-04T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "$prisonId",
+            "visitorPersonIds"  : [-7, -8, -9],
+            "decrementBalances" : true,
+            "visitRoomId"       : 14511
+          }"""
+          )
+        )
         .exchange()
         .expectStatus().isCreated
         .expectBody(CreateVisitResponse::class.java)
@@ -94,9 +132,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
       // Spot check that the database has been populated.
       TransactionTemplate(transactionManager).execute {
         val visit = visitRepository.findById(response?.visitId!!).orElseThrow()
-        assertThat(visit.endTime).isEqualTo(LocalDateTime.of(2021, 11, 4, 13, 4))
+        assertThat(visit.endTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
         assertThat(visit.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
-        assertThat(visit.visitors).extracting("personId", "eventStatus.code").containsExactly(
+        assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
           Tuple.tuple(null, "SCH"),
           Tuple.tuple(-7L, "SCH"),
           Tuple.tuple(-8L, "SCH"),

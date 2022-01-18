@@ -19,7 +19,7 @@ import javax.persistence.Table
 data class AgencyInternalLocation(
   @Id
   @Column(name = "INTERNAL_LOCATION_ID")
-  val locationId: Long? = null,
+  val locationId: Long = 0,
 
   @Column(name = "ACTIVE_FLAG")
   @Type(type = "yes_no")

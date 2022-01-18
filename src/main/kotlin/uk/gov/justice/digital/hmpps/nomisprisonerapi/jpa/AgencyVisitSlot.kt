@@ -17,7 +17,7 @@ import javax.persistence.Table
 data class AgencyVisitSlot(
   @Id
   @Column(name = "AGENCY_VISIT_SLOT_ID")
-  var id: Long? = null,
+  var id: Long = 0,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)

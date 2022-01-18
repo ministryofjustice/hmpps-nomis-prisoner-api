@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -23,10 +22,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.VisitService
 import javax.validation.Valid
+import javax.validation.constraints.Pattern
+
+const val OFFENDER_NO_PATTERN = "[A-Z]\\d{4}[A-Z]{2}"
 
 @RestController
 @Validated
-@RequestMapping("/visits", produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/prisoner/{offenderNo}/visit", produces = [MediaType.APPLICATION_JSON_VALUE])
 class VisitResource(private val visitService: VisitService) {
 
   @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")
@@ -35,7 +37,6 @@ class VisitResource(private val visitService: VisitService) {
   @Operation(
     summary = "Creates a new visit",
     description = "Creates a new visit and decrements the visit balance.",
-    security = [SecurityRequirement(name = "ROLE_UPDATE_NOMIS")],
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -71,14 +72,27 @@ class VisitResource(private val visitService: VisitService) {
       ),
     ]
   )
-  fun createVisit(@RequestBody @Valid createVisitRequest: CreateVisitRequest): CreateVisitResponse =
-    visitService.createVisit(createVisitRequest)
+  fun createVisit(
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @PathVariable
+    @Pattern(regexp = OFFENDER_NO_PATTERN)
+    offenderNo: String,
+    @RequestBody @Valid createVisitRequest: CreateVisitRequest
+  ): CreateVisitResponse =
+    visitService.createVisit(offenderNo, createVisitRequest)
 
   @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")
   @PutMapping("/{visitId}")
   @Operation(
     summary = "Amend a visit",
-    security = [SecurityRequirement(name = "ROLE_UPDATE_NOMIS")],
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = AmendVisitRequest::class)
+        )
+      ]
+    ),
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -107,17 +121,22 @@ class VisitResource(private val visitService: VisitService) {
     ]
   )
   fun amendVisit(
-    @PathVariable visitId: Long,
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @PathVariable
+    @Pattern(regexp = OFFENDER_NO_PATTERN)
+    offenderNo: String,
+    @Schema(description = "Nomis Visit Id", required = true)
+    @PathVariable
+    visitId: Long,
     @RequestBody @Valid amendVisitRequest: AmendVisitRequest
   ) {
-    visitService.amendVisit(visitId, amendVisitRequest)
+    visitService.amendVisit(offenderNo, visitId, amendVisitRequest)
   }
 
   @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")
   @PutMapping("/{visitId}/cancel")
   @Operation(
     summary = "Cancel a visit",
-    security = [SecurityRequirement(name = "ROLE_UPDATE_NOMIS")],
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -146,9 +165,15 @@ class VisitResource(private val visitService: VisitService) {
     ]
   )
   fun cancelVisit(
-    @PathVariable visitId: Long,
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @PathVariable
+    @Pattern(regexp = OFFENDER_NO_PATTERN)
+    offenderNo: String,
+    @Schema(description = "Nomis Visit Id", required = true)
+    @PathVariable
+    visitId: Long,
     @RequestBody @Valid cancelVisitRequest: CancelVisitRequest
   ) {
-    visitService.cancelVisit(visitId, cancelVisitRequest)
+    visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
   }
 }

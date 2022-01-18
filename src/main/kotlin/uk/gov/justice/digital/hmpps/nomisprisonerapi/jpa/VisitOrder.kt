@@ -26,7 +26,7 @@ data class VisitOrder(
   @GeneratedValue(generator = "OFFENDER_VISIT_ORDER_ID")
   @Id
   @Column(name = "OFFENDER_VISIT_ORDER_ID", nullable = false)
-  val id: Long? = null,
+  val id: Long = 0,
 
   @Column(name = "VISIT_ORDER_NUMBER", nullable = false)
   val visitOrderNumber: Long,

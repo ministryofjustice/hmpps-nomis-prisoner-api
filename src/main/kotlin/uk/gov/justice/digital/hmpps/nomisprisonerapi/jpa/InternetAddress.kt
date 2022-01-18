@@ -14,7 +14,7 @@ import javax.persistence.Table
 abstract class InternetAddress {
   @Id
   @Column(name = "INTERNET_ADDRESS_ID", nullable = false)
-  val internetAddressId: Long? = null
+  val internetAddressId: Long = 0
 
   @Column(name = "INTERNET_ADDRESS_CLASS")
   val internetAddressClass: String? = null

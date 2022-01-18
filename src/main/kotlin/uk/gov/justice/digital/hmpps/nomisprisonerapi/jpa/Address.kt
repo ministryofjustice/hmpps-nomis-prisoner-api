@@ -30,7 +30,7 @@ abstract class Address {
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
-  val addressId: Long? = null
+  val addressId: Long = 0
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
