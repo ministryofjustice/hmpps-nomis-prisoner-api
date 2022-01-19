@@ -140,6 +140,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           Tuple.tuple(-8L, "SCH"),
           Tuple.tuple(-9L, "SCH"),
         )
+        assertThat(visit.visitors[0].eventId).isGreaterThan(0)
 
         val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
 

@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.function.Supplier
@@ -33,6 +34,7 @@ import java.util.function.Supplier
 @Transactional
 class VisitService(
   private val visitRepository: VisitRepository,
+  private val visitVisitorRepository: VisitVisitorRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository,
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
@@ -160,15 +162,26 @@ class VisitService(
     //  Add dummy visitor row for the offender_booking as is required by the P-Nomis view
 
     visit.visitors.add(
-      VisitVisitor(visit = visit, offenderBooking = offenderBooking, eventStatus = scheduledEventStatus)
+      VisitVisitor(
+        visit = visit,
+        offenderBooking = offenderBooking,
+        eventStatus = scheduledEventStatus,
+        eventId = getNextEvent()
+      )
     )
 
     visitDto.visitorPersonIds.forEach {
       val person = personRepository.findById(it).orElseThrow(DataNotFoundException("Person with id=$it does not exist"))
       visit.visitors.add(
-        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus)
+        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus, eventId = getNextEvent())
       )
     }
+  }
+
+  private fun getNextEvent(): Long {
+    // TODO Reviewing with Paul M as to whether this is a wise course to take!
+    // The stored proc uses event_id.nextval
+    return visitVisitorRepository.getEventId()
   }
 }
 

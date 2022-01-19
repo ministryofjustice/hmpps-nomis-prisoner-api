@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -45,10 +46,12 @@ private const val visitId = -8L
 private const val offenderNo = "A1234AA"
 private const val prisonId = "SWI"
 private const val roomId = "VISIT-ROOM"
+private const val eventId = 34L
 
 internal class VisitServiceTest {
 
   private val visitRepository: VisitRepository = mock()
+  private val visitVisitorRepository: VisitVisitorRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val personRepository: PersonRepository = mock()
   private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository = mock()
@@ -62,6 +65,7 @@ internal class VisitServiceTest {
 
   private val visitService: VisitService = VisitService(
     visitRepository,
+    visitVisitorRepository,
     offenderBookingRepository,
     offenderVisitBalanceRepository,
     offenderVisitBalanceAdjustmentRepository,
@@ -113,6 +117,8 @@ internal class VisitServiceTest {
         )
       )
     )
+
+    whenever(visitVisitorRepository.getEventId()).thenReturn(eventId)
   }
 
   @DisplayName("create")
@@ -180,11 +186,11 @@ internal class VisitServiceTest {
 
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus")
+          assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus", "eventId")
             .containsExactly(
-              Tuple.tuple(offenderBookingId, null, eventStatus),
-              Tuple.tuple(null, 45L, eventStatus),
-              Tuple.tuple(null, 46L, eventStatus),
+              Tuple.tuple(offenderBookingId, null, eventStatus, eventId),
+              Tuple.tuple(null, 45L, eventStatus, eventId),
+              Tuple.tuple(null, 46L, eventStatus, eventId),
             )
         }
       )
