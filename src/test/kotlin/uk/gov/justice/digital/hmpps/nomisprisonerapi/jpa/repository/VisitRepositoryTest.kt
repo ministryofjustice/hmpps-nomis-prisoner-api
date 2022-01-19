@@ -31,6 +31,9 @@ class VisitRepositoryTest {
   lateinit var repository: VisitRepository
 
   @Autowired
+  lateinit var visitVisitorRepository: VisitVisitorRepository
+
+  @Autowired
   lateinit var offenderBookingRepository: OffenderBookingRepository
 
   @Autowired
@@ -96,6 +99,7 @@ class VisitRepositoryTest {
         offenderBooking = seedOffenderBooking,
         visit = visit,
         person = seedPerson2,
+        eventId = visitVisitorRepository.getEventId()
       )
     )
 
@@ -123,6 +127,7 @@ class VisitRepositoryTest {
     assertThat(assistedVisit).isTrue
     assertThat(person?.id).isEqualTo(-1)
     assertThat(visitVisitors[1].person?.id).isEqualTo(-2)
+    assertThat(visitVisitors[1].eventId).isGreaterThan(0)
   }
 
   @Test
