@@ -17,14 +17,19 @@ class AuthenticationFacade {
     get() {
       val username: String?
       val userPrincipal = userPrincipal
-      username = if (userPrincipal is String) {
-        userPrincipal
-      } else if (userPrincipal is UserDetails) {
-        userPrincipal.username
-      } else if (userPrincipal is Map<*, *>) {
-        userPrincipal["username"] as String?
-      } else {
-        null
+      username = when (userPrincipal) {
+        is String -> {
+          userPrincipal
+        }
+        is UserDetails -> {
+          userPrincipal.username
+        }
+        is Map<*, *> -> {
+          userPrincipal["username"] as String?
+        }
+        else -> {
+          null
+        }
       }
       return username
     }

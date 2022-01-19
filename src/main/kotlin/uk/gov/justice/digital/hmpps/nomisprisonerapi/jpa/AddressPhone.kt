@@ -15,7 +15,7 @@ data class AddressPhone(
   var address: Address
 ) : Phone() {
 
-  constructor(address: Address, phoneId: Long?, phoneType: String?, phoneNo: String?, extNo: String?) : this(address) {
+  constructor(address: Address, phoneId: Long, phoneType: String?, phoneNo: String?, extNo: String?) : this(address) {
     this.phoneId = phoneId
     this.phoneType = phoneType
     this.phoneNo = phoneNo

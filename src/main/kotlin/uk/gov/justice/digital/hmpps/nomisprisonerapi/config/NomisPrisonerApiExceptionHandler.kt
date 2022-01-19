@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.DataNotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.PrisonerNotFoundException
 import javax.validation.ValidationException
 
@@ -45,6 +46,20 @@ class NomisPrisonerApiExceptionHandler {
         ErrorResponse(
           status = NOT_FOUND,
           userMessage = "Not Found: ${e.message}",
+          developerMessage = e.message
+        )
+      )
+  }
+
+  @ExceptionHandler(DataNotFoundException::class)
+  fun handleBadRequestException(e: Exception): ResponseEntity<ErrorResponse?>? {
+    log.info("Bad request: {}", e.message)
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST,
+          userMessage = "Bad request: ${e.message}",
           developerMessage = e.message
         )
       )

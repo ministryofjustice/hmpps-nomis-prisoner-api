@@ -23,7 +23,7 @@ data class OffenderBooking(
   @GeneratedValue(generator = "OFFENDER_BOOK_ID")
   @Id
   @Column(name = "OFFENDER_BOOK_ID")
-  val bookingId: Long? = null,
+  val bookingId: Long = 0,
 
   @Column(name = "BOOKING_SEQ", nullable = false)
   val bookingSequence: Int? = null,

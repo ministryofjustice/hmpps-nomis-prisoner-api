@@ -17,13 +17,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentRea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.function.Supplier
@@ -32,47 +33,50 @@ import java.util.function.Supplier
 @Transactional
 class VisitService(
   private val visitRepository: VisitRepository,
-  private val visitVisitorRepository: VisitVisitorRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository,
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
   private val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
-  private val agencyRepository: AgencyLocationRepository,
+  private val agencyLocationRepository: AgencyLocationRepository,
+  private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val telemetryClient: TelemetryClient,
+  private val personRepository: PersonRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun createVisit(visitDto: CreateVisitRequest): CreateVisitResponse {
+  fun createVisit(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
 
-    val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(visitDto.offenderNo, true)
-      .orElseThrow(PrisonerNotFoundException(visitDto.offenderNo))
+    val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
+      .orElseThrow(PrisonerNotFoundException(offenderNo))
 
     createBalance(visitDto, offenderBooking)
 
-    val visit = visitRepository.save(mapVisitModel(visitDto, offenderBooking))
+    val mappedVisit = mapVisitModel(visitDto, offenderBooking)
 
-    addVisitors(visit, offenderBooking, visitDto)
+    addVisitors(mappedVisit, offenderBooking, visitDto)
 
-    telemetryClient.trackEvent("visit-created", mapOf("visitId" to visit.id!!.toString()), null)
+    val visit = visitRepository.save(mappedVisit)
+
+    telemetryClient.trackEvent("visit-created", mapOf("visitId" to visit.id.toString()), null)
 
     return CreateVisitResponse(visit.id)
   }
 
-  fun amendVisit(visitId: Long, visitDto: AmendVisitRequest) {
+  fun amendVisit(offenderNo: String, visitId: Long, visitDto: AmendVisitRequest) {
   }
 
-  fun cancelVisit(visitId: Long, visitDto: CancelVisitRequest) {
+  fun cancelVisit(offenderNo: String, visitId: Long, visitDto: CancelVisitRequest) {
   }
 
   private fun createBalance(
     visitDto: CreateVisitRequest,
     offenderBooking: OffenderBooking,
   ) {
-    val offenderVisitBalance = offenderVisitBalanceRepository.findById(offenderBooking.bookingId!!).orElseThrow()
+    val offenderVisitBalance = offenderVisitBalanceRepository.findById(offenderBooking.bookingId).orElseThrow()
 
     if (visitDto.decrementBalances) {
 
@@ -117,15 +121,24 @@ class VisitService(
 
     val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType)).orElseThrow()
 
+    val location = agencyLocationRepository.findById(visitDto.prisonId)
+      .orElseThrow(DataNotFoundException("Prison with id=${visitDto.prisonId} does not exist"))
+    val agencyInternalLocation = agencyInternalLocationRepository.findById(visitDto.visitRoomId)
+      .orElseThrow(DataNotFoundException("Room location with id=${visitDto.visitRoomId} does not exist"))
+    // TODO is more validation needed on prison or room (e.g. it is a visit room)?
+    // In fact is prison redundant (available in agencyInternalLocation)
+
     return Visit(
       offenderBooking = offenderBooking,
-      visitDate = LocalDate.from(visitDto.startTime),
-      startTime = visitDto.startTime,
-      endTime = LocalDateTime.of(LocalDate.from(visitDto.startTime), visitDto.endTime),
+      visitDate = LocalDate.from(visitDto.startDateTime),
+      startTime = visitDto.startDateTime,
+      endTime = LocalDateTime.of(LocalDate.from(visitDto.startDateTime), visitDto.endTime),
       visitType = visitType,
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
-      location = agencyRepository.findById(visitDto.prisonId).orElseThrow(),
+      location = location,
+      agencyInternalLocation = agencyInternalLocation,
       // TODO not yet sure if anything else is needed
+
       // searchLevel = searchRepository.findById(SearchLevel.pk("FULL")).orElseThrow(),
       // agencyInternalLocation = agencyInternalRepository.findById(-3L).orElseThrow(),
       // commentText = "comment text",
@@ -142,21 +155,14 @@ class VisitService(
 
     //  Add dummy visitor row for the offender_booking as is required by the P-Nomis view
 
-    visitVisitorRepository.save(
-      VisitVisitor(
-        visitId = visit.id!!,
-        offenderBooking = offenderBooking,
-        eventStatus = scheduledEventStatus,
-      )
+    visit.visitors.add(
+      VisitVisitor(visit = visit, offenderBooking = offenderBooking, eventStatus = scheduledEventStatus)
     )
 
     visitDto.visitorPersonIds.forEach {
-      visitVisitorRepository.save(
-        VisitVisitor(
-          visitId = visit.id,
-          personId = it,
-          eventStatus = scheduledEventStatus,
-        )
+      val person = personRepository.findById(it).orElseThrow(DataNotFoundException("Person with id=$it does not exist"))
+      visit.visitors.add(
+        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus)
       )
     }
   }
@@ -165,5 +171,11 @@ class VisitService(
 class PrisonerNotFoundException(message: String?) : RuntimeException(message), Supplier<PrisonerNotFoundException> {
   override fun get(): PrisonerNotFoundException {
     return PrisonerNotFoundException(message)
+  }
+}
+
+class DataNotFoundException(message: String?) : RuntimeException(message), Supplier<DataNotFoundException> {
+  override fun get(): DataNotFoundException {
+    return DataNotFoundException(message)
   }
 }

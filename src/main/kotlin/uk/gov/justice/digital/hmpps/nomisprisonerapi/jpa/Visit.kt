@@ -9,6 +9,7 @@ import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Objects
+import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -27,7 +28,7 @@ data class Visit(
   @GeneratedValue(generator = "OFFENDER_VISIT_ID")
   @Id
   @Column(name = "OFFENDER_VISIT_ID", nullable = false)
-  val id: Long? = null,
+  val id: Long = 0,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
@@ -108,9 +109,8 @@ data class Visit(
   val visitOrder: VisitOrder? = null,
 
   /* a list of all visitors including those without visitor orders */
-  @OneToMany
-  @JoinColumn(name = "OFFENDER_VISIT_ID", referencedColumnName = "OFFENDER_VISIT_ID")
-  val visitors: List<VisitVisitor> = ArrayList(),
+  @OneToMany(mappedBy = "visit", cascade = [CascadeType.ALL])
+  val visitors: MutableList<VisitVisitor> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -121,6 +121,11 @@ data class Visit(
 
   override fun hashCode(): Int {
     return Objects.hashCode(id)
+  }
+
+  // omit visitors to avoid recursion
+  override fun toString(): String {
+    return "Visit(id=$id, offenderBooking=$offenderBooking, commentText=$commentText, visitorConcernText=$visitorConcernText, visitDate=$visitDate, startTime=$startTime, endTime=$endTime, visitType=$visitType, visitStatus=$visitStatus, searchLevel=$searchLevel, location=$location, agencyInternalLocation=$agencyInternalLocation)"
   }
 
   /* fields not used in production for info:

@@ -16,10 +16,10 @@ class OffenderIdentifier {
   @Embeddable
   class OffenderIdentifierPK : Serializable {
     @Column(name = "OFFENDER_ID", nullable = false)
-    private val offenderId: Long? = null
+    private val offenderId: Long = 0
 
     @Column(name = "OFFENDER_ID_SEQ", nullable = false)
-    private val offenderIdSeq: Long? = null
+    private val offenderIdSeq: Long = 0
   }
 
   @EmbeddedId

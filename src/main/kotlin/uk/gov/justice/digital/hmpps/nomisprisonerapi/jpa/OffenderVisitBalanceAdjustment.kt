@@ -19,7 +19,7 @@ data class OffenderVisitBalanceAdjustment(
   @GeneratedValue(generator = "OFFENDER_VISIT_BALANCE_ADJ_ID")
   @Id
   @Column(name = "OFFENDER_VISIT_BALANCE_ADJ_ID")
-  val id: Long? = null,
+  val id: Long = 0,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)

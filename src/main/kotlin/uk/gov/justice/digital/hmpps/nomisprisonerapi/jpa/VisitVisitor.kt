@@ -25,17 +25,19 @@ data class VisitVisitor(
   @GeneratedValue(generator = "OFFENDER_VISIT_VISITOR_ID")
   @Id
   @Column(name = "OFFENDER_VISIT_VISITOR_ID", nullable = false)
-  val id: Long? = null,
+  val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking? = null,
 
-  @Column(name = "OFFENDER_VISIT_ID", nullable = false)
-  val visitId: Long,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "OFFENDER_VISIT_ID", nullable = false)
+  val visit: Visit,
 
-  @Column(nullable = false)
-  val personId: Long? = null,
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "PERSON_ID")
+  val person: Person? = null,
 
   @Column(name = "GROUP_LEADER_FLAG", nullable = false)
   @Type(type = "yes_no")
