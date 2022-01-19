@@ -44,7 +44,7 @@ private const val offenderBookingId = -9L
 private const val visitId = -8L
 private const val offenderNo = "A1234AA"
 private const val prisonId = "SWI"
-private const val roomId = 102L
+private const val roomId = "VISIT-ROOM"
 
 internal class VisitServiceTest {
 
@@ -100,8 +100,8 @@ internal class VisitServiceTest {
     whenever(visitStatusRepository.findById(VisitStatus.pk("SCH"))).thenReturn(Optional.of(visitStatus))
     whenever(eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED)).thenReturn(Optional.of(eventStatus))
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.of(AgencyLocation(prisonId, "desc")))
-    whenever(agencyInternalLocationRepository.findById(roomId)).thenReturn(
-      Optional.of(AgencyInternalLocation(roomId, true))
+    whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(
+      listOf(AgencyInternalLocation(12345L, true))
     )
 
     whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
@@ -205,7 +205,6 @@ internal class VisitServiceTest {
     @Test
     fun personNotFound() {
       whenever(personRepository.findById(45L)).thenReturn(Optional.empty())
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
 
       val thrown = assertThrows(DataNotFoundException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
@@ -216,7 +215,6 @@ internal class VisitServiceTest {
     @Test
     fun prisonNotFound() {
       whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.empty())
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
 
       val thrown = assertThrows(DataNotFoundException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
@@ -226,13 +224,24 @@ internal class VisitServiceTest {
 
     @Test
     fun roomNotFound() {
-      whenever(agencyInternalLocationRepository.findById(roomId)).thenReturn(Optional.empty())
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
+      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(emptyList())
 
       val thrown = assertThrows(DataNotFoundException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
       }
-      assertThat(thrown.message).isEqualTo("Room location with id=$roomId does not exist")
+      assertThat(thrown.message).isEqualTo("Room location with code=$roomId does not exist in prison $prisonId")
+    }
+
+    @Test
+    fun moreThanOneRoom() {
+      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(
+        listOf(AgencyInternalLocation(12345L, true), AgencyInternalLocation(12346L, true))
+      )
+
+      val thrown = assertThrows(DataNotFoundException::class.java) {
+        visitService.createVisit(offenderNo, createVisitRequest)
+      }
+      assertThat(thrown.message).isEqualTo("There is more than one room with code=$roomId at prison $prisonId")
     }
   }
 }
