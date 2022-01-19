@@ -28,7 +28,7 @@ const val OFFENDER_NO_PATTERN = "[A-Z]\\d{4}[A-Z]{2}"
 
 @RestController
 @Validated
-@RequestMapping("/prisoner/{offenderNo}/visit", produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/prisoners/{offenderNo}/visit", produces = [MediaType.APPLICATION_JSON_VALUE])
 class VisitResource(private val visitService: VisitService) {
 
   @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")

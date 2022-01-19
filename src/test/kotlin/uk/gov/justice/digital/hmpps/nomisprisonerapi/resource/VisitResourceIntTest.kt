@@ -29,7 +29,7 @@ private val createVisitRequest = CreateVisitRequest(
   prisonId = prisonId,
   visitorPersonIds = listOf(-7L, -8L, -9L),
   decrementBalances = true,
-  visitRoomId = 14511,
+  visitRoomId = "VISIT",
 )
 
 class VisitResourceIntTest : IntegrationTestBase() {
@@ -49,7 +49,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/prisoner/$offenderNo/visit")
+      webTestClient.post().uri("/prisoners/$offenderNo/visit")
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
         .expectStatus().isUnauthorized
@@ -57,7 +57,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.post().uri("/prisoner/$offenderNo/visit")
+      webTestClient.post().uri("/prisoners/$offenderNo/visit")
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
@@ -66,7 +66,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit forbidden with wrong role`() {
-      webTestClient.post().uri("/prisoner/$offenderNo/visit")
+      webTestClient.post().uri("/prisoners/$offenderNo/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
@@ -75,7 +75,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit with offender not found`() {
-      webTestClient.post().uri("/prisoner/Z9999ZZ/visit")
+      webTestClient.post().uri("/prisoners/Z9999ZZ/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
@@ -84,7 +84,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit with invalid person`() {
-      val error = webTestClient.post().uri("/prisoner/$offenderNo/visit")
+      val error = webTestClient.post().uri("/prisoners/$offenderNo/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .body(BodyInserters.fromValue(createVisitRequest.copy(visitorPersonIds = listOf(-7L, -99L))))
         .exchange()
@@ -96,7 +96,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit with invalid offenderNo`() {
-      webTestClient.post().uri("/prisoner/ZZ000ZZ/visit")
+      webTestClient.post().uri("/prisoners/ZZ000ZZ/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .body(BodyInserters.fromValue(createVisitRequest))
         .exchange()
@@ -107,7 +107,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit success`() {
-      val response = webTestClient.post().uri("/prisoner/$offenderNo/visit")
+      val response = webTestClient.post().uri("/prisoners/$offenderNo/visit")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
@@ -119,7 +119,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [-7, -8, -9],
             "decrementBalances" : true,
-            "visitRoomId"       : 14511
+            "visitRoomId"       : "VISIT"
           }"""
           )
         )

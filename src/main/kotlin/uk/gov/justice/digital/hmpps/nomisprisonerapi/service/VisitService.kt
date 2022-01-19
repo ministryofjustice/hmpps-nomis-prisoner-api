@@ -123,10 +123,14 @@ class VisitService(
 
     val location = agencyLocationRepository.findById(visitDto.prisonId)
       .orElseThrow(DataNotFoundException("Prison with id=${visitDto.prisonId} does not exist"))
-    val agencyInternalLocation = agencyInternalLocationRepository.findById(visitDto.visitRoomId)
-      .orElseThrow(DataNotFoundException("Room location with id=${visitDto.visitRoomId} does not exist"))
-    // TODO is more validation needed on prison or room (e.g. it is a visit room)?
-    // In fact is prison redundant (available in agencyInternalLocation)
+    val agencyInternalLocations =
+      agencyInternalLocationRepository.findByLocationCodeAndAgencyId(visitDto.visitRoomId, visitDto.prisonId)
+    if (agencyInternalLocations.isEmpty()) {
+      throw (DataNotFoundException("Room location with code=${visitDto.visitRoomId} does not exist in prison ${visitDto.prisonId}"))
+    } else if (agencyInternalLocations.size > 1) {
+      throw (DataNotFoundException("There is more than one room with code=${visitDto.visitRoomId} at prison ${visitDto.prisonId}"))
+    }
+    // TODO is more validation needed on prison or room (e.g. it is a visit room type)?
 
     return Visit(
       offenderBooking = offenderBooking,
@@ -136,7 +140,7 @@ class VisitService(
       visitType = visitType,
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       location = location,
-      agencyInternalLocation = agencyInternalLocation,
+      agencyInternalLocation = agencyInternalLocations[0],
       // TODO not yet sure if anything else is needed
 
       // searchLevel = searchRepository.findById(SearchLevel.pk("FULL")).orElseThrow(),

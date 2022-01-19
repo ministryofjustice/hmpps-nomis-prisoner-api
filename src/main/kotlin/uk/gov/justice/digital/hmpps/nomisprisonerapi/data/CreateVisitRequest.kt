@@ -49,7 +49,7 @@ data class CreateVisitRequest(
   @NotNull
   val issueDate: LocalDate? = null,
 
-  @Schema(description = "Location of visit, an agency internal location id", required = true)
-  @NotNull
-  val visitRoomId: Long,
+  @Schema(description = "Location of visit, an agency internal location code", required = true)
+  @NotBlank
+  val visitRoomId: String,
 )
