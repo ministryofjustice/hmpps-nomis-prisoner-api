@@ -30,6 +30,7 @@ private val createVisitRequest = CreateVisitRequest(
   visitorPersonIds = listOf(-7L, -8L, -9L),
   decrementBalances = true,
   visitRoomId = "VISIT",
+  vsipVisitId = "12345"
 )
 
 class VisitResourceIntTest : IntegrationTestBase() {
@@ -119,7 +120,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [-7, -8, -9],
             "decrementBalances" : true,
-            "visitRoomId"       : "VISIT"
+            "visitRoomId"       : "VISIT",
+            "vsipVisitId"       : "12345"
           }"""
           )
         )
@@ -134,6 +136,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         val visit = visitRepository.findById(response?.visitId!!).orElseThrow()
         assertThat(visit.endTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
         assertThat(visit.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
+        assertThat(visit.vsipVisitId).isEqualTo("VSIP_12345")
         assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
           Tuple.tuple(null, "SCH"),
           Tuple.tuple(-7L, "SCH"),
