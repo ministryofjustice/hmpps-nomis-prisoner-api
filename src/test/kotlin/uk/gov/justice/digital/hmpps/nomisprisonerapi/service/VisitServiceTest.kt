@@ -90,6 +90,7 @@ internal class VisitServiceTest {
     visitorPersonIds = listOf(45L, 46L),
     decrementBalances = true,
     visitRoomId = roomId,
+    vsipVisitId = "12345"
   )
 
   @BeforeEach
@@ -139,6 +140,7 @@ internal class VisitServiceTest {
           assertThat(visit.visitType).isEqualTo(visitType)
           assertThat(visit.visitStatus).isEqualTo(visitStatus)
           assertThat(visit.location?.id).isEqualTo(prisonId)
+          assertThat(visit.vsipVisitId).isEqualTo(VisitService.VSIP_PREFIX + "12345")
         }
       )
     }

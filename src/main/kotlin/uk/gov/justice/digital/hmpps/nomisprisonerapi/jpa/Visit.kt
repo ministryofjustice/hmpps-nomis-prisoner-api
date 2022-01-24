@@ -104,6 +104,9 @@ data class Visit(
   @JoinColumn(name = "AGENCY_VISIT_SLOT_ID")
   val agencyVisitSlot: AgencyVisitSlot? = null,
 
+  @Column(name = "CLIENT_UNIQUE_REF")
+  val vsipVisitId: String? = null,
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_VISIT_ORDER_ID")
   val visitOrder: VisitOrder? = null,
@@ -125,7 +128,7 @@ data class Visit(
 
   // omit visitors to avoid recursion
   override fun toString(): String {
-    return "Visit(id=$id, offenderBooking=$offenderBooking, commentText=$commentText, visitorConcernText=$visitorConcernText, visitDate=$visitDate, startTime=$startTime, endTime=$endTime, visitType=$visitType, visitStatus=$visitStatus, searchLevel=$searchLevel, location=$location, agencyInternalLocation=$agencyInternalLocation)"
+    return "Visit(id=$id, offenderBooking=$offenderBooking, commentText=$commentText, visitorConcernText=$visitorConcernText, visitDate=$visitDate, startTime=$startTime, endTime=$endTime, visitType=$visitType, visitStatus=$visitStatus, searchLevel=$searchLevel, location=$location, agencyInternalLocation=$agencyInternalLocation, vsipVisitId=$vsipVisitId)"
   }
 
   /* fields not used in production for info:
@@ -140,7 +143,7 @@ data class Visit(
      private VisitOutcomeReason outcomeReason;
 
      "CLIENT_UNIQUE_REF" - not used since 2018
-     private String clientReference;
+     private String vsipVisitId;
 
      "EVENT_OUTCOME" - not used since 2015
      private VisitOutcome outcome;

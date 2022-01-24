@@ -48,6 +48,7 @@ class VisitService(
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
+    val VSIP_PREFIX = "VSIP_"
   }
 
   fun createVisit(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
@@ -143,6 +144,7 @@ class VisitService(
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       location = location,
       agencyInternalLocation = agencyInternalLocations[0],
+      vsipVisitId = VSIP_PREFIX + visitDto.vsipVisitId
       // TODO not yet sure if anything else is needed
 
       // searchLevel = searchRepository.findById(SearchLevel.pk("FULL")).orElseThrow(),
