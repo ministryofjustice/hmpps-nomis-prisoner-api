@@ -142,9 +142,6 @@ data class Visit(
      OUTCOME_REASON_CODE
      private VisitOutcomeReason outcomeReason;
 
-     "CLIENT_UNIQUE_REF" - not used since 2018
-     private String vsipVisitId;
-
      "EVENT_OUTCOME" - not used since 2015
      private VisitOutcome outcome;
 
