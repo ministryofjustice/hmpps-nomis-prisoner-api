@@ -8,8 +8,10 @@ import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
+import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.OneToMany
+import javax.persistence.SequenceGenerator
 import javax.persistence.Table
 
 @Entity
@@ -17,7 +19,9 @@ import javax.persistence.Table
 data class Person(
   @Id
   @Column(name = "PERSON_ID")
-  val id: Long,
+  @SequenceGenerator(name = "PERSON_ID", sequenceName = "PERSON_ID", allocationSize = 1)
+  @GeneratedValue(generator = "PERSON_ID")
+  var id: Long = 0,
 
   @Column(name = "FIRST_NAME", nullable = false)
   val firstName: String,
@@ -52,10 +56,14 @@ data class Person(
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as Person
+
     return id == other.id
   }
 
-  override fun hashCode(): Int {
-    return id.hashCode()
+  override fun hashCode(): Int = id.hashCode()
+
+  @Override
+  override fun toString(): String {
+    return this::class.simpleName + "(id = $id )"
   }
 }

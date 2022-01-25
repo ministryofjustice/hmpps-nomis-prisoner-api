@@ -17,10 +17,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import java.time.LocalDate
@@ -28,16 +30,20 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 private const val prisonId = "BXI"
-private val createVisitRequest = CreateVisitRequest(
-  visitType = "SCON",
-  startDateTime = LocalDateTime.parse("2021-11-04T12:05"),
-  endTime = LocalTime.parse("13:04"),
-  prisonId = prisonId,
-  visitorPersonIds = listOf(-7L, -8L, -9L),
-  visitRoomId = "VISIT",
-  vsipVisitId = "12345",
-  issueDate = LocalDate.parse("2021-11-02"),
-)
+
+private val createVisit: (visitorPersonIds: List<Long>) -> CreateVisitRequest =
+  { visitorPersonIds ->
+    CreateVisitRequest(
+      visitType = "SCON",
+      startDateTime = LocalDateTime.parse("2021-11-04T12:05"),
+      endTime = LocalTime.parse("13:04"),
+      prisonId = prisonId,
+      visitorPersonIds = visitorPersonIds,
+      visitRoomId = "VISIT",
+      vsipVisitId = "12345",
+      issueDate = LocalDate.parse("2021-11-02"),
+    )
+  }
 
 class VisitResourceIntTest : IntegrationTestBase() {
 
@@ -56,6 +62,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
   lateinit var offenderNo: String
   lateinit var offender: Offender
   private var offenderBookingId: Long = 0L
+  private val threePeople = mutableListOf<Person>()
+  private val createVisitWithPeople: () -> CreateVisitRequest = { createVisit(threePeople.map { it.id }) }
 
   @BeforeEach
   internal fun createPrisoner() {
@@ -66,21 +74,27 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     offenderNo = offender.nomsId
     offenderBookingId = offender.latestBooking().bookingId
+    threePeople.addAll(
+      (1..3).map {
+        repository.save(PersonBuilder())
+      }
+    )
   }
 
   @AfterEach
   internal fun deletePrisoner() {
     repository.delete(offender)
+    repository.delete(threePeople)
   }
 
   @DisplayName("Create")
   @Nested
-  inner class CreateVisitRequest {
+  inner class CreateVisitRequestTest {
 
     @Test
     fun `access forbidden when no authority`() {
       webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .body(BodyInserters.fromValue(createVisitRequest))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -89,7 +103,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `access forbidden when no role`() {
       webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf()))
-        .body(BodyInserters.fromValue(createVisitRequest))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isForbidden
     }
@@ -98,7 +112,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `create visit forbidden with wrong role`() {
       webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-        .body(BodyInserters.fromValue(createVisitRequest))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isForbidden
     }
@@ -107,7 +121,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `create visit with offender not found`() {
       webTestClient.post().uri("/prisoners/Z9999ZZ/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .body(BodyInserters.fromValue(createVisitRequest))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -116,7 +130,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `create visit with invalid person`() {
       val error = webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .body(BodyInserters.fromValue(createVisitRequest.copy(visitorPersonIds = listOf(-7L, -99L))))
+        .body(BodyInserters.fromValue(createVisitWithPeople().copy(visitorPersonIds = listOf(-7L, -99L))))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
@@ -128,7 +142,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `create visit with invalid offenderNo`() {
       webTestClient.post().uri("/prisoners/ZZ000ZZ/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .body(BodyInserters.fromValue(createVisitRequest))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
@@ -137,6 +151,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit success`() {
+      val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -147,7 +162,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "startDateTime"     : "2021-11-04T12:05",
             "endTime"           : "13:04",
             "prisonId"          : "$prisonId",
-            "visitorPersonIds"  : [-7, -8, -9],
+            "visitorPersonIds"  : [$personIds],
             "visitRoomId"       : "VISIT",
             "vsipVisitId"       : "12345",
             "issueDate"         : "2021-11-02"
@@ -168,9 +183,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.vsipVisitId).isEqualTo("VSIP_12345")
         assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
           Tuple.tuple(null, "SCH"),
-          Tuple.tuple(-7L, "SCH"),
-          Tuple.tuple(-8L, "SCH"),
-          Tuple.tuple(-9L, "SCH"),
+          Tuple.tuple(threePeople[0].id, "SCH"),
+          Tuple.tuple(threePeople[1].id, "SCH"),
+          Tuple.tuple(threePeople[2].id, "SCH"),
         )
         assertThat(visit.visitors[0].eventId).isGreaterThan(0)
 
@@ -193,7 +208,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val createResponse = webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createVisitRequest))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isCreated
         .expectBody(CreateVisitResponse::class.java)
