@@ -30,7 +30,7 @@ data class Offender(
   @GeneratedValue(generator = "OFFENDER_ID")
   @Id
   @Column(name = "OFFENDER_ID", nullable = false)
-  val id: Long,
+  var id: Long = 0,
 
   @Column(name = "OFFENDER_ID_DISPLAY", nullable = false)
   val nomsId: String,
@@ -73,15 +73,15 @@ data class Offender(
   val birthDate: LocalDate? = null,
 
   @Column(name = "ROOT_OFFENDER_ID")
-  val rootOffenderId: Long? = null,
+  var rootOffenderId: Long? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ROOT_OFFENDER_ID", updatable = false, insertable = false)
-  val rootOffender: Offender? = null,
+  var rootOffender: Offender? = null,
 
   @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @BatchSize(size = 25)
-  val bookings: List<OffenderBooking> = emptyList(),
+  val bookings: MutableList<OffenderBooking> = mutableListOf(),
 
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val identifiers: List<OffenderIdentifier> = ArrayList(),

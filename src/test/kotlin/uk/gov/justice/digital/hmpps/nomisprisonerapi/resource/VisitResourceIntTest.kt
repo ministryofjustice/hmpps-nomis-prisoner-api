@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.groups.Tuple
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,14 +15,17 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-private const val offenderBookingId = -10L
-private const val offenderNo = "A1234AJ"
 private const val prisonId = "BXI"
 private val createVisitRequest = CreateVisitRequest(
   visitType = "SCON",
@@ -44,9 +49,32 @@ class VisitResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var transactionManager: PlatformTransactionManager
 
+  @Autowired
+  lateinit var repository: Repository
+
+
   @DisplayName("Create")
   @Nested
   inner class CreateVisitRequest {
+    lateinit var offenderNo: String
+    lateinit var offender: Offender
+    private var offenderBookingId: Long = 0L
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      offender = repository.save(
+        OffenderBuilder()
+          .withBooking(OffenderBookingBuilder().withVisitBalance())
+      )
+
+      offenderNo = offender.nomsId
+      offenderBookingId = offender.latestBooking().bookingId
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offender)
+    }
 
     @Test
     fun `access forbidden when no authority`() {
@@ -148,9 +176,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
         val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
 
         assertThat(balanceAdjustment).extracting("offenderBooking.bookingId", "remainingVisitOrders").containsExactly(
-          Tuple.tuple(-10L, -1),
+          Tuple.tuple(offenderBookingId, -1),
         )
       }
     }
   }
 }
+
+private fun Offender.latestBooking(): OffenderBooking =
+  this.bookings.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")
+
