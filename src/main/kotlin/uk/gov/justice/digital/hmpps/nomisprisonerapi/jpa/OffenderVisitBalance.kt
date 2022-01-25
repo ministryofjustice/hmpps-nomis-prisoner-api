@@ -5,6 +5,7 @@ import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.Id
 import javax.persistence.JoinColumn
+import javax.persistence.MapsId
 import javax.persistence.OneToOne
 import javax.persistence.Table
 
@@ -14,16 +15,12 @@ data class OffenderVisitBalance(
 
   @Id
   @Column(name = "OFFENDER_BOOK_ID", nullable = false)
-  val offenderBookingId: Long,
+  val offenderBookingId: Long = 0,
 
   @OneToOne
-  @JoinColumn(
-    name = "OFFENDER_BOOK_ID",
-    referencedColumnName = "OFFENDER_BOOK_ID",
-    insertable = false,
-    updatable = false
-  )
-  val offenderBooking: OffenderBooking? = null,
+  @MapsId
+  @JoinColumn(name = "OFFENDER_BOOK_ID")
+  val offenderBooking: OffenderBooking,
 
   @Column(name = "REMAINING_VO")
   val remainingVisitOrders: Int? = null,
