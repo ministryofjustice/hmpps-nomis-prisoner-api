@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import org.hibernate.Hibernate
 import javax.persistence.Column
 import javax.persistence.DiscriminatorColumn
 import javax.persistence.Entity
@@ -28,4 +29,15 @@ abstract class Phone {
 
   @Column(name = "EXT_NO")
   var extNo: String? = null
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as Phone
+    return phoneId == other.phoneId
+  }
+
+  override fun hashCode(): Int {
+    return phoneId.hashCode()
+  }
 }

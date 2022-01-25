@@ -122,8 +122,8 @@ data class AgencyLocation(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    val that = other as AgencyLocation
-    return id == that.id
+    other as AgencyLocation
+    return id == other.id
   }
 
   override fun hashCode(): Int {

@@ -29,10 +29,6 @@ data class CreateVisitRequest(
   @NotEmpty
   val visitorPersonIds: List<Long>,
 
-  @Schema(description = "Whether to handle balance or remaining visits", required = true)
-  @NotNull
-  val decrementBalances: Boolean,
-
   @Schema(description = "Whether visit is a privileged one")
   val privileged: Boolean = false,
 
@@ -47,7 +43,7 @@ data class CreateVisitRequest(
 
   @Schema(description = "Issue date", required = true)
   @NotNull
-  val issueDate: LocalDate? = null,
+  val issueDate: LocalDate,
 
   @Schema(description = "Location of visit, an agency internal location code", required = true)
   @NotBlank

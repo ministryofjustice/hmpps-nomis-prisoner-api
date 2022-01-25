@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -33,9 +34,9 @@ private val createVisitRequest = CreateVisitRequest(
   endTime = LocalTime.parse("13:04"),
   prisonId = prisonId,
   visitorPersonIds = listOf(-7L, -8L, -9L),
-  decrementBalances = true,
   visitRoomId = "VISIT",
-  vsipVisitId = "12345"
+  vsipVisitId = "12345",
+  issueDate = LocalDate.parse("2021-11-02"),
 )
 
 class VisitResourceIntTest : IntegrationTestBase() {
@@ -52,28 +53,29 @@ class VisitResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
 
+  lateinit var offenderNo: String
+  lateinit var offender: Offender
+  private var offenderBookingId: Long = 0L
+
+  @BeforeEach
+  internal fun createPrisoner() {
+    offender = repository.save(
+      OffenderBuilder()
+        .withBooking(OffenderBookingBuilder().withVisitBalance())
+    )
+
+    offenderNo = offender.nomsId
+    offenderBookingId = offender.latestBooking().bookingId
+  }
+
+  @AfterEach
+  internal fun deletePrisoner() {
+    repository.delete(offender)
+  }
+
   @DisplayName("Create")
   @Nested
   inner class CreateVisitRequest {
-    lateinit var offenderNo: String
-    lateinit var offender: Offender
-    private var offenderBookingId: Long = 0L
-
-    @BeforeEach
-    internal fun createPrisoner() {
-      offender = repository.save(
-        OffenderBuilder()
-          .withBooking(OffenderBookingBuilder().withVisitBalance())
-      )
-
-      offenderNo = offender.nomsId
-      offenderBookingId = offender.latestBooking().bookingId
-    }
-
-    @AfterEach
-    internal fun deletePrisoner() {
-      repository.delete(offender)
-    }
 
     @Test
     fun `access forbidden when no authority`() {
@@ -146,9 +148,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "endTime"           : "13:04",
             "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [-7, -8, -9],
-            "decrementBalances" : true,
             "visitRoomId"       : "VISIT",
-            "vsipVisitId"       : "12345"
+            "vsipVisitId"       : "12345",
+            "issueDate"         : "2021-11-02"
           }"""
           )
         )
@@ -174,9 +176,69 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
 
-        assertThat(balanceAdjustment).extracting("offenderBooking.bookingId", "remainingVisitOrders").containsExactly(
-          Tuple.tuple(offenderBookingId, -1),
+        assertThat(balanceAdjustment).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
+          .containsExactly(
+            Tuple.tuple(offenderBookingId, -1),
+          )
+        offenderVisitBalanceAdjustmentRepository.deleteAll()
+      }
+    }
+  }
+
+  @DisplayName("Cancel")
+  @Nested
+  inner class CancelVisitRequest {
+    @Test
+    fun `cancel visit success`() {
+      val createResponse = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitRequest))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+      val visitId = createResponse?.visitId!!
+
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "outcome" : "VISCANC"
+          }"""
+          )
         )
+        .exchange()
+        .expectStatus().isOk
+        .expectBody().isEmpty
+
+      // Spot check that the database has been updated correctly.
+      TransactionTemplate(transactionManager).execute {
+        val visit = visitRepository.findById(visitId).orElseThrow()
+        assertThat(visit.visitStatus?.code).isEqualTo("CANC")
+        assertThat(visit.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
+        assertThat(visit.visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
+          .containsExactly(
+            Tuple.tuple("ABS", "CANC", "VISCANC"),
+            Tuple.tuple("ABS", "CANC", "VISCANC"),
+            Tuple.tuple("ABS", "CANC", "VISCANC"),
+            Tuple.tuple("ABS", "CANC", "VISCANC"),
+          )
+        assertThat(visit.visitOrder?.status?.code).isEqualTo("CANC")
+        assertThat(visit.visitOrder?.outcomeReason?.code).isEqualTo("VISCANC")
+        assertThat(visit.visitOrder?.expiryDate).isEqualTo(LocalDate.now())
+
+        val balanceAdjustments = offenderVisitBalanceAdjustmentRepository.findAll()
+
+        assertThat(balanceAdjustments).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
+          .containsExactly(
+            Tuple.tuple(offenderBookingId, -1),
+            Tuple.tuple(offenderBookingId, 1),
+          )
+        // TODO has to be done separately
+        offenderVisitBalanceAdjustmentRepository.deleteAll()
       }
     }
   }

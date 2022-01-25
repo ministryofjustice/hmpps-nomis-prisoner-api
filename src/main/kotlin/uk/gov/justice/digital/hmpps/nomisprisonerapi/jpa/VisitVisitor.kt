@@ -62,7 +62,7 @@ data class VisitVisitor(
       ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code"))
     ]
   )
-  val eventStatus: EventStatus? = null,
+  var eventStatus: EventStatus? = null,
 
   @Column
   val eventId: Long? = null,
@@ -85,7 +85,7 @@ data class VisitVisitor(
       )
     ]
   )
-  val outcomeReason: VisitOutcomeReason? = null,
+  var outcomeReason: VisitOutcomeReason? = null,
 
   /* DB constraint exists: EVENT_OUTCOME IN ('ATT', 'ABS', 'CANC') */
   @ManyToOne
@@ -106,7 +106,7 @@ data class VisitVisitor(
       )
     ]
   )
-  val eventOutcome: EventOutcome? = null,
+  var eventOutcome: EventOutcome? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

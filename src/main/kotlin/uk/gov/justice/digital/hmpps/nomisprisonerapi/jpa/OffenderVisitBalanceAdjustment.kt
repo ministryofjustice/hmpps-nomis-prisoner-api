@@ -1,6 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
+import java.util.Objects
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -37,9 +44,19 @@ data class OffenderVisitBalanceAdjustment(
   @Column(name = "PREVIOUS_REMAINING_PVO")
   val previousRemainingPrivilegedVisitOrders: Int? = null,
 
-  @Column(name = "ADJUST_REASON_CODE")
-  @Size(max = 12)
-  val adjustReasonCode: String? = null,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + VisitOrderAdjustmentReason.VISIT_ORDER_ADJUSTMENT + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "ADJUST_REASON_CODE", referencedColumnName = "code", nullable = false))
+    ]
+  )
+  val adjustReasonCode: VisitOrderAdjustmentReason? = null,
 
   @Column(name = "AUTHORISED_STAFF_ID")
   val authorisedStaffId: Long? = null,
@@ -63,4 +80,16 @@ data class OffenderVisitBalanceAdjustment(
   @Column(name = "EXPIRY_STATUS")
   @Size(max = 3)
   val expiryStatus: String? = null
-) : AuditableEntity()
+) : AuditableEntity() {
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as OffenderVisitBalanceAdjustment
+    return id == other.id
+  }
+
+  override fun hashCode(): Int {
+    return Objects.hashCode(id)
+  }
+}

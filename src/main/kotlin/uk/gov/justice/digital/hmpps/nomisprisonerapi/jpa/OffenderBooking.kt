@@ -200,8 +200,8 @@ data class OffenderBooking(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    val that = other as OffenderBooking
-    return bookingId == that.bookingId
+    other as OffenderBooking
+    return bookingId == other.bookingId
   }
 
   override fun hashCode(): Int {

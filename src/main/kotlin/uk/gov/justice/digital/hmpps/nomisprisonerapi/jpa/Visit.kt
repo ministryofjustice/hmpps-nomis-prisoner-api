@@ -35,7 +35,7 @@ data class Visit(
   val offenderBooking: OffenderBooking? = null,
 
   @Column
-  val commentText: String? = null,
+  var commentText: String? = null,
 
   @Column
   val visitorConcernText: String? = null,
@@ -75,7 +75,7 @@ data class Visit(
       ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_STATUS", referencedColumnName = "code", nullable = false))
     ]
   )
-  val visitStatus: VisitStatus? = null,
+  var visitStatus: VisitStatus? = null,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -107,9 +107,9 @@ data class Visit(
   @Column(name = "CLIENT_UNIQUE_REF")
   val vsipVisitId: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
   @JoinColumn(name = "OFFENDER_VISIT_ORDER_ID")
-  val visitOrder: VisitOrder? = null,
+  var visitOrder: VisitOrder? = null,
 
   /* a list of all visitors including those without visitor orders */
   @OneToMany(mappedBy = "visit", cascade = [CascadeType.ALL])
@@ -118,8 +118,8 @@ data class Visit(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    val visit = other as Visit
-    return id == visit.id
+    other as Visit
+    return id == other.id
   }
 
   override fun hashCode(): Int {

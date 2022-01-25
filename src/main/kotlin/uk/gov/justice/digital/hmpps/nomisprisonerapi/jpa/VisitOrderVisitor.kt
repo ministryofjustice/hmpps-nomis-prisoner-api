@@ -33,8 +33,8 @@ data class VisitOrderVisitor(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    val that = other as VisitOrderVisitor
-    return id == that.id
+    other as VisitOrderVisitor
+    return id == other.id
   }
 
   override fun hashCode(): Int {
