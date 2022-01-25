@@ -5,7 +5,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDateTime
 
-
 class OffenderBookingBuilder(
   var bookingBeginDate: LocalDateTime = LocalDateTime.now(),
   var active: Boolean = true,

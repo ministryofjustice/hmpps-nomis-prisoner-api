@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
-
 @Service
 @Transactional
 class Repository(
@@ -32,13 +31,15 @@ class Repository(
       rootOffenderId = id
     }
 
-    offender.bookings.addAll(offenderBuilder.bookingBuilders.mapIndexed { index, bookingBuilder ->
-      val booking = save(bookingBuilder.build(offender, index, lookupAgency(bookingBuilder.agencyLocationId)))
-      bookingBuilder.visitBalanceBuilder?.run {
-        save(this.build(booking))
+    offender.bookings.addAll(
+      offenderBuilder.bookingBuilders.mapIndexed { index, bookingBuilder ->
+        val booking = save(bookingBuilder.build(offender, index, lookupAgency(bookingBuilder.agencyLocationId)))
+        bookingBuilder.visitBalanceBuilder?.run {
+          save(this.build(booking))
+        }
+        booking
       }
-      booking
-    })
+    )
 
     return offender
   }
@@ -53,5 +54,4 @@ class Repository(
   fun delete(offender: Offender) {
     offenderRepository.deleteById(offender.id)
   }
-
 }

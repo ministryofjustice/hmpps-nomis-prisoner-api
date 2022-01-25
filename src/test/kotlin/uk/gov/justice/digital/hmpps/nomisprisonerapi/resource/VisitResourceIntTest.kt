@@ -52,7 +52,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
 
-
   @DisplayName("Create")
   @Nested
   inner class CreateVisitRequest {
@@ -185,4 +184,3 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
 private fun Offender.latestBooking(): OffenderBooking =
   this.bookings.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")
-

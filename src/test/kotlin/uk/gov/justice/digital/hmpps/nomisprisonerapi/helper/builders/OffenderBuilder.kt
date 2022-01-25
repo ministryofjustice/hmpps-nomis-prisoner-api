@@ -4,7 +4,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.time.LocalDate
 
-
 class OffenderBuilder(
   var nomsId: String = "A5194DY",
   var lastName: String = "NTHANDA",
@@ -27,6 +26,4 @@ class OffenderBuilder(
     bookingBuilders = arrayOf(*bookingBuilder)
     return this
   }
-
 }
-

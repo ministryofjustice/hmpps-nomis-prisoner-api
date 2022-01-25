@@ -4,7 +4,7 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Type
 import java.time.LocalDateTime
-import java.util.*
+import java.util.Objects
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
