@@ -42,7 +42,7 @@ data class OffenderVisitBalance(
     return offenderBookingId == other.offenderBookingId
   }
 
-  override fun hashCode(): Int = javaClass.hashCode()
+  override fun hashCode(): Int = offenderBookingId.hashCode()
 
   @Override
   override fun toString(): String {
