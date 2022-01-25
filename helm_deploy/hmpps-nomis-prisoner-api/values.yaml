@@ -42,7 +42,3 @@ generic-service:
     limits:
       cpu: 2000m
       memory: 1240Mi
-
-generic-prometheus-alerts:
-  targetApplication: hmpps-nomis-prisoner-api
-  # TODO should probably send alerts to the syscon-alerts slack channel
