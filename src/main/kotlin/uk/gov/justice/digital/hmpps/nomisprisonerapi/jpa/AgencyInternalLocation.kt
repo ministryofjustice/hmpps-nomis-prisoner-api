@@ -93,8 +93,8 @@ data class AgencyInternalLocation(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    val that = other as AgencyInternalLocation
-    return locationId == that.locationId
+    other as AgencyInternalLocation
+    return locationId == other.locationId
   }
 
   override fun hashCode(): Int {

@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
@@ -59,6 +60,9 @@ class VisitRepositoryTest {
 
   @Autowired
   lateinit var offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository
+
+  @Autowired
+  lateinit var visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>
 
   @Autowired
   lateinit var entityManager: TestEntityManager
@@ -141,7 +145,7 @@ class VisitRepositoryTest {
       OffenderVisitBalanceAdjustment(
         offenderBooking = seedOffenderBooking,
         adjustDate = LocalDate.of(2020, 12, 21),
-        adjustReasonCode = "VO_ISSUE",
+        adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow(),
         remainingVisitOrders = -1,
         previousRemainingVisitOrders = seedBalance.remainingVisitOrders, // from offender_visit_balances
         commentText = "test comment",
@@ -155,7 +159,7 @@ class VisitRepositoryTest {
     assertThat(offenderVisitBalanceAdjustment.id).isEqualTo(1)
     assertThat(offenderVisitBalanceAdjustment.offenderBooking.bookingId).isEqualTo(-10)
     assertThat(offenderVisitBalanceAdjustment.adjustDate).isEqualTo(LocalDate.of(2020, 12, 21))
-    assertThat(offenderVisitBalanceAdjustment.adjustReasonCode).isEqualTo("VO_ISSUE")
+    assertThat(offenderVisitBalanceAdjustment.adjustReasonCode?.code).isEqualTo("VO_ISSUE")
     assertThat(offenderVisitBalanceAdjustment.remainingVisitOrders).isEqualTo(-1)
     assertThat(offenderVisitBalanceAdjustment.previousRemainingVisitOrders).isEqualTo(25)
     assertThat(offenderVisitBalanceAdjustment.commentText).isEqualTo("test comment")

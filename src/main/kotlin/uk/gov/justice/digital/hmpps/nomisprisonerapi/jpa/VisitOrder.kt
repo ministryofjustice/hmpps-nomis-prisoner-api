@@ -8,6 +8,7 @@ import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.util.Objects
+import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -71,16 +72,16 @@ data class VisitOrder(
       ), JoinColumnOrFormula(column = JoinColumn(name = "STATUS", referencedColumnName = "code", nullable = false))
     ]
   )
-  val status: VisitStatus,
+  var status: VisitStatus,
 
-  @OneToMany(mappedBy = "visitOrder")
+  @OneToMany(mappedBy = "visitOrder", cascade = [CascadeType.ALL])
   val visitors: List<VisitOrderVisitor> = ArrayList(),
 
   @Column
   val commentText: String? = null,
 
   @Column
-  val expiryDate: LocalDate? = null,
+  var expiryDate: LocalDate? = null,
 
   //    @ManyToOne(fetch = FetchType.LAZY)
   //    @NotFound(action = IGNORE)
@@ -89,12 +90,28 @@ data class VisitOrder(
 
   @Column
   val mailedDate: LocalDate? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'${VisitOutcomeReason.VISIT_OUTCOME_REASON}'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(
+        column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code", nullable = true)
+      )
+    ]
+  )
+  var outcomeReason: VisitOutcomeReason? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    val visitOrder = other as VisitOrder
-    return id == visitOrder.id
+    other as VisitOrder
+    return id == other.id
   }
 
   override fun hashCode(): Int {

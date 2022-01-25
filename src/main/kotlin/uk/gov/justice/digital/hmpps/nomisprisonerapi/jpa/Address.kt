@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -7,6 +8,7 @@ import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import org.hibernate.annotations.Where
 import java.time.LocalDate
+import java.util.Objects
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.DiscriminatorColumn
@@ -129,5 +131,17 @@ abstract class Address {
     phone.address = this
     phones.add(phone)
     return phone
+  }
+
+  override fun equals(other: Any?): Boolean {
+
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as Address
+    return addressId == other.addressId
+  }
+
+  override fun hashCode(): Int {
+    return Objects.hashCode(addressId)
   }
 }

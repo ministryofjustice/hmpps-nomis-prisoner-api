@@ -37,8 +37,8 @@ abstract class ReferenceCode(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    val that = other as ReferenceCode
-    return if (domain != that.domain) false else code == that.code
+    other as ReferenceCode
+    return if (domain != other.domain) false else code == other.code
   }
 
   override fun hashCode(): Int {

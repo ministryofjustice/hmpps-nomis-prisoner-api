@@ -2,10 +2,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import javax.validation.constraints.NotEmpty
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Visit creation")
+@Schema(description = "Visit cancellation")
 data class CancelVisitRequest(
-  // nothing needed ?
-  val dummy: String
+  // TODO This is a guess, possible values are dependent on VSIP
+  @Schema(description = "The cancellation reason", allowableValues = ["VISCANC", "OFFCANC", "ADMIN", "NSHOW"], required = true)
+  @NotEmpty
+  val outcome: String,
 )
