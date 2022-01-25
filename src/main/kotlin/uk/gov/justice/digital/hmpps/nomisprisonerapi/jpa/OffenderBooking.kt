@@ -5,6 +5,7 @@ import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Type
 import java.time.LocalDateTime
 import java.util.Objects
+import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -12,6 +13,8 @@ import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
+import javax.persistence.OneToMany
+import javax.persistence.OneToOne
 import javax.persistence.SequenceGenerator
 import javax.persistence.Table
 
@@ -155,7 +158,7 @@ data class OffenderBooking(
   //
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "ROOT_OFFENDER_ID", nullable = false)
-  val rootOffender: Offender? = null,
+  var rootOffender: Offender? = null,
 
   @Column(name = "BOOKING_STATUS")
   val bookingStatus: String? = null,
@@ -183,6 +186,12 @@ data class OffenderBooking(
 
   @Column(name = "ADMISSION_REASON")
   val admissionReason: String? = null,
+
+  @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val visits: MutableList<Visit> = mutableListOf(),
+
+  @OneToOne(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  var visitBalance: OffenderVisitBalance? = null,
 
   //    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
   //    @PrimaryKeyJoinColumn
