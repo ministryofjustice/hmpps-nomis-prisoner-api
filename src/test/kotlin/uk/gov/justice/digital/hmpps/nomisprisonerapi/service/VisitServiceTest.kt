@@ -135,7 +135,7 @@ internal class VisitServiceTest {
     whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
       Optional.of(
         OffenderVisitBalance(
-          offenderBookingId = offenderBookingId,
+          offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
           remainingVisitOrders = 3,
           remainingPrivilegedVisitOrders = 5,
         )
@@ -186,9 +186,9 @@ internal class VisitServiceTest {
       whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
         Optional.of(
           OffenderVisitBalance(
-            offenderBookingId = offenderBookingId,
             remainingVisitOrders = 3,
             remainingPrivilegedVisitOrders = 0,
+            offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
           )
         )
       )
@@ -230,9 +230,9 @@ internal class VisitServiceTest {
       whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
         Optional.of(
           OffenderVisitBalance(
-            offenderBookingId = offenderBookingId,
             remainingVisitOrders = 0,
             remainingPrivilegedVisitOrders = 0,
+            offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
           )
         )
       )

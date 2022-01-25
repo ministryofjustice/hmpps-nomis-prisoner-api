@@ -15,6 +15,7 @@ import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
 import javax.persistence.OneToMany
 import javax.persistence.OneToOne
+import javax.persistence.PrimaryKeyJoinColumn
 import javax.persistence.SequenceGenerator
 import javax.persistence.Table
 
@@ -190,7 +191,8 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val visits: MutableList<Visit> = mutableListOf(),
 
-  @OneToOne(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "offenderBooking", cascade = [CascadeType.ALL])
+  @PrimaryKeyJoinColumn
   var visitBalance: OffenderVisitBalance? = null,
 
   //    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)

@@ -8,7 +8,7 @@ class VisitBalanceBuilder(
   var remainingPrivilegedVisitOrders: Int = 3,
 ) {
   fun build(offenderBooking: OffenderBooking): OffenderVisitBalance = OffenderVisitBalance(
-    offenderBookingId = offenderBooking.bookingId,
+    offenderBooking = offenderBooking,
     remainingVisitOrders = remainingVisitOrders,
     remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
     visitAllowanceIndicator = null,
