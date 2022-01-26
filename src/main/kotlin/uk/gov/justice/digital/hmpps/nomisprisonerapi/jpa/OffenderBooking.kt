@@ -198,6 +198,9 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val visitBalanceAdjustments: MutableList<OffenderVisitBalanceAdjustment> = mutableListOf(),
 
+  @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val contacts: MutableList<OffenderContactPerson> = mutableListOf(),
+
   //    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
   //    @PrimaryKeyJoinColumn
   //    private ReleaseDetail releaseDetail;

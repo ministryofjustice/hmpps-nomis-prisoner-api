@@ -4,10 +4,12 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -17,6 +19,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 @Transactional
 class Repository(
   val genderRepository: ReferenceCodeRepository<Gender>,
+  val contactTypeRepository: ReferenceCodeRepository<ContactType>,
+  val relationshipTypeRepository: ReferenceCodeRepository<RelationshipType>,
   val offenderRepository: OffenderRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val personRepository: PersonRepository,
@@ -34,6 +38,11 @@ class Repository(
         bookingBuilder.visitBalanceBuilder?.run {
           booking.visitBalance = this.build(booking)
         }
+        booking.contacts.addAll(
+          bookingBuilder.contacts.map {
+            it.build(booking, lookupContactType(it.contactType), lookupRelationshipType(it.relationshipType))
+          }
+        )
         booking
       }
     )
@@ -46,6 +55,12 @@ class Repository(
   fun save(offender: Offender): Offender = offenderRepository.saveAndFlush(offender)
 
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
+  fun lookupContactType(code: String): ContactType =
+    contactTypeRepository.findByIdOrNull(Pk(ContactType.CONTACTS, code))!!
+
+  fun lookupRelationshipType(code: String): RelationshipType =
+    relationshipTypeRepository.findByIdOrNull(Pk(RelationshipType.RELATIONSHIP, code))!!
+
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
