@@ -45,9 +45,9 @@ data class CreateVisitRequest(
   @NotNull
   val issueDate: LocalDate,
 
-  @Schema(description = "Location of visit, an agency internal location code", required = true)
-  @NotBlank
-  val visitRoomId: String,
+//  @Schema(description = "Location of visit, an agency internal location code", required = true)
+//  @NotBlank
+//  val visitRoomId: String,
 
   @Schema(description = "VSIP visit id to allow mapping of nomis to VSIP visits", required = true)
   @NotBlank
