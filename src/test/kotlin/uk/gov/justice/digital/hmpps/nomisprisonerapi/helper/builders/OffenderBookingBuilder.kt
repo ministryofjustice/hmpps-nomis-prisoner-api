@@ -12,6 +12,7 @@ class OffenderBookingBuilder(
   var youthAdultCode: String = "N",
   var visitBalanceBuilder: VisitBalanceBuilder? = null,
   var agencyLocationId: String = "BXI",
+  var contacts: List<OffenderContactBuilder> = emptyList(),
 ) {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
@@ -28,6 +29,11 @@ class OffenderBookingBuilder(
 
   fun withVisitBalance(visitBalanceBuilder: VisitBalanceBuilder = VisitBalanceBuilder()): OffenderBookingBuilder {
     this.visitBalanceBuilder = visitBalanceBuilder
+    return this
+  }
+
+  fun withContacts(vararg contactBuilder: OffenderContactBuilder): OffenderBookingBuilder {
+    this.contacts = arrayOf(*contactBuilder).asList()
     return this
   }
 }

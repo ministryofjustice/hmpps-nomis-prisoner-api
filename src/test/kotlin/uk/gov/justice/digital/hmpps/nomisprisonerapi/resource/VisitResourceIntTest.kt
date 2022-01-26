@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderContactBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -67,18 +68,22 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   internal fun createPrisoner() {
-    offender = repository.save(
-      OffenderBuilder()
-        .withBooking(OffenderBookingBuilder().withVisitBalance())
-    )
-
-    offenderNo = offender.nomsId
-    offenderBookingId = offender.latestBooking().bookingId
     threePeople.addAll(
       (1..3).map {
         repository.save(PersonBuilder())
       }
     )
+    offender = repository.save(
+      OffenderBuilder()
+        .withBooking(
+          OffenderBookingBuilder()
+            .withVisitBalance()
+            .withContacts(*threePeople.map { OffenderContactBuilder(it) }.toTypedArray())
+        )
+    )
+
+    offenderNo = offender.nomsId
+    offenderBookingId = offender.latestBooking().bookingId
   }
 
   @AfterEach
@@ -195,7 +200,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .containsExactly(
             Tuple.tuple(offenderBookingId, -1),
           )
-        offenderVisitBalanceAdjustmentRepository.deleteAll()
       }
     }
   }
@@ -252,8 +256,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
             Tuple.tuple(offenderBookingId, -1),
             Tuple.tuple(offenderBookingId, 1),
           )
-        // TODO has to be done separately
-        offenderVisitBalanceAdjustmentRepository.deleteAll()
       }
     }
   }
