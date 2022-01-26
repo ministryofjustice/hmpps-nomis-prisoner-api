@@ -195,7 +195,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .containsExactly(
             Tuple.tuple(offenderBookingId, -1),
           )
-        offenderVisitBalanceAdjustmentRepository.deleteAll()
       }
     }
   }
@@ -252,8 +251,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
             Tuple.tuple(offenderBookingId, -1),
             Tuple.tuple(offenderBookingId, 1),
           )
-        // TODO has to be done separately
-        offenderVisitBalanceAdjustmentRepository.deleteAll()
       }
     }
   }
