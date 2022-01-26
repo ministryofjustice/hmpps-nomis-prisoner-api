@@ -11,6 +11,11 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBalanceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
@@ -24,21 +29,17 @@ import java.time.LocalDateTime
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(AuthenticationFacade::class, AuditorAwareImpl::class)
+@Import(AuthenticationFacade::class, AuditorAwareImpl::class, Repository::class)
 @WithMockUser
 class VisitRepositoryTest {
+  @Autowired
+  lateinit var builderRepository: Repository
 
   @Autowired
   lateinit var repository: VisitRepository
 
   @Autowired
   lateinit var visitVisitorRepository: VisitVisitorRepository
-
-  @Autowired
-  lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  @Autowired
-  lateinit var personRepository: PersonRepository
 
   @Autowired
   lateinit var visitTypeRepository: ReferenceCodeRepository<VisitType>
@@ -56,9 +57,6 @@ class VisitRepositoryTest {
   lateinit var agencyInternalRepository: AgencyInternalLocationRepository
 
   @Autowired
-  lateinit var offenderVisitBalanceRepository: OffenderVisitBalanceRepository
-
-  @Autowired
   lateinit var offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository
 
   @Autowired
@@ -69,11 +67,13 @@ class VisitRepositoryTest {
 
   @Test
   fun saveVisit() {
-    val seedOffenderBooking = offenderBookingRepository.findById(-10L).orElseThrow()
-    assertThat(seedOffenderBooking.bookingId).isEqualTo(-10L)
+    val seedOffenderBooking = builderRepository.save(
+      OffenderBuilder()
+        .withBooking(OffenderBookingBuilder().withVisitBalance())
+    ).bookings.first()
 
-    val seedPerson1 = personRepository.findById(-1L).orElseThrow()
-    val seedPerson2 = personRepository.findById(-2L).orElseThrow()
+    val seedPerson1 = builderRepository.save(PersonBuilder())
+    val seedPerson2 = builderRepository.save(PersonBuilder())
 
     val visit = Visit(
       offenderBooking = seedOffenderBooking,
@@ -125,19 +125,29 @@ class VisitRepositoryTest {
     val visitVisitors = persistedVisit.visitors
     assertThat(visitVisitors.size).isEqualTo(2)
     val (_, offenderBooking, parentVisit, person, groupLeader, assistedVisit) = visitVisitors[0]
-    assertThat(offenderBooking?.bookingId).isEqualTo(-10L)
+    assertThat(offenderBooking?.bookingId).isEqualTo(seedOffenderBooking.bookingId)
     assertThat(parentVisit.id).isEqualTo(visit.id)
     assertThat(groupLeader).isTrue
     assertThat(assistedVisit).isTrue
-    assertThat(person?.id).isEqualTo(-1)
-    assertThat(visitVisitors[1].person?.id).isEqualTo(-2)
+    assertThat(person?.id).isEqualTo(seedPerson1.id)
+    assertThat(visitVisitors[1].person?.id).isEqualTo(seedPerson2.id)
     assertThat(visitVisitors[1].eventId).isGreaterThan(0)
   }
 
   @Test
   fun saveBalanceAdjustment() {
-    val seedOffenderBooking = offenderBookingRepository.findById(-10L).orElseThrow()
-    val seedBalance = offenderVisitBalanceRepository.findById(-10L).orElseThrow()
+    val seedOffenderBooking = builderRepository.save(
+      OffenderBuilder()
+        .withBooking(
+          OffenderBookingBuilder().withVisitBalance(
+            VisitBalanceBuilder(
+              remainingPrivilegedVisitOrders = 2,
+              remainingVisitOrders = 25
+            )
+          )
+        )
+    ).bookings.first()
+    val seedBalance = seedOffenderBooking.visitBalance ?: throw IllegalStateException("No visit balance")
     assertThat(seedBalance.remainingVisitOrders).isEqualTo(25)
     assertThat(seedBalance.remainingPrivilegedVisitOrders).isEqualTo(2)
 
@@ -145,7 +155,8 @@ class VisitRepositoryTest {
       OffenderVisitBalanceAdjustment(
         offenderBooking = seedOffenderBooking,
         adjustDate = LocalDate.of(2020, 12, 21),
-        adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow(),
+        adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE)
+          .orElseThrow(),
         remainingVisitOrders = -1,
         previousRemainingVisitOrders = seedBalance.remainingVisitOrders, // from offender_visit_balances
         commentText = "test comment",
@@ -157,7 +168,7 @@ class VisitRepositoryTest {
 
     val offenderVisitBalanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll().first()
     assertThat(offenderVisitBalanceAdjustment.id).isEqualTo(1)
-    assertThat(offenderVisitBalanceAdjustment.offenderBooking.bookingId).isEqualTo(-10)
+    assertThat(offenderVisitBalanceAdjustment.offenderBooking.bookingId).isEqualTo(seedOffenderBooking.bookingId)
     assertThat(offenderVisitBalanceAdjustment.adjustDate).isEqualTo(LocalDate.of(2020, 12, 21))
     assertThat(offenderVisitBalanceAdjustment.adjustReasonCode?.code).isEqualTo("VO_ISSUE")
     assertThat(offenderVisitBalanceAdjustment.remainingVisitOrders).isEqualTo(-1)
