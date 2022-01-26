@@ -52,7 +52,7 @@ class VisitResource(private val visitService: VisitService) {
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Incorrect request to create a visit",
+        description = "Prison or person ids do not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -63,6 +63,16 @@ class VisitResource(private val visitService: VisitService) {
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "offenderNo does not exist",
         content = [
           Content(
             mediaType = "application/json",

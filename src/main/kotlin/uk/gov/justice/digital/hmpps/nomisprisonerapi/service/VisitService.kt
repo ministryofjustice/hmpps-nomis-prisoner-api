@@ -84,8 +84,10 @@ class VisitService(
 
   fun cancelVisit(offenderNo: String, vsipVisitId: String, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
-    val visit = visitRepository.findOneByVsipVisitId(VSIP_PREFIX + vsipVisitId).orElseThrow(NotFoundException("VSIP visit id $vsipVisitId not found"))
-    val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome)).orElseThrow()
+    val visit = visitRepository.findOneByVsipVisitId(VSIP_PREFIX + vsipVisitId)
+      .orElseThrow(NotFoundException("VSIP visit id $vsipVisitId not found"))
+    val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome))
+      .orElseThrow(BadDataException("Invalid cancellation reason: ${visitDto.outcome}"))
 
     val cancVisitStatus = visitStatusRepository.findById(VisitStatus.CANCELLED).orElseThrow()
     val absEventOutcome = eventOutcomeRepository.findById(EventOutcome.ABS).orElseThrow()
