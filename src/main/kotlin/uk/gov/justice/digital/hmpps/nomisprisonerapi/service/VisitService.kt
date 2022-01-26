@@ -64,7 +64,7 @@ class VisitService(
   fun createVisit(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
 
     val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
-      .orElseThrow(PrisonerNotFoundException(offenderNo))
+      .orElseThrow(NotFoundException(offenderNo))
 
     val mappedVisit = mapVisitModel(visitDto, offenderBooking)
 
@@ -82,19 +82,21 @@ class VisitService(
   fun amendVisit(offenderNo: String, visitId: Long, visitDto: AmendVisitRequest) {
   }
 
-  fun cancelVisit(offenderNo: String, visitId: Long, visitDto: CancelVisitRequest) {
+  fun cancelVisit(offenderNo: String, vsipVisitId: String, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
-    val visit = visitRepository.findById(visitId).orElseThrow(PrisonerNotFoundException(offenderNo))
-    val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome)).orElseThrow()
+    val visit = visitRepository.findOneByVsipVisitId(VSIP_PREFIX + vsipVisitId)
+      .orElseThrow(NotFoundException("VSIP visit id $vsipVisitId not found"))
+    val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome))
+      .orElseThrow(BadDataException("Invalid cancellation reason: ${visitDto.outcome}"))
 
     val cancVisitStatus = visitStatusRepository.findById(VisitStatus.CANCELLED).orElseThrow()
     val absEventOutcome = eventOutcomeRepository.findById(EventOutcome.ABS).orElseThrow()
     val cancEventStatus = eventStatusRepository.findById(EventStatus.CANCELLED).orElseThrow()
 
     if (visit.visitStatus?.code == "CANC") {
-      throw DataNotFoundException("Visit already cancelled") // or 2xx already done?
+      throw BadDataException("Visit already cancelled") // or 2xx already done?
     } else if (visit.visitStatus?.code != "SCH") {
-      throw DataNotFoundException("Visit already completed")
+      throw BadDataException("Visit already completed")
     }
 
     visit.visitStatus = cancVisitStatus
@@ -213,15 +215,15 @@ class VisitService(
     val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType)).orElseThrow()
 
     val location = agencyLocationRepository.findById(visitDto.prisonId)
-      .orElseThrow(DataNotFoundException("Prison with id=${visitDto.prisonId} does not exist"))
-    val agencyInternalLocations =
-      agencyInternalLocationRepository.findByLocationCodeAndAgencyId(visitDto.visitRoomId, visitDto.prisonId)
-    if (agencyInternalLocations.isEmpty()) {
-      throw (DataNotFoundException("Room location with code=${visitDto.visitRoomId} does not exist in prison ${visitDto.prisonId}"))
-    } else if (agencyInternalLocations.size > 1) {
-      throw (DataNotFoundException("There is more than one room with code=${visitDto.visitRoomId} at prison ${visitDto.prisonId}"))
-    }
-    // TODO is more validation needed on prison or room (e.g. it is a visit room type)?
+      .orElseThrow(BadDataException("Prison with id=${visitDto.prisonId} does not exist"))
+//    val agencyInternalLocations =
+//      agencyInternalLocationRepository.findByLocationCodeAndAgencyId(visitDto.visitRoomId, visitDto.prisonId)
+//    if (agencyInternalLocations.isEmpty()) {
+//      throw (BadDataException("Room location with code=${visitDto.visitRoomId} does not exist in prison ${visitDto.prisonId}"))
+//    } else if (agencyInternalLocations.size > 1) {
+//      throw (BadDataException("There is more than one room with code=${visitDto.visitRoomId} at prison ${visitDto.prisonId}"))
+//    }
+//    // TODO is more validation needed on prison or room (e.g. it is a visit room type)?
 
     return Visit(
       offenderBooking = offenderBooking,
@@ -231,7 +233,7 @@ class VisitService(
       visitType = visitType,
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       location = location,
-      agencyInternalLocation = agencyInternalLocations[0],
+      // agencyInternalLocation = agencyInternalLocations[0],
       vsipVisitId = VSIP_PREFIX + visitDto.vsipVisitId
       // TODO not yet sure if anything else is needed
 
@@ -260,7 +262,7 @@ class VisitService(
     )
 
     visitDto.visitorPersonIds.forEach {
-      val person = personRepository.findById(it).orElseThrow(DataNotFoundException("Person with id=$it does not exist"))
+      val person = personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist"))
       visit.visitors.add(
         VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus)
       )
@@ -274,14 +276,14 @@ class VisitService(
   }
 }
 
-class PrisonerNotFoundException(message: String?) : RuntimeException(message), Supplier<PrisonerNotFoundException> {
-  override fun get(): PrisonerNotFoundException {
-    return PrisonerNotFoundException(message)
+class NotFoundException(message: String?) : RuntimeException(message), Supplier<NotFoundException> {
+  override fun get(): NotFoundException {
+    return NotFoundException(message)
   }
 }
 
-class DataNotFoundException(message: String?) : RuntimeException(message), Supplier<DataNotFoundException> {
-  override fun get(): DataNotFoundException {
-    return DataNotFoundException(message)
+class BadDataException(message: String?) : RuntimeException(message), Supplier<BadDataException> {
+  override fun get(): BadDataException {
+    return BadDataException(message)
   }
 }

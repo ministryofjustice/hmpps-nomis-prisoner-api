@@ -52,7 +52,7 @@ class VisitResource(private val visitService: VisitService) {
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Incorrect request to create a visit",
+        description = "Prison or person ids do not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -63,6 +63,16 @@ class VisitResource(private val visitService: VisitService) {
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "offenderNo does not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -134,7 +144,7 @@ class VisitResource(private val visitService: VisitService) {
   }
 
   @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")
-  @PutMapping("/{visitId}/cancel")
+  @PutMapping("/vsipVisitId/{vsipVisitId}/cancel")
   @Operation(
     summary = "Cancel a visit",
     responses = [
@@ -144,7 +154,17 @@ class VisitResource(private val visitService: VisitService) {
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Incorrect request to cancel a visit",
+        description = "Invalid cancellation reason",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "VSIP visit id not found",
         content = [
           Content(
             mediaType = "application/json",
@@ -169,11 +189,11 @@ class VisitResource(private val visitService: VisitService) {
     @PathVariable
     @Pattern(regexp = OFFENDER_NO_PATTERN)
     offenderNo: String,
-    @Schema(description = "Nomis Visit Id", required = true)
+    @Schema(description = "VSIP Visit Id", required = true)
     @PathVariable
-    visitId: Long,
+    vsipVisitId: String,
     @RequestBody @Valid cancelVisitRequest: CancelVisitRequest
   ) {
-    visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+    visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
   }
 }

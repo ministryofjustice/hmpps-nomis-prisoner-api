@@ -40,7 +40,7 @@ private val createVisit: (visitorPersonIds: List<Long>) -> CreateVisitRequest =
       endTime = LocalTime.parse("13:04"),
       prisonId = prisonId,
       visitorPersonIds = visitorPersonIds,
-      visitRoomId = "VISIT",
+      // visitRoomId = "VISIT",
       vsipVisitId = "12345",
       issueDate = LocalDate.parse("2021-11-02"),
     )
@@ -219,7 +219,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .returnResult().responseBody
       val visitId = createResponse?.visitId!!
 
-      webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(

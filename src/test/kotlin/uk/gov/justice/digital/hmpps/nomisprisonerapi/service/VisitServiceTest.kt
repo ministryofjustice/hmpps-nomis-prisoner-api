@@ -52,6 +52,7 @@ import java.util.Optional
 
 private const val offenderBookingId = -9L
 private const val visitId = -8L
+private const val vsipVisitId = "1008"
 private const val offenderNo = "A1234AA"
 private const val prisonId = "SWI"
 private const val roomId = "VISIT-ROOM"
@@ -155,7 +156,7 @@ internal class VisitServiceTest {
       endTime = LocalTime.parse("13:04"),
       prisonId = prisonId,
       visitorPersonIds = listOf(45L, 46L),
-      visitRoomId = roomId,
+      // visitRoomId = roomId,
       vsipVisitId = "12345",
       issueDate = LocalDate.parse("2021-11-02"),
     )
@@ -281,7 +282,7 @@ internal class VisitServiceTest {
         Optional.empty()
       )
 
-      val thrown = assertThrows(PrisonerNotFoundException::class.java) {
+      val thrown = assertThrows(NotFoundException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo(offenderNo)
@@ -291,7 +292,7 @@ internal class VisitServiceTest {
     fun personNotFound() {
       whenever(personRepository.findById(45L)).thenReturn(Optional.empty())
 
-      val thrown = assertThrows(DataNotFoundException::class.java) {
+      val thrown = assertThrows(BadDataException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo("Person with id=45 does not exist")
@@ -301,33 +302,33 @@ internal class VisitServiceTest {
     fun prisonNotFound() {
       whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.empty())
 
-      val thrown = assertThrows(DataNotFoundException::class.java) {
+      val thrown = assertThrows(BadDataException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo("Prison with id=$prisonId does not exist")
     }
 
-    @Test
-    fun roomNotFound() {
-      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(emptyList())
-
-      val thrown = assertThrows(DataNotFoundException::class.java) {
-        visitService.createVisit(offenderNo, createVisitRequest)
-      }
-      assertThat(thrown.message).isEqualTo("Room location with code=$roomId does not exist in prison $prisonId")
-    }
-
-    @Test
-    fun moreThanOneRoom() {
-      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(
-        listOf(AgencyInternalLocation(12345L, true), AgencyInternalLocation(12346L, true))
-      )
-
-      val thrown = assertThrows(DataNotFoundException::class.java) {
-        visitService.createVisit(offenderNo, createVisitRequest)
-      }
-      assertThat(thrown.message).isEqualTo("There is more than one room with code=$roomId at prison $prisonId")
-    }
+//    @Test
+//    fun roomNotFound() {
+//      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(emptyList())
+//
+//      val thrown = assertThrows(BadDataException::class.java) {
+//        visitService.createVisit(offenderNo, createVisitRequest)
+//      }
+//      assertThat(thrown.message).isEqualTo("Room location with code=$roomId does not exist in prison $prisonId")
+//    }
+//
+//    @Test
+//    fun moreThanOneRoom() {
+//      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(
+//        listOf(AgencyInternalLocation(12345L, true), AgencyInternalLocation(12346L, true))
+//      )
+//
+//      val thrown = assertThrows(BadDataException::class.java) {
+//        visitService.createVisit(offenderNo, createVisitRequest)
+//      }
+//      assertThat(thrown.message).isEqualTo("There is more than one room with code=$roomId at prison $prisonId")
+//    }
   }
 
   @DisplayName("cancel")
@@ -356,9 +357,9 @@ internal class VisitServiceTest {
     @Test
     fun `visit data is amended correctly`() {
 
-      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(visit))
+      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(visit))
 
-      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
       with(visit) {
         assertThat(visitStatus?.code).isEqualTo("CANC")
@@ -379,9 +380,9 @@ internal class VisitServiceTest {
     @Test
     fun `balance increment is saved correctly`() {
 
-      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(visit))
+      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(visit))
 
-      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
