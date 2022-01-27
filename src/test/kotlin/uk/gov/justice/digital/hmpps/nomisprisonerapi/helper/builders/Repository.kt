@@ -77,7 +77,7 @@ class Repository(
   }
 
   fun changeVisitStatus(visitId: Long?) {
-      val visit = visitRepository.findById(visitId!!).orElseThrow()
-      visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
+    val visit = visitRepository.findById(visitId!!).orElseThrow()
+    visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
   }
 }
