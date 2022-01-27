@@ -19,7 +19,6 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -35,11 +34,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
@@ -55,7 +52,6 @@ private const val visitId = -8L
 private const val vsipVisitId = "1008"
 private const val offenderNo = "A1234AA"
 private const val prisonId = "SWI"
-private const val roomId = "VISIT-ROOM"
 private const val eventId = 34L
 private const val visitOrder = 54L
 
@@ -66,7 +62,6 @@ internal class VisitServiceTest {
   private val visitOrderRepository: VisitOrderRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val personRepository: PersonRepository = mock()
-  private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository = mock()
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository = mock()
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus> = mock()
   private val visitTypeRepository: ReferenceCodeRepository<VisitType> = mock()
@@ -76,7 +71,6 @@ internal class VisitServiceTest {
   private val eventOutcomeRepository: ReferenceCodeRepository<EventOutcome> = mock()
   private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason> = mock()
   private val agencyLocationRepository: AgencyLocationRepository = mock()
-  private val agencyInternalLocationRepository: AgencyInternalLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val visitService: VisitService = VisitService(
@@ -84,7 +78,6 @@ internal class VisitServiceTest {
     visitVisitorRepository,
     visitOrderRepository,
     offenderBookingRepository,
-    offenderVisitBalanceRepository,
     offenderVisitBalanceAdjustmentRepository,
     eventStatusRepository,
     visitTypeRepository,
@@ -94,17 +87,39 @@ internal class VisitServiceTest {
     eventOutcomeRepository,
     visitOrderAdjustmentReasonRepository,
     agencyLocationRepository,
-    agencyInternalLocationRepository,
     telemetryClient,
     personRepository
   )
 
   val visitType = VisitType("SCON", "desc")
+  val defaultOffenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now())
+  val defaultVisit = Visit(
+    id = visitId,
+    visitStatus = VisitStatus("SCH", "desc"),
+    offenderBooking = defaultOffenderBooking,
+    visitOrder = VisitOrder(
+      offenderBooking = defaultOffenderBooking,
+      visitOrderNumber = 123L,
+      visitOrderType = VisitOrderType("PVO", "desc"),
+      status = VisitStatus("SCH", "desc"),
+      issueDate = LocalDate.parse("2021-12-01"),
+    ),
+  )
+
+  init { // add circular references
+    defaultOffenderBooking.visitBalance = OffenderVisitBalance(
+      offenderBooking = defaultOffenderBooking,
+      remainingVisitOrders = 3,
+      remainingPrivilegedVisitOrders = 5,
+    )
+    defaultVisit.visitors.add(VisitVisitor(offenderBooking = defaultOffenderBooking, visit = defaultVisit))
+    defaultVisit.visitors.add(VisitVisitor(person = Person(-7L, "First", "Last"), visit = defaultVisit))
+  }
 
   @BeforeEach
   fun setup() {
     whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
-      Optional.of(OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()))
+      Optional.of(defaultOffenderBooking)
     )
     whenever(personRepository.findById(any())).thenAnswer {
       return@thenAnswer Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There"))
@@ -129,19 +144,6 @@ internal class VisitServiceTest {
       return@thenAnswer Optional.of(EventOutcome((it.arguments[0] as ReferenceCode.Pk).code!!, "desc"))
     }
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.of(AgencyLocation(prisonId, "desc")))
-    whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(
-      listOf(AgencyInternalLocation(12345L, true))
-    )
-
-    whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
-      Optional.of(
-        OffenderVisitBalance(
-          offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
-          remainingVisitOrders = 3,
-          remainingPrivilegedVisitOrders = 5,
-        )
-      )
-    )
 
     whenever(visitVisitorRepository.getEventId()).thenReturn(eventId)
     whenever(visitOrderRepository.getVisitOrderNumber()).thenReturn(visitOrder)
@@ -164,7 +166,7 @@ internal class VisitServiceTest {
     @Test
     fun `visit data is mapped correctly`() {
 
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
 
@@ -184,17 +186,14 @@ internal class VisitServiceTest {
     @Test
     fun `balance decrement is saved correctly when no privileged is available`() {
 
-      whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
-        Optional.of(
-          OffenderVisitBalance(
-            remainingVisitOrders = 3,
-            remainingPrivilegedVisitOrders = 0,
-            offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
-          )
+      defaultVisit.offenderBooking.visitBalance =
+        OffenderVisitBalance(
+          remainingVisitOrders = 3,
+          remainingPrivilegedVisitOrders = 0,
+          offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
         )
-      )
 
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
@@ -211,7 +210,7 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance decrement is saved correctly when available`() {
 
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
 
@@ -228,16 +227,14 @@ internal class VisitServiceTest {
     @Test
     fun `No visit order or balance adjustment is created when no balance available`() {
 
-      whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(
-        Optional.of(
-          OffenderVisitBalance(
-            remainingVisitOrders = 0,
-            remainingPrivilegedVisitOrders = 0,
-            offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
-          )
+      defaultVisit.offenderBooking.visitBalance =
+        OffenderVisitBalance(
+          remainingVisitOrders = 0,
+          remainingPrivilegedVisitOrders = 0,
+          offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
         )
-      )
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
+
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
 
@@ -248,8 +245,8 @@ internal class VisitServiceTest {
     @Test
     fun `No visit order or balance adjustment is created when no balance record exists`() {
 
-      whenever(offenderVisitBalanceRepository.findById(offenderBookingId)).thenReturn(Optional.empty())
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
+      defaultVisit.offenderBooking.visitBalance = null
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
 
@@ -260,7 +257,7 @@ internal class VisitServiceTest {
     @Test
     fun `visitor records are saved correctly`() {
 
-      whenever(visitRepository.save(any())).thenReturn(Visit(id = visitId))
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
@@ -307,61 +304,21 @@ internal class VisitServiceTest {
       }
       assertThat(thrown.message).isEqualTo("Prison with id=$prisonId does not exist")
     }
-
-//    @Test
-//    fun roomNotFound() {
-//      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(emptyList())
-//
-//      val thrown = assertThrows(BadDataException::class.java) {
-//        visitService.createVisit(offenderNo, createVisitRequest)
-//      }
-//      assertThat(thrown.message).isEqualTo("Room location with code=$roomId does not exist in prison $prisonId")
-//    }
-//
-//    @Test
-//    fun moreThanOneRoom() {
-//      whenever(agencyInternalLocationRepository.findByLocationCodeAndAgencyId(roomId, prisonId)).thenReturn(
-//        listOf(AgencyInternalLocation(12345L, true), AgencyInternalLocation(12346L, true))
-//      )
-//
-//      val thrown = assertThrows(BadDataException::class.java) {
-//        visitService.createVisit(offenderNo, createVisitRequest)
-//      }
-//      assertThat(thrown.message).isEqualTo("There is more than one room with code=$roomId at prison $prisonId")
-//    }
   }
 
   @DisplayName("cancel")
   @Nested
   internal inner class CancelVisit {
     val cancelVisitRequest = CancelVisitRequest(outcome = "OFFCANC")
-    val offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now())
-    val visit = Visit(
-      id = visitId,
-      visitStatus = VisitStatus("SCH", "desc"),
-      offenderBooking = offenderBooking,
-      visitOrder = VisitOrder(
-        offenderBooking = offenderBooking,
-        visitOrderNumber = 123L,
-        visitOrderType = VisitOrderType("PVO", "desc"),
-        status = VisitStatus("SCH", "desc"),
-        issueDate = LocalDate.parse("2021-12-01"),
-      ),
-    )
-
-    init {
-      visit.visitors.add(VisitVisitor(offenderBooking = offenderBooking, visit = visit))
-      visit.visitors.add(VisitVisitor(person = Person(-7L, "First", "Last"), visit = visit))
-    }
 
     @Test
     fun `visit data is amended correctly`() {
 
-      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(visit))
+      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
 
       visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
-      with(visit) {
+      with(defaultVisit) {
         assertThat(visitStatus?.code).isEqualTo("CANC")
 
         assertThat(visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
@@ -380,7 +337,26 @@ internal class VisitServiceTest {
     @Test
     fun `balance increment is saved correctly`() {
 
-      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(visit))
+      defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
+
+      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+
+      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+
+      verify(offenderVisitBalanceAdjustmentRepository).save(
+        check { balanceArgument ->
+          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_CANCEL)
+          assertThat(balanceArgument.remainingVisitOrders).isEqualTo(1)
+          assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
+          assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
+        }
+      )
+    }
+
+    @Test
+    fun `privilege balance increment is saved correctly`() {
+
+      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
 
       visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
@@ -392,6 +368,30 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
         }
       )
+    }
+
+    @Test
+    fun `No balance exists`() {
+
+      defaultVisit.offenderBooking.visitBalance = null
+
+      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+
+      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+
+      verify(offenderVisitBalanceAdjustmentRepository, times(0)).save(any())
+    }
+
+    @Test
+    fun `No visit order exists`() {
+
+      defaultVisit.visitOrder = null
+
+      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+
+      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+
+      verify(offenderVisitBalanceAdjustmentRepository, times(0)).save(any())
     }
   }
 }

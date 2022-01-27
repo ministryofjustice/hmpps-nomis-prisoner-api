@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.AmendVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
@@ -90,58 +89,6 @@ class VisitResource(private val visitService: VisitService) {
     @RequestBody @Valid createVisitRequest: CreateVisitRequest
   ): CreateVisitResponse =
     visitService.createVisit(offenderNo, createVisitRequest)
-
-  @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")
-  @PutMapping("/{visitId}")
-  @Operation(
-    summary = "Amend a visit",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = AmendVisitRequest::class)
-        )
-      ]
-    ),
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Visit amended"
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "Incorrect request to amend a visit",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
-      ),
-    ]
-  )
-  fun amendVisit(
-    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
-    @PathVariable
-    @Pattern(regexp = OFFENDER_NO_PATTERN)
-    offenderNo: String,
-    @Schema(description = "Nomis Visit Id", required = true)
-    @PathVariable
-    visitId: Long,
-    @RequestBody @Valid amendVisitRequest: AmendVisitRequest
-  ) {
-    visitService.amendVisit(offenderNo, visitId, amendVisitRequest)
-  }
 
   @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")
   @PutMapping("/vsipVisitId/{vsipVisitId}/cancel")

@@ -56,7 +56,7 @@ data class VisitOrder(
       )
     ]
   )
-  val visitOrderType: VisitOrderType,
+  var visitOrderType: VisitOrderType,
 
 /* status content seems to be mainly set to scheduled and the other options don't all make sense */
   @ManyToOne(fetch = FetchType.LAZY)

@@ -24,7 +24,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -53,6 +55,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository
+
+  @Autowired
+  lateinit var visitStatusRepository: ReferenceCodeRepository<VisitStatus>
 
   @Autowired
   lateinit var transactionManager: PlatformTransactionManager
@@ -184,7 +189,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       TransactionTemplate(transactionManager).execute {
         val visit = visitRepository.findById(response?.visitId!!).orElseThrow()
         assertThat(visit.endTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
-        assertThat(visit.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
+        assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
         assertThat(visit.vsipVisitId).isEqualTo("VSIP_12345")
         assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
           Tuple.tuple(null, "SCH"),
@@ -201,6 +206,29 @@ class VisitResourceIntTest : IntegrationTestBase() {
             Tuple.tuple(offenderBookingId, -1),
           )
       }
+    }
+
+    @Test
+    fun `create when visit already exists`() {
+      val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+
+      assertThat(
+        webTestClient.post().uri("/prisoners/$offenderNo/visits")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(createVisitWithPeople()))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Visit with VSIP visit id = 12345, Nomis visit id = ${response?.visitId} already exists")
     }
   }
 
@@ -237,7 +265,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       TransactionTemplate(transactionManager).execute {
         val visit = visitRepository.findById(visitId).orElseThrow()
         assertThat(visit.visitStatus?.code).isEqualTo("CANC")
-        assertThat(visit.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
+        assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
         assertThat(visit.visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
           .containsExactly(
             Tuple.tuple("ABS", "CANC", "VISCANC"),
@@ -257,6 +285,88 @@ class VisitResourceIntTest : IntegrationTestBase() {
             Tuple.tuple(offenderBookingId, 1),
           )
       }
+    }
+
+    @Test
+    fun `cancel visit with visit id not found`() {
+      val error = webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/does-not-exist/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue("""{ "outcome" : "VISCANC" }""")
+        )
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(error?.userMessage).isEqualTo("Not Found: VSIP visit id does-not-exist not found")
+    }
+
+    @Test
+    fun `cancel visit with invalid cancellation reason`() {
+      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isCreated
+
+      val error = webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue("""{ "outcome" : "NOT-A-CANC-REASON" }"""))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(error?.userMessage).isEqualTo("Bad request: Invalid cancellation reason: NOT-A-CANC-REASON")
+    }
+
+    @Test
+    fun `cancel already cancelled or other status`() {
+      val createResponse = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+      val visitId = createResponse?.visitId!!
+
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
+        .exchange()
+        .expectStatus().isOk
+
+      assertThat(
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Visit already cancelled, with outcome VISCANC")
+
+      TransactionTemplate(transactionManager).execute {
+        val visit = visitRepository.findById(visitId).orElseThrow()
+        visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
+      }
+
+      assertThat(
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Visit status is not scheduled but is NORM")
     }
   }
 }

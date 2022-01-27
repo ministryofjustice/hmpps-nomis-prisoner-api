@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.config
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
+import org.springframework.http.HttpStatus.CONFLICT
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
@@ -10,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.NotFoundException
 import javax.validation.ValidationException
 
@@ -60,6 +62,20 @@ class NomisPrisonerApiExceptionHandler {
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "Bad request: ${e.message}",
+          developerMessage = e.message
+        )
+      )
+  }
+
+  @ExceptionHandler(ConflictException::class)
+  fun handleConflictException(e: Exception): ResponseEntity<ErrorResponse?>? {
+    log.info("Conflict http error: {}", e.message)
+    return ResponseEntity
+      .status(CONFLICT)
+      .body(
+        ErrorResponse(
+          status = CONFLICT,
+          userMessage = e.message,
           developerMessage = e.message
         )
       )
