@@ -8,10 +8,8 @@ import javax.persistence.Entity
 class VisitStatus(code: String, description: String) : ReferenceCode(VISIT_STATUS, code, description) {
   companion object {
     const val VISIT_STATUS = "VIS_STS"
-    val NORM = Pk(VISIT_STATUS, "NORM")
-    val CANCELLED = Pk(VISIT_STATUS, "CANC")
-    fun pk(code: String): Pk {
-      return Pk(VISIT_STATUS, code)
-    }
+    val NORM = pk("NORM")
+    val CANCELLED = pk("CANC")
+    fun pk(code: String): Pk = Pk(VISIT_STATUS, code)
   }
 }

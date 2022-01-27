@@ -47,29 +47,6 @@ data class OffenderBooking(
   @Column(name = "BOOKING_BEGIN_DATE", nullable = false)
   val bookingBeginDate: LocalDateTime,
 
-  //
-  //    @OneToMany(mappedBy = "id.offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    private List<OffenderProfileDetail> profileDetails = new ArrayList<>();
-  //
-  //    @OrderColumn(name = "MILITARY_SEQ")
-  //    @ListIndexBase(1)
-  //    @OneToMany(mappedBy = "bookingAndSequence.offenderBooking", cascade = CascadeType.ALL)
-  //    private List<OffenderMilitaryRecord> militaryRecords;
-  //
-  //    @OrderColumn(name = "CASE_SEQ")
-  //    @ListIndexBase(1)
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    private List<OffenderCourtCase> courtCases = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @BatchSize(size = 25)
-  //    private List<CourtOrder> courtOrders = new ArrayList<>();
-  //
-  //    @ListIndexBase(1)
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    private List<OffenderPropertyContainer> propertyContainers;
-
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val location: AgencyLocation? = null,
@@ -82,10 +59,6 @@ data class OffenderBooking(
   @JoinColumn(name = "LIVING_UNIT_ID")
   val assignedLivingUnit: AgencyInternalLocation? = null,
 
-  //    @ManyToOne(fetch = FetchType.LAZY)
-  //    @JoinColumn(name = "ASSIGNED_STAFF_ID")
-  //    private Staff assignedStaff;
-
   @Column(name = "AGENCY_IML_ID")
   val livingUnitMv: Long? = null,
 
@@ -93,69 +66,6 @@ data class OffenderBooking(
   @Type(type = "yes_no")
   val active: Boolean = false,
 
-  //    @OrderBy("effectiveDate ASC")
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    private List<OffenderNonAssociationDetail> nonAssociationDetails = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @BatchSize(size = 25)
-  //    private List<ExternalMovement> externalMovements = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @BatchSize(size = 25)
-  //    private List<OffenderImprisonmentStatus> imprisonmentStatuses = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    private List<OffenderCaseNote> caseNotes = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    private List<OffenderCharge> charges = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @BatchSize(size = 25)
-  //    private List<SentenceCalculation> sentenceCalculations = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    @Exclude
-  //    private List<KeyDateAdjustment> keyDateAdjustments = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    @Exclude
-  //    private List<SentenceAdjustment> sentenceAdjustments = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    @Exclude
-  //    @BatchSize(size = 25)
-  //    private List<SentenceTerm> terms = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    @Exclude
-  //    @BatchSize(size = 25)
-  //    private List<OffenderSentence> sentences = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    @Exclude
-  //    @BatchSize(size = 25)
-  //    private List<OffenderImage> images = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    @Exclude
-  //    @BatchSize(size = 25)
-  //    private List<OffenderAlert> alerts = new ArrayList<>();
-  //
-  //    @OneToMany(mappedBy = "offenderBooking", cascade = CascadeType.ALL)
-  //    @Default
-  //    @Exclude
-  //    @BatchSize(size = 25)
-  //    private List<OffenderIepLevel> iepLevels = new ArrayList<>();
-  //
-  //
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "ROOT_OFFENDER_ID", nullable = false)
   var rootOffender: Offender? = null,
@@ -200,9 +110,6 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val contacts: MutableList<OffenderContactPerson> = mutableListOf(),
 
-  //    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
-  //    @PrimaryKeyJoinColumn
-  //    private ReleaseDetail releaseDetail;
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

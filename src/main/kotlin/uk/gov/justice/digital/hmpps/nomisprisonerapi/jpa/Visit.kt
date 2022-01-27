@@ -31,7 +31,7 @@ data class Visit(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
-  val offenderBooking: OffenderBooking? = null,
+  val offenderBooking: OffenderBooking,
 
   @Column
   var commentText: String? = null,

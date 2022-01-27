@@ -8,10 +8,8 @@ import javax.persistence.Entity
 class Gender(code: String, description: String) : ReferenceCode(SEX, code, description) {
   companion object {
     const val SEX = "SEX"
-    val MALE = Pk(SEX, "M")
-    val FEMALE = Pk(SEX, "F")
-    fun pk(code: String): Pk {
-      return Pk(SEX, code)
-    }
+    val MALE = pk("M")
+    val FEMALE = pk("F")
+    fun pk(code: String): Pk = Pk(SEX, code)
   }
 }

@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
@@ -25,7 +23,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -40,7 +37,6 @@ private val createVisit: (visitorPersonIds: List<Long>) -> CreateVisitRequest =
       endTime = LocalTime.parse("13:04"),
       prisonId = prisonId,
       visitorPersonIds = visitorPersonIds,
-      // visitRoomId = "VISIT",
       vsipVisitId = "12345",
       issueDate = LocalDate.parse("2021-11-02"),
     )
@@ -49,13 +45,7 @@ private val createVisit: (visitorPersonIds: List<Long>) -> CreateVisitRequest =
 class VisitResourceIntTest : IntegrationTestBase() {
 
   @Autowired
-  lateinit var visitRepository: VisitRepository
-
-  @Autowired
   lateinit var offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository
-
-  @Autowired
-  lateinit var transactionManager: PlatformTransactionManager
 
   @Autowired
   lateinit var repository: Repository
@@ -181,26 +171,48 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(response?.visitId).isGreaterThan(0)
 
       // Spot check that the database has been populated.
-      TransactionTemplate(transactionManager).execute {
-        val visit = visitRepository.findById(response?.visitId!!).orElseThrow()
-        assertThat(visit.endTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
-        assertThat(visit.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
-        assertThat(visit.vsipVisitId).isEqualTo("VSIP_12345")
-        assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
-          Tuple.tuple(null, "SCH"),
-          Tuple.tuple(threePeople[0].id, "SCH"),
-          Tuple.tuple(threePeople[1].id, "SCH"),
-          Tuple.tuple(threePeople[2].id, "SCH"),
+      val visit = repository.lookupVisit(response?.visitId)
+
+      assertThat(visit.endTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
+      assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
+      assertThat(visit.vsipVisitId).isEqualTo("VSIP_12345")
+      assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
+        Tuple.tuple(null, "SCH"),
+        Tuple.tuple(threePeople[0].id, "SCH"),
+        Tuple.tuple(threePeople[1].id, "SCH"),
+        Tuple.tuple(threePeople[2].id, "SCH"),
+      )
+      assertThat(visit.visitors[0].eventId).isGreaterThan(0)
+
+      val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
+
+      assertThat(balanceAdjustment).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
+        .containsExactly(
+          Tuple.tuple(offenderBookingId, -1),
         )
-        assertThat(visit.visitors[0].eventId).isGreaterThan(0)
+    }
 
-        val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
+    @Test
+    fun `create when visit already exists`() {
+      val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
 
-        assertThat(balanceAdjustment).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
-          .containsExactly(
-            Tuple.tuple(offenderBookingId, -1),
-          )
-      }
+      assertThat(
+        webTestClient.post().uri("/prisoners/$offenderNo/visits")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(createVisitWithPeople()))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Visit with VSIP visit id = 12345, Nomis visit id = ${response?.visitId} already exists")
     }
   }
 
@@ -209,15 +221,14 @@ class VisitResourceIntTest : IntegrationTestBase() {
   inner class CancelVisitRequest {
     @Test
     fun `cancel visit success`() {
-      val createResponse = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+      val visitId = webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isCreated
         .expectBody(CreateVisitResponse::class.java)
-        .returnResult().responseBody
-      val visitId = createResponse?.visitId!!
+        .returnResult().responseBody?.visitId
 
       webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
@@ -234,29 +245,108 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectBody().isEmpty
 
       // Spot check that the database has been updated correctly.
-      TransactionTemplate(transactionManager).execute {
-        val visit = visitRepository.findById(visitId).orElseThrow()
-        assertThat(visit.visitStatus?.code).isEqualTo("CANC")
-        assertThat(visit.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
-        assertThat(visit.visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
-          .containsExactly(
-            Tuple.tuple("ABS", "CANC", "VISCANC"),
-            Tuple.tuple("ABS", "CANC", "VISCANC"),
-            Tuple.tuple("ABS", "CANC", "VISCANC"),
-            Tuple.tuple("ABS", "CANC", "VISCANC"),
-          )
-        assertThat(visit.visitOrder?.status?.code).isEqualTo("CANC")
-        assertThat(visit.visitOrder?.outcomeReason?.code).isEqualTo("VISCANC")
-        assertThat(visit.visitOrder?.expiryDate).isEqualTo(LocalDate.now())
+      val visit = repository.lookupVisit(visitId)
 
-        val balanceAdjustments = offenderVisitBalanceAdjustmentRepository.findAll()
+      assertThat(visit.visitStatus?.code).isEqualTo("CANC")
+      assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
+      assertThat(visit.visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
+        .containsExactly(
+          Tuple.tuple("ABS", "CANC", "VISCANC"),
+          Tuple.tuple("ABS", "CANC", "VISCANC"),
+          Tuple.tuple("ABS", "CANC", "VISCANC"),
+          Tuple.tuple("ABS", "CANC", "VISCANC"),
+        )
+      assertThat(visit.visitOrder?.status?.code).isEqualTo("CANC")
+      assertThat(visit.visitOrder?.outcomeReason?.code).isEqualTo("VISCANC")
+      assertThat(visit.visitOrder?.expiryDate).isEqualTo(LocalDate.now())
 
-        assertThat(balanceAdjustments).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
-          .containsExactly(
-            Tuple.tuple(offenderBookingId, -1),
-            Tuple.tuple(offenderBookingId, 1),
+      val balanceAdjustments = offenderVisitBalanceAdjustmentRepository.findAll()
+
+      assertThat(balanceAdjustments).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
+        .containsExactly(
+          Tuple.tuple(offenderBookingId, -1),
+          Tuple.tuple(offenderBookingId, 1),
+        )
+    }
+
+    @Test
+    fun `cancel visit with visit id not found`() {
+      assertThat(
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/does-not-exist/cancel")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue("""{ "outcome" : "VISCANC" }""")
           )
-      }
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Not Found: VSIP visit id does-not-exist not found")
+    }
+
+    @Test
+    fun `cancel visit with invalid cancellation reason`() {
+      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isCreated
+
+      assertThat(
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{ "outcome" : "NOT-A-CANC-REASON" }"""))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Bad request: Invalid cancellation reason: NOT-A-CANC-REASON")
+    }
+
+    @Test
+    fun `cancel already cancelled or other status`() {
+      val visitId = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody?.visitId
+
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
+        .exchange()
+        .expectStatus().isOk
+
+      assertThat(
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{ "outcome" : "OFFCANC" }"""))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Visit already cancelled, with outcome VISCANC")
+
+      repository.changeVisitStatus(visitId)
+
+      assertThat(
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Visit status is not scheduled but is NORM")
     }
   }
 }

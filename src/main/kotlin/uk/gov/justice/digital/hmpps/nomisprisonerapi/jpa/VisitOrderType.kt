@@ -10,8 +10,6 @@ class VisitOrderType(code: String, description: String) : ReferenceCode(VISIT_OR
 
   companion object {
     const val VISIT_ORDER_TYPE = "VIS_ORD_TYPE"
-    fun pk(code: String): Pk {
-      return Pk(VISIT_ORDER_TYPE, code)
-    }
+    fun pk(code: String): Pk = Pk(VISIT_ORDER_TYPE, code)
   }
 }

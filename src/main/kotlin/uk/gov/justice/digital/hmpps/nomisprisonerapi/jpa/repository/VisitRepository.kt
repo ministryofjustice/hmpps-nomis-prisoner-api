@@ -10,4 +10,5 @@ import java.util.Optional
 interface VisitRepository : CrudRepository<Visit, Long> {
   fun findByOffenderBooking(booking: OffenderBooking): List<Visit>
   fun findOneByVsipVisitId(vsipVisitId: String): Optional<Visit>
+  fun findByVsipVisitId(vsipVisitId: String): List<Visit>
 }

@@ -10,10 +10,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 
 @Repository
 @Transactional
@@ -24,6 +27,8 @@ class Repository(
   val offenderRepository: OffenderRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val personRepository: PersonRepository,
+  val visitRepository: VisitRepository,
+  val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
 ) {
   fun save(offenderBuilder: OffenderBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
@@ -64,4 +69,15 @@ class Repository(
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
+
+  fun lookupVisit(visitId: Long?): Visit {
+    val visit = visitRepository.findById(visitId!!).orElseThrow()
+    visit.visitors.size // hydrate
+    return visit
+  }
+
+  fun changeVisitStatus(visitId: Long?) {
+    val visit = visitRepository.findById(visitId!!).orElseThrow()
+    visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
+  }
 }

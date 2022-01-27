@@ -4,7 +4,6 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.AmendVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
@@ -21,11 +20,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
@@ -42,7 +39,6 @@ class VisitService(
   private val visitVisitorRepository: VisitVisitorRepository,
   private val visitOrderRepository: VisitOrderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
-  private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository,
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
@@ -52,19 +48,27 @@ class VisitService(
   private val eventOutcomeRepository: ReferenceCodeRepository<EventOutcome>,
   private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>,
   private val agencyLocationRepository: AgencyLocationRepository,
-  private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val telemetryClient: TelemetryClient,
   private val personRepository: PersonRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
-    val VSIP_PREFIX = "VSIP_"
+    const val VSIP_PREFIX = "VSIP_"
   }
 
   fun createVisit(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
 
     val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
       .orElseThrow(NotFoundException(offenderNo))
+
+    val existingVisits = visitRepository.findByVsipVisitId(VSIP_PREFIX + visitDto.vsipVisitId)
+    if (!existingVisits.isEmpty()) {
+      val existingVisit = existingVisits[0]
+      val message =
+        "Visit with VSIP visit id = ${visitDto.vsipVisitId}, Nomis visit id = ${existingVisit.id} already exists"
+      log.error(message)
+      throw ConflictException(message)
+    }
 
     val mappedVisit = mapVisitModel(visitDto, offenderBooking)
 
@@ -79,41 +83,45 @@ class VisitService(
     return CreateVisitResponse(visit.id)
   }
 
-  fun amendVisit(offenderNo: String, visitId: Long, visitDto: AmendVisitRequest) {
-  }
-
   fun cancelVisit(offenderNo: String, vsipVisitId: String, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
+
     val visit = visitRepository.findOneByVsipVisitId(VSIP_PREFIX + vsipVisitId)
       .orElseThrow(NotFoundException("VSIP visit id $vsipVisitId not found"))
+
     val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome))
       .orElseThrow(BadDataException("Invalid cancellation reason: ${visitDto.outcome}"))
 
-    val cancVisitStatus = visitStatusRepository.findById(VisitStatus.CANCELLED).orElseThrow()
-    val absEventOutcome = eventOutcomeRepository.findById(EventOutcome.ABS).orElseThrow()
-    val cancEventStatus = eventStatusRepository.findById(EventStatus.CANCELLED).orElseThrow()
-
+    val visitOrder = visit.visitOrder
     if (visit.visitStatus?.code == "CANC") {
-      throw BadDataException("Visit already cancelled") // or 2xx already done?
+      val message =
+        "Visit already cancelled, with " + if (visitOrder == null) "no outcome" else "outcome " + visitOrder.outcomeReason?.code
+      log.error("$message for vsip visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      throw ConflictException(message)
     } else if (visit.visitStatus?.code != "SCH") {
-      throw BadDataException("Visit already completed")
+      val message = "Visit status is not scheduled but is ${visit.visitStatus?.code}"
+      log.error("$message for vsip visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      throw ConflictException(message)
     }
 
-    visit.visitStatus = cancVisitStatus
+    val cancelledVisitStatus = visitStatusRepository.findById(VisitStatus.CANCELLED).orElseThrow()
+    val absenceEventOutcome = eventOutcomeRepository.findById(EventOutcome.ABS).orElseThrow()
+    val cancelledEventStatus = eventStatusRepository.findById(EventStatus.CANCELLED).orElseThrow()
+
+    visit.visitStatus = cancelledVisitStatus
 
     visit.visitors.forEach {
-      it.eventOutcome = absEventOutcome
-      it.eventStatus = cancEventStatus
+      it.eventOutcome = absenceEventOutcome
+      it.eventStatus = cancelledEventStatus
       it.outcomeReason = visitOutcome
     }
 
-    val visitOrder = visit.visitOrder
     if (visitOrder != null) {
-      visitOrder.status = cancVisitStatus
+      visitOrder.status = cancelledVisitStatus
       visitOrder.outcomeReason = visitOutcome
       visitOrder.expiryDate = today
 
-      cancelBalance(visit, today)
+      cancelBalance(visitOrder, visit.offenderBooking, today)
     }
   }
 
@@ -122,11 +130,10 @@ class VisitService(
     visitDto: CreateVisitRequest,
     offenderBooking: OffenderBooking,
   ) {
-    val offenderVisitBalance = offenderVisitBalanceRepository.findById(offenderBooking.bookingId)
+    val offenderVisitBalance = offenderBooking.visitBalance
+    if (offenderVisitBalance != null) {
 
-    if (offenderVisitBalance.isPresent) {
-
-      if (offenderVisitBalance.get().remainingPrivilegedVisitOrders!! > 0) {
+      if (offenderVisitBalance.remainingPrivilegedVisitOrders!! > 0) {
         val adjustReasonCode =
           visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_ISSUE).orElseThrow()
 
@@ -136,7 +143,7 @@ class VisitService(
             adjustDate = visitDto.issueDate,
             adjustReasonCode = adjustReasonCode,
             remainingPrivilegedVisitOrders = -1,
-            previousRemainingPrivilegedVisitOrders = offenderVisitBalance.get().remainingPrivilegedVisitOrders,
+            previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
             commentText = "Created by VSIP for an on-line visit booking",
           )
         )
@@ -148,7 +155,7 @@ class VisitService(
           issueDate = visitDto.issueDate,
           expiryDate = visitDto.issueDate.plusDays(28),
         )
-      } else if (offenderVisitBalance.get().remainingVisitOrders!! > 0) {
+      } else if (offenderVisitBalance.remainingVisitOrders!! > 0) {
         val adjustReasonCode =
           visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow()
         offenderVisitBalanceAdjustmentRepository.save(
@@ -157,12 +164,8 @@ class VisitService(
             adjustDate = visitDto.issueDate,
             adjustReasonCode = adjustReasonCode,
             remainingVisitOrders = -1,
-            previousRemainingVisitOrders = offenderVisitBalance.get().remainingVisitOrders,
+            previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
             commentText = "Created by VSIP for an on-line visit booking",
-            //  authorisedStaffId = visitDto.staffId,
-            //  endorsedStaffId = visitDto.staffId,
-            // TODO: If necessary, could follow stored proc logic and use staffId from:
-            //   select staff_id from staff_user_accounts where username = 'OMS_OWNER';
           )
         )
         visit.visitOrder = VisitOrder(
@@ -178,52 +181,46 @@ class VisitService(
   }
 
   private fun cancelBalance(
-    visit: Visit,
+    visitOrder: VisitOrder,
+    offenderBooking: OffenderBooking,
     today: LocalDate,
   ) {
-    val visitOrder = visit.visitOrder!!
-    val offenderBooking = visit.offenderBooking!!
-    val offenderVisitBalance = offenderVisitBalanceRepository.findById(offenderBooking.bookingId).orElseThrow()
+    val offenderVisitBalance = offenderBooking.visitBalance
+    if (offenderVisitBalance != null) {
 
-    offenderVisitBalanceAdjustmentRepository.save(
+      offenderVisitBalanceAdjustmentRepository.save(
 
-      if (visitOrder.visitOrderType.isPrivileged())
-        OffenderVisitBalanceAdjustment(
-          offenderBooking = offenderBooking,
-          adjustDate = today,
-          commentText = "Booking cancelled by VSIP",
-          adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_CANCEL)
-            .orElseThrow(),
-          remainingPrivilegedVisitOrders = 1,
-          previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
-        )
-      else
-        OffenderVisitBalanceAdjustment(
-          offenderBooking = offenderBooking,
-          adjustDate = today,
-          commentText = "Booking cancelled by VSIP",
-          adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_CANCEL)
-            .orElseThrow(),
-          remainingVisitOrders = 1,
-          previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
-        )
-    )
+        if (visitOrder.visitOrderType.isPrivileged())
+          OffenderVisitBalanceAdjustment(
+            offenderBooking = offenderBooking,
+            adjustDate = today,
+            commentText = "Booking cancelled by VSIP",
+            adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_CANCEL)
+              .orElseThrow(),
+            remainingPrivilegedVisitOrders = 1,
+            previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
+          )
+        else
+          OffenderVisitBalanceAdjustment(
+            offenderBooking = offenderBooking,
+            adjustDate = today,
+            commentText = "Booking cancelled by VSIP",
+            adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_CANCEL)
+              .orElseThrow(),
+            remainingVisitOrders = 1,
+            previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
+          )
+      )
+    }
   }
 
   private fun mapVisitModel(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
 
-    val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType)).orElseThrow()
+    val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))
+      .orElseThrow(BadDataException("Invalid visit type: ${visitDto.visitType}"))
 
     val location = agencyLocationRepository.findById(visitDto.prisonId)
       .orElseThrow(BadDataException("Prison with id=${visitDto.prisonId} does not exist"))
-//    val agencyInternalLocations =
-//      agencyInternalLocationRepository.findByLocationCodeAndAgencyId(visitDto.visitRoomId, visitDto.prisonId)
-//    if (agencyInternalLocations.isEmpty()) {
-//      throw (BadDataException("Room location with code=${visitDto.visitRoomId} does not exist in prison ${visitDto.prisonId}"))
-//    } else if (agencyInternalLocations.size > 1) {
-//      throw (BadDataException("There is more than one room with code=${visitDto.visitRoomId} at prison ${visitDto.prisonId}"))
-//    }
-//    // TODO is more validation needed on prison or room (e.g. it is a visit room type)?
 
     return Visit(
       offenderBooking = offenderBooking,
@@ -233,19 +230,13 @@ class VisitService(
       visitType = visitType,
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       location = location,
-      // agencyInternalLocation = agencyInternalLocations[0],
       vsipVisitId = VSIP_PREFIX + visitDto.vsipVisitId
-      // TODO not yet sure if anything else is needed
-
-      // searchLevel = searchRepository.findById(SearchLevel.pk("FULL")).orElseThrow(),
-      // commentText = "booked by VSIP",
-      // visitorConcernText = "visitor concerns",
     )
   }
 
   private fun addVisitors(
     visit: Visit,
-    offenderBooking: OffenderBooking?,
+    offenderBooking: OffenderBooking,
     visitDto: CreateVisitRequest
   ) {
     val scheduledEventStatus = eventStatusRepository.findById(SCHEDULED_APPROVED).orElseThrow()
@@ -270,8 +261,6 @@ class VisitService(
   }
 
   private fun getNextEvent(): Long {
-    // TODO Reviewing with Paul M as to whether this is a wise course to take!
-    // The stored proc uses event_id.nextval
     return visitVisitorRepository.getEventId()
   }
 }
@@ -285,5 +274,11 @@ class NotFoundException(message: String?) : RuntimeException(message), Supplier<
 class BadDataException(message: String?) : RuntimeException(message), Supplier<BadDataException> {
   override fun get(): BadDataException {
     return BadDataException(message)
+  }
+}
+
+class ConflictException(message: String?) : RuntimeException(message), Supplier<ConflictException> {
+  override fun get(): ConflictException {
+    return ConflictException(message)
   }
 }

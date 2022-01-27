@@ -23,10 +23,10 @@ data class OffenderVisitBalance(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "REMAINING_VO")
-  val remainingVisitOrders: Int? = null,
+  var remainingVisitOrders: Int? = null,
 
   @Column(name = "REMAINING_PVO")
-  val remainingPrivilegedVisitOrders: Int? = null,
+  var remainingPrivilegedVisitOrders: Int? = null,
 
   @Column(name = "VISIT_ALLOWANCE_INDICATOR")
   val visitAllowanceIndicator: Boolean? = false,
