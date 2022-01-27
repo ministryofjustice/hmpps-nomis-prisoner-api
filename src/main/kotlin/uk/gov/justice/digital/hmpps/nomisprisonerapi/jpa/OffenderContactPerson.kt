@@ -100,7 +100,7 @@ data class OffenderContactPerson(
     return id == other.id
   }
 
-  override fun hashCode(): Int = id.hashCode()
+  override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
   override fun toString(): String {

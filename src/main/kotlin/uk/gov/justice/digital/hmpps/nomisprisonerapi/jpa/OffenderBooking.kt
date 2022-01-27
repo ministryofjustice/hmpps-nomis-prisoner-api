@@ -4,7 +4,6 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Type
 import java.time.LocalDateTime
-import java.util.Objects
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -212,9 +211,7 @@ data class OffenderBooking(
     return bookingId == other.bookingId
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(bookingId)
-  }
+  override fun hashCode(): Int = javaClass.hashCode()
 
   override fun toString(): String {
     return javaClass.simpleName + "(" +

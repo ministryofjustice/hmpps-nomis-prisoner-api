@@ -8,7 +8,6 @@ import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import org.hibernate.annotations.Where
 import java.time.LocalDate
-import java.util.Objects
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.DiscriminatorColumn
@@ -141,7 +140,5 @@ abstract class Address {
     return addressId == other.addressId
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(addressId)
-  }
+  override fun hashCode(): Int = javaClass.hashCode()
 }
