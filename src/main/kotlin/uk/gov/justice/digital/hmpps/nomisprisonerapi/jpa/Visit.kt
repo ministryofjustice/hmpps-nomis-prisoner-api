@@ -8,7 +8,6 @@ import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.Objects
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -72,7 +71,13 @@ data class Visit(
           value = "'" + VisitStatus.VISIT_STATUS + "'",
           referencedColumnName = "domain"
         )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_STATUS", referencedColumnName = "code", nullable = false))
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "VISIT_STATUS",
+          referencedColumnName = "code",
+          nullable = false
+        )
+      )
     ]
   )
   var visitStatus: VisitStatus? = null,
@@ -122,9 +127,7 @@ data class Visit(
     return id == other.id
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(id)
-  }
+  override fun hashCode(): Int = javaClass.hashCode()
 
   // omit visitors to avoid recursion
   override fun toString(): String {

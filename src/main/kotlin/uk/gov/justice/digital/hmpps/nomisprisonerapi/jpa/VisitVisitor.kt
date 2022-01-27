@@ -7,7 +7,6 @@ import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import org.hibernate.annotations.Type
-import java.util.Objects
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -115,7 +114,5 @@ data class VisitVisitor(
     return id == other.id
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(id)
-  }
+  override fun hashCode(): Int = javaClass.hashCode()
 }

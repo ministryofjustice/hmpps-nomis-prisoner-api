@@ -9,7 +9,6 @@ import org.hibernate.annotations.JoinFormula
 import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender.Companion.SEX
 import java.time.LocalDate
-import java.util.Objects
 import javax.persistence.CascadeType
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -130,7 +129,5 @@ data class Offender(
     return id == other.id
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(id)
-  }
+  override fun hashCode(): Int = javaClass.hashCode()
 }

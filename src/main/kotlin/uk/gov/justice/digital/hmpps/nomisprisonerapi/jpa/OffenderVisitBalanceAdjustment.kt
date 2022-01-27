@@ -7,7 +7,6 @@ import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
-import java.util.Objects
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -22,7 +21,11 @@ import javax.validation.constraints.Size
 @Entity
 @Table(name = "OFFENDER_VISIT_BALANCE_ADJS")
 data class OffenderVisitBalanceAdjustment(
-  @SequenceGenerator(name = "OFFENDER_VISIT_BALANCE_ADJ_ID", sequenceName = "OFFENDER_VISIT_BALANCE_ADJ_ID", allocationSize = 1)
+  @SequenceGenerator(
+    name = "OFFENDER_VISIT_BALANCE_ADJ_ID",
+    sequenceName = "OFFENDER_VISIT_BALANCE_ADJ_ID",
+    allocationSize = 1
+  )
   @GeneratedValue(generator = "OFFENDER_VISIT_BALANCE_ADJ_ID")
   @Id
   @Column(name = "OFFENDER_VISIT_BALANCE_ADJ_ID")
@@ -53,7 +56,13 @@ data class OffenderVisitBalanceAdjustment(
           value = "'" + VisitOrderAdjustmentReason.VISIT_ORDER_ADJUSTMENT + "'",
           referencedColumnName = "domain"
         )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "ADJUST_REASON_CODE", referencedColumnName = "code", nullable = false))
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "ADJUST_REASON_CODE",
+          referencedColumnName = "code",
+          nullable = false
+        )
+      )
     ]
   )
   val adjustReasonCode: VisitOrderAdjustmentReason? = null,
@@ -89,7 +98,5 @@ data class OffenderVisitBalanceAdjustment(
     return id == other.id
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(id)
-  }
+  override fun hashCode(): Int = javaClass.hashCode()
 }

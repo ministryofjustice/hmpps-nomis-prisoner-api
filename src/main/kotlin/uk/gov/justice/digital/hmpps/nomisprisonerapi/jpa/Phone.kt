@@ -37,7 +37,5 @@ abstract class Phone {
     return phoneId == other.phoneId
   }
 
-  override fun hashCode(): Int {
-    return phoneId.hashCode()
-  }
+  override fun hashCode(): Int = javaClass.hashCode()
 }
