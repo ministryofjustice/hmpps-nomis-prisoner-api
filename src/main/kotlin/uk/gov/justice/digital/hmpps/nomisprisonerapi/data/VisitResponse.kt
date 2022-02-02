@@ -59,6 +59,16 @@ data class VisitResponse(
   )
   val visitorConcernText: String? = null,
 ) {
-  data class Visitor(val personId: Long, val leadVisitor: Boolean)
+  data class Visitor(
+    @Schema(
+      description = "visitor NOMIS person Id"
+    )
+    val personId: Long,
+    @Schema(
+      description = "Indicates lead visitor for the visit"
+    )
+    val leadVisitor: Boolean
+  )
+
   data class CodeDescription(val code: String, val description: String)
 }
