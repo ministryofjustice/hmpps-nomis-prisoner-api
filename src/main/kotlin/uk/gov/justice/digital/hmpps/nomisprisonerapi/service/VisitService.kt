@@ -2,11 +2,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.SCHEDULED_APPROVED
@@ -93,13 +95,13 @@ class VisitService(
       .orElseThrow(BadDataException("Invalid cancellation reason: ${visitDto.outcome}"))
 
     val visitOrder = visit.visitOrder
-    if (visit.visitStatus?.code == "CANC") {
+    if (visit.visitStatus.code == "CANC") {
       val message =
         "Visit already cancelled, with " + if (visitOrder == null) "no outcome" else "outcome " + visitOrder.outcomeReason?.code
       log.error("$message for vsip visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
       throw ConflictException(message)
-    } else if (visit.visitStatus?.code != "SCH") {
-      val message = "Visit status is not scheduled but is ${visit.visitStatus?.code}"
+    } else if (visit.visitStatus.code != "SCH") {
+      val message = "Visit status is not scheduled but is ${visit.visitStatus.code}"
       log.error("$message for vsip visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
       throw ConflictException(message)
     }
@@ -225,8 +227,8 @@ class VisitService(
     return Visit(
       offenderBooking = offenderBooking,
       visitDate = LocalDate.from(visitDto.startDateTime),
-      startTime = visitDto.startDateTime,
-      endTime = LocalDateTime.of(LocalDate.from(visitDto.startDateTime), visitDto.endTime),
+      startDateTime = visitDto.startDateTime,
+      endDateTime = LocalDateTime.of(LocalDate.from(visitDto.startDateTime), visitDto.endTime),
       visitType = visitType,
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       location = location,
@@ -262,6 +264,24 @@ class VisitService(
 
   private fun getNextEvent(): Long {
     return visitVisitorRepository.getEventId()
+  }
+
+  fun getVisit(visitId: Long): VisitResponse {
+    return visitRepository.findByIdOrNull(visitId)?.run {
+      return VisitResponse(
+        visitId = this.id,
+        offenderNo = this.offenderBooking.offender.nomsId,
+        prisonId = this.location.id,
+        startDateTime = LocalDateTime.from(this.startDateTime),
+        endDateTime = LocalDateTime.from(this.endDateTime),
+        visitType = VisitResponse.CodeDescription(this.visitType.code, this.visitType.description),
+        visitStatus = VisitResponse.CodeDescription(this.visitStatus.code, this.visitStatus.description),
+        agencyInternalLocation = this.agencyInternalLocation?.let { VisitResponse.CodeDescription(it.locationCode!!, it.description!!) },
+        commentText = this.commentText,
+        visitorConcernText = this.visitorConcernText,
+        visitors = this.visitors.filter { visitor -> visitor.person != null }.map { visitor -> VisitResponse.Visitor(visitor.person!!.id, visitor.groupLeader) }
+      )
+    } ?: throw NotFoundException("visit id $visitId")
   }
 }
 

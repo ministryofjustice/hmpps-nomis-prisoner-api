@@ -39,7 +39,7 @@ data class OffenderBooking(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_ID", nullable = false)
-  val offender: Offender? = null,
+  val offender: Offender,
 
   @Column(name = "DISCLOSURE_FLAG", nullable = false)
   val disclosureFlag: String = "Y",

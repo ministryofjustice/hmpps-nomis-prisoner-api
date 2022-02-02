@@ -22,10 +22,10 @@ import javax.persistence.Table
 data class AgencyLocation(
   @Id
   @Column(name = "AGY_LOC_ID")
-  val id: String? = null,
+  val id: String,
 
   @Column(name = "DESCRIPTION")
-  val description: String? = null,
+  val description: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
