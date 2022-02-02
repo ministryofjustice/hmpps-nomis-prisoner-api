@@ -295,25 +295,6 @@ internal class VisitServiceTest {
     }
 
     @Test
-    fun `visit records are mapped to dto correctly`() {
-
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
-
-      visitService.createVisit(offenderNo, createVisitRequest)
-
-      verify(visitRepository).save(
-        check { visit ->
-          assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
-            .containsExactly(
-              Tuple.tuple(offenderBookingId, null, "SCH", eventId),
-              Tuple.tuple(null, 45L, "SCH", null),
-              Tuple.tuple(null, 46L, "SCH", null),
-            )
-        }
-      )
-    }
-
-    @Test
     fun offenderNotFound() {
       whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
         Optional.empty()
