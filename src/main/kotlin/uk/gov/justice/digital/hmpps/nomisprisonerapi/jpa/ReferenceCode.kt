@@ -18,12 +18,12 @@ abstract class ReferenceCode(
 
   @Id
   @Column(insertable = false, updatable = false)
-  open val domain: String? = null,
+  open val domain: String,
 
   @Id
-  open val code: String? = null,
+  open val code: String,
 
-  open val description: String? = null
+  open val description: String,
 
 ) : Serializable {
 

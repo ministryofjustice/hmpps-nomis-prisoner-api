@@ -40,13 +40,13 @@ data class Visit(
   val visitorConcernText: String? = null,
 
   @Column(nullable = false)
-  val visitDate: LocalDate? = null,
+  val visitDate: LocalDate,
 
-  @Column(nullable = false)
-  val startTime: LocalDateTime? = null,
+  @Column(name = "START_TIME", nullable = false)
+  val startDateTime: LocalDateTime,
 
-  @Column(nullable = false)
-  val endTime: LocalDateTime? = null,
+  @Column(name = "END_TIME", nullable = false)
+  val endDateTime: LocalDateTime,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -60,7 +60,7 @@ data class Visit(
       ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = false))
     ]
   )
-  val visitType: VisitType? = null,
+  val visitType: VisitType,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -80,7 +80,7 @@ data class Visit(
       )
     ]
   )
-  var visitStatus: VisitStatus? = null,
+  var visitStatus: VisitStatus,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -99,7 +99,7 @@ data class Visit(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  val location: AgencyLocation? = null,
+  val location: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "VISIT_INTERNAL_LOCATION_ID")
@@ -131,7 +131,7 @@ data class Visit(
 
   // omit visitors to avoid recursion
   override fun toString(): String {
-    return "Visit(id=$id, offenderBooking=$offenderBooking, commentText=$commentText, visitorConcernText=$visitorConcernText, visitDate=$visitDate, startTime=$startTime, endTime=$endTime, visitType=$visitType, visitStatus=$visitStatus, searchLevel=$searchLevel, location=$location, agencyInternalLocation=$agencyInternalLocation, vsipVisitId=$vsipVisitId)"
+    return "Visit(id=$id, offenderBooking=$offenderBooking, commentText=$commentText, visitorConcernText=$visitorConcernText, visitDate=$visitDate, startDateTime=$startDateTime, endDateTime=$endDateTime, visitType=$visitType, visitStatus=$visitStatus, searchLevel=$searchLevel, location=$location, agencyInternalLocation=$agencyInternalLocation, vsipVisitId=$vsipVisitId)"
   }
 
   /* fields not used in production for info:

@@ -80,8 +80,8 @@ class VisitRepositoryTest {
       commentText = "comment text",
       visitorConcernText = "visitor concerns",
       visitDate = LocalDate.parse("2009-12-21"),
-      startTime = LocalDateTime.parse("2009-12-21T13:15"),
-      endTime = LocalDateTime.parse("2009-12-21T14:15"),
+      startDateTime = LocalDateTime.parse("2009-12-21T13:15"),
+      endDateTime = LocalDateTime.parse("2009-12-21T14:15"),
       visitType = visitTypeRepository.findById(VisitType.pk("SCON")).orElseThrow(),
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       searchLevel = searchRepository.findById(SearchLevel.pk("FULL")).orElseThrow(),
@@ -115,8 +115,8 @@ class VisitRepositoryTest {
     val persistedVisit = persistedVisitList[0]
 
     assertThat(persistedVisit.visitDate).isEqualTo(LocalDate.parse("2009-12-21"))
-    assertThat(persistedVisit.startTime).isEqualTo(LocalDateTime.parse("2009-12-21T13:15"))
-    assertThat(persistedVisit.endTime).isEqualTo(LocalDateTime.parse("2009-12-21T14:15"))
+    assertThat(persistedVisit.startDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T13:15"))
+    assertThat(persistedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T14:15"))
     assertThat(persistedVisit.id).isNotNull
     assertThat(persistedVisit.searchLevel!!.description).isEqualTo("Full Search")
     assertThat(persistedVisit.visitStatus!!.description).isEqualTo("Scheduled")

@@ -8,8 +8,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 
 class OffenderContactBuilder(
   val person: Person,
-  var contactType: String = "S",
-  var relationshipType: String = "FRI",
+  var contactTypeCode: String = "S",
+  var relationshipTypeCode: String = "FRI",
 ) {
   fun build(
     offenderBooking: OffenderBooking,

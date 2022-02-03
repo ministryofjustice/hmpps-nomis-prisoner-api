@@ -13,11 +13,14 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderContactBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitVisitorBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -56,7 +59,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
   private val threePeople = mutableListOf<Person>()
   private val createVisitWithPeople: () -> CreateVisitRequest = { createVisit(threePeople.map { it.id }) }
 
-  @BeforeEach
   internal fun createPrisoner() {
     threePeople.addAll(
       (1..3).map {
@@ -76,15 +78,19 @@ class VisitResourceIntTest : IntegrationTestBase() {
     offenderBookingId = offender.latestBooking().bookingId
   }
 
-  @AfterEach
-  internal fun deletePrisoner() {
-    repository.delete(offender)
-    repository.delete(threePeople)
-  }
-
   @DisplayName("Create")
   @Nested
   inner class CreateVisitRequestTest {
+    @BeforeEach
+    internal fun setUpData() {
+      createPrisoner()
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      repository.delete(offender)
+      repository.delete(threePeople)
+    }
 
     @Test
     fun `access forbidden when no authority`() {
@@ -173,7 +179,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       // Spot check that the database has been populated.
       val visit = repository.lookupVisit(response?.visitId)
 
-      assertThat(visit.endTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
+      assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
       assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
       assertThat(visit.vsipVisitId).isEqualTo("VSIP_12345")
       assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
@@ -219,6 +225,17 @@ class VisitResourceIntTest : IntegrationTestBase() {
   @DisplayName("Cancel")
   @Nested
   inner class CancelVisitRequest {
+    @BeforeEach
+    internal fun setUpData() {
+      createPrisoner()
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      repository.delete(offender)
+      repository.delete(threePeople)
+    }
+
     @Test
     fun `cancel visit success`() {
       val visitId = webTestClient.post().uri("/prisoners/$offenderNo/visits")
@@ -247,7 +264,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       // Spot check that the database has been updated correctly.
       val visit = repository.lookupVisit(visitId)
 
-      assertThat(visit.visitStatus?.code).isEqualTo("CANC")
+      assertThat(visit.visitStatus.code).isEqualTo("CANC")
       assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
       assertThat(visit.visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
         .containsExactly(
@@ -347,6 +364,91 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(ErrorResponse::class.java)
           .returnResult().responseBody?.userMessage
       ).isEqualTo("Visit status is not scheduled but is NORM")
+    }
+  }
+
+  @DisplayName("Get Visit")
+  @Nested
+  inner class GetVisitRequest {
+    @BeforeEach
+    internal fun createPrisonerWithVisit() {
+      val person1 = repository.save(PersonBuilder())
+      val person2 = repository.save(PersonBuilder())
+      offender = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder()
+              .withVisits(
+                VisitBuilder().withVisitors(
+                  VisitVisitorBuilder(person1),
+                  VisitVisitorBuilder(person2, leadVisitor = true)
+                )
+              )
+          )
+      )
+
+      offenderNo = offender.nomsId
+      offenderBookingId = offender.latestBooking().bookingId
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offender)
+    }
+
+    @Test
+    fun `get visit success`() {
+      val visitId = offender.bookings[0].visits[0].id
+      val visit = webTestClient.get().uri("/visits/$visitId")
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody(VisitResponse::class.java)
+        .returnResult().responseBody!!
+
+      assertThat(visit.visitStatus.code).isEqualTo("SCH")
+      assertThat(visit.visitType.code).isEqualTo("SCON")
+      assertThat(visit.offenderNo).isEqualTo("A1234TT")
+      assertThat(visit.prisonId).isEqualTo("MDI")
+      assertThat(visit.startDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T12:05"))
+      assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T13:05"))
+      assertThat(visit.visitors).extracting("leadVisitor")
+        .containsExactly(
+          false, true
+        )
+    }
+
+    @Test
+    fun `get visit with visit id not found`() {
+      assertThat(
+        webTestClient.get().uri("/visits/123")
+          .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Not Found: visit id 123")
+    }
+
+    @Test
+    fun `get visit prevents access without appropriate role`() {
+      val visitId = offender.bookings[0].visits[0].id
+      assertThat(
+        webTestClient.get().uri("/visits/$visitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden
+      )
+    }
+
+    @Test
+    fun `get visit prevents access without authorization`() {
+      val visitId = offender.bookings[0].visits[0].id
+      assertThat(
+        webTestClient.get().uri("/visits/$visitId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      )
     }
   }
 }

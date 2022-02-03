@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -29,6 +30,7 @@ class Repository(
   val personRepository: PersonRepository,
   val visitRepository: VisitRepository,
   val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
+  val visitTypeRepository: ReferenceCodeRepository<VisitType>,
 ) {
   fun save(offenderBuilder: OffenderBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
@@ -45,7 +47,23 @@ class Repository(
         }
         booking.contacts.addAll(
           bookingBuilder.contacts.map {
-            it.build(booking, lookupContactType(it.contactType), lookupRelationshipType(it.relationshipType))
+            it.build(booking, lookupContactType(it.contactTypeCode), lookupRelationshipType(it.relationshipTypeCode))
+          }
+        )
+        booking.visits.addAll(
+          bookingBuilder.visits.map { visitBuilder ->
+            val visit = visitBuilder.build(
+              offenderBooking = booking,
+              visitType = lookupVisitType(visitBuilder.visitTypeCode),
+              visitStatus = lookupVisitStatus(visitBuilder.visitStatusCode),
+              agencyLocation = lookupAgency(visitBuilder.agyLocId)
+            )
+            visit.visitors.addAll(
+              visitBuilder.visitors.map {
+                it.build(it.person, leadVisitor = it.leadVisitor, visit)
+              }
+            )
+            visit
           }
         )
         booking
@@ -62,6 +80,12 @@ class Repository(
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
   fun lookupContactType(code: String): ContactType =
     contactTypeRepository.findByIdOrNull(Pk(ContactType.CONTACTS, code))!!
+
+  fun lookupVisitType(code: String): VisitType =
+    visitTypeRepository.findByIdOrNull(Pk(VisitType.VISIT_TYPE, code))!!
+
+  fun lookupVisitStatus(code: String): VisitStatus =
+    visitStatusRepository.findByIdOrNull(Pk(VisitStatus.VISIT_STATUS, code))!!
 
   fun lookupRelationshipType(code: String): RelationshipType =
     relationshipTypeRepository.findByIdOrNull(Pk(RelationshipType.RELATIONSHIP, code))!!

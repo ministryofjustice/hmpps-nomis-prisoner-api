@@ -22,6 +22,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -92,7 +94,9 @@ internal class VisitServiceTest {
   )
 
   val visitType = VisitType("SCON", "desc")
-  val defaultOffenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now())
+  private val defaultOffender = Offender(nomsId = "A1234FG", lastName = "Smith", gender = Gender("MALE", "Male"))
+  private val defaultOffenderBooking =
+    OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now(), offender = defaultOffender)
   val defaultVisit = Visit(
     id = visitId,
     visitStatus = VisitStatus("SCH", "desc"),
@@ -104,6 +108,15 @@ internal class VisitServiceTest {
       status = VisitStatus("SCH", "desc"),
       issueDate = LocalDate.parse("2021-12-01"),
     ),
+    startDateTime = LocalDateTime.parse("2022-01-01T09:00"),
+    endDateTime = LocalDateTime.parse("2022-01-01T10:00"),
+    visitDate = LocalDate.parse("2022-01-01"),
+    location = AgencyLocation(id = "MDI", description = "Moorlands"),
+    visitType = VisitType(
+      code = "SCON", description = "Social contact"
+    ),
+    commentText = "some comments",
+    visitorConcernText = "concerns"
   )
 
   init { // add circular references
@@ -173,11 +186,11 @@ internal class VisitServiceTest {
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.visitDate).isEqualTo(LocalDate.parse("2021-11-04"))
-          assertThat(visit.startTime).isEqualTo(LocalDateTime.parse("2021-11-04T12:05"))
-          assertThat(visit.endTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
+          assertThat(visit.startDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T12:05"))
+          assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
           assertThat(visit.visitType).isEqualTo(visitType)
-          assertThat(visit.visitStatus?.code).isEqualTo("SCH")
-          assertThat(visit.location?.id).isEqualTo(prisonId)
+          assertThat(visit.visitStatus.code).isEqualTo("SCH")
+          assertThat(visit.location.id).isEqualTo(prisonId)
           assertThat(visit.vsipVisitId).isEqualTo(VisitService.VSIP_PREFIX + "12345")
         }
       )
@@ -190,7 +203,11 @@ internal class VisitServiceTest {
         OffenderVisitBalance(
           remainingVisitOrders = 3,
           remainingPrivilegedVisitOrders = 0,
-          offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
+          offenderBooking = OffenderBooking(
+            bookingId = offenderBookingId,
+            bookingBeginDate = LocalDateTime.now(),
+            offender = defaultOffender
+          ),
         )
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
@@ -231,7 +248,11 @@ internal class VisitServiceTest {
         OffenderVisitBalance(
           remainingVisitOrders = 0,
           remainingPrivilegedVisitOrders = 0,
-          offenderBooking = OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now()),
+          offenderBooking = OffenderBooking(
+            bookingId = offenderBookingId,
+            bookingBeginDate = LocalDateTime.now(),
+            offender = defaultOffender
+          ),
         )
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
@@ -319,7 +340,7 @@ internal class VisitServiceTest {
       visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
       with(defaultVisit) {
-        assertThat(visitStatus?.code).isEqualTo("CANC")
+        assertThat(visitStatus.code).isEqualTo("CANC")
 
         assertThat(visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
           .containsExactly(
@@ -392,6 +413,28 @@ internal class VisitServiceTest {
       visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository, times(0)).save(any())
+    }
+  }
+
+  @DisplayName("get")
+  @Nested
+  internal inner class GetVisit {
+    @Test
+    fun `visit data is mapped correctly`() {
+
+      whenever(visitRepository.findById(123)).thenReturn(Optional.of(defaultVisit))
+
+      val visitResponse = visitService.getVisit(123)
+      assertThat(visitResponse.startDateTime).isEqualTo(defaultVisit.startDateTime)
+      assertThat(visitResponse.endDateTime).isEqualTo(defaultVisit.endDateTime)
+      assertThat(visitResponse.visitType.code).isEqualTo(defaultVisit.visitType.code)
+      assertThat(visitResponse.visitType.description).isEqualTo(defaultVisit.visitType.description)
+      assertThat(visitResponse.visitStatus.code).isEqualTo(defaultVisit.visitStatus.code)
+      assertThat(visitResponse.visitStatus.description).isEqualTo(defaultVisit.visitStatus.description)
+      assertThat(visitResponse.prisonId).isEqualTo(defaultVisit.location.id)
+      assertThat(visitResponse.offenderNo).isEqualTo(defaultVisit.offenderBooking.offender.nomsId)
+      assertThat(visitResponse.commentText).isEqualTo(defaultVisit.commentText)
+      assertThat(visitResponse.visitorConcernText).isEqualTo(defaultVisit.visitorConcernText)
     }
   }
 }

@@ -7,7 +7,6 @@ import javax.persistence.Entity
 @DiscriminatorValue(AgencyLocationType.AGY_LOC_TYPE)
 class AgencyLocationType : ReferenceCode {
   constructor(code: String, description: String) : super(AGY_LOC_TYPE, code, description)
-  constructor(code: String) : super(AGY_LOC_TYPE, code, null)
 
   val isCourt: Boolean
     get() = COURT_TYPE.code == code
