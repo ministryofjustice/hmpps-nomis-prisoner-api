@@ -206,21 +206,11 @@ class VisitResource(private val visitService: VisitService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Pageable list of visits is returned"
+        description = "Pageable list of visit ids is returned"
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "visit does not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -235,12 +225,12 @@ class VisitResource(private val visitService: VisitService) {
     pageRequest: Pageable,
     @RequestParam(value = "prisonIds", required = false)
     @Parameter(
-      description = "Filter results by prison ids",
+      description = "Filter results by prison ids (returns all prisons if not specified)",
       example = "['MDI','LEI']"
     ) prisonIds: List<String>?,
     @RequestParam(value = "visitTypes", required = false)
     @Parameter(
-      description = "Filter results by visitType",
+      description = "Filter results by visitType (returns all types if not specified)",
       example = "['SCON','OFFI']"
     ) visitTypes: List<String>?,
     @RequestParam(value = "fromDateTime", required = false)
