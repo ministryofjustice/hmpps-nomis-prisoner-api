@@ -14,11 +14,11 @@ import javax.persistence.Table
 abstract class InternetAddress {
   @Id
   @Column(name = "INTERNET_ADDRESS_ID", nullable = false)
-  val internetAddressId: Long = 0
+  open val internetAddressId: Long = 0
 
   @Column(name = "INTERNET_ADDRESS_CLASS")
-  val internetAddressClass: String? = null
+  open val internetAddressClass: String? = null
 
   @Column(name = "INTERNET_ADDRESS")
-  val internetAddress: String? = null
+  open val internetAddress: String? = null
 }

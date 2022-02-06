@@ -19,7 +19,7 @@ abstract class Phone {
   @SequenceGenerator(name = "PHONE_ID", sequenceName = "PHONE_ID", allocationSize = 1)
   @GeneratedValue(generator = "PHONE_ID")
   @Column(name = "PHONE_ID", nullable = false)
-  var phoneId: Long = 0
+  open var phoneId: Long = 0
 
   @Column(name = "PHONE_TYPE")
   var phoneType: String? = null

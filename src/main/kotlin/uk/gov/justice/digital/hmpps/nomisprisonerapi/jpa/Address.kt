@@ -31,7 +31,7 @@ abstract class Address {
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
-  val addressId: Long = 0
+  open val addressId: Long = 0
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -45,32 +45,32 @@ abstract class Address {
       ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_TYPE", referencedColumnName = "code"))
     ]
   )
-  val addressType: AddressType? = null
-  val flat: String? = null
-  val premise: String? = null
-  val street: String? = null
-  val locality: String? = null
+  open val addressType: AddressType? = null
+  open val flat: String? = null
+  open val premise: String? = null
+  open val street: String? = null
+  open val locality: String? = null
 
   @Column(name = "POSTAL_CODE")
-  val postalCode: String? = null
+  open val postalCode: String? = null
 
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
-  val noFixedAddressFlag: String? = null
+  open val noFixedAddressFlag: String? = null
 
   @Column(name = "PRIMARY_FLAG", nullable = false)
-  val primaryFlag = "N"
+  open val primaryFlag = "N"
 
   @Column(name = "MAIL_FLAG", nullable = false)
-  val mailFlag = "N"
+  open val mailFlag = "N"
 
   @Column(name = "COMMENT_TEXT")
-  val commentText: String? = null
+  open val commentText: String? = null
 
   @Column(name = "START_DATE")
-  val startDate: LocalDate? = null
+  open val startDate: LocalDate? = null
 
   @Column(name = "END_DATE")
-  val endDate: LocalDate? = null
+  open val endDate: LocalDate? = null
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -84,7 +84,7 @@ abstract class Address {
       ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTY_CODE", referencedColumnName = "code"))
     ]
   )
-  val county: County? = null
+  open val county: County? = null
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -98,7 +98,7 @@ abstract class Address {
       ), JoinColumnOrFormula(column = JoinColumn(name = "CITY_CODE", referencedColumnName = "code"))
     ]
   )
-  val city: City? = null
+  open val city: City? = null
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -112,15 +112,15 @@ abstract class Address {
       ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTRY_CODE", referencedColumnName = "code"))
     ]
   )
-  val country: Country? = null
+  open val country: Country? = null
 
   @OneToMany
   @JoinColumn(name = "ADDRESS_ID")
-  val addressUsages: List<AddressUsage> = ArrayList()
+  open val addressUsages: List<AddressUsage> = ArrayList()
 
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @Where(clause = "OWNER_CLASS = '" + AddressPhone.PHONE_TYPE + "'")
-  val phones: MutableList<AddressPhone> = ArrayList()
+  open val phones: MutableList<AddressPhone> = ArrayList()
 
   fun removePhone(phone: AddressPhone) {
     phones.remove(phone)

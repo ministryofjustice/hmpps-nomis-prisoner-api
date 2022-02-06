@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import java.time.LocalDateTime
 import javax.validation.constraints.NotEmpty
 
@@ -68,6 +69,21 @@ data class VisitResponse(
       description = "Indicates lead visitor for the visit"
     )
     val leadVisitor: Boolean
+  )
+
+  constructor(visitEntity: Visit) : this(
+    visitId = visitEntity.id,
+    offenderNo = visitEntity.offenderBooking.offender.nomsId,
+    prisonId = visitEntity.location.id,
+    startDateTime = LocalDateTime.from(visitEntity.startDateTime),
+    endDateTime = LocalDateTime.from(visitEntity.endDateTime),
+    visitType = VisitResponse.CodeDescription(visitEntity.visitType.code, visitEntity.visitType.description),
+    visitStatus = VisitResponse.CodeDescription(visitEntity.visitStatus.code, visitEntity.visitStatus.description),
+    agencyInternalLocation = visitEntity.agencyInternalLocation?.let { VisitResponse.CodeDescription(it.locationCode, it.description) },
+    commentText = visitEntity.commentText,
+    visitorConcernText = visitEntity.visitorConcernText,
+    visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }.map { visitor -> VisitResponse.Visitor(visitor.person!!.id, visitor.groupLeader) }
+
   )
 
   data class CodeDescription(val code: String, val description: String)

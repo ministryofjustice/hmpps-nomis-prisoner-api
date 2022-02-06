@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.groups.Tuple
+import org.hamcrest.Matchers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -54,7 +55,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
   lateinit var repository: Repository
 
   lateinit var offenderNo: String
-  lateinit var offender: Offender
+  lateinit var offenderAtMoorlands: Offender
+  lateinit var offenderAtLeeds: Offender
+  lateinit var offenderAtBrixton: Offender
   private var offenderBookingId: Long = 0L
   private val threePeople = mutableListOf<Person>()
   private val createVisitWithPeople: () -> CreateVisitRequest = { createVisit(threePeople.map { it.id }) }
@@ -65,7 +68,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         repository.save(PersonBuilder())
       }
     )
-    offender = repository.save(
+    offenderAtMoorlands = repository.save(
       OffenderBuilder()
         .withBooking(
           OffenderBookingBuilder()
@@ -74,8 +77,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
     )
 
-    offenderNo = offender.nomsId
-    offenderBookingId = offender.latestBooking().bookingId
+    offenderNo = offenderAtMoorlands.nomsId
+    offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
   }
 
   @DisplayName("Create")
@@ -88,7 +91,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deleteData() {
-      repository.delete(offender)
+      repository.delete(offenderAtMoorlands)
       repository.delete(threePeople)
     }
 
@@ -232,7 +235,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deleteData() {
-      repository.delete(offender)
+      repository.delete(offenderAtMoorlands)
       repository.delete(threePeople)
     }
 
@@ -374,7 +377,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun createPrisonerWithVisit() {
       val person1 = repository.save(PersonBuilder())
       val person2 = repository.save(PersonBuilder())
-      offender = repository.save(
+      offenderAtMoorlands = repository.save(
         OffenderBuilder(nomsId = "A1234TT")
           .withBooking(
             OffenderBookingBuilder()
@@ -387,18 +390,18 @@ class VisitResourceIntTest : IntegrationTestBase() {
           )
       )
 
-      offenderNo = offender.nomsId
-      offenderBookingId = offender.latestBooking().bookingId
+      offenderNo = offenderAtMoorlands.nomsId
+      offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
     }
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(offender)
+      repository.delete(offenderAtMoorlands)
     }
 
     @Test
     fun `get visit success`() {
-      val visitId = offender.bookings[0].visits[0].id
+      val visitId = offenderAtMoorlands.bookings[0].visits[0].id
       val visit = webTestClient.get().uri("/visits/$visitId")
         .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
         .exchange()
@@ -432,7 +435,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get visit prevents access without appropriate role`() {
-      val visitId = offender.bookings[0].visits[0].id
+      val visitId = offenderAtMoorlands.bookings[0].visits[0].id
       assertThat(
         webTestClient.get().uri("/visits/$visitId")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
@@ -443,9 +446,294 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get visit prevents access without authorization`() {
-      val visitId = offender.bookings[0].visits[0].id
+      val visitId = offenderAtMoorlands.bookings[0].visits[0].id
       assertThat(
         webTestClient.get().uri("/visits/$visitId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      )
+    }
+  }
+
+  @DisplayName("filter Visits")
+  @Nested
+  inner class GetVisitIdsByFilterRequest {
+    @BeforeEach
+    internal fun createPrisonerWithVisits() {
+      val person1 = repository.save(PersonBuilder())
+      val person2 = repository.save(PersonBuilder())
+      offenderAtMoorlands = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "MDI")
+              .withVisits(
+                VisitBuilder(
+                  agyLocId = "MDI",
+                  startDateTimeString = "2022-01-01T09:00",
+                  endDateTimeString = "2022-01-01T10:00"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1),
+                  VisitVisitorBuilder(person2, leadVisitor = true)
+                ),
+                VisitBuilder(
+                  agyLocId = "MDI",
+                  startDateTimeString = "2022-01-01T12:00",
+                  endDateTimeString = "2022-01-01T13:00"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+              )
+          )
+      )
+      offenderAtLeeds = repository.save(
+        OffenderBuilder(nomsId = "A4567TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "LEI")
+              .withVisits(
+                VisitBuilder(
+                  agyLocId = "LEI", startDateTimeString = "2022-01-02T09:00",
+                  endDateTimeString = "2022-01-02T10:00"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+                VisitBuilder(
+                  agyLocId = "LEI", startDateTimeString = "2022-01-02T14:00",
+                  endDateTimeString = "2022-01-02T15:00"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+              )
+          )
+      )
+      offenderAtBrixton = repository.save(
+        OffenderBuilder(nomsId = "A7897TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "BXI")
+              .withVisits(
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2022-01-01T09:00",
+                  endDateTimeString = "2022-01-01T10:00",
+                  visitTypeCode = "OFFI"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2023-01-01T09:00",
+                  endDateTimeString = "2023-01-01T10:00"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2023-02-01T09:00",
+                  endDateTimeString = "2023-02-01T10:00"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2023-03-01T09:00",
+                  endDateTimeString = "2023-03-01T10:00"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+              )
+          )
+      )
+      repository.updateCreatedToMatchVisitStart() // hack to allow easier testing of date ranges (CREATED is not updateable via JPA)
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offenderAtMoorlands)
+      repository.delete(offenderAtLeeds)
+      repository.delete(offenderAtBrixton)
+    }
+
+    @Test
+    fun `get all visit ids - no filter specified`() {
+      webTestClient.get().uri("/visits/ids")
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.numberOfElements").isEqualTo(8)
+    }
+
+    @Test
+    fun `get visit ids by prisons - Leeds`() {
+      val leedsVisitIds = offenderAtLeeds.latestBooking().visits.map { it.id.toInt() }.toTypedArray()
+      webTestClient.get().uri("/visits/ids?prisonIds=LEI")
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.numberOfElements").isEqualTo(2)
+        .jsonPath("$.content..visitId").value(
+          Matchers.contains(
+            *leedsVisitIds
+          )
+        )
+    }
+
+    @Test
+    fun `get visit by prison ID - Leeds and Brixton`() {
+      val brixtonVisitIds = offenderAtBrixton.latestBooking().visits.map { it.id.toInt() }.toTypedArray()
+      val leedsVisitIds = offenderAtLeeds.latestBooking().visits.map { it.id.toInt() }.toTypedArray()
+      webTestClient.get().uri {
+        it.path("/visits/ids")
+          .queryParam("prisonIds", "LEI")
+          .queryParam("prisonIds", "BXI")
+          .queryParam("sort", "location.id,startDateTime,asc")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.content..visitId").value(
+          Matchers.contains(
+            *brixtonVisitIds + leedsVisitIds
+          )
+        )
+    }
+
+    @Test
+    fun `get visit ids by visit type`() {
+      webTestClient.get().uri("/visits/ids?visitTypes=OFFI")
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.content..visitId").value(
+          Matchers.contains(
+            offenderAtBrixton.latestBooking().visits[0].id.toInt()
+          )
+        )
+    }
+
+    @Test
+    fun `get visits starting within a given date and time range`() {
+
+      webTestClient.get().uri {
+        it.path("/visits/ids")
+          .queryParam("fromDateTime", "2022-01-01T09:00:00")
+          .queryParam("toDateTime", "2022-01-01T09:30:00")
+          .queryParam("sort", "location.id,startDateTime,asc")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.content..visitId").value(
+          Matchers.contains(
+            offenderAtBrixton.latestBooking().visits[0].id.toInt(),
+            offenderAtMoorlands.latestBooking().visits[0].id.toInt()
+          )
+        )
+    }
+
+    @Test
+    fun `get visits starting after a given date and time`() {
+
+      webTestClient.get().uri {
+        it.path("/visits/ids")
+          .queryParam("fromDateTime", "2022-10-01T09:00:00")
+          .queryParam("sort", "location.id,startDateTime,asc")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.content..visitId").value(
+          Matchers.contains(
+            offenderAtBrixton.latestBooking().visits[1].id.toInt(),
+            offenderAtBrixton.latestBooking().visits[2].id.toInt(),
+            offenderAtBrixton.latestBooking().visits[3].id.toInt()
+          )
+        )
+    }
+
+    @Test
+    fun `get visits for a prison, in a date range and of type`() {
+
+      webTestClient.get().uri {
+        it.path("/visits/ids")
+          .queryParam("prisonIds", "MDI")
+          .queryParam("visitTypes", "SCON")
+          .queryParam("fromDateTime", "2022-01-01T09:00:00")
+          .queryParam("toDateTime", "2022-01-01T09:30:00")
+          .queryParam("sort", "location.id,startDateTime,asc")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.content..visitId").value(
+          Matchers.contains(
+            offenderAtMoorlands.latestBooking().visits[0].id.toInt()
+          )
+        )
+    }
+
+    @Test
+    fun `can request a different page size`() {
+      webTestClient.get().uri {
+        it.path("/visits/ids")
+          .queryParam("size", "2")
+          .queryParam("sort", "location.id,startDateTime,asc")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(8)
+        .jsonPath("numberOfElements").isEqualTo(2)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(4)
+        .jsonPath("size").isEqualTo(2)
+    }
+
+    @Test
+    fun `can request a different page`() {
+      webTestClient.get().uri {
+        it.path("/visits/ids")
+          .queryParam("size", "2")
+          .queryParam("page", "3")
+          .queryParam("sort", "location.id,startDateTime,asc")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(8)
+        .jsonPath("numberOfElements").isEqualTo(2)
+        .jsonPath("number").isEqualTo(3)
+        .jsonPath("totalPages").isEqualTo(4)
+        .jsonPath("size").isEqualTo(2)
+    }
+
+    @Test
+    fun `get visit prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get().uri("/visits/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden
+      )
+    }
+
+    @Test
+    fun `get visit prevents access without authorization`() {
+      assertThat(
+        webTestClient.get().uri("/visits/ids")
           .exchange()
           .expectStatus().isUnauthorized
       )

@@ -30,13 +30,13 @@ data class AgencyInternalLocation(
   val certifiedFlag: Boolean = false,
 
   @Column(name = "INTERNAL_LOCATION_TYPE")
-  val locationType: String? = null,
+  val locationType: String,
 
   @Column(name = "AGY_LOC_ID")
-  val agencyId: String? = null,
+  val agencyId: String,
 
   @Column(name = "DESCRIPTION")
-  val description: String? = null,
+  val description: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PARENT_INTERNAL_LOCATION_ID")
@@ -53,16 +53,16 @@ data class AgencyInternalLocation(
   val userDescription: String? = null,
 
   @Column(name = "INTERNAL_LOCATION_CODE")
-  val locationCode: String? = null,
+  val locationCode: String,
 
   @Column(name = "CAPACITY")
   val capacity: Int? = null
 ) {
   val isCell: Boolean
-    get() = locationType != null && locationType == "CELL"
+    get() = locationType == "CELL"
   val isCellSwap: Boolean
     get() = !certifiedFlag &&
-      active && parentLocation == null && locationCode != null && locationCode == "CSWAP"
+      active && parentLocation == null && locationCode == "CSWAP"
   val isActiveCell: Boolean
     get() = active && isCell
 
