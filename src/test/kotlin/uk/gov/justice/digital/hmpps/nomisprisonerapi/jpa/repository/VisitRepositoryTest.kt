@@ -119,7 +119,7 @@ class VisitRepositoryTest {
     assertThat(persistedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T14:15"))
     assertThat(persistedVisit.id).isNotNull
     assertThat(persistedVisit.searchLevel!!.description).isEqualTo("Full Search")
-    assertThat(persistedVisit.visitStatus!!.description).isEqualTo("Scheduled")
+    assertThat(persistedVisit.visitStatus.description).isEqualTo("Scheduled")
     assertThat(persistedVisit.visitorConcernText).isEqualTo("visitor concerns")
 
     val visitVisitors = persistedVisit.visitors

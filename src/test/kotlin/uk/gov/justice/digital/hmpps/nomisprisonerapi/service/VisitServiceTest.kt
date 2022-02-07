@@ -16,9 +16,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -44,6 +47,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -435,6 +439,29 @@ internal class VisitServiceTest {
       assertThat(visitResponse.offenderNo).isEqualTo(defaultVisit.offenderBooking.offender.nomsId)
       assertThat(visitResponse.commentText).isEqualTo(defaultVisit.commentText)
       assertThat(visitResponse.visitorConcernText).isEqualTo(defaultVisit.visitorConcernText)
+    }
+
+    @Test
+    fun `visit ids by filter data are mapped correctly`() {
+
+      val visitFilter = VisitFilter(
+        prisonIds = listOf(),
+        visitTypes = listOf(),
+        toDateTime = LocalDateTime.now(),
+        fromDateTime = LocalDateTime.now()
+      )
+      val pageRequest = PageRequest.of(0, 1)
+
+      whenever(visitRepository.findAll(any() as VisitSpecification, any() as PageRequest)).thenReturn(
+        PageImpl(
+          listOf(defaultVisit)
+        )
+      )
+      val visitList = visitService.findVisitIdsByFilter(
+        pageRequest,
+        visitFilter
+      )
+      assertThat(visitList).extracting("visitId").containsExactly(defaultVisit.id)
     }
   }
 }

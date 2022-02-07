@@ -19,16 +19,16 @@ abstract class Phone {
   @SequenceGenerator(name = "PHONE_ID", sequenceName = "PHONE_ID", allocationSize = 1)
   @GeneratedValue(generator = "PHONE_ID")
   @Column(name = "PHONE_ID", nullable = false)
-  var phoneId: Long = 0
+  open var phoneId: Long = 0
 
   @Column(name = "PHONE_TYPE")
-  var phoneType: String? = null
+  open var phoneType: String? = null
 
   @Column(name = "PHONE_NO")
-  var phoneNo: String? = null
+  open var phoneNo: String? = null
 
   @Column(name = "EXT_NO")
-  var extNo: String? = null
+  open var extNo: String? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

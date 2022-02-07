@@ -13,6 +13,8 @@ import java.time.LocalDateTime
 class VisitBuilder(
   var visitTypeCode: String = "SCON",
   var visitStatusCode: String = "SCH",
+  var startDateTimeString: String = "2022-01-01T12:05",
+  var endDateTimeString: String = "2022-01-01T13:05",
   var agyLocId: String = "MDI",
   var visitors: List<VisitVisitorBuilder> = emptyList(),
 ) {
@@ -24,8 +26,8 @@ class VisitBuilder(
   ): Visit =
     Visit(
       offenderBooking = offenderBooking,
-      startDateTime = LocalDateTime.parse("2022-01-01T12:05"),
-      endDateTime = LocalDateTime.parse("2022-01-01T13:05"),
+      startDateTime = LocalDateTime.parse(startDateTimeString),
+      endDateTime = LocalDateTime.parse(endDateTimeString),
       visitType = visitType,
       visitStatus = visitStatus,
       location = agencyLocation,

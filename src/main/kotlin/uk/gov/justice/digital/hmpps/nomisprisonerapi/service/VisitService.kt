@@ -2,13 +2,17 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.SCHEDULED_APPROVED
@@ -30,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.function.Supplier
@@ -269,19 +274,14 @@ class VisitService(
   fun getVisit(visitId: Long): VisitResponse {
     return visitRepository.findByIdOrNull(visitId)?.run {
       return VisitResponse(
-        visitId = this.id,
-        offenderNo = this.offenderBooking.offender.nomsId,
-        prisonId = this.location.id,
-        startDateTime = LocalDateTime.from(this.startDateTime),
-        endDateTime = LocalDateTime.from(this.endDateTime),
-        visitType = VisitResponse.CodeDescription(this.visitType.code, this.visitType.description),
-        visitStatus = VisitResponse.CodeDescription(this.visitStatus.code, this.visitStatus.description),
-        agencyInternalLocation = this.agencyInternalLocation?.let { VisitResponse.CodeDescription(it.locationCode!!, it.description!!) },
-        commentText = this.commentText,
-        visitorConcernText = this.visitorConcernText,
-        visitors = this.visitors.filter { visitor -> visitor.person != null }.map { visitor -> VisitResponse.Visitor(visitor.person!!.id, visitor.groupLeader) }
+        this
       )
     } ?: throw NotFoundException("visit id $visitId")
+  }
+
+  fun findVisitIdsByFilter(pageRequest: Pageable, visitFilter: VisitFilter): Page<VisitIdResponse> {
+    log.info("Visit Id filter request : $visitFilter")
+    return visitRepository.findAll(VisitSpecification(visitFilter), pageRequest).map { VisitIdResponse(it.id) }
   }
 }
 

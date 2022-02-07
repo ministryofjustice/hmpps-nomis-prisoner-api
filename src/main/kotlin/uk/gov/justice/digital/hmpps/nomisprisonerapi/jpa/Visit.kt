@@ -119,6 +119,9 @@ data class Visit(
   /* a list of all visitors including those without visitor orders */
   @OneToMany(mappedBy = "visit", cascade = [CascadeType.ALL])
   val visitors: MutableList<VisitVisitor> = mutableListOf(),
+
+  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now()
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

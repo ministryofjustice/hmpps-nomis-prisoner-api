@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -32,6 +34,8 @@ class Repository(
   val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
   val visitTypeRepository: ReferenceCodeRepository<VisitType>,
 ) {
+  @Autowired
+  var jdbcTemplate: JdbcTemplate? = null
   fun save(offenderBuilder: OffenderBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
 
@@ -103,5 +107,11 @@ class Repository(
   fun changeVisitStatus(visitId: Long?) {
     val visit = visitRepository.findById(visitId!!).orElseThrow()
     visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
+  }
+
+  fun updateCreatedToMatchVisitStart() {
+    val sql =
+      "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
+    jdbcTemplate!!.execute(sql)
   }
 }

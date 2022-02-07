@@ -1,9 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -14,14 +20,18 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.VisitService
+import java.time.LocalDateTime
 import javax.validation.Valid
 import javax.validation.constraints.Pattern
 
@@ -186,4 +196,63 @@ class VisitResource(private val visitService: VisitService) {
     visitId: Long,
   ): VisitResponse =
     visitService.getVisit(visitId)
+
+  @PreAuthorize("hasRole('ROLE_READ_NOMIS')")
+  @GetMapping("/visits/ids")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "get visits by filter",
+    description = "Retrieves a paged list of visits by filter",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Pageable list of visit ids is returned"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun getVisitsByFilter(
+    @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC)
+    pageRequest: Pageable,
+    @RequestParam(value = "prisonIds", required = false)
+    @Parameter(
+      description = "Filter results by prison ids (returns all prisons if not specified)",
+      example = "['MDI','LEI']"
+    ) prisonIds: List<String>?,
+    @RequestParam(value = "visitTypes", required = false)
+    @Parameter(
+      description = "Filter results by visitType (returns all types if not specified)",
+      example = "['SCON','OFFI']"
+    ) visitTypes: List<String>?,
+    @RequestParam(value = "fromDateTime", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    @Parameter(
+      description = "Filter results by visits that start on or after the given timestamp",
+      example = "2021-11-03T09:00:00"
+    ) fromDateTime: LocalDateTime?,
+    @RequestParam(value = "toDateTime", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    @Parameter(
+      description = "Filter results by visits that start on or before the given timestamp",
+      example = "2021-11-03T09:00:00"
+    ) toDateTime: LocalDateTime?
+  ): Page<VisitIdResponse> =
+    visitService.findVisitIdsByFilter(
+      pageRequest = pageRequest,
+      VisitFilter(
+        visitTypes = visitTypes ?: listOf(),
+        prisonIds = prisonIds ?: listOf(),
+        toDateTime = toDateTime,
+        fromDateTime = fromDateTime
+      )
+    )
 }
