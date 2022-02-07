@@ -75,14 +75,14 @@ data class VisitResponse(
     visitId = visitEntity.id,
     offenderNo = visitEntity.offenderBooking.offender.nomsId,
     prisonId = visitEntity.location.id,
-    startDateTime = LocalDateTime.from(visitEntity.startDateTime),
-    endDateTime = LocalDateTime.from(visitEntity.endDateTime),
-    visitType = VisitResponse.CodeDescription(visitEntity.visitType.code, visitEntity.visitType.description),
-    visitStatus = VisitResponse.CodeDescription(visitEntity.visitStatus.code, visitEntity.visitStatus.description),
-    agencyInternalLocation = visitEntity.agencyInternalLocation?.let { VisitResponse.CodeDescription(it.locationCode, it.description) },
+    startDateTime = visitEntity.startDateTime,
+    endDateTime = visitEntity.endDateTime,
+    visitType = CodeDescription(visitEntity.visitType.code, visitEntity.visitType.description),
+    visitStatus = CodeDescription(visitEntity.visitStatus.code, visitEntity.visitStatus.description),
+    agencyInternalLocation = visitEntity.agencyInternalLocation?.let { CodeDescription(it.locationCode, it.description) },
     commentText = visitEntity.commentText,
     visitorConcernText = visitEntity.visitorConcernText,
-    visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }.map { visitor -> VisitResponse.Visitor(visitor.person!!.id, visitor.groupLeader) }
+    visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }.map { visitor -> Visitor(visitor.person!!.id, visitor.groupLeader) }
 
   )
 
