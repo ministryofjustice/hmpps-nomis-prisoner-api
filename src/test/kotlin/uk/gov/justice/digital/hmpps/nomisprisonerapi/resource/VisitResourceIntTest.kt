@@ -721,6 +721,19 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `malformed date returns bad request`() {
+
+      webTestClient.get().uri {
+        it.path("/visits/ids")
+          .queryParam("fromDateTime", "202-10-01T09:00:00")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
     fun `get visit prevents access without appropriate role`() {
       assertThat(
         webTestClient.get().uri("/visits/ids")
