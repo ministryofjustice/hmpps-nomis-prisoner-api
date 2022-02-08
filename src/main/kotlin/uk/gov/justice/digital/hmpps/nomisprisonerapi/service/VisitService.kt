@@ -280,7 +280,7 @@ class VisitService(
   }
 
   fun findVisitIdsByFilter(pageRequest: Pageable, visitFilter: VisitFilter): Page<VisitIdResponse> {
-    log.info("Visit Id filter request : $visitFilter")
+    log.info("Visit Id filter request : $visitFilter with page request $pageRequest")
     return visitRepository.findAll(VisitSpecification(visitFilter), pageRequest).map { VisitIdResponse(it.id) }
   }
 }
