@@ -35,7 +35,7 @@ class Repository(
   val visitTypeRepository: ReferenceCodeRepository<VisitType>,
 ) {
   @Autowired
-  var jdbcTemplate: JdbcTemplate? = null
+  lateinit var jdbcTemplate: JdbcTemplate
   fun save(offenderBuilder: OffenderBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
 
@@ -112,6 +112,6 @@ class Repository(
   fun updateCreatedToMatchVisitStart() {
     val sql =
       "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
-    jdbcTemplate!!.execute(sql)
+    jdbcTemplate.execute(sql)
   }
 }
