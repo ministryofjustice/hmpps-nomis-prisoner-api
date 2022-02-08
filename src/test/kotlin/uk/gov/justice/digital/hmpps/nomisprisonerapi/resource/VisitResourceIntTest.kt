@@ -368,6 +368,27 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody?.userMessage
       ).isEqualTo("Visit status is not scheduled but is NORM")
     }
+
+    @Test
+    fun `Offender does not match`() {
+      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isCreated
+
+      assertThat(
+        webTestClient.put().uri("/prisoners/B1234BB/visits/vsipVisitId/12345/cancel")
+          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody?.userMessage
+      ).isEqualTo("Bad request: Visit's offenderNo = A5194DY does not match argument = B1234BB")
+    }
   }
 
   @DisplayName("Get Visit")

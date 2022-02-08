@@ -9,8 +9,6 @@ class ContactType(code: String, description: String) : ReferenceCode(CONTACTS, c
 
   companion object {
     const val CONTACTS = "CONTACTS"
-    fun pk(code: String): Pk {
-      return Pk(CONTACTS, code)
-    }
+    fun pk(code: String): Pk = Pk(CONTACTS, code)
   }
 }

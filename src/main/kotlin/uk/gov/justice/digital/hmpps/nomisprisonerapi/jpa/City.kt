@@ -8,8 +8,6 @@ import javax.persistence.Entity
 class City(code: String, description: String) : ReferenceCode(CITY, code, description) {
   companion object {
     const val CITY = "CITY"
-    fun pk(code: String): Pk {
-      return Pk(CITY, code)
-    }
+    fun pk(code: String): Pk = Pk(CITY, code)
   }
 }

@@ -8,8 +8,6 @@ import javax.persistence.Entity
 class AddressType(code: String, description: String) : ReferenceCode(ADDR_TYPE, code, description) {
   companion object {
     const val ADDR_TYPE = "ADDR_TYPE"
-    fun pk(code: String): Pk {
-      return Pk(ADDR_TYPE, code)
-    }
+    fun pk(code: String): Pk = Pk(ADDR_TYPE, code)
   }
 }

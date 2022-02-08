@@ -68,11 +68,10 @@ class VisitService(
     val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
       .orElseThrow(NotFoundException(offenderNo))
 
-    val existingVisits = visitRepository.findByVsipVisitId(VSIP_PREFIX + visitDto.vsipVisitId)
-    if (!existingVisits.isEmpty()) {
-      val existingVisit = existingVisits[0]
+    val existingVisit = visitRepository.findOneByVsipVisitId(VSIP_PREFIX + visitDto.vsipVisitId)
+    if (existingVisit.isPresent) {
       val message =
-        "Visit with VSIP visit id = ${visitDto.vsipVisitId}, Nomis visit id = ${existingVisit.id} already exists"
+        "Visit with VSIP visit id = ${visitDto.vsipVisitId}, Nomis visit id = ${existingVisit.get().id} already exists"
       log.error(message)
       throw ConflictException(message)
     }
@@ -85,7 +84,17 @@ class VisitService(
 
     val visit = visitRepository.save(mappedVisit)
 
-    telemetryClient.trackEvent("visit-created", mapOf("visitId" to visit.id.toString()), null)
+    telemetryClient.trackEvent(
+      "visit-created",
+      mapOf(
+        "nomisVisitId" to visit.id.toString(),
+        "vsipVisitId" to visit.vsipVisitId,
+        "offenderNo" to offenderNo,
+        "prisonId" to visitDto.prisonId,
+      ),
+      null
+    )
+    log.debug("Visit created with VSIP visit id = ${visit.vsipVisitId}, Nomis visit id = ${visit.id}")
 
     return CreateVisitResponse(visit.id)
   }
@@ -103,12 +112,18 @@ class VisitService(
     if (visit.visitStatus.code == "CANC") {
       val message =
         "Visit already cancelled, with " + if (visitOrder == null) "no outcome" else "outcome " + visitOrder.outcomeReason?.code
-      log.error("$message for vsip visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      log.error("$message for VSIP visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
       throw ConflictException(message)
     } else if (visit.visitStatus.code != "SCH") {
       val message = "Visit status is not scheduled but is ${visit.visitStatus.code}"
-      log.error("$message for vsip visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      log.error("$message for VSIP visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
       throw ConflictException(message)
+    }
+    if (offenderNo != visit.offenderBooking.offender.nomsId) {
+      val message =
+        "Visit's offenderNo = ${visit.offenderBooking.offender.nomsId} does not match argument = $offenderNo"
+      log.error("$message for VSIP visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      throw BadDataException(message)
     }
 
     val cancelledVisitStatus = visitStatusRepository.findById(VisitStatus.CANCELLED).orElseThrow()
@@ -130,6 +145,18 @@ class VisitService(
 
       cancelBalance(visitOrder, visit.offenderBooking, today)
     }
+
+    telemetryClient.trackEvent(
+      "visit-cancelled",
+      mapOf(
+        "nomisVisitId" to visit.id.toString(),
+        "vsipVisitId" to visit.vsipVisitId,
+        "offenderNo" to offenderNo,
+        "prisonId" to visit.location.id,
+      ),
+      null
+    )
+    log.debug("Visit created with VSIP visit id = ${visit.vsipVisitId}, Nomis visit id = ${visit.id}")
   }
 
   private fun createBalance(
