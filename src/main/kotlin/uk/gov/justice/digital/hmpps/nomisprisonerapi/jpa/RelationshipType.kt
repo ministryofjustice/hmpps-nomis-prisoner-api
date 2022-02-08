@@ -9,8 +9,6 @@ class RelationshipType(code: String, description: String) : ReferenceCode(RELATI
 
   companion object {
     const val RELATIONSHIP = "RELATIONSHIP"
-    fun pk(code: String): Pk {
-      return Pk(RELATIONSHIP, code)
-    }
+    fun pk(code: String): Pk = Pk(RELATIONSHIP, code)
   }
 }

@@ -10,8 +10,6 @@ class VisitType(code: String, description: String) : ReferenceCode(VISIT_TYPE, c
   fun isSocial() = code == "SCON"
   companion object {
     const val VISIT_TYPE = "VISIT_TYPE"
-    fun pk(code: String): Pk {
-      return Pk(VISIT_TYPE, code)
-    }
+    fun pk(code: String): Pk = Pk(VISIT_TYPE, code)
   }
 }

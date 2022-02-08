@@ -8,8 +8,6 @@ import javax.persistence.Entity
 class VisitOutcomeReason(code: String, description: String) : ReferenceCode(VISIT_OUTCOME_REASON, code, description) {
   companion object {
     const val VISIT_OUTCOME_REASON = "MOVE_CANC_RS"
-    fun pk(code: String): Pk {
-      return Pk(VISIT_OUTCOME_REASON, code)
-    }
+    fun pk(code: String): Pk = Pk(VISIT_OUTCOME_REASON, code)
   }
 }

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
@@ -98,9 +98,18 @@ internal class VisitServiceTest {
   )
 
   val visitType = VisitType("SCON", "desc")
-  private val defaultOffender = Offender(nomsId = "A1234FG", lastName = "Smith", gender = Gender("MALE", "Male"))
-  private val defaultOffenderBooking =
-    OffenderBooking(bookingId = offenderBookingId, bookingBeginDate = LocalDateTime.now(), offender = defaultOffender)
+  private val defaultOffender = Offender(nomsId = offenderNo, lastName = "Smith", gender = Gender("MALE", "Male"))
+  val defaultOffenderBooking = OffenderBooking(
+    bookingId = offenderBookingId,
+    offender = defaultOffender,
+    bookingBeginDate = LocalDateTime.now()
+  ).apply { // add circular reference
+    visitBalance = OffenderVisitBalance(
+      offenderBooking = this,
+      remainingVisitOrders = 3,
+      remainingPrivilegedVisitOrders = 5,
+    )
+  }
   val defaultVisit = Visit(
     id = visitId,
     visitStatus = VisitStatus("SCH", "desc"),
@@ -121,16 +130,9 @@ internal class VisitServiceTest {
     ),
     commentText = "some comments",
     visitorConcernText = "concerns"
-  )
-
-  init { // add circular references
-    defaultOffenderBooking.visitBalance = OffenderVisitBalance(
-      offenderBooking = defaultOffenderBooking,
-      remainingVisitOrders = 3,
-      remainingPrivilegedVisitOrders = 5,
-    )
-    defaultVisit.visitors.add(VisitVisitor(offenderBooking = defaultOffenderBooking, visit = defaultVisit))
-    defaultVisit.visitors.add(VisitVisitor(person = Person(-7L, "First", "Last"), visit = defaultVisit))
+  ).apply { // add circular reference
+    visitors.add(VisitVisitor(visit = this, offenderBooking = defaultOffenderBooking))
+    visitors.add(VisitVisitor(visit = this, person = Person(-7L, "First", "Last")))
   }
 
   @BeforeEach
@@ -264,7 +266,7 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
 
       verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNull() })
-      verify(offenderVisitBalanceAdjustmentRepository, times(0)).save(any())
+      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
 
     @Test
@@ -276,7 +278,7 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
 
       verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNull() })
-      verify(offenderVisitBalanceAdjustmentRepository, times(0)).save(any())
+      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
 
     @Test
@@ -404,7 +406,7 @@ internal class VisitServiceTest {
 
       visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
-      verify(offenderVisitBalanceAdjustmentRepository, times(0)).save(any())
+      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
 
     @Test
@@ -416,7 +418,7 @@ internal class VisitServiceTest {
 
       visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
 
-      verify(offenderVisitBalanceAdjustmentRepository, times(0)).save(any())
+      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
   }
 
