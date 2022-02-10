@@ -217,7 +217,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `cancel visit success`() {
       val visitId = createVisit()
 
-      webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/${visitId}/cancel")
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/$visitId/cancel")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
@@ -277,7 +277,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visitId = createVisit()
 
       assertThat(
-        webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/${visitId}/cancel")
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "NOT-A-CANC-REASON" }"""))
@@ -292,7 +292,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `cancel already cancelled or other status`() {
       val visitId = createVisit()
 
-      webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/${visitId}/cancel")
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/$visitId/cancel")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
@@ -300,7 +300,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       assertThat(
-        webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/${visitId}/cancel")
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "OFFCANC" }"""))
@@ -313,7 +313,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       repository.changeVisitStatus(visitId)
 
       assertThat(
-        webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/${visitId}/cancel")
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/nomisVisitId/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
@@ -329,7 +329,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visitId = createVisit()
 
       assertThat(
-        webTestClient.put().uri("/prisoners/B1234BB/visits/nomisVisitId/${visitId}/cancel")
+        webTestClient.put().uri("/prisoners/B1234BB/visits/nomisVisitId/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
