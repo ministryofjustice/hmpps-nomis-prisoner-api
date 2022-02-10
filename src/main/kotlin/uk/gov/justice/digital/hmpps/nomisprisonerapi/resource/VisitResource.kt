@@ -103,7 +103,7 @@ class VisitResource(private val visitService: VisitService) {
     visitService.createVisit(offenderNo, createVisitRequest)
 
   @PreAuthorize("hasRole('ROLE_UPDATE_NOMIS')")
-  @PutMapping("/prisoners/{offenderNo}/visits/vsipVisitId/{vsipVisitId}/cancel")
+  @PutMapping("/prisoners/{offenderNo}/visits/nomisVisitId/{nomisVisitId}/cancel")
   @Operation(
     summary = "Cancel a visit",
     responses = [
@@ -148,12 +148,12 @@ class VisitResource(private val visitService: VisitService) {
     @PathVariable
     @Pattern(regexp = OFFENDER_NO_PATTERN)
     offenderNo: String,
-    @Schema(description = "VSIP Visit Id", required = true)
+    @Schema(description = "Nomis Visit Id", required = true)
     @PathVariable
-    vsipVisitId: String,
+    nomisVisitId: Long,
     @RequestBody @Valid cancelVisitRequest: CancelVisitRequest
   ) {
-    visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+    visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
   }
 
   @PreAuthorize("hasRole('ROLE_READ_NOMIS')")
@@ -191,7 +191,7 @@ class VisitResource(private val visitService: VisitService) {
     ]
   )
   fun getVisit(
-    @Schema(description = "Visit Id", example = "12345", required = true)
+    @Schema(description = "Nomis Visit Id", example = "12345", required = true)
     @PathVariable
     visitId: Long,
   ): VisitResponse =

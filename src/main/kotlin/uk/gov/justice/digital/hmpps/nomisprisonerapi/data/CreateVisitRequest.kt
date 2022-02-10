@@ -17,7 +17,7 @@ data class CreateVisitRequest(
   @NotNull
   val startDateTime: LocalDateTime,
 
-  @Schema(description = "Visit end time", required = true)
+  @Schema(description = "Visit end time", required = true, format = "HH:MM") // TODO test!
   @NotNull
   val endTime: LocalTime,
 
@@ -39,8 +39,4 @@ data class CreateVisitRequest(
   @Schema(description = "Issue date", required = true)
   @NotNull
   val issueDate: LocalDate,
-
-  @Schema(description = "VSIP visit id to allow mapping of nomis to VSIP visits", required = true)
-  @NotBlank
-  val vsipVisitId: String,
 )

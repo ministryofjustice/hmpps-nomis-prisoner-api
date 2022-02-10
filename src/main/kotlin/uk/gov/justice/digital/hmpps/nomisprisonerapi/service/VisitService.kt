@@ -60,21 +60,12 @@ class VisitService(
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
-    const val VSIP_PREFIX = "VSIP_"
   }
 
   fun createVisit(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
 
     val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
       .orElseThrow(NotFoundException(offenderNo))
-
-    val existingVisit = visitRepository.findOneByVsipVisitId(VSIP_PREFIX + visitDto.vsipVisitId)
-    if (existingVisit.isPresent) {
-      val message =
-        "Visit with VSIP visit id = ${visitDto.vsipVisitId}, Nomis visit id = ${existingVisit.get().id} already exists"
-      log.error(message)
-      throw ConflictException(message)
-    }
 
     val mappedVisit = mapVisitModel(visitDto, offenderBooking)
 
@@ -88,22 +79,21 @@ class VisitService(
       "visit-created",
       mapOf(
         "nomisVisitId" to visit.id.toString(),
-        "vsipVisitId" to visit.vsipVisitId,
         "offenderNo" to offenderNo,
         "prisonId" to visitDto.prisonId,
       ),
       null
     )
-    log.debug("Visit created with VSIP visit id = ${visit.vsipVisitId}, Nomis visit id = ${visit.id}")
+    log.debug("Visit created with Nomis visit id = ${visit.id}")
 
     return CreateVisitResponse(visit.id)
   }
 
-  fun cancelVisit(offenderNo: String, vsipVisitId: String, visitDto: CancelVisitRequest) {
+  fun cancelVisit(offenderNo: String, nomisVisitId: Long, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
 
-    val visit = visitRepository.findOneByVsipVisitId(VSIP_PREFIX + vsipVisitId)
-      .orElseThrow(NotFoundException("VSIP visit id $vsipVisitId not found"))
+    val visit = visitRepository.findById(nomisVisitId)
+      .orElseThrow(NotFoundException("Nomis visit id $nomisVisitId not found"))
 
     val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome))
       .orElseThrow(BadDataException("Invalid cancellation reason: ${visitDto.outcome}"))
@@ -112,17 +102,17 @@ class VisitService(
     if (visit.visitStatus.code == "CANC") {
       val message =
         "Visit already cancelled, with " + if (visitOrder == null) "no outcome" else "outcome " + visitOrder.outcomeReason?.code
-      log.error("$message for VSIP visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      log.error("$message for Nomis visit id = ${visit.id}")
       throw ConflictException(message)
     } else if (visit.visitStatus.code != "SCH") {
       val message = "Visit status is not scheduled but is ${visit.visitStatus.code}"
-      log.error("$message for VSIP visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      log.error("$message for Nomis visit id = ${visit.id}")
       throw ConflictException(message)
     }
     if (offenderNo != visit.offenderBooking.offender.nomsId) {
       val message =
         "Visit's offenderNo = ${visit.offenderBooking.offender.nomsId} does not match argument = $offenderNo"
-      log.error("$message for VSIP visit id = $vsipVisitId, Nomis visit id = ${visit.id}")
+      log.error("$message for Nomis visit id = ${visit.id}")
       throw BadDataException(message)
     }
 
@@ -150,13 +140,12 @@ class VisitService(
       "visit-cancelled",
       mapOf(
         "nomisVisitId" to visit.id.toString(),
-        "vsipVisitId" to visit.vsipVisitId,
         "offenderNo" to offenderNo,
         "prisonId" to visit.location.id,
       ),
       null
     )
-    log.debug("Visit created with VSIP visit id = ${visit.vsipVisitId}, Nomis visit id = ${visit.id}")
+    log.debug("Visit with Nomis visit id = ${visit.id} cancelled")
   }
 
   private fun createBalance(
@@ -264,7 +253,6 @@ class VisitService(
       visitType = visitType,
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       location = location,
-      vsipVisitId = VSIP_PREFIX + visitDto.vsipVisitId
     )
   }
 
@@ -300,9 +288,7 @@ class VisitService(
 
   fun getVisit(visitId: Long): VisitResponse {
     return visitRepository.findByIdOrNull(visitId)?.run {
-      return VisitResponse(
-        this
-      )
+      return VisitResponse(this)
     } ?: throw NotFoundException("visit id $visitId")
   }
 

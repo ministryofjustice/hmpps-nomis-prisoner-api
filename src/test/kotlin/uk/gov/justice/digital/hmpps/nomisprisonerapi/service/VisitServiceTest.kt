@@ -55,7 +55,7 @@ import java.util.Optional
 
 private const val offenderBookingId = -9L
 private const val visitId = -8L
-private const val vsipVisitId = "1008"
+private const val nomisVisitId = 1008L
 private const val offenderNo = "A1234AA"
 private const val prisonId = "SWI"
 private const val eventId = 34L
@@ -177,8 +177,6 @@ internal class VisitServiceTest {
       endTime = LocalTime.parse("13:04"),
       prisonId = prisonId,
       visitorPersonIds = listOf(45L, 46L),
-      // visitRoomId = roomId,
-      vsipVisitId = "12345",
       issueDate = LocalDate.parse("2021-11-02"),
     )
 
@@ -197,7 +195,6 @@ internal class VisitServiceTest {
           assertThat(visit.visitType).isEqualTo(visitType)
           assertThat(visit.visitStatus.code).isEqualTo("SCH")
           assertThat(visit.location.id).isEqualTo(prisonId)
-          assertThat(visit.vsipVisitId).isEqualTo(VisitService.VSIP_PREFIX + "12345")
         }
       )
     }
@@ -212,7 +209,7 @@ internal class VisitServiceTest {
           offenderBooking = OffenderBooking(
             bookingId = offenderBookingId,
             bookingBeginDate = LocalDateTime.now(),
-            offender = defaultOffender
+            offender = defaultOffender,
           ),
         )
 
@@ -341,9 +338,9 @@ internal class VisitServiceTest {
     @Test
     fun `visit data is amended correctly`() {
 
-      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
 
       with(defaultVisit) {
         assertThat(visitStatus.code).isEqualTo("CANC")
@@ -366,9 +363,9 @@ internal class VisitServiceTest {
 
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
-      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -383,9 +380,9 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance increment is saved correctly`() {
 
-      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -402,9 +399,9 @@ internal class VisitServiceTest {
 
       defaultVisit.offenderBooking.visitBalance = null
 
-      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
@@ -414,9 +411,9 @@ internal class VisitServiceTest {
 
       defaultVisit.visitOrder = null
 
-      whenever(visitRepository.findOneByVsipVisitId("VSIP_" + vsipVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, vsipVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
