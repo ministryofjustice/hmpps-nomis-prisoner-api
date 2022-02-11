@@ -54,8 +54,7 @@ import java.time.LocalTime
 import java.util.Optional
 
 private const val offenderBookingId = -9L
-private const val visitId = -8L
-private const val nomisVisitId = 1008L
+private const val visitId = 1008L
 private const val offenderNo = "A1234AA"
 private const val prisonId = "SWI"
 private const val eventId = 34L
@@ -338,9 +337,9 @@ internal class VisitServiceTest {
     @Test
     fun `visit data is amended correctly`() {
 
-      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
 
       with(defaultVisit) {
         assertThat(visitStatus.code).isEqualTo("CANC")
@@ -363,9 +362,9 @@ internal class VisitServiceTest {
 
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
-      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -380,9 +379,9 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance increment is saved correctly`() {
 
-      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -399,9 +398,9 @@ internal class VisitServiceTest {
 
       defaultVisit.offenderBooking.visitBalance = null
 
-      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
@@ -411,9 +410,9 @@ internal class VisitServiceTest {
 
       defaultVisit.visitOrder = null
 
-      whenever(visitRepository.findById(nomisVisitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, nomisVisitId, cancelVisitRequest)
+      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
