@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.0.3-beta"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.0.3"
   kotlin("plugin.spring") version "1.6.10"
   kotlin("plugin.jpa") version "1.6.10"
   idea
@@ -19,9 +19,9 @@ dependencies {
   implementation("org.flywaydb:flyway-core:8.4.4")
   implementation("com.vladmihalcea:hibernate-types-52:2.14.0")
 
-  implementation("org.springdoc:springdoc-openapi-ui:1.6.5")
-  implementation("org.springdoc:springdoc-openapi-kotlin:1.6.5")
-  implementation("org.springdoc:springdoc-openapi-data-rest:1.6.5")
+  implementation("org.springdoc:springdoc-openapi-ui:1.6.6")
+  implementation("org.springdoc:springdoc-openapi-kotlin:1.6.6")
+  implementation("org.springdoc:springdoc-openapi-data-rest:1.6.6")
 
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
 
