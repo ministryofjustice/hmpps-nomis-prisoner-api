@@ -41,7 +41,6 @@ private val createVisit: (visitorPersonIds: List<Long>) -> CreateVisitRequest =
       endTime = LocalTime.parse("13:04"),
       prisonId = prisonId,
       visitorPersonIds = visitorPersonIds,
-      vsipVisitId = "12345",
       issueDate = LocalDate.parse("2021-11-02"),
     )
   }
@@ -168,7 +167,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [$personIds],
             "visitRoomId"       : "VISIT",
-            "vsipVisitId"       : "12345",
             "issueDate"         : "2021-11-02"
           }"""
           )
@@ -184,7 +182,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
       assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
-      assertThat(visit.vsipVisitId).isEqualTo("VSIP_12345")
       assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
         Tuple.tuple(null, "SCH"),
         Tuple.tuple(threePeople[0].id, "SCH"),
@@ -199,29 +196,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .containsExactly(
           Tuple.tuple(offenderBookingId, -1),
         )
-    }
-
-    @Test
-    fun `create when visit already exists`() {
-      val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createVisitWithPeople()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(CreateVisitResponse::class.java)
-        .returnResult().responseBody
-
-      assertThat(
-        webTestClient.post().uri("/prisoners/$offenderNo/visits")
-          .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(createVisitWithPeople()))
-          .exchange()
-          .expectStatus().isEqualTo(409)
-          .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody?.userMessage
-      ).isEqualTo("Visit with VSIP visit id = 12345, Nomis visit id = ${response?.visitId} already exists")
     }
   }
 
@@ -241,16 +215,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `cancel visit success`() {
-      val visitId = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createVisitWithPeople()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(CreateVisitResponse::class.java)
-        .returnResult().responseBody?.visitId
+      val visitId = createVisit()
 
-      webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
@@ -292,7 +259,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `cancel visit with visit id not found`() {
       assertThat(
-        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/does-not-exist/cancel")
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/9999/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -302,20 +269,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody(ErrorResponse::class.java)
           .returnResult().responseBody?.userMessage
-      ).isEqualTo("Not Found: VSIP visit id does-not-exist not found")
+      ).isEqualTo("Not Found: Nomis visit id 9999 not found")
     }
 
     @Test
     fun `cancel visit with invalid cancellation reason`() {
-      webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createVisitWithPeople()))
-        .exchange()
-        .expectStatus().isCreated
+      val visitId = createVisit()
 
       assertThat(
-        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "NOT-A-CANC-REASON" }"""))
@@ -328,16 +290,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `cancel already cancelled or other status`() {
-      val visitId = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createVisitWithPeople()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(CreateVisitResponse::class.java)
-        .returnResult().responseBody?.visitId
+      val visitId = createVisit()
 
-      webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
         .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
@@ -345,7 +300,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       assertThat(
-        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "OFFCANC" }"""))
@@ -358,7 +313,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       repository.changeVisitStatus(visitId)
 
       assertThat(
-        webTestClient.put().uri("/prisoners/$offenderNo/visits/vsipVisitId/12345/cancel")
+        webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
@@ -371,15 +326,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `Offender does not match`() {
-      webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createVisitWithPeople()))
-        .exchange()
-        .expectStatus().isCreated
+      val visitId = createVisit()
 
       assertThat(
-        webTestClient.put().uri("/prisoners/B1234BB/visits/vsipVisitId/12345/cancel")
+        webTestClient.put().uri("/prisoners/B1234BB/visits/$visitId/cancel")
           .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
@@ -390,6 +340,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
       ).isEqualTo("Bad request: Visit's offenderNo = A5194DY does not match argument = B1234BB")
     }
   }
+
+  private fun createVisit() = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+    .headers(setAuthorisation(roles = listOf("ROLE_UPDATE_NOMIS")))
+    .contentType(MediaType.APPLICATION_JSON)
+    .body(BodyInserters.fromValue(createVisitWithPeople()))
+    .exchange()
+    .expectStatus().isCreated
+    .expectBody(CreateVisitResponse::class.java)
+    .returnResult().responseBody?.visitId
 
   @DisplayName("Get Visit")
   @Nested
