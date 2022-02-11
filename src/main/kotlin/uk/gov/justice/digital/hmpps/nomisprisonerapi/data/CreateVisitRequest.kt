@@ -17,7 +17,7 @@ data class CreateVisitRequest(
   @NotNull
   val startDateTime: LocalDateTime,
 
-  @Schema(description = "Visit end time", required = true, type = "string", pattern= "HH:mm", example = "14:30")
+  @Schema(description = "Visit end time", required = true, type = "string", pattern = "HH:mm", example = "14:30")
   @NotNull
   val endTime: LocalTime,
 
