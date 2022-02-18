@@ -221,7 +221,7 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(-1)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
-          assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP for an on-line visit booking")
+          assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
         }
       )
     }
@@ -238,7 +238,7 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isNull()
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(-1)
-          assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP for an on-line visit booking")
+          assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
         }
       )
     }
