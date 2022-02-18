@@ -97,7 +97,7 @@ internal class VisitServiceTest {
   )
 
   val visitType = VisitType("SCON", "desc")
-  private val defaultOffender = Offender(nomsId = offenderNo, lastName = "Smith", gender = Gender("MALE", "Male"))
+  val defaultOffender = Offender(nomsId = offenderNo, lastName = "Smith", gender = Gender("MALE", "Male"))
   val defaultOffenderBooking = OffenderBooking(
     bookingId = offenderBookingId,
     offender = defaultOffender,
@@ -244,11 +244,11 @@ internal class VisitServiceTest {
     }
 
     @Test
-    fun `No visit order or balance adjustment is created when no balance available`() {
+    fun `Visit order and balance adjustment is still created when balance is negative`() {
 
       defaultVisit.offenderBooking.visitBalance =
         OffenderVisitBalance(
-          remainingVisitOrders = 0,
+          remainingVisitOrders = -1,
           remainingPrivilegedVisitOrders = 0,
           offenderBooking = OffenderBooking(
             bookingId = offenderBookingId,
@@ -259,10 +259,10 @@ internal class VisitServiceTest {
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
+      visitService.createVisit(offenderNo, createVisitRequest)
 
-      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNull() })
-      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
+      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
+      verify(offenderVisitBalanceAdjustmentRepository).save(any())
     }
 
     @Test

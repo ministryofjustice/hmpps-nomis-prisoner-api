@@ -167,7 +167,7 @@ class VisitService(
             adjustReasonCode = adjustReasonCode,
             remainingPrivilegedVisitOrders = -1,
             previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
-            commentText = "Created by VSIP for an on-line visit booking",
+            commentText = "Created by VSIP",
           )
         )
         visit.visitOrder = VisitOrder(
@@ -178,9 +178,10 @@ class VisitService(
           issueDate = visitDto.issueDate,
           expiryDate = visitDto.issueDate.plusDays(28),
         )
-      } else if (offenderVisitBalance.remainingVisitOrders!! > 0) {
+      } else {
         val adjustReasonCode =
           visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow()
+
         offenderVisitBalanceAdjustmentRepository.save(
           OffenderVisitBalanceAdjustment(
             offenderBooking = offenderBooking,
@@ -188,7 +189,7 @@ class VisitService(
             adjustReasonCode = adjustReasonCode,
             remainingVisitOrders = -1,
             previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
-            commentText = "Created by VSIP for an on-line visit booking",
+            commentText = "Created by VSIP",
           )
         )
         visit.visitOrder = VisitOrder(
