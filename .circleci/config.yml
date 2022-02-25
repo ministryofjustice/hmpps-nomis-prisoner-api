@@ -45,7 +45,7 @@ jobs:
           docker buildx build \
             --build-arg BUILD_NUMBER=$APP_VERSION \
             --build-arg GIT_REF=$CIRCLE_SHA1 \
-            --platform linux/amd64 \
+            --platform linux/arm64/v8,linux/amd64 \
             --tag your-username/multiarch-example:buildx-latest .
 workflows:
   version: 2
