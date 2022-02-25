@@ -35,32 +35,14 @@ jobs:
           path: build/reports
   build_docker:
     docker:
-      - image: cimg/base:stable
+      - image: jdrouet/docker-with-buildx:stable
     steps:
       - setup_remote_docker:
           version: 20.10.6
-      - run: mkdir -vp ~/.docker/cli-plugins/
-      - run: curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
-      - run: chmod a+x ~/.docker/cli-plugins/docker-buildx
-      - run: docker buildx version
       - checkout
-      - hmpps/create_app_version
-      - run:
-          name: Create IMAGE_NAME env var
-          command: |
-            IMAGE_NAME="quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}"
-            echo "export IMAGE_NAME=$IMAGE_NAME" >> $BASH_ENV
-            echo $IMAGE_NAME
-      - run:
-          name: "Setup custom environment variables"
-          command: echo 'export MY_ENV_VAR="FOO"' >> $BASH_ENV
-      - run:
-          name: "What was my custom environment variable?"
-          command: echo ${MY_ENV_VAR}
-      - run:
-          name: "What was my custom environment variable?"
-          command: echo ${IMAGE_NAME}
       - run: |
+          export APP_VERSION="multiplatform"
+          export IMAGE_NAME="quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}"
           docker buildx build . \
             --platform linux/amd64,linux/arm64 \
             --build-arg BUILD_NUMBER=$APP_VERSION \
