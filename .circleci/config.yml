@@ -39,32 +39,14 @@ jobs:
       - setup_remote_docker:
           version: 19.03.14
       - checkout
-      - hmpps/create_app_version
-      - run:
-          name: Create IMAGE_NAME env var
-          command: |
-            IMAGE_NAME="quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}"
-            echo "export IMAGE_NAME=quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}" >> $BASH_ENV
       - run: |
           ssh remote-docker \<<EOF
             sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
             sudo systemctl restart docker
             sudo docker info
           EOF
-          - run: |
-            docker buildx build . --pull \
-              --platform linux/amd64 \
-              --rm=false \
-              --build-arg BUILD_NUMBER=$APP_VERSION \
-              --build-arg GIT_REF=$CIRCLE_SHA1 \
-              --tag "${IMAGE_NAME}:${APP_VERSION}" \
-              --label "maintainer=dps-hmpps@digital.justice.gov.uk" \
-              --label "app.version=${APP_VERSION}" \
-              --label "build.version=${APP_VERSION}" \
-              --label "build.number=${CIRCLE_BUILD_NUM}" \
-              --label "build.url=${CIRCLE_BUILD_URL}" \
-              --label "build.gitref=${CIRCLE_SHA1}" 
-
+      - run: |
+          docker buildx build .
 workflows:
   version: 2
   build-test-and-deploy:
