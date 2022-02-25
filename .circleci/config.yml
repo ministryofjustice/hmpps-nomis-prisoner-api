@@ -35,7 +35,7 @@ jobs:
           path: build/reports
   build_docker:
     docker:
-      - image: jdrouet/docker-with-buildx:stable
+      - image: cimg/node:17.2.0
     steps:
       - setup_remote_docker:
           version: 20.10.6
