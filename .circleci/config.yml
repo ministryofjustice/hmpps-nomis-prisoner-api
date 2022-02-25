@@ -34,7 +34,8 @@ jobs:
       - store_artifacts:
           path: build/reports
   build_docker:
-    executor: default
+    docker:
+      - image: cimg/base:stable
     steps:
       - setup_remote_docker:
           version: 20.10.6
