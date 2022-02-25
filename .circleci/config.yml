@@ -49,6 +49,7 @@ jobs:
             echo $IMAGE_NAME
       - run: |
           echo "IMAGE_NAME=${IMAGE_NAME}"
+          echo $IMAGE_NAME
           echo "APP_VERSION=${APP_VERSION}"
           echo "CIRCLE_BUILD_NUM=${CIRCLE_BUILD_NUM}"
       - run: |
