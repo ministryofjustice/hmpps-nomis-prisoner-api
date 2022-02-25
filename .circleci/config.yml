@@ -54,9 +54,8 @@ jobs:
             sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
             sudo systemctl restart docker
             sudo docker info
+            sudo docker buildx create --use 
           EOF
-      - run: |
-          docker buildx create --use \
       - run: |
           docker buildx build . \
             --platform linux/amd64,linux/arm64 \
