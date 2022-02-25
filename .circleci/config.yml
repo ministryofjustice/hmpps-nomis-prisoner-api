@@ -43,6 +43,8 @@ jobs:
       - run: |
           export APP_VERSION="multiplatform"
           export IMAGE_NAME="quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}"
+          docker context create whatever
+          docker buildx create whatever
           docker buildx create --use
           docker buildx build . \
             --platform linux/amd64,linux/arm64 \
