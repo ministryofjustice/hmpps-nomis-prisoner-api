@@ -49,6 +49,10 @@ jobs:
       - mem/remember:
           env_var: IMAGE_NAME
           value: "${IMAGE_NAME}"
+      - mem/recall:
+          env_var: IMAGE_NAME
+      - mem/recall:
+          env_var: APP_VERSION
       - run: |
           echo "IMAGE_NAME=${IMAGE_NAME}"
           echo "APP_VERSION=${APP_VERSION}"
