@@ -48,6 +48,12 @@ jobs:
             echo "export IMAGE_NAME=$IMAGE_NAME" >> $BASH_ENV
             echo $IMAGE_NAME
       - run:
+          name: "Setup custom environment variables"
+          command: echo 'export MY_ENV_VAR="FOO"' >> $BASH_ENV
+      - run:
+          name: "What was my custom environment variable?"
+          command: echo ${MY_ENV_VAR}
+      - run:
           name: "What was my custom environment variable?"
           command: echo ${IMAGE_NAME}
       - run: |
