@@ -41,7 +41,10 @@ jobs:
       - setup_remote_docker:
           version: 18.09.3
       - run: |
+          export APP_VERSION=multiplatform
           docker buildx build \
+            --build-arg BUILD_NUMBER=$APP_VERSION \
+            --build-arg GIT_REF=$CIRCLE_SHA1 \
             --platform linux/arm/v7,linux/arm64/v8,linux/amd64 \
             --tag your-username/multiarch-example:buildx-latest .
 workflows:
