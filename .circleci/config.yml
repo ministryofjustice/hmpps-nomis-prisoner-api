@@ -46,13 +46,7 @@ jobs:
           command: |
             IMAGE_NAME="quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}"
             echo "export IMAGE_NAME=$IMAGE_NAME" >> $BASH_ENV
-      - mem/remember:
-          env_var: IMAGE_NAME
-          value: "${IMAGE_NAME}"
-      - mem/recall:
-          env_var: IMAGE_NAME
-      - mem/recall:
-          env_var: APP_VERSION
+            echo $IMAGE_NAME
       - run: |
           echo "IMAGE_NAME=${IMAGE_NAME}"
           echo "APP_VERSION=${APP_VERSION}"
