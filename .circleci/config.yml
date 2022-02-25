@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   hmpps: ministryofjustice/hmpps@3.12
+  mem: circleci/rememborb@0.0.1
 
 parameters:
   alerts-slack-channel:
@@ -37,8 +38,17 @@ jobs:
       - image: cimg/base:stable
     steps:
       - setup_remote_docker:
-          version: 19.03.14
+          version: 20.10.6
       - checkout
+      - hmpps/create_app_version
+      - run:
+          name: Create IMAGE_NAME env var
+          command: |
+            IMAGE_NAME="quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}"
+            echo "export IMAGE_NAME=$IMAGE_NAME" >> $BASH_ENV
+      - mem/remember:
+          env_var: IMAGE_NAME
+          value: "${IMAGE_NAME}"
       - run: |
           ssh remote-docker \<<EOF
             sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
@@ -46,7 +56,11 @@ jobs:
             sudo docker info
           EOF
       - run: |
-          docker buildx build .
+          docker buildx build . \
+            --build-arg BUILD_NUMBER=$APP_VERSION \
+            --build-arg GIT_REF=$CIRCLE_SHA1 \
+            --tag "${IMAGE_NAME}:${APP_VERSION}" \
+
 workflows:
   version: 2
   build-test-and-deploy:
