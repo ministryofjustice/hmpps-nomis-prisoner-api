@@ -50,6 +50,10 @@ jobs:
           env_var: IMAGE_NAME
           value: "${IMAGE_NAME}"
       - run: |
+          echo "IMAGE_NAME=${IMAGE_NAME}"
+          echo "APP_VERSION=${APP_VERSION}"
+          echo "CIRCLE_BUILD_NUM=${CIRCLE_BUILD_NUM}"
+      - run: |
           docker buildx build . \
             --platform linux/amd64,linux/arm64 \
             --build-arg BUILD_NUMBER=$APP_VERSION \
