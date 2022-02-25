@@ -47,11 +47,9 @@ jobs:
             IMAGE_NAME="quay.io/hmpps/${CIRCLE_PROJECT_REPONAME}"
             echo "export IMAGE_NAME=$IMAGE_NAME" >> $BASH_ENV
             echo $IMAGE_NAME
-      - run: |
-          echo "IMAGE_NAME=${IMAGE_NAME}"
-          echo $IMAGE_NAME
-          echo "APP_VERSION=${APP_VERSION}"
-          echo "CIRCLE_BUILD_NUM=${CIRCLE_BUILD_NUM}"
+      - run:
+          name: "What was my custom environment variable?"
+          command: echo ${IMAGE_NAME}
       - run: |
           docker buildx build . \
             --platform linux/amd64,linux/arm64 \
