@@ -57,6 +57,7 @@ jobs:
           EOF
       - run: |
           docker buildx build . \
+            --platform linux/amd64,linux/arm64 \
             --build-arg BUILD_NUMBER=$APP_VERSION \
             --build-arg GIT_REF=$CIRCLE_SHA1 \
             --tag "${IMAGE_NAME}:${APP_VERSION}" \
