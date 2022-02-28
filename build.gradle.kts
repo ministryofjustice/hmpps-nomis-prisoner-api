@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.0.3"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.0.4"
   kotlin("plugin.spring") version "1.6.10"
   kotlin("plugin.jpa") version "1.6.10"
   idea
@@ -16,7 +16,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
-  implementation("org.flywaydb:flyway-core:8.4.4")
+  implementation("org.flywaydb:flyway-core:8.5.1")
   implementation("com.vladmihalcea:hibernate-types-52:2.14.0")
 
   implementation("org.springdoc:springdoc-openapi-ui:1.6.6")
@@ -34,7 +34,7 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin:4.1.1")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("org.mockito:mockito-inline:4.3.1")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.0.29")
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.0.30")
   testImplementation("org.springframework.security:spring-security-test")
 }
 
