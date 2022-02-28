@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
 import io.swagger.v3.parser.OpenAPIV3Parser
+import net.minidev.json.JSONArray
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -62,5 +63,38 @@ class OpenApiDocsTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectBody().jsonPath("info.version").isEqualTo(DateTimeFormatter.ISO_DATE.format(LocalDate.now()))
+  }
+
+  @Test
+  fun `the generated swagger for date times hasn't got the time zone`() {
+    webTestClient.get()
+      .uri("/v3/api-docs")
+      .accept(MediaType.APPLICATION_JSON)
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.example").isEqualTo("2021-07-05T10:35:17")
+      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.description")
+      .isEqualTo("Visit start date and time")
+      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.type").isEqualTo("string")
+      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.pattern")
+      .isEqualTo("""^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}${'$'}""")
+      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.format").doesNotExist()
+  }
+
+  @Test
+  fun `the security scheme is setup for bearer tokens`() {
+    val bearerJwts = JSONArray()
+    bearerJwts.addAll(listOf("read", "write"))
+    webTestClient.get()
+      .uri("/v3/api-docs")
+      .accept(MediaType.APPLICATION_JSON)
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.components.securitySchemes.bearer-jwt")
+      .isEqualTo(mapOf("type" to "http", "scheme" to "bearer", "bearerFormat" to "JWT"))
+      .jsonPath("$.security[0].bearer-jwt")
+      .isEqualTo(bearerJwts)
   }
 }
