@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -16,13 +17,15 @@ class VisitBuilder(
   var startDateTimeString: String = "2022-01-01T12:05",
   var endDateTimeString: String = "2022-01-01T13:05",
   var agyLocId: String = "MDI",
+  var agencyInternalLocationDescription: String? = "MDI-1-1-001",
   var visitors: List<VisitVisitorBuilder> = emptyList(),
 ) {
   fun build(
     offenderBooking: OffenderBooking,
     visitType: VisitType,
     visitStatus: VisitStatus,
-    agencyLocation: AgencyLocation
+    agencyLocation: AgencyLocation,
+    agencyInternalLocation: AgencyInternalLocation?
   ): Visit =
     Visit(
       offenderBooking = offenderBooking,
@@ -32,6 +35,7 @@ class VisitBuilder(
       visitStatus = visitStatus,
       location = agencyLocation,
       visitDate = LocalDate.parse("2022-01-01"),
+      agencyInternalLocation = agencyInternalLocation
     )
 
   fun withVisitors(vararg visitVisitorBuilders: VisitVisitorBuilder): VisitBuilder {

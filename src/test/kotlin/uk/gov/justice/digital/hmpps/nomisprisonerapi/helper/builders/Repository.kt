@@ -5,6 +5,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -29,6 +31,7 @@ class Repository(
   val relationshipTypeRepository: ReferenceCodeRepository<RelationshipType>,
   val offenderRepository: OffenderRepository,
   val agencyLocationRepository: AgencyLocationRepository,
+  val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   val personRepository: PersonRepository,
   val visitRepository: VisitRepository,
   val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
@@ -60,7 +63,8 @@ class Repository(
               offenderBooking = booking,
               visitType = lookupVisitType(visitBuilder.visitTypeCode),
               visitStatus = lookupVisitStatus(visitBuilder.visitStatusCode),
-              agencyLocation = lookupAgency(visitBuilder.agyLocId)
+              agencyLocation = lookupAgency(visitBuilder.agyLocId),
+              agencyInternalLocation = visitBuilder.agencyInternalLocationDescription?.run { lookupAgencyInternalLocationByDescription(this) }
             )
             visit.visitors.addAll(
               visitBuilder.visitors.map {
@@ -95,6 +99,7 @@ class Repository(
     relationshipTypeRepository.findByIdOrNull(Pk(RelationshipType.RELATIONSHIP, code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
+  fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation = agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
 

@@ -42,6 +42,10 @@ class VisitSpecification(private val filter: VisitFilter) : Specification<Visit>
       predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(Visit::whenCreated.name), this))
     }
 
+    filter.ignoreMissingRoom?.run {
+      predicates.add(criteriaBuilder.isNotNull(root.get<String>(Visit::agencyInternalLocation.name)))
+    }
+
     return criteriaBuilder.and(*predicates.toTypedArray())
   }
 }

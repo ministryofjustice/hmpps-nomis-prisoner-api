@@ -458,7 +458,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
                 VisitBuilder(
                   agyLocId = "MDI",
                   startDateTimeString = "2022-01-01T12:00",
-                  endDateTimeString = "2022-01-01T13:00"
+                  endDateTimeString = "2022-01-01T13:00",
+                  agencyInternalLocationDescription = null, // no room specified
                 ).withVisitors(
                   VisitVisitorBuilder(person1)
                 ),
@@ -590,6 +591,23 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.content..visitId").value(
           Matchers.contains(
             offenderAtBrixton.latestBooking().visits[0].id.toInt()
+          )
+        )
+    }
+
+    @Test
+    fun `get visit ids excluding visits without a room`() {
+      webTestClient.get().uri("/visits/ids?ignoreMissingRoom=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.numberOfElements").isEqualTo(7)
+        .jsonPath("$.content..visitId").value(
+          Matchers.not(
+            Matchers.hasItem(
+              offenderAtMoorlands.latestBooking().visits[1].id.toInt()
+            )
           )
         )
     }

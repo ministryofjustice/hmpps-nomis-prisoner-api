@@ -244,7 +244,12 @@ class VisitResource(private val visitService: VisitService) {
     @Parameter(
       description = "Filter results by visits that start on or before the given timestamp",
       example = "2021-11-03T09:00:00"
-    ) toDateTime: LocalDateTime?
+    ) toDateTime: LocalDateTime?,
+    @RequestParam(value = "ignoreMissingRoom", required = false)
+    @Parameter(
+      description = "if true exclude visits without an associated room (visits created during the VSIP synchronisation process)",
+      example = "true"
+    ) ignoreMissingRoom: Boolean?
   ): Page<VisitIdResponse> =
     visitService.findVisitIdsByFilter(
       pageRequest = pageRequest,
@@ -252,7 +257,8 @@ class VisitResource(private val visitService: VisitService) {
         visitTypes = visitTypes ?: listOf(),
         prisonIds = prisonIds ?: listOf(),
         toDateTime = toDateTime,
-        fromDateTime = fromDateTime
+        fromDateTime = fromDateTime,
+        ignoreMissingRoom = ignoreMissingRoom
       )
     )
 }

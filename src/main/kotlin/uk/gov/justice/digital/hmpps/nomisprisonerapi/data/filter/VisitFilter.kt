@@ -22,4 +22,10 @@ data class VisitFilter(
     example = "2020-03-23T12:00:00",
   )
   val fromDateTime: LocalDateTime?,
+
+  @Schema(
+    description = "if true exclude visits without an associated room (visits created by the VSIP synchronisation process)",
+    example = "true",
+  )
+  val ignoreMissingRoom: Boolean?,
 )
