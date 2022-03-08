@@ -598,7 +598,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get visit ids excluding visits without a room`() {
       webTestClient.get().uri("/visits/ids?ignoreMissingRoom=true")
-        .headers(setAuthorisation(roles = listOf("ROLE_READ_NOMIS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
