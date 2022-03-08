@@ -613,6 +613,16 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `get visit ids including visits without a room`() {
+      webTestClient.get().uri("/visits/ids?ignoreMissingRoom=false")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.numberOfElements").isEqualTo(8)
+    }
+
+    @Test
     fun `get visits starting within a given date and time range`() {
 
       webTestClient.get().uri {
