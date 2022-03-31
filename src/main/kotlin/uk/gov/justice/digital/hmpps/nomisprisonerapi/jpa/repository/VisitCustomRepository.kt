@@ -36,7 +36,7 @@ class VisitCustomRepositoryImpl(
     criteriaQuery.multiselect(
       roomDescriptionExpression,
       criteriaBuilder.count(root)
-    ).where(toPredicate).groupBy(root.get<String>(Visit::agencyInternalLocation.name)).orderBy(
+    ).where(toPredicate).groupBy(roomDescriptionExpression).orderBy(
       criteriaBuilder.asc(
         roomDescriptionExpression
       )
