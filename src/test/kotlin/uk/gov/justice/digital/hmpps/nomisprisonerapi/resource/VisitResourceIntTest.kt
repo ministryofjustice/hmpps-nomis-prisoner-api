@@ -760,6 +760,155 @@ class VisitResourceIntTest : IntegrationTestBase() {
       )
     }
   }
+
+  @DisplayName("filter Visit room usage count")
+  @Nested
+  inner class GetVisitRoomCountByFilterRequest {
+    @BeforeEach
+    internal fun createPrisonerWithVisits() {
+      val person1 = repository.save(PersonBuilder())
+      val person2 = repository.save(PersonBuilder())
+      offenderAtMoorlands = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "MDI")
+              .withVisits(
+                VisitBuilder(
+                  agyLocId = "MDI",
+                  startDateTimeString = "2022-01-02T11:00",
+                  endDateTimeString = "2022-01-02T12:00",
+                  agencyInternalLocationDescription = "MDI-1-1-001",
+                ).withVisitors(
+                  VisitVisitorBuilder(person1),
+                  VisitVisitorBuilder(person2, leadVisitor = true)
+                ),
+              )
+          )
+      )
+      offenderAtLeeds = repository.save(
+        OffenderBuilder(nomsId = "A4567TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "LEI")
+              .withVisits(
+                VisitBuilder(
+                  agyLocId = "LEI", startDateTimeString = "2022-01-02T09:00",
+                  endDateTimeString = "2022-01-02T10:00",
+                  agencyInternalLocationDescription = null // ignored in results
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+              )
+          )
+      )
+      offenderAtBrixton = repository.save(
+        OffenderBuilder(nomsId = "A7897TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "BXI")
+              .withVisits(
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2022-01-01T09:00",
+                  endDateTimeString = "2022-01-01T10:00",
+                  visitTypeCode = "OFFI",
+                  agencyInternalLocationDescription = "BXI-VISIT"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2023-01-01T09:00",
+                  endDateTimeString = "2023-01-01T10:00",
+                  agencyInternalLocationDescription = "BXI-VISIT"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2023-02-01T09:00",
+                  endDateTimeString = "2023-02-01T10:00",
+                  agencyInternalLocationDescription = "BXI-VISIT2"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+                VisitBuilder(
+                  agyLocId = "BXI",
+                  startDateTimeString = "2023-03-01T09:00",
+                  endDateTimeString = "2023-03-01T10:00",
+                  agencyInternalLocationDescription = "BXI-VISIT2"
+                ).withVisitors(
+                  VisitVisitorBuilder(person1)
+                ),
+              )
+          )
+      )
+      repository.updateCreatedToMatchVisitStart() // hack to allow easier testing of date ranges (CREATED is not updateable via JPA)
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offenderAtMoorlands)
+      repository.delete(offenderAtLeeds)
+      repository.delete(offenderAtBrixton)
+    }
+
+    @Test
+    fun `get room usage count for all visit rooms - no filter specified`() {
+      webTestClient.get().uri("/visits/rooms/usage-count")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(3)
+    }
+
+    @Test
+    fun `get visit rooms usage filtered by prison, date and visit type`() {
+      webTestClient.get().uri("/visits/rooms/usage-count?prisonIds=BXI&prisonIds=MDI&fromDateTime=2022-01-02T10:00:00&visitTypes=SCON")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(3)
+        .jsonPath("$[0].agencyInternalLocationDescription").isEqualTo("BXI-VISIT")
+        .jsonPath("$[0].count").isEqualTo(1)
+        .jsonPath("$[1].agencyInternalLocationDescription").isEqualTo("BXI-VISIT2")
+        .jsonPath("$[1].count").isEqualTo(2)
+        .jsonPath("$[2].agencyInternalLocationDescription").isEqualTo("MDI-1-1-001")
+        .jsonPath("$[2].count").isEqualTo(1)
+    }
+
+    @Test
+    fun `malformed date returns bad request`() {
+
+      webTestClient.get().uri {
+        it.path("/visits/rooms/usage-count")
+          .queryParam("fromDateTime", "202-10-01T09:00:00")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `get visit rooms usage prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get().uri("/visits/rooms/usage-count")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden
+      )
+    }
+
+    @Test
+    fun `get visit rooms usage prevents access without authorization`() {
+      assertThat(
+        webTestClient.get().uri("/visits/rooms/usage-count")
+          .exchange()
+          .expectStatus().isUnauthorized
+      )
+    }
+  }
 }
 
 private fun Offender.latestBooking(): OffenderBooking =

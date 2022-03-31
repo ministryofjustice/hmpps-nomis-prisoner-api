@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.VisitService
 import java.time.LocalDateTime
@@ -199,7 +200,6 @@ class VisitResource(private val visitService: VisitService) {
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @GetMapping("/visits/ids")
-  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get visits by filter",
     description = "Retrieves a paged list of visits by filter",
@@ -259,6 +259,65 @@ class VisitResource(private val visitService: VisitService) {
         toDateTime = toDateTime,
         fromDateTime = fromDateTime,
         ignoreMissingRoom = ignoreMissingRoom
+      )
+    )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @GetMapping("/visits/rooms/usage-count")
+  @Operation(
+    summary = "get visit room usage by filter",
+    description = "Retrieves a list of rooms with usage count for the (filtered) visits",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "list of visit room and count is returned"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun getVisitRoomCountsByFilter(
+    @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC)
+    pageRequest: Pageable,
+    @RequestParam(value = "prisonIds", required = false)
+    @Parameter(
+      description = "Filter results by prison ids (returns all prisons if not specified)",
+      example = "['MDI','LEI']"
+    ) prisonIds: List<String>?,
+    @RequestParam(value = "visitTypes", required = false)
+    @Parameter(
+      description = "Filter results by visitType (returns all types if not specified)",
+      example = "['SCON','OFFI']"
+    ) visitTypes: List<String>?,
+    @RequestParam(value = "fromDateTime", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    @Parameter(
+      description = "Filter results by visits that start on or after the given timestamp",
+      example = "2021-11-03T09:00:00"
+    ) fromDateTime: LocalDateTime?,
+    @RequestParam(value = "toDateTime", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    @Parameter(
+      description = "Filter results by visits that start on or before the given timestamp",
+      example = "2021-11-03T09:00:00"
+    ) toDateTime: LocalDateTime?
+
+  ): List<VisitRoomCountResponse> =
+    visitService.findRoomCountsByFilter(
+      VisitFilter(
+        visitTypes = visitTypes ?: listOf(),
+        prisonIds = prisonIds ?: listOf(),
+        toDateTime = toDateTime,
+        fromDateTime = fromDateTime,
+        ignoreMissingRoom = false // not used
       )
     )
 }
