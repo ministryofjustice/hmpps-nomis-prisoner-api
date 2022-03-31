@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -296,6 +297,11 @@ class VisitService(
   fun findVisitIdsByFilter(pageRequest: Pageable, visitFilter: VisitFilter): Page<VisitIdResponse> {
     log.info("Visit Id filter request : $visitFilter with page request $pageRequest")
     return visitRepository.findAll(VisitSpecification(visitFilter), pageRequest).map { VisitIdResponse(it.id) }
+  }
+
+  fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
+    log.info("Visit room count request with filter: $visitFilter")
+    return visitRepository.findRoomUsageCountWithFilter(visitFilter)
   }
 }
 

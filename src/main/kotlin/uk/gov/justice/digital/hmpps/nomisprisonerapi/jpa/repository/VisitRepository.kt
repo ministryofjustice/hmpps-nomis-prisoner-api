@@ -7,6 +7,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 
 @Repository
-interface VisitRepository : CrudRepository<Visit, Long>, JpaSpecificationExecutor<Visit> {
+interface VisitRepository : CrudRepository<Visit, Long>, JpaSpecificationExecutor<Visit>, VisitCustomRepository {
   fun findByOffenderBooking(booking: OffenderBooking): List<Visit>
 }
