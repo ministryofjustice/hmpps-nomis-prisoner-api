@@ -300,7 +300,6 @@ class VisitService(
   }
 
   fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
-    log.info("Visit room count request with filter: $visitFilter")
     return visitRepository.findRoomUsageCountWithFilter(visitFilter)
   }
 }

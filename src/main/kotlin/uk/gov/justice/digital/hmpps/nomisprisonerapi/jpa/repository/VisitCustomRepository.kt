@@ -17,12 +17,13 @@ interface VisitCustomRepository {
 }
 
 @Repository
-class VisitCustomRepositoryImpl : VisitCustomRepository {
+class VisitCustomRepositoryImpl(
   @PersistenceContext
-  private val entityManager: EntityManager? = null
+  private val entityManager: EntityManager
+) : VisitCustomRepository {
 
   override fun findRoomUsageCountWithFilter(filter: VisitFilter): List<VisitRoomCountResponse> {
-    val criteriaBuilder: CriteriaBuilder = entityManager!!.criteriaBuilder
+    val criteriaBuilder: CriteriaBuilder = entityManager.criteriaBuilder
     val criteriaQuery: CriteriaQuery<VisitRoomCountResponse> =
       criteriaBuilder.createQuery(VisitRoomCountResponse::class.java)
     val root: Root<Visit> = criteriaQuery.from(Visit::class.java)

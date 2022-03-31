@@ -200,7 +200,6 @@ class VisitResource(private val visitService: VisitService) {
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @GetMapping("/visits/ids")
-  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get visits by filter",
     description = "Retrieves a paged list of visits by filter",
@@ -265,14 +264,13 @@ class VisitResource(private val visitService: VisitService) {
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @GetMapping("/visits/rooms/usage-count")
-  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get visit room usage by filter",
     description = "Retrieves a list of rooms with usage count for the (filtered) visits",
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Pageable list of visit ids is returned"
+        description = "list of visit room and count is returned"
       ),
       ApiResponse(
         responseCode = "401",
