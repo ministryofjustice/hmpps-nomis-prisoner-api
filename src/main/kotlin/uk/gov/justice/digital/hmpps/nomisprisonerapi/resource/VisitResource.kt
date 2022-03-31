@@ -267,8 +267,8 @@ class VisitResource(private val visitService: VisitService) {
   @GetMapping("/visits/rooms/usage-count")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "get visit rooms by filter",
-    description = "Retrieves a paged list of visits by filter",
+    summary = "get visit room usage by filter",
+    description = "Retrieves a list of rooms with usage count for the (filtered) visits",
     responses = [
       ApiResponse(
         responseCode = "200",
