@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class VisitRoomCountResponse(
   @Schema(description = "The internal location description")
   val agencyInternalLocationDescription: String,
-  @Schema(description = "How many times has the room been used")
+  @Schema(description = "The room usage count")
   val count: Long,
   @Schema(description = "The prison id")
   val prisonId: String
