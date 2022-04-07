@@ -871,10 +871,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.size()").isEqualTo(3)
         .jsonPath("$[0].agencyInternalLocationDescription").isEqualTo("BXI-VISIT")
         .jsonPath("$[0].count").isEqualTo(1)
+        .jsonPath("$[0].prisonId").isEqualTo("BXI")
         .jsonPath("$[1].agencyInternalLocationDescription").isEqualTo("BXI-VISIT2")
         .jsonPath("$[1].count").isEqualTo(2)
+        .jsonPath("$[1].prisonId").isEqualTo("BXI")
         .jsonPath("$[2].agencyInternalLocationDescription").isEqualTo("MDI-1-1-001")
         .jsonPath("$[2].count").isEqualTo(1)
+        .jsonPath("$[2].prisonId").isEqualTo("MDI")
     }
 
     @Test
