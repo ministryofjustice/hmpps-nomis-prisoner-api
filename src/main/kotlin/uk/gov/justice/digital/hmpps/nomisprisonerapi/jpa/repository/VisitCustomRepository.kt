@@ -4,6 +4,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
 import javax.persistence.EntityManager
@@ -33,9 +34,12 @@ class VisitCustomRepositoryImpl(
 
     val roomDescriptionExpression =
       root.get<String>(Visit::agencyInternalLocation.name).get<String>(AgencyInternalLocation::description.name)
+    val prisonIdExpression =
+      root.get<String>(Visit::location.name).get<String>(AgencyLocation::id.name)
     criteriaQuery.multiselect(
       roomDescriptionExpression,
-      criteriaBuilder.count(root)
+      criteriaBuilder.count(root),
+      prisonIdExpression
     ).where(toPredicate).groupBy(roomDescriptionExpression).orderBy(
       criteriaBuilder.asc(
         roomDescriptionExpression

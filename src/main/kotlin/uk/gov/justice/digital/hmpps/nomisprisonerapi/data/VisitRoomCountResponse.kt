@@ -6,7 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Visit id")
 data class VisitRoomCountResponse(
-  @Schema(description = "The internal location description", required = true)
+  @Schema(description = "The internal location description")
   val agencyInternalLocationDescription: String,
-  val count: Long
+  @Schema(description = "The room usage count")
+  val count: Long,
+  @Schema(description = "The prison id")
+  val prisonId: String
 )
