@@ -40,7 +40,7 @@ class VisitCustomRepositoryImpl(
       roomDescriptionExpression,
       criteriaBuilder.count(root),
       prisonIdExpression
-    ).where(toPredicate).groupBy(roomDescriptionExpression).orderBy(
+    ).where(toPredicate).groupBy(roomDescriptionExpression, prisonIdExpression).orderBy(
       criteriaBuilder.asc(
         roomDescriptionExpression
       )
