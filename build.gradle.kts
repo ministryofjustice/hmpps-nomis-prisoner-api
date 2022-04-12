@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.1.3"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.1.4-beta"
   kotlin("plugin.spring") version "1.6.20"
   kotlin("plugin.jpa") version "1.6.20"
   idea
@@ -17,7 +17,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
   implementation("org.flywaydb:flyway-core:8.5.7")
-  implementation("com.vladmihalcea:hibernate-types-52:2.15.2")
+  implementation("com.vladmihalcea:hibernate-types-52:2.16.0")
 
   implementation("org.springdoc:springdoc-openapi-ui:1.6.7")
   implementation("org.springdoc:springdoc-openapi-kotlin:1.6.7")
