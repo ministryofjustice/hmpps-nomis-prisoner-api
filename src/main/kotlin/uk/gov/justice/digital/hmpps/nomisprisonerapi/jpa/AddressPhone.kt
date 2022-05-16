@@ -8,19 +8,15 @@ import javax.persistence.ManyToOne
 
 @Entity
 @DiscriminatorValue(AddressPhone.PHONE_TYPE)
-data class AddressPhone(
+class AddressPhone(
 
   @JoinColumn(name = "OWNER_ID")
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  var address: Address
-) : Phone() {
-
-  constructor(address: Address, phoneId: Long, phoneType: String?, phoneNo: String?, extNo: String?) : this(address) {
-    this.phoneId = phoneId
-    this.phoneType = phoneType
-    this.phoneNo = phoneNo
-    this.extNo = extNo
-  }
+  var address: Address,
+  phoneType: String? = null,
+  phoneNo: String? = null,
+  extNo: String? = null,
+) : Phone(phoneType = phoneType, phoneNo = phoneNo, extNo = extNo) {
 
   companion object {
     const val PHONE_TYPE = "ADDR"

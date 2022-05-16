@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Phone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import java.time.LocalDateTime
 import javax.validation.constraints.NotEmpty
@@ -126,9 +127,19 @@ data class VisitResponse(
     visitorConcernText = visitEntity.visitorConcernText,
     visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }
       .map { visitor -> Visitor(visitor.person!!.id, visitor.groupLeader) },
-    visitOutcome = null,
-    leadVisitor = null
+    visitOutcome = null, // TODO
+    leadVisitor = visitEntity.visitors.find { visitor -> visitor.groupLeader }?.person?.let {
+      LeadVisitor(
+        personId = it.id,
+        fullName = "${it.firstName} ${it.lastName}",
+        telephones = it.phones.toTelephoneList() + it.addresses.flatMap { address -> address.phones.toTelephoneList() }
+      )
+    }
   )
 
   data class CodeDescription(val code: String, val description: String)
+}
+
+fun List<Phone>.toTelephoneList(): List<String> {
+  return this.map { phone -> phone.phoneNo ?: "" }
 }

@@ -26,7 +26,18 @@ import javax.persistence.Table
 @Table(name = "ADDRESSES")
 @DiscriminatorColumn(name = "OWNER_CLASS")
 @Inheritance
-abstract class Address {
+abstract class Address(
+  val premise: String? = null,
+  val street: String? = null,
+  val locality: String? = null,
+  @Column(name = "START_DATE")
+  val startDate: LocalDate = LocalDate.now(),
+  @Column(name = "NO_FIXED_ADDRESS_FLAG")
+  val noFixedAddressFlag: String = "N",
+  @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+  @Where(clause = "OWNER_CLASS = '" + AddressPhone.PHONE_TYPE + "'")
+  val phones: MutableList<AddressPhone> = ArrayList()
+) {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")
@@ -47,15 +58,9 @@ abstract class Address {
   )
   open val addressType: AddressType? = null
   open val flat: String? = null
-  open val premise: String? = null
-  open val street: String? = null
-  open val locality: String? = null
 
   @Column(name = "POSTAL_CODE")
   open val postalCode: String? = null
-
-  @Column(name = "NO_FIXED_ADDRESS_FLAG")
-  open val noFixedAddressFlag: String? = null
 
   @Column(name = "PRIMARY_FLAG", nullable = false)
   open val primaryFlag = "N"
@@ -65,9 +70,6 @@ abstract class Address {
 
   @Column(name = "COMMENT_TEXT")
   open val commentText: String? = null
-
-  @Column(name = "START_DATE")
-  open val startDate: LocalDate? = null
 
   @Column(name = "END_DATE")
   open val endDate: LocalDate? = null
@@ -117,10 +119,6 @@ abstract class Address {
   @OneToMany
   @JoinColumn(name = "ADDRESS_ID")
   open val addressUsages: List<AddressUsage> = ArrayList()
-
-  @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-  @Where(clause = "OWNER_CLASS = '" + AddressPhone.PHONE_TYPE + "'")
-  open val phones: MutableList<AddressPhone> = ArrayList()
 
   fun removePhone(phone: AddressPhone) {
     phones.remove(phone)

@@ -37,11 +37,11 @@ data class Person(
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   @Where(clause = "OWNER_CLASS = '" + PersonAddress.ADDR_TYPE + "'")
-  val addresses: List<PersonAddress> = ArrayList(),
+  val addresses: MutableList<PersonAddress> = mutableListOf(),
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   @Where(clause = "OWNER_CLASS = '" + PersonPhone.PHONE_TYPE + "'")
-  val phones: List<PersonPhone> = ArrayList(),
+  val phones: MutableList<PersonPhone> = mutableListOf(),
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   @Where(clause = "OWNER_CLASS = '" + PersonInternetAddress.TYPE + "'")
