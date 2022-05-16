@@ -14,21 +14,19 @@ import javax.persistence.Table
 @Table(name = "PHONES")
 @DiscriminatorColumn(name = "OWNER_CLASS")
 @Inheritance
-abstract class Phone {
+abstract class Phone(
+  @Column(name = "PHONE_TYPE")
+  val phoneType: String? = null,
+  @Column(name = "PHONE_NO")
+  val phoneNo: String? = null,
+  @Column(name = "EXT_NO")
+  val extNo: String? = null,
+) {
   @Id
   @SequenceGenerator(name = "PHONE_ID", sequenceName = "PHONE_ID", allocationSize = 1)
   @GeneratedValue(generator = "PHONE_ID")
   @Column(name = "PHONE_ID", nullable = false)
   open var phoneId: Long = 0
-
-  @Column(name = "PHONE_TYPE")
-  open var phoneType: String? = null
-
-  @Column(name = "PHONE_NO")
-  open var phoneNo: String? = null
-
-  @Column(name = "EXT_NO")
-  open var extNo: String? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
