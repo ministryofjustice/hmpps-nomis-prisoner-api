@@ -27,6 +27,9 @@ data class VisitResponse(
   @Schema(description = "Visitors", required = true)
   val visitors: List<Visitor>,
 
+  @Schema(description = "the lead visitor")
+  val leadVisitor: LeadVisitor?,
+
   @Schema(description = "Visit type, whether social or official", allowableValues = ["SCON", "OFFI"], required = true)
   @NotEmpty
   val visitType: CodeDescription,
@@ -35,17 +38,36 @@ data class VisitResponse(
     description = "The status of the visit",
     allowableValues = [
       "CANC",
-      "COMP",
       "EXP",
       "HMPOP",
       "NORM",
       "OFFEND",
       "SCH",
-      "VISITOR"
+      "VISITOR",
+      "VDE"
     ],
     required = true
   )
   val visitStatus: CodeDescription,
+
+  @Schema(
+    description = "The outcome of the visit",
+    allowableValues = [
+      "ADMIN",
+      "HMP",
+      "NO_ID",
+      "NO_VO",
+      "NSHOW",
+      "OFFCANC",
+      "REFUSED",
+      "VISCANC",
+      "VO_CANCEL",
+      "BATCH_CANC",
+      "ADMIN_CANCEL",
+    ],
+    required = true
+  )
+  val visitOutcome: CodeDescription?,
 
   @Schema(description = "NOMIS room", required = true)
   val agencyInternalLocation: CodeDescription? = null,
@@ -71,6 +93,21 @@ data class VisitResponse(
     val leadVisitor: Boolean
   )
 
+  data class LeadVisitor(
+    @Schema(
+      description = "visitor NOMIS person Id"
+    )
+    val personId: Long,
+    @Schema(
+      description = "full name of visitor"
+    )
+    val fullName: String,
+    @Schema(
+      description = "list of telephone numbers for contact"
+    )
+    val telephones: List<String>,
+  )
+
   constructor(visitEntity: Visit) : this(
     visitId = visitEntity.id,
     offenderNo = visitEntity.offenderBooking.offender.nomsId,
@@ -79,11 +116,18 @@ data class VisitResponse(
     endDateTime = visitEntity.endDateTime,
     visitType = CodeDescription(visitEntity.visitType.code, visitEntity.visitType.description),
     visitStatus = CodeDescription(visitEntity.visitStatus.code, visitEntity.visitStatus.description),
-    agencyInternalLocation = visitEntity.agencyInternalLocation?.let { CodeDescription(it.locationCode, it.description) },
+    agencyInternalLocation = visitEntity.agencyInternalLocation?.let {
+      CodeDescription(
+        it.locationCode,
+        it.description
+      )
+    },
     commentText = visitEntity.commentText,
     visitorConcernText = visitEntity.visitorConcernText,
-    visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }.map { visitor -> Visitor(visitor.person!!.id, visitor.groupLeader) }
-
+    visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }
+      .map { visitor -> Visitor(visitor.person!!.id, visitor.groupLeader) },
+    visitOutcome = null,
+    leadVisitor = null
   )
 
   data class CodeDescription(val code: String, val description: String)
