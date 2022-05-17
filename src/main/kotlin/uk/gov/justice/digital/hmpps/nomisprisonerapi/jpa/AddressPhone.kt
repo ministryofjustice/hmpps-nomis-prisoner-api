@@ -13,8 +13,8 @@ class AddressPhone(
   @JoinColumn(name = "OWNER_ID")
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   var address: Address,
-  phoneType: String? = null,
-  phoneNo: String? = null,
+  phoneType: String,
+  phoneNo: String,
   extNo: String? = null,
 ) : Phone(phoneType = phoneType, phoneNo = phoneNo, extNo = extNo) {
 

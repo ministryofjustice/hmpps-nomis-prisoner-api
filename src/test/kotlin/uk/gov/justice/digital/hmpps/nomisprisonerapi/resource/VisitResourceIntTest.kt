@@ -452,9 +452,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
           PersonBuilder(
             firstName = "Manon",
             lastName = "Dupont",
-            phoneNumbers = listOf("HOME" to "01145551234", "MOB" to "07973555123"),
+            phoneNumbers = listOf(Triple("HOME", "01145551234", "ext456"), Triple("MOB", "07973555123", null)),
             addressBuilders = listOf(
-              PersonAddressBuilder(phoneNumbers = listOf("HOME" to "01145559999"))
+              PersonAddressBuilder(phoneNumbers = listOf(Triple("HOME", "01145559999", null)))
             )
           )
         )
@@ -499,7 +499,11 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T13:05"))
         assertThat(visit.leadVisitor).isNotNull
         assertThat(visit.leadVisitor?.fullName).isEqualTo("Manon Dupont")
-        assertThat(visit.leadVisitor?.telephones).containsExactly("01145551234", "07973555123", "01145559999")
+        assertThat(visit.leadVisitor?.telephones).containsExactlyInAnyOrder(
+          "01145551234 ext456",
+          "07973555123",
+          "01145559999"
+        )
         assertThat(visit.visitors).extracting("leadVisitor")
           .containsExactly(
             true
@@ -936,7 +940,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get visit rooms usage filtered by prison, date and visit type`() {
-      webTestClient.get().uri("/visits/rooms/usage-count?prisonIds=BXI&prisonIds=MDI&fromDateTime=2022-01-02T10:00:00&visitTypes=SCON")
+      webTestClient.get()
+        .uri("/visits/rooms/usage-count?prisonIds=BXI&prisonIds=MDI&fromDateTime=2022-01-02T10:00:00&visitTypes=SCON")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
         .exchange()
         .expectStatus().isOk

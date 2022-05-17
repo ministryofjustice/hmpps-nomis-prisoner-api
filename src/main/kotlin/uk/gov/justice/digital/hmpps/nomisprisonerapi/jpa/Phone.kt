@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import org.hibernate.Hibernate
+import java.time.LocalDateTime
 import javax.persistence.Column
 import javax.persistence.DiscriminatorColumn
 import javax.persistence.Entity
@@ -16,9 +17,9 @@ import javax.persistence.Table
 @Inheritance
 abstract class Phone(
   @Column(name = "PHONE_TYPE")
-  val phoneType: String? = null,
+  val phoneType: String,
   @Column(name = "PHONE_NO")
-  val phoneNo: String? = null,
+  val phoneNo: String,
   @Column(name = "EXT_NO")
   val extNo: String? = null,
 ) {
@@ -27,6 +28,12 @@ abstract class Phone(
   @GeneratedValue(generator = "PHONE_ID")
   @Column(name = "PHONE_ID", nullable = false)
   open var phoneId: Long = 0
+
+  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now()
+
+  @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
+  var whenModified: LocalDateTime? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
