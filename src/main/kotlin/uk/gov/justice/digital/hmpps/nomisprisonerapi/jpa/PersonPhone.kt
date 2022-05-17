@@ -11,9 +11,9 @@ import javax.persistence.ManyToOne
 class PersonPhone(
   @JoinColumn(name = "OWNER_ID")
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  var person: Person? = null,
-  phoneType: String? = null,
-  phoneNo: String? = null,
+  val person: Person,
+  phoneType: String,
+  phoneNo: String,
   extNo: String? = null,
 ) : Phone(phoneType = phoneType, phoneNo = phoneNo, extNo = extNo) {
   companion object {

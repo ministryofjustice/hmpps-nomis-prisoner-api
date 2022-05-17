@@ -104,7 +104,7 @@ data class VisitResponse(
     )
     val fullName: String,
     @Schema(
-      description = "list of telephone numbers for contact"
+      description = "Ordered list of telephone numbers for contact with latest first"
     )
     val telephones: List<String>,
   )
@@ -132,7 +132,8 @@ data class VisitResponse(
       LeadVisitor(
         personId = it.id,
         fullName = "${it.firstName} ${it.lastName}",
-        telephones = it.phones.toTelephoneList() + it.addresses.flatMap { address -> address.phones.toTelephoneList() }
+        telephones = (it.phones + it.addresses.flatMap { address -> address.phones }).sortedByDescending { phone -> phone.lastChanged }
+          .toTelephoneList()
       )
     }
   )
@@ -141,5 +142,16 @@ data class VisitResponse(
 }
 
 fun List<Phone>.toTelephoneList(): List<String> {
-  return this.map { phone -> phone.phoneNo ?: "" }
+  return this.map { phone ->
+    phone.phoneNo + if (phone.extNo.isNullOrBlank()) {
+      ""
+    } else {
+      " ${phone.extNo}"
+    }
+  }
 }
+
+private val Phone.lastChanged: LocalDateTime
+  get() {
+    return whenModified ?: whenCreated
+  }

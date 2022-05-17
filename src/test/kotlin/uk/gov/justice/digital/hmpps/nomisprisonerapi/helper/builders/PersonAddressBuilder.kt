@@ -8,7 +8,7 @@ class PersonAddressBuilder(
   var premise: String = "41",
   var street: String = "High Street",
   var locality: String = "Sheffield",
-  private var phoneNumbers: List<Pair<String, String>> = listOf()
+  private var phoneNumbers: List<Triple<String, String, String?>> = listOf(),
 ) {
   fun build(person: Person): PersonAddress =
     PersonAddress(
@@ -17,13 +17,13 @@ class PersonAddressBuilder(
       street = street,
       locality = locality
     ).apply {
-      phoneNumbers.map { (type, number) ->
+      phoneNumbers.map { (type, number, extension) ->
         this.addPhone(
           AddressPhone(
             this,
             phoneType = type,
             phoneNo = number,
-            extNo = null
+            extNo = extension
           )
         )
       }

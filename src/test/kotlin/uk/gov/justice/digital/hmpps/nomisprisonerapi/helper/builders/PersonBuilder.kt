@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
 class PersonBuilder(
   var firstName: String = "NEO",
   var lastName: String = "AYOMIDE",
-  var phoneNumbers: List<Pair<String, String>> = listOf(),
+  var phoneNumbers: List<Triple<String, String, String?>> = listOf(),
   var addressBuilders: List<PersonAddressBuilder> = listOf(),
 ) {
   fun build(): Person =
@@ -14,12 +14,13 @@ class PersonBuilder(
       firstName = firstName,
       lastName = lastName,
     ).apply {
-      phoneNumbers.forEach { (type, number) ->
+      phoneNumbers.forEach { (type, number, extension) ->
         this.phones.add(
           PersonPhone(
             person = this,
             phoneType = type,
-            phoneNo = number
+            phoneNo = number,
+            extNo = extension,
           )
         )
       }
