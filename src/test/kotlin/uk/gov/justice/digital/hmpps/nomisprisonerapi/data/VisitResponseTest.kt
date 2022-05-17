@@ -101,7 +101,7 @@ internal class VisitResponseTest {
                   Triple(
                     "HOME",
                     "0123456789",
-                    null
+                    "ext: 876"
                   )
                 )
               ).build()
@@ -110,11 +110,11 @@ internal class VisitResponseTest {
         )
       val response = VisitResponse(theVisitor)
 
-      assertThat(response.leadVisitor?.telephones).contains("0123456789")
+      assertThat(response.leadVisitor?.telephones).contains("0123456789 ext: 876")
     }
 
     @Test
-    internal fun `will have multiple phone in list if the exits as a global number`() {
+    internal fun `will have multiple phone in list if they exist as a global numbers`() {
       val theVisitor =
         visit.copy(
           visitors = mutableListOf(
@@ -134,7 +134,7 @@ internal class VisitResponseTest {
     }
 
     @Test
-    internal fun `will include numbers with extensions from addresses as well multiple phone in list if the exits as a global number`() {
+    internal fun `will include numbers from addresses as well global numbers`() {
       val theVisitor =
         visit.copy(
           visitors = mutableListOf(
