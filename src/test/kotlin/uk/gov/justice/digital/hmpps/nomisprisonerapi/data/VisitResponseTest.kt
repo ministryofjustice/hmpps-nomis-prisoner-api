@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse.Visitor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
@@ -23,6 +25,7 @@ import java.time.LocalDateTime
 
 internal class VisitResponseTest {
   lateinit var visitor: VisitVisitor
+  lateinit var outcomeVisitorRecord: VisitVisitor
   val visit = Visit(
     id = 99L,
     offenderBooking = anOffenderBooking("A1234LK"),
@@ -47,6 +50,14 @@ internal class VisitResponseTest {
         person = PersonBuilder().build().apply { id = 88L },
         groupLeader = true,
         visit = this
+      ),
+    )
+    this.visitors.add(
+      VisitVisitor(
+        person = null,
+        offenderBooking = this.offenderBooking,
+        groupLeader = true,
+        visit = this
       )
     )
   }
@@ -57,6 +68,7 @@ internal class VisitResponseTest {
     @BeforeEach
     internal fun setUp() {
       visitor = visit.visitors.first()
+      outcomeVisitorRecord = visit.visitors.last()
     }
 
     @Test
@@ -78,9 +90,9 @@ internal class VisitResponseTest {
 
     @Test
     internal fun `will have no lead visitor if not present`() {
-      val theVisitor = visit.copy(visitors = mutableListOf(visitor.copy(groupLeader = false)))
+      val theVisit = visit.copy(visitors = mutableListOf(visitor.copy(groupLeader = false), outcomeVisitorRecord))
 
-      assertThat(VisitResponse(theVisitor).leadVisitor).isNull()
+      assertThat(VisitResponse(theVisit).leadVisitor).isNull()
     }
 
     @Test
@@ -92,7 +104,7 @@ internal class VisitResponseTest {
 
     @Test
     internal fun `will have single phone in list if exits as a global number`() {
-      val theVisitor =
+      val theVisit =
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
@@ -104,18 +116,19 @@ internal class VisitResponseTest {
                     "ext: 876"
                   )
                 )
-              ).build()
-            )
+              ).build(),
+            ),
+            outcomeVisitorRecord
           )
         )
-      val response = VisitResponse(theVisitor)
+      val response = VisitResponse(theVisit)
 
       assertThat(response.leadVisitor?.telephones).contains("0123456789 ext: 876")
     }
 
     @Test
     internal fun `will have multiple phone in list if they exist as a global numbers`() {
-      val theVisitor =
+      val theVisit =
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
@@ -125,10 +138,11 @@ internal class VisitResponseTest {
                   Triple("MOBL", "07973 121212", null)
                 )
               ).build()
-            )
+            ),
+            outcomeVisitorRecord
           )
         )
-      val response = VisitResponse(theVisitor)
+      val response = VisitResponse(theVisit)
 
       assertThat(response.leadVisitor?.telephones).contains("0123456789", "07973 121212")
     }
@@ -153,7 +167,8 @@ internal class VisitResponseTest {
                   )
                 )
               ).build()
-            )
+            ),
+            outcomeVisitorRecord
           )
         )
       val response = VisitResponse(theVisitor)
@@ -197,7 +212,8 @@ internal class VisitResponseTest {
                 this.addresses[1].phones[0].whenCreated = LocalDateTime.now().minusDays(2) // 2nd
                 this.addresses[1].phones[1].whenCreated = LocalDateTime.now().minusDays(3) // 3rd
               },
-            )
+            ),
+            outcomeVisitorRecord
           )
         )
       val response = VisitResponse(theVisitor)
@@ -210,6 +226,34 @@ internal class VisitResponseTest {
         "1234567890",
         "0123456789",
       )
+    }
+
+    @Test
+    internal fun `outcome is derived from dummy visitor record`() {
+      val theVisit =
+        visit.copy(
+          visitors = mutableListOf(
+            visitor,
+            outcomeVisitorRecord.copy(outcomeReason = VisitOutcomeReason("REFUSED", "Offender Refused Visit"))
+          )
+        )
+      val response = VisitResponse(theVisit)
+
+      assertThat(response.visitOutcome).isEqualTo(CodeDescription("REFUSED", "Offender Refused Visit"))
+    }
+
+    @Test
+    internal fun `outcome is null when not present in dummy visitor record`() {
+      val theVisit =
+        visit.copy(
+          visitors = mutableListOf(
+            visitor,
+            outcomeVisitorRecord.copy(outcomeReason = null)
+          )
+        )
+      val response = VisitResponse(theVisit)
+
+      assertThat(response.visitOutcome).isNull()
     }
   }
 }

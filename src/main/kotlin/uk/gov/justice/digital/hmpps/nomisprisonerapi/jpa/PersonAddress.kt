@@ -18,7 +18,7 @@ class PersonAddress(
   locality: String? = null,
   startDate: LocalDate = LocalDate.now(),
   noFixedAddressFlag: String = "N",
-  phones: MutableList<AddressPhone> = ArrayList()
+  phones: MutableList<AddressPhone> = mutableListOf()
 ) : Address(
   premise = premise,
   street = street,

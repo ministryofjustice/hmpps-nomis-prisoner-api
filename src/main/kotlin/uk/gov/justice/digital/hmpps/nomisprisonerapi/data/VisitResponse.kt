@@ -127,7 +127,8 @@ data class VisitResponse(
     visitorConcernText = visitEntity.visitorConcernText,
     visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }
       .map { visitor -> Visitor(visitor.person!!.id, visitor.groupLeader) },
-    visitOutcome = null, // TODO
+    visitOutcome = visitEntity.visitors.find { it.person == null }?.outcomeReason
+      ?.let { CodeDescription(it.code, it.description) },
     leadVisitor = visitEntity.visitors.find { visitor -> visitor.groupLeader }?.person?.let {
       LeadVisitor(
         personId = it.id,

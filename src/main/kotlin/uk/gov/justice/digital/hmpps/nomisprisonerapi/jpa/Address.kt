@@ -35,7 +35,7 @@ abstract class Address(
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
   val noFixedAddressFlag: String = "N",
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-  @Where(clause = "OWNER_CLASS = '" + AddressPhone.PHONE_TYPE + "'")
+  @Where(clause = "OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
   val phones: MutableList<AddressPhone> = ArrayList()
 ) {
   @Id
