@@ -233,13 +233,15 @@ internal class VisitResponseTest {
       val theVisit =
         visit.copy(
           visitors = mutableListOf(
-            visitor,
-            outcomeVisitorRecord.copy(outcomeReason = VisitOutcomeReason("REFUSED", "Offender Refused Visit"))
+            visitor.copy(outcomeReason = VisitOutcomeReason("BANANAS", "Visit ended due to bananas")),
+            outcomeVisitorRecord.copy(outcomeReason = VisitOutcomeReason("REFUSED", "Offender Refused Visit")),
+            visitor.copy(outcomeReason = VisitOutcomeReason("APPLES", "Visit ended due to apples")),
           )
         )
       val response = VisitResponse(theVisit)
 
       assertThat(response.visitOutcome).isEqualTo(CodeDescription("REFUSED", "Offender Refused Visit"))
+      assertThat(response.visitors).hasSize(2)
     }
 
     @Test
