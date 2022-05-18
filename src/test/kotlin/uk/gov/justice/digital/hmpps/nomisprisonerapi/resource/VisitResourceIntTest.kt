@@ -559,6 +559,61 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
       }
     }
+
+    @DisplayName("With an outcome that is not in reference table")
+    @Nested
+    inner class WithOutcomeNoReferenceData {
+
+      @BeforeEach
+      internal fun createPrisonerWithVisit() {
+        val leadVisitor = repository.save(
+          PersonBuilder(
+            firstName = "Manon",
+            lastName = "Dupont",
+          )
+        )
+
+        offenderAtMoorlands = repository.save(
+          OffenderBuilder(nomsId = "A1234TT")
+            .withBooking(
+              OffenderBookingBuilder()
+                .withVisits(
+                  VisitBuilder()
+                    .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
+                    .withVisitOutcome("BATCH_CANC")
+                )
+            )
+        )
+
+        offenderNo = offenderAtMoorlands.nomsId
+        offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.delete(offenderAtMoorlands)
+      }
+
+      @Test
+      fun `visit will contain outcome and status`() {
+        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visit = webTestClient.get().uri("/visits/$visitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(visit.visitStatus.code).isEqualTo("SCH")
+        assertThat(visit.visitType.code).isEqualTo("SCON")
+        assertThat(visit.visitOutcome).isEqualTo(
+          CodeDescription(
+            code = "BATCH_CANC",
+            description = "BATCH_CANC"
+          )
+        )
+      }
+    }
   }
 
   @DisplayName("filter Visits")

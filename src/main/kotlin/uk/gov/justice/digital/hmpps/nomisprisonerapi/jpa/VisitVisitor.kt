@@ -79,12 +79,17 @@ data class VisitVisitor(
         column = JoinColumn(
           name = "OUTCOME_REASON_CODE",
           referencedColumnName = "code",
-          nullable = false
+          nullable = false,
+          updatable = false,
+          insertable = false,
         )
       )
     ]
   )
   var outcomeReason: VisitOutcomeReason? = null,
+
+  @Column(name = "OUTCOME_REASON_CODE")
+  var outcomeReasonCode: String? = null,
 
   /* DB constraint exists: EVENT_OUTCOME IN ('ATT', 'ABS', 'CANC') */
   @ManyToOne

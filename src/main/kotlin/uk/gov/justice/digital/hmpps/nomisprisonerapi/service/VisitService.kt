@@ -127,6 +127,7 @@ class VisitService(
       it.eventOutcome = absenceEventOutcome
       it.eventStatus = cancelledEventStatus
       it.outcomeReason = visitOutcome
+      it.outcomeReasonCode = visitOutcome.code
     }
 
     if (visitOrder != null) {
