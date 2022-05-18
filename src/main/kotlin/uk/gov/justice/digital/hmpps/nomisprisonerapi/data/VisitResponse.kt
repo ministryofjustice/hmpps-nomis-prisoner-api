@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Phone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
 import java.time.LocalDateTime
 import javax.validation.constraints.NotEmpty
 
@@ -127,8 +128,9 @@ data class VisitResponse(
     visitorConcernText = visitEntity.visitorConcernText,
     visitors = visitEntity.visitors.filter { visitor -> visitor.person != null }
       .map { visitor -> Visitor(visitor.person!!.id, visitor.groupLeader) },
-    visitOutcome = visitEntity.visitors.find { it.person == null }?.outcomeReason
-      ?.let { CodeDescription(it.code, it.description) },
+    visitOutcome = visitEntity.outcomeVisitor()?.outcomeReason
+      ?.let { CodeDescription(it.code, it.description) }
+      ?: visitEntity.outcomeVisitor()?.outcomeReasonCode?.let { CodeDescription(it, it) },
     leadVisitor = visitEntity.visitors.find { visitor -> visitor.groupLeader }?.person?.let {
       LeadVisitor(
         personId = it.id,
@@ -156,3 +158,6 @@ private val Phone.lastChanged: LocalDateTime
   get() {
     return whenModified ?: whenCreated
   }
+
+fun Visit.outcomeVisitor(): VisitVisitor? =
+  this.visitors.find { it.person == null }

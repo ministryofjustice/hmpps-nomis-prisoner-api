@@ -5,7 +5,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
@@ -63,8 +62,8 @@ class VisitVisitorBuilder(
 class VisitOutcomeBuilder(
   val outcomeCode: String? = null,
 ) {
-  fun build(visit: Visit, visitOutcome: VisitOutcomeReason?): VisitVisitor =
+  fun build(visit: Visit): VisitVisitor =
     VisitVisitor(
-      person = null, visit = visit, groupLeader = false, outcomeReason = visitOutcome
+      person = null, visit = visit, groupLeader = false, outcomeReasonCode = outcomeCode
     )
 }

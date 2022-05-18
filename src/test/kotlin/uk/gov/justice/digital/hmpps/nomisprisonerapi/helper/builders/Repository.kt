@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -30,7 +29,6 @@ class Repository(
   val genderRepository: ReferenceCodeRepository<Gender>,
   val contactTypeRepository: ReferenceCodeRepository<ContactType>,
   val relationshipTypeRepository: ReferenceCodeRepository<RelationshipType>,
-  val visitOutcomeReasonRepository: ReferenceCodeRepository<VisitOutcomeReason>,
   val offenderRepository: OffenderRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val agencyInternalLocationRepository: AgencyInternalLocationRepository,
@@ -71,7 +69,7 @@ class Repository(
             visit.visitors.addAll(
               visitBuilder.visitors.map {
                 it.build(it.person, leadVisitor = it.leadVisitor, visit)
-              } + visitBuilder.visitOutcome.build(visit, visitBuilder.visitOutcome.outcomeCode?.let { lookupVisitOutcomeReason(it) })
+              } + visitBuilder.visitOutcome.build(visit)
             )
             visit
           }
@@ -99,9 +97,6 @@ class Repository(
 
   fun lookupRelationshipType(code: String): RelationshipType =
     relationshipTypeRepository.findByIdOrNull(Pk(RelationshipType.RELATIONSHIP, code))!!
-
-  fun lookupVisitOutcomeReason(code: String): VisitOutcomeReason =
-    visitOutcomeReasonRepository.findByIdOrNull(VisitOutcomeReason.pk(code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation = agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
