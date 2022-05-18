@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderContactBuilder
@@ -481,7 +482,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `get visit success`() {
+      fun `visit wil contain lead visitor with telephone numbers`() {
         val visitId = offenderAtMoorlands.bookings[0].visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
@@ -490,13 +491,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(VisitResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(visit.visitStatus.code).isEqualTo("SCH")
-        assertThat(visit.visitType.code).isEqualTo("SCON")
-        assertThat(visit.visitOutcome).isNull()
-        assertThat(visit.offenderNo).isEqualTo("A1234TT")
-        assertThat(visit.prisonId).isEqualTo("MDI")
-        assertThat(visit.startDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T12:05"))
-        assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T13:05"))
         assertThat(visit.leadVisitor).isNotNull
         assertThat(visit.leadVisitor?.fullName).isEqualTo("Manon Dupont")
         assertThat(visit.leadVisitor?.telephones).containsExactlyInAnyOrder(
@@ -508,6 +502,61 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .containsExactly(
             true
           )
+      }
+    }
+
+    @DisplayName("With an outcome")
+    @Nested
+    inner class WithOutcome {
+
+      @BeforeEach
+      internal fun createPrisonerWithVisit() {
+        val leadVisitor = repository.save(
+          PersonBuilder(
+            firstName = "Manon",
+            lastName = "Dupont",
+          )
+        )
+
+        offenderAtMoorlands = repository.save(
+          OffenderBuilder(nomsId = "A1234TT")
+            .withBooking(
+              OffenderBookingBuilder()
+                .withVisits(
+                  VisitBuilder()
+                    .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
+                    .withVisitOutcome("REFUSED")
+                )
+            )
+        )
+
+        offenderNo = offenderAtMoorlands.nomsId
+        offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.delete(offenderAtMoorlands)
+      }
+
+      @Test
+      fun `visit will contain outcome and status`() {
+        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visit = webTestClient.get().uri("/visits/$visitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(visit.visitStatus.code).isEqualTo("SCH")
+        assertThat(visit.visitType.code).isEqualTo("SCON")
+        assertThat(visit.visitOutcome).isEqualTo(
+          CodeDescription(
+            code = "REFUSED",
+            description = "Offender Refused Visit"
+          )
+        )
       }
     }
   }

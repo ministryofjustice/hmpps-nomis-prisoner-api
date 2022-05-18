@@ -36,15 +36,15 @@ data class Person(
   val birthDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  @Where(clause = "OWNER_CLASS = '" + PersonAddress.ADDR_TYPE + "'")
+  @Where(clause = "OWNER_CLASS = '${PersonAddress.ADDR_TYPE}'")
   val addresses: MutableList<PersonAddress> = mutableListOf(),
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  @Where(clause = "OWNER_CLASS = '" + PersonPhone.PHONE_TYPE + "'")
+  @Where(clause = "OWNER_CLASS = '${PersonPhone.PHONE_TYPE}'")
   val phones: MutableList<PersonPhone> = mutableListOf(),
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  @Where(clause = "OWNER_CLASS = '" + PersonInternetAddress.TYPE + "'")
+  @Where(clause = "OWNER_CLASS = '${PersonInternetAddress.TYPE}'")
   val internetAddresses: List<PersonInternetAddress> = ArrayList(),
 ) {
   fun getEmails(): List<PersonInternetAddress> {

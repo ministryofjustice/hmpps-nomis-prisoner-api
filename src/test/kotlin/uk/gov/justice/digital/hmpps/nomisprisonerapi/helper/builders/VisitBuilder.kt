@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
@@ -19,6 +20,7 @@ class VisitBuilder(
   var agyLocId: String = "MDI",
   var agencyInternalLocationDescription: String? = "MDI-1-1-001",
   var visitors: List<VisitVisitorBuilder> = emptyList(),
+  var visitOutcome: VisitOutcomeBuilder = VisitOutcomeBuilder(),
 ) {
   fun build(
     offenderBooking: OffenderBooking,
@@ -42,6 +44,10 @@ class VisitBuilder(
     this.visitors = arrayOf(*visitVisitorBuilders).asList()
     return this
   }
+  fun withVisitOutcome(visitOutcomeCode: String): VisitBuilder {
+    this.visitOutcome = VisitOutcomeBuilder(visitOutcomeCode)
+    return this
+  }
 }
 
 class VisitVisitorBuilder(
@@ -51,5 +57,14 @@ class VisitVisitorBuilder(
   fun build(person: Person, leadVisitor: Boolean, visit: Visit): VisitVisitor =
     VisitVisitor(
       person = person, visit = visit, groupLeader = leadVisitor
+    )
+}
+
+class VisitOutcomeBuilder(
+  val outcomeCode: String? = null,
+) {
+  fun build(visit: Visit, visitOutcome: VisitOutcomeReason?): VisitVisitor =
+    VisitVisitor(
+      person = null, visit = visit, groupLeader = false, outcomeReason = visitOutcome
     )
 }
