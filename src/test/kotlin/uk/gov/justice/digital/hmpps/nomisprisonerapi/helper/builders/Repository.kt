@@ -106,6 +106,7 @@ class Repository(
   fun lookupVisit(visitId: Long?): Visit {
     val visit = visitRepository.findById(visitId!!).orElseThrow()
     visit.visitors.size // hydrate
+    visit.visitOrder?.visitors?.size
     return visit
   }
 

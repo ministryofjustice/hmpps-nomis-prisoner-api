@@ -6,14 +6,18 @@ import java.util.Objects
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
+import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
+import javax.persistence.SequenceGenerator
 import javax.persistence.Table
 
 @Entity
 @Table(name = "OFFENDER_VO_VISITORS")
 data class VisitOrderVisitor(
+  @SequenceGenerator(name = "OFFENDER_VO_VISITOR_ID", sequenceName = "OFFENDER_VO_VISITOR_ID", allocationSize = 1)
+  @GeneratedValue(generator = "OFFENDER_VO_VISITOR_ID")
   @Id
   @Column(name = "OFFENDER_VO_VISITOR_ID", nullable = false)
   val id: Long,

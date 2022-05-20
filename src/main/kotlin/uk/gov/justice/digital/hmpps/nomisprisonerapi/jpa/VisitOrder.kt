@@ -74,7 +74,7 @@ data class VisitOrder(
   var status: VisitStatus,
 
   @OneToMany(mappedBy = "visitOrder", cascade = [CascadeType.ALL])
-  val visitors: List<VisitOrderVisitor> = ArrayList(),
+  var visitors: List<VisitOrderVisitor> = ArrayList(),
 
   @Column
   val commentText: String? = null,

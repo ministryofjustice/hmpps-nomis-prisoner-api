@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderVisitor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
@@ -169,7 +170,7 @@ class VisitService(
             adjustReasonCode = adjustReasonCode,
             remainingPrivilegedVisitOrders = -1,
             previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
-            commentText = "Created by VSIP",
+            commentText = visitDto.visitOrderComment,
           )
         )
         visit.visitOrder = VisitOrder(
@@ -179,7 +180,15 @@ class VisitService(
           status = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
           issueDate = visitDto.issueDate,
           expiryDate = visitDto.issueDate.plusDays(28),
-        )
+          commentText = visitDto.visitOrderComment
+        ).apply {
+          this.visitors = visitDto.visitorPersonIds.mapIndexed { index, personId ->
+            this.createVisitor(
+              personId,
+              groupLeader = index == 0
+            ) // randomly choose first visitor as lead since VSIP has to no concept of a lead visitor but we need it for data integrity
+          }
+        }
       } else {
         val adjustReasonCode =
           visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow()
@@ -191,7 +200,7 @@ class VisitService(
             adjustReasonCode = adjustReasonCode,
             remainingVisitOrders = -1,
             previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
-            commentText = "Created by VSIP",
+            commentText = visitDto.visitOrderComment,
           )
         )
         visit.visitOrder = VisitOrder(
@@ -201,10 +210,23 @@ class VisitService(
           status = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
           issueDate = visitDto.issueDate,
           expiryDate = visitDto.issueDate.plusDays(28),
-        )
+          commentText = visitDto.visitOrderComment,
+        ).apply {
+          this.visitors = visitDto.visitorPersonIds.mapIndexed { index, personId ->
+            this.createVisitor(personId, groupLeader = index == 0)
+          }
+        }
       }
     }
   }
+
+  private fun VisitOrder.createVisitor(personId: Long, groupLeader: Boolean): VisitOrderVisitor = VisitOrderVisitor(
+    id = 0,
+    visitOrder = this,
+    person = personRepository.findById(personId)
+      .orElseThrow(BadDataException("Person with id=$personId does not exist")),
+    groupLeader = groupLeader
+  )
 
   private fun cancelBalance(
     visitOrder: VisitOrder,
@@ -256,6 +278,7 @@ class VisitService(
       visitType = visitType,
       visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
       location = location,
+      commentText = visitDto.visitComment,
     )
   }
 

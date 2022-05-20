@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.groups.Tuple
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.AfterEach
@@ -169,7 +170,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [$personIds],
             "visitRoomId"       : "VISIT",
-            "issueDate"         : "2021-11-02"
+            "issueDate"         : "2021-11-02",
+            "visitComment"      : "VSIP Ref: asd-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd"
           }"""
           )
         )
@@ -191,6 +194,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
         Tuple.tuple(threePeople[2].id, "SCH"),
       )
       assertThat(visit.visitors[0].eventId).isGreaterThan(0)
+      assertThat(visit.commentText).isEqualTo("VSIP Ref: asd-fff-ddd")
+      assertThat(visit.visitOrder).isNotNull
+      assertThat(visit.visitOrder?.commentText).isEqualTo("VSIP Order Ref: asd-fff-ddd")
+      // lead visitor assigned randomly to first visitor in list to create a valid order
+      assertThat(visit.visitOrder?.visitors).extracting("person.id", "groupLeader").containsExactly(
+        tuple(threePeople[0].id, true),
+        tuple(threePeople[1].id, false),
+        tuple(threePeople[2].id, false),
+      )
 
       val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
 

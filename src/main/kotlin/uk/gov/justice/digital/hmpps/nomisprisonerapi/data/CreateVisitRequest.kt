@@ -39,4 +39,10 @@ data class CreateVisitRequest(
   @Schema(description = "Issue date", required = true)
   @NotNull
   val issueDate: LocalDate,
+
+  @Schema(description = "Comment to be added to visit")
+  val visitComment: String = "Created by VSIP",
+
+  @Schema(description = "Comment to be added to visit order (if one is created)")
+  val visitOrderComment: String = "Created by VSIP",
 )
