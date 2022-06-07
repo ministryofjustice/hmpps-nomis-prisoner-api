@@ -89,7 +89,7 @@ data class OffenderVisitBalanceAdjustment(
   @Column(name = "EXPIRY_STATUS")
   @Size(max = 3)
   val expiryStatus: String? = null
-) : AuditableEntity() {
+) {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
