@@ -451,10 +451,8 @@ internal class VisitServiceTest {
       )
       val pageRequest = PageRequest.of(0, 1)
 
-      whenever(visitRepository.findAll(any() as VisitSpecification, any() as PageRequest)).thenReturn(
-        PageImpl(
-          listOf(defaultVisit)
-        )
+      whenever(visitRepository.findAll(any<VisitSpecification>(), any<PageRequest>())).thenReturn(
+        PageImpl(listOf(defaultVisit))
       )
       val visitList = visitService.findVisitIdsByFilter(
         pageRequest,
