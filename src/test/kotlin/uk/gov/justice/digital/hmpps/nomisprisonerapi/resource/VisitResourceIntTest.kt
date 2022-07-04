@@ -1106,6 +1106,127 @@ class VisitResourceIntTest : IntegrationTestBase() {
       )
     }
   }
+
+  @DisplayName("Create v2")
+  @Nested
+  inner class CreateVisitV2RequestTest {
+    @BeforeEach
+    internal fun setUpData() {
+      createPrisoner()
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      repository.delete(offenderAtMoorlands)
+      repository.delete(threePeople)
+    }
+
+    @Test
+    fun `create visit forbidden with wrong role`() {
+      webTestClient.post().uri("/prisoners/$offenderNo/visits/v2")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `create visit with offender not found`() {
+      webTestClient.post().uri("/prisoners/Z9999ZZ/visits/v2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS_TESTING")))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `create visit with invalid person`() {
+      val error = webTestClient.post().uri("/prisoners/$offenderNo/visits/v2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS_TESTING")))
+        .body(BodyInserters.fromValue(createVisitWithPeople().copy(visitorPersonIds = listOf(-7L, -99L))))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(error?.userMessage).isEqualTo("Bad request: Person with id=-99 does not exist")
+    }
+
+    @Test
+    fun `create visit with invalid offenderNo`() {
+      webTestClient.post().uri("/prisoners/ZZ000ZZ/visits/v2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS_TESTING")))
+        .body(BodyInserters.fromValue(createVisitWithPeople()))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+    }
+
+    @Test
+    fun `create visit success`() {
+      val personIds: String = threePeople.map { it.id }.joinToString(",")
+      val response = webTestClient.post().uri("/prisoners/$offenderNo/visits/v2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS_TESTING")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-04T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "$prisonId",
+            "visitorPersonIds"  : [$personIds],
+            "visitRoomId"       : "VISIT",
+            "issueDate"         : "2021-11-02",
+            "visitComment"      : "VSIP Ref: asd-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd"
+          }"""
+          )
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.visitId).isGreaterThan(0)
+
+      // Spot check that the database has been populated.
+      val visit = repository.lookupVisit(response?.visitId)
+
+      assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
+      assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
+      assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
+        Tuple.tuple(null, "SCH"),
+        Tuple.tuple(threePeople[0].id, "SCH"),
+        Tuple.tuple(threePeople[1].id, "SCH"),
+        Tuple.tuple(threePeople[2].id, "SCH"),
+      )
+      assertThat(visit.visitors[0].eventId).isGreaterThan(0)
+      assertThat(visit.commentText).isEqualTo("VSIP Ref: asd-fff-ddd")
+      assertThat(visit.visitOrder).isNotNull
+      assertThat(visit.visitOrder?.commentText).isEqualTo("VSIP Order Ref: asd-fff-ddd")
+      // lead visitor assigned randomly to first visitor in list to create a valid order
+      assertThat(visit.visitOrder?.visitors).extracting("person.id", "groupLeader").containsExactly(
+        tuple(threePeople[0].id, true),
+        tuple(threePeople[1].id, false),
+        tuple(threePeople[2].id, false),
+      )
+
+      assertThat(visit.agencyVisitSlot).isNotNull
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VSIP")
+      assertThat(visit.agencyVisitSlot!!.timeSlotSequence).isEqualTo(1)
+      assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
+      assertThat(visit.agencyVisitSlot!!.agencyVisitTime.endTime).isEqualTo(LocalTime.parse("13:04"))
+      assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.weekDay).isEqualTo("THU")
+      assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.timeSlotSequence).isEqualTo(1)
+
+      val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
+
+      assertThat(balanceAdjustment).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
+        .containsExactly(
+          Tuple.tuple(offenderBookingId, -1),
+        )
+    }
+  }
 }
 
 private fun Offender.latestBooking(): OffenderBooking =

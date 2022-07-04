@@ -107,7 +107,7 @@ data class Visit(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGENCY_VISIT_SLOT_ID")
-  val agencyVisitSlot: AgencyVisitSlot? = null,
+  var agencyVisitSlot: AgencyVisitSlot? = null,
 
   @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
   @JoinColumn(name = "OFFENDER_VISIT_ORDER_ID")

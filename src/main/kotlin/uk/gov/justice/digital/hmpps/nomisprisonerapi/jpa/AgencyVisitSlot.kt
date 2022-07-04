@@ -8,6 +8,7 @@ import javax.persistence.Entity
 import javax.persistence.FetchType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
+import javax.persistence.JoinColumns
 import javax.persistence.ManyToOne
 import javax.persistence.Table
 
@@ -23,11 +24,21 @@ data class AgencyVisitSlot(
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   var location: AgencyLocation,
 
-  @Column(nullable = false)
+  @Column(name = "WEEK_DAY", nullable = false)
   var weekDay: String,
 
   @Column(name = "TIME_SLOT_SEQ", nullable = false)
   var timeSlotSequence: Int,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumns(
+    value = [
+      JoinColumn(name = "WEEK_DAY", referencedColumnName = "WEEK_DAY", insertable = false, updatable = false),
+      JoinColumn(name = "AGY_LOC_ID", referencedColumnName = "AGY_LOC_ID", insertable = false, updatable = false),
+      JoinColumn(name = "TIME_SLOT_SEQ", referencedColumnName = "TIME_SLOT_SEQ", insertable = false, updatable = false)
+    ]
+  )
+  var agencyVisitTime: AgencyVisitTime,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID", nullable = false)
