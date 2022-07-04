@@ -8,9 +8,11 @@ import java.util.Objects
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
+import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
+import javax.persistence.SequenceGenerator
 import javax.persistence.Table
 
 @Entity
@@ -18,6 +20,8 @@ import javax.persistence.Table
 @BatchSize(size = 25)
 data class AgencyInternalLocation(
   @Id
+  @SequenceGenerator(name = "INTERNAL_LOCATION_ID", sequenceName = "INTERNAL_LOCATION_ID", allocationSize = 1)
+  @GeneratedValue(generator = "INTERNAL_LOCATION_ID")
   @Column(name = "INTERNAL_LOCATION_ID")
   val locationId: Long = 0,
 
