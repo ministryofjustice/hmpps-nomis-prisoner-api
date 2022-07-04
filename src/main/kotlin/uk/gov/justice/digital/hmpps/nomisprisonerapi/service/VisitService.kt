@@ -14,6 +14,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDayId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.SCHEDULED_APPROVED
@@ -28,7 +35,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -39,6 +50,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.function.Supplier
 
 @Service
@@ -59,9 +71,22 @@ class VisitService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val telemetryClient: TelemetryClient,
   private val personRepository: PersonRepository,
+  private val visitDayRepository: AgencyVisitDayRepository,
+  private val visitTimeRepository: AgencyVisitTimeRepository,
+  private val visitSlotRepository: AgencyVisitSlotRepository,
+  private val internalLocationRepository: AgencyInternalLocationRepository
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
+    val dayOfWeekNomisMap = mapOf(
+      1 to "MON",
+      2 to "TUE",
+      3 to "WED",
+      4 to "THU",
+      5 to "FRI",
+      6 to "SAT",
+      7 to "SUN"
+    )
   }
 
   fun createVisit(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
@@ -282,6 +307,32 @@ class VisitService(
     )
   }
 
+  private fun mapVisitModelV2(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
+
+    val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))
+      .orElseThrow(BadDataException("Invalid visit type: ${visitDto.visitType}"))
+
+    val location = agencyLocationRepository.findById(visitDto.prisonId)
+      .orElseThrow(BadDataException("Prison with id=${visitDto.prisonId} does not exist"))
+
+    val endDateTime = LocalDateTime.of(LocalDate.from(visitDto.startDateTime), visitDto.endTime)
+    val visitSlot =
+      getOrCreateVisitSlot(startDateTime = visitDto.startDateTime, endDateTime = endDateTime, location = location)
+
+    return Visit(
+      offenderBooking = offenderBooking,
+      visitDate = LocalDate.from(visitDto.startDateTime),
+      startDateTime = visitDto.startDateTime,
+      endDateTime = endDateTime,
+      visitType = visitType,
+      visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
+      location = location,
+      commentText = visitDto.visitComment,
+      agencyVisitSlot = visitSlot,
+      agencyInternalLocation = visitSlot.agencyInternalLocation
+    )
+  }
+
   private fun addVisitors(
     visit: Visit,
     offenderBooking: OffenderBooking,
@@ -308,6 +359,128 @@ class VisitService(
     }
   }
 
+  private fun getOrCreateVisitSlot(
+    location: AgencyLocation,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+  ): AgencyVisitSlot {
+    val agencyVisitTime =
+      getOrCreateVisitTime(startDateTime = startDateTime, endDateTime = endDateTime, location = location)
+    val vsipVisitRoom = getOrCreateVsipVisitRoom(location = location)
+    return visitSlotRepository.findByAgencyInternalLocation_DescriptionAndAgencyVisitTime_StartTimeAndWeekDay(
+      roomDescription = vsipVisitRoom.description,
+      startTime = agencyVisitTime.startTime,
+      weekDay = agencyVisitTime.agencyVisitTimesId.weekDay
+    ) ?: createVisitSlot(
+      visitTime = agencyVisitTime, vsipRoom = vsipVisitRoom
+    )
+  }
+
+  private fun getOrCreateVisitTime(
+    location: AgencyLocation,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+  ): AgencyVisitTime {
+    val weekDay = getOrCreateVisitDay(startDateTime = startDateTime, location = location)
+    return visitTimeRepository.findByStartTimeAndAgencyVisitTimesId_WeekDayAndAgencyVisitTimesId_Location(
+      startTime = startDateTime.toLocalTime(),
+      weekDay = weekDay.agencyVisitDayId.weekDay, location = location
+    ) ?: createVisitTime(
+      location = location,
+      weekDay = weekDay,
+      startDateTime = startDateTime,
+      endDateTime = endDateTime
+    )
+  }
+
+  private fun getOrCreateVisitDay(
+    startDateTime: LocalDateTime,
+    location: AgencyLocation
+  ): AgencyVisitDay {
+    val weekDayNomis = dayOfWeekNomisMap[startDateTime.dayOfWeek.value]
+      ?: throw BadDataException("Invalid day of week: ${startDateTime.dayOfWeek}")
+    return visitDayRepository.findByIdOrNull(
+      AgencyVisitDayId(location = location, weekDay = weekDayNomis)
+    ) ?: createDayOfWeek(
+      location = location,
+      weekDayNomis = weekDayNomis
+    )
+  }
+
+  private fun getOrCreateVsipVisitRoom(
+    location: AgencyLocation
+  ): AgencyInternalLocation {
+    val roomDescription = "${location.id}-VSIP"
+    return internalLocationRepository.findByDescriptionAndAgencyId(roomDescription, location.id)
+      ?: createVsipVisitRoom(
+        location = location, roomDescription = roomDescription
+      )
+  }
+
+  private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay {
+    return visitDayRepository.save(
+      AgencyVisitDay(
+        AgencyVisitDayId(location, weekDayNomis)
+      )
+    )
+  }
+
+  private fun createVisitTime(
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+    location: AgencyLocation,
+    weekDay: AgencyVisitDay
+  ): AgencyVisitTime {
+    val timeSlotSeq =
+      visitTimeRepository.findFirstByAgencyVisitTimesId_LocationAndAgencyVisitTimesId_WeekDayOrderByAgencyVisitTimesId_TimeSlotSequenceDesc(
+        agencyId = location,
+        weekDay = weekDay.agencyVisitDayId.weekDay
+      )?.let { it.agencyVisitTimesId.timeSlotSequence + 1 } ?: 1
+    return visitTimeRepository.save(
+      AgencyVisitTime(
+        AgencyVisitTimeId(location, weekDay.agencyVisitDayId.weekDay, timeSlotSeq),
+        startTime = startDateTime.toLocalTime(),
+        endTime = endDateTime.toLocalTime(),
+        effectiveDate = startDateTime.toLocalDate(),
+        expiryDate = startDateTime.toLocalDate()
+      )
+    )
+  }
+
+  private fun createVisitSlot(
+    visitTime: AgencyVisitTime,
+    vsipRoom: AgencyInternalLocation
+  ): AgencyVisitSlot {
+    log.info(
+      "Creating visit slot for day of week ${visitTime.agencyVisitTimesId.weekDay}, start time: ${
+      visitTime.startTime.format(
+        DateTimeFormatter.ISO_TIME
+      )
+      } at ${vsipRoom.agencyId}"
+    )
+    return visitSlotRepository.save(
+      AgencyVisitSlot(
+        agencyVisitTime = visitTime,
+        agencyInternalLocation = vsipRoom,
+        location = visitTime.agencyVisitTimesId.location,
+        weekDay = visitTime.agencyVisitTimesId.weekDay,
+        timeSlotSequence = visitTime.agencyVisitTimesId.timeSlotSequence
+      )
+    )
+  }
+
+  private fun createVsipVisitRoom(location: AgencyLocation, roomDescription: String): AgencyInternalLocation {
+    log.info("Creating VSIP visit room: $roomDescription")
+    return internalLocationRepository.save(
+      AgencyInternalLocation(
+        agencyId = location.id,
+        description = roomDescription,
+        locationType = "VISIT",
+        locationCode = "VSIP"
+      )
+    )
+  }
+
   private fun getNextEvent(): Long {
     return visitVisitorRepository.getEventId()
   }
@@ -325,6 +498,33 @@ class VisitService(
 
   fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
     return visitRepository.findRoomUsageCountWithFilter(visitFilter)
+  }
+
+  fun createVisitV2(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
+
+    val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
+      .orElseThrow(NotFoundException(offenderNo))
+
+    val mappedVisit = mapVisitModelV2(visitDto, offenderBooking)
+
+    createBalance(mappedVisit, visitDto, offenderBooking)
+
+    addVisitors(mappedVisit, offenderBooking, visitDto)
+
+    val visit = visitRepository.save(mappedVisit)
+
+    telemetryClient.trackEvent(
+      "visit-v2-created",
+      mapOf(
+        "nomisVisitId" to visit.id.toString(),
+        "offenderNo" to offenderNo,
+        "prisonId" to visitDto.prisonId,
+      ),
+      null
+    )
+    log.debug("Visit v2 created with Nomis visit id = ${visit.id}")
+
+    return CreateVisitResponse(visit.id)
   }
 }
 
