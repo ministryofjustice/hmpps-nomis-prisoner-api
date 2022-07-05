@@ -1218,6 +1218,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.endTime).isEqualTo(LocalTime.parse("13:04"))
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.weekDay).isEqualTo("THU")
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.timeSlotSequence).isEqualTo(1)
+      assertThat(visit.agencyVisitSlot!!.maxAdults).isEqualTo(0)
+      assertThat(visit.agencyVisitSlot!!.maxGroups).isEqualTo(0)
 
       val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
 

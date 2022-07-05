@@ -464,7 +464,9 @@ class VisitService(
         agencyInternalLocation = vsipRoom,
         location = visitTime.agencyVisitTimesId.location,
         weekDay = visitTime.agencyVisitTimesId.weekDay,
-        timeSlotSequence = visitTime.agencyVisitTimesId.timeSlotSequence
+        timeSlotSequence = visitTime.agencyVisitTimesId.timeSlotSequence,
+        maxAdults = 0,
+        maxGroups = 0
       )
     )
   }
