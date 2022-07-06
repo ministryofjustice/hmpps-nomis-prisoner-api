@@ -1216,6 +1216,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(visit.agencyVisitSlot!!.timeSlotSequence).isEqualTo(1)
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.endTime).isEqualTo(LocalTime.parse("13:04"))
+      assertThat(visit.agencyVisitSlot!!.agencyVisitTime.effectiveDate).isEqualTo(LocalDate.parse("2021-11-03"))
+      assertThat(visit.agencyVisitSlot!!.agencyVisitTime.expiryDate).isEqualTo(LocalDate.parse("2021-11-03"))
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.weekDay).isEqualTo("THU")
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.timeSlotSequence).isEqualTo(1)
       assertThat(visit.agencyVisitSlot!!.maxAdults).isEqualTo(0)

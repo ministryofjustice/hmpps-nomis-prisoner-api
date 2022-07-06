@@ -441,8 +441,9 @@ class VisitService(
         AgencyVisitTimeId(location, weekDay.agencyVisitDayId.weekDay, timeSlotSeq),
         startTime = startDateTime.toLocalTime(),
         endTime = endDateTime.toLocalTime(),
-        effectiveDate = startDateTime.toLocalDate(),
-        expiryDate = startDateTime.toLocalDate()
+        effectiveDate = startDateTime.toLocalDate()
+          .minusDays(1), // effective and expiry in the past to avoid the slot being available in pnomis
+        expiryDate = startDateTime.toLocalDate().minusDays(1)
       )
     )
   }
