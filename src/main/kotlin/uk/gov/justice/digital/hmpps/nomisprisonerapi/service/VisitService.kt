@@ -295,26 +295,6 @@ class VisitService(
     val location = agencyLocationRepository.findById(visitDto.prisonId)
       .orElseThrow(BadDataException("Prison with id=${visitDto.prisonId} does not exist"))
 
-    return Visit(
-      offenderBooking = offenderBooking,
-      visitDate = LocalDate.from(visitDto.startDateTime),
-      startDateTime = visitDto.startDateTime,
-      endDateTime = LocalDateTime.of(LocalDate.from(visitDto.startDateTime), visitDto.endTime),
-      visitType = visitType,
-      visitStatus = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
-      location = location,
-      commentText = visitDto.visitComment,
-    )
-  }
-
-  private fun mapVisitModelV2(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
-
-    val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))
-      .orElseThrow(BadDataException("Invalid visit type: ${visitDto.visitType}"))
-
-    val location = agencyLocationRepository.findById(visitDto.prisonId)
-      .orElseThrow(BadDataException("Prison with id=${visitDto.prisonId} does not exist"))
-
     val endDateTime = LocalDateTime.of(LocalDate.from(visitDto.startDateTime), visitDto.endTime)
     val visitSlot =
       getOrCreateVisitSlot(startDateTime = visitDto.startDateTime, endDateTime = endDateTime, location = location)
@@ -501,33 +481,6 @@ class VisitService(
 
   fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
     return visitRepository.findRoomUsageCountWithFilter(visitFilter)
-  }
-
-  fun createVisitV2(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
-
-    val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
-      .orElseThrow(NotFoundException(offenderNo))
-
-    val mappedVisit = mapVisitModelV2(visitDto, offenderBooking)
-
-    createBalance(mappedVisit, visitDto, offenderBooking)
-
-    addVisitors(mappedVisit, offenderBooking, visitDto)
-
-    val visit = visitRepository.save(mappedVisit)
-
-    telemetryClient.trackEvent(
-      "visit-v2-created",
-      mapOf(
-        "nomisVisitId" to visit.id.toString(),
-        "offenderNo" to offenderNo,
-        "prisonId" to visitDto.prisonId,
-      ),
-      null
-    )
-    log.debug("Visit v2 created with Nomis visit id = ${visit.id}")
-
-    return CreateVisitResponse(visit.id)
   }
 }
 
