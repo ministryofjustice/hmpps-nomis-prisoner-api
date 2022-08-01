@@ -45,4 +45,10 @@ data class CreateVisitRequest(
 
   @Schema(description = "Comment to be added to visit order (if one is created)")
   val visitOrderComment: String = "Created by VSIP",
+
+  @Schema(description = "Name of the real world room where visit will take place")
+  val room: String,
+
+  @Schema(description = "Whether visit is restricted to a closed session", allowableValues = ["OPEN", "CLOSED"])
+  val openClosedStatus: String,
 )
