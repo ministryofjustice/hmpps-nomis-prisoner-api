@@ -25,10 +25,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDayId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -152,45 +150,6 @@ internal class VisitServiceTest {
     visitors.add(VisitVisitor(visit = this, person = Person(-7L, "First", "Last")))
   }
 
-  private val defaultLocation = AgencyLocation(id = "SWI", description = "Swindon")
-
-  private val defaultVisitDay = AgencyVisitDay(
-    AgencyVisitDayId(
-      location = defaultLocation,
-      weekDay = "THU"
-    )
-  )
-
-  private val defaultVisitTime =
-    AgencyVisitTime(
-      AgencyVisitTimeId(
-        location = defaultLocation,
-        timeSlotSequence = 10,
-        weekDay = defaultVisitDay.agencyVisitDayId.weekDay
-      ),
-      startTime = LocalTime.parse("12:05"),
-      endTime = LocalTime.parse("12:05"),
-      effectiveDate = LocalDate.parse("2021-11-02"),
-      expiryDate = LocalDate.parse("2021-11-02")
-    )
-
-  private val defaultInternalLocation = AgencyInternalLocation(
-    locationId = 24,
-    agencyId = defaultLocation.id,
-    description = "SWI-VSIP",
-    locationType = "VISIT",
-    locationCode = "VSIP"
-  )
-
-  private val defaultVisitSlot = AgencyVisitSlot(
-    id = 10,
-    agencyVisitTime = defaultVisitTime,
-    agencyInternalLocation = defaultInternalLocation,
-    location = defaultLocation,
-    weekDay = defaultVisitDay.agencyVisitDayId.weekDay,
-    timeSlotSequence = 10,
-  )
-
   @BeforeEach
   fun setup() {
     whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
@@ -223,10 +182,11 @@ internal class VisitServiceTest {
     whenever(visitVisitorRepository.getEventId()).thenReturn(eventId)
     whenever(visitOrderRepository.getVisitOrderNumber()).thenReturn(visitOrder)
 
-    whenever(visitDayRepository.save(any())).thenReturn(defaultVisitDay)
-    whenever(visitTimeRepository.save(any())).thenReturn(defaultVisitTime)
-    whenever(visitSlotRepository.save(any())).thenReturn(defaultVisitSlot)
-    whenever(internalLocationRepository.save(any())).thenReturn(defaultInternalLocation)
+    whenever(visitDayRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitDay }
+    whenever(visitTimeRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitTime }
+    whenever(visitSlotRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitSlot }
+    whenever(internalLocationRepository.save(any())).thenAnswer { it.arguments[0] as AgencyInternalLocation }
+    whenever(visitRepository.save(any())).thenAnswer { (it.arguments[0] as Visit).copy(id = visitId) }
   }
 
   @DisplayName("create")
@@ -245,9 +205,6 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data is mapped correctly`() {
-
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
-
       assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
 
       verify(visitRepository).save(
@@ -264,9 +221,6 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data room details are mapped correctly`() {
-
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
-
       assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
 
       verify(visitDayRepository).save(any())
@@ -276,10 +230,62 @@ internal class VisitServiceTest {
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.location.id).isEqualTo(prisonId)
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP")
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
           assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
+        }
+      )
+    }
+
+    @Test
+    internal fun `room description is used for NOMIS room description`() {
+      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "OPEN"))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-SOC")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINSOC")
+        }
+      )
+    }
+
+    @Test
+    internal fun `visit restriction is used for NOMIS room description`() {
+      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "CLOSED"))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-CLO")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINCLO")
+        }
+      )
+    }
+
+    @Test
+    internal fun `room description for open visit is based on room description without "visit(s)" and "room"`() {
+      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Big visits room annex", openClosedStatus = "OPEN"))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-BIG-ANNEX-SOC")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPBIGANNEXSO")
+        }
+      )
+    }
+    @Test
+    internal fun `room description for closed visit is based on room description without "visit(s)" and "room"`() {
+      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "HUGE visits room annex", openClosedStatus = "CLOSED"))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-HUGE-ANNEX-CLO")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPHUGEANNEXC")
+        }
+      )
+    }
+
+    @Test
+    internal fun `very long descriptions will be limited which means codes can be duplicated`() {
+      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "The Whale is an 1851 novel by American writer Herman Melville. The book is the sailor Ishmael's narrative of the obsessive quest of Ahab, captain of the whaling ship Pequod, for revenge against Moby Dick, the giant white sperm whale that on the ship's previous voyage bit off Ahab's leg at the knee.", openClosedStatus = "CLOSED"))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-THE-WHALE-IS-AN-1851-NOVEL-BY-AMERICAN-WRITER-HERMAN-MELVILLE-THE-BOOK-IS-THE-SAILOR-ISHMAELS-NARRATIVE-OF-THE-OBSESSIVE-QUEST-OF-AHAB-CAPTAIN-OF-THE-WHALING-SHIP-PEQUOD-FOR-REVENGE-AGAINST-MOBY-DICK-THE-GIANT-WHITE-SPERM-WHALE-CLO")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPTHEWHALEIS")
         }
       )
     }
