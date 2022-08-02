@@ -297,7 +297,13 @@ class VisitService(
 
     val endDateTime = LocalDateTime.of(LocalDate.from(visitDto.startDateTime), visitDto.endTime)
     val visitSlot =
-      getOrCreateVisitSlot(startDateTime = visitDto.startDateTime, endDateTime = endDateTime, location = location)
+      getOrCreateVisitSlot(
+        startDateTime = visitDto.startDateTime,
+        endDateTime = endDateTime,
+        location = location,
+        roomDescription = visitDto.room,
+        isClosedVisit = "CLOSED" == visitDto.openClosedStatus
+      )
 
     return Visit(
       offenderBooking = offenderBooking,
@@ -343,10 +349,13 @@ class VisitService(
     location: AgencyLocation,
     startDateTime: LocalDateTime,
     endDateTime: LocalDateTime,
+    roomDescription: String,
+    isClosedVisit: Boolean,
   ): AgencyVisitSlot {
     val agencyVisitTime =
       getOrCreateVisitTime(startDateTime = startDateTime, endDateTime = endDateTime, location = location)
-    val vsipVisitRoom = getOrCreateVsipVisitRoom(location = location)
+    val vsipVisitRoom =
+      getOrCreateVsipVisitRoom(location = location, roomDescription = roomDescription, isClosedVisit = isClosedVisit)
     return visitSlotRepository.findByAgencyInternalLocation_DescriptionAndAgencyVisitTime_StartTimeAndWeekDay(
       roomDescription = vsipVisitRoom.description,
       startTime = agencyVisitTime.startTime,
@@ -388,14 +397,40 @@ class VisitService(
   }
 
   private fun getOrCreateVsipVisitRoom(
-    location: AgencyLocation
+    location: AgencyLocation,
+    roomDescription: String,
+    isClosedVisit: Boolean,
   ): AgencyInternalLocation {
-    val roomDescription = "${location.id}-VSIP"
-    return internalLocationRepository.findByDescriptionAndAgencyId(roomDescription, location.id)
+    // description and agencyId is unique (code is not unique)
+    val internalLocationDescription =
+      roomDescription.toNomisBaseDescription().toInternalLocationDescription(location.id, isClosedVisit)
+    return internalLocationRepository.findByDescriptionAndAgencyId(internalLocationDescription, location.id)
       ?: createVsipVisitRoom(
-        location = location, roomDescription = roomDescription
+        location = location,
+        roomDescription = internalLocationDescription,
+        roomCode = internalLocationDescription.toInternalLocationCode(location.id)
       )
   }
+
+  private fun String.toInternalLocationDescription(locationId: String, isClosedVisit: Boolean) =
+    "$locationId-VSIP-$this-${if (isClosedVisit) "CLO" else "SOC"}"
+
+  private fun String.toNomisBaseDescription() =
+    this.replace("room", "", ignoreCase = true)
+      .replace("visits", "", ignoreCase = true)
+      .replace("visit", "", ignoreCase = true)
+      .replace("[,'\".-]".toRegex(), "")
+      .trim()
+      .replace("\\s+".toRegex(), "-")
+      .uppercase()
+      .take(240 - 12) // Full description can not exceed 240 characters (12 additional characters will be added to this description)
+      .removeSuffix("-")
+
+  private fun String.toInternalLocationCode(locationId: String) =
+    this.replace("VSIP", "VP")
+      .replace(locationId, "")
+      .replace("-", "")
+      .take(12) // Code does not need to be unique so just take the first 12 characters
 
   private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay {
     return visitDayRepository.save(
@@ -452,14 +487,18 @@ class VisitService(
     )
   }
 
-  private fun createVsipVisitRoom(location: AgencyLocation, roomDescription: String): AgencyInternalLocation {
-    log.info("Creating VSIP visit room: $roomDescription")
+  private fun createVsipVisitRoom(
+    location: AgencyLocation,
+    roomDescription: String,
+    roomCode: String
+  ): AgencyInternalLocation {
+    log.info("Creating VSIP visit room: $roomDescription ($roomCode)")
     return internalLocationRepository.save(
       AgencyInternalLocation(
         agencyId = location.id,
         description = roomDescription,
         locationType = "VISIT",
-        locationCode = "VSIP"
+        locationCode = roomCode,
       )
     )
   }

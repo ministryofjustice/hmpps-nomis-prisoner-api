@@ -314,7 +314,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visit = repository.lookupVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VSIP")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VSIP-MAIN-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VPMAINSOC")
       assertThat(visit.agencyVisitSlot!!.timeSlotSequence).isEqualTo(1)
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.endTime).isEqualTo(LocalTime.parse("13:04"))
