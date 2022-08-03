@@ -11,6 +11,8 @@ import java.time.LocalTime
 interface AgencyVisitTimeRepository :
   JpaRepository<AgencyVisitTime, AgencyVisitTimeId> {
 
+  fun findByAgencyVisitTimesId_Location_Id(locationId: String): List<AgencyVisitTime>
+
   fun findByStartTimeAndAgencyVisitTimesId_WeekDayAndAgencyVisitTimesId_Location(
     startTime: LocalTime,
     weekDay: String,

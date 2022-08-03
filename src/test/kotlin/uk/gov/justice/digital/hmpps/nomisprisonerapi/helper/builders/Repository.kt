@@ -7,6 +7,9 @@ import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -18,6 +21,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -36,6 +42,9 @@ class Repository(
   val visitRepository: VisitRepository,
   val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
   val visitTypeRepository: ReferenceCodeRepository<VisitType>,
+  val agencyVisitSlotRepository: AgencyVisitSlotRepository,
+  val agencyVisitDayRepository: AgencyVisitDayRepository,
+  val agencyVisitTimeRepository: AgencyVisitTimeRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -64,7 +73,11 @@ class Repository(
               visitType = lookupVisitType(visitBuilder.visitTypeCode),
               visitStatus = lookupVisitStatus(visitBuilder.visitStatusCode),
               agencyLocation = lookupAgency(visitBuilder.agyLocId),
-              agencyInternalLocation = visitBuilder.agencyInternalLocationDescription?.run { lookupAgencyInternalLocationByDescription(this) }
+              agencyInternalLocation = visitBuilder.agencyInternalLocationDescription?.run {
+                lookupAgencyInternalLocationByDescription(
+                  this
+                )
+              }
             )
             visit.visitors.addAll(
               visitBuilder.visitors.map {
@@ -99,9 +112,15 @@ class Repository(
     relationshipTypeRepository.findByIdOrNull(Pk(RelationshipType.RELATIONSHIP, code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
-  fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation = agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
+  fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation =
+    agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
+
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
+
+  fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
+  fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()
+  fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
 
   fun lookupVisit(visitId: Long?): Visit {
     val visit = visitRepository.findById(visitId!!).orElseThrow()
@@ -120,4 +139,13 @@ class Repository(
       "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
     jdbcTemplate.execute(sql)
   }
+
+  fun findAllAgencyVisitSlots(prisonId: String): List<AgencyVisitSlot> =
+    agencyVisitSlotRepository.findByLocation_Id(prisonId)
+
+  fun findAllAgencyVisitTimes(prisonId: String): List<AgencyVisitTime> =
+    agencyVisitTimeRepository.findByAgencyVisitTimesId_Location_Id(prisonId)
+
+  fun findAllAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
+    agencyVisitDayRepository.findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(weekDay, prisonId)
 }
