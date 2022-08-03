@@ -176,6 +176,21 @@ class VisitService(
     log.debug("Visit with Nomis visit id = ${visit.id} cancelled")
   }
 
+  fun getVisit(visitId: Long): VisitResponse {
+    return visitRepository.findByIdOrNull(visitId)?.run {
+      return VisitResponse(this)
+    } ?: throw NotFoundException("visit id $visitId")
+  }
+
+  fun findVisitIdsByFilter(pageRequest: Pageable, visitFilter: VisitFilter): Page<VisitIdResponse> {
+    log.info("Visit Id filter request : $visitFilter with page request $pageRequest")
+    return visitRepository.findAll(VisitSpecification(visitFilter), pageRequest).map { VisitIdResponse(it.id) }
+  }
+
+  fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
+    return visitRepository.findRoomUsageCountWithFilter(visitFilter)
+  }
+
   private fun createBalance(
     visit: Visit,
     visitDto: CreateVisitRequest,
@@ -373,7 +388,8 @@ class VisitService(
     val weekDay = getOrCreateVisitDay(startDateTime = startDateTime, location = location)
     return visitTimeRepository.findByStartTimeAndAgencyVisitTimesId_WeekDayAndAgencyVisitTimesId_Location(
       startTime = startDateTime.toLocalTime(),
-      weekDay = weekDay.agencyVisitDayId.weekDay, location = location
+      weekDay = weekDay.agencyVisitDayId.weekDay,
+      location = location
     ) ?: createVisitTime(
       location = location,
       weekDay = weekDay,
@@ -505,21 +521,6 @@ class VisitService(
 
   private fun getNextEvent(): Long {
     return visitVisitorRepository.getEventId()
-  }
-
-  fun getVisit(visitId: Long): VisitResponse {
-    return visitRepository.findByIdOrNull(visitId)?.run {
-      return VisitResponse(this)
-    } ?: throw NotFoundException("visit id $visitId")
-  }
-
-  fun findVisitIdsByFilter(pageRequest: Pageable, visitFilter: VisitFilter): Page<VisitIdResponse> {
-    log.info("Visit Id filter request : $visitFilter with page request $pageRequest")
-    return visitRepository.findAll(VisitSpecification(visitFilter), pageRequest).map { VisitIdResponse(it.id) }
-  }
-
-  fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
-    return visitRepository.findRoomUsageCountWithFilter(visitFilter)
   }
 }
 

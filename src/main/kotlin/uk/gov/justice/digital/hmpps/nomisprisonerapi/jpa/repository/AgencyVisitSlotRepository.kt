@@ -7,6 +7,9 @@ import java.time.LocalTime
 
 @Repository
 interface AgencyVisitSlotRepository : CrudRepository<AgencyVisitSlot, Long> {
+
+  fun findByLocation_Id(locationId: String): List<AgencyVisitSlot>
+
   fun findByAgencyInternalLocation_DescriptionAndAgencyVisitTime_StartTimeAndWeekDay(
     roomDescription: String,
     startTime: LocalTime,
