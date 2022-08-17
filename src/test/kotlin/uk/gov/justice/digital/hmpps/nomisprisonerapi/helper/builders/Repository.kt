@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
@@ -42,6 +43,7 @@ class Repository(
   val visitRepository: VisitRepository,
   val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
   val visitTypeRepository: ReferenceCodeRepository<VisitType>,
+  val iepLevelRepository: ReferenceCodeRepository<IEPLevel>,
   val agencyVisitSlotRepository: AgencyVisitSlotRepository,
   val agencyVisitDayRepository: AgencyVisitDayRepository,
   val agencyVisitTimeRepository: AgencyVisitTimeRepository,
@@ -87,11 +89,21 @@ class Repository(
             visit
           }
         )
+
         booking
       }
     )
 
     offenderRepository.saveAndFlush(offender)
+
+    // children that require a flushed booking
+    offender.bookings.forEachIndexed { index, booking ->
+      booking.incentives.addAll(
+        offenderBuilder.bookingBuilders[index].incentives.map {
+          it.build(booking, lookupIepLevel(it.iepLevel))
+        }
+      )
+    }
     return offender
   }
 
@@ -104,6 +116,9 @@ class Repository(
 
   fun lookupVisitType(code: String): VisitType =
     visitTypeRepository.findByIdOrNull(Pk(VisitType.VISIT_TYPE, code))!!
+
+  fun lookupIepLevel(code: String): IEPLevel =
+    iepLevelRepository.findByIdOrNull(Pk(IEPLevel.IEP_LEVEL, code))!!
 
   fun lookupVisitStatus(code: String): VisitStatus =
     visitStatusRepository.findByIdOrNull(Pk(VisitStatus.VISIT_STATUS, code))!!
