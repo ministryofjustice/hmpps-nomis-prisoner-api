@@ -140,8 +140,6 @@ data class VisitResponse(
       )
     }
   )
-
-  data class CodeDescription(val code: String, val description: String)
 }
 
 fun List<Phone>.toTelephoneList(): List<String> {

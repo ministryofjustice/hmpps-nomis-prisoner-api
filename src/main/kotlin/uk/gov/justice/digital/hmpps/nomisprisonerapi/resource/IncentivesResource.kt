@@ -14,11 +14,13 @@ import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.IncentiveIdResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.IncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.IncentiveFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.IncentivesService
 import java.time.LocalDate
@@ -87,5 +89,50 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         fromDate = fromDate,
         latestOnly = latestOnly ?: false
       )
+    )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @GetMapping("/incentives/booking-id/{bookingId}/incentive-sequence/{incentiveSequence}")
+  @Operation(
+    summary = "get a prisoner's incentive level (a.k.a IEP) by id (bookingId and incentiveId)",
+    description = "Retrieves a created incentive level for a prisoner. Requires ROLE_NOMIS_INCENTIVES.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the incentive level details"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun getIncentive(
+    @Schema(description = "NOMIS booking Id", example = "12345", required = true)
+    @PathVariable
+    bookingId: Long,
+    @Schema(description = "NOMIS Incentive sequence ", example = "1", required = true)
+    @PathVariable
+    incentiveSequence: Long
+  ): IncentiveResponse =
+    incentivesService.getIncentive(
+      bookingId = bookingId,
+      incentiveSequence = incentiveSequence
     )
 }
