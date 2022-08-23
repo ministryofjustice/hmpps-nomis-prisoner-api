@@ -11,7 +11,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.IncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.IncentiveFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncentiveSpecification
@@ -21,7 +20,6 @@ import java.time.LocalDateTime
 @Transactional
 class IncentivesService(
   private val incentiveRepository: IncentiveRepository,
-  private val agencyLocationRepository: AgencyLocationRepository,
   private val offenderBookingRepository: OffenderBookingRepository
 ) {
   fun findIncentiveIdsByFilter(pageRequest: Pageable, incentiveFilter: IncentiveFilter): Page<IncentiveIdResponse> {
@@ -42,17 +40,14 @@ class IncentivesService(
   }
 
   private fun mapIncentiveModel(incentiveEntity: Incentive): IncentiveResponse {
-
-    val prison = agencyLocationRepository.findById(incentiveEntity.location.id)
-      .orElseThrow { NotFoundException("prison Id ${incentiveEntity.location.id} not found") }
-
     return IncentiveResponse(
       bookingId = incentiveEntity.id.offenderBooking.bookingId,
       incentiveSequence = incentiveEntity.id.sequence,
       commentText = incentiveEntity.commentText,
       iepDateTime = LocalDateTime.of(incentiveEntity.iepDate, incentiveEntity.iepTime),
       iepLevel = CodeDescription(incentiveEntity.iepLevel.code, incentiveEntity.iepLevel.description),
-      prisonId = prison.id
+      prisonId = incentiveEntity.location.id,
+      userId = incentiveEntity.userId
     )
   }
 }

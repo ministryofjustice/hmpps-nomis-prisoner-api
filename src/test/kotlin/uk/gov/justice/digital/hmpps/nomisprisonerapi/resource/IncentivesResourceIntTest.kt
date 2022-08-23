@@ -187,7 +187,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                   iepLevel = "STD",
                   sequence = 1,
                   iepDate = LocalDate.parse("2022-01-01"),
-                  iepTime = LocalTime.parse("10:00:00")
+                  iepTime = LocalTime.parse("10:00:00"),
+                  userId = "JOHN_GEN"
                 ),
                 IncentiveBuilder(
                   iepLevel = "ENH",
@@ -220,6 +221,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("iepLevel.code").isEqualTo("STD")
         .jsonPath("iepLevel.description").isEqualTo("Standard")
         .jsonPath("iepDateTime").isEqualTo("2022-01-01T10:00:00")
+        .jsonPath("userId").isEqualTo("JOHN_GEN")
     }
 
     @Test

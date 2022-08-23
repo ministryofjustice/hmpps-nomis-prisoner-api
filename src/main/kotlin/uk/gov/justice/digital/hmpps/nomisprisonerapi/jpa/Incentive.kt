@@ -41,6 +41,9 @@ data class Incentive(
   @Column(nullable = false)
   val iepTime: LocalTime,
 
+  @Column
+  var userId: String? = null,
+
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val location: AgencyLocation,

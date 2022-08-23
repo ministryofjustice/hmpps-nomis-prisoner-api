@@ -17,4 +17,6 @@ data class IncentiveResponse(
   val prisonId: String,
   @Schema(description = "IEP level code and description", required = true)
   val iepLevel: CodeDescription,
+  @Schema(description = "User id of user creating prisoner incentive level", required = false)
+  val userId: String? = null,
 )
