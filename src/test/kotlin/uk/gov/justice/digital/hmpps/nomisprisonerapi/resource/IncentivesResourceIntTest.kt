@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
+import java.time.LocalTime
 
 class IncentivesResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -78,6 +79,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(6)
     }
+
     @Test
     fun `get incentives issued within a given date range`() {
 
@@ -163,6 +165,98 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `get incentives prevents access without authorization`() {
       Assertions.assertThat(
         webTestClient.get().uri("/incentives/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      )
+    }
+  }
+
+  @DisplayName("get incentive by id")
+  @Nested
+  inner class GetIncentiveByIdRequest {
+    lateinit var offenderAtMoorlands: Offender
+
+    @BeforeEach
+    internal fun createPrisonerWithIEPs() {
+      offenderAtMoorlands = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "MDI")
+              .withIncentives(
+                IncentiveBuilder(
+                  iepLevel = "STD",
+                  sequence = 1,
+                  iepDate = LocalDate.parse("2022-01-01"),
+                  iepTime = LocalTime.parse("10:00:00"),
+                  userId = "JOHN_GEN"
+                ),
+                IncentiveBuilder(
+                  iepLevel = "ENH",
+                  sequence = 2,
+                  iepDate = LocalDate.parse("2022-01-02"),
+                  iepTime = LocalTime.parse("10:00:00")
+                )
+              )
+          )
+      )
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offenderAtMoorlands)
+    }
+
+    @Test
+    fun `get incentive by id`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("bookingId").isEqualTo(bookingId)
+        .jsonPath("incentiveSequence").isEqualTo("1")
+        .jsonPath("prisonId").isEqualTo("MDI")
+        .jsonPath("commentText").isEqualTo("comment")
+        .jsonPath("iepLevel.code").isEqualTo("STD")
+        .jsonPath("iepLevel.description").isEqualTo("Standard")
+        .jsonPath("iepDateTime").isEqualTo("2022-01-01T10:00:00")
+        .jsonPath("userId").isEqualTo("JOHN_GEN")
+    }
+
+    @Test
+    fun `get incentive by id - not found (sequence)`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/3")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get incentive by id - not found (booking id)`() {
+      webTestClient.get().uri("/incentives/booking-id/456/incentive-sequence/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get incentive prevents access without appropriate role`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      Assertions.assertThat(
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden
+      )
+    }
+
+    @Test
+    fun `get incentive prevents access without authorization`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      Assertions.assertThat(
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
           .exchange()
           .expectStatus().isUnauthorized
       )

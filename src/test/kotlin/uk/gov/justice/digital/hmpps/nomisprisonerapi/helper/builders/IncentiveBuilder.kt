@@ -9,6 +9,7 @@ import java.time.LocalTime
 
 class IncentiveBuilder(
   var iepLevel: String = "ENT",
+  var userId: String? = null,
   var sequence: Long = 1,
   var commentText: String = "comment",
   var iepDate: LocalDate = LocalDate.now(),
@@ -25,5 +26,6 @@ class IncentiveBuilder(
       iepTime = iepTime,
       location = offenderBooking.location!!,
       iepLevel = level,
+      userId = userId
     )
 }
