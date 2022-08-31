@@ -195,6 +195,13 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                   sequence = 2,
                   iepDate = LocalDate.parse("2022-01-02"),
                   iepTime = LocalTime.parse("10:00:00")
+                ),
+                // earlier date but highest sequence - date takes precedence over sequence for current IEP
+                IncentiveBuilder(
+                  iepLevel = "BAS",
+                  sequence = 3,
+                  iepDate = LocalDate.parse("2020-01-02"),
+                  iepTime = LocalTime.parse("10:00:00")
                 )
               )
           )
@@ -222,12 +229,32 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("iepLevel.description").isEqualTo("Standard")
         .jsonPath("iepDateTime").isEqualTo("2022-01-01T10:00:00")
         .jsonPath("userId").isEqualTo("JOHN_GEN")
+        .jsonPath("currentIep").isEqualTo(false)
+    }
+
+    @Test
+    fun `get incentive by id (current)`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("bookingId").isEqualTo(bookingId)
+        .jsonPath("incentiveSequence").isEqualTo(2)
+        .jsonPath("prisonId").isEqualTo("MDI")
+        .jsonPath("commentText").isEqualTo("comment")
+        .jsonPath("iepLevel.code").isEqualTo("ENH")
+        .jsonPath("iepLevel.description").isEqualTo("Enhanced")
+        .jsonPath("iepDateTime").isEqualTo("2022-01-02T10:00:00")
+        .jsonPath("userId").doesNotExist()
+        .jsonPath("currentIep").isEqualTo(true)
     }
 
     @Test
     fun `get incentive by id - not found (sequence)`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/3")
+      webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/4")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .exchange()
         .expectStatus().isNotFound
@@ -257,6 +284,113 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       Assertions.assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
+          .exchange()
+          .expectStatus().isUnauthorized
+      )
+    }
+  }
+
+  @DisplayName("get current incentive for booking")
+  @Nested
+  inner class GetCurrentIncentiveByBookingRequest {
+    lateinit var offenderAtMoorlands: Offender
+    lateinit var offenderAtMoorlandsWithoutIncentives: Offender
+
+    @BeforeEach
+    internal fun createPrisonerWithIEPs() {
+      offenderAtMoorlands = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "MDI")
+              .withIncentives(
+                IncentiveBuilder(
+                  iepLevel = "STD",
+                  sequence = 1,
+                  iepDate = LocalDate.parse("2022-01-01"),
+                  iepTime = LocalTime.parse("10:00:00"),
+                  userId = "JOHN_GEN"
+                ),
+                IncentiveBuilder(
+                  iepLevel = "ENH",
+                  sequence = 2,
+                  iepDate = LocalDate.parse("2022-01-02"),
+                  iepTime = LocalTime.parse("10:00:00")
+                ),
+                // earlier date but highest sequence - date takes precedence over sequence for current IEP
+                IncentiveBuilder(
+                  iepLevel = "BAS",
+                  sequence = 3,
+                  iepDate = LocalDate.parse("2020-01-02"),
+                  iepTime = LocalTime.parse("10:00:00")
+                )
+              )
+          )
+      )
+      offenderAtMoorlandsWithoutIncentives = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "MDI")
+          )
+      )
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offenderAtMoorlands)
+    }
+
+    @Test
+    fun `get current incentive`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("bookingId").isEqualTo(bookingId)
+        .jsonPath("incentiveSequence").isEqualTo(2)
+        .jsonPath("prisonId").isEqualTo("MDI")
+        .jsonPath("commentText").isEqualTo("comment")
+        .jsonPath("iepLevel.code").isEqualTo("ENH")
+        .jsonPath("iepLevel.description").isEqualTo("Enhanced")
+        .jsonPath("iepDateTime").isEqualTo("2022-01-02T10:00:00")
+        .jsonPath("userId").doesNotExist()
+        .jsonPath("currentIep").isEqualTo(true)
+    }
+
+    @Test
+    fun `get current incentive by booking - booking not found`() {
+      webTestClient.get().uri("/incentives/booking-id/5678/current")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get current incentive by booking - no incentives against booking`() {
+      val bookingId = offenderAtMoorlandsWithoutIncentives.latestBooking().bookingId
+      webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get current incentive prevents access without appropriate role`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      Assertions.assertThat(
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden
+      )
+    }
+
+    @Test
+    fun `get current incentive prevents access without authorization`() {
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      Assertions.assertThat(
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
           .exchange()
           .expectStatus().isUnauthorized
       )
