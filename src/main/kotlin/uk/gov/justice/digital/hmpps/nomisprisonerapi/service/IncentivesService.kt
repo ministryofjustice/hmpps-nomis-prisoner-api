@@ -38,8 +38,7 @@ class IncentivesService(
     )?.let {
       // determine if this incentive is the current IEP for the booking
       val currentIep =
-        incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)
-          ?.let { current -> current == it } ?: false
+        it == incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)
       mapIncentiveModel(it, currentIep)
     }
       ?: throw NotFoundException("Incentive not found, booking id $bookingId, sequence $incentiveSequence")
