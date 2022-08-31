@@ -35,11 +35,26 @@ class IncentivesService(
         offenderBooking = offenderBooking,
         sequence = incentiveSequence
       )
-    )?.let { mapIncentiveModel(it) }
+    )?.let {
+      // determine if this incentive is the current IEP for the booking
+      val currentIep =
+        incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)
+          ?.let { current -> current == it } ?: false
+      mapIncentiveModel(it, currentIep)
+    }
       ?: throw NotFoundException("Incentive not found, booking id $bookingId, sequence $incentiveSequence")
   }
 
-  private fun mapIncentiveModel(incentiveEntity: Incentive): IncentiveResponse {
+  fun getCurrentIncentive(bookingId: Long): IncentiveResponse {
+    val offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Offender booking $bookingId not found")
+    return incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)
+      ?.let {
+        mapIncentiveModel(incentiveEntity = it, currentIep = true)
+      } ?: throw NotFoundException("Current Incentive not found, booking id $bookingId")
+  }
+
+  private fun mapIncentiveModel(incentiveEntity: Incentive, currentIep: Boolean): IncentiveResponse {
     return IncentiveResponse(
       bookingId = incentiveEntity.id.offenderBooking.bookingId,
       incentiveSequence = incentiveEntity.id.sequence,
@@ -47,7 +62,8 @@ class IncentivesService(
       iepDateTime = LocalDateTime.of(incentiveEntity.iepDate, incentiveEntity.iepTime),
       iepLevel = CodeDescription(incentiveEntity.iepLevel.code, incentiveEntity.iepLevel.description),
       prisonId = incentiveEntity.location.id,
-      userId = incentiveEntity.userId
+      userId = incentiveEntity.userId,
+      currentIep = currentIep
     )
   }
 }

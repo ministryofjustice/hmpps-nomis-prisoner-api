@@ -135,4 +135,45 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       bookingId = bookingId,
       incentiveSequence = incentiveSequence
     )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @GetMapping("/incentives/booking-id/{bookingId}/current")
+  @Operation(
+    summary = "get a prisoner's current incentive level (a.k.a IEP) for a booking",
+    description = "Retrieves the current incentive level (by booking) for a prisoner. Requires ROLE_NOMIS_INCENTIVES.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the incentive level details"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun getCurrentIncentive(
+    @Schema(description = "NOMIS booking Id", example = "12345", required = true)
+    @PathVariable
+    bookingId: Long
+  ): IncentiveResponse =
+    incentivesService.getCurrentIncentive(
+      bookingId = bookingId
+    )
 }
