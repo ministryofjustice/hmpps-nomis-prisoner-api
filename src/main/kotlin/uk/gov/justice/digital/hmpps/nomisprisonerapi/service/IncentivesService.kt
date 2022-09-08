@@ -62,7 +62,9 @@ class IncentivesService(
       iepLevel = CodeDescription(incentiveEntity.iepLevel.code, incentiveEntity.iepLevel.description),
       prisonId = incentiveEntity.location.id,
       userId = incentiveEntity.userId,
-      currentIep = currentIep
+      currentIep = currentIep,
+      offenderNo = incentiveEntity.id.offenderBooking.offender.nomsId,
+      auditModule = incentiveEntity.auditModuleName,
     )
   }
 }
