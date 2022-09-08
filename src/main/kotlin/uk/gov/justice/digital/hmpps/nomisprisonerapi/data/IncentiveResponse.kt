@@ -5,6 +5,8 @@ import java.time.LocalDateTime
 
 @Schema(description = "Incentive information")
 data class IncentiveResponse(
+  @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
+  val offenderNo: String,
   @Schema(description = "The booking id", required = true)
   val bookingId: Long,
   @Schema(description = "The sequence of the incentive within this booking", required = true)
@@ -21,4 +23,10 @@ data class IncentiveResponse(
   val userId: String? = null,
   @Schema(description = "Is this IEP the current IEP for the booking?", required = true)
   val currentIep: Boolean,
+  @Schema(
+    description = "The NOMIS module that created this IEP",
+    required = true,
+    allowableValues = ["OCUWARNG", "PRISON_API", "OIDADMIS", "MERGE", "OIDOIEPS", "OIDITRAN", "OSIOSEAR"]
+  )
+  val auditModule: String? = null,
 )

@@ -12,6 +12,7 @@ class IncentiveBuilder(
   var userId: String? = null,
   var sequence: Long = 1,
   var commentText: String = "comment",
+  var auditModuleName: String? = null,
   var iepDate: LocalDate = LocalDate.now(),
   var iepTime: LocalTime = LocalTime.now(),
 ) {
@@ -26,6 +27,7 @@ class IncentiveBuilder(
       iepTime = iepTime,
       location = offenderBooking.location!!,
       iepLevel = level,
-      userId = userId
+      userId = userId,
+      auditModuleName = auditModuleName,
     )
 }

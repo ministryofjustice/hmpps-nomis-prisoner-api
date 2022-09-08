@@ -188,13 +188,15 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                   sequence = 1,
                   iepDate = LocalDate.parse("2022-01-01"),
                   iepTime = LocalTime.parse("10:00:00"),
-                  userId = "JOHN_GEN"
+                  userId = "JOHN_GEN",
+                  auditModuleName = "OIDITRAN",
                 ),
                 IncentiveBuilder(
                   iepLevel = "ENH",
                   sequence = 2,
                   iepDate = LocalDate.parse("2022-01-02"),
-                  iepTime = LocalTime.parse("10:00:00")
+                  iepTime = LocalTime.parse("10:00:00"),
+                  auditModuleName = "OCUWARNG",
                 ),
                 // earlier date but highest sequence - date takes precedence over sequence for current IEP
                 IncentiveBuilder(
@@ -221,6 +223,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
+        .jsonPath("offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
         .jsonPath("bookingId").isEqualTo(bookingId)
         .jsonPath("incentiveSequence").isEqualTo("1")
         .jsonPath("prisonId").isEqualTo("MDI")
@@ -230,6 +233,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("iepDateTime").isEqualTo("2022-01-01T10:00:00")
         .jsonPath("userId").isEqualTo("JOHN_GEN")
         .jsonPath("currentIep").isEqualTo(false)
+        .jsonPath("auditModule").isEqualTo("OIDITRAN")
     }
 
     @Test
@@ -240,6 +244,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
+        .jsonPath("offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
         .jsonPath("bookingId").isEqualTo(bookingId)
         .jsonPath("incentiveSequence").isEqualTo(2)
         .jsonPath("prisonId").isEqualTo("MDI")
@@ -249,6 +254,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("iepDateTime").isEqualTo("2022-01-02T10:00:00")
         .jsonPath("userId").doesNotExist()
         .jsonPath("currentIep").isEqualTo(true)
+        .jsonPath("auditModule").isEqualTo("OCUWARNG")
     }
 
     @Test
