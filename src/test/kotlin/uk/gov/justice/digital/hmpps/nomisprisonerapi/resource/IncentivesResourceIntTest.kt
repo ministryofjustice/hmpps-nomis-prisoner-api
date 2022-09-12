@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -8,19 +8,150 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
+import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateIncentiveRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateIncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.IncentiveBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
 import java.time.LocalTime
 
+private const val offenderBookingId = 98765L
+
+private val createIncentive: () -> CreateIncentiveRequest = {
+  CreateIncentiveRequest(
+    iepLevel = "STD",
+    comments = "a comment",
+    iepDate = LocalDate.parse("2021-12-01"),
+    iepTime = LocalTime.parse("13:04"),
+    agencyId = "WAI",
+    userId = "me",
+  )
+}
+
 class IncentivesResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
+
+  @DisplayName("Create")
+  @Nested
+  inner class CreateIncentive {
+    lateinit var offenderAtMoorlands: Offender
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      offenderAtMoorlands = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "WAI")
+          )
+      )
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offenderAtMoorlands)
+    }
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `create visit forbidden with wrong role`() {
+      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `create visit with booking not found`() {
+      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will create incentive with correct details`() {
+      var offender = repository.lookupOffender("A1234TT")
+      var booking = offender?.latestBooking()
+      var bookingId = booking?.bookingId
+
+      callCreateEndpoint(bookingId)
+
+      // Spot check that the database has been populated.
+      offender = repository.lookupOffender("A1234TT")
+      booking = offender?.latestBooking()
+      bookingId = booking?.bookingId
+
+      assertThat(booking?.incentives).hasSize(1)
+      var incentive = booking?.incentives?.get(0)
+      assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+      assertThat(incentive?.id?.sequence).isEqualTo(1)
+      assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+
+      // Add another to cover the case of existing incentive
+      callCreateEndpoint(bookingId)
+
+      offender = repository.lookupOffender("A1234TT")
+      booking = offender?.latestBooking()
+      bookingId = booking?.bookingId
+
+      assertThat(booking?.incentives).hasSize(2)
+      incentive = booking?.incentives?.get(1)
+      assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+      assertThat(incentive?.id?.sequence).isEqualTo(2)
+      assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+    }
+
+    private fun callCreateEndpoint(bookingId: Long?) {
+      val response = webTestClient.post().uri("/prisoners/$bookingId/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "iepLevel"    : "STD",
+            "iepDate"     : "2021-11-04",
+            "iepTime"     : "2021-11-04T13:04",
+            "agencyId"    : "${"WAI"}",
+            "comments"    : "a comment",
+            "userId"      : "steve"
+          }"""
+          )
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateIncentiveResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.bookingId).isEqualTo(bookingId)
+      assertThat(response?.sequence).isGreaterThan(0)
+    }
+  }
 
   @DisplayName("filter incentives")
   @Nested
@@ -153,7 +284,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get incentives prevents access without appropriate role`() {
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
@@ -163,7 +294,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get incentives prevents access without authorization`() {
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/ids")
           .exchange()
           .expectStatus().isUnauthorized
@@ -277,7 +408,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get incentive prevents access without appropriate role`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
@@ -288,7 +419,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get incentive prevents access without authorization`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
           .exchange()
           .expectStatus().isUnauthorized
@@ -384,7 +515,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get current incentive prevents access without appropriate role`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
@@ -395,7 +526,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get current incentive prevents access without authorization`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
           .exchange()
           .expectStatus().isUnauthorized
