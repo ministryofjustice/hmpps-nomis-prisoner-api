@@ -236,20 +236,15 @@ class VisitResource(private val visitService: VisitService) {
     @RequestParam(value = "fromDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
-      description = "Filter results by visits that start on or after the given timestamp",
+      description = "Filter results by visits that were created on or after the given timestamp",
       example = "2021-11-03T09:00:00"
     ) fromDateTime: LocalDateTime?,
     @RequestParam(value = "toDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
-      description = "Filter results by visits that start on or before the given timestamp",
+      description = "Filter results by visits that were created on or before the given timestamp",
       example = "2021-11-03T09:00:00"
-    ) toDateTime: LocalDateTime?,
-    @RequestParam(value = "ignoreMissingRoom", required = false)
-    @Parameter(
-      description = "if true exclude visits without an associated room (visits created during the VSIP synchronisation process)",
-      example = "true"
-    ) ignoreMissingRoom: Boolean?
+    ) toDateTime: LocalDateTime?
   ): Page<VisitIdResponse> =
     visitService.findVisitIdsByFilter(
       pageRequest = pageRequest,
@@ -257,16 +252,15 @@ class VisitResource(private val visitService: VisitService) {
         visitTypes = visitTypes ?: listOf(),
         prisonIds = prisonIds ?: listOf(),
         toDateTime = toDateTime,
-        fromDateTime = fromDateTime,
-        ignoreMissingRoom = ignoreMissingRoom
+        fromDateTime = fromDateTime
       )
     )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @GetMapping("/visits/rooms/usage-count")
   @Operation(
-    summary = "get visit room usage by filter",
-    description = "Retrieves a list of rooms with usage count for the (filtered) visits",
+    summary = "get future visit room usage by filter",
+    description = "Retrieves a list of rooms with usage count for the (filtered) visits. Only future visits are included",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -300,13 +294,13 @@ class VisitResource(private val visitService: VisitService) {
     @RequestParam(value = "fromDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
-      description = "Filter results by visits that start on or after the given timestamp",
+      description = "Filter results by visits that were created on or after the given timestamp",
       example = "2021-11-03T09:00:00"
     ) fromDateTime: LocalDateTime?,
     @RequestParam(value = "toDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
-      description = "Filter results by visits that start on or before the given timestamp",
+      description = "Filter results by visits that were created on or before the given timestamp",
       example = "2021-11-03T09:00:00"
     ) toDateTime: LocalDateTime?
 
@@ -317,7 +311,7 @@ class VisitResource(private val visitService: VisitService) {
         prisonIds = prisonIds ?: listOf(),
         toDateTime = toDateTime,
         fromDateTime = fromDateTime,
-        ignoreMissingRoom = false // not used
+        futureVisits = true
       )
     )
 }

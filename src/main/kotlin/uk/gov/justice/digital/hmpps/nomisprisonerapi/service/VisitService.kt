@@ -188,7 +188,7 @@ class VisitService(
   }
 
   fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
-    return visitRepository.findRoomUsageCountWithFilter(visitFilter)
+    return visitRepository.findFutureRoomUsageWithFilter(visitFilter)
   }
 
   private fun createBalance(

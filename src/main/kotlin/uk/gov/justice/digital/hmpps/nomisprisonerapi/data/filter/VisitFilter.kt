@@ -24,8 +24,8 @@ data class VisitFilter(
   val fromDateTime: LocalDateTime?,
 
   @Schema(
-    description = "if true exclude visits without an associated room (visits created by the VSIP synchronisation process)",
+    description = "if true only include visits that are after today",
     example = "true",
   )
-  val ignoreMissingRoom: Boolean?,
+  val futureVisits: Boolean? = false,
 )

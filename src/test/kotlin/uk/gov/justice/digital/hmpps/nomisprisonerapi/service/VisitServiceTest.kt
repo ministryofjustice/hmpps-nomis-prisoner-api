@@ -557,8 +557,7 @@ internal class VisitServiceTest {
         prisonIds = listOf(),
         visitTypes = listOf(),
         toDateTime = LocalDateTime.now(),
-        fromDateTime = LocalDateTime.now(),
-        ignoreMissingRoom = false
+        fromDateTime = LocalDateTime.now()
       )
       val pageRequest = PageRequest.of(0, 1)
 

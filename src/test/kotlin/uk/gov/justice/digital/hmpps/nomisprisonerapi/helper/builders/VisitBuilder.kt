@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 class VisitBuilder(
@@ -27,17 +26,19 @@ class VisitBuilder(
     visitStatus: VisitStatus,
     agencyLocation: AgencyLocation,
     agencyInternalLocation: AgencyInternalLocation?
-  ): Visit =
-    Visit(
+  ): Visit {
+    val startDateTime = LocalDateTime.parse(startDateTimeString)
+    return Visit(
       offenderBooking = offenderBooking,
-      startDateTime = LocalDateTime.parse(startDateTimeString),
+      startDateTime = startDateTime,
       endDateTime = LocalDateTime.parse(endDateTimeString),
       visitType = visitType,
       visitStatus = visitStatus,
       location = agencyLocation,
-      visitDate = LocalDate.parse("2022-01-01"),
+      visitDate = startDateTime.toLocalDate(),
       agencyInternalLocation = agencyInternalLocation
     )
+  }
 
   fun withVisitors(vararg visitVisitorBuilders: VisitVisitorBuilder): VisitBuilder {
     this.visitors = arrayOf(*visitVisitorBuilders).asList()
