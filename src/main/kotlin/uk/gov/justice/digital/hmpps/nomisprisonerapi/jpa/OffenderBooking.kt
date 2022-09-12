@@ -113,6 +113,15 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val incentives: MutableList<Incentive> = mutableListOf(),
 ) {
+  fun getNextSequence(): Long {
+    val i = incentives.stream().max(Comparator.comparing { (a, _) -> a.sequence })
+    if (i.isPresent) {
+      return i.get().id.sequence + 1
+    } else {
+      return 1
+    }
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -122,12 +131,11 @@ data class OffenderBooking(
 
   override fun hashCode(): Int = javaClass.hashCode()
 
-  override fun toString(): String {
-    return javaClass.simpleName + "(" +
+  override fun toString(): String =
+    javaClass.simpleName + "(" +
       "bookingId = " + bookingId + ", " +
       "bookNumber = " + bookNumber + ", " +
       "bookingSequence = " + bookingSequence + ", " +
       "active = " + active + ", " +
       "inOutStatus = " + inOutStatus + ")"
-  }
 }

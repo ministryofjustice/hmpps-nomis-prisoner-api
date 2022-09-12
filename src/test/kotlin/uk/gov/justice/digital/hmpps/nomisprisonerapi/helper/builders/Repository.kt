@@ -163,4 +163,10 @@ class Repository(
 
   fun findAllAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
     agencyVisitDayRepository.findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(weekDay, prisonId)
+
+  fun lookupOffender(nomsId: String): Offender? {
+    val offender = offenderRepository.findByNomsId(nomsId).firstOrNull()
+    offender?.bookings?.firstOrNull()?.incentives?.size // hydrate
+    return offender
+  }
 }
