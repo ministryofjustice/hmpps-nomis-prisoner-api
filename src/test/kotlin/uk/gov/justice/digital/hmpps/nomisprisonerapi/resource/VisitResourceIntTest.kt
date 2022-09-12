@@ -1131,23 +1131,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `get visit ids excluding visits without a room`() {
-      webTestClient.get().uri("/visits/ids?ignoreMissingRoom=true")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("$.numberOfElements").isEqualTo(7)
-        .jsonPath("$.content..visitId").value(
-          Matchers.not(
-            Matchers.hasItem(
-              offenderAtMoorlands.latestBooking().visits[1].id.toInt()
-            )
-          )
-        )
-    }
-
-    @Test
     fun `get visit ids including visits without a room`() {
       webTestClient.get().uri("/visits/ids?ignoreMissingRoom=false")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
@@ -1310,8 +1293,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
               .withVisits(
                 VisitBuilder(
                   agyLocId = "MDI",
-                  startDateTimeString = "2022-01-02T11:00",
-                  endDateTimeString = "2022-01-02T12:00",
+                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(2), LocalTime.of(11, 0)).toString(),
+                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(2), LocalTime.of(12, 0)).toString(),
                   agencyInternalLocationDescription = "MDI-1-1-001",
                 ).withVisitors(
                   VisitVisitorBuilder(person1),
@@ -1326,8 +1309,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
             OffenderBookingBuilder(agencyLocationId = "LEI")
               .withVisits(
                 VisitBuilder(
-                  agyLocId = "LEI", startDateTimeString = "2022-01-02T09:00",
-                  endDateTimeString = "2022-01-02T10:00",
+                  agyLocId = "LEI",
+                  startDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(9, 0)).toString(),
+                  endDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(10, 0)).toString(),
                   agencyInternalLocationDescription = null // ignored in results
                 ).withVisitors(
                   VisitVisitorBuilder(person1)
@@ -1342,8 +1326,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
               .withVisits(
                 VisitBuilder(
                   agyLocId = "BXI",
-                  startDateTimeString = "2022-01-01T09:00",
-                  endDateTimeString = "2022-01-01T10:00",
+                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(9, 0)).toString(),
+                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(10, 0)).toString(),
                   visitTypeCode = "OFFI",
                   agencyInternalLocationDescription = "BXI-VISIT"
                 ).withVisitors(
@@ -1351,24 +1335,24 @@ class VisitResourceIntTest : IntegrationTestBase() {
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
-                  startDateTimeString = "2023-01-01T09:00",
-                  endDateTimeString = "2023-01-01T10:00",
+                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(9, 0)).toString(),
+                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(10, 0)).toString(),
                   agencyInternalLocationDescription = "BXI-VISIT"
                 ).withVisitors(
                   VisitVisitorBuilder(person1)
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
-                  startDateTimeString = "2023-02-01T09:00",
-                  endDateTimeString = "2023-02-01T10:00",
+                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(9, 0)).toString(),
+                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(10, 0)).toString(),
                   agencyInternalLocationDescription = "BXI-VISIT2"
                 ).withVisitors(
                   VisitVisitorBuilder(person1)
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
-                  startDateTimeString = "2023-03-01T09:00",
-                  endDateTimeString = "2023-03-01T10:00",
+                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(9, 0)).toString(),
+                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(10, 0)).toString(),
                   agencyInternalLocationDescription = "BXI-VISIT2"
                 ).withVisitors(
                   VisitVisitorBuilder(person1)
@@ -1398,8 +1382,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get visit rooms usage filtered by prison, date and visit type`() {
+      val oneWeekInFuture = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.NOON).toString()
       webTestClient.get()
-        .uri("/visits/rooms/usage-count?prisonIds=BXI&prisonIds=MDI&fromDateTime=2022-01-02T10:00:00&visitTypes=SCON")
+        .uri("/visits/rooms/usage-count?prisonIds=BXI&prisonIds=MDI&fromDateTime=$oneWeekInFuture&visitTypes=SCON")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
         .exchange()
         .expectStatus().isOk
@@ -1414,6 +1399,17 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[2].agencyInternalLocationDescription").isEqualTo("MDI-1-1-001")
         .jsonPath("$[2].count").isEqualTo(1)
         .jsonPath("$[2].prisonId").isEqualTo("MDI")
+    }
+
+    @Test
+    fun `get visit rooms usage - ignores visits in the past`() {
+      webTestClient.get()
+        .uri("/visits/rooms/usage-count?prisonIds=LEI&visitTypes=SCON")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(0)
     }
 
     @Test
