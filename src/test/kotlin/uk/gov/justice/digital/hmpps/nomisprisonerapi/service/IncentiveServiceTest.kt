@@ -9,22 +9,21 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateIncentiveRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateIncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -38,7 +37,7 @@ private const val prisonDescription = "Shrewsbury"
 internal class IncentiveServiceTest {
 
   private val incentiveRepository: IncentiveRepository = mock()
-  private val iepLevelRepository: ReferenceCodeRepository<IEPLevel> = mock()
+  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
@@ -47,7 +46,7 @@ internal class IncentiveServiceTest {
     incentiveRepository,
     offenderBookingRepository,
     agencyLocationRepository,
-    iepLevelRepository,
+    availablePrisonIepLevelRepository,
     telemetryClient,
   )
 
@@ -66,9 +65,10 @@ internal class IncentiveServiceTest {
     whenever(offenderBookingRepository.findById(offenderBookingId)).thenReturn(
       Optional.of(defaultOffenderBooking)
     )
-    whenever(iepLevelRepository.findById(any())).thenAnswer {
-      val code = (it.arguments[0] as ReferenceCode.Pk).code!!
-      return@thenAnswer Optional.of(IEPLevel(code, "$code-desc"))
+    whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
+      val prison = (it.arguments[0] as AgencyLocation)
+      val code = (it.arguments[1] as String)
+      return@thenAnswer AvailablePrisonIepLevel(code, prison, IEPLevel(code, "$code-desc"))
     }
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(
       Optional.of(AgencyLocation(prisonId, "desc"))
@@ -97,17 +97,15 @@ internal class IncentiveServiceTest {
       assertThat(incentivesService.createIncentive(offenderBookingId, createRequest))
         .isEqualTo(CreateIncentiveResponse(offenderBookingId, 1))
 
-      verify(incentiveRepository).save(
-        org.mockito.kotlin.check { incentive ->
-          assertThat(incentive?.commentText).isEqualTo("a comment")
-          assertThat(incentive?.iepDate).isEqualTo(LocalDate.parse("2021-12-01"))
-          assertThat(incentive?.iepTime).isEqualTo(LocalTime.parse("13:04"))
-          assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(offenderBookingId)
-          assertThat(incentive?.iepLevel?.description).isEqualTo("STD-desc")
-          assertThat(incentive?.location).isEqualTo(AgencyLocation(prisonId, prisonDescription))
-          assertThat(incentive?.userId).isEqualTo("me")
-        }
-      )
+      val incentive = defaultOffenderBooking.incentives.get(0)
+
+      assertThat(incentive.commentText).isEqualTo("a comment")
+      assertThat(incentive.iepDate).isEqualTo(LocalDate.parse("2021-12-01"))
+      assertThat(incentive.iepTime).isEqualTo(LocalTime.parse("13:04"))
+      assertThat(incentive.id.offenderBooking.bookingId).isEqualTo(offenderBookingId)
+      assertThat(incentive.iepLevel.description).isEqualTo("STD-desc")
+      assertThat(incentive.location).isEqualTo(AgencyLocation(prisonId, prisonDescription))
+      assertThat(incentive.userId).isEqualTo("me")
     }
 
     @Test
@@ -134,12 +132,12 @@ internal class IncentiveServiceTest {
 
     @Test
     fun invalidIEP() {
-      whenever(iepLevelRepository.findById(any())).thenReturn(Optional.empty())
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenReturn(null)
 
       val thrown = assertThrows<BadDataException>() {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
-      assertThat(thrown.message).isEqualTo("Invalid IEP type from incentives: STD")
+      assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison SWI")
     }
   }
 }

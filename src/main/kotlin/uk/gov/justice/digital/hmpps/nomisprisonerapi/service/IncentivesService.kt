@@ -13,14 +13,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateIncentiveRespons
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.IncentiveIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.IncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.IncentiveFilter
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncentiveSpecification
 import java.time.LocalDateTime
 
@@ -30,7 +29,7 @@ class IncentivesService(
   private val incentiveRepository: IncentiveRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
-  private val iepLevelRepository: ReferenceCodeRepository<IEPLevel>,
+  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -41,8 +40,7 @@ class IncentivesService(
     val offenderBooking = offenderBookingRepository.findById(bookingId)
       .orElseThrow(NotFoundException(bookingId.toString()))
 
-    val mappedIncentive = mapIncentiveModel(dto, offenderBooking)
-    val incentive = incentiveRepository.save(mappedIncentive)
+    val incentive = mapIncentiveModel(dto, offenderBooking)
     offenderBooking.incentives.add(incentive)
 
     telemetryClient.trackEvent(
@@ -109,15 +107,15 @@ class IncentivesService(
 
     val sequence = offenderBooking.getNextSequence()
 
-    val iepLevel = iepLevelRepository.findById(IEPLevel.pk(dto.iepLevel))
-      .orElseThrow(BadDataException("Invalid IEP type from incentives: ${dto.iepLevel}"))
-
     val location = agencyLocationRepository.findById(dto.agencyId)
       .orElseThrow(BadDataException("Prison with id=${dto.agencyId} does not exist"))
 
+    val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(location, dto.iepLevel)
+      ?: throw BadDataException("IEP type ${dto.iepLevel} does not exist for prison ${dto.agencyId}")
+
     return Incentive(
       id = IncentiveId(offenderBooking, sequence),
-      iepLevel = iepLevel,
+      iepLevel = availablePrisonIepLevel.iepLevel,
       iepDate = dto.iepDate,
       iepTime = dto.iepTime,
       commentText = dto.comments,

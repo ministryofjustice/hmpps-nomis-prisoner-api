@@ -113,14 +113,7 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val incentives: MutableList<Incentive> = mutableListOf(),
 ) {
-  fun getNextSequence(): Long {
-    val i = incentives.stream().max(Comparator.comparing { (a, _) -> a.sequence })
-    if (i.isPresent) {
-      return i.get().id.sequence + 1
-    } else {
-      return 1
-    }
-  }
+  fun getNextSequence(): Long = incentives.map { it.id.sequence }.maxOrNull()?.let { it + 1 } ?: 1
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

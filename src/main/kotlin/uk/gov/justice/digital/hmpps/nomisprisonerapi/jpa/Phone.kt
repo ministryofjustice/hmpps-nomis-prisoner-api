@@ -17,11 +17,11 @@ import javax.persistence.Table
 @Inheritance
 abstract class Phone(
   @Column(name = "PHONE_TYPE")
-  val phoneType: String,
+  open val phoneType: String,
   @Column(name = "PHONE_NO")
-  val phoneNo: String,
+  open val phoneNo: String,
   @Column(name = "EXT_NO")
-  val extNo: String? = null,
+  open val extNo: String? = null,
 ) {
   @Id
   @SequenceGenerator(name = "PHONE_ID", sequenceName = "PHONE_ID", allocationSize = 1)

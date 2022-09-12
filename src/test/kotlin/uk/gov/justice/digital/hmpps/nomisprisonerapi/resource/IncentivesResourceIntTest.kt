@@ -96,7 +96,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    internal fun `will create incentive with correct details`() {
+    fun `will create incentive with correct details`() {
       var offender = repository.lookupOffender("A1234TT")
       var booking = offender?.latestBooking()
       var bookingId = booking?.bookingId
