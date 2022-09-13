@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 private const val offenderBookingId = 98765L
@@ -29,9 +30,8 @@ private val createIncentive: () -> CreateIncentiveRequest = {
   CreateIncentiveRequest(
     iepLevel = "STD",
     comments = "a comment",
-    iepDate = LocalDate.parse("2021-12-01"),
-    iepTime = LocalTime.parse("13:04"),
-    agencyId = "WAI",
+    iepDateTime = LocalDateTime.parse("2021-12-01T13:04"),
+    prisonId = "WAI",
     userId = "me",
   )
 }
@@ -62,7 +62,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
         .expectStatus().isUnauthorized
@@ -70,7 +70,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
@@ -79,7 +79,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit forbidden with wrong role`() {
-      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
@@ -88,7 +88,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create visit with booking not found`() {
-      webTestClient.post().uri("/prisoners/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
@@ -129,16 +129,15 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     private fun callCreateEndpoint(bookingId: Long?) {
-      val response = webTestClient.post().uri("/prisoners/$bookingId/incentives")
+      val response = webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
             """{
             "iepLevel"    : "STD",
-            "iepDate"     : "2021-11-04",
-            "iepTime"     : "2021-11-04T13:04",
-            "agencyId"    : "${"WAI"}",
+            "iepDateTime" : "2021-11-04T13:04",
+            "prisonId"    : "WAI",
             "comments"    : "a comment",
             "userId"      : "steve"
           }"""

@@ -107,17 +107,17 @@ class IncentivesService(
 
     val sequence = offenderBooking.getNextSequence()
 
-    val location = agencyLocationRepository.findById(dto.agencyId)
-      .orElseThrow(BadDataException("Prison with id=${dto.agencyId} does not exist"))
+    val location = agencyLocationRepository.findById(dto.prisonId)
+      .orElseThrow(BadDataException("Prison with id=${dto.prisonId} does not exist"))
 
     val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(location, dto.iepLevel)
-      ?: throw BadDataException("IEP type ${dto.iepLevel} does not exist for prison ${dto.agencyId}")
+      ?: throw BadDataException("IEP type ${dto.iepLevel} does not exist for prison ${dto.prisonId}")
 
     return Incentive(
       id = IncentiveId(offenderBooking, sequence),
       iepLevel = availablePrisonIepLevel.iepLevel,
-      iepDate = dto.iepDate,
-      iepTime = dto.iepTime,
+      iepDate = dto.iepDateTime.toLocalDate(),
+      iepTime = dto.iepDateTime.toLocalTime(),
       commentText = dto.comments,
       location = location,
       userId = dto.userId,
