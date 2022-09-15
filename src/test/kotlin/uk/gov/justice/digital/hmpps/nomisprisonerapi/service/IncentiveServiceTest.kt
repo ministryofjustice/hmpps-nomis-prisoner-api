@@ -86,9 +86,8 @@ internal class IncentiveServiceTest {
     private val createRequest = CreateIncentiveRequest(
       iepLevel = "STD",
       comments = "a comment",
-      iepDate = LocalDate.parse("2021-12-01"),
-      iepTime = LocalTime.parse("13:04"),
-      agencyId = prisonId,
+      iepDateTime = LocalDateTime.parse("2021-12-01T13:04"),
+      prisonId = prisonId,
       userId = "me",
     )
 

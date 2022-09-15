@@ -37,7 +37,7 @@ import javax.validation.Valid
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class IncentivesResource(private val incentivesService: IncentivesService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
-  @PostMapping("/prisoners/{bookingId}/incentives")
+  @PostMapping("/prisoners/booking-id/{bookingId}/incentives")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new incentive",
