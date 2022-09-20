@@ -323,7 +323,7 @@ internal class VisitServiceTest {
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
+      visitService.createVisit(offenderNo, createVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -363,7 +363,7 @@ internal class VisitServiceTest {
       defaultVisit.offenderBooking.visitBalance = null
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest.copy(privileged = true))
+      visitService.createVisit(offenderNo, createVisitRequest)
 
       verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNull() })
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
