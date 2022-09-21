@@ -182,10 +182,10 @@ class VisitService(
       .orElseThrow(NotFoundException("Nomis visit id $visitId not found for offender $offenderNo"))
 
     // status (which is probably scheduled) is held on dummy visitor record
-    val eventStatus = visit.visitors.first { it.offenderBooking != null }.eventStatus
+    val eventStatus = visit.visitors.first { it.isStatusRecord() }.eventStatus
 
     val existingVisitorsPersonIds = visit.visitors.mapNotNull { it.person?.id }.toSet()
-    val visitorsToRemove = visit.visitors.filter { it.person?.id !in updateVisitRequest.visitorPersonIds }
+    val visitorsToRemove = visit.visitors.filter { it.isStatusRecord().not() && it.person?.id !in updateVisitRequest.visitorPersonIds }
     val visitorsToAdd = (updateVisitRequest.visitorPersonIds - existingVisitorsPersonIds).map {
       VisitVisitor(
         visit = visit,
@@ -576,3 +576,5 @@ class ConflictException(message: String?) : RuntimeException(message), Supplier<
     return ConflictException(message)
   }
 }
+
+private fun VisitVisitor.isStatusRecord() = this.offenderBooking != null
