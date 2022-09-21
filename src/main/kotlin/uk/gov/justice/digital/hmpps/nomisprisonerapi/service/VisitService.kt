@@ -206,6 +206,7 @@ class VisitService(
         roomDescription = updateVisitRequest.room,
         isClosedVisit = "CLOSED" == updateVisitRequest.openClosedStatus
       )
+    visit.visitDate = updateVisitRequest.startDateTime.toLocalDate()
     visit.startDateTime = updateVisitRequest.startDateTime
     visit.endDateTime = endDateTime
     visit.agencyInternalLocation = visit.agencyVisitSlot?.agencyInternalLocation
