@@ -16,7 +16,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.UpdateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse.Visitor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderContactBuilder
@@ -49,6 +51,17 @@ private val createVisit: (visitorPersonIds: List<Long>) -> CreateVisitRequest =
       openClosedStatus = "OPEN",
     )
   }
+private val updateVisit: (visitorPersonIds: List<Long>) -> UpdateVisitRequest =
+  { visitorPersonIds ->
+    UpdateVisitRequest(
+      visitType = "SCON",
+      startDateTime = LocalDateTime.parse("2021-11-04T12:05"),
+      endTime = LocalTime.parse("13:04"),
+      visitorPersonIds = visitorPersonIds,
+      room = "Main visit room",
+      openClosedStatus = "OPEN",
+    )
+  }
 
 class VisitResourceIntTest : IntegrationTestBase() {
 
@@ -65,6 +78,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
   private var offenderBookingId: Long = 0L
   private val threePeople = mutableListOf<Person>()
   private val createVisitWithPeople: () -> CreateVisitRequest = { createVisit(threePeople.map { it.id }) }
+  private val updateVisitWithPeople: () -> UpdateVisitRequest = { updateVisit(threePeople.map { it.id }) }
 
   internal fun createPrisoner() {
     threePeople.addAll(
@@ -87,7 +101,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("Create")
   @Nested
-  inner class CreateVisitRequestTest {
+  inner class CreateVisit {
     @BeforeEach
     internal fun setUpData() {
       createPrisoner()
@@ -557,7 +571,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("Cancel")
   @Nested
-  inner class CancelVisitRequest {
+  inner class CancelVisit {
     @BeforeEach
     internal fun setUpData() {
       createPrisoner()
@@ -697,14 +711,188 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun createVisit() = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
-    .contentType(MediaType.APPLICATION_JSON)
-    .body(BodyInserters.fromValue(createVisitWithPeople()))
-    .exchange()
-    .expectStatus().isCreated
-    .expectBody(CreateVisitResponse::class.java)
-    .returnResult().responseBody?.visitId
+  @DisplayName("Update")
+  @Nested
+  inner class UpdateVisit {
+    private var existingVisitId: Long = 0
+
+    @BeforeEach
+    internal fun setUpData() {
+      createPrisoner()
+      existingVisitId = createVisit()!!
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      repository.delete(offenderAtMoorlands)
+      repository.delete(threePeople)
+      repository.deleteAllVisitSlots()
+      repository.deleteAllVisitTimes()
+      repository.deleteAllVisitDays()
+    }
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/$existingVisitId")
+        .body(BodyInserters.fromValue(updateVisitWithPeople()))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/$existingVisitId")
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(updateVisitWithPeople()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `update visit forbidden with wrong role`() {
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/$existingVisitId")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(updateVisitWithPeople()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `404 when visit does not exist`() {
+      webTestClient.put().uri("/prisoners/$offenderNo/visits/987654321")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .body(BodyInserters.fromValue(updateVisitWithPeople()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `404 when offender does not exist`() {
+      webTestClient.put().uri("/prisoners/A1234JK/visits/$existingVisitId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .body(BodyInserters.fromValue(updateVisitWithPeople()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Nested
+    inner class WrongOffender {
+      lateinit var anotherOffender: Offender
+
+      @BeforeEach
+      internal fun setUp() {
+        anotherOffender = repository.save(
+          OffenderBuilder(nomsId = "A9999AA")
+            .withBooking(
+              OffenderBookingBuilder()
+                .withVisitBalance()
+            )
+        )
+      }
+
+      @AfterEach
+      internal fun tearDown() {
+        repository.delete(anotherOffender)
+      }
+
+      @Test
+      fun `404 when offender does not own the visit`() {
+        webTestClient.put().uri("/prisoners/${anotherOffender.nomsId}/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .body(BodyInserters.fromValue(updateVisitWithPeople()))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class UpdateSuccessful {
+      lateinit var johnSmith: Person
+      lateinit var neoAyomide: Person
+      lateinit var KashfAbidi: Person
+      lateinit var offenderWithVisit: Offender
+      lateinit var updateRequest: UpdateVisitRequest
+
+      @BeforeEach
+      internal fun setUp() {
+        johnSmith = repository.save(PersonBuilder(firstName = "JOHN", lastName = "SMITH"))
+        neoAyomide = repository.save(PersonBuilder(firstName = "NEO", lastName = "AYOMIDE"))
+        KashfAbidi = repository.save(PersonBuilder(firstName = "KASHF", lastName = "ABIDI"))
+
+        offenderWithVisit = repository.save(
+          OffenderBuilder(nomsId = "A7688JM")
+            .withBooking(
+              OffenderBookingBuilder()
+                .withVisitBalance()
+                .withContacts(
+                  *listOf(johnSmith, neoAyomide, KashfAbidi).map { OffenderContactBuilder(it) }
+                    .toTypedArray()
+                )
+            )
+        )
+
+        existingVisitId = createVisit(
+          offenderWithVisit.nomsId,
+          CreateVisitRequest(
+            visitType = "SCON",
+            startDateTime = LocalDateTime.parse("2021-11-04T09:00"),
+            endTime = LocalTime.parse("10:30"),
+            prisonId = prisonId,
+            visitorPersonIds = listOf(johnSmith, neoAyomide).map { it.id },
+            issueDate = LocalDate.parse("2021-11-02"),
+            room = "Main visit room",
+            openClosedStatus = "OPEN",
+          )
+        )!!
+
+        updateRequest = UpdateVisitRequest(
+          visitType = "SCON",
+          startDateTime = LocalDateTime.parse("2021-11-04T09:00"),
+          endTime = LocalTime.parse("10:30"),
+          visitorPersonIds = listOf(johnSmith, neoAyomide).map { it.id },
+          room = "Main visit room",
+          openClosedStatus = "OPEN",
+        )
+      }
+
+      @AfterEach
+      internal fun tearDown() {
+        repository.delete(offenderWithVisit)
+        repository.delete(listOf(johnSmith, neoAyomide, KashfAbidi))
+      }
+
+      @Test
+      internal fun `can change the people visiting`() {
+        webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .body(
+            BodyInserters.fromValue(updateRequest.copy(visitorPersonIds = listOf(neoAyomide.id, KashfAbidi.id)))
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(updatedVisit.visitors).extracting<Long>(Visitor::personId)
+          .containsExactlyInAnyOrder(neoAyomide.id, KashfAbidi.id)
+      }
+    }
+  }
+
+  private fun createVisit(offenderNo: String = this.offenderNo, request: CreateVisitRequest = createVisitWithPeople()) =
+    webTestClient.post().uri("/prisoners/$offenderNo/visits")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+      .contentType(MediaType.APPLICATION_JSON)
+      .body(BodyInserters.fromValue(request))
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody(CreateVisitResponse::class.java)
+      .returnResult().responseBody?.visitId
 
   @DisplayName("Get Visit")
   @Nested

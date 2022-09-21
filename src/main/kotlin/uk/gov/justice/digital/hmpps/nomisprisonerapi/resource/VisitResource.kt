@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.UpdateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
@@ -102,6 +103,67 @@ class VisitResource(private val visitService: VisitService) {
     @RequestBody @Valid createVisitRequest: CreateVisitRequest
   ): CreateVisitResponse =
     visitService.createVisit(offenderNo, createVisitRequest)
+  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PutMapping("/prisoners/{offenderNo}/visits/{visitId}")
+  @Operation(
+    summary = "Updates an existing visit",
+    description = "Updates details of an existing visit such as the visitors and time slot",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateVisitRequest::class)
+        )
+      ]
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Visit information updated"
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Person ids do not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "offenderNo or visits id does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun updateVisit(
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @PathVariable
+    @Pattern(regexp = OFFENDER_NO_PATTERN)
+    offenderNo: String,
+    @Schema(description = "Nomis visit Id", example = "123456", required = true)
+    @PathVariable
+    visitId: Long,
+    @RequestBody @Valid updateVisitRequest: UpdateVisitRequest
+  ): Unit =
+    visitService.updateVisit(offenderNo, visitId, updateVisitRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @PutMapping("/prisoners/{offenderNo}/visits/{visitId}/cancel")

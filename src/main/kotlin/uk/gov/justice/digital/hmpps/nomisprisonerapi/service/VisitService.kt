@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CancelVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateVisitResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.UpdateVisitRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
@@ -174,6 +175,29 @@ class VisitService(
       null
     )
     log.debug("Visit with Nomis visit id = ${visit.id} cancelled")
+  }
+
+  fun updateVisit(offenderNo: String, visitId: Long, updateVisitRequest: UpdateVisitRequest) {
+    val visit = visitRepository.findByIdAndOffenderBooking_Offender_NomsId(visitId, offenderNo)
+      .orElseThrow(NotFoundException("Nomis visit id $visitId not found for offender $offenderNo"))
+
+    // status (which is probably scheduled) is held on dummy visitor record
+    val eventStatus = visit.visitors.first { it.offenderBooking != null }.eventStatus
+
+    val existingVisitorsPersonIds = visit.visitors.mapNotNull { it.person?.id }.toSet()
+    val visitorsToRemove = visit.visitors.filter { it.person?.id !in updateVisitRequest.visitorPersonIds }
+    val visitorsToAdd = (updateVisitRequest.visitorPersonIds - existingVisitorsPersonIds).map {
+      VisitVisitor(
+        visit = visit,
+        person = personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist")),
+        eventStatus = eventStatus
+      )
+    }
+
+    visit.visitors.removeAll(visitorsToRemove)
+    visit.visitors.addAll(visitorsToAdd)
+
+    // TODO update other fields
   }
 
   fun getVisit(visitId: Long): VisitResponse {

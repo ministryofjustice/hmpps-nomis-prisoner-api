@@ -114,7 +114,7 @@ data class Visit(
   var visitOrder: VisitOrder? = null,
 
   /* a list of all visitors including those without visitor orders */
-  @OneToMany(mappedBy = "visit", cascade = [CascadeType.ALL])
+  @OneToMany(mappedBy = "visit", cascade = [CascadeType.ALL], orphanRemoval = true)
   val visitors: MutableList<VisitVisitor> = mutableListOf(),
 
   @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
