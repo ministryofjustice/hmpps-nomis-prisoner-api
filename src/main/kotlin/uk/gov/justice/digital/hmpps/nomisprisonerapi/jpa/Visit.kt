@@ -40,7 +40,7 @@ data class Visit(
   val visitorConcernText: String? = null,
 
   @Column(nullable = false)
-  val visitDate: LocalDate,
+  var visitDate: LocalDate,
 
   @Column(name = "START_TIME", nullable = false)
   var startDateTime: LocalDateTime,
