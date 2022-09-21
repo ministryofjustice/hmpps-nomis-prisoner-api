@@ -23,10 +23,6 @@ data class UpdateVisitRequest(
   @NotEmpty
   val visitorPersonIds: List<Long>,
 
-  @Schema(description = "Visit type, whether social or official", allowableValues = ["SCON", "OFFI"], required = true)
-  @NotEmpty
-  val visitType: String,
-
   @Schema(description = "Name of the real world room where visit will take place")
   val room: String,
 

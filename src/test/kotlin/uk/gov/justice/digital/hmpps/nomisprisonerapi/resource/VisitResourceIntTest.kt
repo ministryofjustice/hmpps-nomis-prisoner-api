@@ -54,7 +54,6 @@ private val createVisit: (visitorPersonIds: List<Long>) -> CreateVisitRequest =
 private val updateVisit: (visitorPersonIds: List<Long>) -> UpdateVisitRequest =
   { visitorPersonIds ->
     UpdateVisitRequest(
-      visitType = "SCON",
       startDateTime = LocalDateTime.parse("2021-11-04T12:05"),
       endTime = LocalTime.parse("13:04"),
       visitorPersonIds = visitorPersonIds,
@@ -846,7 +845,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )!!
 
         updateRequest = UpdateVisitRequest(
-          visitType = "SCON",
           startDateTime = LocalDateTime.parse("2021-11-04T09:00"),
           endTime = LocalTime.parse("10:30"),
           visitorPersonIds = listOf(johnSmith, neoAyomide).map { it.id },
@@ -880,6 +878,65 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         assertThat(updatedVisit.visitors).extracting<Long>(Visitor::personId)
           .containsExactlyInAnyOrder(neoAyomide.id, KashfAbidi.id)
+      }
+
+      @Test
+      internal fun `can change the room the visit is in`() {
+        webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .body(
+            BodyInserters.fromValue(updateRequest.copy(room = "Another room", openClosedStatus = "OPEN"))
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-ANOTHER-SOC")
+      }
+      @Test
+      internal fun `can change the restriction status`() {
+        webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .body(
+            BodyInserters.fromValue(updateRequest.copy(openClosedStatus = "CLOSED"))
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-MAIN-CLO")
+      }
+      @Test
+      internal fun `can change date and time of visit`() {
+        webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .body(
+            BodyInserters.fromValue(updateRequest.copy(LocalDateTime.parse("2021-11-05T14:00"), LocalTime.parse("15:30")))
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(updatedVisit.startDateTime).isEqualTo(LocalDateTime.parse("2021-11-05T14:00"))
+        assertThat(updatedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-05T15:30"))
       }
     }
   }

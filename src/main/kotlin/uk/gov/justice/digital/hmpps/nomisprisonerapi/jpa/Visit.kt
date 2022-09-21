@@ -43,10 +43,10 @@ data class Visit(
   val visitDate: LocalDate,
 
   @Column(name = "START_TIME", nullable = false)
-  val startDateTime: LocalDateTime,
+  var startDateTime: LocalDateTime,
 
   @Column(name = "END_TIME", nullable = false)
-  val endDateTime: LocalDateTime,
+  var endDateTime: LocalDateTime,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
@@ -103,7 +103,7 @@ data class Visit(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "VISIT_INTERNAL_LOCATION_ID")
-  val agencyInternalLocation: AgencyInternalLocation? = null,
+  var agencyInternalLocation: AgencyInternalLocation? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGENCY_VISIT_SLOT_ID")
