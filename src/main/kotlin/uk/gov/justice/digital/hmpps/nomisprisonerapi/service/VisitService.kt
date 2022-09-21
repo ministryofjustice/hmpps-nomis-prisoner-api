@@ -197,7 +197,18 @@ class VisitService(
     visit.visitors.removeAll(visitorsToRemove)
     visit.visitors.addAll(visitorsToAdd)
 
-    // TODO update other fields
+    val endDateTime = LocalDateTime.of(LocalDate.from(updateVisitRequest.startDateTime), updateVisitRequest.endTime)
+    visit.agencyVisitSlot =
+      getOrCreateVisitSlot(
+        startDateTime = updateVisitRequest.startDateTime,
+        endDateTime = endDateTime,
+        location = visit.location,
+        roomDescription = updateVisitRequest.room,
+        isClosedVisit = "CLOSED" == updateVisitRequest.openClosedStatus
+      )
+    visit.startDateTime = updateVisitRequest.startDateTime
+    visit.endDateTime = endDateTime
+    visit.agencyInternalLocation = visit.agencyVisitSlot?.agencyInternalLocation
   }
 
   fun getVisit(visitId: Long): VisitResponse {
