@@ -997,6 +997,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.visitStatus.code).isEqualTo("SCH")
         assertThat(visit.visitType.code).isEqualTo("SCON")
         assertThat(visit.visitOutcome).isNull()
+        assertThat(visit.modifyUserId).isNull()
         assertThat(visit.offenderNo).isEqualTo("A1234TT")
         assertThat(visit.prisonId).isEqualTo("MDI")
         assertThat(visit.startDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T12:05"))

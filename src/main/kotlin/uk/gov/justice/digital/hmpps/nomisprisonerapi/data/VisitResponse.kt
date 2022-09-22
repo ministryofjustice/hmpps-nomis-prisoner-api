@@ -83,6 +83,11 @@ data class VisitResponse(
     description = "Visitor concerns text"
   )
   val visitorConcernText: String? = null,
+
+  @Schema(
+    description = "User id for last visit update"
+  )
+  val modifyUserId: String? = null,
 ) {
   data class Visitor(
     @Schema(
@@ -138,7 +143,8 @@ data class VisitResponse(
         telephones = (it.phones + it.addresses.flatMap { address -> address.phones }).sortedByDescending { phone -> phone.lastChanged }
           .toTelephoneList()
       )
-    }
+    },
+    modifyUserId = visitEntity.modifyUserId
   )
 }
 

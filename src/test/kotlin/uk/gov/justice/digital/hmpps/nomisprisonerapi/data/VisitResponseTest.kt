@@ -35,6 +35,7 @@ internal class VisitResponseTest {
     commentText = "Contact Jane 0978 5652727",
     visitorConcernText = "None",
     location = AgencyLocation(id = "LEI", description = "Leeds HMP"),
+    modifyUserId = "bsmith",
     agencyInternalLocation = AgencyInternalLocation(
       agencyId = "LEI",
       description = "LEI-VIS-01",
@@ -77,6 +78,7 @@ internal class VisitResponseTest {
       assertThat(response.visitId).isEqualTo(99L)
       assertThat(response.offenderNo).isEqualTo("A1234LK")
       assertThat(response.prisonId).isEqualTo("LEI")
+      assertThat(response.modifyUserId).isEqualTo("bsmith")
       assertThat(response.startDateTime).isEqualTo("2020-01-01T10:00:00")
       assertThat(response.endDateTime).isEqualTo("2020-01-01T11:00:00")
       assertThat(response.visitType.code).isEqualTo("SCON")
