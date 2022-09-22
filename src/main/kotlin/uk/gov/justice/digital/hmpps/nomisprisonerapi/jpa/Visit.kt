@@ -118,7 +118,10 @@ data class Visit(
   val visitors: MutableList<VisitVisitor> = mutableListOf(),
 
   @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenCreated: LocalDateTime = LocalDateTime.now()
+  var whenCreated: LocalDateTime = LocalDateTime.now(),
+
+  @Column
+  val modifyUserId: String? = null
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
