@@ -120,7 +120,7 @@ data class Visit(
   @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
   var whenCreated: LocalDateTime = LocalDateTime.now(),
 
-  @Column
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   val modifyUserId: String? = null
 ) {
   override fun equals(other: Any?): Boolean {
