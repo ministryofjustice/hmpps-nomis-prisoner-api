@@ -112,7 +112,7 @@ class VisitResource(private val visitService: VisitService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateVisitRequest::class)
+          schema = Schema(implementation = UpdateVisitRequest::class)
         )
       ]
     ),
