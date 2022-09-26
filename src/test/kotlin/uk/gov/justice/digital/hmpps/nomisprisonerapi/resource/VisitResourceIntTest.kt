@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.ColumnMapRowMapper
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -32,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
+import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -66,6 +69,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository
+
+  @Autowired
+  lateinit var jdbcTemplate: JdbcTemplate
 
   @Autowired
   lateinit var repository: Repository
@@ -898,7 +904,18 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-ANOTHER-SOC")
+
+        val visits = jdbcTemplate.query(
+          """SELECT * FROM V_OFFENDER_VISITS 
+            |JOIN AGENCY_INTERNAL_LOCATIONS location ON VISIT_INTERNAL_LOCATION_ID = location.INTERNAL_LOCATION_ID 
+            |WHERE OFFENDER_ID_DISPLAY = '${offenderWithVisit.nomsId}'""".trimMargin(),
+          ColumnMapRowMapper()
+        )
+
+        assertThat(visits).hasSize(1)
+        assertThat(visits.first()["DESCRIPTION"]).isEqualTo("$prisonId-VSIP-ANOTHER-SOC")
       }
+
       @Test
       internal fun `can change the restriction status`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
@@ -918,6 +935,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-MAIN-CLO")
       }
+
       @Test
       internal fun `can change date and time of visit`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
@@ -937,6 +955,17 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         assertThat(updatedVisit.startDateTime).isEqualTo(LocalDateTime.parse("2021-11-05T14:00"))
         assertThat(updatedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-05T15:30"))
+
+        val visits = jdbcTemplate.query(
+          """SELECT * FROM V_OFFENDER_VISITS 
+            |WHERE OFFENDER_ID_DISPLAY = '${offenderWithVisit.nomsId}'""".trimMargin(),
+          ColumnMapRowMapper()
+        )
+
+        assertThat(visits).hasSize(1)
+        assertThat(visits.first()["VISIT_DATE"]).isEqualTo(LocalDate.parse("2021-11-05").asSQLTimestamp())
+        assertThat(visits.first()["START_TIME"]).isEqualTo(LocalDateTime.parse("2021-11-05T14:00").asSQLTimestamp())
+        assertThat(visits.first()["END_TIME"]).isEqualTo(LocalDateTime.parse("2021-11-05T15:30").asSQLTimestamp())
       }
     }
   }
@@ -1691,6 +1720,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
   }
 }
+
+private fun LocalDate.asSQLTimestamp(): Timestamp = Timestamp.valueOf(this.atStartOfDay())
+private fun LocalDateTime.asSQLTimestamp(): Timestamp = Timestamp.valueOf(this)
 
 private fun Offender.latestBooking(): OffenderBooking =
   this.bookings.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")
