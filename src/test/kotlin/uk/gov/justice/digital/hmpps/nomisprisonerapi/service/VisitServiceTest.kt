@@ -259,7 +259,7 @@ internal class VisitServiceTest {
     }
 
     @Test
-    internal fun `room description for open visit is based on room description without "visit(s)" and "room"`() {
+    internal fun `room description for open visit is based on room description without 'visit(s)' and 'room'`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Big visits room annex", openClosedStatus = "OPEN"))
       verify(visitRepository).save(
         check { visit ->
@@ -269,7 +269,7 @@ internal class VisitServiceTest {
       )
     }
     @Test
-    internal fun `room description for closed visit is based on room description without "visit(s)" and "room"`() {
+    internal fun `room description for closed visit is based on room description without 'visit(s)' and 'room'`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "HUGE visits room annex", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
         check { visit ->

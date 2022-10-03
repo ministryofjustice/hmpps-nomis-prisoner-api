@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -52,7 +52,7 @@ class IncentiveRepositoryTest {
       id = IncentiveId(seedOffenderBooking, 1),
       commentText = "comment text",
       iepDate = LocalDate.parse("2009-12-21"),
-      iepTime = LocalTime.parse("13:15"),
+      iepTime = LocalDateTime.parse("2009-12-21T13:15"),
       iepLevel = iepLevelRepository.findById(IEPLevel.pk("BAS")).orElseThrow(),
       location = agencyRepository.findById("LEI").orElseThrow(),
       userId = "me",
@@ -67,7 +67,7 @@ class IncentiveRepositoryTest {
 
     assertThat(persistedIncentive?.commentText).isEqualTo("comment text")
     assertThat(persistedIncentive?.iepDate).isEqualTo(LocalDate.parse("2009-12-21"))
-    assertThat(persistedIncentive?.iepTime).isEqualTo(LocalTime.parse("13:15"))
+    assertThat(persistedIncentive?.iepTime).isEqualTo(LocalDateTime.parse("2009-12-21T13:15"))
     assertThat(persistedIncentive?.id?.offenderBooking?.bookingId).isEqualTo(seedOffenderBooking.bookingId)
     assertThat(persistedIncentive?.iepLevel?.description).isEqualTo("Basic")
     assertThat(persistedIncentive?.location?.description).isEqualTo("LEEDS")

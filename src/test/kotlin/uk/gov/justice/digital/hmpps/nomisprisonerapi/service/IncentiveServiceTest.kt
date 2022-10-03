@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.util.Optional
 
 private const val offenderBookingId = -9L
@@ -92,7 +91,7 @@ internal class IncentiveServiceTest {
     )
 
     @Test
-    fun `visit data is mapped correctly`() {
+    fun `incentive data is mapped correctly`() {
       assertThat(incentivesService.createIncentive(offenderBookingId, createRequest))
         .isEqualTo(CreateIncentiveResponse(offenderBookingId, 1))
 
@@ -100,7 +99,7 @@ internal class IncentiveServiceTest {
 
       assertThat(incentive.commentText).isEqualTo("a comment")
       assertThat(incentive.iepDate).isEqualTo(LocalDate.parse("2021-12-01"))
-      assertThat(incentive.iepTime).isEqualTo(LocalTime.parse("13:04"))
+      assertThat(incentive.iepTime).isEqualTo(LocalDateTime.parse("2021-12-01T13:04"))
       assertThat(incentive.id.offenderBooking.bookingId).isEqualTo(offenderBookingId)
       assertThat(incentive.iepLevel.description).isEqualTo("STD-desc")
       assertThat(incentive.location).isEqualTo(AgencyLocation(prisonId, prisonDescription))
