@@ -20,9 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 private const val offenderBookingId = 98765L
 
@@ -166,8 +164,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "MDI")
               .withIncentives(
-                IncentiveBuilder(iepLevel = "STD", sequence = 1, iepDate = LocalDate.parse("2022-01-01")),
-                IncentiveBuilder(iepLevel = "ENH", sequence = 2, iepDate = LocalDate.parse("2022-01-02"))
+                IncentiveBuilder(iepLevel = "STD", sequence = 1, iepDateTime = LocalDateTime.parse("2022-01-01T12:00")),
+                IncentiveBuilder(iepLevel = "ENH", sequence = 2, iepDateTime = LocalDateTime.parse("2022-01-02T12:00"))
               )
           )
       )
@@ -316,24 +314,21 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                 IncentiveBuilder(
                   iepLevel = "STD",
                   sequence = 1,
-                  iepDate = LocalDate.parse("2022-01-01"),
-                  iepTime = LocalTime.parse("10:00:00"),
+                  iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
                   userId = "JOHN_GEN",
                   auditModuleName = "OIDITRAN",
                 ),
                 IncentiveBuilder(
                   iepLevel = "ENH",
                   sequence = 2,
-                  iepDate = LocalDate.parse("2022-01-02"),
-                  iepTime = LocalTime.parse("10:00:00"),
+                  iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"),
                   auditModuleName = "OCUWARNG",
                 ),
                 // earlier date but highest sequence - date takes precedence over sequence for current IEP
                 IncentiveBuilder(
                   iepLevel = "BAS",
                   sequence = 3,
-                  iepDate = LocalDate.parse("2020-01-02"),
-                  iepTime = LocalTime.parse("10:00:00")
+                  iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"),
                 )
               )
           )
@@ -442,22 +437,19 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                 IncentiveBuilder(
                   iepLevel = "STD",
                   sequence = 1,
-                  iepDate = LocalDate.parse("2022-01-01"),
-                  iepTime = LocalTime.parse("10:00:00"),
+                  iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
                   userId = "JOHN_GEN"
                 ),
                 IncentiveBuilder(
                   iepLevel = "ENH",
                   sequence = 2,
-                  iepDate = LocalDate.parse("2022-01-02"),
-                  iepTime = LocalTime.parse("10:00:00")
+                  iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"),
                 ),
                 // earlier date but highest sequence - date takes precedence over sequence for current IEP
                 IncentiveBuilder(
                   iepLevel = "BAS",
                   sequence = 3,
-                  iepDate = LocalDate.parse("2020-01-02"),
-                  iepTime = LocalTime.parse("10:00:00")
+                  iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"),
                 )
               )
           )

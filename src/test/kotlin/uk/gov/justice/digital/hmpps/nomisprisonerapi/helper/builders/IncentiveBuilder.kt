@@ -4,8 +4,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 
 class IncentiveBuilder(
   var iepLevel: String = "ENT",
@@ -13,8 +12,7 @@ class IncentiveBuilder(
   var sequence: Long = 1,
   var commentText: String = "comment",
   var auditModuleName: String? = null,
-  var iepDate: LocalDate = LocalDate.now(),
-  var iepTime: LocalTime = LocalTime.now(),
+  var iepDateTime: LocalDateTime = LocalDateTime.now(),
 ) {
   fun build(
     offenderBooking: OffenderBooking,
@@ -23,8 +21,8 @@ class IncentiveBuilder(
     Incentive(
       id = IncentiveId(offenderBooking = offenderBooking, sequence = sequence),
       commentText = commentText,
-      iepDate = iepDate,
-      iepTime = iepTime,
+      iepDate = iepDateTime.toLocalDate(),
+      iepTime = iepDateTime,
       location = offenderBooking.location!!,
       iepLevel = level,
       userId = userId,

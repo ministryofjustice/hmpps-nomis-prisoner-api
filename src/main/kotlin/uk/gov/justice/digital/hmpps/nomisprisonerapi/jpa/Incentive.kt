@@ -6,7 +6,7 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import java.io.Serializable
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 import javax.persistence.Column
 import javax.persistence.Embeddable
 import javax.persistence.EmbeddedId
@@ -39,7 +39,7 @@ data class Incentive(
   val iepDate: LocalDate,
 
   @Column(nullable = false)
-  val iepTime: LocalTime,
+  val iepTime: LocalDateTime,
 
   @Column
   var userId: String? = null,
