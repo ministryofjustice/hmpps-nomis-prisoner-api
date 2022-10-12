@@ -120,6 +120,12 @@ data class Visit(
   @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
   var whenCreated: LocalDateTime = LocalDateTime.now(),
 
+  @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
+  var whenUpdated: LocalDateTime? = null,
+
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  val createUserId: String = "",
+
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   val modifyUserId: String? = null
 ) {
