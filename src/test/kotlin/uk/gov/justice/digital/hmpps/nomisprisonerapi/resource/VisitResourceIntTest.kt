@@ -1027,11 +1027,14 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.visitType.code).isEqualTo("SCON")
         assertThat(visit.visitOutcome).isNull()
         assertThat(visit.modifyUserId).isNull()
+        assertThat(visit.createUserId).isEqualTo("SA")
         assertThat(visit.offenderNo).isEqualTo("A1234TT")
         assertThat(visit.prisonId).isEqualTo("MDI")
         assertThat(visit.startDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T12:05"))
         assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2022-01-01T13:05"))
         assertThat(visit.leadVisitor).isNull()
+        assertThat(visit.whenUpdated).isNull()
+        assertThat(visit.whenCreated).isNotNull()
         assertThat(visit.visitors).extracting("leadVisitor")
           .containsExactly(
             false, false

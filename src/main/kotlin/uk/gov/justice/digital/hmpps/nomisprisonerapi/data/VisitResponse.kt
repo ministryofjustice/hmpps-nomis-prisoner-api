@@ -85,6 +85,21 @@ data class VisitResponse(
   val visitorConcernText: String? = null,
 
   @Schema(
+    description = "date and time of creation"
+  )
+  val whenCreated: LocalDateTime,
+
+  @Schema(
+    description = "date and time of last update"
+  )
+  val whenUpdated: LocalDateTime? = null,
+
+  @Schema(
+    description = "User id for visit creation"
+  )
+  val createUserId: String,
+
+  @Schema(
     description = "User id for last visit update"
   )
   val modifyUserId: String? = null,
@@ -144,7 +159,10 @@ data class VisitResponse(
           .toTelephoneList()
       )
     },
-    modifyUserId = visitEntity.modifyUserId
+    modifyUserId = visitEntity.modifyUserId,
+    whenUpdated = visitEntity.whenUpdated,
+    createUserId = visitEntity.createUserId,
+    whenCreated = visitEntity.whenCreated
   )
 }
 
