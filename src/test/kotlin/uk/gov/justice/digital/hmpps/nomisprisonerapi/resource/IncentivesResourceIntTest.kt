@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.Matchers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -20,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 private const val offenderBookingId = 98765L
@@ -213,20 +213,15 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
       webTestClient.get().uri {
         it.path("/incentives/ids")
-          .queryParam("fromDate", "2022-01-01")
-          .queryParam("toDate", "2022-01-02")
+          .queryParam("fromDate", LocalDate.now().minusDays(1).toString())
+          .queryParam("toDate", LocalDate.now().toString())
           .build()
       }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.content..sequence").value(
-          Matchers.contains(
-            1,
-            2
-          )
-        )
+        .jsonPath("$.numberOfElements").isEqualTo(6)
     }
 
     @Test

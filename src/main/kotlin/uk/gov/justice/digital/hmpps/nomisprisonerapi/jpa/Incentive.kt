@@ -65,6 +65,9 @@ data class Incentive(
   )
   val iepLevel: IEPLevel,
 
+  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now()
+
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

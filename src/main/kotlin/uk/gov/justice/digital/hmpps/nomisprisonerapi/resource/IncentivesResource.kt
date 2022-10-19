@@ -128,18 +128,18 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     ]
   )
   fun getIncentivesByFilter(
-    @PageableDefault(sort = ["iepDate", "iepTime"], direction = Sort.Direction.ASC)
+    @PageableDefault(sort = ["whenCreated", "id.offenderBooking", "id.sequence"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
-      description = "Filter results by incentives that were assigned on or after the given date",
+      description = "Filter results by incentives that were created on or after the given date",
       example = "2021-11-03"
     ) fromDate: LocalDate?,
     @RequestParam(value = "toDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
-      description = "Filter results by incentives that were assigned on or before the given date",
+      description = "Filter results by incentives that were created on or before the given date",
       example = "2021-11-03"
     ) toDate: LocalDate?,
     @RequestParam(value = "latestOnly", required = false)

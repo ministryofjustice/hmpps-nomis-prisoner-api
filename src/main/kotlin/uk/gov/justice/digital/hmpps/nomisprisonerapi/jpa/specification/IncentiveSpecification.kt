@@ -17,11 +17,11 @@ class IncentiveSpecification(private val filter: IncentiveFilter) : Specificatio
     val predicates = mutableListOf<Predicate>()
 
     filter.fromDate?.run {
-      predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(Incentive::iepDate.name), this))
+      predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(Incentive::whenCreated.name), this.atStartOfDay()))
     }
 
     filter.toDate?.run {
-      predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(Incentive::iepDate.name), this))
+      predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(Incentive::whenCreated.name), this.plusDays(1).atStartOfDay()))
     }
 
     // TODO: latestOnly flag
