@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.5.6"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "4.5.7-beta"
   kotlin("plugin.spring") version "1.7.20"
   kotlin("plugin.jpa") version "1.7.20"
   idea
@@ -34,7 +34,7 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("org.mockito:mockito-inline:4.8.1")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.6")
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.7")
   testImplementation("org.springframework.security:spring-security-test")
 }
 
