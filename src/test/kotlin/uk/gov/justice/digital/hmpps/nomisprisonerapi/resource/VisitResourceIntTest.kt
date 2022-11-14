@@ -1590,7 +1590,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   agyLocId = "LEI",
                   startDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = null // ignored in results
+                  agencyInternalLocationDescription = "LEI-VISITS-NEW_SOC_VIS"
                 ).withVisitors(
                   VisitVisitorBuilder(person1)
                 ),
@@ -1680,7 +1680,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `get visit rooms usage - ignores visits in the past`() {
+    fun `get visit rooms usage - ignores visits in the past by default`() {
       webTestClient.get()
         .uri("/visits/rooms/usage-count?prisonIds=LEI&visitTypes=SCON")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
@@ -1688,6 +1688,17 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `get visit rooms usage - include visits in the past if required`() {
+      webTestClient.get()
+        .uri("/visits/rooms/usage-count?prisonIds=LEI&visitTypes=SCON&futureVisitsOnly=false")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(1)
     }
 
     @Test

@@ -103,6 +103,7 @@ class VisitResource(private val visitService: VisitService) {
     @RequestBody @Valid createVisitRequest: CreateVisitRequest
   ): CreateVisitResponse =
     visitService.createVisit(offenderNo, createVisitRequest)
+
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @PutMapping("/prisoners/{offenderNo}/visits/{visitId}")
   @Operation(
@@ -364,7 +365,12 @@ class VisitResource(private val visitService: VisitService) {
     @Parameter(
       description = "Filter results by visits that were created on or before the given timestamp",
       example = "2021-11-03T09:00:00"
-    ) toDateTime: LocalDateTime?
+    ) toDateTime: LocalDateTime?,
+    @RequestParam(value = "futureVisitsOnly", required = false)
+    @Parameter(
+      description = "Filter results by restricting to future visit usage only",
+      example = "true"
+    ) futureVisitsOnly: Boolean?,
 
   ): List<VisitRoomCountResponse> =
     visitService.findRoomCountsByFilter(
@@ -373,7 +379,7 @@ class VisitResource(private val visitService: VisitService) {
         prisonIds = prisonIds ?: listOf(),
         toDateTime = toDateTime,
         fromDateTime = fromDateTime,
-        futureVisits = true
+        futureVisits = futureVisitsOnly ?: true
       )
     )
 }

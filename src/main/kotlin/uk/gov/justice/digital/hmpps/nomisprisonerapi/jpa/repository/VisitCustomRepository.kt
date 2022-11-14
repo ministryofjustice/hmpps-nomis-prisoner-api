@@ -14,7 +14,7 @@ import javax.persistence.criteria.CriteriaQuery
 import javax.persistence.criteria.Root
 
 interface VisitCustomRepository {
-  fun findFutureRoomUsageWithFilter(filter: VisitFilter): List<VisitRoomCountResponse>
+  fun findRoomUsageWithFilter(filter: VisitFilter): List<VisitRoomCountResponse>
 }
 
 @Repository
@@ -23,7 +23,7 @@ class VisitCustomRepositoryImpl(
   private val entityManager: EntityManager
 ) : VisitCustomRepository {
 
-  override fun findFutureRoomUsageWithFilter(filter: VisitFilter): List<VisitRoomCountResponse> {
+  override fun findRoomUsageWithFilter(filter: VisitFilter): List<VisitRoomCountResponse> {
     val criteriaBuilder: CriteriaBuilder = entityManager.criteriaBuilder
     val criteriaQuery: CriteriaQuery<VisitRoomCountResponse> =
       criteriaBuilder.createQuery(VisitRoomCountResponse::class.java)
