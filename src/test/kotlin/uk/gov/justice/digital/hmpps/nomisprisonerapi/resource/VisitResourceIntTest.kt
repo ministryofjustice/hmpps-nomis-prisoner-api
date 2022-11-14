@@ -1590,7 +1590,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   agyLocId = "LEI",
                   startDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "LEI-VISITS-NEW_SOC_VIS" 
+                  agencyInternalLocationDescription = "LEI-VISITS-NEW_SOC_VIS"
                 ).withVisitors(
                   VisitVisitorBuilder(person1)
                 ),

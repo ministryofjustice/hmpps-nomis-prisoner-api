@@ -372,7 +372,7 @@ class VisitResource(private val visitService: VisitService) {
       example = "true"
     ) futureVisitsOnly: Boolean?,
 
-    ): List<VisitRoomCountResponse> =
+  ): List<VisitRoomCountResponse> =
     visitService.findRoomCountsByFilter(
       VisitFilter(
         visitTypes = visitTypes ?: listOf(),
