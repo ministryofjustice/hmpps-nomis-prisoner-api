@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 @Schema(description = "Incentive information")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class IncentiveResponse(
   @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
   val offenderNo: String,
@@ -29,4 +31,8 @@ data class IncentiveResponse(
     allowableValues = ["OCUWARNG", "PRISON_API", "OIDADMIS", "MERGE", "OIDOIEPS", "OIDITRAN", "OSIOSEAR"]
   )
   val auditModule: String? = null,
+  @Schema(description = "date and time of creation")
+  val whenCreated: LocalDateTime,
+  @Schema(description = "date and time of last update")
+  val whenUpdated: LocalDateTime? = null,
 )

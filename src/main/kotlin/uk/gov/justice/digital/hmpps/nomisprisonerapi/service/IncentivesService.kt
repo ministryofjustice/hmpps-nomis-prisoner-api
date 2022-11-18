@@ -100,6 +100,8 @@ class IncentivesService(
       currentIep = currentIep,
       offenderNo = incentiveEntity.id.offenderBooking.offender.nomsId,
       auditModule = incentiveEntity.auditModuleName,
+      whenCreated = incentiveEntity.whenCreated,
+      whenUpdated = incentiveEntity.whenUpdated
     )
   }
 

@@ -66,7 +66,9 @@ data class Incentive(
   val iepLevel: IEPLevel,
 
   @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenCreated: LocalDateTime = LocalDateTime.now()
+  var whenCreated: LocalDateTime = LocalDateTime.now(),
+  @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
+  var whenUpdated: LocalDateTime? = null,
 
 ) {
   override fun equals(other: Any?): Boolean {

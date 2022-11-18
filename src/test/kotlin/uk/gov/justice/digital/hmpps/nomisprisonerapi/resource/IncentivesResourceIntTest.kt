@@ -354,6 +354,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("userId").isEqualTo("JOHN_GEN")
         .jsonPath("currentIep").isEqualTo(false)
         .jsonPath("auditModule").isEqualTo("OIDITRAN")
+        .jsonPath("whenCreated").isNotEmpty
+        .jsonPath("whenUodated").doesNotExist()
     }
 
     @Test
