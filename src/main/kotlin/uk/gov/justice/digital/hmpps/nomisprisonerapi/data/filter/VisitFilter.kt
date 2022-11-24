@@ -28,4 +28,11 @@ data class VisitFilter(
     example = "true",
   )
   val futureVisits: Boolean? = false,
+
+  @Schema(
+    description = "if true exclude erroneous visits ( determined by visit date being more than 1 year in the future )",
+    example = "true",
+  )
+  val excludeExtremeFutureDates: Boolean? = false,
+
 )

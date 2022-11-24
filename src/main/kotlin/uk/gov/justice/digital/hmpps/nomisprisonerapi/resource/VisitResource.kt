@@ -379,7 +379,8 @@ class VisitResource(private val visitService: VisitService) {
         prisonIds = prisonIds ?: listOf(),
         toDateTime = toDateTime,
         fromDateTime = fromDateTime,
-        futureVisits = futureVisitsOnly ?: true
+        futureVisits = futureVisitsOnly ?: true,
+        excludeExtremeFutureDates = futureVisitsOnly ?: true, // apply filtering of bad data if only restricting usage to future dates
       )
     )
 }

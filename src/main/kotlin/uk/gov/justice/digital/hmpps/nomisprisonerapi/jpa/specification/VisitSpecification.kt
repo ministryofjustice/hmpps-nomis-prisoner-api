@@ -47,6 +47,13 @@ class VisitSpecification(private val filter: VisitFilter) : Specification<Visit>
       predicates.add(criteriaBuilder.greaterThan(root.get(Visit::visitDate.name), LocalDate.now()))
     }
 
+    filter.excludeExtremeFutureDates?.takeIf { it }?.run {
+      /* if we only interested in future dates, exclude any erroneous dates that are way in the future. There are a number of live visits
+         with clearly invalid dates that are years in the future.
+       */
+      predicates.add(criteriaBuilder.lessThan(root.get(Visit::visitDate.name), LocalDate.now().plusYears(1)))
+    }
+
     return criteriaBuilder.and(*predicates.toTypedArray())
   }
 }
