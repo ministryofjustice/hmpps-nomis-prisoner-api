@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.config
 
+import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -14,7 +15,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.NotFoundException
-import javax.validation.ValidationException
 
 @RestControllerAdvice
 class NomisPrisonerApiExceptionHandler {

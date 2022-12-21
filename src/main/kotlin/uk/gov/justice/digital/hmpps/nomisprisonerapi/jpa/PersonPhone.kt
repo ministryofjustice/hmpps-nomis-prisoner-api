@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import javax.persistence.DiscriminatorValue
-import javax.persistence.Entity
-import javax.persistence.FetchType
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 
 @Entity
 @DiscriminatorValue(PersonPhone.PHONE_TYPE)

@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType.LAZY
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import java.time.LocalDate
-import javax.persistence.DiscriminatorValue
-import javax.persistence.Entity
-import javax.persistence.FetchType.LAZY
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
 
 @Entity
 @DiscriminatorValue(PersonAddress.ADDR_TYPE)

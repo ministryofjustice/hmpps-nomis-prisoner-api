@@ -1,21 +1,22 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
-import org.hibernate.annotations.Type
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.FetchType
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
-import javax.persistence.SequenceGenerator
-import javax.persistence.Table
+import org.hibernate.type.YesNoConverter
 
 @Entity
 @Table(name = "OFFENDER_VISIT_VISITORS")
@@ -39,11 +40,11 @@ data class VisitVisitor(
   val person: Person? = null,
 
   @Column(name = "GROUP_LEADER_FLAG", nullable = false)
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val groupLeader: Boolean = false,
 
   @Column(name = "ASSISTED_VISIT_FLAG", nullable = false)
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val assistedVisit: Boolean = false,
 
   @Column
@@ -79,7 +80,7 @@ data class VisitVisitor(
         column = JoinColumn(
           name = "OUTCOME_REASON_CODE",
           referencedColumnName = "code",
-          nullable = false,
+          nullable = true,
           updatable = false,
           insertable = false,
         )
@@ -105,7 +106,7 @@ data class VisitVisitor(
         column = JoinColumn(
           name = "EVENT_OUTCOME",
           referencedColumnName = "code",
-          nullable = false
+          nullable = true
         )
       )
     ]
