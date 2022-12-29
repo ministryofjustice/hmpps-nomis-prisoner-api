@@ -76,7 +76,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `create visit forbidden with wrong role`() {
+    fun `access forbidden with wrong role`() {
       webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(createIncentive()))
@@ -85,7 +85,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `create visit with booking not found`() {
+    fun `create with booking not found`() {
       webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .body(BodyInserters.fromValue(createIncentive()))

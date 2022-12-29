@@ -20,12 +20,12 @@ data class CourseActivityPayRate(
   @Id
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID", nullable = false)
-  val courseActivity: CourseActivity,
+  var courseActivity: CourseActivity,
 
   @Id
-  @Column
-  @Size(max = 6)
-  var iepLevel: String? = null,
+  @Column(name = "IEP_LEVEL")
+  @Size(max = 12)
+  val iepLevelCode: String,
 
   @Id
   @Column
@@ -39,6 +39,20 @@ data class CourseActivityPayRate(
   @Column
   val endDate: LocalDate? = null,
 
+//  @ManyToOne(fetch = FetchType.LAZY)
+//  @JoinColumnsOrFormulas(
+//    value = [
+//      JoinColumnOrFormula(
+//        formula = JoinFormula(
+//          value = "'" + IEPLevel.IEP_LEVEL + "'",
+//          referencedColumnName = "domain"
+//        )
+//      ),
+//      JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code"))
+//    ]
+//  )
+//  val iepLevel: IEPLevel? = null,
+
   @Column
   var halfDayRate: BigDecimal? = null,
 ) : Serializable {
@@ -48,17 +62,17 @@ data class CourseActivityPayRate(
     other as CourseActivityPayRate
 
     return courseActivity.courseActivityId == other.courseActivity.courseActivityId &&
-      iepLevel == other.iepLevel &&
+      iepLevelCode == other.iepLevelCode &&
       payBandCode == other.payBandCode &&
       startDate == other.startDate
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
   override fun toString(): String =
-    "CourseActivityPayRate(courseActivity=$courseActivity, iepLevel=$iepLevel, payBandCode=$payBandCode, startDate=$startDate)"
+    "CourseActivityPayRate(courseActivity=$courseActivity, iepLevel=$iepLevelCode, payBandCode=$payBandCode, startDate=$startDate)"
 }
 
 /*
 also:
-COMMENT_TEXT	VARCHAR2(240 CHAR)	Yes		Free text comment
+COMMENT_TEXT	VARCHAR2(240 CHAR)			Free text comment
  */

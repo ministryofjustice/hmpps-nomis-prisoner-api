@@ -1,6 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.Type
 import java.time.LocalDate
 import javax.persistence.CascadeType
@@ -110,9 +113,19 @@ data class CourseActivity(
   @Size(max = 12)
   val courseActivityType: String? = "PA",
 
-  @Column
-  @Size(max = 6)
-  var iepLevel: String? = null,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + IEPLevel.IEP_LEVEL + "'",
+          referencedColumnName = "domain"
+        )
+      ),
+      JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code"))
+    ]
+  )
+  val iepLevel: IEPLevel,
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "INTERNAL_LOCATION_ID", nullable = false)

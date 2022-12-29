@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
@@ -49,6 +51,7 @@ class Repository(
   val agencyVisitSlotRepository: AgencyVisitSlotRepository,
   val agencyVisitDayRepository: AgencyVisitDayRepository,
   val agencyVisitTimeRepository: AgencyVisitTimeRepository,
+  val activityRepository: ActivityRepository,
   val programServiceRepository: ProgramServiceRepository,
 ) {
   @Autowired
@@ -173,5 +176,12 @@ class Repository(
     return offender
   }
 
-  fun save(programService: ProgramService) : ProgramService = programServiceRepository.save(programService)
+  fun lookupActivity(id: Long): CourseActivity = activityRepository.findById(id).orElseThrow().also {
+    it.payRates?.size
+  }
+
+  fun deleteProgramServices() = programServiceRepository.deleteAll()
+  fun deleteActivities() = activityRepository.deleteAll()
+
+  fun save(programService: ProgramService): ProgramService = programServiceRepository.save(programService)
 }

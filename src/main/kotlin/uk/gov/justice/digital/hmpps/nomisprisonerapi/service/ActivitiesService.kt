@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 
 @Service
@@ -21,6 +22,7 @@ class ActivitiesService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val programServiceRepository: ProgramServiceRepository,
+  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -59,6 +61,10 @@ class ActivitiesService(
     val programService = programServiceRepository.findByProgramCode(dto.programCode)
       ?: throw BadDataException("Program Service with code=${dto.programCode} does not exist")
 
+    val availablePrisonIepLevel = dto.minimumIncentiveLevel?.run {
+      availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(prison, dto.minimumIncentiveLevel)
+        ?: throw BadDataException("IEP type ${dto.minimumIncentiveLevel} does not exist for prison ${dto.prisonId}")
+    }
     return CourseActivity(
       code = dto.code,
       program = programService,
@@ -69,22 +75,28 @@ class ActivitiesService(
       active = true,
       scheduleStartDate = dto.startDate,
       scheduleEndDate = dto.endDate,
-      iepLevel = dto.minimumIncentiveLevel,
+      iepLevel = availablePrisonIepLevel!!.iepLevel,
       internalLocation = location,
       payPerSession = PayPerSession.F,
     )
   }
 
   private fun mapRates(dto: CreateActivityRequest, courseActivity: CourseActivity): List<CourseActivityPayRate> {
+
     return dto.payRates.map { rate ->
+
+      val availablePrisonIepLevel = rate.incentiveLevel?.run {
+        return@run availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(courseActivity.prison, rate.incentiveLevel)
+          ?: throw BadDataException("IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
+      }
+
       return@map CourseActivityPayRate(
-        // courseActivityId = courseActivity.courseActivityId,
         courseActivity = courseActivity,
-        iepLevel = rate.iepLevel,
+        iepLevelCode = availablePrisonIepLevel!!.iepLevel.code,
         payBandCode = rate.payBand,
         startDate = dto.startDate,
         endDate = dto.endDate,
-        halfDayRate = rate.rate
+        halfDayRate = rate.rate,
       )
     }
   }

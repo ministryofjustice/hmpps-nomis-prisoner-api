@@ -51,13 +51,13 @@ data class CreateActivityRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Course activity creation request pay rates")
 data class PayRateRequest(
-  @Schema(description = "Activity end date", example = "2022-08-12")
-  val iepLevel: String? = null,
+  @Schema(description = "The incentive level", example = "2022-08-12")
+  val incentiveLevel: String? = null,
 
-  @Schema(description = "Activity end date", example = "2022-08-12")
+  @Schema(description = "The pay band (1 TO 10)", example = "4")
   val payBand: String? = null,
 
-  @Schema(description = "Activity end date", example = "2022-08-12")
+  @Schema(description = "The half day rate", example = "0.50")
   val rate: BigDecimal? = null,
 )
 
