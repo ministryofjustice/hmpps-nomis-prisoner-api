@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Pattern
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -34,8 +36,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.VisitService
 import java.time.LocalDateTime
-import javax.validation.Valid
-import javax.validation.constraints.Pattern
 
 const val OFFENDER_NO_PATTERN = "[A-Z]\\d{4}[A-Z]{2}"
 

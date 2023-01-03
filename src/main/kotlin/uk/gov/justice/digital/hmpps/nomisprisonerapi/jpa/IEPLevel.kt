@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel.Companion.IEP_LEVEL
-import javax.persistence.DiscriminatorValue
-import javax.persistence.Entity
 
 @Entity
 @DiscriminatorValue(IEP_LEVEL)

@@ -1,21 +1,22 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType.LAZY
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction.IGNORE
-import org.hibernate.annotations.Type
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.FetchType.LAZY
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
-import javax.persistence.SequenceGenerator
-import javax.persistence.Table
+import org.hibernate.type.YesNoConverter
 
 @Entity
 @Table(name = "OFFENDER_CONTACT_PERSONS")
@@ -65,7 +66,7 @@ data class OffenderContactPerson(
         column = JoinColumn(
           name = "CONTACT_TYPE",
           referencedColumnName = "code",
-          nullable = false
+          nullable = true
         )
       )
     ]
@@ -73,19 +74,19 @@ data class OffenderContactPerson(
   val contactType: ContactType,
 
   @Column(name = "ACTIVE_FLAG")
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val active: Boolean = false,
 
   @Column(name = "NEXT_OF_KIN_FLAG")
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val nextOfKin: Boolean = false,
 
   @Column(name = "EMERGENCY_CONTACT_FLAG")
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val emergencyContact: Boolean = false,
 
   @Column(name = "APPROVED_VISITOR_FLAG")
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val approvedVisitor: Boolean = false,
 
   @Column(name = "COMMENT_TEXT")

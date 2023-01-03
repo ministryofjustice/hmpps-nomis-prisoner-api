@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import javax.persistence.DiscriminatorValue
-import javax.persistence.Entity
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
 
 @Entity
 @DiscriminatorValue(VisitOutcomeReason.VISIT_OUTCOME_REASON)

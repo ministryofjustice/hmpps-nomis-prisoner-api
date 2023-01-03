@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
 import java.time.LocalDateTime
 import java.time.LocalTime
-import javax.validation.constraints.NotEmpty
-import javax.validation.constraints.NotNull
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Visit update request")

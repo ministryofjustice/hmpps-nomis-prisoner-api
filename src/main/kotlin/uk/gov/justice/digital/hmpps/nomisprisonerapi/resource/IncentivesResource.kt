@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -30,7 +31,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.IncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.IncentiveFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.IncentivesService
 import java.time.LocalDate
-import javax.validation.Valid
 
 @RestController
 @Validated
