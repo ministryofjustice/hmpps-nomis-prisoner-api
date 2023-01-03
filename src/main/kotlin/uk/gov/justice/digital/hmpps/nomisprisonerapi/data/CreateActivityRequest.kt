@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
-import java.math.BigDecimal
-import java.time.LocalDate
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import java.math.BigDecimal
+import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Course activity creation request")

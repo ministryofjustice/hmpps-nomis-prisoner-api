@@ -1,12 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import org.hibernate.Hibernate
-import org.hibernate.annotations.Type
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
 
 @Entity
