@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateActivityRequest
@@ -52,18 +53,18 @@ class ActivitiesService(
 
   private fun mapModel(dto: CreateActivityRequest): CourseActivity {
 
-    val prison = agencyLocationRepository.findById(dto.prisonId)
-      .orElseThrow(BadDataException("Prison with id=${dto.prisonId} does not exist"))
+    val prison = agencyLocationRepository.findByIdOrNull(dto.prisonId)
+      ?: throw BadDataException("Prison with id=${dto.prisonId} does not exist")
 
-    val location = agencyInternalLocationRepository.findById(dto.internalLocation)
-      .orElseThrow(BadDataException("Location with id=${dto.internalLocation} does not exist"))
+    val location = agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
+      ?: throw BadDataException("Location with id=${dto.internalLocationId} does not exist")
 
     val programService = programServiceRepository.findByProgramCode(dto.programCode)
       ?: throw BadDataException("Program Service with code=${dto.programCode} does not exist")
 
-    val availablePrisonIepLevel = dto.minimumIncentiveLevel?.run {
-      availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(prison, dto.minimumIncentiveLevel)
-        ?: throw BadDataException("IEP type ${dto.minimumIncentiveLevel} does not exist for prison ${dto.prisonId}")
+    val availablePrisonIepLevel = dto.minimumIncentiveLevelCode?.run {
+      availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(prison, dto.minimumIncentiveLevelCode)
+        ?: throw BadDataException("IEP type ${dto.minimumIncentiveLevelCode} does not exist for prison ${dto.prisonId}")
     }
     return CourseActivity(
       code = dto.code,
@@ -85,14 +86,17 @@ class ActivitiesService(
 
     return dto.payRates.map { rate ->
 
-      val availablePrisonIepLevel = rate.incentiveLevel?.run {
-        return@run availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(courseActivity.prison, rate.incentiveLevel)
+      val availablePrisonIepLevel = rate.incentiveLevel.run {
+        return@run availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(
+          courseActivity.prison,
+          rate.incentiveLevel
+        )
           ?: throw BadDataException("IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
       }
 
       return@map CourseActivityPayRate(
         courseActivity = courseActivity,
-        iepLevelCode = availablePrisonIepLevel!!.iepLevel.code,
+        iepLevelCode = availablePrisonIepLevel.iepLevel.code,
         payBandCode = rate.payBand,
         startDate = dto.startDate,
         endDate = dto.endDate,

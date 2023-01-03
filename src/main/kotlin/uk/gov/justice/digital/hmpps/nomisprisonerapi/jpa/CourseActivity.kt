@@ -17,7 +17,6 @@ import javax.persistence.ManyToOne
 import javax.persistence.OneToMany
 import javax.persistence.SequenceGenerator
 import javax.persistence.Table
-import javax.validation.constraints.Size
 
 @Entity
 @Table(name = "COURSE_ACTIVITIES")
@@ -58,31 +57,28 @@ data class CourseActivity(
   val courseActivityId: Long = 0,
 
   @Column
-  @Size(max = 20)
-  var code: String? = null,
+  val code: String? = null,
 
   @Column
-  @Size(max = 6)
-  var caseloadId: String? = null,
+  val caseloadId: String? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val prison: AgencyLocation,
 
   @Column
-  @Size(max = 40)
-  var description: String? = null,
+  val description: String? = null,
 
   @Column
-  var capacity: Int? = null,
+  val capacity: Int? = null,
 
-  @Column(name = "ACTIVE_FLAG")
+  @Column(name = "ACTIVE_FLAG", nullable = false)
   @Type(type = "yes_no")
   val active: Boolean = false,
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "PROGRAM_ID", nullable = false)
-  var program: ProgramService? = null,
+  val program: ProgramService,
 
   @Column
   val scheduleStartDate: LocalDate? = null,
@@ -94,23 +90,18 @@ data class CourseActivity(
   var payRates: List<CourseActivityPayRate>? = null,
 
   @Column
-  @Size(max = 12)
   val caseloadType: String? = "INST",
 
-  @Column
-  @Size(max = 12)
+  @Column(nullable = false)
   val courseClass: String? = "COURSE",
 
   @Column
-  @Size(max = 12)
   val providerPartyClass: String? = "AGY",
 
   @Column
-  @Size(max = 6)
   val providerPartyCode: String? = prison.id,
 
   @Column
-  @Size(max = 12)
   val courseActivityType: String? = "PA",
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -129,14 +120,14 @@ data class CourseActivity(
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "INTERNAL_LOCATION_ID", nullable = false)
-  var internalLocation: AgencyInternalLocation? = null,
+  val internalLocation: AgencyInternalLocation,
 
   @Column(name = "HOLIDAY_FLAG")
   @Type(type = "yes_no")
   val holiday: Boolean = false, // If the course/activity conforms to national holidays
 
   @Column
-  var payPerSession: PayPerSession? = null,
+  val payPerSession: PayPerSession? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -150,7 +141,7 @@ data class CourseActivity(
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(courseActivityId = $courseActivityId )"
+    return this::class.simpleName + "(courseActivityId = $courseActivityId, desc = $description )"
   }
 }
 

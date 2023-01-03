@@ -28,7 +28,7 @@ data class CreateActivityRequest(
 
   @Schema(description = "Room where the activity is to occur (from activity schedule)", required = true)
   @NotNull
-  val internalLocation: Long,
+  val internalLocationId: Long,
 
   @Schema(description = "Capacity of activity (from activity schedule)", required = true)
   val capacity: Int,
@@ -41,7 +41,7 @@ data class CreateActivityRequest(
   val description: String,
 
   @Schema(description = "Minimum Incentive Level")
-  val minimumIncentiveLevel: String? = null,
+  val minimumIncentiveLevelCode: String? = null,
 
   @Schema(description = "Program Service code (from activity category)", required = true)
   @NotBlank
@@ -51,14 +51,14 @@ data class CreateActivityRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Course activity creation request pay rates")
 data class PayRateRequest(
-  @Schema(description = "The incentive level", example = "2022-08-12")
-  val incentiveLevel: String? = null,
+  @Schema(description = "The incentive level", example = "BAS", required = true)
+  val incentiveLevel: String,
 
-  @Schema(description = "The pay band (1 TO 10)", example = "4")
-  val payBand: String? = null,
+  @Schema(description = "The pay band (1 TO 10)", example = "4", required = true)
+  val payBand: String,
 
-  @Schema(description = "The half day rate", example = "0.50")
-  val rate: BigDecimal? = null,
+  @Schema(description = "The half day rate", example = "0.50", required = true)
+  val rate: BigDecimal,
 )
 
 /*

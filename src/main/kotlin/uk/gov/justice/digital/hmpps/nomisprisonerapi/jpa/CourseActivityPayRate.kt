@@ -11,7 +11,6 @@ import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
 import javax.persistence.Table
-import javax.validation.constraints.Size
 
 @Entity
 @Table(name = "COURSE_ACTIVITY_PAY_RATES")
@@ -20,21 +19,19 @@ data class CourseActivityPayRate(
   @Id
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID", nullable = false)
-  var courseActivity: CourseActivity,
+  val courseActivity: CourseActivity,
 
   @Id
-  @Column(name = "IEP_LEVEL")
-  @Size(max = 12)
+  @Column(name = "IEP_LEVEL", nullable = false)
   val iepLevelCode: String,
 
   @Id
-  @Column
-  @Size(max = 12)
-  var payBandCode: String? = null,
+  @Column(nullable = false)
+  val payBandCode: String,
 
   @Id
-  @Column
-  val startDate: LocalDate? = null,
+  @Column(nullable = false)
+  val startDate: LocalDate,
 
   @Column
   val endDate: LocalDate? = null,
@@ -53,8 +50,8 @@ data class CourseActivityPayRate(
 //  )
 //  val iepLevel: IEPLevel? = null,
 
-  @Column
-  var halfDayRate: BigDecimal? = null,
+  @Column(nullable = false)
+  val halfDayRate: BigDecimal,
 ) : Serializable {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

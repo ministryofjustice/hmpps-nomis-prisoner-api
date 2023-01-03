@@ -76,6 +76,7 @@ internal class ActivitiesServiceTest {
       ProgramService(
         programCode = programCode,
         description = "desc",
+        active = true,
       )
     )
     whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
@@ -100,8 +101,8 @@ internal class ActivitiesServiceTest {
       capacity = 23,
       startDate = LocalDate.parse("2022-10-31"),
       endDate = LocalDate.parse("2022-11-30"),
-      minimumIncentiveLevel = iepLevel,
-      internalLocation = roomId,
+      minimumIncentiveLevelCode = iepLevel,
+      internalLocationId = roomId,
       payRates = listOf(
         PayRateRequest(
           incentiveLevel = "BASIC",
@@ -124,13 +125,13 @@ internal class ActivitiesServiceTest {
           assertThat(activity.description).isEqualTo("test description")
           assertThat(activity.capacity).isEqualTo(23)
           assertThat(activity.active).isTrue()
-          assertThat(activity.program?.programCode).isEqualTo(programCode)
+          assertThat(activity.program.programCode).isEqualTo(programCode)
           assertThat(activity.scheduleStartDate).isEqualTo(LocalDate.parse("2022-10-31"))
           assertThat(activity.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
           assertThat(activity.providerPartyCode).isEqualTo(prisonId)
           assertThat(activity.courseActivityType).isEqualTo("PA")
           assertThat(activity.iepLevel.code).isEqualTo(iepLevel)
-          assertThat(activity.internalLocation?.locationId).isEqualTo(roomId)
+          assertThat(activity.internalLocation.locationId).isEqualTo(roomId)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.F)
         }
       )

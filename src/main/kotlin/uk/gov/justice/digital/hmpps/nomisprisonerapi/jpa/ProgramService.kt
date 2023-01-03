@@ -6,7 +6,6 @@ import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.Id
 import javax.persistence.Table
-import javax.validation.constraints.Size
 
 @Entity
 @Table(name = "PROGRAM_SERVICES")
@@ -16,19 +15,16 @@ data class ProgramService(
   val programId: Long = 0,
 
   @Column
-  @Size(max = 40)
-  var programCode: String? = null,
+  val programCode: String? = null,
 
-  @Column
-  @Size(max = 40)
-  var description: String? = null,
+  @Column(nullable = false)
+  val description: String,
 
-  @Column(name = "ACTIVE_FLAG")
+  @Column(name = "ACTIVE_FLAG", nullable = false)
   @Type(type = "yes_no")
-  val active: Boolean? = false,
+  val active: Boolean,
 
-  @Column
-  @Size(max = 12)
+  @Column(nullable = false)
   val programClass: String = "PRG",
 ) {
   override fun equals(other: Any?): Boolean {

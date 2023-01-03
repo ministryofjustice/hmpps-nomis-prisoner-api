@@ -20,7 +20,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 private const val prisonId = "LEI"
-private const val roomId: Long = -8
+private const val roomId: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
 private const val programCode = "INTTEST"
 private const val iepLevel = "STD"
 
@@ -33,8 +33,8 @@ private val createActivity: () -> CreateActivityRequest = {
     capacity = 23,
     startDate = LocalDate.parse("2022-10-31"),
     endDate = LocalDate.parse("2022-11-30"),
-    minimumIncentiveLevel = iepLevel,
-    internalLocation = roomId,
+    minimumIncentiveLevelCode = iepLevel,
+    internalLocationId = roomId,
     payRates = listOf(
       PayRateRequest(
         incentiveLevel = "BAS",
@@ -136,8 +136,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
             "capacity" : 23,
             "startDate" : "2022-10-31",
             "endDate" : "2022-11-30",
-            "minimumIncentiveLevel" : "$iepLevel",
-            "internalLocation" : "$roomId",
+            "minimumIncentiveLevelCode" : "$iepLevel",
+            "internalLocationId" : "$roomId",
             "payRates" : [ {
                 "incentiveLevel" : "BAS",
                 "payBand" : "5",
