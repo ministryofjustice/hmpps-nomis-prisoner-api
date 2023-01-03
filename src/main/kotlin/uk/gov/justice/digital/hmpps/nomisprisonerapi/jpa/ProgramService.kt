@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Type
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.Table
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Table
+import org.hibernate.type.YesNoConverter
 
 @Entity
 @Table(name = "PROGRAM_SERVICES")
@@ -21,7 +23,7 @@ data class ProgramService(
   val description: String,
 
   @Column(name = "ACTIVE_FLAG", nullable = false)
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val active: Boolean,
 
   @Column(nullable = false)
