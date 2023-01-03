@@ -1,12 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import org.hibernate.Hibernate
-import org.hibernate.annotations.JoinColumnOrFormula
-import org.hibernate.annotations.JoinColumnsOrFormulas
-import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.Type
-import org.hibernate.type.YesNoConverter
-import java.time.LocalDate
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
@@ -19,6 +12,12 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
+import org.hibernate.type.YesNoConverter
+import java.time.LocalDate
 
 @Entity
 @Table(name = "COURSE_ACTIVITIES")
