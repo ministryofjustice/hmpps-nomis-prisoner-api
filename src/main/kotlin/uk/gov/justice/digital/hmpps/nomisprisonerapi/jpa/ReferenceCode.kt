@@ -1,14 +1,14 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.Column
+import jakarta.persistence.DiscriminatorColumn
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.IdClass
+import jakarta.persistence.Inheritance
 import org.hibernate.Hibernate
 import java.io.Serializable
 import java.util.Objects
-import javax.persistence.Column
-import javax.persistence.DiscriminatorColumn
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.IdClass
-import javax.persistence.Inheritance
 
 @Entity(name = "REFERENCE_CODES")
 @DiscriminatorColumn(name = "domain")

@@ -1,24 +1,23 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.Type
+import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
 import java.util.Objects
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.FetchType
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
-import javax.persistence.Table
 
 @Entity
 @Table(name = "AGENCY_LOCATIONS")
-@BatchSize(size = 25)
 data class AgencyLocation(
   @Id
   @Column(name = "AGY_LOC_ID")
@@ -39,7 +38,7 @@ data class AgencyLocation(
         column = JoinColumn(
           name = "AGENCY_LOCATION_TYPE",
           referencedColumnName = "code",
-          nullable = false
+          nullable = true
         )
       )
     ]
@@ -47,7 +46,7 @@ data class AgencyLocation(
   val type: AgencyLocationType? = null,
 
   @Column(name = "ACTIVE_FLAG")
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val active: Boolean = false,
 
   @Column(name = "LONG_DESCRIPTION")
@@ -75,7 +74,7 @@ data class AgencyLocation(
         column = JoinColumn(
           name = "JURISDICTION_CODE",
           referencedColumnName = "code",
-          nullable = false
+          nullable = true
         )
       )
     ]

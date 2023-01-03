@@ -1,26 +1,25 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.PrimaryKeyJoinColumn
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.BatchSize
-import org.hibernate.annotations.Type
+import org.hibernate.type.YesNoConverter
 import java.time.LocalDateTime
-import javax.persistence.CascadeType
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.FetchType
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
-import javax.persistence.OneToMany
-import javax.persistence.OneToOne
-import javax.persistence.PrimaryKeyJoinColumn
-import javax.persistence.SequenceGenerator
-import javax.persistence.Table
 
 @Entity
 @Table(name = "OFFENDER_BOOKINGS")
-@BatchSize(size = 25)
 data class OffenderBooking(
   @SequenceGenerator(name = "OFFENDER_BOOK_ID", sequenceName = "OFFENDER_BOOK_ID", allocationSize = 1)
   @GeneratedValue(generator = "OFFENDER_BOOK_ID")
@@ -63,7 +62,7 @@ data class OffenderBooking(
   val livingUnitMv: Long? = null,
 
   @Column(name = "ACTIVE_FLAG", nullable = false)
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val active: Boolean = false,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)

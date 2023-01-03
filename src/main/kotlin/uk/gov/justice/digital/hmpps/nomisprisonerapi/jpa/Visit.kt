@@ -1,5 +1,16 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
@@ -8,17 +19,6 @@ import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
-import javax.persistence.CascadeType
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.FetchType
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
-import javax.persistence.OneToMany
-import javax.persistence.SequenceGenerator
-import javax.persistence.Table
 
 @Entity
 @Table(name = "OFFENDER_VISITS")
@@ -57,7 +57,7 @@ data class Visit(
           value = "'" + VisitType.VISIT_TYPE + "'",
           referencedColumnName = "domain"
         )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = false))
+      ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = true))
     ]
   )
   val visitType: VisitType,
@@ -75,7 +75,7 @@ data class Visit(
         column = JoinColumn(
           name = "VISIT_STATUS",
           referencedColumnName = "code",
-          nullable = false
+          nullable = true
         )
       )
     ]
@@ -91,7 +91,7 @@ data class Visit(
           value = "'" + SearchLevel.SEARCH_LEVEL + "'",
           referencedColumnName = "domain"
         )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "SEARCH_TYPE", referencedColumnName = "code", nullable = false))
+      ), JoinColumnOrFormula(column = JoinColumn(name = "SEARCH_TYPE", referencedColumnName = "code", nullable = true))
     ]
   )
 

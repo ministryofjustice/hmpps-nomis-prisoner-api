@@ -2,11 +2,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotEmpty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Phone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
 import java.time.LocalDateTime
-import javax.validation.constraints.NotEmpty
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Visit information")

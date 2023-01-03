@@ -1,29 +1,27 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.apache.commons.lang3.StringUtils
 import org.hibernate.Hibernate
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender.Companion.SEX
 import java.time.LocalDate
-import javax.persistence.CascadeType
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.FetchType
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
-import javax.persistence.OneToMany
-import javax.persistence.SequenceGenerator
-import javax.persistence.Table
 
 @Entity
 @Table(name = "OFFENDERS")
-@BatchSize(size = 25)
 data class Offender(
   @SequenceGenerator(name = "OFFENDER_ID", sequenceName = "OFFENDER_ID", allocationSize = 1)
   @GeneratedValue(generator = "OFFENDER_ID")
@@ -41,7 +39,7 @@ data class Offender(
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(formula = JoinFormula(value = "'$SEX'", referencedColumnName = "domain")),
-      JoinColumnOrFormula(column = JoinColumn(name = "SEX_CODE", referencedColumnName = "code", nullable = false))
+      JoinColumnOrFormula(column = JoinColumn(name = "SEX_CODE", referencedColumnName = "code", nullable = true))
     ]
   )
   val gender: Gender,
@@ -79,7 +77,6 @@ data class Offender(
   var rootOffender: Offender? = null,
 
   @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-  @BatchSize(size = 25)
   val bookings: MutableList<OffenderBooking> = mutableListOf(),
 
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)

@@ -1,23 +1,21 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import net.bytebuddy.build.ToStringPlugin
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.BatchSize
-import org.hibernate.annotations.Type
+import org.hibernate.type.YesNoConverter
 import java.util.Objects
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.FetchType
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
-import javax.persistence.SequenceGenerator
-import javax.persistence.Table
 
 @Entity
 @Table(name = "AGENCY_INTERNAL_LOCATIONS")
-@BatchSize(size = 25)
 data class AgencyInternalLocation(
   @Id
   @SequenceGenerator(name = "INTERNAL_LOCATION_ID", sequenceName = "INTERNAL_LOCATION_ID", allocationSize = 1)
@@ -26,11 +24,11 @@ data class AgencyInternalLocation(
   val locationId: Long = 0,
 
   @Column(name = "ACTIVE_FLAG")
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val active: Boolean = false,
 
   @Column(name = "CERTIFIED_FLAG")
-  @Type(type = "yes_no")
+  @Convert(converter = YesNoConverter::class)
   val certifiedFlag: Boolean = false,
 
   @Column(name = "INTERNAL_LOCATION_TYPE")
@@ -44,7 +42,6 @@ data class AgencyInternalLocation(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PARENT_INTERNAL_LOCATION_ID")
-  @ToStringPlugin.Exclude
   val parentLocation: AgencyInternalLocation? = null,
 
   @Column(name = "NO_OF_OCCUPANT")
