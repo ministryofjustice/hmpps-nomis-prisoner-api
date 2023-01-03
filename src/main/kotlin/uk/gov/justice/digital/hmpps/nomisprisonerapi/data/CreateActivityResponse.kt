@@ -5,10 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Incentive creation response")
-data class CreateIncentiveResponse(
-  @Schema(description = "The created Nomis booking and sequence", required = true)
+@Schema(description = "Activity creation response")
+data class CreateActivityResponse(
+  @Schema(description = "The created course activity id", required = true)
   @NotNull
-  val bookingId: Long,
-  val sequence: Long,
+  val courseActivityId: Long,
 )

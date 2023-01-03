@@ -72,8 +72,6 @@ internal class IncentiveServiceTest {
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(
       Optional.of(AgencyLocation(prisonId, "desc"))
     )
-
-    // whenever(internalLocationRepository.save(any())).thenAnswer { it.arguments[0] as AgencyInternalLocation }
     whenever(incentiveRepository.save(any())).thenAnswer {
       (it.arguments[0] as Incentive).copy(id = IncentiveId(defaultOffenderBooking, 1))
     }
