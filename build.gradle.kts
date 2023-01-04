@@ -1,7 +1,7 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.0-beta"
-  kotlin("plugin.spring") version "1.7.22"
-  kotlin("plugin.jpa") version "1.7.22"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.0-beta-2"
+  kotlin("plugin.spring") version "1.8.0"
+  kotlin("plugin.jpa") version "1.8.0"
   idea
 }
 
@@ -17,7 +17,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
   implementation("org.flywaydb:flyway-core")
-  implementation("com.vladmihalcea:hibernate-types-60:2.21.0")
+  implementation("com.vladmihalcea:hibernate-types-60:2.21.1")
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
 
@@ -32,9 +32,10 @@ dependencies {
   testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.11.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
-  testImplementation("org.mockito:mockito-inline:4.10.0")
+  testImplementation("org.mockito:mockito-inline:4.11.0")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.9")
   testImplementation("org.springframework.security:spring-security-test")
+  testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.21.0")
 }
 
 java {
