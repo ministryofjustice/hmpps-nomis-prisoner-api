@@ -32,7 +32,7 @@ import java.util.Optional
 
 private const val courseActivityId = 1L
 private const val prisonId = "LEI"
-private const val roomId: Long = -8
+private const val roomId: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
 private const val programCode = "TEST"
 private const val iepLevel = "STD"
 
@@ -132,7 +132,7 @@ internal class ActivitiesServiceTest {
           assertThat(activity.courseActivityType).isEqualTo("PA")
           assertThat(activity.iepLevel.code).isEqualTo(iepLevel)
           assertThat(activity.internalLocation.locationId).isEqualTo(roomId)
-          assertThat(activity.payPerSession).isEqualTo(PayPerSession.F)
+          assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
         }
       )
 

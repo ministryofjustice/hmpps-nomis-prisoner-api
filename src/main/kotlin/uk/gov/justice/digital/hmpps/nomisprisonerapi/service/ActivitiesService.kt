@@ -78,7 +78,7 @@ class ActivitiesService(
       scheduleEndDate = dto.endDate,
       iepLevel = availablePrisonIepLevel!!.iepLevel,
       internalLocation = location,
-      payPerSession = PayPerSession.F,
+      payPerSession = PayPerSession.H,
     )
   }
 
