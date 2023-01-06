@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.0-beta-2"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.0-beta-3"
   kotlin("plugin.spring") version "1.8.0"
   kotlin("plugin.jpa") version "1.8.0"
   idea
@@ -35,7 +35,7 @@ dependencies {
   testImplementation("org.mockito:mockito-inline:4.11.0")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.9")
   testImplementation("org.springframework.security:spring-security-test")
-  testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.21.0")
+  testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.22.0")
 }
 
 java {
