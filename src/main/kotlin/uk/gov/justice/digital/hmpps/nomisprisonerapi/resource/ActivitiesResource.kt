@@ -28,7 +28,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new activity",
-    description = "Creates a new activity and associated pay rates",
+    description = "Creates a new activity and associated pay rates. Requires role NOMIS_ACTIVITIES",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
