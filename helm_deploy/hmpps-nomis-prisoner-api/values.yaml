@@ -18,6 +18,7 @@ generic-service:
       # this magic line automatically generates a certificate for the ingress
       cert-manager.io/cluster-issuer: letsencrypt-production
     enabled: true
+    dso_enabled: true
     host: app-hostname.local    # override per environment
     tlsSecretName: hmpps-nomis-prisoner-api-cert
 
