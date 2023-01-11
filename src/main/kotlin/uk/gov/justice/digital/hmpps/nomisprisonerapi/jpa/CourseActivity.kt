@@ -4,6 +4,8 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType.STRING
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
@@ -128,6 +130,7 @@ data class CourseActivity(
   val holiday: Boolean = false, // If the course/activity conforms to national holidays
 
   @Column
+  @Enumerated(STRING)
   val payPerSession: PayPerSession? = null,
 ) {
   override fun equals(other: Any?): Boolean {
