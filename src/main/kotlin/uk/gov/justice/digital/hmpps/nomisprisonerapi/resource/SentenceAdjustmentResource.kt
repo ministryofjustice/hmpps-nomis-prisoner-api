@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.SentenceAdjustmentService
+import java.time.LocalDate
 
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class SentenceAdjustmentResource {
+class SentenceAdjustmentResource(private val sentenceAdjustmentService: SentenceAdjustmentService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/sentence-adjustments/{sentenceAdjustmentId}")
   @Operation(
@@ -59,7 +61,7 @@ class SentenceAdjustmentResource {
     @Schema(description = "Sentence adjustment id", example = "12345", required = true)
     @PathVariable
     sentenceAdjustmentId: Long,
-  ): SentenceAdjustmentResponse = SentenceAdjustmentResponse(sentenceAdjustmentId, 1, 1)
+  ): SentenceAdjustmentResponse = sentenceAdjustmentService.getSentenceAdjustment(sentenceAdjustmentId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/booking-id/{bookingId}/sentences/{sentenceSequence}/adjustments")
@@ -131,7 +133,7 @@ class SentenceAdjustmentResource {
     sentenceSequence: Long,
     @RequestBody @Valid request: CreateSentenceAdjustmentRequest
   ): CreateSentenceAdjustmentResponse =
-    CreateSentenceAdjustmentResponse(1L)
+    sentenceAdjustmentService.createSentenceAdjustment(bookingId, sentenceSequence, request)
 }
 
 @Schema(description = "Create sentence adjustment response")
@@ -140,7 +142,7 @@ data class CreateSentenceAdjustmentResponse(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Sentence adjustment [TODO add more fields]")
+@Schema(description = "Sentence adjustment")
 data class SentenceAdjustmentResponse(
   @Schema(description = "The sentence adjustment id", required = true)
   val sentenceAdjustmentId: Long,
@@ -148,12 +150,45 @@ data class SentenceAdjustmentResponse(
   val bookingId: Long,
   @Schema(description = "The sequence of the sentence within this booking", required = true)
   val sentenceSequence: Long,
+  @Schema(description = "Adjustment type", required = true)
+  val sentenceAdjustmentType: SentenceAdjustmentType,
+  @Schema(description = "Date adjustment is applied", required = true)
+  val adjustmentDate: LocalDate,
+  @Schema(description = "Start of the period which contributed to the adjustment", required = false)
+  val adjustmentFromDate: LocalDate?,
+  @Schema(description = "End of the period which contributed to the adjustment", required = false)
+  val adjustmentToDate: LocalDate?,
+  @Schema(description = "Number of days for the adjustment", required = true)
+  val adjustmentDays: Long,
+  @Schema(description = "Comment", required = false)
+  val comment: String?,
+  @Schema(description = "Flag to indicate if the adjustment is being applied", required = true)
+  val active: Boolean,
 )
 
-@Schema(description = "Sentence adjustment [TODO add more fields]")
+data class SentenceAdjustmentType(
+  @Schema(description = "code", required = true, example = "RX")
+  val code: String,
+  @Schema(description = "description", required = true, example = "Remand")
+  val description: String,
+)
+
+@Schema(description = "Sentence adjustment")
 data class CreateSentenceAdjustmentRequest(
   @Schema(description = "The booking id", required = true)
   val bookingId: Long,
   @Schema(description = "The sequence of the sentence within this booking", required = true)
   val sentenceSequence: Long,
+  @Schema(description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS", required = true, example = "RX")
+  val sentenceAdjustmentTypeCode: String,
+  @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
+  val adjustmentDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Start of the period which contributed to the adjustment", required = false)
+  val adjustmentFromDate: LocalDate?,
+  @Schema(description = "Number of days for the adjustment", required = true)
+  val adjustmentDays: Long,
+  @Schema(description = "Comment", required = false)
+  val comment: String?,
+  @Schema(description = "Flag to indicate if the adjustment is being applied", required = false, defaultValue = "true")
+  val active: Boolean = true,
 )
