@@ -1,4 +1,4 @@
-create table OMS_OWNER.SENTENCE_ADJUSTMENTS
+create table SENTENCE_ADJUSTMENTS
 (
     SENTENCE_ADJUST_CODE          VARCHAR2(12 char)                      not null
         constraint SA_PK
@@ -19,20 +19,20 @@ create table OMS_OWNER.SENTENCE_ADJUSTMENTS
     AUDIT_ADDITIONAL_INFO         VARCHAR2(256 char)
 );
 
-comment on table OMS_OWNER.SENTENCE_ADJUSTMENTS is 'This Table stores the details of the Sentence Adjustment Types';
+comment on table SENTENCE_ADJUSTMENTS is 'This Table stores the details of the Sentence Adjustment Types';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.SENTENCE_ADJUST_CODE is 'Adjustment Code';
+comment on column SENTENCE_ADJUSTMENTS.SENTENCE_ADJUST_CODE is 'Adjustment Code';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.DESCRIPTION is 'Description of the Adjustment code';
+comment on column SENTENCE_ADJUSTMENTS.DESCRIPTION is 'Description of the Adjustment code';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.DEBIT_CREDIT_CODE is 'Either CR or DR';
+comment on column SENTENCE_ADJUSTMENTS.DEBIT_CREDIT_CODE is 'Either CR or DR';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.USAGE_CODE is 'The source code for the adjustment Refence Domain : [ADJ_SRC]';
+comment on column SENTENCE_ADJUSTMENTS.USAGE_CODE is 'The source code for the adjustment Refence Domain : [ADJ_SRC]';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.CREATE_DATETIME is 'The timestamp when the record is created';
+comment on column SENTENCE_ADJUSTMENTS.CREATE_DATETIME is 'The timestamp when the record is created';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.CREATE_USER_ID is 'The user who creates the record';
+comment on column SENTENCE_ADJUSTMENTS.CREATE_USER_ID is 'The user who creates the record';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.MODIFY_DATETIME is 'The timestamp when the record is modified ';
+comment on column SENTENCE_ADJUSTMENTS.MODIFY_DATETIME is 'The timestamp when the record is modified ';
 
-comment on column OMS_OWNER.SENTENCE_ADJUSTMENTS.MODIFY_USER_ID is 'The user who modifies the record';
+comment on column SENTENCE_ADJUSTMENTS.MODIFY_USER_ID is 'The user who modifies the record';
