@@ -19,6 +19,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
@@ -32,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 
 @Repository
@@ -53,6 +56,7 @@ class Repository(
   val agencyVisitTimeRepository: AgencyVisitTimeRepository,
   val activityRepository: ActivityRepository,
   val programServiceRepository: ProgramServiceRepository,
+  val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -109,6 +113,15 @@ class Repository(
           it.build(booking, lookupIepLevel(it.iepLevel))
         }
       )
+      booking.sentences.addAll(
+        offenderBuilder.bookingBuilders[index].sentences.mapIndexed { index, sentenceBuilder ->
+          sentenceBuilder.build(
+            booking,
+            index.toLong() + 1,
+            lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category)
+          )
+        }
+      )
     }
     return offender
   }
@@ -125,6 +138,9 @@ class Repository(
 
   fun lookupIepLevel(code: String): IEPLevel =
     iepLevelRepository.findByIdOrNull(Pk(IEPLevel.IEP_LEVEL, code))!!
+
+  fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
+    sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
 
   fun lookupVisitStatus(code: String): VisitStatus =
     visitStatusRepository.findByIdOrNull(Pk(VisitStatus.VISIT_STATUS, code))!!

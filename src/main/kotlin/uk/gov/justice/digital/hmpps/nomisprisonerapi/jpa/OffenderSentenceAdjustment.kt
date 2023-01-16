@@ -13,7 +13,7 @@ import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
-import java.sql.Date
+import java.time.LocalDate
 
 @Entity
 @Table(name = "OFFENDER_SENTENCE_ADJUSTS")
@@ -33,26 +33,26 @@ class OffenderSentenceAdjustment(
   val sentenceAdjustment: SentenceAdjustment,
 
   @Column(name = "ADJUST_DATE")
-  val adjustDate: Date,
+  val adjustmentDate: LocalDate,
 
   @Column(name = "ADJUST_DAYS")
-  val adjustDays: Long,
+  val adjustmentNumberOfDays: Long,
 
   @Column(name = "ADJUST_FROM_DATE")
-  private var adjustFromDate: Date? = null,
+  val fromDate: LocalDate? = null,
 
   @Column(name = "ADJUST_TO_DATE")
-  private val adjustToDate: Date? = null,
+  val toDate: LocalDate? = null,
 
   @Column(name = "COMMENT_TEXT")
-  private val commentText: String? = null,
+  val comment: String? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
   val offenderBooking: OffenderBooking,
 
   @Column(name = "SENTENCE_SEQ", nullable = false)
-  val sequence: Int,
+  val sentenceSequence: Long,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumns(
