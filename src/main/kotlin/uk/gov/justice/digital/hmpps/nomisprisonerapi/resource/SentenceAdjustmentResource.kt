@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.NotBlank
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -175,18 +177,16 @@ data class SentenceAdjustmentType(
 
 @Schema(description = "Sentence adjustment")
 data class CreateSentenceAdjustmentRequest(
-  @Schema(description = "The booking id", required = true)
-  val bookingId: Long,
-  @Schema(description = "The sequence of the sentence within this booking", required = true)
-  val sentenceSequence: Long,
   @Schema(description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS", required = true, example = "RX")
-  val sentenceAdjustmentTypeCode: String,
+  @field:NotBlank
+  val sentenceAdjustmentTypeCode: String = "",
   @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
   val adjustmentDate: LocalDate = LocalDate.now(),
   @Schema(description = "Start of the period which contributed to the adjustment", required = false)
   val adjustmentFromDate: LocalDate?,
   @Schema(description = "Number of days for the adjustment", required = true)
-  val adjustmentDays: Long,
+  @field:Min(0)
+  val adjustmentDays: Long = -1,
   @Schema(description = "Comment", required = false)
   val comment: String?,
   @Schema(description = "Flag to indicate if the adjustment is being applied", required = false, defaultValue = "true")
