@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "SENTENCE_ADJUSTMENTS")
-class SentenceAdjustment(
+data class SentenceAdjustment(
   @Id
   @Column(name = "SENTENCE_ADJUST_CODE", nullable = false)
   val id: String,
