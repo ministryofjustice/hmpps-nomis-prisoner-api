@@ -43,11 +43,31 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /sentence-adjustments/{sentenceAdjustmentId}")
   inner class GetSentenceAdjustment {
+    lateinit var anotherPrisoner: Offender
+    var sentenceAdjustmentId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      anotherPrisoner = repository.save(
+        OffenderBuilder(nomsId = "A1234TX")
+          .withBooking(
+            OffenderBookingBuilder()
+              .withSentences(SentenceBuilder().withAdjustment())
+          )
+      )
+      sentenceAdjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(anotherPrisoner)
+    }
+
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/sentence-adjustments/1")
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -55,7 +75,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/sentence-adjustments/1")
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -63,10 +83,27 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/sentence-adjustments/1")
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .exchange()
           .expectStatus().isUnauthorized
       }
+    }
+
+    @Test
+    internal fun `404 when adjustment does not exist`() {
+      webTestClient.get().uri("/sentence-adjustments/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+    @Test
+    internal fun `200 when adjustment does exist`() {
+      webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
     }
   }
 
@@ -116,6 +153,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Booking 999 not found")
       }
 
       @Test
@@ -126,6 +164,8 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(createBasicSentenceAdjustmentRequest()))
           .exchange()
           .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence with sequence 999 not found")
       }
 
       @Test
@@ -144,6 +184,8 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("adjustmentDays must be greater than or equal to 0")
       }
 
       @Test
@@ -163,6 +205,29 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence adjustment type BANANAS not found")
+      }
+
+      @Test
+      internal fun `400 when adjustment type is for a booking not sentence`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                  {
+                    "adjustmentDays": 10,
+                    "sentenceAdjustmentTypeCode": "ADA"
+                  }
+                """
+            )
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence adjustment type ADA not valid for a sentence")
       }
 
       @Test
@@ -181,43 +246,193 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("sentenceAdjustmentTypeCode must not be blank")
       }
     }
 
-    @Test
-    fun `can create an adjustment`() {
-      val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(
-          BodyInserters.fromValue(
-            """
+    @Nested
+    inner class WithOneSentence {
+      @Test
+      fun `can create an adjustment with minimal data`() {
+        val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
                     {
                       "adjustmentDays": 10,
                       "sentenceAdjustmentTypeCode": "RX"
                     }
                   """
+            )
           )
-        )
-        .exchange()
-        .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
-        .returnResult().responseBody!!.sentenceAdjustmentId
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.sentenceAdjustmentId
 
-      webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
-        .jsonPath("bookingId").isEqualTo(bookingId)
-        .jsonPath("sentenceSequence").isEqualTo(1)
-        .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
-        .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
-        .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
-        .jsonPath("adjustmentFromDate").doesNotExist()
-        .jsonPath("adjustmentToDate").doesNotExist()
-        .jsonPath("comment").doesNotExist()
-        .jsonPath("active").isEqualTo(true)
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("sentenceSequence").isEqualTo(1)
+          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
+          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentDays").isEqualTo(10)
+          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentFromDate").doesNotExist()
+          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("comment").doesNotExist()
+          .jsonPath("active").isEqualTo(true)
+      }
+
+      @Test
+      fun `can create an adjustment with all data`() {
+        val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                    {
+                      "adjustmentDays": 10,
+                      "sentenceAdjustmentTypeCode": "RX",
+                      "adjustmentDate": "2023-01-16",
+                      "adjustmentFromDate": "2023-01-02",
+                      "comment": "Remand for 10 days",
+                      "active": false
+                    }
+                  """
+            )
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.sentenceAdjustmentId
+
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("sentenceSequence").isEqualTo(1)
+          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
+          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-01-12")
+          .jsonPath("adjustmentDays").isEqualTo(10)
+          .jsonPath("comment").isEqualTo("Remand for 10 days")
+          .jsonPath("active").isEqualTo(false)
+      }
+    }
+
+    @Nested
+    inner class WithMultipleSentences {
+      lateinit var anotherPrisoner: Offender
+      var anotherBookingId: Long = 0
+
+      @BeforeEach
+      internal fun createPrisoner() {
+        anotherPrisoner = repository.save(
+          OffenderBuilder(nomsId = "A1234TT")
+            .withBooking(
+              OffenderBookingBuilder()
+                .withSentences(SentenceBuilder(), SentenceBuilder().withAdjustment())
+            )
+        )
+        anotherBookingId = anotherPrisoner.bookings.first().bookingId
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.delete(anotherPrisoner)
+      }
+
+      @Test
+      fun `can create an adjustment with minimal data`() {
+        val sentenceAdjustmentId =
+          webTestClient.post().uri("/prisoners/booking-id/$anotherBookingId/sentences/2/adjustments")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                """
+                    {
+                      "adjustmentDays": 10,
+                      "sentenceAdjustmentTypeCode": "RX"
+                    }
+                  """
+              )
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
+            .returnResult().responseBody!!.sentenceAdjustmentId
+
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(anotherBookingId)
+          .jsonPath("sentenceSequence").isEqualTo(2)
+          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
+          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentDays").isEqualTo(10)
+          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentFromDate").doesNotExist()
+          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("comment").doesNotExist()
+          .jsonPath("active").isEqualTo(true)
+      }
+
+      @Test
+      fun `can create an adjustment with all data`() {
+        val sentenceAdjustmentId =
+          webTestClient.post().uri("/prisoners/booking-id/$anotherBookingId/sentences/2/adjustments")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                """
+                    {
+                      "adjustmentDays": 10,
+                      "sentenceAdjustmentTypeCode": "RX",
+                      "adjustmentDate": "2023-01-16",
+                      "adjustmentFromDate": "2023-01-02",
+                      "comment": "Remand for 10 days",
+                      "active": false
+                    }
+                  """
+              )
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
+            .returnResult().responseBody!!.sentenceAdjustmentId
+
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(anotherBookingId)
+          .jsonPath("sentenceSequence").isEqualTo(2)
+          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
+          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-01-12")
+          .jsonPath("adjustmentDays").isEqualTo(10)
+          .jsonPath("comment").isEqualTo("Remand for 10 days")
+          .jsonPath("active").isEqualTo(false)
+      }
     }
 
     fun createBasicSentenceAdjustmentRequest() = """

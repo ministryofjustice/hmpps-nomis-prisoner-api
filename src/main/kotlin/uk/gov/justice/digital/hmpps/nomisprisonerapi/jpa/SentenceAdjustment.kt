@@ -13,4 +13,8 @@ data class SentenceAdjustment(
   val id: String,
   @Column(name = "DESCRIPTION", nullable = false)
   val description: String,
-)
+  @Column(name = "USAGE_CODE", nullable = false)
+  val usage: String?,
+) {
+  fun isSentenceRelated() = usage == "SENT"
+}
