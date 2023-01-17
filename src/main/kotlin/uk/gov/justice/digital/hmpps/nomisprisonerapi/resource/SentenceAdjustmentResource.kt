@@ -177,7 +177,12 @@ data class SentenceAdjustmentType(
 
 @Schema(description = "Sentence adjustment")
 data class CreateSentenceAdjustmentRequest(
-  @Schema(description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS", required = true, example = "RX")
+  @Schema(
+    description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
+    required = true,
+    example = "RX",
+    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"]
+  )
   @field:NotBlank
   val sentenceAdjustmentTypeCode: String = "",
   @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
