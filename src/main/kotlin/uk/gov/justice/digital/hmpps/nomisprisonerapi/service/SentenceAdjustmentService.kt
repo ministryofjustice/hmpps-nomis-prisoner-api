@@ -43,14 +43,12 @@ class SentenceAdjustmentService(
   fun createSentenceAdjustment(bookingId: Long, sentenceSequence: Long, request: CreateSentenceAdjustmentRequest) =
     offenderBookingRepository.findByIdOrNull(bookingId)?.let {
       offenderSentenceRepository.findByIdOrNull(SentenceId(it, sentenceSequence))?.let { sentence ->
-        val sentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(request.sentenceAdjustmentTypeCode)
-          ?: throw BadDataException("Sentence adjustment type ${request.sentenceAdjustmentTypeCode} not found")
         sentence.adjustments.add(
           OffenderSentenceAdjustment(
             offenderBooking = it,
             sentenceSequence = sentenceSequence,
             sentence = sentence,
-            sentenceAdjustment = sentenceAdjustment,
+            sentenceAdjustment = findValidSentenceAdjustmentType(request.sentenceAdjustmentTypeCode),
             adjustmentDate = request.adjustmentDate,
             adjustmentNumberOfDays = request.adjustmentDays,
             fromDate = request.adjustmentFromDate,
@@ -64,4 +62,10 @@ class SentenceAdjustmentService(
       }
         ?: throw NotFoundException("Sentence with sequence $sentenceSequence not found")
     } ?: throw NotFoundException("Booking $bookingId not found")
+
+  private fun findValidSentenceAdjustmentType(sentenceAdjustmentTypeCode: String) =
+    sentenceAdjustmentRepository.findByIdOrNull(sentenceAdjustmentTypeCode)?.also {
+      if (!it.isSentenceRelated()) throw BadDataException("Sentence adjustment type $sentenceAdjustmentTypeCode not valid for a sentence")
+    }
+      ?: throw BadDataException("Sentence adjustment type $sentenceAdjustmentTypeCode not found")
 }

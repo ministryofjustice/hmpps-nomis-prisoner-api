@@ -71,13 +71,14 @@ class NomisPrisonerApiExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException::class)
   fun handleValidationErrorException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse?>? {
     log.info("Bad request: {}", e.message)
+    val message = if (e.hasFieldErrors()) { "${e.fieldError?.field} ${e.fieldError?.defaultMessage}" } else { e.message }
     return ResponseEntity
       .status(BAD_REQUEST)
       .body(
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "Bad request: ${e.message}",
-          developerMessage = e.message
+          developerMessage = message
         )
       )
   }
