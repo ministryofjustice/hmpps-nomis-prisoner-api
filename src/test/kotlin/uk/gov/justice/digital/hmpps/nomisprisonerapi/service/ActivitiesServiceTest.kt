@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.service
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -13,21 +12,30 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateOffenderProgramProfileResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.PayRateRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.Optional
 
 private const val courseActivityId = 1L
@@ -35,6 +43,10 @@ private const val prisonId = "LEI"
 private const val roomId: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
 private const val programCode = "TEST"
 private const val iepLevel = "STD"
+private const val offenderBookingId = -9L
+private const val offenderNo = "A1234AA"
+private const val prisonDescription = "Leeds"
+private const val offenderProgramReferenceId = 12345L
 
 internal class ActivitiesServiceTest {
 
@@ -43,6 +55,8 @@ internal class ActivitiesServiceTest {
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository = mock()
   private val programServiceRepository: ProgramServiceRepository = mock()
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
+  private val offenderBookingRepository: OffenderBookingRepository = mock()
+  private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val activitiesService = ActivitiesService(
@@ -51,48 +65,39 @@ internal class ActivitiesServiceTest {
     agencyInternalLocationRepository,
     programServiceRepository,
     availablePrisonIepLevelRepository,
+    offenderBookingRepository,
+    offenderProgramProfileRepository,
     telemetryClient,
   )
 
-  private var returnedCourseActivity: CourseActivity? = null
+  val defaultPrison = AgencyLocation(prisonId, prisonDescription)
+  val defaultProgramService = ProgramService(
+    programCode = programCode,
+    description = "desc",
+    active = true,
+  )
+  val defaultRoom = AgencyInternalLocation(
+    agencyId = prisonId,
+    description = prisonDescription,
+    locationType = "ROOM",
+    locationCode = "ROOM-1",
+    locationId = roomId
+  )
+  fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
 
   @BeforeEach
   fun setup() {
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(
-      Optional.of(AgencyLocation(prisonId, "Leeds"))
-    )
-    whenever(agencyInternalLocationRepository.findById(roomId)).thenReturn(
-      Optional.of(
-        AgencyInternalLocation(
-          agencyId = prisonId,
-          description = "desc",
-          locationType = "ROOM",
-          locationCode = "ROOM-1",
-          locationId = roomId
-        )
-      )
+      Optional.of(defaultPrison)
     )
     whenever(programServiceRepository.findByProgramCode(programCode)).thenReturn(
-      ProgramService(
-        programCode = programCode,
-        description = "desc",
-        active = true,
-      )
+      defaultProgramService
     )
-    whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
-      val prison = (it.arguments[0] as AgencyLocation)
-      val code = (it.arguments[1] as String)
-      return@thenAnswer AvailablePrisonIepLevel(code, prison, IEPLevel(code, "$code-desc"))
-    }
-    whenever(activityRepository.save(any())).thenAnswer {
-      returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
-      returnedCourseActivity
-    }
   }
 
-  @DisplayName("create")
   @Nested
-  internal inner class Create {
+  internal inner class CreateActivity {
+
     private val createRequest = CreateActivityRequest(
       prisonId = prisonId,
       code = "CA",
@@ -112,6 +117,23 @@ internal class ActivitiesServiceTest {
       )
     )
 
+    @BeforeEach
+    fun setup() {
+
+      whenever(agencyInternalLocationRepository.findById(roomId)).thenReturn(Optional.of(defaultRoom))
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
+        val prison = (it.arguments[0] as AgencyLocation)
+        val code = (it.arguments[1] as String)
+        return@thenAnswer AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
+      }
+      whenever(activityRepository.save(any())).thenAnswer {
+        returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
+        returnedCourseActivity
+      }
+    }
+
+    private var returnedCourseActivity: CourseActivity? = null
+
     @Test
     fun `Activity data is mapped correctly`() {
       assertThat(activitiesService.createActivity(createRequest))
@@ -120,7 +142,7 @@ internal class ActivitiesServiceTest {
       verify(activityRepository).save(
         org.mockito.kotlin.check { activity ->
           assertThat(activity.code).isEqualTo("CA")
-          assertThat(activity.prison.description).isEqualTo("Leeds")
+          assertThat(activity.prison.description).isEqualTo(prisonDescription)
           assertThat(activity.caseloadId).isEqualTo(prisonId)
           assertThat(activity.description).isEqualTo("test description")
           assertThat(activity.capacity).isEqualTo(23)
@@ -182,6 +204,87 @@ internal class ActivitiesServiceTest {
         activitiesService.createActivity(createRequest)
       }
       assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $prisonId")
+    }
+  }
+
+  @Nested
+  internal inner class CreateOffenderProgramProfile {
+    private val defaultOffender = Offender(
+      nomsId = offenderNo, lastName = "Smith",
+      gender = Gender("MALE", "Male")
+    )
+    private val defaultOffenderBooking = OffenderBooking(
+      bookingId = offenderBookingId,
+      offender = defaultOffender,
+      bookingBeginDate = LocalDateTime.now()
+    )
+    private val defaultCourseActivity = CourseActivity(
+      courseActivityId = courseActivityId,
+      prison = defaultPrison,
+      program = defaultProgramService,
+      iepLevel = defaultIepLevel("STD"),
+      internalLocation = defaultRoom,
+    )
+    private val createRequest = CreateOffenderProgramProfileRequest(
+      courseActivityId = courseActivityId,
+      bookingId = offenderBookingId,
+      startDate = LocalDate.parse("2022-10-31"),
+      endDate = LocalDate.parse("2022-11-30"),
+    )
+
+    @BeforeEach
+    fun setup() {
+      whenever(activityRepository.findById(courseActivityId)).thenReturn(
+        Optional.of(defaultCourseActivity)
+      )
+      whenever(offenderBookingRepository.findById(offenderBookingId)).thenReturn(
+        Optional.of(defaultOffenderBooking)
+      )
+
+      whenever(offenderProgramProfileRepository.save(any())).thenAnswer {
+        (it.arguments[0] as OffenderProgramProfile).copy(offenderProgramReferenceId = offenderProgramReferenceId)
+      }
+    }
+
+    @Test
+    fun `Data is mapped correctly`() {
+      assertThat(activitiesService.createOffenderProgramProfile(createRequest))
+        .isEqualTo(CreateOffenderProgramProfileResponse(offenderProgramReferenceId))
+
+      verify(offenderProgramProfileRepository).save(
+        org.mockito.kotlin.check {
+          with(it) {
+            assertThat(offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
+            assertThat(offenderBooking.bookingId).isEqualTo(offenderBookingId)
+            assertThat(program.programCode).isEqualTo(programCode)
+            assertThat(startDate).isEqualTo(LocalDate.parse("2022-10-31"))
+            assertThat(programStatus).isEqualTo("ALLOC")
+            assertThat(courseActivity?.courseActivityId).isEqualTo(courseActivityId)
+            assertThat(prison?.id).isEqualTo(prisonId)
+            assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))
+          }
+        }
+      )
+    }
+
+    @Test
+    fun courseActivityNotFound() {
+      whenever(activityRepository.findById(courseActivityId)).thenReturn(Optional.empty())
+
+      val thrown = assertThrows<BadDataException>() {
+        activitiesService.createOffenderProgramProfile(createRequest)
+      }
+      assertThat(thrown.message).isEqualTo("Course activity with id=$courseActivityId does not exist")
+    }
+
+    @Test
+    fun invalidBooking() {
+      whenever(offenderBookingRepository.findById(offenderBookingId)).thenReturn(Optional.empty())
+
+      val thrown = assertThrows<BadDataException>() {
+        activitiesService.createOffenderProgramProfile(createRequest)
+      }
+      assertThat(thrown.message).isEqualTo("Booking with id=$offenderBookingId does not exist")
     }
   }
 }

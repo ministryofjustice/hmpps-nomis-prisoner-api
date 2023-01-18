@@ -107,7 +107,7 @@ data class CourseActivity(
   @Column
   val courseActivityType: String? = "PA",
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(

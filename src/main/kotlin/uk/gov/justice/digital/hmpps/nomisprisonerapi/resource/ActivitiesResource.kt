@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateOffenderProgramProfileResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.ActivitiesService
 
 @RestController
@@ -40,7 +42,13 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Activity information with created sequence"
+        description = "Activity information with created sequence",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateActivityResponse::class)
+          )
+        ]
       ),
       ApiResponse(
         responseCode = "400",
@@ -68,4 +76,56 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
     @RequestBody @Valid createActivityRequest: CreateActivityRequest
   ): CreateActivityResponse =
     activitiesService.createActivity(createActivityRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PostMapping("/activities/offender-program-profile")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Allocates a prisoner to an activity",
+    description = "Allocates a prisoner to an activity. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateOffenderProgramProfileRequest::class)
+        )
+      ]
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Offender program profile information with created id",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateOffenderProgramProfileResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Activity or booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun createOffenderProgramProfile(
+    @RequestBody @Valid createRequest: CreateOffenderProgramProfileRequest
+  ): CreateOffenderProgramProfileResponse =
+    activitiesService.createOffenderProgramProfile(createRequest)
 }

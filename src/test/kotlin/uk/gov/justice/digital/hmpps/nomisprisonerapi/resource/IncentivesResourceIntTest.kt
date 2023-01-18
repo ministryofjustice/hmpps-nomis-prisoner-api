@@ -16,9 +16,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBoo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -522,6 +522,3 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
   }
 }
-
-private fun Offender.latestBooking(): OffenderBooking =
-  this.bookings.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")

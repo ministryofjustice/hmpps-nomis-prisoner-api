@@ -30,8 +30,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitVisitorBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import java.sql.Timestamp
@@ -1746,6 +1746,3 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
 private fun LocalDate.asSQLTimestamp(): Timestamp = Timestamp.valueOf(this.atStartOfDay())
 private fun LocalDateTime.asSQLTimestamp(): Timestamp = Timestamp.valueOf(this)
-
-private fun Offender.latestBooking(): OffenderBooking =
-  this.bookings.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")

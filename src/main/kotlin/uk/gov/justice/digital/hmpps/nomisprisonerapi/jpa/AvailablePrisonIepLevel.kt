@@ -30,7 +30,7 @@ data class AvailablePrisonIepLevel(
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val agencyLocation: AgencyLocation,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
