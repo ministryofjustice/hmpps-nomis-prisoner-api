@@ -112,6 +112,9 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val incentives: MutableList<Incentive> = mutableListOf(),
 
+  @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val offenderProgramProfiles: MutableList<OffenderProgramProfile> = mutableListOf(),
+
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val sentences: MutableList<OffenderSentence> = mutableListOf(),
 

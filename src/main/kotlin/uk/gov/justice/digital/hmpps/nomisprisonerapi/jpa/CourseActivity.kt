@@ -107,7 +107,7 @@ data class CourseActivity(
   @Column
   val courseActivityType: String? = "PA",
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -132,6 +132,9 @@ data class CourseActivity(
   @Column
   @Enumerated(STRING)
   val payPerSession: PayPerSession? = null,
+
+  @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val offenderProgramProfiles: MutableList<OffenderProgramProfile> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

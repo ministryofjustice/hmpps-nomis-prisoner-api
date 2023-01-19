@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 
 @Repository
-interface ActivityRepository : JpaRepository <CourseActivity, Long>
+interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfile, Long>

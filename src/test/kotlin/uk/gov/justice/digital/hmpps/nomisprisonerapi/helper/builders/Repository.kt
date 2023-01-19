@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
@@ -31,6 +32,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
@@ -60,6 +62,7 @@ class Repository(
   val programServiceRepository: ProgramServiceRepository,
   val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
   val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
+  val offenderProgramProfileRepository: OffenderProgramProfileRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -110,17 +113,17 @@ class Repository(
     offenderRepository.saveAndFlush(offender)
 
     // children that require a flushed booking
-    offender.bookings.forEachIndexed { index, booking ->
+    offender.bookings.forEachIndexed { bookingIndex, booking ->
       booking.incentives.addAll(
-        offenderBuilder.bookingBuilders[index].incentives.map {
+        offenderBuilder.bookingBuilders[bookingIndex].incentives.map {
           it.build(booking, lookupIepLevel(it.iepLevel))
         }
       )
       booking.sentences.addAll(
-        offenderBuilder.bookingBuilders[index].sentences.mapIndexed { index, sentenceBuilder ->
+        offenderBuilder.bookingBuilders[bookingIndex].sentences.mapIndexed { sentenceIndex, sentenceBuilder ->
           val sentence = sentenceBuilder.build(
             booking,
-            index.toLong() + 1,
+            sentenceIndex.toLong() + 1,
             lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category)
           )
           sentence.adjustments.addAll(
@@ -204,7 +207,11 @@ class Repository(
     return offender
   }
 
-  fun lookupActivity(id: Long): CourseActivity = activityRepository.findById(id).orElseThrow().also {
+  fun lookupProgramService(id: Long): ProgramService = programServiceRepository.findByIdOrNull(id)!!
+  fun lookupOffenderProgramProfile(id: Long): OffenderProgramProfile =
+    offenderProgramProfileRepository.findByIdOrNull(id)!!
+
+  fun lookupActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
     it.payRates?.size
   }
 
@@ -212,4 +219,10 @@ class Repository(
   fun deleteActivities() = activityRepository.deleteAll()
 
   fun save(programService: ProgramService): ProgramService = programServiceRepository.save(programService)
+  fun save(courseActivity: CourseActivity): CourseActivity =
+    activityRepository.save(
+      courseActivity
+        // need to refresh a reference data property to avoid a 'transient entity' error
+        .copy(iepLevel = lookupIepLevel(courseActivity.iepLevel.code))
+    )
 }
