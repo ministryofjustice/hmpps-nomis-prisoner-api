@@ -73,7 +73,6 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   internal fun cleanUp() {
-    repository.deleteOffenderProgramProfiles()
     repository.delete(offenderAtMoorlands)
     repository.deleteActivities()
     repository.deleteProgramServices()
@@ -174,7 +173,6 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     private val createOffenderProgramProfileRequest: () -> CreateOffenderProgramProfileRequest = {
       CreateOffenderProgramProfileRequest(
-        courseActivityId = courseActivity.courseActivityId,
         bookingId = repository.lookupOffender("A1234TT")?.latestBooking()?.bookingId!!,
         startDate = LocalDate.parse("2022-10-31"),
         endDate = LocalDate.parse("2022-11-30"),
@@ -203,7 +201,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/activities/offender-program-profile")
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
         .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
         .exchange()
         .expectStatus().isUnauthorized
@@ -211,7 +209,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.post().uri("/activities/offender-program-profile")
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
         .exchange()
@@ -220,7 +218,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden with wrong role`() {
-      webTestClient.post().uri("/activities/offender-program-profile")
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
         .exchange()
@@ -229,9 +227,18 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access with activity not found`() {
-      webTestClient.post().uri("/activities/offender-program-profile")
+      webTestClient.post().uri("/activities/999888")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest().copy(courseActivityId = 999888)))
+        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `access with booking not found`() {
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest().copy(bookingId = 999888)))
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -254,13 +261,12 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
     }
 
     private fun callCreateEndpoint(courseActivityId: Long, bookingId: Long): Long {
-      val response = webTestClient.post().uri("/activities/offender-program-profile")
+      val response = webTestClient.post().uri("/activities/$courseActivityId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
             """{
-            "courseActivityId" : "$courseActivityId",
             "bookingId" : "$bookingId",
             "startDate" : "2022-10-31",
             "endDate" : "2022-11-30"

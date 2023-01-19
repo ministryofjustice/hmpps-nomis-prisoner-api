@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -78,7 +79,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
     activitiesService.createActivity(createActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PostMapping("/activities/offender-program-profile")
+  @PostMapping("/activities/{courseActivityId}")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Allocates a prisoner to an activity",
@@ -104,7 +105,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Activity or booking does not exist",
+        description = "Booking does not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -122,10 +123,21 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
           )
         ]
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Activity does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
     ]
   )
   fun createOffenderProgramProfile(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid createRequest: CreateOffenderProgramProfileRequest
   ): CreateOffenderProgramProfileResponse =
-    activitiesService.createOffenderProgramProfile(createRequest)
+    activitiesService.createOffenderProgramProfile(courseActivityId, createRequest)
 }

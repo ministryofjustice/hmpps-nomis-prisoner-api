@@ -43,66 +43,9 @@ data class OffenderProgramProfile(
   @JoinColumn(name = "AGY_LOC_ID")
   val prison: AgencyLocation? = null,
 
-//  @ManyToOne(fetch = FetchType.LAZY)
-//  @NotFound(action = NotFoundAction.IGNORE)
-//  @JoinColumnsOrFormulas(
-//    value = [JoinColumnOrFormula(
-//      formula = JoinFormula(
-//        value = "'" + OffenderProgramEndReason.DOMAIN + "'",
-//        referencedColumnName = "domain"
-//      )
-//    ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_END_REASON", referencedColumnName = "code"))]
-//  )
-//  val endReason: OffenderProgramEndReason? = null,
-
   @Column(name = "OFFENDER_END_DATE")
   val endDate: LocalDate? = null,
 
-//  @Column(name = "OFFENDER_END_REASON", updatable = false, insertable = false)
-//  val endReasonCode: String? = null,
-
-//  @Column(name = "OFFENDER_END_COMMENT_TEXT")
-//  val endCommentText: String? = null,
-
-//  @ManyToOne(fetch = FetchType.LAZY)
-//  @NotFound(action = NotFoundAction.IGNORE)
-//  @JoinColumnsOrFormulas(
-//    value = [JoinColumnOrFormula(
-//      formula = JoinFormula(
-//        value = "'" + WaitlistDecisionCode.DOMAIN + "'",
-//        referencedColumnName = "domain"
-//      )
-//    ), JoinColumnOrFormula(
-//      column = JoinColumn(
-//        name = "WAITLIST_DECISION_CODE",
-//        referencedColumnName = "code",
-//        updatable = false,
-//        insertable = false
-//      )
-//    )]
-//  )
-//  val waitlistDecision: WaitlistDecisionCode? = null,
-
-//  @Column(name = "WAITLIST_DECISION_CODE")
-//  val waitlistDecisionCode: String? = null,
-
-//  @ManyToOne(fetch = FetchType.LAZY)
-//  @NotFound(action = NotFoundAction.IGNORE)
-//  @JoinColumnsOrFormulas(
-//    value = [JoinColumnOrFormula(
-//      formula = JoinFormula(
-//        value = "'" + RejectReasonCode.DOMAIN + "'",
-//        referencedColumnName = "domain"
-//      )
-//    ), JoinColumnOrFormula(column = JoinColumn(name = "REJECT_REASON_CODE", referencedColumnName = "code"))]
-//  )
-//  val rejectReason: RejectReasonCode? = null,
-//
-//  @Column(name = "REJECT_REASON_CODE", updatable = false, insertable = false)
-//  val rejectReasonCode: String? = null,
-
-//  @Column(name = "REJECT_DATE")
-//  val rejectDate: LocalDate? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

@@ -226,7 +226,6 @@ internal class ActivitiesServiceTest {
       internalLocation = defaultRoom,
     )
     private val createRequest = CreateOffenderProgramProfileRequest(
-      courseActivityId = courseActivityId,
       bookingId = offenderBookingId,
       startDate = LocalDate.parse("2022-10-31"),
       endDate = LocalDate.parse("2022-11-30"),
@@ -248,7 +247,7 @@ internal class ActivitiesServiceTest {
 
     @Test
     fun `Data is mapped correctly`() {
-      assertThat(activitiesService.createOffenderProgramProfile(createRequest))
+      assertThat(activitiesService.createOffenderProgramProfile(courseActivityId, createRequest))
         .isEqualTo(CreateOffenderProgramProfileResponse(offenderProgramReferenceId))
 
       verify(offenderProgramProfileRepository).save(
@@ -271,8 +270,8 @@ internal class ActivitiesServiceTest {
     fun courseActivityNotFound() {
       whenever(activityRepository.findById(courseActivityId)).thenReturn(Optional.empty())
 
-      val thrown = assertThrows<BadDataException>() {
-        activitiesService.createOffenderProgramProfile(createRequest)
+      val thrown = assertThrows<NotFoundException>() {
+        activitiesService.createOffenderProgramProfile(courseActivityId, createRequest)
       }
       assertThat(thrown.message).isEqualTo("Course activity with id=$courseActivityId does not exist")
     }
@@ -282,7 +281,7 @@ internal class ActivitiesServiceTest {
       whenever(offenderBookingRepository.findById(offenderBookingId)).thenReturn(Optional.empty())
 
       val thrown = assertThrows<BadDataException>() {
-        activitiesService.createOffenderProgramProfile(createRequest)
+        activitiesService.createOffenderProgramProfile(courseActivityId, createRequest)
       }
       assertThat(thrown.message).isEqualTo("Booking with id=$offenderBookingId does not exist")
     }

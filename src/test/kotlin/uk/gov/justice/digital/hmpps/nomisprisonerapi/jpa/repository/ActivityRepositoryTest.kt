@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.context.annotation.Import
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
@@ -37,9 +36,6 @@ class ActivityRepositoryTest {
   @Autowired
   lateinit var offenderProgramProfileRepository: OffenderProgramProfileRepository
 
-  @Autowired
-  lateinit var entityManager: TestEntityManager
-
   @Test
   fun saveActivity() {
     val seedProgramService = builderRepository.save(
@@ -57,7 +53,7 @@ class ActivityRepositoryTest {
 
     val seedIep = builderRepository.lookupIepLevel("STD")
 
-    activityRepository.save(
+    activityRepository.saveAndFlush(
       CourseActivity(
         code = "CA",
         program = seedProgramService,
@@ -84,7 +80,6 @@ class ActivityRepositoryTest {
         )
       )
     }
-    entityManager.flush()
 
     val persistedRecord = activityRepository.findAll().first()
     assertThat(persistedRecord).isNotNull
@@ -144,7 +139,7 @@ class ActivityRepositoryTest {
         .withBooking(OffenderBookingBuilder())
     ).bookings.first()
 
-    offenderProgramProfileRepository.save(
+    offenderProgramProfileRepository.saveAndFlush(
       OffenderProgramProfile(
         offenderBooking = seedOffenderBooking,
         program = seedProgramService,
@@ -155,8 +150,6 @@ class ActivityRepositoryTest {
         endDate = LocalDate.parse("2023-01-11"),
       )
     )
-
-    entityManager.flush()
 
     val persistedRecord = offenderProgramProfileRepository.findAll().first()
     assertThat(persistedRecord).isNotNull

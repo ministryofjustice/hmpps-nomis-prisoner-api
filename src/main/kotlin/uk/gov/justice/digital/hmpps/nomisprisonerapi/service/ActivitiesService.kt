@@ -51,14 +51,13 @@ class ActivitiesService(
         ),
         null
       )
-      log.debug("Activity created with Nomis id = $courseActivityId")
 
       CreateActivityResponse(courseActivityId)
     }
 
-  fun createOffenderProgramProfile(dto: CreateOffenderProgramProfileRequest): CreateOffenderProgramProfileResponse =
+  fun createOffenderProgramProfile(courseActivityId: Long, dto: CreateOffenderProgramProfileRequest): CreateOffenderProgramProfileResponse =
 
-    offenderProgramProfileRepository.save(mapOffenderProgramProfileModel(dto)).run {
+    offenderProgramProfileRepository.save(mapOffenderProgramProfileModel(courseActivityId, dto)).run {
 
       telemetryClient.trackEvent(
         "offender-program-profile-created",
@@ -128,10 +127,10 @@ class ActivitiesService(
     }
   }
 
-  private fun mapOffenderProgramProfileModel(dto: CreateOffenderProgramProfileRequest): OffenderProgramProfile {
+  private fun mapOffenderProgramProfileModel(courseActivityId: Long, dto: CreateOffenderProgramProfileRequest): OffenderProgramProfile {
 
-    val courseActivity = activityRepository.findByIdOrNull(dto.courseActivityId)
-      ?: throw BadDataException("Course activity with id=${dto.courseActivityId} does not exist")
+    val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
+      ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
 
     val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)
       ?: throw BadDataException("Booking with id=${dto.bookingId} does not exist")

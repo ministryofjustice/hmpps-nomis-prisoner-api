@@ -217,9 +217,12 @@ class Repository(
 
   fun deleteProgramServices() = programServiceRepository.deleteAll()
   fun deleteActivities() = activityRepository.deleteAll()
-  fun deleteOffenderProgramProfiles() = offenderProgramProfileRepository.deleteAll()
 
   fun save(programService: ProgramService): ProgramService = programServiceRepository.save(programService)
   fun save(courseActivity: CourseActivity): CourseActivity =
-    activityRepository.save(courseActivity.copy(iepLevel = lookupIepLevel(courseActivity.iepLevel.code)))
+    activityRepository.save(
+      courseActivity
+        // need to refresh a reference data property to avoid a 'transient entity' error
+        .copy(iepLevel = lookupIepLevel(courseActivity.iepLevel.code))
+    )
 }
