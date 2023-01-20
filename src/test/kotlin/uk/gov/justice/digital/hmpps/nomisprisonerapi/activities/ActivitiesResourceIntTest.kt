@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -123,11 +123,10 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
       assertThat(courseActivity.courseActivityId).isEqualTo(id)
       assertThat(courseActivity.capacity).isEqualTo(23)
-      assertThat(courseActivity.prison.id)
-        .isEqualTo(prisonId)
+      assertThat(courseActivity.prison.id).isEqualTo(prisonId)
       assertThat(courseActivity.payRates?.first()?.halfDayRate).isCloseTo(
         BigDecimal(0.4),
-        Assertions.within(BigDecimal("0.001"))
+        within(BigDecimal("0.001"))
       )
     }
 
@@ -252,8 +251,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       assertThat(persistedRecord.courseActivity?.courseActivityId).isEqualTo(courseActivity.courseActivityId)
       with(persistedRecord) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
-        assertThat(program.programCode)
-          .isEqualTo(programCode)
+        assertThat(program.programCode).isEqualTo(programCode)
         assertThat(startDate).isEqualTo(LocalDate.parse("2022-10-31"))
         assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))
       }
