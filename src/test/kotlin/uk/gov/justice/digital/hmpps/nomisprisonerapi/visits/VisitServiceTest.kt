@@ -3,11 +3,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.visits
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.groups.Tuple
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -204,7 +206,7 @@ internal class VisitServiceTest {
         .isEqualTo(CreateVisitResponse(visitId))
 
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.visitDate).isEqualTo(LocalDate.parse("2021-11-04"))
           assertThat(visit.startDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T12:05"))
           assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
@@ -225,7 +227,7 @@ internal class VisitServiceTest {
       verify(visitSlotRepository).save(any())
       verify(internalLocationRepository).save(any())
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.location.id).isEqualTo(prisonId)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
           assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
@@ -237,7 +239,7 @@ internal class VisitServiceTest {
     internal fun `room description is used for NOMIS room description`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "OPEN"))
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-SOC")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINSOC")
         }
@@ -248,7 +250,7 @@ internal class VisitServiceTest {
     internal fun `visit restriction is used for NOMIS room description`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-CLO")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINCLO")
         }
@@ -259,7 +261,7 @@ internal class VisitServiceTest {
     internal fun `room description for open visit is based on room description without 'visit(s)' and 'room'`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Big visits room annex", openClosedStatus = "OPEN"))
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-BIG-ANNEX-SOC")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPBIGANNEXSO")
         }
@@ -269,7 +271,7 @@ internal class VisitServiceTest {
     internal fun `room description for closed visit is based on room description without 'visit(s)' and 'room'`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "HUGE visits room annex", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-HUGE-ANNEX-CLO")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPHUGEANNEXC")
         }
@@ -280,7 +282,7 @@ internal class VisitServiceTest {
     internal fun `very long descriptions will be limited which means codes can be duplicated`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "The Whale is an 1851 novel by American writer Herman Melville. The book is the sailor Ishmael's narrative of the obsessive quest of Ahab, captain of the whaling ship Pequod, for revenge against Moby Dick, the giant white sperm whale that on the ship's previous voyage bit off Ahab's leg at the knee.", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.agencyInternalLocation?.description)
             .isEqualTo("SWI-VSIP-THE-WHALE-IS-AN-1851-NOVEL-BY-AMERICAN-WRITER-HERMAN-MELVILLE-THE-BOOK-IS-THE-SAILOR-ISHMAELS-NARRATIVE-OF-THE-OBSESSIVE-QUEST-OF-AHAB-CAPTAIN-OF-THE-WHALING-SHIP-PEQUOD-FOR-REVENGE-AGAINST-MOBY-DICK-THE-GIANT-WHITE-SPERM-WHALE-CLO")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPTHEWHALEIS")
@@ -307,7 +309,7 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
-        org.mockito.kotlin.check { balanceArgument ->
+        check { balanceArgument ->
           assertThat(balanceArgument.adjustReasonCode?.code)
             .isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(-1)
@@ -325,7 +327,7 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
-        org.mockito.kotlin.check { balanceArgument ->
+        check { balanceArgument ->
           assertThat(balanceArgument.adjustReasonCode?.code)
             .isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isNull()
@@ -353,7 +355,7 @@ internal class VisitServiceTest {
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
-      verify(visitRepository).save(org.mockito.kotlin.check { visit ->
+      verify(visitRepository).save(check { visit ->
         assertThat(visit.visitOrder).isNotNull()
       })
       verify(offenderVisitBalanceAdjustmentRepository).save(any())
@@ -367,7 +369,7 @@ internal class VisitServiceTest {
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
-      verify(visitRepository).save(org.mockito.kotlin.check { visit ->
+      verify(visitRepository).save(check { visit ->
         assertThat(visit.visitOrder).isNull()
       })
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
@@ -381,7 +383,7 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest)
 
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.visitors)
             .extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
             .containsExactly(
@@ -401,7 +403,7 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest)
 
       verify(visitRepository).save(
-        org.mockito.kotlin.check { visit ->
+        check { visit ->
           assertThat(visit.visitors)
             .extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
             .containsExactly(
@@ -419,7 +421,7 @@ internal class VisitServiceTest {
         Optional.empty()
       )
 
-      val thrown = org.junit.jupiter.api.Assertions.assertThrows(NotFoundException::class.java) {
+      val thrown = assertThrows(NotFoundException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo(offenderNo)
@@ -429,7 +431,7 @@ internal class VisitServiceTest {
     fun personNotFound() {
       whenever(personRepository.findById(45L)).thenReturn(Optional.empty())
 
-      val thrown = org.junit.jupiter.api.Assertions.assertThrows(BadDataException::class.java) {
+      val thrown = assertThrows(BadDataException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo("Person with id=45 does not exist")
@@ -439,7 +441,7 @@ internal class VisitServiceTest {
     fun prisonNotFound() {
       whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.empty())
 
-      val thrown = org.junit.jupiter.api.Assertions.assertThrows(BadDataException::class.java) {
+      val thrown = assertThrows(BadDataException::class.java) {
         visitService.createVisit(offenderNo, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo("Prison with id=$prisonId does not exist")
@@ -484,7 +486,7 @@ internal class VisitServiceTest {
       visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
-        org.mockito.kotlin.check { balanceArgument ->
+        check { balanceArgument ->
           assertThat(balanceArgument.adjustReasonCode?.code)
             .isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_CANCEL)
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(1)
@@ -502,7 +504,7 @@ internal class VisitServiceTest {
       visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
-        org.mockito.kotlin.check { balanceArgument ->
+        check { balanceArgument ->
           assertThat(balanceArgument.adjustReasonCode?.code)
             .isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_CANCEL)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(1)
