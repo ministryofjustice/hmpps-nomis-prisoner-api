@@ -5,7 +5,7 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import org.springframework.data.jpa.domain.Specification
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.IncentiveFilter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.incentives.IncentiveFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 
 class IncentiveSpecification(private val filter: IncentiveFilter) : Specification<Incentive> {

@@ -13,9 +13,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.ConflictException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 
 @RestControllerAdvice
 class NomisPrisonerApiExceptionHandler {
@@ -101,10 +101,10 @@ class NomisPrisonerApiExceptionHandler {
   fun handleMethodArgumentTypeMismatchException(e: Exception): ResponseEntity<ErrorResponse> {
     log.info("Validation exception: {}", e.message)
     return ResponseEntity
-      .status(HttpStatus.BAD_REQUEST)
+      .status(BAD_REQUEST)
       .body(
         ErrorResponse(
-          status = HttpStatus.BAD_REQUEST,
+          status = BAD_REQUEST,
           userMessage = "Invalid Argument: ${e.cause?.message}",
           developerMessage = e.message
         )

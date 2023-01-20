@@ -6,12 +6,12 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.VisitRoomCountResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitFilter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitRoomCountResponse
 
 interface VisitCustomRepository {
   fun findRoomUsageWithFilter(filter: VisitFilter): List<VisitRoomCountResponse>
