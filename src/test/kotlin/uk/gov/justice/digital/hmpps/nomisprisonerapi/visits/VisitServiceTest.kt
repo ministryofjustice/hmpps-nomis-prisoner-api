@@ -52,7 +52,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.VisitService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -355,9 +354,11 @@ internal class VisitServiceTest {
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
-      verify(visitRepository).save(check { visit ->
-        assertThat(visit.visitOrder).isNotNull()
-      })
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.visitOrder).isNotNull()
+        }
+      )
       verify(offenderVisitBalanceAdjustmentRepository).save(any())
     }
 
@@ -369,9 +370,11 @@ internal class VisitServiceTest {
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
-      verify(visitRepository).save(check { visit ->
-        assertThat(visit.visitOrder).isNull()
-      })
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.visitOrder).isNull()
+        }
+      )
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
 

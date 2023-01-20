@@ -10,7 +10,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CreateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.PayRateRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -30,8 +32,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePri
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

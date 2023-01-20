@@ -7,7 +7,9 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -16,8 +18,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePri
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncentiveSpecification
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import java.time.LocalDateTime
 
 @Service

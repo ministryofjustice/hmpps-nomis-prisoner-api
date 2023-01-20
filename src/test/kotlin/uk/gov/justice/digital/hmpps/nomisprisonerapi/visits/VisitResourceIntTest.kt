@@ -80,7 +80,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
   private val threePeople = mutableListOf<Person>()
   private val createVisitWithPeople: () -> CreateVisitRequest = {
     createVisit(
-      threePeople.map { it.id })
+      threePeople.map { it.id }
+    )
   }
   private val updateVisitWithPeople: () -> UpdateVisitRequest = { updateVisit(threePeople.map { it.id }) }
 
@@ -190,7 +191,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitType"         : "SCON",
             "startDateTime"     : "2021-11-04T12:05",
             "endTime"           : "13:04",
-            "prisonId"          : "${prisonId}",
+            "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [$personIds],
             "issueDate"         : "2021-11-02",
             "visitComment"      : "VSIP Ref: asd-fff-ddd",
@@ -234,7 +235,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitType"         : "SCON",
             "startDateTime"     : "2021-11-04T12:05",
             "endTime"           : "13:04",
-            "prisonId"          : "${prisonId}",
+            "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [$personIds],
             "issueDate"         : "2021-11-02",
             "visitComment"      : "VSIP Ref: asd-fff-ddd",
@@ -270,7 +271,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitType"         : "SCON",
             "startDateTime"     : "2021-11-04T12:05",
             "endTime"           : "13:04",
-            "prisonId"          : "${prisonId}",
+            "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [$personIds],
             "issueDate"         : "2021-11-02",
             "visitComment"      : "VSIP Ref: asd-fff-ddd",
@@ -313,7 +314,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitType"         : "SCON",
             "startDateTime"     : "2021-11-04T12:05",
             "endTime"           : "13:04",
-            "prisonId"          : "${prisonId}",
+            "prisonId"          : "$prisonId",
             "visitorPersonIds"  : [$personIds],
             "issueDate"         : "2021-11-02",
             "visitComment"      : "VSIP Ref: asd-fff-ddd",
@@ -334,7 +335,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       assertThat(visit.agencyVisitSlot).isNotNull
       assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description)
-        .isEqualTo("${prisonId}-VSIP-MAIN-SOC")
+        .isEqualTo("$prisonId-VSIP-MAIN-SOC")
       assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VPMAINSOC")
       assertThat(visit.agencyVisitSlot!!.timeSlotSequence).isEqualTo(1)
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
@@ -409,7 +410,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
 
         assertThat(visit.agencyInternalLocation!!.description)
-          .isEqualTo("${prisonId}-VSIP-MAIN-SOC")
+          .isEqualTo("$prisonId-VSIP-MAIN-SOC")
         assertThat(repository.findAllAgencyVisitSlots(prisonId))
           .hasSize(1)
           .anyMatch { it.id == visit.agencyVisitSlot!!.id }
@@ -423,7 +424,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           )
         )
         assertThat(visitInDifferentRestrictionRoom.agencyInternalLocation!!.description)
-          .isEqualTo("${prisonId}-VSIP-MAIN-CLO")
+          .isEqualTo("$prisonId-VSIP-MAIN-CLO")
         assertThat(repository.findAllAgencyVisitSlots(prisonId))
           .hasSize(2)
           .anyMatch { it.id == visitInDifferentRestrictionRoom.agencyVisitSlot!!.id }
@@ -437,7 +438,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           )
         )
         assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description)
-          .isEqualTo("${prisonId}-VSIP-BIG-BLUE-CLO")
+          .isEqualTo("$prisonId-VSIP-BIG-BLUE-CLO")
         assertThat(repository.findAllAgencyVisitSlots(prisonId))
           .hasSize(3)
           .anyMatch { it.id == visitInDifferentPhysicalRoom.agencyVisitSlot!!.id }
@@ -582,7 +583,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   "visitType"         : "SCON",
                   "startDateTime"     : "$startDateTime",
                   "endTime"           : "$endTime",
-                  "prisonId"          : "${prisonId}",
+                  "prisonId"          : "$prisonId",
                   "visitorPersonIds"  : [${threePeople.map { it.id }.joinToString(",")}],
                   "issueDate"         : "2021-11-02",
                   "visitComment"      : "VSIP Ref: asd-fff-ddd",
@@ -927,7 +928,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(VisitResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("${prisonId}-VSIP-ANOTHER-SOC")
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-ANOTHER-SOC")
 
         val visits = jdbcTemplate.query(
           """SELECT * FROM V_OFFENDER_VISITS 
@@ -938,7 +939,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         assertThat(visits).hasSize(1)
         assertThat(visits.first()["DESCRIPTION"])
-          .isEqualTo("${prisonId}-VSIP-ANOTHER-SOC")
+          .isEqualTo("$prisonId-VSIP-ANOTHER-SOC")
       }
 
       @Test
@@ -958,7 +959,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(VisitResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("${prisonId}-VSIP-MAIN-CLO")
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-MAIN-CLO")
       }
 
       @Test

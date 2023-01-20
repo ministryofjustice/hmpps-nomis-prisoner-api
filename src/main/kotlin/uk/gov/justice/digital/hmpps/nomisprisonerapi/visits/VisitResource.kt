@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.service.VisitService
 import java.time.LocalDateTime
 
 const val OFFENDER_NO_PATTERN = "[A-Z]\\d{4}[A-Z]{2}"

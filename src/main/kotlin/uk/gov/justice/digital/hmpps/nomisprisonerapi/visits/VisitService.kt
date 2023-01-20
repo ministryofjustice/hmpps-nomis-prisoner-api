@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.service
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.visits
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
@@ -10,13 +10,6 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.CancelVisitRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.CreateVisitRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.CreateVisitResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.UpdateVisitRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitIdResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitRoomCountResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -51,7 +44,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitResponse
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
