@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -120,11 +121,11 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       // Spot check that the database has been populated.
       val courseActivity = repository.lookupActivity(id)
 
-      Assertions.assertThat(courseActivity.courseActivityId).isEqualTo(id)
-      Assertions.assertThat(courseActivity.capacity).isEqualTo(23)
-      Assertions.assertThat(courseActivity.prison.id)
+      assertThat(courseActivity.courseActivityId).isEqualTo(id)
+      assertThat(courseActivity.capacity).isEqualTo(23)
+      assertThat(courseActivity.prison.id)
         .isEqualTo(prisonId)
-      Assertions.assertThat(courseActivity.payRates?.first()?.halfDayRate).isCloseTo(
+      assertThat(courseActivity.payRates?.first()?.halfDayRate).isCloseTo(
         BigDecimal(0.4),
         Assertions.within(BigDecimal("0.001"))
       )
@@ -158,7 +159,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isCreated
         .expectBody(CreateActivityResponse::class.java)
         .returnResult().responseBody
-      Assertions.assertThat(response?.courseActivityId).isGreaterThan(0)
+      assertThat(response?.courseActivityId).isGreaterThan(0)
       return response!!.courseActivityId
     }
   }
@@ -248,13 +249,13 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
       // Spot check that the database has been populated correctly.
       val persistedRecord = repository.lookupOffenderProgramProfile(id)
-      Assertions.assertThat(persistedRecord.courseActivity?.courseActivityId).isEqualTo(courseActivity.courseActivityId)
+      assertThat(persistedRecord.courseActivity?.courseActivityId).isEqualTo(courseActivity.courseActivityId)
       with(persistedRecord) {
-        Assertions.assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
-        Assertions.assertThat(program.programCode)
+        assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
+        assertThat(program.programCode)
           .isEqualTo(programCode)
-        Assertions.assertThat(startDate).isEqualTo(LocalDate.parse("2022-10-31"))
-        Assertions.assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))
+        assertThat(startDate).isEqualTo(LocalDate.parse("2022-10-31"))
+        assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))
       }
     }
 
@@ -275,7 +276,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isCreated
         .expectBody(CreateOffenderProgramProfileResponse::class.java)
         .returnResult().responseBody
-      Assertions.assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
+      assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       return response!!.offenderProgramReferenceId
     }
   }

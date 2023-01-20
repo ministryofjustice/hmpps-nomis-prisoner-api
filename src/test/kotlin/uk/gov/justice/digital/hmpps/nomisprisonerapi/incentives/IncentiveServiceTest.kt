@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incentives
 
 import com.microsoft.applicationinsights.TelemetryClient
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -90,18 +90,18 @@ internal class IncentiveServiceTest {
 
     @Test
     fun `incentive data is mapped correctly`() {
-      Assertions.assertThat(incentivesService.createIncentive(offenderBookingId, createRequest))
+      assertThat(incentivesService.createIncentive(offenderBookingId, createRequest))
         .isEqualTo(CreateIncentiveResponse(offenderBookingId, 1))
 
       val incentive = defaultOffenderBooking.incentives.get(0)
 
-      Assertions.assertThat(incentive.commentText).isEqualTo("a comment")
-      Assertions.assertThat(incentive.iepDate).isEqualTo(LocalDate.parse("2021-12-01"))
-      Assertions.assertThat(incentive.iepTime).isEqualTo(LocalDateTime.parse("2021-12-01T13:04"))
-      Assertions.assertThat(incentive.id.offenderBooking.bookingId).isEqualTo(offenderBookingId)
-      Assertions.assertThat(incentive.iepLevel.description).isEqualTo("STD-desc")
-      Assertions.assertThat(incentive.location).isEqualTo(AgencyLocation(prisonId, prisonDescription))
-      Assertions.assertThat(incentive.userId).isEqualTo("me")
+      assertThat(incentive.commentText).isEqualTo("a comment")
+      assertThat(incentive.iepDate).isEqualTo(LocalDate.parse("2021-12-01"))
+      assertThat(incentive.iepTime).isEqualTo(LocalDateTime.parse("2021-12-01T13:04"))
+      assertThat(incentive.id.offenderBooking.bookingId).isEqualTo(offenderBookingId)
+      assertThat(incentive.iepLevel.description).isEqualTo("STD-desc")
+      assertThat(incentive.location).isEqualTo(AgencyLocation(prisonId, prisonDescription))
+      assertThat(incentive.userId).isEqualTo("me")
     }
 
     @Test
@@ -113,7 +113,7 @@ internal class IncentiveServiceTest {
       val thrown = assertThrows<NotFoundException>() {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo(offenderBookingId.toString())
+      assertThat(thrown.message).isEqualTo(offenderBookingId.toString())
     }
 
     @Test
@@ -123,7 +123,7 @@ internal class IncentiveServiceTest {
       val thrown = assertThrows<BadDataException>() {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo("Prison with id=$prisonId does not exist")
+      assertThat(thrown.message).isEqualTo("Prison with id=$prisonId does not exist")
     }
 
     @Test
@@ -133,7 +133,7 @@ internal class IncentiveServiceTest {
       val thrown = assertThrows<BadDataException>() {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison SWI")
+      assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison SWI")
     }
   }
 }

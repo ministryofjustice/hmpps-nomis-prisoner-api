@@ -201,8 +201,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data is mapped correctly`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest))
-        .isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
 
       verify(visitRepository).save(
         check { visit ->
@@ -218,8 +217,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data room details are mapped correctly`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest))
-        .isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
 
       verify(visitDayRepository).save(any())
       verify(visitTimeRepository).save(any())
@@ -282,8 +280,7 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "The Whale is an 1851 novel by American writer Herman Melville. The book is the sailor Ishmael's narrative of the obsessive quest of Ahab, captain of the whaling ship Pequod, for revenge against Moby Dick, the giant white sperm whale that on the ship's previous voyage bit off Ahab's leg at the knee.", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description)
-            .isEqualTo("SWI-VSIP-THE-WHALE-IS-AN-1851-NOVEL-BY-AMERICAN-WRITER-HERMAN-MELVILLE-THE-BOOK-IS-THE-SAILOR-ISHMAELS-NARRATIVE-OF-THE-OBSESSIVE-QUEST-OF-AHAB-CAPTAIN-OF-THE-WHALING-SHIP-PEQUOD-FOR-REVENGE-AGAINST-MOBY-DICK-THE-GIANT-WHITE-SPERM-WHALE-CLO")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-THE-WHALE-IS-AN-1851-NOVEL-BY-AMERICAN-WRITER-HERMAN-MELVILLE-THE-BOOK-IS-THE-SAILOR-ISHMAELS-NARRATIVE-OF-THE-OBSESSIVE-QUEST-OF-AHAB-CAPTAIN-OF-THE-WHALING-SHIP-PEQUOD-FOR-REVENGE-AGAINST-MOBY-DICK-THE-GIANT-WHITE-SPERM-WHALE-CLO")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPTHEWHALEIS")
         }
       )
@@ -309,8 +306,7 @@ internal class VisitServiceTest {
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code)
-            .isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE)
+          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(-1)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
@@ -327,8 +323,7 @@ internal class VisitServiceTest {
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code)
-            .isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_ISSUE)
+          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isNull()
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(-1)
           assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
@@ -354,11 +349,7 @@ internal class VisitServiceTest {
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
-      verify(visitRepository).save(
-        check { visit ->
-          assertThat(visit.visitOrder).isNotNull()
-        }
-      )
+      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
       verify(offenderVisitBalanceAdjustmentRepository).save(any())
     }
 
@@ -370,11 +361,7 @@ internal class VisitServiceTest {
 
       visitService.createVisit(offenderNo, createVisitRequest)
 
-      verify(visitRepository).save(
-        check { visit ->
-          assertThat(visit.visitOrder).isNull()
-        }
-      )
+      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNull() })
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
 
@@ -387,8 +374,7 @@ internal class VisitServiceTest {
 
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.visitors)
-            .extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
+          assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
             .containsExactly(
               Tuple.tuple(offenderBookingId, null, "SCH", eventId),
               Tuple.tuple(null, 45L, "SCH", null),
@@ -407,8 +393,7 @@ internal class VisitServiceTest {
 
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.visitors)
-            .extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
+          assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
             .containsExactly(
               Tuple.tuple(offenderBookingId, null, "SCH", eventId),
               Tuple.tuple(null, 45L, "SCH", null),
@@ -490,8 +475,7 @@ internal class VisitServiceTest {
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code)
-            .isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_CANCEL)
+          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_CANCEL)
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(1)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
@@ -508,8 +492,7 @@ internal class VisitServiceTest {
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code)
-            .isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_CANCEL)
+          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_CANCEL)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(1)
           assertThat(balanceArgument.remainingVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")

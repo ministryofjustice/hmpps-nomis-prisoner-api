@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incentives
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -103,11 +103,11 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       booking = offender?.latestBooking()
       bookingId = booking?.bookingId
 
-      Assertions.assertThat(booking?.incentives).hasSize(1)
+      assertThat(booking?.incentives).hasSize(1)
       var incentive = booking?.incentives?.get(0)
-      Assertions.assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
-      Assertions.assertThat(incentive?.id?.sequence).isEqualTo(1)
-      Assertions.assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+      assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+      assertThat(incentive?.id?.sequence).isEqualTo(1)
+      assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
 
       // Add another to cover the case of existing incentive
       callCreateEndpoint(bookingId)
@@ -116,11 +116,11 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       booking = offender?.latestBooking()
       bookingId = booking?.bookingId
 
-      Assertions.assertThat(booking?.incentives).hasSize(2)
+      assertThat(booking?.incentives).hasSize(2)
       incentive = booking?.incentives?.get(1)
-      Assertions.assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
-      Assertions.assertThat(incentive?.id?.sequence).isEqualTo(2)
-      Assertions.assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+      assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+      assertThat(incentive?.id?.sequence).isEqualTo(2)
+      assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
     }
 
     private fun callCreateEndpoint(bookingId: Long?) {
@@ -142,8 +142,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isCreated
         .expectBody(CreateIncentiveResponse::class.java)
         .returnResult().responseBody
-      Assertions.assertThat(response?.bookingId).isEqualTo(bookingId)
-      Assertions.assertThat(response?.sequence).isGreaterThan(0)
+      assertThat(response?.bookingId).isEqualTo(bookingId)
+      assertThat(response?.sequence).isGreaterThan(0)
     }
   }
 
@@ -273,7 +273,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get incentives prevents access without appropriate role`() {
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
@@ -283,7 +283,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get incentives prevents access without authorization`() {
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/ids")
           .exchange()
           .expectStatus().isUnauthorized
@@ -396,7 +396,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get incentive prevents access without appropriate role`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
@@ -407,7 +407,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get incentive prevents access without authorization`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
           .exchange()
           .expectStatus().isUnauthorized
@@ -500,7 +500,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get current incentive prevents access without appropriate role`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
@@ -511,7 +511,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get current incentive prevents access without authorization`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
-      Assertions.assertThat(
+      assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
           .exchange()
           .expectStatus().isUnauthorized
