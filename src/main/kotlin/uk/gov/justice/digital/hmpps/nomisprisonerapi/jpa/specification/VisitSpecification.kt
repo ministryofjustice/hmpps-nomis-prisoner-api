@@ -5,7 +5,7 @@ import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import org.springframework.data.jpa.domain.Specification
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.filter.VisitFilter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitFilter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
