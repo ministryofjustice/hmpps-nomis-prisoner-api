@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -66,12 +67,94 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
           )
         ]
       ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
     ]
   )
   fun createActivity(
     @RequestBody @Valid createActivityRequest: CreateActivityRequest
   ): CreateActivityResponse =
     activitiesService.createActivity(createActivityRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PutMapping("/activities/{courseActivityId}")
+  @Operation(
+    summary = "Updates an activity",
+    description = "Updates an activity and associated pay rates. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = UpdateActivityRequest::class)
+        )
+      ]
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity information",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = UpdateActivityResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Prison, location, program service or iep value do not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Activity Not Found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun updateActivity(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @RequestBody @Valid updateActivityRequest: UpdateActivityRequest
+  ): UpdateActivityResponse =
+    activitiesService.updateActivity(courseActivityId, updateActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities/{courseActivityId}")
@@ -111,6 +194,16 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
         content = [
           Content(
             mediaType = "application/json",
