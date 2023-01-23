@@ -274,87 +274,6 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return bad request for missing data`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(prisonIdJson = null)))
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("prisonId") }
-      }
-
-      @Test
-      fun `should return bad request for malformed number`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(capacityJson = """"capacity": "NOT_A_NUMBER",""")))
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("capacity") }
-      }
-
-      @Test
-      fun `should return bad request for malformed date`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(startDateJson = """"startDate": "2022-11-35",""")))
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("startDate") }
-      }
-
-      @Test
-      fun `should return bad request for malformed number in child`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(
-            BodyInserters.fromValue(
-              updateActivityRequestJson(
-                payRatesJson = """
-          "payRates" : [ {
-              "incentiveLevel" : "BAS",
-              "payBand" : "5",
-              "rate" : 'NOT_A_NUMBER"
-              } ]
-                """.trimIndent()
-              )
-            )
-          )
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("rate") }
-      }
-
-      @Test
-      fun `should return bad request for missing pay rates`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(payRatesJson = null)))
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("payRates") }
-      }
-
-      @Test
-      fun `should return OK for empty pay rates`() {
-        doReturn(UpdateActivityResponse(prisonId = "LEI")).whenever(activityService).updateActivity(anyLong(), any())
-
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(payRatesJson = """ "payRates" : []""")))
-          .exchange()
-          .expectStatus().isOk
-
-        verify(activityService).updateActivity(1, updateActivityRequest().copy(payRates = listOf()))
-      }
-
-      @Test
       fun `should return not found`() {
         doThrow(NotFoundException("Activity not found")).whenever(activityService).updateActivity(anyLong(), any())
 
@@ -365,6 +284,87 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
       }
+    }
+
+    @Test
+    fun `should return bad request for missing data`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateActivityRequestJson(prisonIdJson = null)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> { it.contains("prisonId") }
+    }
+
+    @Test
+    fun `should return bad request for malformed number`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateActivityRequestJson(capacityJson = """"capacity": "NOT_A_NUMBER",""")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> { it.contains("capacity") }
+    }
+
+    @Test
+    fun `should return bad request for malformed date`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateActivityRequestJson(startDateJson = """"startDate": "2022-11-35",""")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> { it.contains("startDate") }
+    }
+
+    @Test
+    fun `should return bad request for malformed number in child`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(
+          BodyInserters.fromValue(
+            updateActivityRequestJson(
+              payRatesJson = """
+          "payRates" : [ {
+              "incentiveLevel" : "BAS",
+              "payBand" : "5",
+              "rate" : 'NOT_A_NUMBER"
+              } ]
+              """.trimIndent()
+            )
+          )
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> { it.contains("rate") }
+    }
+
+    @Test
+    fun `should return bad request for missing pay rates`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateActivityRequestJson(payRatesJson = null)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> { it.contains("payRates") }
+    }
+
+    @Test
+    fun `should return OK for empty pay rates`() {
+      doReturn(UpdateActivityResponse(prisonId = "LEI")).whenever(activityService).updateActivity(anyLong(), any())
+
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateActivityRequestJson(payRatesJson = """ "payRates" : []""")))
+        .exchange()
+        .expectStatus().isOk
+
+      verify(activityService).updateActivity(1, updateActivityRequest().copy(payRates = listOf()))
     }
   }
 
