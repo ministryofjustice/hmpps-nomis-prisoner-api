@@ -166,6 +166,8 @@ class Repository(
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation =
     agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
+  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation =
+    agencyInternalLocationRepository.findById(locationId).orElse(null)
 
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
@@ -212,17 +214,26 @@ class Repository(
     offenderProgramProfileRepository.findByIdOrNull(id)!!
 
   fun lookupActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
-    it.payRates?.size
+    it.payRates.size
   }
 
   fun deleteProgramServices() = programServiceRepository.deleteAll()
   fun deleteActivities() = activityRepository.deleteAll()
 
-  fun save(programService: ProgramService): ProgramService = programServiceRepository.save(programService)
-  fun save(courseActivity: CourseActivity): CourseActivity =
-    activityRepository.save(
-      courseActivity
-        // need to refresh a reference data property to avoid a 'transient entity' error
-        .copy(iepLevel = lookupIepLevel(courseActivity.iepLevel.code))
-    )
+  fun save(programServiceBuilder: ProgramServiceBuilder): ProgramService =
+    programServiceRepository.save(programServiceBuilder.build())
+
+  fun save(courseActivityBuilder: CourseActivityBuilder): CourseActivity =
+    with(courseActivityBuilder) {
+      build(
+        lookupAgency(prisonId),
+        lookupProgramService(programId),
+        lookupIepLevel(minimumIncentiveLevelCode),
+        lookupAgencyInternalLocation(internalLocationId)
+      )
+    }.apply {
+      payRates.addAll(courseActivityBuilder.payRates.map { it.build(this) })
+    }.let {
+      activityRepository.save(it)
+    }
 }

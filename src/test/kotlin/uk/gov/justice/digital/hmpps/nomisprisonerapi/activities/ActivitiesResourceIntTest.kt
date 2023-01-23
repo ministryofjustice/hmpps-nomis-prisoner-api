@@ -20,14 +20,15 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -69,14 +70,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   internal fun setup() {
-    repository.save(
-      ProgramService(
-        programId = 20,
-        programCode = programCode,
-        description = "test description",
-        active = true,
-      )
-    )
+    repository.save(ProgramServiceBuilder())
     offenderAtMoorlands =
       repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
   }
@@ -137,7 +131,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       assertThat(courseActivity.courseActivityId).isEqualTo(id)
       assertThat(courseActivity.capacity).isEqualTo(23)
       assertThat(courseActivity.prison.id).isEqualTo(prisonId)
-      assertThat(courseActivity.payRates?.first()?.halfDayRate).isCloseTo(
+      assertThat(courseActivity.payRates.first().halfDayRate).isCloseTo(
         BigDecimal(0.4),
         within(BigDecimal("0.001"))
       )
@@ -378,29 +372,14 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
     private val createOffenderProgramProfileRequest: () -> CreateOffenderProgramProfileRequest = {
       CreateOffenderProgramProfileRequest(
         bookingId = repository.lookupOffender("A1234TT")?.latestBooking()?.bookingId!!,
-        startDate = LocalDate.parse("2022-10-31"),
-        endDate = LocalDate.parse("2022-11-30"),
+        startDate = LocalDate.parse("2022-11-14"),
+        endDate = LocalDate.parse("2022-11-21"),
       )
     }
 
     @BeforeEach
     internal fun setup() {
-
-      courseActivity = repository.save(
-        CourseActivity(
-          code = "CA",
-          program = repository.lookupProgramService(20),
-          caseloadId = "LEI",
-          prison = repository.lookupAgency("LEI"),
-          description = "test description",
-          capacity = 23,
-          active = true,
-          scheduleStartDate = LocalDate.parse("2022-10-31"),
-          scheduleEndDate = LocalDate.parse("2022-11-30"),
-          iepLevel = repository.lookupIepLevel("STD"),
-          internalLocation = repository.lookupAgencyInternalLocationByDescription("LEI-A-1-7"),
-        )
-      )
+      courseActivity = repository.save(CourseActivityBuilder())
     }
 
     @Test
@@ -459,8 +438,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       with(persistedRecord) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(program.programCode).isEqualTo(programCode)
-        assertThat(startDate).isEqualTo(LocalDate.parse("2022-10-31"))
-        assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))
+        assertThat(startDate).isEqualTo(LocalDate.parse("2022-11-14"))
+        assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-21"))
       }
     }
 
@@ -472,8 +451,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           BodyInserters.fromValue(
             """{
             "bookingId" : "$bookingId",
-            "startDate" : "2022-10-31",
-            "endDate" : "2022-11-30"
+            "startDate" : "2022-11-14",
+            "endDate" : "2022-11-21"
           }"""
           )
         )
