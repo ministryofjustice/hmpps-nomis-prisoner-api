@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus.CONFLICT
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -68,6 +69,20 @@ class NomisPrisonerApiExceptionHandler {
         )
       )
   }
+  @ExceptionHandler(HttpMessageNotReadableException::class)
+  fun handleHttpMessageNotReadablException(e: Exception): ResponseEntity<ErrorResponse?>? {
+    log.info("Bad request: {}", e.message)
+    return ResponseEntity
+      .status(BAD_REQUEST)
+      .body(
+        ErrorResponse(
+          status = BAD_REQUEST,
+          userMessage = "Bad request: ${e.message}",
+          developerMessage = e.message
+        )
+      )
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException::class)
   fun handleValidationErrorException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse?>? {
     log.info("Bad request: {}", e.message)
