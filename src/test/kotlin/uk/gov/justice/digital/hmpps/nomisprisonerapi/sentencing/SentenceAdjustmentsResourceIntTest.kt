@@ -302,7 +302,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
                       "adjustmentDays": 10,
                       "sentenceAdjustmentTypeCode": "RX",
                       "adjustmentDate": "2023-01-16",
-                      "adjustmentFromDate": "2023-01-02",
+                      "adjustmentFromDate": "2023-01-01",
                       "comment": "Remand for 10 days",
                       "active": false
                     }
@@ -324,8 +324,8 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
           .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
-          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
-          .jsonPath("adjustmentToDate").isEqualTo("2023-01-12")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-01-10")
           .jsonPath("adjustmentDays").isEqualTo(10)
           .jsonPath("comment").isEqualTo("Remand for 10 days")
           .jsonPath("active").isEqualTo(false)
@@ -402,11 +402,11 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
               BodyInserters.fromValue(
                 """
                     {
-                      "adjustmentDays": 10,
+                      "adjustmentDays": 2,
                       "sentenceAdjustmentTypeCode": "RX",
                       "adjustmentDate": "2023-01-16",
-                      "adjustmentFromDate": "2023-01-02",
-                      "comment": "Remand for 10 days",
+                      "adjustmentFromDate": "2023-02-01",
+                      "comment": "Remand for 2 days",
                       "active": false
                     }
                   """
@@ -427,10 +427,10 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
           .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
-          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
-          .jsonPath("adjustmentToDate").isEqualTo("2023-01-12")
-          .jsonPath("adjustmentDays").isEqualTo(10)
-          .jsonPath("comment").isEqualTo("Remand for 10 days")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-02-01")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-02-02")
+          .jsonPath("adjustmentDays").isEqualTo(2)
+          .jsonPath("comment").isEqualTo("Remand for 2 days")
           .jsonPath("active").isEqualTo(false)
       }
     }

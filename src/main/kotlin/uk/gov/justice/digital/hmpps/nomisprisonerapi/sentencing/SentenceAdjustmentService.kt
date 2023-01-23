@@ -50,7 +50,7 @@ class SentenceAdjustmentService(
             adjustmentDate = request.adjustmentDate,
             adjustmentNumberOfDays = request.adjustmentDays,
             fromDate = request.adjustmentFromDate,
-            toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays),
+            toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1), // dates are inclusive so a 1-day remand starts and end on dame day
             comment = request.comment,
             active = request.active,
           )
