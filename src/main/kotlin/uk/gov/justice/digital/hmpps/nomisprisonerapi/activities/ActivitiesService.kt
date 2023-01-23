@@ -143,4 +143,8 @@ class ActivitiesService(
       endDate = dto.endDate,
     )
   }
+
+  // TODO SDI-500 make this work
+  fun updateActivity(courseActivityId: Long, updateActivityRequest: UpdateActivityRequest): UpdateActivityResponse =
+    UpdateActivityResponse(prisonId = updateActivityRequest.prisonId)
 }

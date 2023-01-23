@@ -1,3 +1,5 @@
+@file:Suppress("ClassName")
+
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import org.assertj.core.api.Assertions.assertThat
@@ -6,9 +8,18 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -47,6 +58,10 @@ private val createActivityRequest: () -> CreateActivityRequest = {
 }
 
 class ActivitiesResourceIntTest : IntegrationTestBase() {
+
+  @SpyBean
+  lateinit var activityService: ActivitiesService
+
   @Autowired
   lateinit var repository: Repository
 
@@ -158,6 +173,97 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         .returnResult().responseBody
       assertThat(response?.courseActivityId).isGreaterThan(0)
       return response!!.courseActivityId
+    }
+  }
+
+  @Nested
+  inner class UpdateActivity {
+
+    private fun updateActivityRequest() = UpdateActivityRequest(prisonId = "LEI")
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(updateActivityRequest()))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(updateActivityRequest()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(updateActivityRequest()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should call the service`() {
+      doReturn(UpdateActivityResponse(prisonId = "LEI")).whenever(activityService).updateActivity(anyLong(), any())
+
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "prisonId" : "$prisonId"
+          }"""
+          )
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      verify(activityService).updateActivity(1, updateActivityRequest())
+    }
+
+    @Test
+    fun `should return bad request`() {
+      doThrow(BadDataException("Prison not found")).whenever(activityService).updateActivity(anyLong(), any())
+
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "prisonId" : "$prisonId"
+          }"""
+          )
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return not found`() {
+      doThrow(NotFoundException("Activity not found")).whenever(activityService).updateActivity(anyLong(), any())
+
+      webTestClient.put().uri("/activities/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "prisonId" : "$prisonId"
+          }"""
+          )
+        )
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 
