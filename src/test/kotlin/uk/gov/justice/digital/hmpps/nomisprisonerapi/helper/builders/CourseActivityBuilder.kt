@@ -63,5 +63,7 @@ class CourseActivityBuilder(
       scheduleEndDate = LocalDate.parse(endDate),
       iepLevel = repository.lookupIepLevel(minimumIncentiveLevelCode),
       internalLocation = repository.lookupAgencyInternalLocation(internalLocationId),
-    )
+    ).apply {
+      payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
+    }
 }

@@ -224,9 +224,6 @@ class Repository(
     programServiceRepository.save(programServiceBuilder.build())
 
   fun save(courseActivityBuilder: CourseActivityBuilder): CourseActivity =
-    courseActivityBuilder.build().apply {
-      payRates.addAll(courseActivityBuilder.payRates.map { it.build(this) })
-    }.let {
-      activityRepository.save(it)
-    }
+    courseActivityBuilder.build()
+      .let { activityRepository.save(it) }
 }
