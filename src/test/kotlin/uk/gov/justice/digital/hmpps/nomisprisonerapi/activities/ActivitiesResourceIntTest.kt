@@ -20,7 +20,7 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
@@ -65,6 +65,9 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var repository: Repository
+
+  @Autowired
+  lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
 
   lateinit var offenderAtMoorlands: Offender
 
@@ -379,7 +382,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun setup() {
-      courseActivity = repository.save(CourseActivityBuilder())
+      courseActivity = repository.save(courseActivityBuilderFactory.builder())
     }
 
     @Test

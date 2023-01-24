@@ -224,14 +224,7 @@ class Repository(
     programServiceRepository.save(programServiceBuilder.build())
 
   fun save(courseActivityBuilder: CourseActivityBuilder): CourseActivity =
-    with(courseActivityBuilder) {
-      build(
-        lookupAgency(prisonId),
-        lookupProgramService(programId),
-        lookupIepLevel(minimumIncentiveLevelCode),
-        lookupAgencyInternalLocation(internalLocationId)
-      )
-    }.apply {
+    courseActivityBuilder.build().apply {
       payRates.addAll(courseActivityBuilder.payRates.map { it.build(this) })
     }.let {
       activityRepository.save(it)
