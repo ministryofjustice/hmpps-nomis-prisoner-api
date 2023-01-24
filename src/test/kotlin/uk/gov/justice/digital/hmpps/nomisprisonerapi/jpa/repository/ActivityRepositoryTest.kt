@@ -62,7 +62,7 @@ class ActivityRepositoryTest {
         payPerSession = PayPerSession.F,
       )
     ).apply {
-      payRates = mutableListOf(
+      payRates.add(
         CourseActivityPayRate(
           courseActivity = this,
           iepLevelCode = seedIep.code,

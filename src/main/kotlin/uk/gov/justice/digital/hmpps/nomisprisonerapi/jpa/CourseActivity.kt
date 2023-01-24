@@ -89,8 +89,8 @@ data class CourseActivity(
   @Column
   val scheduleEndDate: LocalDate? = null,
 
-  @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  var payRates: MutableList<CourseActivityPayRate> = mutableListOf(),
+  @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+  val payRates: MutableList<CourseActivityPayRate> = mutableListOf(),
 
   @Column
   val caseloadType: String? = "INST",
@@ -123,7 +123,7 @@ data class CourseActivity(
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "INTERNAL_LOCATION_ID", nullable = false)
-  val internalLocation: AgencyInternalLocation,
+  var internalLocation: AgencyInternalLocation,
 
   @Column(name = "HOLIDAY_FLAG")
   @Convert(converter = YesNoConverter::class)

@@ -8,18 +8,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.junit.jupiter.api.assertAll
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
@@ -30,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 private const val prisonId = "LEI"
@@ -59,9 +53,6 @@ private val createActivityRequest: () -> CreateActivityRequest = {
 }
 
 class ActivitiesResourceIntTest : IntegrationTestBase() {
-
-  @SpyBean
-  lateinit var activityService: ActivitiesService
 
   @Autowired
   lateinit var repository: Repository
@@ -176,40 +167,34 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class UpdateActivity {
 
-    private fun updateActivityRequest() = UpdateActivityRequest(
-      prisonId = "LEI",
-      code = "CA",
-      programCode = "SOME_PROGRAM",
-      description = "test description",
-      capacity = 12,
-      startDate = LocalDate.of(2022, 10, 31),
-      endDate = LocalDate.of(2022, 11, 30),
-      minimumIncentiveLevelCode = "STD",
-      internalLocationId = -27,
-      payRates = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = BigDecimal.valueOf(0.4)))
-    )
+    @BeforeEach
+    fun setUp() {
+      repository.save(courseActivityBuilderFactory.builder())
+    }
 
+    // Currently just mutates the location and pay rate - more to follow
     private fun updateActivityRequestJson(
       prisonIdJson: String? = """"prisonId": "LEI",""",
       capacityJson: String = """"capacity": 12,""",
       startDateJson: String = """"startDate" : "2022-10-31",""",
+      internalLocationJson: String = """"internalLocationId" : -27,""",
       payRatesJson: String? = """
           "payRates" : [ {
               "incentiveLevel" : "BAS",
               "payBand" : "5",
-              "rate" : 0.4
+              "rate" : 0.8
               } ]
       """.trimIndent(),
     ) = """{
             ${prisonIdJson ?: ""}
             "code" : "CA",
-            "programCode" : "SOME_PROGRAM",
-            "description" : "test description",
+            "programCode" : "INTTEST",
+            "description" : "test course activity",
             $capacityJson
             $startDateJson
             "endDate" : "2022-11-30",
             "minimumIncentiveLevelCode" : "STD",
-            "internalLocationId" : -27,
+            $internalLocationJson
             ${payRatesJson ?: ""}
           }"""
 
@@ -245,38 +230,36 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should call the service`() {
-        doReturn(UpdateActivityResponse(prisonId = "LEI")).whenever(activityService).updateActivity(anyLong(), any())
+      fun `should update the activity and pay rate`() {
+        val existingActivity = repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
 
-        webTestClient.put().uri("/activities/1")
+        webTestClient.put().uri("/activities/${existingActivity.courseActivityId}")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(BodyInserters.fromValue(updateActivityRequestJson()))
           .exchange()
           .expectStatus().isOk
 
-        verify(activityService).updateActivity(1, updateActivityRequest())
+        val updated = repository.lookupActivity(existingActivity.courseActivityId)
+        assertAll(
+          { assertThat(updated.internalLocation.locationId).isEqualTo(-27) },
+          { assertThat(updated.payRates.first().halfDayRate).isEqualTo(BigDecimal(0.8).setScale(3, RoundingMode.HALF_UP)) }
+        )
       }
 
-      // TODO SDI-500 use bad data instead of a mock when service is implemented
       @Test
-      fun `should return bad request`() {
-        doThrow(BadDataException("Prison not found")).whenever(activityService).updateActivity(anyLong(), any())
-
+      fun `should return bad request for unknown data`() {
         webTestClient.put().uri("/activities/1")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson()))
+          .body(BodyInserters.fromValue(updateActivityRequestJson(internalLocationJson = """"internalLocationId: -99999,""")))
           .exchange()
           .expectStatus().isBadRequest
       }
 
-      // TODO SDI-500 use bad data instead of a mock when service is implemented
       @Test
-      fun `should return not found`() {
-        doThrow(NotFoundException("Activity not found")).whenever(activityService).updateActivity(anyLong(), any())
-
-        webTestClient.put().uri("/activities/1")
+      fun `should return not found for missing activity`() {
+        webTestClient.put().uri("/activities/2")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(BodyInserters.fromValue(updateActivityRequestJson()))
@@ -353,16 +336,17 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK for empty pay rates`() {
-        doReturn(UpdateActivityResponse(prisonId = "LEI")).whenever(activityService).updateActivity(anyLong(), any())
+        val existingActivity = repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
 
-        webTestClient.put().uri("/activities/1")
+        webTestClient.put().uri("/activities/${existingActivity.courseActivityId}")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(BodyInserters.fromValue(updateActivityRequestJson(payRatesJson = """ "payRates" : []""")))
           .exchange()
           .expectStatus().isOk
 
-        verify(activityService).updateActivity(1, updateActivityRequest().copy(payRates = listOf()))
+        val updated = repository.lookupActivity(existingActivity.courseActivityId)
+        assertThat(updated.payRates).isEmpty()
       }
     }
   }

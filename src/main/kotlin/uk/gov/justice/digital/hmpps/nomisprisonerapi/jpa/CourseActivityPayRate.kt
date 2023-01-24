@@ -10,6 +10,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import java.io.Serializable
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 
 @Entity
@@ -51,7 +52,7 @@ data class CourseActivityPayRate(
 //  val iepLevel: IEPLevel? = null,
 
   @Column(nullable = false)
-  val halfDayRate: BigDecimal,
+  var halfDayRate: BigDecimal,
 ) : Serializable {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -67,6 +68,10 @@ data class CourseActivityPayRate(
   override fun hashCode(): Int = javaClass.hashCode()
   override fun toString(): String =
     "CourseActivityPayRate(courseActivity=$courseActivity, iepLevel=$iepLevelCode, payBandCode=$payBandCode, startDate=$startDate)"
+
+  companion object {
+    fun preciseHalfDayRate(halfDayRate: BigDecimal) = halfDayRate.setScale(3, RoundingMode.HALF_UP)
+  }
 }
 
 /*
