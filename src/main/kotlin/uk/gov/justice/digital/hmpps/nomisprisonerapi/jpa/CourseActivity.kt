@@ -90,7 +90,7 @@ data class CourseActivity(
   val scheduleEndDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  var payRates: List<CourseActivityPayRate>? = null,
+  var payRates: MutableList<CourseActivityPayRate> = mutableListOf(),
 
   @Column
   val caseloadType: String? = "INST",

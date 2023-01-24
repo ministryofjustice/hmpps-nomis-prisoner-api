@@ -102,17 +102,15 @@ class ActivitiesService(
     )
   }
 
-  private fun mapRates(dto: CreateActivityRequest, courseActivity: CourseActivity): List<CourseActivityPayRate> {
+  private fun mapRates(dto: CreateActivityRequest, courseActivity: CourseActivity): MutableList<CourseActivityPayRate> {
 
     return dto.payRates.map { rate ->
 
-      val availablePrisonIepLevel = rate.incentiveLevel.run {
-        return@run availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(
-          courseActivity.prison,
-          rate.incentiveLevel
-        )
-          ?: throw BadDataException("IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
-      }
+      val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(
+        courseActivity.prison,
+        rate.incentiveLevel
+      )
+        ?: throw BadDataException("IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
 
       return@map CourseActivityPayRate(
         courseActivity = courseActivity,
@@ -122,7 +120,7 @@ class ActivitiesService(
         endDate = dto.endDate,
         halfDayRate = rate.rate,
       )
-    }
+    }.toMutableList()
   }
 
   private fun mapOffenderProgramProfileModel(courseActivityId: Long, dto: CreateOffenderProgramProfileRequest): OffenderProgramProfile {

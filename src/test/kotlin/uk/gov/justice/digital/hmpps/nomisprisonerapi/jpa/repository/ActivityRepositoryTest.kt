@@ -12,12 +12,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -38,14 +38,7 @@ class ActivityRepositoryTest {
 
   @Test
   fun saveActivity() {
-    val seedProgramService = builderRepository.save(
-      ProgramService(
-        programId = 10,
-        programCode = "TESTPS",
-        description = "test description",
-        active = true,
-      )
-    )
+    val seedProgramService = builderRepository.save(ProgramServiceBuilder(programId = 10, programCode = "TESTPS"))
 
     val seedPrison = builderRepository.lookupAgency("LEI")
 
@@ -69,7 +62,7 @@ class ActivityRepositoryTest {
         payPerSession = PayPerSession.F,
       )
     ).apply {
-      payRates = listOf(
+      payRates = mutableListOf(
         CourseActivityPayRate(
           courseActivity = this,
           iepLevelCode = seedIep.code,
@@ -111,15 +104,7 @@ class ActivityRepositoryTest {
 
   @Test
   fun saveOffenderProgramProfile() {
-    val seedProgramService = builderRepository.save(
-      ProgramService(
-        programId = 10,
-        programCode = "TESTPS",
-        description = "test description",
-        active = true,
-      )
-    )
-
+    val seedProgramService = builderRepository.save(ProgramServiceBuilder(programId = 10, programCode = "TESTPS"))
     val seedPrison = builderRepository.lookupAgency("LEI")
     val seedRoom = builderRepository.lookupAgencyInternalLocationByDescription("LEI-A-1-7")
     val seedIep = builderRepository.lookupIepLevel("STD")
