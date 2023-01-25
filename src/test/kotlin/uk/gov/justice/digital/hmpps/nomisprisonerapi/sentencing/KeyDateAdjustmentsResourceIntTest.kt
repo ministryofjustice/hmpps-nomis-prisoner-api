@@ -28,7 +28,6 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
       OffenderBuilder(nomsId = "A1234TT")
         .withBooking(
           OffenderBookingBuilder()
-          // .withSentences(SentenceBuilder())
         )
     )
     bookingId = prisoner.bookings.first().bookingId
@@ -279,7 +278,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
                       "adjustmentTypeCode": "LAL",
                       "adjustmentDate": "2023-01-16",
                       "adjustmentFromDate": "2023-01-01",
-                      "comment": "Remand for 10 days",
+                      "comment": "a comment",
                       "active": false
                     }
                   """
@@ -302,7 +301,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
           .jsonPath("adjustmentToDate").isEqualTo("2023-01-10")
           .jsonPath("adjustmentDays").isEqualTo(10)
-          .jsonPath("comment").isEqualTo("Remand for 10 days")
+          .jsonPath("comment").isEqualTo("a comment")
           .jsonPath("active").isEqualTo(false)
       }
     }
