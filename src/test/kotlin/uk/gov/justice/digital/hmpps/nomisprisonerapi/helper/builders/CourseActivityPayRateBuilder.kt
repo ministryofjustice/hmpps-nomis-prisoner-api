@@ -8,8 +8,8 @@ import java.time.LocalDate
 class CourseActivityPayRateBuilder(
   var iepLevelCode: String = "STD",
   var payBandCode: String = "5",
-  var startDate: String = "2022-11-16",
-  var endDate: String? = "2022-11-23",
+  var startDate: String = "2022-10-31",
+  var endDate: String? = "2022-11-30",
   var halfDayRate: BigDecimal = BigDecimal(3.2),
 ) {
   fun build(courseActivity: CourseActivity) =

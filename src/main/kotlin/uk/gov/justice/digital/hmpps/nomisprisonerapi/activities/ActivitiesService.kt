@@ -36,22 +36,19 @@ class ActivitiesService(
   }
 
   fun createActivity(dto: CreateActivityRequest): CreateActivityResponse =
-
-    activityRepository.save(mapActivityModel(dto)).run {
-
-      payRates = mapRates(dto, this)
-
-      telemetryClient.trackEvent(
-        "activity-created",
-        mapOf(
-          "id" to courseActivityId.toString(),
-          "prisonId" to prison.id,
-        ),
-        null
-      )
-
-      CreateActivityResponse(courseActivityId)
-    }
+    mapActivityModel(dto)
+      .apply { payRates.addAll(mapRates(dto, this)) }
+      .also {
+        telemetryClient.trackEvent(
+          "activity-created",
+          mapOf(
+            "id" to it.courseActivityId.toString(),
+            "prisonId" to it.prison.id,
+          ),
+          null
+        )
+      }
+      .let { CreateActivityResponse(activityRepository.save(it).courseActivityId) }
 
   fun createOffenderProgramProfile(courseActivityId: Long, dto: CreateOffenderProgramProfileRequest): CreateOffenderProgramProfileResponse =
 
@@ -118,7 +115,7 @@ class ActivitiesService(
         payBandCode = rate.payBand,
         startDate = dto.startDate,
         endDate = dto.endDate,
-        halfDayRate = rate.rate,
+        halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate.rate),
       )
     }.toMutableList()
   }
@@ -142,7 +139,27 @@ class ActivitiesService(
     )
   }
 
-  // TODO SDI-500 make this work
-  fun updateActivity(courseActivityId: Long, updateActivityRequest: UpdateActivityRequest): UpdateActivityResponse =
-    UpdateActivityResponse(prisonId = updateActivityRequest.prisonId)
+  fun updateActivity(courseActivityId: Long, updateActivityRequest: UpdateActivityRequest) {
+    val existingActivity = activityRepository.findByIdOrNull(courseActivityId)
+      ?: throw NotFoundException("Course activity with id $courseActivityId not found")
+
+    val location = agencyInternalLocationRepository.findByIdOrNull(updateActivityRequest.internalLocationId)
+      ?: throw BadDataException("Location with id=${updateActivityRequest.internalLocationId} does not exist")
+
+    existingActivity.internalLocation = location
+    existingActivity.payRates.clear()
+    // TODO SDI-500 we need something much cleverer than this if it turns out Nomis keeps a history of pay rates
+    existingActivity.payRates.addAll(
+      updateActivityRequest.payRates.map { payRateRequest ->
+        CourseActivityPayRate(
+          existingActivity,
+          payRateRequest.incentiveLevel,
+          payRateRequest.payBand,
+          existingActivity.scheduleStartDate!!,
+          existingActivity.scheduleEndDate,
+          CourseActivityPayRate.preciseHalfDayRate(payRateRequest.rate)
+        )
+      }
+    )
+  }
 }

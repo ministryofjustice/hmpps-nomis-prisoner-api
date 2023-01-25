@@ -153,8 +153,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
   fun updateActivity(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid updateActivityRequest: UpdateActivityRequest
-  ): UpdateActivityResponse =
-    activitiesService.updateActivity(courseActivityId, updateActivityRequest)
+  ) = activitiesService.updateActivity(courseActivityId, updateActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities/{courseActivityId}")

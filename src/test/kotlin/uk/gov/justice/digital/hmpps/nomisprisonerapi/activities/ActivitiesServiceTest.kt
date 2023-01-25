@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -160,7 +161,7 @@ internal class ActivitiesServiceTest {
       assertThat(rate?.payBandCode).isEqualTo("5")
       assertThat(rate?.startDate).isEqualTo(LocalDate.parse("2022-10-31"))
       assertThat(rate?.endDate).isEqualTo(LocalDate.parse("2022-11-30"))
-      assertThat(rate?.halfDayRate).isEqualTo(BigDecimal(3.2))
+      assertThat(rate?.halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal("0.001")))
     }
 
     @Test
