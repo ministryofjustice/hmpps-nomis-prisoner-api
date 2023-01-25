@@ -128,10 +128,18 @@ class Repository(
           )
           sentence.adjustments.addAll(
             sentenceBuilder.adjustments.map {
-              it.build(lookupSentenceAdjustment(it.sentenceAdjustmentTypeCode), sentence)
+              it.build(lookupSentenceAdjustment(it.adjustmentTypeCode), sentence)
             }
           )
           sentence
+        }
+      )
+      booking.keyDateAdjustments.addAll(
+        offenderBuilder.bookingBuilders[bookingIndex].keyDateAdjustments.map {
+          it.build(
+            booking,
+            lookupSentenceAdjustment(it.adjustmentTypeCode)
+          )
         }
       )
     }
@@ -166,6 +174,7 @@ class Repository(
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation =
     agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
+
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation =
     agencyInternalLocationRepository.findById(locationId).orElse(null)
 

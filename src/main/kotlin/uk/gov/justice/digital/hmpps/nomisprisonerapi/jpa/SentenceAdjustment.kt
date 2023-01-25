@@ -17,4 +17,5 @@ data class SentenceAdjustment(
   val usage: String?,
 ) {
   fun isSentenceRelated() = usage == "SENT"
+  fun isBookingRelated() = usage == "BKG"
 }

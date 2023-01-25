@@ -34,7 +34,7 @@ class SentenceBuilder(
 }
 
 class SentenceAdjustmentBuilder(
-  var sentenceAdjustmentTypeCode: String = "UR",
+  var adjustmentTypeCode: String = "UR",
   var adjustmentDate: LocalDate = LocalDate.now(),
   var adjustmentNumberOfDays: Long = 10,
 ) {
