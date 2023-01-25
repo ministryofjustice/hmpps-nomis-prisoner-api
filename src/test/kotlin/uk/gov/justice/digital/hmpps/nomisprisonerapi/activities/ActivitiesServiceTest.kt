@@ -214,6 +214,7 @@ internal class ActivitiesServiceTest {
     private val defaultOffenderBooking = OffenderBooking(
       bookingId = offenderBookingId,
       offender = defaultOffender,
+      location = defaultPrison,
       bookingBeginDate = LocalDateTime.now()
     )
     private val defaultCourseActivity = CourseActivity(

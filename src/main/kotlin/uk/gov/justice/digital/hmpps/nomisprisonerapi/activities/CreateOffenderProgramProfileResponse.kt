@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "OffenderProgramProfile creation response")
 data class CreateOffenderProgramProfileResponse(
-  @Schema(description = "The created OffenderProgramProfile id", required = true)
+  @Schema(description = "The created OffenderProgramProfile id", required = true, example = "12345678")
   @NotNull
   val offenderProgramReferenceId: Long,
 )

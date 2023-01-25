@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePri
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -50,7 +51,10 @@ class ActivitiesService(
       }
       .let { CreateActivityResponse(activityRepository.save(it).courseActivityId) }
 
-  fun createOffenderProgramProfile(courseActivityId: Long, dto: CreateOffenderProgramProfileRequest): CreateOffenderProgramProfileResponse =
+  fun createOffenderProgramProfile(
+    courseActivityId: Long,
+    dto: CreateOffenderProgramProfileRequest
+  ): CreateOffenderProgramProfileResponse =
 
     offenderProgramProfileRepository.save(mapOffenderProgramProfileModel(courseActivityId, dto)).run {
 
@@ -120,13 +124,28 @@ class ActivitiesService(
     }.toMutableList()
   }
 
-  private fun mapOffenderProgramProfileModel(courseActivityId: Long, dto: CreateOffenderProgramProfileRequest): OffenderProgramProfile {
+  private fun mapOffenderProgramProfileModel(
+    courseActivityId: Long,
+    dto: CreateOffenderProgramProfileRequest
+  ): OffenderProgramProfile {
 
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
 
     val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)
       ?: throw BadDataException("Booking with id=${dto.bookingId} does not exist")
+
+    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, offenderBooking)?.run {
+      throw BadDataException("Offender Program Profile with courseActivityId=$courseActivityId and bookingId=${dto.bookingId} already exists")
+    }
+
+    if (courseActivity.prison.id != offenderBooking.location?.id) {
+      throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
+    }
+
+    if (courseActivity.scheduleEndDate?.isBefore(LocalDate.now()) == true) {
+      throw BadDataException("Course activity with id=$courseActivityId has expired")
+    }
 
     return OffenderProgramProfile(
       offenderBooking = offenderBooking,

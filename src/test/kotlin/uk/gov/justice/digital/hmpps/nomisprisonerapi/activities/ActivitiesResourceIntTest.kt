@@ -12,6 +12,7 @@ import org.junit.jupiter.api.assertAll
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
@@ -25,8 +26,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-private const val prisonId = "LEI"
+private const val prisonId = "MDI"
 private const val roomId: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
 private const val programCode = "INTTEST"
 private const val iepLevel = "STD"
@@ -54,6 +56,8 @@ private val createActivityRequest: () -> CreateActivityRequest = {
 
 class ActivitiesResourceIntTest : IntegrationTestBase() {
 
+  private val TEN_DAYS_TIME = LocalDate.now().plusDays(10)
+
   @Autowired
   lateinit var repository: Repository
 
@@ -61,17 +65,21 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
   lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
 
   lateinit var offenderAtMoorlands: Offender
+  lateinit var offenderAtOtherPrison: Offender
 
   @BeforeEach
   internal fun setup() {
     repository.save(ProgramServiceBuilder())
     offenderAtMoorlands =
-      repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
+      repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = prisonId)))
+    offenderAtOtherPrison =
+      repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "BXI")))
   }
 
   @AfterEach
   internal fun cleanUp() {
     repository.delete(offenderAtMoorlands)
+    repository.delete(offenderAtOtherPrison)
     repository.deleteActivities()
     repository.deleteProgramServices()
   }
@@ -231,7 +239,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should update the activity and pay rate`() {
-        val existingActivity = repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
+        val existingActivity =
+          repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
 
         webTestClient.put().uri("/activities/${existingActivity.courseActivityId}")
           .contentType(MediaType.APPLICATION_JSON)
@@ -243,7 +252,11 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         val updated = repository.lookupActivity(existingActivity.courseActivityId)
         assertAll(
           { assertThat(updated.internalLocation.locationId).isEqualTo(-27) },
-          { assertThat(updated.payRates.first().halfDayRate).isEqualTo(BigDecimal(0.8).setScale(3, RoundingMode.HALF_UP)) }
+          {
+            assertThat(updated.payRates.first().halfDayRate).isEqualTo(
+              BigDecimal(0.8).setScale(3, RoundingMode.HALF_UP)
+            )
+          }
         )
       }
 
@@ -336,7 +349,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK for empty pay rates`() {
-        val existingActivity = repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
+        val existingActivity =
+          repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
 
         webTestClient.put().uri("/activities/${existingActivity.courseActivityId}")
           .contentType(MediaType.APPLICATION_JSON)
@@ -358,15 +372,15 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     private val createOffenderProgramProfileRequest: () -> CreateOffenderProgramProfileRequest = {
       CreateOffenderProgramProfileRequest(
-        bookingId = repository.lookupOffender("A1234TT")?.latestBooking()?.bookingId!!,
+        bookingId = offenderAtMoorlands.latestBooking().bookingId,
         startDate = LocalDate.parse("2022-11-14"),
-        endDate = LocalDate.parse("2022-11-21"),
+        endDate = TEN_DAYS_TIME,
       )
     }
 
     @BeforeEach
     internal fun setup() {
-      courseActivity = repository.save(courseActivityBuilderFactory.builder())
+      courseActivity = repository.save(courseActivityBuilderFactory.builder(prisonId = prisonId))
     }
 
     @Test
@@ -397,20 +411,88 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access with activity not found`() {
-      webTestClient.post().uri("/activities/999888")
+      val response = webTestClient.post().uri("/activities/999888")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
         .exchange()
         .expectStatus().isNotFound
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.userMessage).isEqualTo("Not Found: Course activity with id=999888 does not exist")
     }
 
     @Test
     fun `access with booking not found`() {
-      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .body(BodyInserters.fromValue(createOffenderProgramProfileRequest().copy(bookingId = 999888)))
         .exchange()
         .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.userMessage).isEqualTo("Bad request: Booking with id=999888 does not exist")
+    }
+
+    @Test
+    fun `allocation already exists`() {
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isCreated
+      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.userMessage).isEqualTo("Bad request: Offender Program Profile with courseActivityId=${courseActivity.courseActivityId} and bookingId=${offenderAtMoorlands.latestBooking().bookingId} already exists")
+    }
+
+    @Test
+    fun `prisoner at different prison`() {
+      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest().copy(bookingId = offenderAtOtherPrison.latestBooking().bookingId)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.userMessage).isEqualTo("Bad request: Prisoner is at prison=BXI, not the Course activity prison=$prisonId")
+    }
+
+    @Test
+    fun `activity expired`() {
+      val expired = repository.save(courseActivityBuilderFactory.builder(prisonId = prisonId, endDate = "2022-12-14"))
+      val response = webTestClient.post().uri("/activities/${expired.courseActivityId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.userMessage).isEqualTo("Bad request: Course activity with id=${expired.courseActivityId} has expired")
+    }
+
+    @Test
+    fun `start date missing`() {
+      val response = webTestClient.post().uri("/activities/4567")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "bookingId" : "1234",
+            "endDate"   : "2022-11-30"
+          }"""
+          )
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody(ErrorResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.userMessage).contains("value failed for JSON property startDate due to missing (therefore NULL) value")
     }
 
     @Test
@@ -426,7 +508,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(program.programCode).isEqualTo(programCode)
         assertThat(startDate).isEqualTo(LocalDate.parse("2022-11-14"))
-        assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-21"))
+        assertThat(endDate).isEqualTo(TEN_DAYS_TIME)
       }
     }
 
@@ -439,7 +521,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
             """{
             "bookingId" : "$bookingId",
             "startDate" : "2022-11-14",
-            "endDate" : "2022-11-21"
+            "endDate"   : "${TEN_DAYS_TIME.format(DateTimeFormatter.ISO_DATE)}"
           }"""
           )
         )
