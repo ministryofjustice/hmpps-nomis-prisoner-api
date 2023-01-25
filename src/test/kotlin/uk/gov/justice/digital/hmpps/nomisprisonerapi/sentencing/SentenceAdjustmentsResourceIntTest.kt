@@ -103,7 +103,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+        .jsonPath("id").isEqualTo(sentenceAdjustmentId)
     }
   }
 
@@ -177,7 +177,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """
                   {
-                    "sentenceAdjustmentTypeCode": "RX"
+                    "adjustmentTypeCode": "RX"
                   }
                 """
             )
@@ -198,7 +198,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
                   {
                     "adjustmentDays": 10,
-                    "sentenceAdjustmentTypeCode": "BANANAS"
+                    "adjustmentTypeCode": "BANANAS"
                   }
                 """
             )
@@ -219,7 +219,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
                   {
                     "adjustmentDays": 10,
-                    "sentenceAdjustmentTypeCode": "ADA"
+                    "adjustmentTypeCode": "ADA"
                   }
                 """
             )
@@ -247,7 +247,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("sentenceAdjustmentTypeCode must not be blank")
+          .jsonPath("developerMessage").isEqualTo("adjustmentTypeCode must not be blank")
       }
     }
 
@@ -263,25 +263,25 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
                     {
                       "adjustmentDays": 10,
-                      "sentenceAdjustmentTypeCode": "RX"
+                      "adjustmentTypeCode": "RX"
                     }
                   """
             )
           )
           .exchange()
-          .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
-          .returnResult().responseBody!!.sentenceAdjustmentId
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
           .jsonPath("bookingId").isEqualTo(bookingId)
           .jsonPath("sentenceSequence").isEqualTo(1)
-          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
-          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentType.code").isEqualTo("RX")
+          .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDays").isEqualTo(10)
           .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
           .jsonPath("adjustmentFromDate").doesNotExist()
@@ -300,7 +300,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
                     {
                       "adjustmentDays": 10,
-                      "sentenceAdjustmentTypeCode": "RX",
+                      "adjustmentTypeCode": "RX",
                       "adjustmentDate": "2023-01-16",
                       "adjustmentFromDate": "2023-01-01",
                       "comment": "Remand for 10 days",
@@ -310,19 +310,19 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
             )
           )
           .exchange()
-          .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
-          .returnResult().responseBody!!.sentenceAdjustmentId
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
           .jsonPath("bookingId").isEqualTo(bookingId)
           .jsonPath("sentenceSequence").isEqualTo(1)
-          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
-          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentType.code").isEqualTo("RX")
+          .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
           .jsonPath("adjustmentToDate").isEqualTo("2023-01-10")
@@ -365,25 +365,25 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
                 """
                     {
                       "adjustmentDays": 10,
-                      "sentenceAdjustmentTypeCode": "RX"
+                      "adjustmentTypeCode": "RX"
                     }
                   """
               )
             )
             .exchange()
-            .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
-            .returnResult().responseBody!!.sentenceAdjustmentId
+            .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+            .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
           .jsonPath("bookingId").isEqualTo(anotherBookingId)
           .jsonPath("sentenceSequence").isEqualTo(2)
-          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
-          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentType.code").isEqualTo("RX")
+          .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDays").isEqualTo(10)
           .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
           .jsonPath("adjustmentFromDate").doesNotExist()
@@ -403,7 +403,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
                 """
                     {
                       "adjustmentDays": 2,
-                      "sentenceAdjustmentTypeCode": "RX",
+                      "adjustmentTypeCode": "RX",
                       "adjustmentDate": "2023-01-16",
                       "adjustmentFromDate": "2023-02-01",
                       "comment": "Remand for 2 days",
@@ -413,19 +413,19 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
               )
             )
             .exchange()
-            .expectStatus().isCreated.expectBody(CreateSentenceAdjustmentResponse::class.java)
-            .returnResult().responseBody!!.sentenceAdjustmentId
+            .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+            .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("sentenceAdjustmentId").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
           .jsonPath("bookingId").isEqualTo(anotherBookingId)
           .jsonPath("sentenceSequence").isEqualTo(2)
-          .jsonPath("sentenceAdjustmentType.code").isEqualTo("RX")
-          .jsonPath("sentenceAdjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentType.code").isEqualTo("RX")
+          .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
           .jsonPath("adjustmentFromDate").isEqualTo("2023-02-01")
           .jsonPath("adjustmentToDate").isEqualTo("2023-02-02")
@@ -438,7 +438,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
     fun createBasicSentenceAdjustmentRequest() = """
       {
         "adjustmentDays": 10,
-        "sentenceAdjustmentTypeCode": "RX"
+        "adjustmentTypeCode": "RX"
       }
     """.trimIndent()
   }

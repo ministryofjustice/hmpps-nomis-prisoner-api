@@ -16,6 +16,7 @@ class OffenderBookingBuilder(
   var visits: List<VisitBuilder> = emptyList(),
   var incentives: List<IncentiveBuilder> = emptyList(),
   var sentences: List<SentenceBuilder> = emptyList(),
+  var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
 ) {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
@@ -50,6 +51,10 @@ class OffenderBookingBuilder(
   }
   fun withSentences(vararg sentenceBuilder: SentenceBuilder): OffenderBookingBuilder {
     this.sentences = arrayOf(*sentenceBuilder).asList()
+    return this
+  }
+  fun withKeyDateAdjustments(vararg keyDateAdjustmentBuilder: KeyDateAdjustmentBuilder): OffenderBookingBuilder {
+    this.keyDateAdjustments = arrayOf(*keyDateAdjustmentBuilder).asList()
     return this
   }
 }
