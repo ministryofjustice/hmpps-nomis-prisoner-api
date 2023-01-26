@@ -8,7 +8,7 @@ import java.time.LocalDate
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Course activity creation request")
 data class CreateOffenderProgramProfileRequest(
-  @Schema(description = "Booking id of the prisoner to be allocated to the activity", required = true)
+  @Schema(description = "Booking id of the prisoner to be allocated to the activity", required = true, example = "1234567")
   @NotNull
   val bookingId: Long,
 
