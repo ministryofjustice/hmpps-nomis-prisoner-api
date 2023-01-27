@@ -8,13 +8,13 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertAll
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
@@ -22,9 +22,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -188,7 +188,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       internalLocationJson: String = """"internalLocationId" : -27,""",
       payRatesJson: String? = """
           "payRates" : [ {
-              "incentiveLevel" : "BAS",
+              "incentiveLevel" : "STD",
               "payBand" : "5",
               "rate" : 0.8
               } ]
@@ -239,130 +239,460 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should update the activity and pay rate`() {
-        val existingActivity =
-          repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
+        val existingActivityId = getSavedActivityId()
 
-        webTestClient.put().uri("/activities/${existingActivity.courseActivityId}")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson()))
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(),
+        )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivity.courseActivityId)
-        assertAll(
-          { assertThat(updated.internalLocation.locationId).isEqualTo(-27) },
-          {
-            assertThat(updated.payRates.first().halfDayRate).isEqualTo(
-              BigDecimal(0.8).setScale(3, RoundingMode.HALF_UP)
-            )
-          }
-        )
+        val updated = repository.lookupActivity(existingActivityId)
+        assertThat(updated.internalLocation.locationId).isEqualTo(-27)
+        assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
+        assertThat(updated.payRates[1].endDate).isNull()
+        assertThat(updated.payRates[1].halfDayRate).isCloseTo(BigDecimal(0.8), within(BigDecimal(0.001)))
       }
 
       @Test
       fun `should return bad request for unknown data`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(internalLocationJson = """"internalLocationId: -99999,""")))
-          .exchange()
+        val existingActivity =
+          repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
+
+        callUpdateEndpoint(
+          courseActivityId = existingActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(internalLocationJson = """"internalLocationId: -99999,"""),
+        )
           .expectStatus().isBadRequest
       }
 
       @Test
       fun `should return not found for missing activity`() {
-        webTestClient.put().uri("/activities/2")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson()))
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId() + 100,
+          jsonBody = updateActivityRequestJson(),
+        )
           .expectStatus().isNotFound
       }
 
       @Test
       fun `should return bad request for missing data`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(prisonIdJson = null)))
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(prisonIdJson = null),
+        )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> { it.contains("prisonId") }
       }
 
       @Test
       fun `should return bad request for malformed number`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(capacityJson = """"capacity": "NOT_A_NUMBER",""")))
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(capacityJson = """"capacity": "NOT_A_NUMBER","""),
+        )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> { it.contains("capacity") }
       }
 
       @Test
       fun `should return bad request for malformed date`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(startDateJson = """"startDate": "2022-11-35",""")))
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(startDateJson = """"startDate": "2022-11-35","""),
+        )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> { it.contains("startDate") }
       }
 
       @Test
       fun `should return bad request for malformed number in child`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(
-            BodyInserters.fromValue(
-              updateActivityRequestJson(
-                payRatesJson = """
-            "payRates" : [ {
-                "incentiveLevel" : "BAS",
-                "payBand" : "5",
-                "rate" : 'NOT_A_NUMBER"
-                } ]
-                """.trimIndent()
-              )
-            )
-          )
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """
+              "payRates" : [ {
+                  "incentiveLevel" : "BAS",
+                  "payBand" : "5",
+                  "rate" : 'NOT_A_NUMBER"
+                  } ]
+            """.trimIndent()
+          ),
+        )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> { it.contains("rate") }
       }
 
       @Test
       fun `should return bad request for missing pay rates`() {
-        webTestClient.put().uri("/activities/1")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(payRatesJson = null)))
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(payRatesJson = null),
+        )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> { it.contains("payRates") }
       }
 
       @Test
       fun `should return OK for empty pay rates`() {
-        val existingActivity =
-          repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
+        val existingActivityId = getSavedActivityId()
 
-        webTestClient.put().uri("/activities/${existingActivity.courseActivityId}")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(updateActivityRequestJson(payRatesJson = """ "payRates" : []""")))
-          .exchange()
+        callUpdateEndpoint(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : []"""),
+        )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivity.courseActivityId)
-        assertThat(updated.payRates).isEmpty()
+        val updated = repository.lookupActivity(existingActivityId)
+        assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
       }
     }
+
+    @Nested
+    inner class PayRates {
+      @Test
+      fun `no change should do nothing`() {
+        val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(
+            internalLocationJson = """"internalLocationId" : -8,""",
+            payRatesJson = """ "payRates" : [ { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 3.2 } ] """,
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivityId).payRates
+        assertThat(updatedRates.size).isEqualTo(1)
+        with(updatedRates.first()) {
+          assertThat(iepLevelCode).isEqualTo("STD")
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        }
+      }
+
+      @Test
+      fun `adding should create new pay rate effective today`() {
+        val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """ "payRates" : [ 
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 3.2 }, 
+              { "incentiveLevel" : "STD", "payBand" : "6", "rate" : 3.4 } 
+              ] """.trimMargin(),
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivityId).payRates
+        assertThat(updatedRates.size).isEqualTo(2)
+        // existing rate unchanged
+        with(updatedRates[0]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+          assertThat(endDate).isNull()
+        }
+        // new rate added
+        with(updatedRates[1]) {
+          assertThat(payBandCode).isEqualTo("6")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.4), within(BigDecimal(0.001)))
+          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(endDate).isNull()
+        }
+      }
+
+      @Test
+      fun `amending should expire existing and create new pay rate effective tomorrow`() {
+        val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """ "payRates" : [ 
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 4.3 }
+              ] """.trimMargin(),
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivityId).payRates
+        assertThat(updatedRates.size).isEqualTo(2)
+        // old rate has been expired
+        with(updatedRates[0]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+          assertThat(endDate).isEqualTo(LocalDate.now())
+        }
+        // new rate created from tomorrow
+        with(updatedRates[1]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(4.3), within(BigDecimal(0.001)))
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(endDate).isNull()
+        }
+      }
+
+      @Test
+      fun `re-adding previously expired rate should add new rate effective today`() {
+        val existingActivity = repository.save(
+          courseActivityBuilderFactory.builder(
+            payRates = listOf(
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "5",
+                startDate = LocalDate.now().minusDays(10).toString(),
+                endDate = LocalDate.now().minusDays(3).toString(),
+                halfDayRate = BigDecimal(3.2)
+              ),
+            )
+          )
+        )
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """ "payRates" : [ 
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 4.3 }
+              ] """.trimMargin(),
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivity.courseActivityId).payRates
+        assertThat(updatedRates.size).isEqualTo(2)
+        // old rate not changed
+        with(updatedRates[0]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+          assertThat(endDate).isEqualTo(LocalDate.now().minusDays(3))
+        }
+        // new rate created from today
+        with(updatedRates[1]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(4.3), within(BigDecimal(0.001)))
+          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(endDate).isNull()
+        }
+      }
+
+      @Test
+      fun `amending new rate starting tomorrow should not cause an expiry (adjusting rate twice in one day)`() {
+        val existingActivity = repository.save(
+          courseActivityBuilderFactory.builder(
+            payRates = listOf(
+              // old rate expires today
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "5",
+                startDate = LocalDate.now().minusDays(1).toString(),
+                endDate = LocalDate.now().toString(),
+                halfDayRate = BigDecimal(3.2)
+              ),
+              // new rate becomes effective tomorrow
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "5",
+                startDate = LocalDate.now().plusDays(1).toString(),
+                halfDayRate = BigDecimal(4.3)
+              ),
+            )
+          )
+        )
+
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """ "payRates" : [ 
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 5.4 }
+              ] """.trimMargin(),
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivity.courseActivityId).payRates
+        assertThat(updatedRates.size).isEqualTo(2)
+        // old rate still expired
+        with(updatedRates[0]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+          assertThat(endDate).isEqualTo(LocalDate.now())
+        }
+        // new rate with adjusted half day rate is still effective from tomorrow
+        with(updatedRates[1]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(5.4), within(BigDecimal(0.001)))
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(endDate).isNull()
+        }
+      }
+
+      @Test
+      fun `removing new rate starting tomorrow should delete the rate rather than expire`() {
+        val existingActivity = repository.save(
+          courseActivityBuilderFactory.builder(
+            payRates = listOf(
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "5",
+                startDate = LocalDate.now().minusDays(1).toString(),
+                endDate = LocalDate.now().toString(),
+                halfDayRate = BigDecimal(3.2)
+              ),
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "5",
+                startDate = LocalDate.now().plusDays(1).toString(),
+                halfDayRate = BigDecimal(4.3)
+              ),
+            )
+          )
+        )
+
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """ "payRates" : [] """.trimMargin(),
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivity.courseActivityId).payRates
+        // We only have the old expired rate - the future rate is now removed
+        assertThat(updatedRates.size).isEqualTo(1)
+        // old rate still expired
+        with(updatedRates[0]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+          assertThat(endDate).isEqualTo(LocalDate.now())
+        }
+      }
+
+      @Test
+      fun `missing rate should be expired`() {
+        val existingActivityId = getSavedActivityId()
+
+        // request pay band 6 instead of 5
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """ "payRates" : [ 
+              { "incentiveLevel" : "STD", "payBand" : "6", "rate" : 6.5 }
+              ] """.trimMargin(),
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivityId).payRates
+        assertThat(updatedRates.size).isEqualTo(2)
+        // missing rate for pay band 5 has been expired
+        with(updatedRates[0]) {
+          assertThat(payBandCode).isEqualTo("5")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+          assertThat(endDate).isEqualTo(LocalDate.now())
+        }
+        // new rate for pay band 6 effective from today
+        with(updatedRates[1]) {
+          assertThat(payBandCode).isEqualTo("6")
+          assertThat(halfDayRate).isCloseTo(BigDecimal(6.5), within(BigDecimal(0.001)))
+          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(endDate).isNull()
+        }
+      }
+
+      @Test
+      fun `should be able to add, amend, amend future rate and delete rate at the same time`() {
+        val existingActivity = repository.save(
+          courseActivityBuilderFactory.builder(
+            payRates = listOf(
+              // rate is expired
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "5",
+                startDate = LocalDate.now().minusDays(1).toString(),
+                endDate = LocalDate.now().toString(),
+                halfDayRate = BigDecimal(3.2)
+              ),
+              // new rate active from tomorrow
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "5",
+                startDate = LocalDate.now().plusDays(1).toString(),
+                halfDayRate = BigDecimal(4.3)
+              ),
+              // rate expires today
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "6",
+                startDate = LocalDate.now().minusDays(1).toString(),
+                endDate = LocalDate.now().toString(),
+                halfDayRate = BigDecimal(5.3)
+              ),
+              // rate currently active
+              CourseActivityPayRateBuilder(
+                iepLevelCode = "STD",
+                payBandCode = "7",
+                startDate = LocalDate.now().minusDays(1).toString(),
+                halfDayRate = BigDecimal(8.7)
+              ),
+            )
+          )
+        )
+
+        callUpdateEndpointIsOk(
+          courseActivityId = existingActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """ "payRates" : [ 
+            { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 4.4 }, 
+            { "incentiveLevel" : "STD", "payBand" : "6", "rate" : 5.4 }
+            ] """.trimMargin(),
+          ),
+        )
+
+        val updatedRates = repository.lookupActivity(existingActivity.courseActivityId).payRates
+        assertThat(updatedRates.size).isEqualTo(5)
+        // old rate for pay band 5 is still expired
+        with(updatedRates.findRate("STD", "5", expired = true)) {
+          assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        }
+        // new rate for pay band 5 has been updated
+        with(updatedRates.findRate("STD", "5", expired = false)) {
+          assertThat(halfDayRate).isCloseTo(BigDecimal(4.4), within(BigDecimal(0.001)))
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+        }
+        // old rate for pay band 6 is still expired
+        with(updatedRates.findRate("STD", "6", expired = true)) {
+          assertThat(halfDayRate).isCloseTo(BigDecimal(5.3), within(BigDecimal(0.001)))
+          assertThat(endDate).isEqualTo(LocalDate.now())
+        }
+        // new rate for pay band 6 applicable from tomorrow
+        with(updatedRates.findRate("STD", "6", expired = false)) {
+          assertThat(halfDayRate).isCloseTo(BigDecimal(5.4), within(BigDecimal(0.001)))
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+        }
+        // old rate for pay band 7 has been expired
+        with(updatedRates.findRate("STD", "7", expired = true)) {
+          assertThat(halfDayRate).isCloseTo(BigDecimal(8.7), within(BigDecimal(0.001)))
+          assertThat(endDate).isEqualTo(LocalDate.now())
+        }
+      }
+    }
+
+    private fun callUpdateEndpoint(courseActivityId: Long, jsonBody: String) =
+      webTestClient.put().uri("/activities/$courseActivityId")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(jsonBody))
+        .exchange()
+
+    private fun callUpdateEndpointIsOk(courseActivityId: Long, jsonBody: String) =
+      callUpdateEndpoint(courseActivityId, jsonBody)
+        .expectStatus().isOk
+
+    private fun getSavedActivityId() =
+      repository.activityRepository.findAll().firstOrNull()?.courseActivityId
+        ?: throw BadDataException("No activities in database")
+
+    private fun MutableList<CourseActivityPayRate>.findRate(
+      iepLevelCode: String,
+      payBandCode: String,
+      expired: Boolean
+    ): CourseActivityPayRate =
+      firstOrNull { it.iepLevelCode == iepLevelCode && it.payBandCode == payBandCode && if (expired) it.endDate != null else it.endDate == null }!!
   }
 
   @Nested

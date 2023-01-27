@@ -35,25 +35,12 @@ data class CourseActivityPayRate(
   val startDate: LocalDate,
 
   @Column
-  val endDate: LocalDate? = null,
-
-//  @ManyToOne(fetch = FetchType.LAZY)
-//  @JoinColumnsOrFormulas(
-//    value = [
-//      JoinColumnOrFormula(
-//        formula = JoinFormula(
-//          value = "'" + IEPLevel.IEP_LEVEL + "'",
-//          referencedColumnName = "domain"
-//        )
-//      ),
-//      JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code"))
-//    ]
-//  )
-//  val iepLevel: IEPLevel? = null,
+  var endDate: LocalDate? = null,
 
   @Column(nullable = false)
   var halfDayRate: BigDecimal,
 ) : Serializable {
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -68,6 +55,10 @@ data class CourseActivityPayRate(
   override fun hashCode(): Int = javaClass.hashCode()
   override fun toString(): String =
     "CourseActivityPayRate(courseActivity=$courseActivity, iepLevel=$iepLevelCode, payBandCode=$payBandCode, startDate=$startDate)"
+
+  fun isExpired(): Boolean = endDate != null
+  fun expire(): CourseActivityPayRate = this.apply { endDate = LocalDate.now() }
+  fun isNotYetActive(): Boolean = startDate > LocalDate.now()
 
   companion object {
     fun preciseHalfDayRate(halfDayRate: BigDecimal) = halfDayRate.setScale(3, RoundingMode.HALF_UP)
