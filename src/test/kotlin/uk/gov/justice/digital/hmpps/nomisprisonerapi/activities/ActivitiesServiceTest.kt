@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -81,6 +83,7 @@ internal class ActivitiesServiceTest {
     locationCode = "ROOM-1",
     locationId = roomId
   )
+
   fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
 
   @BeforeEach
@@ -138,13 +141,13 @@ internal class ActivitiesServiceTest {
         .isEqualTo(CreateActivityResponse(courseActivityId))
 
       verify(activityRepository).save(
-        org.mockito.kotlin.check { activity ->
+        check { activity ->
           assertThat(activity.code).isEqualTo("CA")
           assertThat(activity.prison.description).isEqualTo(prisonDescription)
           assertThat(activity.caseloadId).isEqualTo(prisonId)
           assertThat(activity.description).isEqualTo("test description")
           assertThat(activity.capacity).isEqualTo(23)
-          assertThat(activity.active).isTrue()
+          assertThat(activity.active).isTrue
           assertThat(activity.program.programCode).isEqualTo(programCode)
           assertThat(activity.scheduleStartDate).isEqualTo(LocalDate.parse("2022-10-31"))
           assertThat(activity.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
@@ -203,12 +206,23 @@ internal class ActivitiesServiceTest {
       }
       assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $prisonId")
     }
+
+    @Test
+    fun invalidPayBandCode() {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenReturn(null)
+
+      val thrown = assertThrows<BadDataException>() {
+        activitiesService.createActivity(createRequest)
+      }
+      assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $prisonId")
+    }
   }
 
   @Nested
   internal inner class CreateOffenderProgramProfile {
     private val defaultOffender = Offender(
-      nomsId = offenderNo, lastName = "Smith",
+      nomsId = offenderNo,
+      lastName = "Smith",
       gender = Gender("MALE", "Male")
     )
     private val defaultOffenderBooking = OffenderBooking(
@@ -223,11 +237,22 @@ internal class ActivitiesServiceTest {
       program = defaultProgramService,
       iepLevel = defaultIepLevel("STD"),
       internalLocation = defaultRoom,
-    )
+    ).apply {
+      payRates.add(
+        CourseActivityPayRate(
+          courseActivity = this, startDate = LocalDate.parse("2022-11-01"),
+          endDate = LocalDate.parse("2022-11-03"),
+          payBandCode = "3",
+          halfDayRate = BigDecimal("0.50"),
+          iepLevelCode = "ENH"
+        )
+      )
+    }
     private val createRequest = CreateOffenderProgramProfileRequest(
       bookingId = offenderBookingId,
       startDate = LocalDate.parse("2022-10-31"),
       endDate = LocalDate.parse("2022-11-30"),
+      payBandCode = "3",
     )
 
     @BeforeEach
@@ -250,8 +275,8 @@ internal class ActivitiesServiceTest {
         .isEqualTo(CreateOffenderProgramProfileResponse(offenderProgramReferenceId))
 
       verify(offenderProgramProfileRepository).save(
-        org.mockito.kotlin.check {
-          with(it) {
+        check {
+          with(it) outer@{
             assertThat(offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
             assertThat(offenderBooking.bookingId).isEqualTo(offenderBookingId)
             assertThat(program.programCode).isEqualTo(programCode)
@@ -260,6 +285,13 @@ internal class ActivitiesServiceTest {
             assertThat(courseActivity?.courseActivityId).isEqualTo(courseActivityId)
             assertThat(prison?.id).isEqualTo(prisonId)
             assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))
+            assertThat(payBands).hasSize(1)
+            with(payBands.first()) {
+              assertThat(offenderProgramProfile).isSameAs(this@outer)
+              assertThat(startDate).isSameAs(this@outer.startDate)
+              assertThat(endDate).isSameAs(this@outer.endDate)
+              assertThat(payBandCode).isEqualTo("3")
+            }
           }
         }
       )
@@ -283,6 +315,14 @@ internal class ActivitiesServiceTest {
         activitiesService.createOffenderProgramProfile(courseActivityId, createRequest)
       }
       assertThat(thrown.message).isEqualTo("Booking with id=$offenderBookingId does not exist")
+    }
+
+    @Test
+    fun invalidPayBandCode() {
+      val thrown = assertThrows<BadDataException>() {
+        activitiesService.createOffenderProgramProfile(courseActivityId, createRequest.copy(payBandCode = "doesnotexist"))
+      }
+      assertThat(thrown.message).isEqualTo("Pay band code doesnotexist does not exist for course activity with id=$courseActivityId")
     }
   }
 }

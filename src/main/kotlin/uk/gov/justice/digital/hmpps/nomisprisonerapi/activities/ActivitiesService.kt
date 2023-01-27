@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -147,6 +148,10 @@ class ActivitiesService(
       throw BadDataException("Course activity with id=$courseActivityId has expired")
     }
 
+    if (courseActivity.payRates.find { it.payBandCode == dto.payBandCode } == null) {
+      throw BadDataException("Pay band code ${dto.payBandCode} does not exist for course activity with id=$courseActivityId")
+    }
+
     return OffenderProgramProfile(
       offenderBooking = offenderBooking,
       program = courseActivity.program,
@@ -155,7 +160,16 @@ class ActivitiesService(
       courseActivity = courseActivity,
       prison = courseActivity.prison,
       endDate = dto.endDate,
-    )
+    ).apply {
+      payBands.add(
+        OffenderProgramProfilePayBand(
+          offenderProgramProfile = this,
+          startDate = dto.startDate,
+          endDate = dto.endDate,
+          payBandCode = dto.payBandCode,
+        )
+      )
+    }
   }
 
   fun updateActivity(courseActivityId: Long, updateActivityRequest: UpdateActivityRequest) {
