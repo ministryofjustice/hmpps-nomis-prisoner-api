@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderKeyD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 
 @Service
 @Transactional
@@ -23,7 +24,8 @@ class SentencingAdjustmentService(
   private val offenderSentenceRepository: OffenderSentenceRepository,
   private val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
   private val keyDateAdjustmentRepository: OffenderKeyDateAdjustmentRepository,
-  private val entityManager: EntityManager
+  private val entityManager: EntityManager,
+  private val storedProcedureRepository: StoredProcedureRepository
 ) {
   fun getSentenceAdjustment(sentenceAdjustmentId: Long): SentenceAdjustmentResponse =
     offenderSentenceAdjustmentRepository.findByIdOrNull(sentenceAdjustmentId)?.let {
@@ -106,8 +108,8 @@ class SentencingAdjustmentService(
         )
       )
       entityManager.flush()
-      CreateAdjustmentResponse(it.keyDateAdjustments.last().id)
+      CreateAdjustmentResponse(it.keyDateAdjustments.last().id).also { createAdjustmentResponse ->
+        storedProcedureRepository.postKeyDateAdjustmentCreation(keyDateAdjustmentId = createAdjustmentResponse.id, offBookId = bookingId)
+      }
     } ?: throw NotFoundException("Booking $bookingId not found")
-
-  // TODO call stored procedure following key date adjustment creation
 }

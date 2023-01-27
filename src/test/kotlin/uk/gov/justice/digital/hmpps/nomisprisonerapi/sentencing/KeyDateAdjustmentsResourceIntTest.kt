@@ -4,7 +4,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.KeyDateAdjustmentBuilder
@@ -13,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBui
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -21,6 +25,9 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
   lateinit var repository: Repository
   lateinit var prisoner: Offender
   var bookingId: Long = 0
+
+  @SpyBean
+  private lateinit var spRepository: StoredProcedureRepository
 
   @BeforeEach
   internal fun createPrisoner() {
@@ -84,6 +91,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNotFound
     }
+
     @Test
     internal fun `200 when adjustment does exist`() {
       webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
@@ -303,6 +311,11 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentDays").isEqualTo(10)
           .jsonPath("comment").isEqualTo("a comment")
           .jsonPath("active").isEqualTo(false)
+
+        verify(spRepository).postKeyDateAdjustmentCreation(
+          eq(adjustmentId),
+          eq(bookingId)
+        )
       }
     }
 
