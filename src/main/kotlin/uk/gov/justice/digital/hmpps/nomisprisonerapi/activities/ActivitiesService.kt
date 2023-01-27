@@ -176,11 +176,11 @@ class ActivitiesService(
    * Rebuild the list of pay rates to replace the existing list - taking into account we never delete old rates, just expire them
    *
    * This is quite a tricky algorithm. When building the new rate list it does the following:
-   * - any existing rates that are expired are retained
+   * - newly requested rates are created and become effective today
    * - any existing rates that are still active but haven't changed are retained
    * - any existing rates that have changed are expired with today's date and a new rate added effective tomorrow
+   * - any existing rates that are expired are retained
    * - any existing rates that are not included in the new request are expired
-   * - new rates requested are create and become effective today
    */
   private fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity): MutableList<CourseActivityPayRate> {
     val newPayRates = mutableListOf<CourseActivityPayRate>()
@@ -237,6 +237,7 @@ class ActivitiesService(
       .map { old -> old.expire() }
 
   private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity): CourseActivityPayRate {
+    // calculate start date - usually today unless the old rate expires at the end of today
     val startDate = courseActivity.payRates
       .filter { it.iepLevelCode == incentiveLevel && it.payBandCode == payBand }
       .takeIf { it.isNotEmpty() }
