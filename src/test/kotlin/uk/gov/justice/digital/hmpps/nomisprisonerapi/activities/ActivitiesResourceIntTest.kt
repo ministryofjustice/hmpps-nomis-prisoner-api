@@ -705,6 +705,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         bookingId = offenderAtMoorlands.latestBooking().bookingId,
         startDate = LocalDate.parse("2022-11-14"),
         endDate = TEN_DAYS_TIME,
+        payBandCode = "5",
       )
     }
 
@@ -839,6 +840,11 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(program.programCode).isEqualTo(programCode)
         assertThat(startDate).isEqualTo(LocalDate.parse("2022-11-14"))
         assertThat(endDate).isEqualTo(TEN_DAYS_TIME)
+        val payBand = payBands.first()
+        assertThat(payBand.offenderProgramProfile.offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
+        assertThat(payBand.startDate).isEqualTo(startDate)
+        assertThat(payBand.endDate).isEqualTo(endDate)
+        assertThat(payBand.payBandCode).isEqualTo("5")
       }
     }
 
@@ -849,9 +855,10 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         .body(
           BodyInserters.fromValue(
             """{
-            "bookingId" : "$bookingId",
-            "startDate" : "2022-11-14",
-            "endDate"   : "${TEN_DAYS_TIME.format(DateTimeFormatter.ISO_DATE)}"
+            "bookingId"  : "$bookingId",
+            "startDate"  : "2022-11-14",
+            "endDate"    : "${TEN_DAYS_TIME.format(DateTimeFormatter.ISO_DATE)}",
+            "payBandCode": "5"
           }"""
           )
         )

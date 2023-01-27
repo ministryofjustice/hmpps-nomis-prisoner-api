@@ -220,7 +220,9 @@ class Repository(
 
   fun lookupProgramService(id: Long): ProgramService = programServiceRepository.findByIdOrNull(id)!!
   fun lookupOffenderProgramProfile(id: Long): OffenderProgramProfile =
-    offenderProgramProfileRepository.findByIdOrNull(id)!!
+    offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
+      it.payBands.size
+    }
 
   fun lookupActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
     it.payRates.size
