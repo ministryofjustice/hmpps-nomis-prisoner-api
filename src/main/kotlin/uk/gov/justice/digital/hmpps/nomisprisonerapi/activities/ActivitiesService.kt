@@ -166,19 +166,83 @@ class ActivitiesService(
       ?: throw BadDataException("Location with id=${updateActivityRequest.internalLocationId} does not exist")
 
     existingActivity.internalLocation = location
-    existingActivity.payRates.clear()
-    // TODO SDI-500 we need something much cleverer than this if it turns out Nomis keeps a history of pay rates
-    existingActivity.payRates.addAll(
-      updateActivityRequest.payRates.map { payRateRequest ->
-        CourseActivityPayRate(
-          existingActivity,
-          payRateRequest.incentiveLevel,
-          payRateRequest.payBand,
-          existingActivity.scheduleStartDate!!,
-          existingActivity.scheduleEndDate,
-          CourseActivityPayRate.preciseHalfDayRate(payRateRequest.rate)
-        )
+    buildNewPayRates(updateActivityRequest.payRates, existingActivity).also { newPayRates ->
+      existingActivity.payRates.clear()
+      existingActivity.payRates.addAll(newPayRates)
+    }
+  }
+
+  // Rebuild the list of pay rates to replace the existing list - taking into account we never delete old rates, just expire them
+  private fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity): MutableList<CourseActivityPayRate> {
+    val newPayRates = mutableListOf<CourseActivityPayRate>()
+    val existingPayRates = existingActivity.payRates
+
+    requestedPayRates.forEach { requestedPayRate ->
+      val existingPayRate = existingPayRates.findExistingPayRate(requestedPayRate)
+      when {
+        existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
+        existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
+        existingPayRate.rateIsChangeButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
+        existingPayRate.rateIsChanged(requestedPayRate) -> {
+          newPayRates.add(existingPayRate.expire())
+          newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
+        }
       }
+    }
+
+    newPayRates.addAll(existingPayRates.getExpiredPayRates())
+    newPayRates.addAll(existingPayRates.expirePayRatesIfMissingFrom(newPayRates))
+
+    return newPayRates
+  }
+
+  private fun MutableList<CourseActivityPayRate>.findExistingPayRate(requested: PayRateRequest) =
+    firstOrNull { existing ->
+      !existing.isExpired() &&
+        requested.payBand == existing.payBandCode &&
+        requested.incentiveLevel == existing.iepLevelCode
+    }
+
+  private fun CourseActivityPayRate.rateIsUnchanged(requested: PayRateRequest) =
+    this.halfDayRate.compareTo(requested.rate) == 0
+
+  private fun CourseActivityPayRate.rateIsChangeButNotYetActive(requested: PayRateRequest) =
+    this.rateIsChanged(requested) && this.isNotYetActive()
+
+  private fun CourseActivityPayRate.rateIsChanged(requested: PayRateRequest) =
+    this.halfDayRate.compareTo(requested.rate) != 0
+
+  private fun MutableList<CourseActivityPayRate>.containsRate(newPayRate: CourseActivityPayRate) =
+    this.firstOrNull { existing ->
+      !existing.isExpired() &&
+        existing.payBandCode == newPayRate.payBandCode &&
+        existing.iepLevelCode == newPayRate.iepLevelCode
+    } != null
+
+  private fun MutableList<CourseActivityPayRate>.getExpiredPayRates() = this.filter { it.endDate != null }
+
+  private fun MutableList<CourseActivityPayRate>.expirePayRatesIfMissingFrom(newPayRates: MutableList<CourseActivityPayRate>) =
+    this.filter { old -> !old.isExpired() }
+      .filter { old -> !old.isNotYetActive() } // ignore future rates not included in update - so they are deleted
+      .filter { old -> !newPayRates.containsRate(old) }
+      .map { old -> old.expire() }
+
+  private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity): CourseActivityPayRate {
+    val startDate = courseActivity.payRates
+      .filter { it.iepLevelCode == incentiveLevel && it.payBandCode == payBand }
+      .takeIf { it.isNotEmpty() }
+      ?.maxBy { it.startDate }
+      ?.endDate
+      ?.let { if (it < LocalDate.now()) LocalDate.now() else it.plusDays(1) }
+      ?: LocalDate.now()
+
+    return CourseActivityPayRate(
+      courseActivity,
+      incentiveLevel,
+      payBand,
+      startDate,
+      null,
+      CourseActivityPayRate.preciseHalfDayRate(rate)
     )
   }
 }
