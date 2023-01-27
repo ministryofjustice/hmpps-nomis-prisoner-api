@@ -25,7 +25,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -252,9 +251,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(updated.internalLocation.locationId).isEqualTo(-27)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
         assertThat(updated.payRates[1].endDate).isNull()
-        assertThat(updated.payRates[1].halfDayRate).isEqualTo(
-          BigDecimal(0.8).setScale(3, RoundingMode.HALF_UP)
-        )
+        assertThat(updated.payRates[1].halfDayRate).isCloseTo(BigDecimal(0.8), within(BigDecimal(0.001)))
       }
 
       @Test
@@ -394,6 +391,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         with(updatedRates[0]) {
           assertThat(payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+          assertThat(endDate).isNull()
         }
         // new rate added
         with(updatedRates[1]) {
@@ -460,7 +458,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
         val updatedRates = repository.lookupActivity(existingActivity.courseActivityId).payRates
         assertThat(updatedRates.size).isEqualTo(2)
-        // old rate not chamged
+        // old rate not changed
         with(updatedRates[0]) {
           assertThat(payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
@@ -476,10 +474,11 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `amending new rate starting tomorrow should not cause an expiry`() {
+      fun `amending new rate starting tomorrow should not cause an expiry (adjusting rate twice in one day)`() {
         val existingActivity = repository.save(
           courseActivityBuilderFactory.builder(
             payRates = listOf(
+              // old rate expires today
               CourseActivityPayRateBuilder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
@@ -487,6 +486,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
                 endDate = LocalDate.now().toString(),
                 halfDayRate = BigDecimal(3.2)
               ),
+              // new rate becomes effective tomorrow
               CourseActivityPayRateBuilder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
@@ -514,7 +514,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now())
         }
-        // new rate with adjusted half day rate is still applicable from tomorrow
+        // new rate with adjusted half day rate is still effective from tomorrow
         with(updatedRates[1]) {
           assertThat(payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(5.4), within(BigDecimal(0.001)))
@@ -553,7 +553,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         )
 
         val updatedRates = repository.lookupActivity(existingActivity.courseActivityId).payRates
-        // We only have the old expired - the future rate is now removed
+        // We only have the old expired rate - the future rate is now removed
         assertThat(updatedRates.size).isEqualTo(1)
         // old rate still expired
         with(updatedRates[0]) {
@@ -585,7 +585,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now())
         }
-        // new rate for pay band 6 applicable from today
+        // new rate for pay band 6 effective from today
         with(updatedRates[1]) {
           assertThat(payBandCode).isEqualTo("6")
           assertThat(halfDayRate).isCloseTo(BigDecimal(6.5), within(BigDecimal(0.001)))
@@ -614,6 +614,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
                 startDate = LocalDate.now().plusDays(1).toString(),
                 halfDayRate = BigDecimal(4.3)
               ),
+              // rate expires today
               CourseActivityPayRateBuilder(
                 iepLevelCode = "STD",
                 payBandCode = "6",
@@ -621,6 +622,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
                 endDate = LocalDate.now().toString(),
                 halfDayRate = BigDecimal(5.3)
               ),
+              // rate currently active
               CourseActivityPayRateBuilder(
                 iepLevelCode = "STD",
                 payBandCode = "7",
@@ -652,7 +654,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           assertThat(halfDayRate).isCloseTo(BigDecimal(4.4), within(BigDecimal(0.001)))
           assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
         }
-        // old rate for pay band 6 has been expired
+        // old rate for pay band 6 is still expired
         with(updatedRates.findRate("STD", "6", expired = true)) {
           assertThat(halfDayRate).isCloseTo(BigDecimal(5.3), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now())
@@ -665,7 +667,6 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         // old rate for pay band 7 has been expired
         with(updatedRates.findRate("STD", "7", expired = true)) {
           assertThat(halfDayRate).isCloseTo(BigDecimal(8.7), within(BigDecimal(0.001)))
-          assertThat(endDate).isEqualTo(LocalDate.now())
           assertThat(endDate).isEqualTo(LocalDate.now())
         }
       }
