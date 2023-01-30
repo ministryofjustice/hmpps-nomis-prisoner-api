@@ -56,12 +56,12 @@ data class CourseActivityPayRate(
   override fun toString(): String =
     "CourseActivityPayRate(courseActivity=$courseActivity, iepLevel=$iepLevelCode, payBandCode=$payBandCode, startDate=$startDate)"
 
-  fun isExpired(): Boolean = endDate != null
+  fun hasExpiryDate(): Boolean = endDate != null
   fun expire(): CourseActivityPayRate = this.apply { endDate = LocalDate.now() }
-  fun isNotYetActive(): Boolean = startDate > LocalDate.now()
+  fun hasFutureStartDate(): Boolean = startDate > LocalDate.now()
 
   companion object {
-    fun preciseHalfDayRate(halfDayRate: BigDecimal) = halfDayRate.setScale(3, RoundingMode.HALF_UP)
+    fun preciseHalfDayRate(halfDayRate: BigDecimal): BigDecimal = halfDayRate.setScale(3, RoundingMode.HALF_UP)
   }
 }
 
