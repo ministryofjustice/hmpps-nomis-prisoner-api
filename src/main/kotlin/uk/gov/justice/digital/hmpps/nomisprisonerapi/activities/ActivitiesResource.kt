@@ -30,10 +30,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
     description = "Creates a new activity and associated pay rates. Requires role NOMIS_ACTIVITIES",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreateActivityRequest::class)
-        )
+        Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityRequest::class))
       ]
     ),
     responses = [
@@ -41,40 +38,28 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
         responseCode = "201",
         description = "Activity information with created sequence",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CreateActivityResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "400",
         description = "Prison, location, program service or iep value do not exist",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires role NOMIS_ACTIVITIES",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
     ]
@@ -91,10 +76,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
     description = "Updates an activity and associated pay rates. Requires role NOMIS_ACTIVITIES",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = UpdateActivityRequest::class)
-        )
+        Content(mediaType = "application/json", schema = Schema(implementation = UpdateActivityRequest::class))
       ]
     ),
     responses = [
@@ -102,50 +84,35 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
         responseCode = "200",
         description = "Activity information",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = UpdateActivityResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = UpdateActivityResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "400",
         description = "Prison, location, program service or iep value do not exist",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires role NOMIS_ACTIVITIES",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "404",
         description = "Activity Not Found",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
     ]
@@ -182,42 +149,35 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Booking does not exist",
+        description = """One or more of the following is true:<ul>
+        <li>the course activity or booking id do not exist,</li>
+        <li>the prisoner is already allocated,</li>
+        <li>the course is held at a different prison to the prisoner's location,</li>
+        <li>the pay band code does not exist for the given course activity.</li></ul>
+        """,
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires role NOMIS_ACTIVITIES",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
       ApiResponse(
         responseCode = "404",
         description = "Activity does not exist",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
       ),
     ]
