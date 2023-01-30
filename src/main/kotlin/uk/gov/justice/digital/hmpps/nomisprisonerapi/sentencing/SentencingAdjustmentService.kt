@@ -102,7 +102,7 @@ class SentencingAdjustmentService(
           adjustmentDate = request.adjustmentDate,
           adjustmentNumberOfDays = request.adjustmentDays,
           fromDate = request.adjustmentFromDate,
-          toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1),
+          toDate = request.adjustmentFromDate.plusDays(request.adjustmentDays - 1),
           comment = request.comment,
           active = request.active,
         )

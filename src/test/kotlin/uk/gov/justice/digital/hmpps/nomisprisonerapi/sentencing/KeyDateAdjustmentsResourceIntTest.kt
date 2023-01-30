@@ -161,7 +161,8 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """
                   {
-                    "adjustmentTypeCode": "LAL"
+                    "adjustmentTypeCode": "LAL",
+                    "adjustmentFromDate": "2023-01-01"
                   }
                 """
             )
@@ -182,7 +183,8 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
                   {
                     "adjustmentDays": 10,
-                    "adjustmentTypeCode": "BANANAS"
+                    "adjustmentTypeCode": "BANANAS",
+                    "adjustmentFromDate": "2023-01-01"
                   }
                 """
             )
@@ -203,7 +205,8 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
                   {
                     "adjustmentDays": 10,
-                    "adjustmentTypeCode": "RX"
+                    "adjustmentTypeCode": "RX",
+                    "adjustmentFromDate": "2023-01-01"
                   }
                 """
             )
@@ -223,7 +226,8 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """
                   {
-                    "adjustmentDays": 10
+                    "adjustmentDays": 10,
+                    "adjustmentFromDate": "2023-01-01"
                   }
                 """
             )
@@ -247,7 +251,8 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
                     {
                       "adjustmentDays": 10,
-                      "adjustmentTypeCode": "LAL"
+                      "adjustmentTypeCode": "LAL",
+                      "adjustmentFromDate": "2023-01-01"
                     }
                   """
             )
@@ -267,8 +272,8 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentType.description").isEqualTo("Lawfully at Large")
           .jsonPath("adjustmentDays").isEqualTo(10)
           .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
-          .jsonPath("adjustmentFromDate").doesNotExist()
-          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-01-10")
           .jsonPath("comment").doesNotExist()
           .jsonPath("active").isEqualTo(true)
       }
@@ -322,7 +327,8 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
     fun createBasicKeyDateAdjustmentRequest() = """
       {
         "adjustmentDays": 10,
-        "adjustmentTypeCode": "ADA"
+        "adjustmentTypeCode": "ADA",
+        "adjustmentFromDate": "2023-01-01"
       }
     """.trimIndent()
   }
