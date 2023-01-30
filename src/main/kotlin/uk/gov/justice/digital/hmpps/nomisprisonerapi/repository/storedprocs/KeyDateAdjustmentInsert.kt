@@ -15,8 +15,8 @@ class KeyDateAdjustmentInsert(dataSource: DataSource) : SimpleJdbcCall(dataSourc
       .withoutProcedureColumnMetaDataAccess()
       .withNamedBinding()
       .declareParameters(
-        SqlParameter("p_key_date_id", Types.NUMERIC),
-        SqlParameter("p_off_book_id", Types.NUMERIC)
+        SqlParameter("p_offbook_id", Types.NUMERIC),
+        SqlParameter("p_key_date_id", Types.NUMERIC)
       )
     compile()
   }
