@@ -205,7 +205,7 @@ class ActivitiesService(
       when {
         existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
-        existingPayRate.rateIsChangeButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
+        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
         existingPayRate.rateIsChanged(requestedPayRate) -> {
           newPayRates.add(existingPayRate.expire())
           newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
@@ -221,7 +221,7 @@ class ActivitiesService(
 
   private fun MutableList<CourseActivityPayRate>.findExistingPayRate(requested: PayRateRequest) =
     firstOrNull { existing ->
-      !existing.isExpired() &&
+      !existing.hasExpiryDate() &&
         requested.payBand == existing.payBandCode &&
         requested.incentiveLevel == existing.iepLevelCode
     }
@@ -229,36 +229,37 @@ class ActivitiesService(
   private fun CourseActivityPayRate.rateIsUnchanged(requested: PayRateRequest) =
     this.halfDayRate.compareTo(requested.rate) == 0
 
-  private fun CourseActivityPayRate.rateIsChangeButNotYetActive(requested: PayRateRequest) =
-    this.rateIsChanged(requested) && this.isNotYetActive()
+  private fun CourseActivityPayRate.rateIsChangedButNotYetActive(requested: PayRateRequest) =
+    this.rateIsChanged(requested) && this.hasFutureStartDate()
 
   private fun CourseActivityPayRate.rateIsChanged(requested: PayRateRequest) =
     this.halfDayRate.compareTo(requested.rate) != 0
 
   private fun MutableList<CourseActivityPayRate>.containsRate(newPayRate: CourseActivityPayRate) =
     this.firstOrNull { existing ->
-      !existing.isExpired() &&
+      !existing.hasExpiryDate() &&
         existing.payBandCode == newPayRate.payBandCode &&
         existing.iepLevelCode == newPayRate.iepLevelCode
     } != null
 
-  private fun MutableList<CourseActivityPayRate>.getExpiredPayRates() = this.filter { it.isExpired() }
+  private fun MutableList<CourseActivityPayRate>.getExpiredPayRates() = this.filter { it.hasExpiryDate() }
 
   private fun MutableList<CourseActivityPayRate>.expirePayRatesIfMissingFrom(newPayRates: MutableList<CourseActivityPayRate>) =
-    this.filter { old -> !old.isExpired() }
-      .filter { old -> !old.isNotYetActive() } // ignore future rates not included in update - so they are deleted
+    this.filter { old -> !old.hasExpiryDate() }
+      .filter { old -> !old.hasFutureStartDate() } // ignore future rates not included in updates - so they are deleted
       .filter { old -> !newPayRates.containsRate(old) }
       .map { old -> old.expire() }
 
   private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity): CourseActivityPayRate {
     // calculate start date - usually today unless the old rate expires at the end of today
+    val today = LocalDate.now()
     val startDate = courseActivity.payRates
       .filter { it.iepLevelCode == incentiveLevel && it.payBandCode == payBand }
       .takeIf { it.isNotEmpty() }
       ?.maxBy { it.startDate }
       ?.endDate
-      ?.let { if (it < LocalDate.now()) LocalDate.now() else it.plusDays(1) }
-      ?: LocalDate.now()
+      ?.let { if (it < today) today else it.plusDays(1) }
+      ?: today
 
     return CourseActivityPayRate(
       courseActivity,
