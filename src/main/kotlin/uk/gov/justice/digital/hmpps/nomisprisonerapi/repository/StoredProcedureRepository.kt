@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyD
 interface StoredProcedureRepository {
   fun postKeyDateAdjustmentCreation(
     keyDateAdjustmentId: Long,
-    offBookId: Long
+    bookingId: Long
   )
 }
 
@@ -20,11 +20,11 @@ class StoredProcedureRepositoryOracle(private val keyDateAdjustmentProcedure: Ke
 
   override fun postKeyDateAdjustmentCreation(
     keyDateAdjustmentId: Long,
-    offBookId: Long
+    bookingId: Long
   ) {
     val params = MapSqlParameterSource()
+      .addValue("p_offbook_id", bookingId)
       .addValue("p_key_date_id", keyDateAdjustmentId)
-      .addValue("p_off_book_id", offBookId)
     keyDateAdjustmentProcedure.execute(params)
   }
 }
@@ -39,7 +39,7 @@ class StoredProcedureRepositoryH2() : StoredProcedureRepository {
 
   override fun postKeyDateAdjustmentCreation(
     keyDateAdjustmentId: Long,
-    offBookId: Long
+    bookingId: Long
   ) {
     log.info("calling H2 version of StoreProcedure repo")
   }

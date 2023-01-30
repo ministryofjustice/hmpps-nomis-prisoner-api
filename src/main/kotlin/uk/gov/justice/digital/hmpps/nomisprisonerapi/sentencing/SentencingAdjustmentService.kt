@@ -109,7 +109,7 @@ class SentencingAdjustmentService(
       )
       entityManager.flush()
       CreateAdjustmentResponse(it.keyDateAdjustments.last().id).also { createAdjustmentResponse ->
-        storedProcedureRepository.postKeyDateAdjustmentCreation(keyDateAdjustmentId = createAdjustmentResponse.id, offBookId = bookingId)
+        storedProcedureRepository.postKeyDateAdjustmentCreation(keyDateAdjustmentId = createAdjustmentResponse.id, bookingId = bookingId)
       }
     } ?: throw NotFoundException("Booking $bookingId not found")
 }
