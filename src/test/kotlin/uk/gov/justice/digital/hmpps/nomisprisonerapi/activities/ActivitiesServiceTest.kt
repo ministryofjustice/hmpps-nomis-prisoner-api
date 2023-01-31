@@ -19,11 +19,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
@@ -49,7 +51,7 @@ private const val offenderBookingId = -9L
 private const val offenderNo = "A1234AA"
 private const val prisonDescription = "Leeds"
 private const val offenderProgramReferenceId = 12345L
-
+private const val payBandCode = "5"
 internal class ActivitiesServiceTest {
 
   private val activityRepository: ActivityRepository = mock()
@@ -59,6 +61,7 @@ internal class ActivitiesServiceTest {
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
+  private val payBandRepository: ReferenceCodeRepository<PayBand> = mock()
   private val programServiceEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason> = mock()
   private val telemetryClient: TelemetryClient = mock()
 
@@ -70,6 +73,7 @@ internal class ActivitiesServiceTest {
     availablePrisonIepLevelRepository,
     offenderBookingRepository,
     offenderProgramProfileRepository,
+    payBandRepository,
     programServiceEndReasonRepository,
     telemetryClient,
   )
@@ -89,6 +93,8 @@ internal class ActivitiesServiceTest {
   )
 
   fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
+
+  fun defaultPayBand(code: String) = PayBand(code, "Pay band $code")
 
   @BeforeEach
   fun setup() {
@@ -135,6 +141,7 @@ internal class ActivitiesServiceTest {
         returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
         returnedCourseActivity
       }
+      whenever(payBandRepository.findById(PayBand.pk(payBandCode))).thenReturn(Optional.of(defaultPayBand(payBandCode)))
     }
 
     private var returnedCourseActivity: CourseActivity? = null
@@ -164,9 +171,9 @@ internal class ActivitiesServiceTest {
       )
 
       val rate = returnedCourseActivity?.payRates?.first()
-      assertThat(rate?.iepLevelCode).isEqualTo("BASIC")
-      assertThat(rate?.payBandCode).isEqualTo("5")
-      assertThat(rate?.startDate).isEqualTo(LocalDate.parse("2022-10-31"))
+      assertThat(rate?.id?.iepLevelCode).isEqualTo("BASIC")
+      assertThat(rate?.id?.payBandCode).isEqualTo("5")
+      assertThat(rate?.id?.startDate).isEqualTo(LocalDate.parse("2022-10-31"))
       assertThat(rate?.endDate).isEqualTo(LocalDate.parse("2022-11-30"))
       assertThat(rate?.halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal("0.001")))
     }
@@ -244,11 +251,15 @@ internal class ActivitiesServiceTest {
     ).apply {
       payRates.add(
         CourseActivityPayRate(
-          courseActivity = this, startDate = LocalDate.parse("2022-11-01"),
+          id = CourseActivityPayRateId(
+            courseActivity = this,
+            startDate = LocalDate.parse("2022-11-01"),
+            payBandCode = payBandCode,
+            iepLevelCode = "ENH"
+          ),
+          payBand = defaultPayBand(payBandCode),
           endDate = LocalDate.parse("2022-11-03"),
-          payBandCode = "3",
           halfDayRate = BigDecimal("0.50"),
-          iepLevelCode = "ENH"
         )
       )
     }
@@ -256,7 +267,7 @@ internal class ActivitiesServiceTest {
       bookingId = offenderBookingId,
       startDate = LocalDate.parse("2022-10-31"),
       endDate = LocalDate.parse("2022-11-30"),
-      payBandCode = "3",
+      payBandCode = payBandCode,
     )
 
     @BeforeEach
@@ -271,6 +282,8 @@ internal class ActivitiesServiceTest {
       whenever(offenderProgramProfileRepository.save(any())).thenAnswer {
         (it.arguments[0] as OffenderProgramProfile).copy(offenderProgramReferenceId = offenderProgramReferenceId)
       }
+
+      whenever(payBandRepository.findById(PayBand.pk(payBandCode))).thenReturn(Optional.of(defaultPayBand(payBandCode)))
     }
 
     @Test
@@ -294,7 +307,7 @@ internal class ActivitiesServiceTest {
               assertThat(offenderProgramProfile).isSameAs(this@outer)
               assertThat(startDate).isSameAs(this@outer.startDate)
               assertThat(endDate).isSameAs(this@outer.endDate)
-              assertThat(payBandCode).isEqualTo("3")
+              assertThat(payBand.code).isEqualTo(payBandCode)
             }
           }
         }
@@ -326,7 +339,18 @@ internal class ActivitiesServiceTest {
       val thrown = assertThrows<BadDataException>() {
         activitiesService.createOffenderProgramProfile(courseActivityId, createRequest.copy(payBandCode = "doesnotexist"))
       }
-      assertThat(thrown.message).isEqualTo("Pay band code doesnotexist does not exist for course activity with id=$courseActivityId")
+      assertThat(thrown.message).isEqualTo("Pay band code doesnotexist does not exist")
+    }
+
+    @Test
+    fun invalidPayBandCodeForCourse() {
+      // We are testing that the pay band is not available for the course, not that the pay band does not exist at all
+      whenever(payBandRepository.findById(PayBand.pk("not_on_course"))).thenReturn(Optional.of(defaultPayBand("not_on_course")))
+
+      val thrown = assertThrows<BadDataException>() {
+        activitiesService.createOffenderProgramProfile(courseActivityId, createRequest.copy(payBandCode = "not_on_course"))
+      }
+      assertThat(thrown.message).isEqualTo("Pay band code not_on_course does not exist for course activity with id=$courseActivityId")
     }
   }
 }

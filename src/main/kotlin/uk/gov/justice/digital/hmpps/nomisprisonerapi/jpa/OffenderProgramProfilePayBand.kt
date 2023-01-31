@@ -8,6 +8,9 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import java.time.LocalDate
 
 @Entity
@@ -24,8 +27,18 @@ data class OffenderProgramProfilePayBand(
 
   val endDate: LocalDate? = null,
 
-  @Column(nullable = false)
-  val payBandCode: String,
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + PayBand.PAY_BAND + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true))
+    ]
+  )
+  val payBand: PayBand,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -38,6 +51,6 @@ data class OffenderProgramProfilePayBand(
   override fun hashCode(): Int = javaClass.hashCode()
 
   override fun toString(): String {
-    return "OffenderProgramProfilePayBands(offenderProgramProfile=$offenderProgramProfile, startDate=$startDate, endDate=$endDate, payBandCode='$payBandCode')"
+    return "OffenderProgramProfilePayBands(offenderProgramProfile=$offenderProgramProfile, startDate=$startDate, endDate=$endDate, payBandCode='$payBand')"
   }
 }
