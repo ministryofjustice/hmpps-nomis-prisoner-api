@@ -285,7 +285,10 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(prisonIdJson = null),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("prisonId") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("prisonId")
+            assertThat(it).contains("NULL")
+          }
       }
 
       @Test
@@ -295,7 +298,9 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(capacityJson = """"capacity": "NOT_A_NUMBER","""),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("capacity") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("NOT_A_NUMBER")
+          }
       }
 
       @Test
@@ -305,7 +310,9 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(startDateJson = """"startDate": "2022-11-35","""),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("startDate") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("2022-11-35")
+          }
       }
 
       @Test
@@ -317,23 +324,48 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
               "payRates" : [ {
                   "incentiveLevel" : "BAS",
                   "payBand" : "5",
-                  "rate" : 'NOT_A_NUMBER"
+                  "rate" : "NOT_A_NUMBER"
                   } ]
             """.trimIndent()
           ),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("rate") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("NOT_A_NUMBER")
+          }
+      }
+
+      @Test
+      fun `should return bad request for invalid pay band`() {
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """
+              "payRates" : [ {
+                  "incentiveLevel" : "BAS",
+                  "payBand" : "99",
+                  "rate" : "1.2"
+                  } ]
+            """.trimIndent()
+          ),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Pay band code 99 does not exist")
+          }
       }
 
       @Test
       fun `should return bad request for missing pay rates`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(payRatesJson = null),
+          jsonBody = updateActivityRequestJson(payRatesJson = null, internalLocationJson = """"internalLocationId" : -27"""),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("payRates") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("payRates")
+            assertThat(it).contains("NULL")
+          }
       }
 
       @Test
