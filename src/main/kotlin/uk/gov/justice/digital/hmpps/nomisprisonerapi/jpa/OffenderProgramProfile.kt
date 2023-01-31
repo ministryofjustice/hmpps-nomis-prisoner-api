@@ -12,6 +12,11 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 
 @Entity
@@ -46,10 +51,27 @@ data class OffenderProgramProfile(
   val prison: AgencyLocation? = null,
 
   @Column(name = "OFFENDER_END_DATE")
-  val endDate: LocalDate? = null,
+  var endDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf(),
+
+  @ManyToOne
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + ProgramServiceEndReason.END_REASON + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_END_REASON", referencedColumnName = "code"))
+    ]
+  )
+  var endReason: ProgramServiceEndReason? = null,
+
+  @Column(name = "OFFENDER_END_COMMENT_TEXT")
+  var endComment: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

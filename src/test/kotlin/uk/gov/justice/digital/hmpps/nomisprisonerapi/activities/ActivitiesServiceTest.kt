@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePri
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -57,6 +59,7 @@ internal class ActivitiesServiceTest {
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
+  private val programServiceEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason> = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val activitiesService = ActivitiesService(
@@ -67,6 +70,7 @@ internal class ActivitiesServiceTest {
     availablePrisonIepLevelRepository,
     offenderBookingRepository,
     offenderProgramProfileRepository,
+    programServiceEndReasonRepository,
     telemetryClient,
   )
 
@@ -272,7 +276,7 @@ internal class ActivitiesServiceTest {
     @Test
     fun `Data is mapped correctly`() {
       assertThat(activitiesService.createOffenderProgramProfile(courseActivityId, createRequest))
-        .isEqualTo(CreateOffenderProgramProfileResponse(offenderProgramReferenceId))
+        .isEqualTo(OffenderProgramProfileResponse(offenderProgramReferenceId))
 
       verify(offenderProgramProfileRepository).save(
         check {

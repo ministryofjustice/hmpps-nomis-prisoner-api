@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePri
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
 @Service
@@ -31,6 +33,7 @@ class ActivitiesService(
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
+  private val programServiceEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -55,7 +58,7 @@ class ActivitiesService(
   fun createOffenderProgramProfile(
     courseActivityId: Long,
     dto: CreateOffenderProgramProfileRequest
-  ): CreateOffenderProgramProfileResponse =
+  ): OffenderProgramProfileResponse =
 
     offenderProgramProfileRepository.save(mapOffenderProgramProfileModel(courseActivityId, dto)).run {
 
@@ -70,8 +73,54 @@ class ActivitiesService(
       )
       log.debug("OffenderProgramProfile created with Nomis id = $offenderProgramReferenceId")
 
-      CreateOffenderProgramProfileResponse(offenderProgramReferenceId)
+      OffenderProgramProfileResponse(offenderProgramReferenceId)
     }
+
+  fun endOffenderProgramProfile(
+    courseActivityId: Long,
+    bookingId: Long,
+    dto: EndOffenderProgramProfileRequest
+  ): OffenderProgramProfileResponse =
+
+    offenderProgramProfileRepository.findByCourseActivityIdAndOffenderBookingIdAndAlloc(courseActivityId, bookingId)
+      ?.run {
+
+        dto.endReason?.also {
+          programServiceEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(it))?.also {
+            this.endReason = it
+          }
+            ?: throw BadDataException("End reason code=${dto.endReason} is invalid")
+        }
+        endDate = dto.endDate
+        endComment = dto.endComment
+
+        telemetryClient.trackEvent(
+          "offender-program-profile-ended",
+          mapOf(
+            "id" to offenderProgramReferenceId.toString(),
+            "courseActivityId" to courseActivity?.courseActivityId.toString(),
+            "bookingId" to offenderBooking.bookingId.toString(),
+          ),
+          null
+        )
+        log.debug("OffenderProgramProfile with Nomis id = $offenderProgramReferenceId set as ended")
+
+        OffenderProgramProfileResponse(offenderProgramReferenceId)
+      }
+
+      ?: throwError(courseActivityId, bookingId)
+
+  private fun throwError(
+    courseActivityId: Long,
+    bookingId: Long
+  ): OffenderProgramProfileResponse {
+
+    activityRepository.findByIdOrNull(courseActivityId)
+      ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
+    offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Booking with id=$bookingId does not exist")
+    throw BadDataException("Offender Program Profile with courseActivityId=$courseActivityId and bookingId=$bookingId and status=ALLOC does not exist")
+  }
 
   private fun mapActivityModel(dto: CreateActivityRequest): CourseActivity {
 
@@ -205,7 +254,9 @@ class ActivitiesService(
       when {
         existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
-        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
+        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(
+          existingPayRate.apply { halfDayRate = requestedPayRate.rate }
+        ) // e.g. rate adjusted twice in same day
         existingPayRate.rateIsChanged(requestedPayRate) -> {
           newPayRates.add(existingPayRate.expire())
           newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
