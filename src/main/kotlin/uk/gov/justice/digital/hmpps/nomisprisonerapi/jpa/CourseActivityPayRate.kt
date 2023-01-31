@@ -1,38 +1,58 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
-import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import java.io.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 
-@Entity
-@Table(name = "COURSE_ACTIVITY_PAY_RATES")
-data class CourseActivityPayRate(
+@Embeddable
+data class CourseActivityPayRateId(
 
-  @Id
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID", nullable = false)
   val courseActivity: CourseActivity,
 
-  @Id
   @Column(name = "IEP_LEVEL", nullable = false)
   val iepLevelCode: String,
 
-  @Id
-  @Column(nullable = false)
+  @Column(name = "PAY_BAND_CODE", nullable = false)
   val payBandCode: String,
 
-  @Id
   @Column(nullable = false)
   val startDate: LocalDate,
+) : Serializable
+
+@Entity
+@Table(name = "COURSE_ACTIVITY_PAY_RATES")
+data class CourseActivityPayRate(
+
+  @EmbeddedId
+  val id: CourseActivityPayRateId,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + PayBand.PAY_BAND + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true, updatable = false, insertable = false))
+    ]
+  )
+  val payBand: PayBand,
 
   @Column
   var endDate: LocalDate? = null,
@@ -46,19 +66,16 @@ data class CourseActivityPayRate(
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as CourseActivityPayRate
 
-    return courseActivity.courseActivityId == other.courseActivity.courseActivityId &&
-      iepLevelCode == other.iepLevelCode &&
-      payBandCode == other.payBandCode &&
-      startDate == other.startDate
+    return id == other.id
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
   override fun toString(): String =
-    "CourseActivityPayRate(courseActivity=$courseActivity, iepLevel=$iepLevelCode, payBandCode=$payBandCode, startDate=$startDate)"
+    "CourseActivityPayRate(courseActivityId=${id.courseActivity.courseActivityId}, iepLevel=${id.iepLevelCode}, payBandCode=${id.payBandCode}, startDate=${id.startDate})"
 
   fun hasExpiryDate(): Boolean = endDate != null
   fun expire(): CourseActivityPayRate = this.apply { endDate = LocalDate.now() }
-  fun hasFutureStartDate(): Boolean = startDate > LocalDate.now()
+  fun hasFutureStartDate(): Boolean = id.startDate > LocalDate.now()
 
   companion object {
     fun preciseHalfDayRate(halfDayRate: BigDecimal): BigDecimal = halfDayRate.setScale(3, RoundingMode.HALF_UP)
