@@ -14,7 +14,7 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
@@ -63,6 +63,9 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
+
+  @Autowired
+  lateinit var courseActivityPayRateBuilderFactory: CourseActivityPayRateBuilderFactory
 
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
@@ -282,7 +285,10 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(prisonIdJson = null),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("prisonId") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("prisonId")
+            assertThat(it).contains("NULL")
+          }
       }
 
       @Test
@@ -292,7 +298,9 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(capacityJson = """"capacity": "NOT_A_NUMBER","""),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("capacity") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("NOT_A_NUMBER")
+          }
       }
 
       @Test
@@ -302,7 +310,9 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(startDateJson = """"startDate": "2022-11-35","""),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("startDate") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("2022-11-35")
+          }
       }
 
       @Test
@@ -314,23 +324,48 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
               "payRates" : [ {
                   "incentiveLevel" : "BAS",
                   "payBand" : "5",
-                  "rate" : 'NOT_A_NUMBER"
+                  "rate" : "NOT_A_NUMBER"
                   } ]
             """.trimIndent()
           ),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("rate") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("NOT_A_NUMBER")
+          }
+      }
+
+      @Test
+      fun `should return bad request for invalid pay band`() {
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """
+              "payRates" : [ {
+                  "incentiveLevel" : "BAS",
+                  "payBand" : "99",
+                  "rate" : "1.2"
+                  } ]
+            """.trimIndent()
+          ),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Pay band code 99 does not exist")
+          }
       }
 
       @Test
       fun `should return bad request for missing pay rates`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(payRatesJson = null),
+          jsonBody = updateActivityRequestJson(payRatesJson = null, internalLocationJson = """"internalLocationId" : -27"""),
         )
           .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> { it.contains("payRates") }
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("payRates")
+            assertThat(it).contains("NULL")
+          }
       }
 
       @Test
@@ -365,8 +400,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         val updatedRates = repository.lookupActivity(existingActivityId).payRates
         assertThat(updatedRates.size).isEqualTo(1)
         with(updatedRates.first()) {
-          assertThat(iepLevelCode).isEqualTo("STD")
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.iepLevelCode).isEqualTo("STD")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
         }
       }
@@ -389,15 +424,15 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(updatedRates.size).isEqualTo(2)
         // existing rate unchanged
         with(updatedRates[0]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isNull()
         }
         // new rate added
         with(updatedRates[1]) {
-          assertThat(payBandCode).isEqualTo("6")
+          assertThat(id.payBandCode).isEqualTo("6")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.4), within(BigDecimal(0.001)))
-          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(id.startDate).isEqualTo(LocalDate.now())
           assertThat(endDate).isNull()
         }
       }
@@ -419,15 +454,15 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(updatedRates.size).isEqualTo(2)
         // old rate has been expired
         with(updatedRates[0]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now())
         }
         // new rate created from tomorrow
         with(updatedRates[1]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(4.3), within(BigDecimal(0.001)))
-          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(id.startDate).isEqualTo(LocalDate.now().plusDays(1))
           assertThat(endDate).isNull()
         }
       }
@@ -437,7 +472,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         val existingActivity = repository.save(
           courseActivityBuilderFactory.builder(
             payRates = listOf(
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
                 startDate = LocalDate.now().minusDays(10).toString(),
@@ -460,15 +495,15 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(updatedRates.size).isEqualTo(2)
         // old rate not changed
         with(updatedRates[0]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now().minusDays(3))
         }
         // new rate created from today
         with(updatedRates[1]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(4.3), within(BigDecimal(0.001)))
-          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(id.startDate).isEqualTo(LocalDate.now())
           assertThat(endDate).isNull()
         }
       }
@@ -479,7 +514,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           courseActivityBuilderFactory.builder(
             payRates = listOf(
               // old rate expires today
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
                 startDate = LocalDate.now().minusDays(1).toString(),
@@ -487,7 +522,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
                 halfDayRate = BigDecimal(3.2)
               ),
               // new rate becomes effective tomorrow
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
                 startDate = LocalDate.now().plusDays(1).toString(),
@@ -510,15 +545,15 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(updatedRates.size).isEqualTo(2)
         // old rate still expired
         with(updatedRates[0]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now())
         }
         // new rate with adjusted half day rate is still effective from tomorrow
         with(updatedRates[1]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(5.4), within(BigDecimal(0.001)))
-          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(id.startDate).isEqualTo(LocalDate.now().plusDays(1))
           assertThat(endDate).isNull()
         }
       }
@@ -528,14 +563,14 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         val existingActivity = repository.save(
           courseActivityBuilderFactory.builder(
             payRates = listOf(
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
                 startDate = LocalDate.now().minusDays(1).toString(),
                 endDate = LocalDate.now().toString(),
                 halfDayRate = BigDecimal(3.2)
               ),
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
                 startDate = LocalDate.now().plusDays(1).toString(),
@@ -557,7 +592,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(updatedRates.size).isEqualTo(1)
         // old rate still expired
         with(updatedRates[0]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now())
         }
@@ -581,15 +616,15 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(updatedRates.size).isEqualTo(2)
         // missing rate for pay band 5 has been expired
         with(updatedRates[0]) {
-          assertThat(payBandCode).isEqualTo("5")
+          assertThat(id.payBandCode).isEqualTo("5")
           assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
           assertThat(endDate).isEqualTo(LocalDate.now())
         }
         // new rate for pay band 6 effective from today
         with(updatedRates[1]) {
-          assertThat(payBandCode).isEqualTo("6")
+          assertThat(id.payBandCode).isEqualTo("6")
           assertThat(halfDayRate).isCloseTo(BigDecimal(6.5), within(BigDecimal(0.001)))
-          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(id.startDate).isEqualTo(LocalDate.now())
           assertThat(endDate).isNull()
         }
       }
@@ -600,7 +635,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           courseActivityBuilderFactory.builder(
             payRates = listOf(
               // rate is expired
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
                 startDate = LocalDate.now().minusDays(1).toString(),
@@ -608,14 +643,14 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
                 halfDayRate = BigDecimal(3.2)
               ),
               // new rate active from tomorrow
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "5",
                 startDate = LocalDate.now().plusDays(1).toString(),
                 halfDayRate = BigDecimal(4.3)
               ),
               // rate expires today
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "6",
                 startDate = LocalDate.now().minusDays(1).toString(),
@@ -623,7 +658,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
                 halfDayRate = BigDecimal(5.3)
               ),
               // rate currently active
-              CourseActivityPayRateBuilder(
+              courseActivityPayRateBuilderFactory.builder(
                 iepLevelCode = "STD",
                 payBandCode = "7",
                 startDate = LocalDate.now().minusDays(1).toString(),
@@ -652,7 +687,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         // new rate for pay band 5 has been updated
         with(updatedRates.findRate("STD", "5", expired = false)) {
           assertThat(halfDayRate).isCloseTo(BigDecimal(4.4), within(BigDecimal(0.001)))
-          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(id.startDate).isEqualTo(LocalDate.now().plusDays(1))
         }
         // old rate for pay band 6 is still expired
         with(updatedRates.findRate("STD", "6", expired = true)) {
@@ -662,7 +697,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         // new rate for pay band 6 applicable from tomorrow
         with(updatedRates.findRate("STD", "6", expired = false)) {
           assertThat(halfDayRate).isCloseTo(BigDecimal(5.4), within(BigDecimal(0.001)))
-          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(id.startDate).isEqualTo(LocalDate.now().plusDays(1))
         }
         // old rate for pay band 7 has been expired
         with(updatedRates.findRate("STD", "7", expired = true)) {
@@ -692,7 +727,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       payBandCode: String,
       expired: Boolean
     ): CourseActivityPayRate =
-      firstOrNull { it.iepLevelCode == iepLevelCode && it.payBandCode == payBandCode && if (expired) it.endDate != null else it.endDate == null }!!
+      firstOrNull { it.id.iepLevelCode == iepLevelCode && it.id.payBandCode == payBandCode && if (expired) it.endDate != null else it.endDate == null }!!
   }
 
   @Nested
@@ -844,7 +879,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(payBand.offenderProgramProfile.offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
         assertThat(payBand.startDate).isEqualTo(startDate)
         assertThat(payBand.endDate).isEqualTo(endDate)
-        assertThat(payBand.payBandCode).isEqualTo("5")
+        assertThat(payBand.payBand.code).isEqualTo("5")
       }
     }
 

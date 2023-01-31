@@ -9,8 +9,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -19,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePri
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
 @Service
@@ -31,6 +34,7 @@ class ActivitiesService(
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
+  private val payBandRepository: ReferenceCodeRepository<PayBand>,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -114,11 +118,17 @@ class ActivitiesService(
       )
         ?: throw BadDataException("IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
 
+      val payBand = payBandRepository.findByIdOrNull(PayBand.pk(rate.payBand))
+        ?: throw BadDataException("Pay band code ${rate.payBand} does not exist")
+
       return@map CourseActivityPayRate(
-        courseActivity = courseActivity,
-        iepLevelCode = availablePrisonIepLevel.iepLevel.code,
-        payBandCode = rate.payBand,
-        startDate = dto.startDate,
+        id = CourseActivityPayRateId(
+          courseActivity = courseActivity,
+          iepLevelCode = availablePrisonIepLevel.iepLevel.code,
+          payBandCode = payBand.code,
+          startDate = dto.startDate,
+        ),
+        payBand = payBand,
         endDate = dto.endDate,
         halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate.rate),
       )
@@ -136,6 +146,9 @@ class ActivitiesService(
     val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)
       ?: throw BadDataException("Booking with id=${dto.bookingId} does not exist")
 
+    val payBand = payBandRepository.findByIdOrNull(PayBand.pk(dto.payBandCode))
+      ?: throw BadDataException("Pay band code ${dto.payBandCode} does not exist")
+
     offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, offenderBooking)?.run {
       throw BadDataException("Offender Program Profile with courseActivityId=$courseActivityId and bookingId=${dto.bookingId} already exists")
     }
@@ -148,8 +161,8 @@ class ActivitiesService(
       throw BadDataException("Course activity with id=$courseActivityId has expired")
     }
 
-    if (courseActivity.payRates.find { it.payBandCode == dto.payBandCode } == null) {
-      throw BadDataException("Pay band code ${dto.payBandCode} does not exist for course activity with id=$courseActivityId")
+    if (courseActivity.payRates.find { it.payBand == payBand } == null) {
+      throw BadDataException("Pay band code ${payBand.code} does not exist for course activity with id=$courseActivityId")
     }
 
     return OffenderProgramProfile(
@@ -165,8 +178,8 @@ class ActivitiesService(
         OffenderProgramProfilePayBand(
           offenderProgramProfile = this,
           startDate = dto.startDate,
+          payBand = payBand,
           endDate = dto.endDate,
-          payBandCode = dto.payBandCode,
         )
       )
     }
@@ -222,8 +235,8 @@ class ActivitiesService(
   private fun MutableList<CourseActivityPayRate>.findExistingPayRate(requested: PayRateRequest) =
     firstOrNull { existing ->
       !existing.hasExpiryDate() &&
-        requested.payBand == existing.payBandCode &&
-        requested.incentiveLevel == existing.iepLevelCode
+        requested.payBand == existing.id.payBandCode &&
+        requested.incentiveLevel == existing.id.iepLevelCode
     }
 
   private fun CourseActivityPayRate.rateIsUnchanged(requested: PayRateRequest) =
@@ -238,8 +251,8 @@ class ActivitiesService(
   private fun MutableList<CourseActivityPayRate>.containsRate(newPayRate: CourseActivityPayRate) =
     this.firstOrNull { existing ->
       !existing.hasExpiryDate() &&
-        existing.payBandCode == newPayRate.payBandCode &&
-        existing.iepLevelCode == newPayRate.iepLevelCode
+        existing.id.payBandCode == newPayRate.id.payBandCode &&
+        existing.id.iepLevelCode == newPayRate.id.iepLevelCode
     } != null
 
   private fun MutableList<CourseActivityPayRate>.getExpiredPayRates() = this.filter { it.hasExpiryDate() }
@@ -251,23 +264,29 @@ class ActivitiesService(
       .map { old -> old.expire() }
 
   private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity): CourseActivityPayRate {
+    val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
+      ?: throw BadDataException("Pay band code $payBand does not exist")
+
     // calculate start date - usually today unless the old rate expires at the end of today
     val today = LocalDate.now()
     val startDate = courseActivity.payRates
-      .filter { it.iepLevelCode == incentiveLevel && it.payBandCode == payBand }
+      .filter { it.id.iepLevelCode == incentiveLevel && it.payBand == payBand }
       .takeIf { it.isNotEmpty() }
-      ?.maxBy { it.startDate }
+      ?.maxBy { it.id.startDate }
       ?.endDate
       ?.let { if (it < today) today else it.plusDays(1) }
       ?: today
 
     return CourseActivityPayRate(
-      courseActivity,
-      incentiveLevel,
-      payBand,
-      startDate,
-      null,
-      CourseActivityPayRate.preciseHalfDayRate(rate)
+      id = CourseActivityPayRateId(
+        courseActivity,
+        incentiveLevel,
+        payBand.code,
+        startDate,
+      ),
+      payBand = payBand,
+      endDate = null,
+      halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate)
     )
   }
 }

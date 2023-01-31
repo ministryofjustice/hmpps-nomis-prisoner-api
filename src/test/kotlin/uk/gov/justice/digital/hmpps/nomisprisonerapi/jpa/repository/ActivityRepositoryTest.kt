@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServ
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import java.math.BigDecimal
@@ -46,6 +47,8 @@ class ActivityRepositoryTest {
 
     val seedIep = builderRepository.lookupIepLevel("STD")
 
+    val seedPayBand = builderRepository.lookupPayBandCode("4")
+
     activityRepository.saveAndFlush(
       CourseActivity(
         code = "CA",
@@ -64,10 +67,13 @@ class ActivityRepositoryTest {
     ).apply {
       payRates.add(
         CourseActivityPayRate(
-          courseActivity = this,
-          iepLevelCode = seedIep.code,
-          payBandCode = "4",
-          startDate = LocalDate.parse("2022-12-01"),
+          id = CourseActivityPayRateId(
+            courseActivity = this,
+            iepLevelCode = seedIep.code,
+            payBandCode = seedPayBand.code,
+            startDate = LocalDate.parse("2022-12-01"),
+          ),
+          payBand = seedPayBand,
           endDate = LocalDate.parse("2022-12-02"),
           halfDayRate = BigDecimal(0.6),
         )
@@ -94,10 +100,10 @@ class ActivityRepositoryTest {
     assertThat(persistedRecord?.holiday).isFalse()
     assertThat(persistedRecord?.payPerSession).isEqualTo(PayPerSession.F)
     val rate = persistedRecord?.payRates?.first()
-    assertThat(rate?.courseActivity?.courseActivityId).isEqualTo(persistedRecord?.courseActivityId)
-    assertThat(rate?.iepLevelCode).isEqualTo("STD")
-    assertThat(rate?.payBandCode).isEqualTo("4")
-    assertThat(rate?.startDate).isEqualTo(LocalDate.parse("2022-12-01"))
+    assertThat(rate?.id?.courseActivity?.courseActivityId).isEqualTo(persistedRecord?.courseActivityId)
+    assertThat(rate?.id?.iepLevelCode).isEqualTo("STD")
+    assertThat(rate?.id?.payBandCode).isEqualTo("4")
+    assertThat(rate?.id?.startDate).isEqualTo(LocalDate.parse("2022-12-01"))
     assertThat(rate?.endDate).isEqualTo(LocalDate.parse("2022-12-02"))
     assertThat(rate?.halfDayRate).isEqualTo(BigDecimal(0.6))
   }

@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
@@ -63,6 +64,7 @@ class Repository(
   val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
   val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
   val offenderProgramProfileRepository: OffenderProgramProfileRepository,
+  val payBandRepository: ReferenceCodeRepository<PayBand>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -237,4 +239,6 @@ class Repository(
   fun save(courseActivityBuilder: CourseActivityBuilder): CourseActivity =
     courseActivityBuilder.build()
       .let { activityRepository.save(it) }
+
+  fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 }

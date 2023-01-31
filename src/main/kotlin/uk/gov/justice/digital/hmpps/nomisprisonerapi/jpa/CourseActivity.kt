@@ -89,7 +89,7 @@ data class CourseActivity(
   @Column
   val scheduleEndDate: LocalDate? = null,
 
-  @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+  @OneToMany(mappedBy = "id.courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val payRates: MutableList<CourseActivityPayRate> = mutableListOf(),
 
   @Column

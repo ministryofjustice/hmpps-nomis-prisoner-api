@@ -5,7 +5,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import java.time.LocalDate
 
 @Component
-class CourseActivityBuilderFactory(private val repository: Repository) {
+class CourseActivityBuilderFactory(
+  private val repository: Repository,
+  private val courseActivityPayRateBuilderFactory: CourseActivityPayRateBuilderFactory,
+) {
   fun builder(
     code: String = "CA",
     programId: Long = 20,
@@ -17,7 +20,7 @@ class CourseActivityBuilderFactory(private val repository: Repository) {
     endDate: String? = null,
     minimumIncentiveLevelCode: String = "STD",
     internalLocationId: Long = -8,
-    payRates: List<CourseActivityPayRateBuilder> = listOf(CourseActivityPayRateBuilder()),
+    payRates: List<CourseActivityPayRateBuilder> = listOf(courseActivityPayRateBuilderFactory.builder()),
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
       repository,
@@ -48,7 +51,7 @@ class CourseActivityBuilder(
   var endDate: String?,
   var minimumIncentiveLevelCode: String,
   var internalLocationId: Long,
-  var payRates: List<CourseActivityPayRateBuilder> = listOf(CourseActivityPayRateBuilder()),
+  var payRates: List<CourseActivityPayRateBuilder>,
 ) {
   fun build(): CourseActivity =
     CourseActivity(
