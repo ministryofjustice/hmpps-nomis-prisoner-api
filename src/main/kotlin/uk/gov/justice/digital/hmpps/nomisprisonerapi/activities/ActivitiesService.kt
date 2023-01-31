@@ -180,7 +180,6 @@ class ActivitiesService(
           startDate = dto.startDate,
           payBand = payBand,
           endDate = dto.endDate,
-          payBandCode = payBand.code,
         )
       )
     }

@@ -25,10 +25,6 @@ data class OffenderProgramProfilePayBand(
   @Column(nullable = false)
   val startDate: LocalDate,
 
-  @Id
-  @Column(name = "PAY_BAND_CODE", nullable = false)
-  val payBandCode: String,
-
   val endDate: LocalDate? = null,
 
   @ManyToOne
@@ -39,7 +35,7 @@ data class OffenderProgramProfilePayBand(
           value = "'" + PayBand.PAY_BAND + "'",
           referencedColumnName = "domain"
         )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true, updatable = false, insertable = false))
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true))
     ]
   )
   val payBand: PayBand,
