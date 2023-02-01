@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -63,6 +64,44 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     @PathVariable
     sentenceAdjustmentId: Long,
   ): SentenceAdjustmentResponse = sentencingAdjustmentService.getSentenceAdjustment(sentenceAdjustmentId)
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PutMapping("/sentence-adjustments/{sentenceAdjustmentId}")
+  @Operation(
+    summary = "Updates specific sentence adjustment. The related booking and sentence can not be changed",
+    description = "Requires role NOMIS_SENTENCING. Updates a sentence adjustment by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the sentence adjustment has been updated"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun updateSentenceAdjustment(
+    @Schema(description = "Sentence adjustment id", example = "12345", required = true)
+    @PathVariable
+    sentenceAdjustmentId: Long,
+    @RequestBody @Valid request: UpdateSentenceAdjustmentRequest
+  ): Unit = sentencingAdjustmentService.updateSentenceAdjustment(sentenceAdjustmentId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/booking-id/{bookingId}/sentences/{sentenceSequence}/adjustments")
@@ -276,7 +315,7 @@ data class SentencingAdjustmentType(
   val description: String,
 )
 
-@Schema(description = "Sentence adjustment")
+@Schema(description = "Sentence adjustment create request")
 data class CreateSentenceAdjustmentRequest(
   @Schema(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
@@ -287,6 +326,27 @@ data class CreateSentenceAdjustmentRequest(
   @field:NotBlank
   val adjustmentTypeCode: String = "",
   @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
+  val adjustmentDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Start of the period which contributed to the adjustment", required = false)
+  val adjustmentFromDate: LocalDate?,
+  @Schema(description = "Number of days for the adjustment", required = true)
+  @field:Min(0)
+  val adjustmentDays: Long = -1,
+  @Schema(description = "Comment", required = false)
+  val comment: String?,
+  @Schema(description = "Flag to indicate if the adjustment is being applied", required = false, defaultValue = "true")
+  val active: Boolean = true,
+)
+@Schema(description = "Sentence adjustment update request")
+data class UpdateSentenceAdjustmentRequest(
+  @Schema(
+    description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
+    required = true,
+    example = "RX",
+    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"]
+  )
+  @field:NotBlank
+  val adjustmentTypeCode: String = "",
   val adjustmentDate: LocalDate = LocalDate.now(),
   @Schema(description = "Start of the period which contributed to the adjustment", required = false)
   val adjustmentFromDate: LocalDate?,

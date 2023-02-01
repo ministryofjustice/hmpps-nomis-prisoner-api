@@ -66,6 +66,17 @@ class SentencingAdjustmentService(
         ?: throw NotFoundException("Sentence with sequence $sentenceSequence not found")
     } ?: throw NotFoundException("Booking $bookingId not found")
 
+  fun updateSentenceAdjustment(sentenceAdjustmentId: Long, request: UpdateSentenceAdjustmentRequest): Unit =
+    offenderSentenceAdjustmentRepository.findByIdOrNull(sentenceAdjustmentId)?.run {
+      this.sentenceAdjustment = findValidSentenceAdjustmentType(request.adjustmentTypeCode)
+      this.adjustmentDate = request.adjustmentDate
+      this.adjustmentNumberOfDays = request.adjustmentDays
+      this.fromDate = request.adjustmentFromDate
+      this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
+      this.comment = request.comment
+      this.active = request.active
+    } ?: throw NotFoundException("Sentence adjustment with id $sentenceAdjustmentId not found")
+
   private fun findValidSentenceAdjustmentType(adjustmentTypeCode: String) =
     sentenceAdjustmentRepository.findByIdOrNull(adjustmentTypeCode)?.also {
       if (!it.isSentenceRelated()) throw BadDataException("Sentence adjustment type $adjustmentTypeCode not valid for a sentence")
@@ -109,7 +120,10 @@ class SentencingAdjustmentService(
       )
       entityManager.flush()
       CreateAdjustmentResponse(it.keyDateAdjustments.last().id).also { createAdjustmentResponse ->
-        storedProcedureRepository.postKeyDateAdjustmentCreation(keyDateAdjustmentId = createAdjustmentResponse.id, bookingId = bookingId)
+        storedProcedureRepository.postKeyDateAdjustmentCreation(
+          keyDateAdjustmentId = createAdjustmentResponse.id,
+          bookingId = bookingId
+        )
       }
     } ?: throw NotFoundException("Booking $bookingId not found")
 }
