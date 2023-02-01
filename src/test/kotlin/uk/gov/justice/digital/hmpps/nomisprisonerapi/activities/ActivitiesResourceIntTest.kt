@@ -17,6 +17,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActiv
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfilePayBandBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -66,6 +68,12 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var courseActivityPayRateBuilderFactory: CourseActivityPayRateBuilderFactory
+
+  @Autowired
+  lateinit var offenderProgramProfileBuilderFactory: OffenderProgramProfileBuilderFactory
+
+  @Autowired
+  lateinit var offenderProgramProfilePayBandBuilderFactory: OffenderProgramProfilePayBandBuilderFactory
 
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
@@ -200,9 +208,11 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class UpdateActivity {
 
+    lateinit var courseActivity: CourseActivity
+
     @BeforeEach
     fun setUp() {
-      repository.save(courseActivityBuilderFactory.builder())
+      courseActivity = repository.save(courseActivityBuilderFactory.builder())
     }
 
     // Currently just mutates the location and pay rate - more to follow
@@ -412,6 +422,40 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK for empty pay rates`() {
         val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpoint(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : []"""),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.lookupActivity(existingActivityId)
+        assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
+      }
+
+      @Test
+      fun `should return bad request if pay rate removed which is allocated to an offender`() {
+        repository.save(offenderProgramProfileBuilderFactory.builder(), offenderAtMoorlands.latestBooking(), courseActivity)
+
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : []"""),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Pay band 5 is allocated to offender(s) [A1234TT]")
+          }
+      }
+
+      @Test
+      fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
+        val existingActivityId = getSavedActivityId()
+        repository.save(
+          offenderProgramProfileBuilderFactory.builder(
+            payBands = listOf(offenderProgramProfilePayBandBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()))
+          ),
+          offenderAtMoorlands.latestBooking(), courseActivity
+        )
 
         callUpdateEndpoint(
           courseActivityId = existingActivityId,

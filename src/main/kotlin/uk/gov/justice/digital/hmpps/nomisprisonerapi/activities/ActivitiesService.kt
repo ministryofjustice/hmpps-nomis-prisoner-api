@@ -299,6 +299,17 @@ class ActivitiesService(
       .filter { old -> !old.hasFutureStartDate() } // ignore future rates not included in updates - so they are deleted
       .filter { old -> !newPayRates.containsRate(old) }
       .map { old -> old.expire() }
+      .also { expiredPayRates -> expiredPayRates.throwIfPayBandsInUse() }
+
+  private fun List<CourseActivityPayRate>.throwIfPayBandsInUse() =
+    this.forEach { activityPayRate ->
+      offenderProgramProfileRepository.findByCourseActivity(activityPayRate.id.courseActivity)
+        .filter { profile -> profile.isUsingPayBand(activityPayRate.payBand.code) }
+        .map { offender -> offender.offenderBooking.offender.nomsId }
+        .toList()
+        .takeIf { nomsIds -> nomsIds.isNotEmpty() }
+        ?.run { throw BadDataException("Pay band ${activityPayRate.payBand.code} is allocated to offender(s) $this") }
+    }
 
   private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity): CourseActivityPayRate {
     val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
