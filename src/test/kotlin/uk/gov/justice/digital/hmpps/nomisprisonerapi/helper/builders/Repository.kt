@@ -15,10 +15,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
@@ -65,6 +68,8 @@ class Repository(
   val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
   val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   val payBandRepository: ReferenceCodeRepository<PayBand>,
+  val programStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
+  val programEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -241,4 +246,18 @@ class Repository(
       .let { activityRepository.save(it) }
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
+
+  fun lookupProgramStatus(code: String): OffenderProgramStatus =
+    programStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(code))!!
+
+  fun lookupProgramEndReason(code: String): ProgramServiceEndReason =
+    programEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(code))!!
+
+  fun save(
+    offenderProgramProfileBuilder: OffenderProgramProfileBuilder,
+    offenderBooking: OffenderBooking,
+    courseActivity: CourseActivity
+  ): OffenderProgramProfile =
+    offenderProgramProfileBuilder.build(offenderBooking, courseActivity)
+      .let { offenderProgramProfileRepository.save(it) }
 }

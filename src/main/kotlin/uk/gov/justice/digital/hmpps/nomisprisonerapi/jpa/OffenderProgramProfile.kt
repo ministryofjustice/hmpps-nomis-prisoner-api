@@ -107,4 +107,9 @@ data class OffenderProgramProfile(
 
   fun isDateBefore(date: LocalDate?, comparedDate: LocalDate) = date?.isBefore(comparedDate) ?: false
   fun isDateAfter(date: LocalDate?, comparedDate: LocalDate) = date?.isAfter(comparedDate) ?: false
+
+  fun isUsingPayBand(payBandCode: String) =
+    this.payBands
+      .filter { profilePayBands -> profilePayBands.endDate == null }
+      .any { profilePayBands -> profilePayBands.payBand.code == payBandCode }
 }
