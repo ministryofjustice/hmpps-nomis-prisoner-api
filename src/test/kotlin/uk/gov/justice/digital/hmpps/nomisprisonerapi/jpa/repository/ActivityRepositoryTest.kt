@@ -74,6 +74,7 @@ class ActivityRepositoryTest {
             startDate = LocalDate.parse("2022-12-01"),
           ),
           payBand = seedPayBand,
+          iepLevel = seedIep,
           endDate = LocalDate.parse("2022-12-02"),
           halfDayRate = BigDecimal(0.6),
         )
