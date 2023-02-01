@@ -267,6 +267,9 @@ class ActivitiesService(
     val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
       ?: throw BadDataException("Pay band code $payBand does not exist")
 
+    availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(courseActivity.prison, incentiveLevel)
+      ?: throw BadDataException("IEP type $incentiveLevel does not exist for prison ${courseActivity.prison.id}")
+
     // calculate start date - usually today unless the old rate expires at the end of today
     val today = LocalDate.now()
     val startDate = courseActivity.payRates
