@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class SentenceBuilder(
   var calculationType: String = "ADIMP_ORA",
@@ -31,11 +32,17 @@ class SentenceBuilder(
     adjustments = listOf(sentenceAdjustmentBuilder)
     return this
   }
+
+  fun withAdjustments(vararg sentenceAdjustmentBuilders: SentenceAdjustmentBuilder): SentenceBuilder {
+    adjustments = arrayOf(*sentenceAdjustmentBuilders).asList()
+    return this
+  }
 }
 
 class SentenceAdjustmentBuilder(
   var adjustmentTypeCode: String = "UR",
   var adjustmentDate: LocalDate = LocalDate.now(),
+  var createdDate: LocalDateTime = LocalDateTime.now(),
   var adjustmentNumberOfDays: Long = 10,
 ) {
   fun build(sentenceAdjustment: SentenceAdjustment, sentence: OffenderSentence): OffenderSentenceAdjustment =
@@ -45,6 +52,7 @@ class SentenceAdjustmentBuilder(
       sentence = sentence,
       sentenceAdjustment = sentenceAdjustment,
       adjustmentDate = adjustmentDate,
+      createdDate = createdDate,
       adjustmentNumberOfDays = adjustmentNumberOfDays,
     )
 }
