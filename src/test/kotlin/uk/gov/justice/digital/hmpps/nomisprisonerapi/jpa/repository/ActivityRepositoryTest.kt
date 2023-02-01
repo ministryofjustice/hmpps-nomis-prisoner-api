@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.context.annotation.Import
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -36,6 +38,9 @@ class ActivityRepositoryTest {
 
   @Autowired
   lateinit var offenderProgramProfileRepository: OffenderProgramProfileRepository
+
+  @Autowired
+  lateinit var offenderProgramStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>
 
   @Test
   fun saveActivity() {
@@ -135,7 +140,7 @@ class ActivityRepositoryTest {
         offenderBooking = seedOffenderBooking,
         program = seedProgramService,
         startDate = LocalDate.parse("2023-01-10"),
-        programStatus = "STATUS",
+        programStatus = offenderProgramStatusRepository.findByIdOrNull(OffenderProgramStatus.pk("ALLOC"))!!,
         courseActivity = seedCourseActivity,
         prison = seedPrison,
         endDate = LocalDate.parse("2023-01-11"),
@@ -149,7 +154,7 @@ class ActivityRepositoryTest {
       assertThat(offenderBooking.bookingId).isEqualTo(seedOffenderBooking.bookingId)
       assertThat(program.programCode).isEqualTo("TESTPS")
       assertThat(startDate).isEqualTo(LocalDate.parse("2023-01-10"))
-      assertThat(programStatus).isEqualTo("STATUS")
+      assertThat(programStatus.code).isEqualTo("ALLOC")
       assertThat(courseActivity?.courseActivityId).isEqualTo(seedCourseActivity.courseActivityId)
       assertThat(prison?.id).isEqualTo(seedPrison.id)
       assertThat(endDate).isEqualTo(LocalDate.parse("2023-01-11"))

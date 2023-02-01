@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -62,6 +63,7 @@ internal class ActivitiesServiceTest {
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
   private val payBandRepository: ReferenceCodeRepository<PayBand> = mock()
+  private val offenderProgramStatusRepository: ReferenceCodeRepository<OffenderProgramStatus> = mock()
   private val programServiceEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason> = mock()
   private val telemetryClient: TelemetryClient = mock()
 
@@ -74,6 +76,7 @@ internal class ActivitiesServiceTest {
     offenderBookingRepository,
     offenderProgramProfileRepository,
     payBandRepository,
+    offenderProgramStatusRepository,
     programServiceEndReasonRepository,
     telemetryClient,
   )
@@ -284,6 +287,10 @@ internal class ActivitiesServiceTest {
       }
 
       whenever(payBandRepository.findById(PayBand.pk(payBandCode))).thenReturn(Optional.of(defaultPayBand(payBandCode)))
+
+      whenever(offenderProgramStatusRepository.findById(OffenderProgramStatus.pk("ALLOC"))).thenReturn(
+        Optional.of(OffenderProgramStatus("ALLOC", "Allocated"))
+      )
     }
 
     @Test
@@ -298,7 +305,7 @@ internal class ActivitiesServiceTest {
             assertThat(offenderBooking.bookingId).isEqualTo(offenderBookingId)
             assertThat(program.programCode).isEqualTo(programCode)
             assertThat(startDate).isEqualTo(LocalDate.parse("2022-10-31"))
-            assertThat(programStatus).isEqualTo("ALLOC")
+            assertThat(programStatus.code).isEqualTo("ALLOC")
             assertThat(courseActivity?.courseActivityId).isEqualTo(courseActivityId)
             assertThat(prison?.id).isEqualTo(prisonId)
             assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))

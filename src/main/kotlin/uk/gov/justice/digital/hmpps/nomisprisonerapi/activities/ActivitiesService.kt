@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
-import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -12,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
@@ -36,13 +36,10 @@ class ActivitiesService(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val payBandRepository: ReferenceCodeRepository<PayBand>,
+  private val offenderProgramStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
   private val programServiceEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
   private val telemetryClient: TelemetryClient,
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
-
   fun createActivity(dto: CreateActivityRequest): CreateActivityResponse =
     mapActivityModel(dto)
       .apply { payRates.addAll(mapRates(dto, this)) }
@@ -74,8 +71,6 @@ class ActivitiesService(
         ),
         null
       )
-      log.debug("OffenderProgramProfile created with Nomis id = $offenderProgramReferenceId")
-
       OffenderProgramProfileResponse(offenderProgramReferenceId)
     }
 
@@ -85,15 +80,16 @@ class ActivitiesService(
     dto: EndOffenderProgramProfileRequest
   ): OffenderProgramProfileResponse =
 
-    offenderProgramProfileRepository.findByCourseActivityIdAndOffenderBookingIdAndAlloc(courseActivityId, bookingId)
+    offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCode(
+      courseActivityId,
+      bookingId,
+      "ALLOC"
+    )
       ?.run {
 
-        dto.endReason?.also {
-          programServiceEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(it))?.also {
-            this.endReason = it
-          }
+        endReason =
+          dto.endReason?.let { programServiceEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(it)) }
             ?: throw BadDataException("End reason code=${dto.endReason} is invalid")
-        }
         endDate = dto.endDate
         endComment = dto.endComment
 
@@ -106,14 +102,12 @@ class ActivitiesService(
           ),
           null
         )
-        log.debug("OffenderProgramProfile with Nomis id = $offenderProgramReferenceId set as ended")
-
         OffenderProgramProfileResponse(offenderProgramReferenceId)
       }
 
-      ?: throwError(courseActivityId, bookingId)
+      ?: findAndThrowValidationError(courseActivityId, bookingId)
 
-  private fun throwError(
+  private fun findAndThrowValidationError(
     courseActivityId: Long,
     bookingId: Long
   ): OffenderProgramProfileResponse {
@@ -217,7 +211,7 @@ class ActivitiesService(
       offenderBooking = offenderBooking,
       program = courseActivity.program,
       startDate = dto.startDate,
-      programStatus = "ALLOC",
+      programStatus = offenderProgramStatusRepository.findByIdOrNull(OffenderProgramStatus.pk("ALLOC"))!!,
       courseActivity = courseActivity,
       prison = courseActivity.prison,
       endDate = dto.endDate,
@@ -267,8 +261,9 @@ class ActivitiesService(
         existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
         existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(
+          // e.g. rate adjusted twice in same day
           existingPayRate.apply { halfDayRate = requestedPayRate.rate }
-        ) // e.g. rate adjusted twice in same day
+        )
         existingPayRate.rateIsChanged(requestedPayRate) -> {
           newPayRates.add(existingPayRate.expire())
           newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))

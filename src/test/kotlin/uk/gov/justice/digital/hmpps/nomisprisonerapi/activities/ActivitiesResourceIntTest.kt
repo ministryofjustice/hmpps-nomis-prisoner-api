@@ -955,40 +955,38 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `course activity not found`() {
-      val response = webTestClient.put().uri("/activities/999888/booking-id/$bookingId/end")
+      webTestClient.put().uri("/activities/999888/booking-id/$bookingId/end")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
         .exchange()
         .expectStatus().isNotFound
-        .expectBody(ErrorResponse::class.java)
-        .returnResult().responseBody
-      assertThat(response?.userMessage).isEqualTo("Not Found: Course activity with id=999888 does not exist")
+        .expectBody()
+        .jsonPath("userMessage").isEqualTo("Not Found: Course activity with id=999888 does not exist")
     }
 
     @Test
     fun `booking not found`() {
-      val response = webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/999888/end")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/999888/end")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
         .exchange()
         .expectStatus().isNotFound
-        .expectBody(ErrorResponse::class.java)
-        .returnResult().responseBody
-      assertThat(response?.userMessage).isEqualTo("Not Found: Booking with id=999888 does not exist")
+        .expectBody()
+        .jsonPath("userMessage").isEqualTo("Not Found: Booking with id=999888 does not exist")
     }
 
     @Test
     fun `the prisoner is not allocated to the course`() {
       val otherBookingId = offenderAtOtherPrison.latestBooking().bookingId
-      val response =
-        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$otherBookingId/end")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody
-      assertThat(response?.userMessage).isEqualTo("Bad request: Offender Program Profile with courseActivityId=${courseActivity.courseActivityId} and bookingId=$otherBookingId and status=ALLOC does not exist")
+
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$otherBookingId/end")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage")
+        .isEqualTo("Bad request: Offender Program Profile with courseActivityId=${courseActivity.courseActivityId} and bookingId=$otherBookingId and status=ALLOC does not exist")
     }
 
     @Test
@@ -1047,15 +1045,13 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `the end reason is invalid`() {
-      val response =
-        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(endOffenderProgramProfileRequest().copy(endReason = "DUFF")))
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody
-      assertThat(response?.userMessage).isEqualTo("Bad request: End reason code=DUFF is invalid")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest().copy(endReason = "DUFF")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage").isEqualTo("Bad request: End reason code=DUFF is invalid")
     }
 
     @Test

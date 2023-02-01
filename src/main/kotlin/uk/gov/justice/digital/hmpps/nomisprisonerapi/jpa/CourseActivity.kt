@@ -79,7 +79,7 @@ data class CourseActivity(
   @Convert(converter = YesNoConverter::class)
   val active: Boolean = false,
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "PROGRAM_ID", nullable = false)
   val program: ProgramService,
 
@@ -121,7 +121,7 @@ data class CourseActivity(
   )
   val iepLevel: IEPLevel,
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID", nullable = false)
   var internalLocation: AgencyInternalLocation,
 

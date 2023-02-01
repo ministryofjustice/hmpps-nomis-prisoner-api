@@ -27,7 +27,7 @@ data class OffenderProgramProfilePayBand(
 
   val endDate: LocalDate? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(

@@ -39,14 +39,25 @@ data class OffenderProgramProfile(
   @Column(name = "OFFENDER_START_DATE")
   val startDate: LocalDate? = null,
 
-  @Column(name = "OFFENDER_PROGRAM_STATUS", nullable = false) // OFF_PRG_STS
-  val programStatus: String,
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + OffenderProgramStatus.OFFENDER_PROGRAM_STATUS + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_PROGRAM_STATUS", referencedColumnName = "code"))
+    ]
+  )
+  val programStatus: OffenderProgramStatus,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID")
   val courseActivity: CourseActivity? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
   val prison: AgencyLocation? = null,
 
@@ -56,7 +67,7 @@ data class OffenderProgramProfile(
   @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf(),
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -84,7 +95,7 @@ data class OffenderProgramProfile(
 
   fun isCurrentActivity(): Boolean {
     val currentDate = LocalDate.now()
-    val isCurrentProgramProfile = programStatus == "ALLOC" &&
+    val isCurrentProgramProfile = programStatus.code == "ALLOC" &&
       startAndEndDatesSpanDay(startDate, endDate, currentDate)
     val isCurrentCourseActivity = courseActivity != null &&
       startAndEndDatesSpanDay(courseActivity.scheduleStartDate, courseActivity.scheduleEndDate, currentDate)

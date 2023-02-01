@@ -6,7 +6,7 @@ import org.hibernate.validator.constraints.Length
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Course activity creation request")
+@Schema(description = "Course activity deallocation request")
 data class EndOffenderProgramProfileRequest(
   @Schema(description = "Activity end date", required = true, example = "2022-08-12")
   val endDate: LocalDate,
