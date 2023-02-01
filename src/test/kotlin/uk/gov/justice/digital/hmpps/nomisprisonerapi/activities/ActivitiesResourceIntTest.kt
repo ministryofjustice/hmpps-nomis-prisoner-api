@@ -70,6 +70,28 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
 
+  private fun callCreateEndpoint(courseActivityId: Long, bookingId: Long): Long {
+    val response = webTestClient.post().uri("/activities/$courseActivityId")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .contentType(MediaType.APPLICATION_JSON)
+      .body(
+        BodyInserters.fromValue(
+          """{
+            "bookingId"  : "$bookingId",
+            "startDate"  : "2022-11-14",
+            "endDate"    : "${TEN_DAYS_TIME.format(DateTimeFormatter.ISO_DATE)}",
+            "payBandCode": "5"
+          }"""
+        )
+      )
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody(OffenderProgramProfileResponse::class.java)
+      .returnResult().responseBody
+    assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
+    return response!!.offenderProgramReferenceId
+  }
+
   @BeforeEach
   internal fun setup() {
     repository.save(ProgramServiceBuilder())
@@ -883,7 +905,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will create profile with correct details`() {
 
-      val bookingId = repository.lookupOffender("A1234TT")?.latestBooking()?.bookingId!!
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
       val id = callCreateEndpoint(courseActivity.courseActivityId, bookingId)
 
       // Spot check that the database has been populated correctly.
@@ -901,25 +923,191 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         assertThat(payBand.payBand.code).isEqualTo("5")
       }
     }
+  }
 
-    private fun callCreateEndpoint(courseActivityId: Long, bookingId: Long): Long {
-      val response = webTestClient.post().uri("/activities/$courseActivityId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(
-          BodyInserters.fromValue(
-            """{
-            "bookingId"  : "$bookingId",
-            "startDate"  : "2022-11-14",
-            "endDate"    : "${TEN_DAYS_TIME.format(DateTimeFormatter.ISO_DATE)}",
-            "payBandCode": "5"
-          }"""
-          )
-        )
+  @Nested
+  inner class EndOffenderProgramProfile {
+
+    lateinit var courseActivity: CourseActivity
+    var bookingId: Long = 0
+
+    private val endOffenderProgramProfileRequest: () -> EndOffenderProgramProfileRequest = {
+      EndOffenderProgramProfileRequest(
+        endDate = LocalDate.parse("2023-01-28"),
+        endReason = "REL",
+        endComment = "A comment",
+      )
+    }
+
+    @BeforeEach
+    internal fun setup() {
+      courseActivity = repository.save(courseActivityBuilderFactory.builder(prisonId = prisonId))
+      bookingId = offenderAtMoorlands.latestBooking().bookingId
+      callCreateEndpoint(courseActivity.courseActivityId, bookingId)
+    }
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
         .exchange()
-        .expectStatus().isCreated
-        .expectBody(CreateOffenderProgramProfileResponse::class.java)
-        .returnResult().responseBody
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `course activity not found`() {
+      webTestClient.put().uri("/activities/999888/booking-id/$bookingId/end")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("userMessage").isEqualTo("Not Found: Course activity with id=999888 does not exist")
+    }
+
+    @Test
+    fun `booking not found`() {
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/999888/end")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("userMessage").isEqualTo("Not Found: Booking with id=999888 does not exist")
+    }
+
+    @Test
+    fun `the prisoner is not allocated to the course`() {
+      val otherBookingId = offenderAtOtherPrison.latestBooking().bookingId
+
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$otherBookingId/end")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage")
+        .isEqualTo("Bad request: Offender Program Profile with courseActivityId=${courseActivity.courseActivityId} and bookingId=$otherBookingId and status=ALLOC does not exist")
+    }
+
+    @Test
+    fun `end date missing`() {
+      val response =
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "endReason" : "REL"
+          }"""
+            )
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody
+      assertThat(response?.userMessage).contains("value failed for JSON property endDate due to missing (therefore NULL) value")
+    }
+
+    @Test
+    fun `end date invalid`() {
+      val response =
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "endDate" : "invalid"
+          }"""
+            )
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody
+      assertThat(response?.userMessage).contains("Text 'invalid' could not be parsed at index 0")
+    }
+
+    @Test
+    fun `text too long`() {
+      val response =
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(endOffenderProgramProfileRequest().copy(endReason = "ThirteenChars")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody(ErrorResponse::class.java)
+          .returnResult().responseBody
+      assertThat(response?.userMessage).contains("length must be between 0 and 12")
+    }
+
+    @Test
+    fun `the end reason is invalid`() {
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest().copy(endReason = "DUFF")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage").isEqualTo("Bad request: End reason code=DUFF is invalid")
+    }
+
+    @Test
+    fun `will create profile with correct details`() {
+
+      val bookingId = offenderAtMoorlands.latestBooking().bookingId
+      val id = callEndpoint(courseActivity.courseActivityId, bookingId)
+
+      // Spot check that the database has been populated correctly.
+      val persistedRecord = repository.lookupOffenderProgramProfile(id)
+      assertThat(persistedRecord.courseActivity?.courseActivityId).isEqualTo(courseActivity.courseActivityId)
+      with(persistedRecord) {
+        assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
+        assertThat(endDate).isEqualTo(LocalDate.parse("2023-01-28"))
+        assertThat(endReason?.code).isEqualTo("REL")
+        assertThat(endComment).isEqualTo("A comment")
+      }
+    }
+
+    private fun callEndpoint(courseActivityId: Long, bookingId: Long): Long {
+      val response =
+        webTestClient.put().uri("/activities/$courseActivityId/booking-id/$bookingId/end")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "endDate"   : "2023-01-28",
+            "endReason" : "REL",
+            "endComment": "A comment"
+          }"""
+            )
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(OffenderProgramProfileResponse::class.java)
+          .returnResult().responseBody
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       return response!!.offenderProgramReferenceId
     }

@@ -143,14 +143,14 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = CreateOffenderProgramProfileResponse::class)
+            schema = Schema(implementation = OffenderProgramProfileResponse::class)
           )
         ]
       ),
       ApiResponse(
         responseCode = "400",
         description = """One or more of the following is true:<ul>
-        <li>the course activity or booking id do not exist,</li>
+        <li>the booking id does not exist,</li>
         <li>the prisoner is already allocated,</li>
         <li>the course is held at a different prison to the prisoner's location,</li>
         <li>the pay band code does not exist for the given course activity.</li></ul>
@@ -175,7 +175,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Activity does not exist",
+        description = "The course activity does not exist",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
         ]
@@ -185,6 +185,67 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
   fun createOffenderProgramProfile(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid createRequest: CreateOffenderProgramProfileRequest
-  ): CreateOffenderProgramProfileResponse =
+  ): OffenderProgramProfileResponse =
     activitiesService.createOffenderProgramProfile(courseActivityId, createRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PutMapping("/activities/{courseActivityId}/booking-id/{bookingId}/end")
+  @Operation(
+    summary = "Ends a prisoner's allocation to an activity",
+    description = "Ends a prisoner's allocation to an activity. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = EndOffenderProgramProfileRequest::class)
+        )
+      ]
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Success",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = """One or more of the following is true:<ul>
+        <li>the prisoner is not allocated to the course,</li>
+        <li>the course or prisoner does not exist,</li>
+        <li>the end date is missing or invalid,</li>
+        <li>the reason is invalid</li>
+        </ul>
+        """,
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
+        ]
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The course activity or booking id do not exist",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
+        ]
+      ),
+    ]
+  )
+  fun endOffenderProgramProfile(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
+    @RequestBody @Valid createRequest: EndOffenderProgramProfileRequest
+  ) =
+    activitiesService.endOffenderProgramProfile(courseActivityId, bookingId, createRequest)
 }

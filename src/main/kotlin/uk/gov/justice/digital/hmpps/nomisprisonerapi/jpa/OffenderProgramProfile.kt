@@ -12,6 +12,11 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 
 @Entity
@@ -34,22 +39,50 @@ data class OffenderProgramProfile(
   @Column(name = "OFFENDER_START_DATE")
   val startDate: LocalDate? = null,
 
-  @Column(name = "OFFENDER_PROGRAM_STATUS", nullable = false) // OFF_PRG_STS
-  val programStatus: String,
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + OffenderProgramStatus.OFFENDER_PROGRAM_STATUS + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_PROGRAM_STATUS", referencedColumnName = "code"))
+    ]
+  )
+  val programStatus: OffenderProgramStatus,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID")
   val courseActivity: CourseActivity? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
   val prison: AgencyLocation? = null,
 
   @Column(name = "OFFENDER_END_DATE")
-  val endDate: LocalDate? = null,
+  var endDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf(),
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + ProgramServiceEndReason.END_REASON + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_END_REASON", referencedColumnName = "code"))
+    ]
+  )
+  var endReason: ProgramServiceEndReason? = null,
+
+  @Column(name = "OFFENDER_END_COMMENT_TEXT")
+  var endComment: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -62,7 +95,7 @@ data class OffenderProgramProfile(
 
   fun isCurrentActivity(): Boolean {
     val currentDate = LocalDate.now()
-    val isCurrentProgramProfile = programStatus == "ALLOC" &&
+    val isCurrentProgramProfile = programStatus.code == "ALLOC" &&
       startAndEndDatesSpanDay(startDate, endDate, currentDate)
     val isCurrentCourseActivity = courseActivity != null &&
       startAndEndDatesSpanDay(courseActivity.scheduleStartDate, courseActivity.scheduleEndDate, currentDate)

@@ -7,7 +7,7 @@ import org.hibernate.validator.constraints.Length
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Course activity creation request")
+@Schema(description = "Course activity allocation request")
 data class CreateOffenderProgramProfileRequest(
   @Schema(
     description = "Booking id of the prisoner to be allocated to the activity",
