@@ -376,6 +376,25 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("Pay band code 99 does not exist")
           }
       }
+      @Test
+      fun `should return bad request when incentive level unavailable for prison`() {
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """
+              "payRates" : [ {
+                  "incentiveLevel" : "EN2",
+                  "payBand" : "5",
+                  "rate" : "1.2"
+                  } ]
+            """.trimIndent()
+          ),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("IEP type EN2 does not exist for prison LEI")
+          }
+      }
 
       @Test
       fun `should return bad request for missing pay rates`() {
