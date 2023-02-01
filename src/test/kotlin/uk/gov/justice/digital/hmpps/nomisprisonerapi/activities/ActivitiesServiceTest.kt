@@ -261,6 +261,7 @@ internal class ActivitiesServiceTest {
             iepLevelCode = "ENH"
           ),
           payBand = defaultPayBand(payBandCode),
+          iepLevel = defaultIepLevel("ENH"),
           endDate = LocalDate.parse("2022-11-03"),
           halfDayRate = BigDecimal("0.50"),
         )

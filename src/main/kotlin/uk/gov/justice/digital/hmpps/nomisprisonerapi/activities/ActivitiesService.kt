@@ -165,6 +165,7 @@ class ActivitiesService(
           startDate = dto.startDate,
         ),
         payBand = payBand,
+        iepLevel = availablePrisonIepLevel.iepLevel,
         endDate = dto.endDate,
         halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate.rate),
       )
@@ -303,7 +304,7 @@ class ActivitiesService(
     val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
       ?: throw BadDataException("Pay band code $payBand does not exist")
 
-    availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(courseActivity.prison, incentiveLevel)
+    val availableIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(courseActivity.prison, incentiveLevel)
       ?: throw BadDataException("IEP type $incentiveLevel does not exist for prison ${courseActivity.prison.id}")
 
     // calculate start date - usually today unless the old rate expires at the end of today
@@ -324,6 +325,7 @@ class ActivitiesService(
         startDate,
       ),
       payBand = payBand,
+      iepLevel = availableIepLevel.iepLevel,
       endDate = null,
       halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate)
     )

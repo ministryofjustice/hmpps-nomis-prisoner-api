@@ -54,6 +54,19 @@ data class CourseActivityPayRate(
   )
   val payBand: PayBand,
 
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + IEPLevel.IEP_LEVEL + "'",
+          referencedColumnName = "domain"
+        )
+      ), JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code", nullable = true, updatable = false, insertable = false))
+    ]
+  )
+  val iepLevel: IEPLevel,
+
   @Column
   var endDate: LocalDate? = null,
 
