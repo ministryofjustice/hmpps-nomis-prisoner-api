@@ -105,19 +105,13 @@ class ActivitiesService(
         OffenderProgramProfileResponse(offenderProgramReferenceId)
       }
 
-      ?: findAndThrowValidationError(courseActivityId, bookingId)
-
-  private fun findAndThrowValidationError(
-    courseActivityId: Long,
-    bookingId: Long
-  ): OffenderProgramProfileResponse {
-
-    activityRepository.findByIdOrNull(courseActivityId)
-      ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
-    offenderBookingRepository.findByIdOrNull(bookingId)
-      ?: throw NotFoundException("Booking with id=$bookingId does not exist")
-    throw BadDataException("Offender Program Profile with courseActivityId=$courseActivityId and bookingId=$bookingId and status=ALLOC does not exist")
-  }
+      ?: run {
+        activityRepository.findByIdOrNull(courseActivityId)
+          ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
+        offenderBookingRepository.findByIdOrNull(bookingId)
+          ?: throw NotFoundException("Booking with id=$bookingId does not exist")
+        throw BadDataException("Offender Program Profile with courseActivityId=$courseActivityId and bookingId=$bookingId and status=ALLOC does not exist")
+      }
 
   private fun mapActivityModel(dto: CreateActivityRequest): CourseActivity {
 
@@ -260,10 +254,7 @@ class ActivitiesService(
       when {
         existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
-        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(
-          // e.g. rate adjusted twice in same day
-          existingPayRate.apply { halfDayRate = requestedPayRate.rate }
-        )
+        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
         existingPayRate.rateIsChanged(requestedPayRate) -> {
           newPayRates.add(existingPayRate.expire())
           newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
