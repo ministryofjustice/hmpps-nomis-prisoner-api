@@ -42,6 +42,7 @@ class CourseActivityPayRateBuilder(
         startDate = LocalDate.parse(startDate),
       ),
       payBand = repository.lookupPayBandCode(payBandCodeId),
+      iepLevel = repository.lookupIepLevel(iepLevelCode),
       endDate = endDate?.let { LocalDate.parse(endDate) },
       halfDayRate = CourseActivityPayRate.preciseHalfDayRate(halfDayRate),
     )
