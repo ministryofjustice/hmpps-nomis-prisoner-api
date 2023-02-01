@@ -26,7 +26,7 @@ const val adjustmentIdsInner = "select adjustment_id, adjustment_category, creat
   "    select  offender_sentence_adjust_id adjustment_id, 'SENTENCE' adjustment_category , create_datetime from offender_sentence_adjusts " +
   "    where offender_key_date_adjust_id is null" +
   "    )" +
-  "    where (:fromDate is null or create_datetime >= :fromDate) and (:toDate is null or create_datetime <= :toDate)"
+  "    where (:fromDate is null or create_datetime >= :fromDate) and (:toDate is null or create_datetime < :toDate)"
 @NamedNativeQuery(
   name = "OffenderKeyDateAdjustment.adjustmentIdsQuery_named",
   query = "$adjustmentIdsInner order by create_datetime",
