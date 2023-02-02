@@ -217,10 +217,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     // Currently just mutates the location and pay rate - more to follow
     private fun updateActivityRequestJson(
-      prisonIdJson: String? = """"prisonId": "LEI",""",
-      capacityJson: String = """"capacity": 12,""",
-      startDateJson: String = """"startDate" : "2022-10-31",""",
-      internalLocationJson: String = """"internalLocationId" : -27,""",
+      endDateJson: String = """"endDate" : "2022-11-30",""",
+      internalLocationJson: String? = """"internalLocationId" : -27,""",
       payRatesJson: String? = """
           "payRates" : [ {
               "incentiveLevel" : "STD",
@@ -229,15 +227,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
               } ]
       """.trimIndent(),
     ) = """{
-            ${prisonIdJson ?: ""}
-            "code" : "CA",
-            "programCode" : "INTTEST",
-            "description" : "test course activity",
-            $capacityJson
-            $startDateJson
-            "endDate" : "2022-11-30",
-            "minimumIncentiveLevelCode" : "STD",
-            $internalLocationJson
+            $endDateJson
+            ${internalLocationJson ?: ""}
             ${payRatesJson ?: ""}
           }"""
 
@@ -314,11 +305,11 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for missing data`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(prisonIdJson = null),
+          jsonBody = updateActivityRequestJson(internalLocationJson = """"internalLocationId" : -27""", payRatesJson = null),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("prisonId")
+            assertThat(it).contains("payRates")
             assertThat(it).contains("NULL")
           }
       }
@@ -327,7 +318,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed number`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(capacityJson = """"capacity": "NOT_A_NUMBER","""),
+          jsonBody = updateActivityRequestJson(internalLocationJson = """"internalLocationId": "NOT_A_NUMBER","""),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -339,7 +330,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed date`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(startDateJson = """"startDate": "2022-11-35","""),
+          jsonBody = updateActivityRequestJson(endDateJson = """"endDate": "2022-11-35","""),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {

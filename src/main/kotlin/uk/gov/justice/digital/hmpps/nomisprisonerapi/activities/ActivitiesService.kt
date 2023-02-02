@@ -229,6 +229,8 @@ class ActivitiesService(
     val location = agencyInternalLocationRepository.findByIdOrNull(updateActivityRequest.internalLocationId)
       ?: throw BadDataException("Location with id=${updateActivityRequest.internalLocationId} does not exist")
 
+    // TODO SDI-599 Which fields to update and what to do when they are updated will be picked up on this ticket
+    existingActivity.scheduleEndDate = updateActivityRequest.endDate
     existingActivity.internalLocation = location
     buildNewPayRates(updateActivityRequest.payRates, existingActivity).also { newPayRates ->
       existingActivity.payRates.clear()
