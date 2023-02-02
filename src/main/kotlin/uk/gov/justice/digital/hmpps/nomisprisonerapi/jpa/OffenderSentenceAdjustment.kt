@@ -14,6 +14,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity
 @Table(name = "OFFENDER_SENTENCE_ADJUSTS")
@@ -76,6 +77,9 @@ class OffenderSentenceAdjustment(
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
   var active: Boolean = false,
+
+  @Column(name = "CREATE_DATETIME")
+  val createdDate: LocalDateTime = LocalDateTime.now(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

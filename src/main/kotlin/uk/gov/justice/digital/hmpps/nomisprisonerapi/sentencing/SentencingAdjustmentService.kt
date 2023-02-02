@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
 import jakarta.persistence.EntityManager
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -126,4 +128,9 @@ class SentencingAdjustmentService(
         )
       }
     } ?: throw NotFoundException("Booking $bookingId not found")
+
+  fun findAdjustmentIdsByFilter(pageRequest: Pageable, adjustmentFilter: AdjustmentFilter): Page<AdjustmentIdResponse> {
+    val adjustedToDate = adjustmentFilter.toDate?.let { adjustmentFilter.toDate.plusDays(1) }
+    return keyDateAdjustmentRepository.adjustmentIdsQuery_named(fromDate = adjustmentFilter.fromDate, toDate = adjustedToDate, pageRequest)
+  }
 }
