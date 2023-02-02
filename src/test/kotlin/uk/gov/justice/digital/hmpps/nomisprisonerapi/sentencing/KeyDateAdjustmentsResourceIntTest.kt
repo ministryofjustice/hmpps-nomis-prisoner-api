@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -41,7 +42,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /key-date-adjustments/{keyDateAdjustmentId}")
+  @DisplayName("GET /key-date-adjustments/{adjustmentId}")
   inner class GetKeyDateAdjustment {
     lateinit var anotherPrisoner: Offender
     var adjustmentId: Long = 0
@@ -329,6 +330,268 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
         "adjustmentDays": 10,
         "adjustmentTypeCode": "ADA",
         "adjustmentFromDate": "2023-01-01"
+      }
+    """.trimIndent()
+  }
+
+  @Nested
+  @DisplayName("PUT /key-date-adjustments/{adjustmentId}")
+  inner class UpdateSentenceAdjustment {
+    lateinit var anotherPrisoner: Offender
+    var adjustmentId: Long = 0
+    var bookingId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      anotherPrisoner = repository.save(
+        OffenderBuilder(nomsId = "A1239TX")
+          .withBooking(
+            OffenderBookingBuilder()
+              .withKeyDateAdjustments(KeyDateAdjustmentBuilder())
+          )
+      )
+      bookingId = anotherPrisoner.bookings.first().bookingId
+      adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(anotherPrisoner)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when adjustment id does not exist`() {
+        webTestClient.put().uri("/key-date-adjustments/999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Key date adjustment with id 999 not found")
+      }
+
+      @Test
+      internal fun `400 when days not present in request`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                  {
+                    "adjustmentTypeCode": "RX",
+                    "adjustmentFromDate": "2023-01-02"
+                  }
+                """
+            )
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("adjustmentDays must be greater than or equal to 0")
+      }
+
+      @Test
+      internal fun `400 when adjustment type not valid`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                  {
+                    "adjustmentDays": 10,
+                    "adjustmentTypeCode": "BANANAS",
+                    "adjustmentFromDate": "2023-01-02"
+                  }
+                """
+            )
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence adjustment type BANANAS not found")
+      }
+
+      @Test
+      internal fun `400 when adjustment type is for a sentence not booking`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                  {
+                    "adjustmentDays": 10,
+                    "adjustmentTypeCode": "RX",
+                    "adjustmentFromDate": "2023-01-02"
+                  }
+                """
+            )
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence adjustment type RX not valid for a booking")
+      }
+
+      @Test
+      internal fun `400 when adjustment type not present in request`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                  {
+                    "adjustmentDays": 10,
+                    "adjustmentFromDate": "2023-01-02"
+                  }
+                """
+            )
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("adjustmentTypeCode must not be blank")
+      }
+    }
+
+    @Nested
+    inner class WhenAdjustmentIsUpdated {
+      @Test
+      fun `can update an adjustment with minimal data keeping data that is not updatable`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                    {
+                      "adjustmentDays": 10,
+                      "adjustmentTypeCode": "ADA",
+                      "adjustmentFromDate": "2023-01-02"
+                    }
+                  """
+            )
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(adjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("adjustmentType.code").isEqualTo("ADA")
+          .jsonPath("adjustmentType.description").isEqualTo("Additional Days Awarded")
+          .jsonPath("adjustmentDays").isEqualTo(10)
+          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-01-11")
+          .jsonPath("comment").doesNotExist()
+          .jsonPath("active").isEqualTo(true)
+      }
+
+      @Test
+      fun `can update most of adjustment data`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                    {
+                      "adjustmentDays": 12,
+                      "adjustmentTypeCode": "ADA",
+                      "adjustmentDate": "2023-01-18",
+                      "adjustmentFromDate": "2023-01-02",
+                      "comment": "12 days",
+                      "active": false
+                    }
+                  """
+            )
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(adjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("adjustmentType.code").isEqualTo("ADA")
+          .jsonPath("adjustmentType.description").isEqualTo("Additional Days Awarded")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-18")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-01-13")
+          .jsonPath("adjustmentDays").isEqualTo(12)
+          .jsonPath("comment").isEqualTo("12 days")
+          .jsonPath("active").isEqualTo(false)
+      }
+
+      @Test
+      fun `will call store procedure to update sentence adjustments`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest())
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(spRepository).postKeyDateAdjustmentCreation(
+          eq(adjustmentId),
+          eq(bookingId)
+        )
+      }
+    }
+
+    fun createBasicKeyDateAdjustmentUpdateRequest() = """
+      {
+        "adjustmentDays": 10,
+        "adjustmentTypeCode": "ADA",
+        "adjustmentFromDate": "2023-01-02"
       }
     """.trimIndent()
   }

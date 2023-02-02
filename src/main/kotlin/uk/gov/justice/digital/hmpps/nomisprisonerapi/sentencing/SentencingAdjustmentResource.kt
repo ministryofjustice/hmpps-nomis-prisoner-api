@@ -33,7 +33,7 @@ import java.time.LocalDate
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class SentencingAdjustmentResource(private val sentencingAdjustmentService: SentencingAdjustmentService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @GetMapping("/sentence-adjustments/{sentenceAdjustmentId}")
+  @GetMapping("/sentence-adjustments/{adjustmentId}")
   @Operation(
     summary = "get specific sentence adjustment",
     description = "Requires role NOMIS_SENTENCING. Retrieves a sentence adjustment by id",
@@ -67,10 +67,10 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
   fun getSentenceAdjustment(
     @Schema(description = "Sentence adjustment id", example = "12345", required = true)
     @PathVariable
-    sentenceAdjustmentId: Long,
-  ): SentenceAdjustmentResponse = sentencingAdjustmentService.getSentenceAdjustment(sentenceAdjustmentId)
+    adjustmentId: Long,
+  ): SentenceAdjustmentResponse = sentencingAdjustmentService.getSentenceAdjustment(adjustmentId)
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PutMapping("/sentence-adjustments/{sentenceAdjustmentId}")
+  @PutMapping("/sentence-adjustments/{adjustmentId}")
   @Operation(
     summary = "Updates specific sentence adjustment. The related booking and sentence can not be changed",
     description = "Requires role NOMIS_SENTENCING. Updates a sentence adjustment by id",
@@ -104,9 +104,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
   fun updateSentenceAdjustment(
     @Schema(description = "Sentence adjustment id", example = "12345", required = true)
     @PathVariable
-    sentenceAdjustmentId: Long,
+    adjustmentId: Long,
     @RequestBody @Valid request: UpdateSentenceAdjustmentRequest
-  ): Unit = sentencingAdjustmentService.updateSentenceAdjustment(sentenceAdjustmentId, request)
+  ): Unit = sentencingAdjustmentService.updateSentenceAdjustment(adjustmentId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/booking-id/{bookingId}/sentences/{sentenceSequence}/adjustments")
@@ -181,7 +181,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     sentencingAdjustmentService.createSentenceAdjustment(bookingId, sentenceSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @GetMapping("/key-date-adjustments/{keyDateAdjustmentId}")
+  @GetMapping("/key-date-adjustments/{adjustmentId}")
   @Operation(
     summary = "get specific key date adjustment",
     description = "Requires role NOMIS_SENTENCING. Retrieves a key date adjustment by id",
@@ -215,8 +215,47 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
   fun getKeyDateAdjustment(
     @Schema(description = "Key date adjustment id", example = "12345", required = true)
     @PathVariable
-    keyDateAdjustmentId: Long,
-  ): KeyDateAdjustmentResponse = sentencingAdjustmentService.getKeyDateAdjustment(keyDateAdjustmentId)
+    adjustmentId: Long,
+  ): KeyDateAdjustmentResponse = sentencingAdjustmentService.getKeyDateAdjustment(adjustmentId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PutMapping("/key-date-adjustments/{adjustmentId}")
+  @Operation(
+    summary = "Updates specific key date adjustment. The related booking can not be changed",
+    description = "Requires role NOMIS_SENTENCING. Updates a sentence adjustment by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the key date adjustment has been updated"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun updateKeyDateAdjustment(
+    @Schema(description = "Key date adjustment id", example = "12345", required = true)
+    @PathVariable
+    adjustmentId: Long,
+    @RequestBody @Valid request: UpdateKeyDateAdjustmentRequest
+  ): Unit = sentencingAdjustmentService.updateKeyDateAdjustment(adjustmentId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/booking-id/{bookingId}/adjustments")
@@ -419,8 +458,30 @@ data class UpdateSentenceAdjustmentRequest(
   val active: Boolean = true,
 )
 
-@Schema(description = "Key date adjustment")
+@Schema(description = "Key date adjustment create request")
 data class CreateKeyDateAdjustmentRequest(
+  @Schema(
+    description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
+    required = true,
+    example = "ADA",
+    allowableValues = ["LAL", "UAL", "RADA", "ADA", "SREM"]
+  )
+  @field:NotBlank
+  val adjustmentTypeCode: String = "",
+  @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
+  val adjustmentDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Start of the period which contributed to the adjustment", required = true)
+  val adjustmentFromDate: LocalDate,
+  @Schema(description = "Number of days for the adjustment", required = true)
+  @field:Min(0)
+  val adjustmentDays: Long = -1,
+  @Schema(description = "Comment", required = false)
+  val comment: String?,
+  @Schema(description = "Flag to indicate if the adjustment is being applied", required = false, defaultValue = "true")
+  val active: Boolean = true,
+)
+@Schema(description = "Key date adjustment update request")
+data class UpdateKeyDateAdjustmentRequest(
   @Schema(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
     required = true,

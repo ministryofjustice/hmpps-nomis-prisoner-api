@@ -66,22 +66,22 @@ class OffenderKeyDateAdjustment(
 
   @ManyToOne
   @JoinColumn(name = "SENTENCE_ADJUST_CODE", nullable = false)
-  val sentenceAdjustment: SentenceAdjustment,
+  var sentenceAdjustment: SentenceAdjustment,
 
   @Column(name = "ADJUST_DATE")
-  val adjustmentDate: LocalDate,
+  var adjustmentDate: LocalDate,
 
   @Column(name = "ADJUST_DAYS")
-  val adjustmentNumberOfDays: Long,
+  var adjustmentNumberOfDays: Long,
 
   @Column(name = "ADJUST_FROM_DATE")
-  val fromDate: LocalDate? = null,
+  var fromDate: LocalDate? = null,
 
   @Column(name = "ADJUST_TO_DATE")
-  val toDate: LocalDate? = null,
+  var toDate: LocalDate? = null,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
@@ -89,7 +89,7 @@ class OffenderKeyDateAdjustment(
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = false,
+  var active: Boolean = false,
 
   @Column(name = "CREATE_DATETIME")
   val createdDate: LocalDateTime = LocalDateTime.now(),
