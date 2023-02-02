@@ -41,10 +41,10 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /sentence-adjustments/{sentenceAdjustmentId}")
+  @DisplayName("GET /sentence-adjustments/{adjustmentId}")
   inner class GetSentenceAdjustment {
     lateinit var anotherPrisoner: Offender
-    var sentenceAdjustmentId: Long = 0
+    var adjustmentId: Long = 0
 
     @BeforeEach
     internal fun createPrisoner() {
@@ -55,7 +55,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
               .withSentences(SentenceBuilder().withAdjustment())
           )
       )
-      sentenceAdjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
+      adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
     }
 
     @AfterEach
@@ -67,7 +67,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+        webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -75,7 +75,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+        webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -83,7 +83,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+        webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -98,12 +98,12 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
     }
     @Test
     internal fun `200 when adjustment does exist`() {
-      webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+      webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(sentenceAdjustmentId)
+        .jsonPath("id").isEqualTo(adjustmentId)
     }
   }
 
@@ -443,7 +443,7 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
     """.trimIndent()
   }
   @Nested
-  @DisplayName("PUT /sentence-adjustments/{sentenceAdjustmentId}")
+  @DisplayName("PUT /sentence-adjustments/{adjustmentId}")
   inner class UpdateSentenceAdjustment {
     lateinit var anotherPrisoner: Offender
     var sentenceAdjustmentId: Long = 0

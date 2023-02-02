@@ -29,8 +29,8 @@ class SentencingAdjustmentService(
   private val entityManager: EntityManager,
   private val storedProcedureRepository: StoredProcedureRepository
 ) {
-  fun getSentenceAdjustment(sentenceAdjustmentId: Long): SentenceAdjustmentResponse =
-    offenderSentenceAdjustmentRepository.findByIdOrNull(sentenceAdjustmentId)?.let {
+  fun getSentenceAdjustment(adjustmentId: Long): SentenceAdjustmentResponse =
+    offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.let {
       SentenceAdjustmentResponse(
         id = it.id,
         bookingId = it.offenderBooking.bookingId,
@@ -43,7 +43,7 @@ class SentencingAdjustmentService(
         comment = it.comment,
         active = it.active,
       )
-    } ?: throw NotFoundException("Sentence adjustment $sentenceAdjustmentId not found")
+    } ?: throw NotFoundException("Sentence adjustment $adjustmentId not found")
 
   fun createSentenceAdjustment(bookingId: Long, sentenceSequence: Long, request: CreateSentenceAdjustmentRequest) =
     offenderBookingRepository.findByIdOrNull(bookingId)?.let {
@@ -68,8 +68,8 @@ class SentencingAdjustmentService(
         ?: throw NotFoundException("Sentence with sequence $sentenceSequence not found")
     } ?: throw NotFoundException("Booking $bookingId not found")
 
-  fun updateSentenceAdjustment(sentenceAdjustmentId: Long, request: UpdateSentenceAdjustmentRequest): Unit =
-    offenderSentenceAdjustmentRepository.findByIdOrNull(sentenceAdjustmentId)?.run {
+  fun updateSentenceAdjustment(adjustmentId: Long, request: UpdateSentenceAdjustmentRequest): Unit =
+    offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
       this.sentenceAdjustment = findValidSentenceAdjustmentType(request.adjustmentTypeCode)
       this.adjustmentDate = request.adjustmentDate
       this.adjustmentNumberOfDays = request.adjustmentDays
@@ -77,7 +77,7 @@ class SentencingAdjustmentService(
       this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
       this.comment = request.comment
       this.active = request.active
-    } ?: throw NotFoundException("Sentence adjustment with id $sentenceAdjustmentId not found")
+    } ?: throw NotFoundException("Sentence adjustment with id $adjustmentId not found")
 
   private fun findValidSentenceAdjustmentType(adjustmentTypeCode: String) =
     sentenceAdjustmentRepository.findByIdOrNull(adjustmentTypeCode)?.also {
@@ -129,8 +129,28 @@ class SentencingAdjustmentService(
       }
     } ?: throw NotFoundException("Booking $bookingId not found")
 
+  fun updateKeyDateAdjustment(adjustmentId: Long, request: UpdateKeyDateAdjustmentRequest): Unit =
+    keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
+      this.sentenceAdjustment = findValidKeyDateAdjustmentType(request.adjustmentTypeCode)
+      this.adjustmentDate = request.adjustmentDate
+      this.adjustmentNumberOfDays = request.adjustmentDays
+      this.fromDate = request.adjustmentFromDate
+      this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
+      this.comment = request.comment
+      this.active = request.active
+      entityManager.flush()
+      storedProcedureRepository.postKeyDateAdjustmentCreation(
+        keyDateAdjustmentId = adjustmentId,
+        bookingId = this.offenderBooking.bookingId
+      )
+    } ?: throw NotFoundException("Key date adjustment with id $adjustmentId not found")
+
   fun findAdjustmentIdsByFilter(pageRequest: Pageable, adjustmentFilter: AdjustmentFilter): Page<AdjustmentIdResponse> {
     val adjustedToDate = adjustmentFilter.toDate?.let { adjustmentFilter.toDate.plusDays(1) }
-    return keyDateAdjustmentRepository.adjustmentIdsQuery_named(fromDate = adjustmentFilter.fromDate, toDate = adjustedToDate, pageRequest)
+    return keyDateAdjustmentRepository.adjustmentIdsQuery_named(
+      fromDate = adjustmentFilter.fromDate,
+      toDate = adjustedToDate,
+      pageRequest
+    )
   }
 }
