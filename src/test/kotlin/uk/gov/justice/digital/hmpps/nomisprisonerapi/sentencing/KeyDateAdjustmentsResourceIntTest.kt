@@ -318,7 +318,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("comment").isEqualTo("a comment")
           .jsonPath("active").isEqualTo(false)
 
-        verify(spRepository).postKeyDateAdjustmentCreation(
+        verify(spRepository).postKeyDateAdjustmentUpsert(
           eq(adjustmentId),
           eq(bookingId)
         )
@@ -580,7 +580,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).postKeyDateAdjustmentCreation(
+        verify(spRepository).postKeyDateAdjustmentUpsert(
           eq(adjustmentId),
           eq(bookingId)
         )
@@ -683,7 +683,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      verify(spRepository).postKeyDateAdjustmentCreation(
+      verify(spRepository).preKeyDateAdjustmentDeletion(
         eq(adjustmentId),
         eq(bookingId)
       )

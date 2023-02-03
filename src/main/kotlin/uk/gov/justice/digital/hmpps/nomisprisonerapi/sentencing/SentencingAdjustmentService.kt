@@ -132,7 +132,7 @@ class SentencingAdjustmentService(
       )
       entityManager.flush()
       CreateAdjustmentResponse(it.keyDateAdjustments.last().id).also { createAdjustmentResponse ->
-        storedProcedureRepository.postKeyDateAdjustmentCreation(
+        storedProcedureRepository.postKeyDateAdjustmentUpsert(
           keyDateAdjustmentId = createAdjustmentResponse.id,
           bookingId = bookingId
         )
@@ -149,7 +149,7 @@ class SentencingAdjustmentService(
       this.comment = request.comment
       this.active = request.active
       entityManager.flush()
-      storedProcedureRepository.postKeyDateAdjustmentCreation(
+      storedProcedureRepository.postKeyDateAdjustmentUpsert(
         keyDateAdjustmentId = adjustmentId,
         bookingId = this.offenderBooking.bookingId
       )
@@ -157,12 +157,11 @@ class SentencingAdjustmentService(
 
   fun deleteKeyDateAdjustment(adjustmentId: Long) {
     keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
-      keyDateAdjustmentRepository.deleteById(adjustmentId)
-      entityManager.flush()
-      storedProcedureRepository.postKeyDateAdjustmentCreation(
+      storedProcedureRepository.preKeyDateAdjustmentDeletion(
         keyDateAdjustmentId = adjustmentId,
         bookingId = this.offenderBooking.bookingId
       )
+      keyDateAdjustmentRepository.deleteById(adjustmentId)
     } ?: {
       telemetryClient.trackEvent("key-date-adjustment-delete-not-found", mapOf("adjustmentId" to adjustmentId.toString()), null)
     }
