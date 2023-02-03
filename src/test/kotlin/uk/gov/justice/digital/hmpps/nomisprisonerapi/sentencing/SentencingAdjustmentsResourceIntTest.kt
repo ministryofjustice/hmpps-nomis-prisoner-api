@@ -11,7 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.*
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.KeyDateAdjustmentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceAdjustmentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
@@ -48,7 +53,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /key-date-adjustments/{adjustmentId}")
   inner class GetKeyDateAdjustment {
-    lateinit var anotherPrisoner: Offender
+    private lateinit var anotherPrisoner: Offender
     var adjustmentId: Long = 0
 
     @BeforeEach
@@ -346,7 +351,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("PUT /key-date-adjustments/{adjustmentId}")
   inner class UpdateKeyDateAdjustment {
-    lateinit var anotherPrisoner: Offender
+    private lateinit var anotherPrisoner: Offender
     var adjustmentId: Long = 0
     var bookingId: Long = 0
 
@@ -704,7 +709,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /sentence-adjustments/{adjustmentId}")
   inner class GetSentenceAdjustment {
-    lateinit var anotherPrisoner: Offender
+    private lateinit var anotherPrisoner: Offender
     var adjustmentId: Long = 0
 
     @BeforeEach
@@ -996,8 +1001,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class WithMultipleSentences {
-      lateinit var anotherPrisoner: Offender
-      var anotherBookingId: Long = 0
+      private lateinit var anotherPrisoner: Offender
+      private var anotherBookingId: Long = 0
 
       @BeforeEach
       internal fun createPrisoner() {
@@ -1108,7 +1113,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("PUT /sentence-adjustments/{adjustmentId}")
   inner class UpdateSentenceAdjustment {
-    lateinit var anotherPrisoner: Offender
+    private lateinit var anotherPrisoner: Offender
     var sentenceAdjustmentId: Long = 0
     var bookingId: Long = 0
 
@@ -1349,7 +1354,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("DELETE /sentence-adjustments/{adjustmentId}")
   inner class DeleteSentenceAdjustment {
-    lateinit var anotherPrisoner: Offender
+    private lateinit var anotherPrisoner: Offender
     var adjustmentId: Long = 0
 
     @BeforeEach
@@ -1430,7 +1435,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /adjustments/ids")
   inner class GetAdjustmentIds {
-    lateinit var anotherPrisoner: Offender
+    private lateinit var anotherPrisoner: Offender
 
     @BeforeEach
     internal fun createPrisoner() {
