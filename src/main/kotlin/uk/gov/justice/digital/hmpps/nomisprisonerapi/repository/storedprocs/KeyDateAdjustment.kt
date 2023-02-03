@@ -7,7 +7,7 @@ import java.sql.Types
 import javax.sql.DataSource
 
 @Component
-class KeyDateAdjustmentInsert(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
+class KeyDateAdjustmentUpsert(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
   init {
     withSchemaName("OMS_OWNER")
       .withCatalogName("TAG_SENTENCE_CALC")
@@ -30,7 +30,7 @@ class KeyDateAdjustmentDelete(dataSource: DataSource) : SimpleJdbcCall(dataSourc
       .withoutProcedureColumnMetaDataAccess()
       .withNamedBinding()
       .declareParameters(
-        SqlParameter("p_offbook_id", Types.NUMERIC),
+        SqlParameter("p_offender_book_id", Types.NUMERIC),
         SqlParameter("p_offender_key_date_adjust_id", Types.NUMERIC)
       )
     compile()
