@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityManager
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -27,7 +28,8 @@ class SentencingAdjustmentService(
   private val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
   private val keyDateAdjustmentRepository: OffenderKeyDateAdjustmentRepository,
   private val entityManager: EntityManager,
-  private val storedProcedureRepository: StoredProcedureRepository
+  private val storedProcedureRepository: StoredProcedureRepository,
+  private val telemetryClient: TelemetryClient,
 ) {
   fun getSentenceAdjustment(adjustmentId: Long): SentenceAdjustmentResponse =
     offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.let {
@@ -78,6 +80,14 @@ class SentencingAdjustmentService(
       this.comment = request.comment
       this.active = request.active
     } ?: throw NotFoundException("Sentence adjustment with id $adjustmentId not found")
+
+  fun deleteSentenceAdjustment(adjustmentId: Long) {
+    offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.also {
+      offenderSentenceAdjustmentRepository.deleteById(adjustmentId)
+    } ?: {
+      telemetryClient.trackEvent("sentence-adjustment-delete-not-found", mapOf("adjustmentId" to adjustmentId.toString()), null)
+    }
+  }
 
   private fun findValidSentenceAdjustmentType(adjustmentTypeCode: String) =
     sentenceAdjustmentRepository.findByIdOrNull(adjustmentTypeCode)?.also {

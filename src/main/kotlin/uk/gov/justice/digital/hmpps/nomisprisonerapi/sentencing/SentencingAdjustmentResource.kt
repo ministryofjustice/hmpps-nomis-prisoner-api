@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -62,6 +63,16 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
           )
         ]
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjustment not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
     ]
   )
   fun getSentenceAdjustment(
@@ -69,6 +80,56 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     @PathVariable
     adjustmentId: Long,
   ): SentenceAdjustmentResponse = sentencingAdjustmentService.getSentenceAdjustment(adjustmentId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @DeleteMapping("/sentence-adjustments/{adjustmentId}")
+  @Operation(
+    summary = "deletes specific sentence adjustment",
+    description = "Requires role NOMIS_SENTENCING. Deletes a sentence adjustment by id",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "the sentence adjustment has been deleted"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjustment not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun deleteSentenceAdjustment(
+    @Schema(description = "Sentence adjustment id", example = "12345", required = true)
+    @PathVariable
+    adjustmentId: Long,
+  ): Unit = sentencingAdjustmentService.deleteSentenceAdjustment(adjustmentId)
+
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PutMapping("/sentence-adjustments/{adjustmentId}")
   @Operation(
@@ -210,6 +271,16 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
           )
         ]
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjustment not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
     ]
   )
   fun getKeyDateAdjustment(
@@ -241,6 +312,16 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ApiResponse(
         responseCode = "403",
         description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjustment not found",
         content = [
           Content(
             mediaType = "application/json",
