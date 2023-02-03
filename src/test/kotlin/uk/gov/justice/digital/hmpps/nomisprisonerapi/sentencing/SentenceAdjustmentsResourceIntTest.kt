@@ -682,4 +682,88 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
     """.trimIndent()
   }
+
+  @Nested
+  @DisplayName("DELETE /sentence-adjustments/{adjustmentId}")
+  inner class DeleteSentenceAdjustment {
+    lateinit var anotherPrisoner: Offender
+    var adjustmentId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      anotherPrisoner = repository.save(
+        OffenderBuilder(nomsId = "A1234TX")
+          .withBooking(
+            OffenderBookingBuilder()
+              .withSentences(SentenceBuilder().withAdjustment())
+          )
+      )
+      adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(anotherPrisoner)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    internal fun `204 even when adjustment does not exist`() {
+      webTestClient.get().uri("/sentence-adjustments/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+
+      webTestClient.delete().uri("/sentence-adjustments/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+    }
+    @Test
+    internal fun `204 when adjustment does exist`() {
+      webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+
+      webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+        .expectBody()
+
+      webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+    }
+  }
 }
