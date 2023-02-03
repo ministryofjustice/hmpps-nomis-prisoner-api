@@ -21,3 +21,18 @@ class KeyDateAdjustmentInsert(dataSource: DataSource) : SimpleJdbcCall(dataSourc
     compile()
   }
 }
+@Component
+class KeyDateAdjustmentDelete(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
+  init {
+    withSchemaName("OMS_OWNER")
+      .withCatalogName("TAG_SENTENCE_CALC")
+      .withProcedureName("delete_sentence_adjusts")
+      .withoutProcedureColumnMetaDataAccess()
+      .withNamedBinding()
+      .declareParameters(
+        SqlParameter("p_offbook_id", Types.NUMERIC),
+        SqlParameter("p_offender_key_date_adjust_id", Types.NUMERIC)
+      )
+    compile()
+  }
+}
