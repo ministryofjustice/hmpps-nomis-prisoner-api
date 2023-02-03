@@ -1,11 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
+import com.microsoft.applicationinsights.TelemetryClient
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.SpyBean
@@ -32,6 +36,9 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
   @SpyBean
   private lateinit var spRepository: StoredProcedureRepository
+
+  @SpyBean
+  private lateinit var telemetryClient: TelemetryClient
 
   @BeforeEach
   internal fun createPrisoner() {
@@ -337,6 +344,30 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           eq(bookingId)
         )
       }
+
+      @Test
+      fun `will track telemetry for the create`() {
+        val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest())
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        verify(telemetryClient).trackEvent(
+          eq("key-date-adjustment-created"),
+          check {
+            assertThat(it).containsEntry("adjustmentId", adjustmentId.toString())
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("offenderNo", "A1234TT")
+            assertThat(it).containsEntry("adjustmentType", "ADA")
+          },
+          isNull()
+        )
+      }
     }
 
     fun createBasicKeyDateAdjustmentRequest() = """
@@ -599,6 +630,29 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           eq(bookingId)
         )
       }
+
+      @Test
+      fun `will track telemetry for the update`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest())
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("key-date-adjustment-updated"),
+          check {
+            assertThat(it).containsEntry("adjustmentId", adjustmentId.toString())
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("offenderNo", "A1239TX")
+            assertThat(it).containsEntry("adjustmentType", "ADA")
+          },
+          isNull()
+        )
+      }
     }
 
     fun createBasicKeyDateAdjustmentUpdateRequest() = """
@@ -672,6 +726,14 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
+
+      verify(telemetryClient).trackEvent(
+        eq("key-date-adjustment-delete-not-found"),
+        check {
+          assertThat(it).containsEntry("adjustmentId", "9999")
+        },
+        isNull()
+      )
     }
 
     @Test
@@ -690,6 +752,25 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will track telemetry for the delete`() {
+      webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      verify(telemetryClient).trackEvent(
+        eq("key-date-adjustment-deleted"),
+        check {
+          assertThat(it).containsEntry("adjustmentId", adjustmentId.toString())
+          assertThat(it).containsEntry("bookingId", bookingId.toString())
+          assertThat(it).containsEntry("offenderNo", "A1239TX")
+          assertThat(it).containsEntry("adjustmentType", "ADA")
+        },
+        isNull()
+      )
     }
 
     @Test
@@ -996,6 +1077,31 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentDays").isEqualTo(10)
           .jsonPath("comment").isEqualTo("Remand for 10 days")
           .jsonPath("active").isEqualTo(false)
+      }
+
+      @Test
+      fun `will track telemetry for the create`() {
+        val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicSentenceAdjustmentRequest())
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        verify(telemetryClient).trackEvent(
+          eq("sentence-adjustment-created"),
+          check {
+            assertThat(it).containsEntry("adjustmentId", adjustmentId.toString())
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("sentenceSequence", "1")
+            assertThat(it).containsEntry("offenderNo", "A1234TT")
+            assertThat(it).containsEntry("adjustmentType", "RX")
+          },
+          isNull()
+        )
       }
     }
 
@@ -1341,6 +1447,30 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("comment").isEqualTo("12 days")
           .jsonPath("active").isEqualTo(false)
       }
+
+      @Test
+      fun `will track telemetry for the update`() {
+        webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest())
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("sentence-adjustment-updated"),
+          check {
+            assertThat(it).containsEntry("adjustmentId", sentenceAdjustmentId.toString())
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("sentenceSequence", "1")
+            assertThat(it).containsEntry("offenderNo", "A1239TX")
+            assertThat(it).containsEntry("adjustmentType", "RX")
+          },
+          isNull()
+        )
+      }
     }
 
     fun createBasicSentenceAdjustmentUpdateRequest() = """
@@ -1356,6 +1486,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   inner class DeleteSentenceAdjustment {
     private lateinit var anotherPrisoner: Offender
     var adjustmentId: Long = 0
+    var bookingId: Long = 0
 
     @BeforeEach
     internal fun createPrisoner() {
@@ -1363,10 +1494,11 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withSentences(SentenceBuilder().withAdjustment())
+              .withSentences(SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(adjustmentTypeCode = "UR")))
           )
       )
       adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
+      bookingId = anotherPrisoner.bookings.first().bookingId
     }
 
     @AfterEach
@@ -1411,6 +1543,14 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
+
+      verify(telemetryClient).trackEvent(
+        eq("sentence-adjustment-delete-not-found"),
+        check {
+          assertThat(it).containsEntry("adjustmentId", "9999")
+        },
+        isNull()
+      )
     }
 
     @Test
@@ -1429,6 +1569,26 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will track telemetry for the delete`() {
+      webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      verify(telemetryClient).trackEvent(
+        eq("sentence-adjustment-deleted"),
+        check {
+          assertThat(it).containsEntry("adjustmentId", adjustmentId.toString())
+          assertThat(it).containsEntry("bookingId", bookingId.toString())
+          assertThat(it).containsEntry("sentenceSequence", "1")
+          assertThat(it).containsEntry("offenderNo", "A1234TX")
+          assertThat(it).containsEntry("adjustmentType", "UR")
+        },
+        isNull()
+      )
     }
   }
 

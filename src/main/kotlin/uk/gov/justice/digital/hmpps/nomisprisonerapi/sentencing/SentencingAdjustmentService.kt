@@ -48,11 +48,11 @@ class SentencingAdjustmentService(
     } ?: throw NotFoundException("Sentence adjustment $adjustmentId not found")
 
   fun createSentenceAdjustment(bookingId: Long, sentenceSequence: Long, request: CreateSentenceAdjustmentRequest) =
-    offenderBookingRepository.findByIdOrNull(bookingId)?.let {
-      offenderSentenceRepository.findByIdOrNull(SentenceId(it, sentenceSequence))?.let { sentence ->
+    offenderBookingRepository.findByIdOrNull(bookingId)?.let { booking ->
+      offenderSentenceRepository.findByIdOrNull(SentenceId(booking, sentenceSequence))?.let { sentence ->
         sentence.adjustments.add(
           OffenderSentenceAdjustment(
-            offenderBooking = it,
+            offenderBooking = booking,
             sentenceSequence = sentenceSequence,
             sentence = sentence,
             sentenceAdjustment = findValidSentenceAdjustmentType(request.adjustmentTypeCode),
@@ -65,7 +65,19 @@ class SentencingAdjustmentService(
           )
         )
         entityManager.flush()
-        CreateAdjustmentResponse(sentence.adjustments.last().id)
+        val adjustmentId = sentence.adjustments.last().id
+        telemetryClient.trackEvent(
+          "sentence-adjustment-created",
+          mapOf(
+            "bookingId" to bookingId.toString(),
+            "offenderNo" to booking.offender.nomsId,
+            "sentenceSequence" to sentenceSequence.toString(),
+            "adjustmentId" to adjustmentId.toString(),
+            "adjustmentType" to request.adjustmentTypeCode,
+          ),
+          null
+        )
+        CreateAdjustmentResponse(adjustmentId)
       }
         ?: throw NotFoundException("Sentence with sequence $sentenceSequence not found")
     } ?: throw NotFoundException("Booking $bookingId not found")
@@ -79,14 +91,39 @@ class SentencingAdjustmentService(
       this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
       this.comment = request.comment
       this.active = request.active
+      telemetryClient.trackEvent(
+        "sentence-adjustment-updated",
+        mapOf(
+          "bookingId" to this.offenderBooking.bookingId.toString(),
+          "offenderNo" to this.offenderBooking.offender.nomsId,
+          "sentenceSequence" to this.sentenceSequence.toString(),
+          "adjustmentId" to adjustmentId.toString(),
+          "adjustmentType" to this.sentenceAdjustment.id,
+        ),
+        null
+      )
     } ?: throw NotFoundException("Sentence adjustment with id $adjustmentId not found")
 
   fun deleteSentenceAdjustment(adjustmentId: Long) {
     offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.also {
       offenderSentenceAdjustmentRepository.deleteById(adjustmentId)
-    } ?: {
-      telemetryClient.trackEvent("sentence-adjustment-delete-not-found", mapOf("adjustmentId" to adjustmentId.toString()), null)
+      telemetryClient.trackEvent(
+        "sentence-adjustment-deleted",
+        mapOf(
+          "bookingId" to it.offenderBooking.bookingId.toString(),
+          "offenderNo" to it.offenderBooking.offender.nomsId,
+          "sentenceSequence" to it.sentenceSequence.toString(),
+          "adjustmentId" to adjustmentId.toString(),
+          "adjustmentType" to it.sentenceAdjustment.id,
+        ),
+        null
+      )
     }
+      ?: telemetryClient.trackEvent(
+        "sentence-adjustment-delete-not-found",
+        mapOf("adjustmentId" to adjustmentId.toString()),
+        null
+      )
   }
 
   private fun findValidSentenceAdjustmentType(adjustmentTypeCode: String) =
@@ -131,7 +168,18 @@ class SentencingAdjustmentService(
         )
       )
       entityManager.flush()
-      CreateAdjustmentResponse(it.keyDateAdjustments.last().id).also { createAdjustmentResponse ->
+      val adjustmentId = it.keyDateAdjustments.last().id
+      telemetryClient.trackEvent(
+        "key-date-adjustment-created",
+        mapOf(
+          "bookingId" to bookingId.toString(),
+          "offenderNo" to it.offender.nomsId,
+          "adjustmentId" to adjustmentId.toString(),
+          "adjustmentType" to request.adjustmentTypeCode,
+        ),
+        null
+      )
+      CreateAdjustmentResponse(adjustmentId).also { createAdjustmentResponse ->
         storedProcedureRepository.postKeyDateAdjustmentUpsert(
           keyDateAdjustmentId = createAdjustmentResponse.id,
           bookingId = bookingId
@@ -153,18 +201,40 @@ class SentencingAdjustmentService(
         keyDateAdjustmentId = adjustmentId,
         bookingId = this.offenderBooking.bookingId
       )
+      telemetryClient.trackEvent(
+        "key-date-adjustment-updated",
+        mapOf(
+          "bookingId" to this.offenderBooking.bookingId.toString(),
+          "offenderNo" to this.offenderBooking.offender.nomsId,
+          "adjustmentId" to adjustmentId.toString(),
+          "adjustmentType" to request.adjustmentTypeCode,
+        ),
+        null
+      )
     } ?: throw NotFoundException("Key date adjustment with id $adjustmentId not found")
 
   fun deleteKeyDateAdjustment(adjustmentId: Long) {
-    keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
+    keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.also {
       storedProcedureRepository.preKeyDateAdjustmentDeletion(
         keyDateAdjustmentId = adjustmentId,
-        bookingId = this.offenderBooking.bookingId
+        bookingId = it.offenderBooking.bookingId
       )
       keyDateAdjustmentRepository.deleteById(adjustmentId)
-    } ?: {
-      telemetryClient.trackEvent("key-date-adjustment-delete-not-found", mapOf("adjustmentId" to adjustmentId.toString()), null)
-    }
+      telemetryClient.trackEvent(
+        "key-date-adjustment-deleted",
+        mapOf(
+          "bookingId" to it.offenderBooking.bookingId.toString(),
+          "offenderNo" to it.offenderBooking.offender.nomsId,
+          "adjustmentId" to adjustmentId.toString(),
+          "adjustmentType" to it.sentenceAdjustment.id,
+        ),
+        null
+      )
+    } ?: telemetryClient.trackEvent(
+      "key-date-adjustment-delete-not-found",
+      mapOf("adjustmentId" to adjustmentId.toString()),
+      null
+    )
   }
 
   fun findAdjustmentIdsByFilter(pageRequest: Pageable, adjustmentFilter: AdjustmentFilter): Page<AdjustmentIdResponse> {
