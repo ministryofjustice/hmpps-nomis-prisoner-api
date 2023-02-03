@@ -41,7 +41,7 @@ class StoredProcedureRepositoryOracle(
     bookingId: Long
   ) {
     val params = MapSqlParameterSource()
-      .addValue("p_offbook_id", bookingId)
+      .addValue("p_offender_book_id", bookingId)
       .addValue("p_offender_key_date_adjust_id", keyDateAdjustmentId)
     keyDateAdjustmentDeleteProcedure.execute(params)
   }
