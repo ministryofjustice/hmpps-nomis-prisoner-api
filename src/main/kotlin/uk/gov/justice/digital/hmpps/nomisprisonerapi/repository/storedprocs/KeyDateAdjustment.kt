@@ -7,7 +7,7 @@ import java.sql.Types
 import javax.sql.DataSource
 
 @Component
-class KeyDateAdjustmentInsert(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
+class KeyDateAdjustmentUpsert(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
   init {
     withSchemaName("OMS_OWNER")
       .withCatalogName("TAG_SENTENCE_CALC")

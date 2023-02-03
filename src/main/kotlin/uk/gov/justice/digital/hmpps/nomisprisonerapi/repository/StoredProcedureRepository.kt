@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentDelete
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentInsert
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentUpsert
 
 interface StoredProcedureRepository {
   fun postKeyDateAdjustmentUpsert(
@@ -22,7 +22,7 @@ interface StoredProcedureRepository {
 @Repository
 @Profile("oracle")
 class StoredProcedureRepositoryOracle(
-  private val keyDateAdjustmentInsertProcedure: KeyDateAdjustmentInsert,
+  private val keyDateAdjustmentUpsertProcedure: KeyDateAdjustmentUpsert,
   private val keyDateAdjustmentDeleteProcedure: KeyDateAdjustmentDelete,
 ) :
   StoredProcedureRepository {
@@ -34,7 +34,7 @@ class StoredProcedureRepositoryOracle(
     val params = MapSqlParameterSource()
       .addValue("p_offbook_id", bookingId)
       .addValue("p_key_date_id", keyDateAdjustmentId)
-    keyDateAdjustmentInsertProcedure.execute(params)
+    keyDateAdjustmentUpsertProcedure.execute(params)
   }
   override fun preKeyDateAdjustmentDeletion(
     keyDateAdjustmentId: Long,
