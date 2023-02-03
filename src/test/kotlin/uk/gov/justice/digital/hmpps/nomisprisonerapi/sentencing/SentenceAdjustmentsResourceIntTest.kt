@@ -738,7 +738,6 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNotFound
-        .expectBody()
 
       webTestClient.delete().uri("/sentence-adjustments/9999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -751,19 +750,16 @@ class SentenceAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
-        .expectBody()
 
       webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
-        .expectBody()
 
       webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNotFound
-        .expectBody()
     }
   }
 }

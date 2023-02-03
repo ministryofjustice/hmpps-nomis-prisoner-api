@@ -336,7 +336,7 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("PUT /key-date-adjustments/{adjustmentId}")
-  inner class UpdateSentenceAdjustment {
+  inner class UpdateKeyDateAdjustment {
     lateinit var anotherPrisoner: Offender
     var adjustmentId: Long = 0
     var bookingId: Long = 0
@@ -594,5 +594,99 @@ class KeyDateAdjustmentsResourceIntTest : IntegrationTestBase() {
         "adjustmentFromDate": "2023-01-02"
       }
     """.trimIndent()
+  }
+
+  @Nested
+  @DisplayName("DELETE /key-date-adjustments/{adjustmentId}")
+  inner class DeleteKeyDateAdjustment {
+    private lateinit var anotherPrisoner: Offender
+    var adjustmentId: Long = 0
+    var bookingId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      anotherPrisoner = repository.save(
+        OffenderBuilder(nomsId = "A1239TX")
+          .withBooking(
+            OffenderBookingBuilder()
+              .withKeyDateAdjustments(KeyDateAdjustmentBuilder())
+          )
+      )
+      adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
+      bookingId = anotherPrisoner.bookings.first().bookingId
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(anotherPrisoner)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    internal fun `204 even when adjustment does not exist`() {
+      webTestClient.get().uri("/key-date-adjustments/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNotFound
+
+      webTestClient.delete().uri("/key-date-adjustments/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+    }
+    @Test
+    internal fun `204 when adjustment does exist`() {
+      webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+    @Test
+    fun `will call store procedure to delete sentence adjustments`() {
+      webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      verify(spRepository).postKeyDateAdjustmentCreation(
+        eq(adjustmentId),
+        eq(bookingId)
+      )
+    }
   }
 }

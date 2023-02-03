@@ -155,6 +155,19 @@ class SentencingAdjustmentService(
       )
     } ?: throw NotFoundException("Key date adjustment with id $adjustmentId not found")
 
+  fun deleteKeyDateAdjustment(adjustmentId: Long) {
+    keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
+      keyDateAdjustmentRepository.deleteById(adjustmentId)
+      entityManager.flush()
+      storedProcedureRepository.postKeyDateAdjustmentCreation(
+        keyDateAdjustmentId = adjustmentId,
+        bookingId = this.offenderBooking.bookingId
+      )
+    } ?: {
+      telemetryClient.trackEvent("key-date-adjustment-delete-not-found", mapOf("adjustmentId" to adjustmentId.toString()), null)
+    }
+  }
+
   fun findAdjustmentIdsByFilter(pageRequest: Pageable, adjustmentFilter: AdjustmentFilter): Page<AdjustmentIdResponse> {
     val adjustedToDate = adjustmentFilter.toDate?.let { adjustmentFilter.toDate.plusDays(1) }
     return keyDateAdjustmentRepository.adjustmentIdsQuery_named(

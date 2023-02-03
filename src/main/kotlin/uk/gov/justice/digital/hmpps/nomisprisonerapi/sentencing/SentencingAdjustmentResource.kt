@@ -112,16 +112,6 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
           )
         ]
       ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Adjustment not found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
-      ),
     ]
   )
   fun deleteSentenceAdjustment(
@@ -337,6 +327,45 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     adjustmentId: Long,
     @RequestBody @Valid request: UpdateKeyDateAdjustmentRequest
   ): Unit = sentencingAdjustmentService.updateKeyDateAdjustment(adjustmentId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @DeleteMapping("/key-date-adjustments/{adjustmentId}")
+  @Operation(
+    summary = "deletes specific key date adjustment",
+    description = "Requires role NOMIS_SENTENCING. Deletes a key date adjustment by id",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "the key date adjustment has been deleted"
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+    ]
+  )
+  fun deleteKeyDateAdjustment(
+    @Schema(description = "Key date adjustment id", example = "12345", required = true)
+    @PathVariable
+    adjustmentId: Long,
+  ): Unit = sentencingAdjustmentService.deleteKeyDateAdjustment(adjustmentId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/booking-id/{bookingId}/adjustments")
