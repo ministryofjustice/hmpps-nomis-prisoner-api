@@ -193,7 +193,7 @@ class SentencingAdjustmentService(
       this.adjustmentDate = request.adjustmentDate
       this.adjustmentNumberOfDays = request.adjustmentDays
       this.fromDate = request.adjustmentFromDate
-      this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
+      this.toDate = request.adjustmentFromDate.plusDays(request.adjustmentDays - 1)
       this.comment = request.comment
       this.active = request.active
       entityManager.flush()

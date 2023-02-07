@@ -38,6 +38,9 @@ data class CreateActivityRequest(
 
   @Schema(description = "Program Service code (from activity category)", required = true)
   val programCode: String,
+
+  @Schema(description = "Half or Full day (H or F)", required = true, example = "H")
+  val payPerSession: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
