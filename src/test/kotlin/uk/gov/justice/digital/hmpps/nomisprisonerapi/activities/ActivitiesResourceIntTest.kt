@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -52,7 +53,8 @@ private val createActivityRequest: () -> CreateActivityRequest = {
         payBand = "5",
         rate = BigDecimal(3.2),
       )
-    )
+    ),
+    payPerSession = "F",
   )
 }
 
@@ -170,6 +172,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
         BigDecimal(0.4),
         within(BigDecimal("0.001"))
       )
+      assertThat(courseActivity.payPerSession).isEqualTo(PayPerSession.F)
     }
 
     private fun callCreateEndpoint(): Long {
@@ -192,7 +195,8 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
                 "incentiveLevel" : "BAS",
                 "payBand" : "5",
                 "rate" : 0.4
-                } ]
+                } ],
+            "payPerSession": "F"    
           }"""
           )
         )

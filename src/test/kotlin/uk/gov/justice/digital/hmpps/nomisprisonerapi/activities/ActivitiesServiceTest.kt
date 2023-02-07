@@ -128,7 +128,8 @@ internal class ActivitiesServiceTest {
           payBand = "5",
           rate = BigDecimal(3.2),
         )
-      )
+      ),
+      payPerSession = "H",
     )
 
     @BeforeEach
