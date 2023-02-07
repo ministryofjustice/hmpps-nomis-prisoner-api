@@ -131,6 +131,16 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         description = "the sentence adjustment has been updated"
       ),
       ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
         content = [
@@ -180,7 +190,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Supplied data is invalid",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
         content = [
           Content(
             mediaType = "application/json",
@@ -290,6 +300,16 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         description = "the key date adjustment has been updated"
       ),
       ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class)
+          )
+        ]
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
         content = [
@@ -388,7 +408,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Supplied data is invalid",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
         content = [
           Content(
             mediaType = "application/json",
