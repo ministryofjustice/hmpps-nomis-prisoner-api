@@ -217,7 +217,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
     // Currently just mutates the location and pay rate - more to follow
     private fun updateActivityRequestJson(
-      endDateJson: String = """"endDate" : "2022-11-30",""",
+      endDateJson: String? = """"endDate" : "2022-11-30",""",
       internalLocationJson: String? = """"internalLocationId" : -27,""",
       payRatesJson: String? = """
           "payRates" : [ {
@@ -227,7 +227,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
               } ]
       """.trimIndent(),
     ) = """{
-            $endDateJson
+            ${endDateJson ?: ""}
             ${internalLocationJson ?: ""}
             ${payRatesJson ?: ""}
           }"""
@@ -274,7 +274,7 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.lookupActivity(existingActivityId)
-        assertThat(updated.internalLocation.locationId).isEqualTo(-27)
+        assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
         assertThat(updated.payRates[1].endDate).isNull()
         assertThat(updated.payRates[1].halfDayRate).isCloseTo(BigDecimal(0.8), within(BigDecimal(0.001)))
@@ -456,6 +456,38 @@ class ActivitiesResourceIntTest : IntegrationTestBase() {
 
         val updated = repository.lookupActivity(existingActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
+      }
+    }
+
+    @Nested
+    inner class ActivityDetails {
+      @Test
+      fun `should update details`() {
+        val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpoint(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.lookupActivity(existingActivityId)
+        assertThat(updated.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
+        assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
+      }
+      @Test
+      fun `should allow nullable updates`() {
+        val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpoint(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(endDateJson = null, internalLocationJson = null),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.lookupActivity(existingActivityId)
+        assertThat(updated.scheduleEndDate).isNull()
+        assertThat(updated.internalLocation).isNull()
       }
     }
 

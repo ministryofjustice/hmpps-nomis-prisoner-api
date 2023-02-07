@@ -11,8 +11,8 @@ data class UpdateActivityRequest(
   @Schema(description = "Activity end date", example = "2022-08-12")
   val endDate: LocalDate?,
 
-  @Schema(description = "Room where the activity is to occur (from activity schedule)", required = true)
-  val internalLocationId: Long,
+  @Schema(description = "Room where the activity is to occur (from activity schedule)")
+  val internalLocationId: Long?,
 
   @Schema(description = "Pay rates", required = true)
   val payRates: List<PayRateRequest>,

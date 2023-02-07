@@ -19,7 +19,7 @@ class CourseActivityBuilderFactory(
     startDate: String = "2022-10-31",
     endDate: String? = null,
     minimumIncentiveLevelCode: String = "STD",
-    internalLocationId: Long = -8,
+    internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(courseActivityPayRateBuilderFactory.builder()),
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
@@ -50,7 +50,7 @@ class CourseActivityBuilder(
   var startDate: String,
   var endDate: String?,
   var minimumIncentiveLevelCode: String,
-  var internalLocationId: Long,
+  var internalLocationId: Long?,
   var payRates: List<CourseActivityPayRateBuilder>,
 ) {
   fun build(): CourseActivity =
@@ -65,7 +65,7 @@ class CourseActivityBuilder(
       scheduleStartDate = LocalDate.parse(startDate),
       scheduleEndDate = endDate?.let { LocalDate.parse(it) },
       iepLevel = repository.lookupIepLevel(minimumIncentiveLevelCode),
-      internalLocation = repository.lookupAgencyInternalLocation(internalLocationId),
+      internalLocation = internalLocationId?.let { repository.lookupAgencyInternalLocation(it) },
     ).apply {
       payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
     }
