@@ -168,7 +168,7 @@ internal class ActivitiesServiceTest {
           assertThat(activity.providerPartyCode).isEqualTo(prisonId)
           assertThat(activity.courseActivityType).isEqualTo("PA")
           assertThat(activity.iepLevel.code).isEqualTo(iepLevel)
-          assertThat(activity.internalLocation.locationId).isEqualTo(roomId)
+          assertThat(activity.internalLocation?.locationId).isEqualTo(roomId)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
         }
       )

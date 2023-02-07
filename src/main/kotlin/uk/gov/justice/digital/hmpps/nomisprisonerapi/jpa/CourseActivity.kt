@@ -122,8 +122,8 @@ data class CourseActivity(
   val iepLevel: IEPLevel,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "INTERNAL_LOCATION_ID", nullable = false)
-  var internalLocation: AgencyInternalLocation,
+  @JoinColumn(name = "INTERNAL_LOCATION_ID")
+  var internalLocation: AgencyInternalLocation?,
 
   @Column(name = "HOLIDAY_FLAG")
   @Convert(converter = YesNoConverter::class)

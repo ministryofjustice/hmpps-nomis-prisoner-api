@@ -21,8 +21,8 @@ data class CreateActivityRequest(
   @Schema(description = "Prison where the activity is to occur", required = true)
   val prisonId: String,
 
-  @Schema(description = "Room where the activity is to occur (from activity schedule)", required = true)
-  val internalLocationId: Long,
+  @Schema(description = "Room where the activity is to occur (from activity schedule)")
+  val internalLocationId: Long?,
 
   @Schema(description = "Capacity of activity (from activity schedule)", required = true)
   val capacity: Int,
