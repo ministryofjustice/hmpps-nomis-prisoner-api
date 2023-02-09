@@ -186,6 +186,7 @@ class Repository(
     agencyInternalLocationRepository.findById(locationId).orElse(null)
 
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
+  fun deleteOffenders() = offenderRepository.deleteAll()
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
 
   fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
