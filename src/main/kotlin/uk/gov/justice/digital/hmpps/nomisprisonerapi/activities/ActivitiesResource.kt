@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class ActivitiesResource(private val activitiesService: ActivitiesService) {
+class ActivitiesResource(private val activityService: ActivityService, private val allocationService: AllocationService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities")
   @ResponseStatus(HttpStatus.CREATED)
@@ -67,7 +67,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
   fun createActivity(
     @RequestBody @Valid createActivityRequest: CreateActivityRequest
   ): CreateActivityResponse =
-    activitiesService.createActivity(createActivityRequest)
+    activityService.createActivity(createActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}")
@@ -120,7 +120,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
   fun updateActivity(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid updateActivityRequest: UpdateActivityRequest
-  ) = activitiesService.updateActivity(courseActivityId, updateActivityRequest)
+  ) = activityService.updateActivity(courseActivityId, updateActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities/{courseActivityId}")
@@ -186,7 +186,7 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid createRequest: CreateOffenderProgramProfileRequest
   ): OffenderProgramProfileResponse =
-    activitiesService.createOffenderProgramProfile(courseActivityId, createRequest)
+    allocationService.createOffenderProgramProfile(courseActivityId, createRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/booking-id/{bookingId}/end")
@@ -247,5 +247,5 @@ class ActivitiesResource(private val activitiesService: ActivitiesService) {
     @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
     @RequestBody @Valid createRequest: EndOffenderProgramProfileRequest
   ) =
-    activitiesService.endOffenderProgramProfile(courseActivityId, bookingId, createRequest)
+    allocationService.endOffenderProgramProfile(courseActivityId, bookingId, createRequest)
 }

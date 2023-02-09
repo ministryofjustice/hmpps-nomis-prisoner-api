@@ -30,9 +30,9 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       )
     )
     .info(
-      Info().title("NOMIS Prisoner Management API")
+      Info().title("NOMIS Synchronisation API")
         .version(version)
-        .description("Controls writing Prisoner information back to NOMIS")
+        .description("Controls writing Prisoner information back to NOMIS for data synchronistion (not intended for general usage)")
         .contact(Contact().name("HMPPS Digital Studio").email("feedback@digital.justice.gov.uk"))
     )
     .components(
