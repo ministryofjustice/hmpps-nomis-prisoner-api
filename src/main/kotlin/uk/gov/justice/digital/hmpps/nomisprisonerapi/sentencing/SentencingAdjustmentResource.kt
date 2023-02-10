@@ -523,8 +523,8 @@ data class SentenceAdjustmentResponse(
   val sentenceSequence: Long,
   @Schema(description = "Adjustment type", required = true)
   val adjustmentType: SentencingAdjustmentType,
-  @Schema(description = "Date adjustment is applied", required = true)
-  val adjustmentDate: LocalDate,
+  @Schema(description = "Date adjustment is applied", required = false)
+  val adjustmentDate: LocalDate?,
   @Schema(description = "Start of the period which contributed to the adjustment", required = false)
   val adjustmentFromDate: LocalDate?,
   @Schema(description = "End of the period which contributed to the adjustment", required = false)
@@ -647,8 +647,8 @@ data class KeyDateAdjustmentResponse(
   val bookingId: Long,
   @Schema(description = "Adjustment type", required = true)
   val adjustmentType: SentencingAdjustmentType,
-  @Schema(description = "Date adjustment is applied", required = true)
-  val adjustmentDate: LocalDate,
+  @Schema(description = "Date adjustment is applied", required = false)
+  val adjustmentDate: LocalDate?,
   @Schema(description = "Start of the period which contributed to the adjustment", required = false)
   val adjustmentFromDate: LocalDate?,
   @Schema(description = "End of the period which contributed to the adjustment", required = false)
