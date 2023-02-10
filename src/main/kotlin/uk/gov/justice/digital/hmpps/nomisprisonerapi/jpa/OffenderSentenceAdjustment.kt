@@ -34,7 +34,7 @@ class OffenderSentenceAdjustment(
   var sentenceAdjustment: SentenceAdjustment,
 
   @Column(name = "ADJUST_DATE")
-  var adjustmentDate: LocalDate,
+  var adjustmentDate: LocalDate?,
 
   @Column(name = "ADJUST_DAYS")
   var adjustmentNumberOfDays: Long,
