@@ -368,6 +368,20 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           isNull()
         )
       }
+
+      @Test
+      fun `will call store procedure to audit key date adjustment create`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest())
+          )
+          .exchange()
+          .expectStatus().isCreated
+
+        verify(spRepository).audit("DPS_SYNCHRONISATION")
+      }
     }
 
     fun createBasicKeyDateAdjustmentRequest() = """
@@ -615,7 +629,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will call store procedure to update sentence adjustments`() {
+      fun `will call store procedure to update key date adjustments`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -629,6 +643,19 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           eq(adjustmentId),
           eq(bookingId)
         )
+      }
+      @Test
+      fun `will call store procedure to audit key date adjustment update`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest())
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(spRepository).audit("DPS_SYNCHRONISATION")
       }
 
       @Test
@@ -784,6 +811,15 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         eq(adjustmentId),
         eq(bookingId)
       )
+    }
+    @Test
+    fun `will call audit store procedure to record key date adjustments delete`() {
+      webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      verify(spRepository).audit("DPS_SYNCHRONISATION")
     }
   }
 
@@ -1102,6 +1138,20 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           },
           isNull()
         )
+      }
+
+      @Test
+      fun `will call store procedure to audit sentence adjustment create`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicSentenceAdjustmentRequest())
+          )
+          .exchange()
+          .expectStatus().isCreated
+
+        verify(spRepository).audit("DPS_SYNCHRONISATION")
       }
     }
 
@@ -1471,6 +1521,20 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           isNull()
         )
       }
+
+      @Test
+      fun `will call store procedure to audit sentence adjustment update`() {
+        webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest())
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(spRepository).audit("DPS_SYNCHRONISATION")
+      }
     }
 
     fun createBasicSentenceAdjustmentUpdateRequest() = """
@@ -1589,6 +1653,15 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         },
         isNull()
       )
+    }
+    @Test
+    fun `will call store procedure to audit sentence adjustment update`() {
+      webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      verify(spRepository).audit("DPS_SYNCHRONISATION")
     }
   }
 
