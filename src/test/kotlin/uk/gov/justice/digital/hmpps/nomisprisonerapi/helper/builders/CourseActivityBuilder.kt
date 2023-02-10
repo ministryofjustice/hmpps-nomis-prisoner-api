@@ -1,13 +1,17 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import java.time.LocalDate
 
 @Component
 class CourseActivityBuilderFactory(
-  private val repository: Repository,
-  private val courseActivityPayRateBuilderFactory: CourseActivityPayRateBuilderFactory,
+  private val courseActivityPayRateBuilderFactory: CourseActivityPayRateBuilderFactory = CourseActivityPayRateBuilderFactory(),
+  private val repository: Repository? = null,
 ) {
   fun builder(
     code: String = "CA",
@@ -40,7 +44,7 @@ class CourseActivityBuilderFactory(
 }
 
 class CourseActivityBuilder(
-  val repository: Repository,
+  val repository: Repository?,
   var code: String,
   var programId: Long,
   var prisonId: String,
@@ -54,19 +58,57 @@ class CourseActivityBuilder(
   var payRates: List<CourseActivityPayRateBuilder>,
 ) {
   fun build(): CourseActivity =
+    repository?.let {
+      CourseActivity(
+        code = code,
+        program = repository.lookupProgramService(programId),
+        caseloadId = prisonId,
+        prison = repository.lookupAgency(prisonId),
+        description = description,
+        capacity = capacity,
+        active = active,
+        scheduleStartDate = LocalDate.parse(startDate),
+        scheduleEndDate = endDate?.let { LocalDate.parse(it) },
+        iepLevel = repository.lookupIepLevel(minimumIncentiveLevelCode),
+        internalLocation = internalLocationId?.let { repository.lookupAgencyInternalLocation(it) },
+      ).apply {
+        payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
+      }
+    }
+      ?: throw IllegalStateException("No repository - is this a unit test? Try create() instead.")
+
+  fun create(
+    programCode: String = "CA",
+    internalLocationCode: String? = "CRM1"
+  ): CourseActivity =
     CourseActivity(
       code = code,
-      program = repository.lookupProgramService(programId),
+      program = programService(programCode),
       caseloadId = prisonId,
-      prison = repository.lookupAgency(prisonId),
+      prison = prison(prisonId),
       description = description,
       capacity = capacity,
       active = active,
       scheduleStartDate = LocalDate.parse(startDate),
       scheduleEndDate = endDate?.let { LocalDate.parse(it) },
-      iepLevel = repository.lookupIepLevel(minimumIncentiveLevelCode),
-      internalLocation = internalLocationId?.let { repository.lookupAgencyInternalLocation(it) },
+      iepLevel = iepLevel(minimumIncentiveLevelCode),
+      internalLocation = internalLocationCode?.let { internalLocation(it) },
     ).apply {
-      payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
+      payRates.addAll(this@CourseActivityBuilder.payRates.map { it.create(this) })
     }
+
+  private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()
+
+  private fun prison(id: String) = AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
+
+  private fun iepLevel(code: String) = IEPLevel(code = code, description = code)
+
+  private fun internalLocation(code: String) = AgencyInternalLocation(
+    locationId = internalLocationId!!,
+    active = true,
+    locationType = "CLAS",
+    agencyId = prisonId,
+    description = "Classroom 1",
+    locationCode = code
+  )
 }
