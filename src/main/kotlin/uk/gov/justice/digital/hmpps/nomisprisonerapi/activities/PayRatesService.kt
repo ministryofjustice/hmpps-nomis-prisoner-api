@@ -76,7 +76,7 @@ class PayRatesService(
       }
     }
 
-    newPayRates.addAll(existingPayRates.getExpiredPayRates())
+    newPayRates.addAll(existingPayRates.getExpiredPayRates() - newPayRates.toSet())
     newPayRates.addAll(existingPayRates.expirePayRatesIfMissingFrom(newPayRates))
 
     return newPayRates
@@ -89,7 +89,7 @@ class PayRatesService(
     }
 
   private fun CourseActivityPayRate.rateIsUnchanged(requested: PayRateRequest) =
-    this.halfDayRate.compareTo(requested.rate) == 0
+    this.halfDayRate.compareTo(CourseActivityPayRate.preciseHalfDayRate(requested.rate)) == 0
 
   private fun CourseActivityPayRate.rateIsChangedButNotYetActive(requested: PayRateRequest) =
     this.rateIsChanged(requested) && this.hasFutureStartDate()
