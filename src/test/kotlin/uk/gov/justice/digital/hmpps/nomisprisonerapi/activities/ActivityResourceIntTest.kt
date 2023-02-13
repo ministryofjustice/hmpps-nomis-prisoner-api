@@ -490,11 +490,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       val savedActivity = repository.lookupActivity(1)
 
-      assertThat(savedActivity.courseSchedules[0].courseScheduleId).isGreaterThan(0)
-      assertThat(savedActivity.courseSchedules[0].scheduleDate).isEqualTo(LocalDate.of(2022, 11, 1))
-      assertThat(savedActivity.courseSchedules[0].startTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 8, 0))
-      assertThat(savedActivity.courseSchedules[0].endTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 11, 0))
-      assertThat(savedActivity.courseSchedules[0].slotCategoryCode).isEqualTo("AM")
+      with(savedActivity.courseSchedules[0]) {
+        assertThat(courseScheduleId).isGreaterThan(0)
+        assertThat(scheduleDate).isEqualTo(LocalDate.of(2022, 11, 1))
+        assertThat(startTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 8, 0))
+        assertThat(endTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 11, 0))
+        assertThat(slotCategoryCode).isEqualTo("AM")
+      }
     }
   }
 }
