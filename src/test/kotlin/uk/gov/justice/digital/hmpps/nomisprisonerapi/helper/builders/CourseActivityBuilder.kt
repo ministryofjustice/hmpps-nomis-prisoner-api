@@ -25,6 +25,7 @@ class CourseActivityBuilderFactory(
     minimumIncentiveLevelCode: String = "STD",
     internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(courseActivityPayRateBuilderFactory.builder()),
+    courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
       repository,
@@ -38,7 +39,8 @@ class CourseActivityBuilderFactory(
       endDate,
       minimumIncentiveLevelCode,
       internalLocationId,
-      payRates
+      payRates,
+      courseSchedules,
     )
   }
 }
@@ -56,6 +58,7 @@ class CourseActivityBuilder(
   var minimumIncentiveLevelCode: String,
   var internalLocationId: Long?,
   var payRates: List<CourseActivityPayRateBuilder>,
+  var courseSchedules: List<CourseScheduleBuilder>,
 ) {
   fun build(): CourseActivity =
     repository?.let {
@@ -73,6 +76,7 @@ class CourseActivityBuilder(
         internalLocation = internalLocationId?.let { repository.lookupAgencyInternalLocation(it) },
       ).apply {
         payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
+        courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
       }
     }
       ?: throw IllegalStateException("No repository - is this a unit test? Try create() instead.")
@@ -95,6 +99,7 @@ class CourseActivityBuilder(
       internalLocation = internalLocationCode?.let { internalLocation(it) },
     ).apply {
       payRates.addAll(this@CourseActivityBuilder.payRates.map { it.create(this) })
+      courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
     }
 
   private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()

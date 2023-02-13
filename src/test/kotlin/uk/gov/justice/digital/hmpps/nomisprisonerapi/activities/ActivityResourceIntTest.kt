@@ -2,6 +2,8 @@
 
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
+import jakarta.persistence.EntityManager
+import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
@@ -25,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 private const val PRISON_ID = "MDI"
 private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
@@ -470,5 +473,30 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private fun getSavedActivityId() =
       repository.activityRepository.findAll().firstOrNull()?.courseActivityId
         ?: throw BadDataException("No activities in database")
+  }
+
+  // TODO SDI-610 temporary test to check new table and entity are OK - remove when we have proper integration tests
+  @Nested
+  inner class CourseSchedules {
+
+    @Autowired
+    private lateinit var entityManager: EntityManager
+
+    @Test
+    @Transactional
+    fun `can save and load course schedules`() {
+      repository.save(courseActivityBuilderFactory.builder())
+      entityManager.flush()
+
+      val savedActivity = repository.lookupActivity(1)
+
+      with(savedActivity.courseSchedules[0]) {
+        assertThat(courseScheduleId).isGreaterThan(0)
+        assertThat(scheduleDate).isEqualTo(LocalDate.of(2022, 11, 1))
+        assertThat(startTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 8, 0))
+        assertThat(endTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 11, 0))
+        assertThat(slotCategoryCode).isEqualTo("AM")
+      }
+    }
   }
 }
