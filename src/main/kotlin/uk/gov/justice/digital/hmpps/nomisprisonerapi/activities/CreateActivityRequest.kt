@@ -41,6 +41,9 @@ data class CreateActivityRequest(
 
   @Schema(description = "Half or Full day (H or F)", required = true, example = "H")
   val payPerSession: String,
+
+  @Schema(description = "Schedules", required = false)
+  val schedules: List<SchedulesRequest> = listOf(),
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -54,6 +57,19 @@ data class PayRateRequest(
 
   @Schema(description = "The half day rate", example = "0.50", required = true)
   val rate: BigDecimal,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Course activity creation request schedules")
+data class SchedulesRequest(
+  @Schema(description = "Schedule date", required = true, example = "2022-08-12")
+  val date: LocalDate,
+
+  @Schema(description = "Schedule start time in 24 hour clock", required = true, example = "08:00")
+  val startTime: String,
+
+  @Schema(description = "Schedule end time in 24 hour clock", required = true, example = "11:00")
+  val endTime: String,
 )
 
 /*

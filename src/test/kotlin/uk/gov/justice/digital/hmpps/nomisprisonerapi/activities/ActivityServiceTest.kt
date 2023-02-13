@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
@@ -24,7 +23,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional
@@ -35,7 +33,6 @@ private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTE
 private const val PROGRAM_CODE = "TEST"
 private const val IEP_LEVEL = "STD"
 private const val PRISON_DESCRIPTION = "Leeds"
-private const val PAY_BAND_CODE = "5"
 
 class ActivityServiceTest {
 
@@ -44,7 +41,6 @@ class ActivityServiceTest {
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository = mock()
   private val programServiceRepository: ProgramServiceRepository = mock()
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
-  private val payBandRepository: ReferenceCodeRepository<PayBand> = mock()
   private val payRatesService: PayRatesService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
@@ -73,8 +69,6 @@ class ActivityServiceTest {
   )
 
   private fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
-
-  private fun defaultPayBand(code: String) = PayBand(code, "Pay band $code")
 
   @Nested
   internal inner class CreateActivity {
@@ -117,13 +111,6 @@ class ActivityServiceTest {
         returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
         returnedCourseActivity
       }
-      whenever(payBandRepository.findById(PayBand.pk(PAY_BAND_CODE))).thenReturn(
-        Optional.of(
-          defaultPayBand(
-            PAY_BAND_CODE
-          )
-        )
-      )
     }
 
     private var returnedCourseActivity: CourseActivity? = null
