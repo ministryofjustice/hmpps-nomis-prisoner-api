@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
 
 class CourseScheduleBuilder(
@@ -10,7 +11,7 @@ class CourseScheduleBuilder(
   val startTimeMinutes: Int = 0,
   val endTimeHours: Int = 11,
   val endTimeMinutes: Int = 0,
-  val slotCategoryCode: String = "AM",
+  val slotCategory: SlotCategory = SlotCategory.AM,
 ) {
   fun build(courseActivity: CourseActivity) =
     LocalDate.parse(scheduleDate).let { date ->
@@ -19,7 +20,7 @@ class CourseScheduleBuilder(
         scheduleDate = date,
         startTime = date.atTime(startTimeHours, startTimeMinutes),
         endTime = date.atTime(endTimeHours, endTimeMinutes),
-        slotCategoryCode = slotCategoryCode,
+        slotCategory = slotCategory,
       )
     }
 }

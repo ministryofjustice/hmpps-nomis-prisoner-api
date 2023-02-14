@@ -8,6 +8,9 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.AM
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.ED
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.PM
 import java.time.LocalDate
 
 class ScheduleServiceTest {
@@ -135,6 +138,24 @@ class ScheduleServiceTest {
           assertThat(startTime).isEqualTo("2022-11-02T10:00")
           assertThat(endTime).isEqualTo("2022-11-02T13:00")
         }
+      }
+
+      @Test
+      fun `should default slots`() {
+        val request = createActivityRequest.copy(
+          schedules = listOf(
+            createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 2), startTime = "00:00", endTime = "11:59"),
+            createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 2), startTime = "12:00", endTime = "16:59"),
+            createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 2), startTime = "17:00", endTime = "23:59"),
+            createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 3), startTime = "11:59", endTime = "11:59"),
+            createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 3), startTime = "16:59", endTime = "16:59"),
+            createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 3), startTime = "23:59", endTime = "23:59"),
+          )
+        )
+
+        val newSchedules = scheduleService.mapSchedules(request, courseActivity)
+
+        assertThat(newSchedules).extracting("slotCategory").containsExactly(AM, PM, ED, AM, PM, ED)
       }
     }
   }
