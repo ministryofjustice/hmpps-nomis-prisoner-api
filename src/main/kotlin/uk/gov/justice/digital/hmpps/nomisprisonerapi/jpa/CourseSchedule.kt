@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
@@ -38,8 +40,9 @@ data class CourseSchedule(
   @Column
   val scheduleStatus: String = "SCH",
 
-  @Column
-  val slotCategoryCode: String? = null,
+  @Column(name = "SLOT_CATEGORY_CODE")
+  @Enumerated(EnumType.STRING)
+  val slotCategory: SlotCategory? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

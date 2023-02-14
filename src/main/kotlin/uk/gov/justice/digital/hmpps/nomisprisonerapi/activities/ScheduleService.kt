@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
+import java.time.LocalDateTime
 
 private const val HOURS_AND_MINUTES = "([01]?[0-9]|2[0-3]):([0-5][0-9])"
 
@@ -21,7 +23,7 @@ class ScheduleService {
         scheduleDate = it.date,
         startTime = it.date.atTime(startHour, startMinute),
         endTime = it.date.atTime(endHour, endMinute),
-        slotCategoryCode = "AM" // TODO SDI-610 What rules should we apply to default this value?
+        slotCategory = it.date.atTime(startHour, startMinute).toSlot()
       )
     }.toList()
 
@@ -49,4 +51,11 @@ class ScheduleService {
   }
 
   private fun String.validTime() = Regex(HOURS_AND_MINUTES).matches(this)
+
+  private fun LocalDateTime.toSlot() =
+    when {
+      hour < 12 -> SlotCategory.AM
+      hour < 17 -> SlotCategory.PM
+      else -> SlotCategory.ED
+    }
 }
