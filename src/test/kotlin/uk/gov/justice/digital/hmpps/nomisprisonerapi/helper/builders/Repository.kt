@@ -234,6 +234,7 @@ class Repository(
 
   fun lookupActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
     it.payRates.size
+    it.courseSchedules.size
   }
 
   fun deleteProgramServices() = programServiceRepository.deleteAll()
