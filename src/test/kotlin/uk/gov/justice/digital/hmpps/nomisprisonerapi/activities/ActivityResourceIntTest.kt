@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -485,10 +486,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     @Transactional
     fun `can save and load course schedules`() {
-      repository.save(courseActivityBuilderFactory.builder())
+       val courseActivity= repository.save(courseActivityBuilderFactory.builder())
       entityManager.flush()
 
-      val savedActivity = repository.lookupActivity(1)
+      val savedActivity = repository.lookupActivity(courseActivity.courseActivityId)
 
       with(savedActivity.courseSchedules[0]) {
         assertThat(courseScheduleId).isGreaterThan(0)
@@ -496,6 +497,34 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(startTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 8, 0))
         assertThat(endTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 11, 0))
         assertThat(slotCategoryCode).isEqualTo("AM")
+      }
+    }
+  }
+
+  // TODO SDI-611 temporary test to check new table and entity are OK - remove when we have proper integration tests
+  @Nested
+  inner class CourseScheduleRules {
+
+    @Test
+    @Transactional
+    fun `can save and load course schedule rules`() {
+      val courseActivity = repository.save(courseActivityBuilderFactory.builder())
+
+      val savedActivity = repository.lookupActivity(courseActivity.courseActivityId)
+
+      with(savedActivity.courseScheduleRules[0]) {
+        assertThat(id).isGreaterThan(0)
+        assertThat(courseActivity.courseActivityId).isEqualTo(1)
+        assertThat(monday).isTrue()
+        assertThat(tuesday).isTrue()
+        assertThat(wednesday).isTrue()
+        assertThat(thursday).isTrue()
+        assertThat(friday).isTrue()
+        assertThat(saturday).isFalse()
+        assertThat(sunday).isFalse()
+        assertThat(startTime).isEqualTo(LocalDateTime.of(2022, 10, 31, 9, 30))
+        assertThat(endTime).isEqualTo(LocalDateTime.of(2022, 10, 31, 12, 30))
+        assertThat(slotCategoryCode).isEqualTo(SlotCategory.AM)
       }
     }
   }
