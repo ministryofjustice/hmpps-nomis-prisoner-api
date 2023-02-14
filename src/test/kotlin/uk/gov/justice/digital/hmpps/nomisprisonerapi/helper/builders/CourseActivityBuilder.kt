@@ -26,6 +26,7 @@ class CourseActivityBuilderFactory(
     internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(courseActivityPayRateBuilderFactory.builder()),
     courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
+    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
       repository,
@@ -41,6 +42,7 @@ class CourseActivityBuilderFactory(
       internalLocationId,
       payRates,
       courseSchedules,
+      courseScheduleRules,
     )
   }
 }
@@ -59,6 +61,7 @@ class CourseActivityBuilder(
   var internalLocationId: Long?,
   var payRates: List<CourseActivityPayRateBuilder>,
   var courseSchedules: List<CourseScheduleBuilder>,
+  var courseScheduleRules: List<CourseScheduleRuleBuilder>,
 ) {
   fun build(): CourseActivity =
     repository?.let {
@@ -77,6 +80,7 @@ class CourseActivityBuilder(
       ).apply {
         payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
         courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
+        courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this, this.scheduleStartDate!!) })
       }
     }
       ?: throw IllegalStateException("No repository - is this a unit test? Try create() instead.")
@@ -100,6 +104,7 @@ class CourseActivityBuilder(
     ).apply {
       payRates.addAll(this@CourseActivityBuilder.payRates.map { it.create(this) })
       courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
+      courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this, this.scheduleStartDate!!) })
     }
 
   private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()

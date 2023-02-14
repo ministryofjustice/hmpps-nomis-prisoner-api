@@ -244,7 +244,7 @@ class Repository(
 
   fun save(courseActivityBuilder: CourseActivityBuilder): CourseActivity =
     courseActivityBuilder.build()
-      .let { activityRepository.save(it) }
+      .let { activityRepository.saveAndFlush(it) }
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
