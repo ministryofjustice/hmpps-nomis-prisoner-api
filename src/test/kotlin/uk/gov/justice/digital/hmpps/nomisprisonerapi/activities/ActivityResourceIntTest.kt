@@ -346,6 +346,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("Pay band code 99 does not exist")
           }
       }
+
       @Test
       fun `should return bad request when incentive level unavailable for prison`() {
         callUpdateEndpoint(
@@ -448,6 +449,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(updated.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
         assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
       }
+
       @Test
       fun `should allow nullable updates`() {
         val existingActivityId = getSavedActivityId()
@@ -486,7 +488,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     @Transactional
     fun `can save and load course schedules`() {
-       val courseActivity= repository.save(courseActivityBuilderFactory.builder())
+      val courseActivity = repository.save(courseActivityBuilderFactory.builder())
       entityManager.flush()
 
       val savedActivity = repository.lookupActivity(courseActivity.courseActivityId)
