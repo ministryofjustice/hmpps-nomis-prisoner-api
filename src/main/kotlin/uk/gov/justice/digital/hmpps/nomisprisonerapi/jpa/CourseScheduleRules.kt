@@ -33,43 +33,43 @@ data class CourseScheduleRule(
 
   val weekNo: Int? = 1, // always set to 1 in prod
 
-  @Column(name = "MONDAY_FLAG")
+  @Column(name = "MONDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val monday: Boolean = false,
 
-  @Column(name = "TUESDAY_FLAG")
+  @Column(name = "TUESDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val tuesday: Boolean = false,
 
-  @Column(name = "WEDNESDAY_FLAG")
+  @Column(name = "WEDNESDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val wednesday: Boolean = false,
 
-  @Column(name = "THURSDAY_FLAG")
+  @Column(name = "THURSDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val thursday: Boolean = false,
 
-  @Column(name = "FRIDAY_FLAG")
+  @Column(name = "FRIDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val friday: Boolean = false,
 
-  @Column(name = "SATURDAY_FLAG")
+  @Column(name = "SATURDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val saturday: Boolean = false,
 
-  @Column(name = "SUNDAY_FLAG")
+  @Column(name = "SUNDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val sunday: Boolean = false,
 
-  @Column
+  @Column(nullable = false)
   val startTime: LocalDateTime,
 
   @Column
   val endTime: LocalDateTime? = null,
 
-  @Column
+  @Column(name = "SLOT_CATEGORY_CODE")
   @Enumerated(EnumType.STRING)
-  val slotCategoryCode: SlotCategory,
+  val slotCategory: SlotCategory? = null,
 
 ) : Serializable {
 
@@ -85,5 +85,3 @@ data class CourseScheduleRule(
   override fun toString(): String =
     "CourseScheduleRule(id=$id, courseActivityId=${courseActivity.courseActivityId}, startTime=$startTime)"
 }
-
-enum class SlotCategory { AM, PM, ED }

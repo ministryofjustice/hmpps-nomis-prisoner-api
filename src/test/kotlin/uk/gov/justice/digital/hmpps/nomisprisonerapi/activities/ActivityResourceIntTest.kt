@@ -524,7 +524,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(sunday).isFalse()
         assertThat(startTime).isEqualTo(LocalDateTime.of(2022, 10, 31, 9, 30))
         assertThat(endTime).isEqualTo(LocalDateTime.of(2022, 10, 31, 12, 30))
-        assertThat(slotCategoryCode).isEqualTo(SlotCategory.AM)
+        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
       }
     }
   }

@@ -34,6 +34,6 @@ class CourseScheduleRuleBuilder(
       friday = friday,
       saturday = saturday,
       sunday = sunday,
-      slotCategoryCode = slotCategoryCode,
+      slotCategory = slotCategoryCode,
     )
 }
