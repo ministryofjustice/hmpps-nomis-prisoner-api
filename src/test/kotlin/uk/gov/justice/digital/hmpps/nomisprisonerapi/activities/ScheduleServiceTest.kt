@@ -40,10 +40,6 @@ class ScheduleServiceTest {
 
     @Nested
     inner class Validation {
-      @Test // TODO SDI-610 move to integration test
-      fun `should throw on invalid schedule date`() {
-      }
-
       @Test
       fun `should throw if schedule date before activity start date`() {
         val request = createActivityRequest.copy(schedules = listOf(createSchedulesRequest.copy(date = LocalDate.of(2022, 10, 30))))

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
+import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
@@ -8,6 +9,7 @@ import java.time.LocalDateTime
 
 private const val HOURS_AND_MINUTES = "([01]?[0-9]|2[0-3]):([0-5][0-9])"
 
+@Service
 class ScheduleService {
 
   fun mapSchedules(request: CreateActivityRequest, courseActivity: CourseActivity): List<CourseSchedule> =

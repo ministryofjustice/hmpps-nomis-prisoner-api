@@ -2,7 +2,6 @@
 
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
-import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
@@ -75,16 +74,23 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         endDate = LocalDate.parse("2022-11-30"),
         minimumIncentiveLevelCode = IEP_LEVEL,
         internalLocationId = ROOM_ID,
-        payRates = listOf(
-          PayRateRequest(
-            incentiveLevel = "BAS",
-            payBand = "5",
-            rate = BigDecimal(3.2),
-          )
-        ),
+        payRates = listOf(payRateRequest),
         payPerSession = "F",
+        schedules = listOf(schedulesRequest)
       )
     }
+    private val payRateRequest =
+      PayRateRequest(
+        incentiveLevel = "BAS",
+        payBand = "5",
+        rate = BigDecimal(3.2),
+      )
+    private val schedulesRequest =
+      SchedulesRequest(
+        date = LocalDate.parse("2022-10-31"),
+        startTime = "09:00",
+        endTime = "11:00",
+      )
 
     @Test
     fun `access forbidden when no authority`() {
@@ -122,6 +128,46 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `error from pay rate service should return bad request`() {
+      val invalidPayRate = payRateRequest.copy(payBand = "INVALID")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(createActivityRequest().copy(payRates = listOf(invalidPayRate))))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Pay band code INVALID does not exist")
+        }
+    }
+
+    @Test
+    fun `error from schedule service should return bad request`() {
+      val invalidSchedule = schedulesRequest.copy(startTime = "INVALID")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(createActivityRequest().copy(schedules = listOf(invalidSchedule))))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Schedule for date 2022-10-31 has invalid start time INVALID")
+        }
+    }
+
+    @Test
+    fun `invalid schedule date should return bad request`() {
+      val invalidSchedule = validJsonRequest().replace(""""date": "2022-10-31",""", """"date": "2022-13-31",""")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidSchedule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("2022-13-31")
+        }
+    }
+
+    @Test
     fun `will create activity with correct details`() {
 
       val id = callCreateEndpoint()
@@ -137,15 +183,23 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         within(BigDecimal("0.001"))
       )
       assertThat(courseActivity.payPerSession).isEqualTo(PayPerSession.F)
+      assertThat(courseActivity.courseSchedules.first().scheduleDate).isEqualTo("2022-10-31")
     }
 
     private fun callCreateEndpoint(): Long {
       val response = webTestClient.post().uri("/activities")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(
-          BodyInserters.fromValue(
-            """{
+        .body(BodyInserters.fromValue(validJsonRequest()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateActivityResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.courseActivityId).isGreaterThan(0)
+      return response!!.courseActivityId
+    }
+
+    private fun validJsonRequest() = """{
             "prisonId" : "$PRISON_ID",
             "code" : "CA",
             "programCode" : "$PROGRAM_CODE",
@@ -160,17 +214,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                 "payBand" : "5",
                 "rate" : 0.4
                 } ],
-            "payPerSession": "F"    
-          }"""
-          )
-        )
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(CreateActivityResponse::class.java)
-        .returnResult().responseBody
-      assertThat(response?.courseActivityId).isGreaterThan(0)
-      return response!!.courseActivityId
-    }
+            "payPerSession": "F",
+            "schedules" : [ {
+                "date": "2022-10-31",
+                "startTime" : "09:00",
+                "endTime" : "11:00"
+            } ]
+          }
+    """.trimIndent()
   }
 
   @Nested
@@ -476,31 +527,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private fun getSavedActivityId() =
       repository.activityRepository.findAll().firstOrNull()?.courseActivityId
         ?: throw BadDataException("No activities in database")
-  }
-
-  // TODO SDI-610 temporary test to check new table and entity are OK - remove when we have proper integration tests
-  @Nested
-  inner class CourseSchedules {
-
-    @Autowired
-    private lateinit var entityManager: EntityManager
-
-    @Test
-    @Transactional
-    fun `can save and load course schedules`() {
-      val courseActivity = repository.save(courseActivityBuilderFactory.builder())
-      entityManager.flush()
-
-      val savedActivity = repository.lookupActivity(courseActivity.courseActivityId)
-
-      with(savedActivity.courseSchedules[0]) {
-        assertThat(courseScheduleId).isGreaterThan(0)
-        assertThat(scheduleDate).isEqualTo(LocalDate.of(2022, 11, 1))
-        assertThat(startTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 8, 0))
-        assertThat(endTime).isEqualTo(LocalDateTime.of(2022, 11, 1, 11, 0))
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
-      }
-    }
   }
 
   // TODO SDI-611 temporary test to check new table and entity are OK - remove when we have proper integration tests
