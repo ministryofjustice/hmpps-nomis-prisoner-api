@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigDecimal
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Course activity creation request")
@@ -44,6 +46,9 @@ data class CreateActivityRequest(
 
   @Schema(description = "Schedules", required = false)
   val schedules: List<SchedulesRequest> = listOf(),
+
+  @Schema(description = "Schedules", required = false)
+  val scheduleRules: List<ScheduleRuleRequest> = listOf(),
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -70,6 +75,19 @@ data class SchedulesRequest(
 
   @Schema(description = "Schedule end time in 24 hour clock", required = true, example = "11:00")
   val endTime: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Course activity creation request schedules")
+data class ScheduleRuleRequest(
+  @Schema(description = "Days of the week that the schedule applies to", required = true, example = "[MONDAY,WEDNESDAY]")
+  val daysOfWeek: List<DayOfWeek>,
+
+  @Schema(description = "Schedule start time in 24 hour clock", required = true, example = "08:00")
+  val startTime: LocalTime,
+
+  @Schema(description = "Schedule end time in 24 hour clock", required = true, example = "11:00")
+  val endTime: LocalTime,
 )
 
 /*

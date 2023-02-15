@@ -83,9 +83,6 @@ class ActivitiesResource(private val activityService: ActivityService, private v
       ApiResponse(
         responseCode = "200",
         description = "Activity information",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = UpdateActivityResponse::class))
-        ]
       ),
       ApiResponse(
         responseCode = "400",

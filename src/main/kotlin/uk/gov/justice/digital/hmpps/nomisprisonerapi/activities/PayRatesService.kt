@@ -29,7 +29,7 @@ class PayRatesService(
         courseActivity.prison,
         rate.incentiveLevel
       )
-        ?: throw BadDataException("IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
+        ?: throw BadDataException("Pay rate IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
 
       val payBand = payBandRepository.findByIdOrNull(PayBand.pk(rate.payBand))
         ?: throw BadDataException("Pay band code ${rate.payBand} does not exist")
@@ -128,7 +128,7 @@ class PayRatesService(
       ?: throw BadDataException("Pay band code $payBand does not exist")
 
     val availableIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(courseActivity.prison, incentiveLevel)
-      ?: throw BadDataException("IEP type $incentiveLevel does not exist for prison ${courseActivity.prison.id}")
+      ?: throw BadDataException("Pay rate IEP type $incentiveLevel does not exist for prison ${courseActivity.prison.id}")
 
     // calculate start date - usually today unless the old rate expires at the end of today
     val today = LocalDate.now()

@@ -2,7 +2,6 @@
 
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
-import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
@@ -168,6 +167,34 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `invalid schedule rule time should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:61"""")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidScheduleRule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Invalid value for MinuteOfHour (valid values 0 - 59): 61")
+        }
+    }
+
+    @Test
+    fun `Empty schedule rule day of week list should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""TUESDAY","THURSDAY","FRIDAY"""", """""")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidScheduleRule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Schedule rule daysOfWeek is empty list")
+        }
+    }
+
+    @Test
     fun `will create activity with correct details`() {
 
       val id = callCreateEndpoint()
@@ -184,6 +211,20 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       )
       assertThat(courseActivity.payPerSession).isEqualTo(PayPerSession.F)
       assertThat(courseActivity.courseSchedules.first().scheduleDate).isEqualTo("2022-10-31")
+      with(courseActivity.courseScheduleRules.first()) {
+        assertThat(id).isGreaterThan(0)
+        assertThat(this.courseActivity.courseActivityId).isEqualTo(courseActivity.courseActivityId)
+        assertThat(monday).isFalse
+        assertThat(tuesday).isTrue
+        assertThat(wednesday).isFalse
+        assertThat(thursday).isTrue
+        assertThat(friday).isTrue
+        assertThat(saturday).isFalse
+        assertThat(sunday).isFalse
+        assertThat(startTime).isEqualTo(LocalDateTime.parse("2022-10-01T11:45:00"))
+        assertThat(endTime).isEqualTo(LocalDateTime.parse("2022-10-01T12:35:00"))
+        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+      }
     }
 
     private fun callCreateEndpoint(): Long {
@@ -219,7 +260,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                 "date": "2022-10-31",
                 "startTime" : "09:00",
                 "endTime" : "11:00"
-            } ]
+            } ],
+            "scheduleRules": [{
+              "daysOfWeek": ["TUESDAY","THURSDAY","FRIDAY"],
+              "startTime": "11:45",
+              "endTime": "12:35"
+              }]
           }
     """.trimIndent()
   }
@@ -527,33 +573,5 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private fun getSavedActivityId() =
       repository.activityRepository.findAll().firstOrNull()?.courseActivityId
         ?: throw BadDataException("No activities in database")
-  }
-
-  // TODO SDI-611 temporary test to check new table and entity are OK - remove when we have proper integration tests
-  @Nested
-  inner class CourseScheduleRules {
-
-    @Test
-    @Transactional
-    fun `can save and load course schedule rules`() {
-      val courseActivity = repository.save(courseActivityBuilderFactory.builder())
-
-      val savedActivity = repository.lookupActivity(courseActivity.courseActivityId)
-
-      with(savedActivity.courseScheduleRules[0]) {
-        assertThat(id).isGreaterThan(0)
-        assertThat(courseActivity.courseActivityId).isEqualTo(1)
-        assertThat(monday).isTrue()
-        assertThat(tuesday).isTrue()
-        assertThat(wednesday).isTrue()
-        assertThat(thursday).isTrue()
-        assertThat(friday).isTrue()
-        assertThat(saturday).isFalse()
-        assertThat(sunday).isFalse()
-        assertThat(startTime).isEqualTo(LocalDateTime.of(2022, 10, 31, 9, 30))
-        assertThat(endTime).isEqualTo(LocalDateTime.of(2022, 10, 31, 12, 30))
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
-      }
-    }
   }
 }
