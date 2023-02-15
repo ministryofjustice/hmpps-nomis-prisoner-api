@@ -35,31 +35,31 @@ data class CourseScheduleRule(
 
   @Column(name = "MONDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val monday: Boolean = false,
+  var monday: Boolean = false,
 
   @Column(name = "TUESDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val tuesday: Boolean = false,
+  var tuesday: Boolean = false,
 
   @Column(name = "WEDNESDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val wednesday: Boolean = false,
+  var wednesday: Boolean = false,
 
   @Column(name = "THURSDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val thursday: Boolean = false,
+  var thursday: Boolean = false,
 
   @Column(name = "FRIDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val friday: Boolean = false,
+  var friday: Boolean = false,
 
   @Column(name = "SATURDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val saturday: Boolean = false,
+  var saturday: Boolean = false,
 
   @Column(name = "SUNDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val sunday: Boolean = false,
+  var sunday: Boolean = false,
 
   @Column(nullable = false)
   val startTime: LocalDateTime,

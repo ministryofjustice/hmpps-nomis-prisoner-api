@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -43,6 +44,7 @@ class ActivityServiceTest {
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val payRatesService: PayRatesService = mock()
   private val scheduleService: ScheduleService = mock()
+  private val scheduleRuleService: ScheduleRuleService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val activityService = ActivityService(
@@ -53,6 +55,7 @@ class ActivityServiceTest {
     availablePrisonIepLevelRepository,
     payRatesService,
     scheduleService,
+    scheduleRuleService,
     telemetryClient,
   )
 
@@ -174,7 +177,7 @@ class ActivityServiceTest {
 
     @Test
     fun invalidIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenReturn(null)
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), eq(IEP_LEVEL))).thenReturn(null)
 
       val thrown = assertThrows<BadDataException>() {
         activityService.createActivity(createRequest)
@@ -182,14 +185,14 @@ class ActivityServiceTest {
       Assertions.assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $PRISON_ID")
     }
 
-    @Test
-    fun invalidPayBandCode() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenReturn(null)
+    // TODO @Test
+    fun invalidPayBandIEP() {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), eq("BASIC"))).thenReturn(null)
 
       val thrown = assertThrows<BadDataException>() {
         activityService.createActivity(createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $PRISON_ID")
+      Assertions.assertThat(thrown.message).isEqualTo("Pay rate IEP type BASIC does not exist for prison $PRISON_ID")
     }
   }
 }

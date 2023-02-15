@@ -24,12 +24,14 @@ class ActivityService(
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val payRatesService: PayRatesService,
   private val scheduleService: ScheduleService,
+  private val scheduleRuleService: ScheduleRuleService,
   private val telemetryClient: TelemetryClient,
 ) {
   fun createActivity(dto: CreateActivityRequest): CreateActivityResponse =
     mapActivityModel(dto)
       .apply { payRates.addAll(payRatesService.mapRates(dto, this)) }
       .apply { courseSchedules.addAll(scheduleService.mapSchedules(dto, this)) }
+      .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(dto, this)) }
       .also {
         telemetryClient.trackEvent(
           "activity-created",
