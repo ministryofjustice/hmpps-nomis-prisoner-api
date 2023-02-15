@@ -47,7 +47,7 @@ data class CreateActivityRequest(
   @Schema(description = "Schedules", required = false)
   val schedules: List<SchedulesRequest> = listOf(),
 
-  @Schema(description = "Schedules", required = false)
+  @Schema(description = "Schedule rules", required = false)
   val scheduleRules: List<ScheduleRuleRequest> = listOf(),
 )
 

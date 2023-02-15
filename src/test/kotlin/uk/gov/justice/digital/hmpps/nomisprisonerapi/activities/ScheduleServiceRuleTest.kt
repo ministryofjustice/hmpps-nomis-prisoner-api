@@ -90,10 +90,10 @@ class ScheduleServiceRuleTest {
       fun `should save a single schedule`() {
         val request = createActivityRequest.copy(scheduleRules = listOf(createScheduleRuleRequest))
 
-        val newSchedules = scheduleRuleService.mapRules(request, courseActivity)
+        val newScheduleRules = scheduleRuleService.mapRules(request, courseActivity)
 
-        assertThat(newSchedules.size).isEqualTo(1)
-        with(newSchedules[0]) {
+        assertThat(newScheduleRules.size).isEqualTo(1)
+        with(newScheduleRules[0]) {
           assertThat(monday).isTrue
           assertThat(tuesday).isFalse
           assertThat(wednesday).isTrue
@@ -116,13 +116,13 @@ class ScheduleServiceRuleTest {
           )
         )
 
-        val newSchedules = scheduleRuleService.mapRules(request, courseActivity)
+        val newScheduleRules = scheduleRuleService.mapRules(request, courseActivity)
 
-        assertThat(newSchedules.size).isEqualTo(2)
-        with(newSchedules[0]) {
+        assertThat(newScheduleRules.size).isEqualTo(2)
+        with(newScheduleRules[0]) {
           assertThat(startTime).isEqualTo("2022-10-01T09:00")
         }
-        with(newSchedules[1]) {
+        with(newScheduleRules[1]) {
           assertThat(startTime).isEqualTo("2022-10-01T08:00")
         }
       }
