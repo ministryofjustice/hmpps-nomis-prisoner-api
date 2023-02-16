@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 private const val PRISON_ID = "MDI"
 private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
@@ -87,8 +88,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private val schedulesRequest =
       SchedulesRequest(
         date = LocalDate.parse("2022-10-31"),
-        startTime = "09:00",
-        endTime = "11:00",
+        startTime = LocalTime.of(8, 0),
+        endTime = LocalTime.of(11, 0),
       )
 
     @Test
@@ -140,15 +141,30 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `error from schedule service should return bad request`() {
-      val invalidSchedule = schedulesRequest.copy(startTime = "INVALID")
+    fun `invalid schedule start time should return bad request`() {
+      val invalidSchedule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/activities")
+        .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createActivityRequest().copy(schedules = listOf(invalidSchedule))))
+        .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Schedule for date 2022-10-31 has invalid start time INVALID")
+          assertThat(it).contains("11:65")
+        }
+    }
+
+    @Test
+    fun `invalid schedule end time should return bad request`() {
+      val invalidSchedule = validJsonRequest().replace(""""endTime": "12:35"""", """"endTime": "12:65"""")
+      webTestClient.post().uri("/activities")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(invalidSchedule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("12:65")
         }
     }
 
