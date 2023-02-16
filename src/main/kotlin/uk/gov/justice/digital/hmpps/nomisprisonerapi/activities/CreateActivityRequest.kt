@@ -71,10 +71,10 @@ data class SchedulesRequest(
   val date: LocalDate,
 
   @Schema(description = "Schedule start time in 24 hour clock", required = true, example = "08:00")
-  val startTime: String,
+  val startTime: LocalTime,
 
   @Schema(description = "Schedule end time in 24 hour clock", required = true, example = "11:00")
-  val endTime: String,
+  val endTime: LocalTime,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

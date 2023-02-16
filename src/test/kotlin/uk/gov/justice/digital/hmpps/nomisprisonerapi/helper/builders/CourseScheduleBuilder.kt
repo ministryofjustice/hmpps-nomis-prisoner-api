@@ -4,13 +4,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
+import java.time.LocalTime
 
 class CourseScheduleBuilder(
   val scheduleDate: String = "2022-11-01",
-  val startTimeHours: Int = 8,
-  val startTimeMinutes: Int = 0,
-  val endTimeHours: Int = 11,
-  val endTimeMinutes: Int = 0,
+  val startTime: String = "08:00",
+  val endTime: String = "11:00",
   val slotCategory: SlotCategory = SlotCategory.AM,
 ) {
   fun build(courseActivity: CourseActivity) =
@@ -18,8 +17,8 @@ class CourseScheduleBuilder(
       CourseSchedule(
         courseActivity = courseActivity,
         scheduleDate = date,
-        startTime = date.atTime(startTimeHours, startTimeMinutes),
-        endTime = date.atTime(endTimeHours, endTimeMinutes),
+        startTime = date.atTime(LocalTime.parse(startTime)),
+        endTime = date.atTime(LocalTime.parse(endTime)),
         slotCategory = slotCategory,
       )
     }
