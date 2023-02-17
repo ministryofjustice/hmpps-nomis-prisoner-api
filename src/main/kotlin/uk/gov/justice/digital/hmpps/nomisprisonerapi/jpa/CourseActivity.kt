@@ -141,6 +141,9 @@ data class CourseActivity(
 
   @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val courseScheduleRules: MutableList<CourseScheduleRule> = mutableListOf(),
+
+  @Column
+  val commentText: String = "Copied from the DPS activities service",
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

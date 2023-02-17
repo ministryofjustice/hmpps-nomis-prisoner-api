@@ -72,6 +72,9 @@ data class CourseActivityPayRate(
 
   @Column(nullable = false)
   var halfDayRate: BigDecimal,
+
+  @Column
+  val commentText: String = "Copied from the DPS activities service",
 ) : Serializable {
 
   override fun equals(other: Any?): Boolean {
