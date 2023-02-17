@@ -1,9 +1,13 @@
-# HMPPS NOMIS Prisoner API
+# HMPPS NOMIS Syncronisation Prisoner API
 
-[![CircleCI](https://circleci.com/gh/ministryofjustice/court-register/tree/main.svg?style=svg)](https://circleci.com/gh/ministryofjustice/hmpps-nomis-prisoner-api)
+[![CircleCI](https://circleci.com/gh/ministryofjustice/hmpps-nomis-prisoner-api/tree/main.svg?style=svg)](https://circleci.com/gh/ministryofjustice/hmpps-nomis-prisoner-api)
 [![API docs](https://img.shields.io/badge/API_docs_-view-85EA2D.svg?logo=swagger)](https://nomis-prsner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk/swagger-ui/index.html?configUrl=/v3/api-docs)
 
-Self-contained fat-jar micro-service to interact with prisoners in the NOMIS database
+This is a private API for synchronising data between NOMIS and DPS services that hold data outside of NOMIS.
+It is part of a suite of services to support migration away from NOMIS and should only be used for synchronisation by the following services:
+* hmpps-prisoner-from-nomis-migration   
+* hmpps-prisoner-to-nomis-update
+
 
 ## Building
 
