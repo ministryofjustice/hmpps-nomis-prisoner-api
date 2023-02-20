@@ -197,8 +197,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Empty schedule rule day of week list should return bad request`() {
-      val invalidScheduleRule = validJsonRequest().replace(""""TUESDAY","THURSDAY","FRIDAY"""", """""")
+    fun `Invalidschedule rule day of week list should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""monday": true,""", """"monday": INVALID,""")
       webTestClient.post().uri("/activities")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -206,7 +206,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Schedule rule daysOfWeek is empty list")
+          assertThat(it).contains("INVALID")
         }
     }
 
@@ -278,9 +278,15 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                 "endTime" : "11:00"
             } ],
             "scheduleRules": [{
-              "daysOfWeek": ["TUESDAY","THURSDAY","FRIDAY"],
               "startTime": "11:45",
-              "endTime": "12:35"
+              "endTime": "12:35",
+              "monday": false,
+              "tuesday": true,
+              "wednesday": false,
+              "thursday": true,
+              "friday": true,
+              "saturday": false,
+              "sunday": false
               }]
           }
     """.trimIndent()
