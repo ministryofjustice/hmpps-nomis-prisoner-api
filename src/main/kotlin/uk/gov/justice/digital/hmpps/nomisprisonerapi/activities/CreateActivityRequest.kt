@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigDecimal
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -80,14 +79,32 @@ data class SchedulesRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Course activity creation request schedule rules")
 data class ScheduleRuleRequest(
-  @Schema(description = "Days of the week that the schedule applies to", required = true, example = "[MONDAY,WEDNESDAY]")
-  val daysOfWeek: List<DayOfWeek>,
-
   @Schema(description = "Schedule start time in 24 hour clock", required = true, example = "08:00")
   val startTime: LocalTime,
 
   @Schema(description = "Schedule end time in 24 hour clock", required = true, example = "11:00")
   val endTime: LocalTime,
+
+  @Schema(description = "Scheduled on Monday", required = true, example = "true")
+  val monday: Boolean = false,
+
+  @Schema(description = "Scheduled on Tuesday", required = true, example = "true")
+  val tuesday: Boolean = false,
+
+  @Schema(description = "Scheduled on Wednesday", required = true, example = "true")
+  val wednesday: Boolean = false,
+
+  @Schema(description = "Scheduled on Thursday", required = true, example = "true")
+  val thursday: Boolean = false,
+
+  @Schema(description = "Scheduled on Friday", required = true, example = "true")
+  val friday: Boolean = false,
+
+  @Schema(description = "Scheduled on Saturday", required = true, example = "false")
+  val saturday: Boolean = false,
+
+  @Schema(description = "Scheduled on Sunday", required = true, example = "false")
+  val sunday: Boolean = false,
 )
 
 /*

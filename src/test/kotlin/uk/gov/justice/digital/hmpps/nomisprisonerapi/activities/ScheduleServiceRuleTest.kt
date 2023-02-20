@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -32,9 +31,12 @@ class ScheduleServiceRuleTest {
     )
     private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
     private val createScheduleRuleRequest = ScheduleRuleRequest(
-      daysOfWeek = listOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
       startTime = LocalTime.parse("09:00"),
-      endTime = LocalTime.parse("12:00")
+      endTime = LocalTime.parse("12:00"),
+      monday = true,
+      wednesday = true,
+      saturday = true,
+      sunday = true,
     )
 
     @Nested
@@ -49,31 +51,6 @@ class ScheduleServiceRuleTest {
         }
           .isInstanceOf(BadDataException::class.java)
           .hasMessageContaining("Schedule rule has times out of order - 09:00 to 05:00")
-      }
-
-      @Test
-      fun `should throw if no week days`() {
-        val request =
-          createActivityRequest.copy(scheduleRules = listOf(createScheduleRuleRequest.copy(daysOfWeek = emptyList())))
-
-        assertThatThrownBy {
-          scheduleRuleService.mapRules(request, courseActivity)
-        }
-          .isInstanceOf(BadDataException::class.java)
-          .hasMessageContaining("Schedule rule daysOfWeek is empty list")
-      }
-
-      @Test
-      fun `should throw if too many week days`() {
-        val tooLarge = Array<DayOfWeek>(8) { DayOfWeek.TUESDAY }.asList()
-        val request =
-          createActivityRequest.copy(scheduleRules = listOf(createScheduleRuleRequest.copy(daysOfWeek = tooLarge)))
-
-        assertThatThrownBy {
-          scheduleRuleService.mapRules(request, courseActivity)
-        }
-          .isInstanceOf(BadDataException::class.java)
-          .hasMessageContaining("Schedule rule daysOfWeek has too many entries")
       }
     }
 
