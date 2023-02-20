@@ -12,13 +12,10 @@ import java.time.temporal.TemporalAdjusters
 @Service
 class ScheduleRuleService {
 
-  fun mapRules(dto: CreateActivityRequest, courseActivity: CourseActivity) =
-    dto.scheduleRules.map {
+  fun mapRules(dto: CreateActivityRequest, courseActivity: CourseActivity): List<CourseScheduleRule> {
+    val monthStart = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
+    return dto.scheduleRules.map {
       validateRequest(it)
-
-      // Prod data usually uses 1st day of the scheduleStartDate month for the 'date' part
-      val monthStart = courseActivity.scheduleStartDate!!.with(TemporalAdjusters.firstDayOfMonth())
-
       CourseScheduleRule(
         courseActivity = courseActivity,
         startTime = LocalDateTime.of(monthStart, it.startTime),
@@ -33,6 +30,7 @@ class ScheduleRuleService {
         sunday = it.sunday,
       )
     }
+  }
 
   private fun validateRequest(request: ScheduleRuleRequest) {
     if (request.endTime < request.startTime) {

@@ -212,7 +212,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create activity with correct details`() {
-
+      val monthStart = LocalDate.now().withDayOfMonth(1).toString()
       val id = callCreateEndpoint()
 
       // Spot check that the database has been populated.
@@ -237,8 +237,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(friday).isTrue
         assertThat(saturday).isFalse
         assertThat(sunday).isFalse
-        assertThat(startTime).isEqualTo(LocalDateTime.parse("2022-10-01T11:45:00"))
-        assertThat(endTime).isEqualTo(LocalDateTime.parse("2022-10-01T12:35:00"))
+        assertThat(startTime).isEqualTo(LocalDateTime.parse("${monthStart}T11:45:00"))
+        assertThat(endTime).isEqualTo(LocalDateTime.parse("${monthStart}T12:35:00"))
         assertThat(slotCategory).isEqualTo(SlotCategory.AM)
       }
     }

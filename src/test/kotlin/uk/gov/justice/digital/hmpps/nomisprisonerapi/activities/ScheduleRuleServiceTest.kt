@@ -40,6 +40,7 @@ class ScheduleRuleServiceTest {
       saturday = true,
       sunday = true,
     )
+    private val monthStart = LocalDate.now().withDayOfMonth(1).toString()
 
     @Nested
     inner class Validation {
@@ -80,8 +81,8 @@ class ScheduleRuleServiceTest {
           assertThat(friday).isFalse
           assertThat(saturday).isTrue
           assertThat(sunday).isTrue
-          assertThat(startTime).isEqualTo("2022-10-01T09:00")
-          assertThat(endTime).isEqualTo("2022-10-01T12:00")
+          assertThat(startTime).isEqualTo("${monthStart}T09:00")
+          assertThat(endTime).isEqualTo("${monthStart}T12:00")
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
       }
@@ -99,10 +100,10 @@ class ScheduleRuleServiceTest {
 
         assertThat(newScheduleRules.size).isEqualTo(2)
         with(newScheduleRules[0]) {
-          assertThat(startTime).isEqualTo("2022-10-01T09:00")
+          assertThat(startTime).isEqualTo("${monthStart}T09:00")
         }
         with(newScheduleRules[1]) {
-          assertThat(startTime).isEqualTo("2022-10-01T08:00")
+          assertThat(startTime).isEqualTo("${monthStart}T08:00")
         }
       }
     }
