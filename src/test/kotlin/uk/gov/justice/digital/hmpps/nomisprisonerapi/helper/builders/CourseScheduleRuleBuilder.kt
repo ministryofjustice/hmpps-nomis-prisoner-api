@@ -19,12 +19,10 @@ class CourseScheduleRuleBuilder(
   val friday: Boolean = true,
   val saturday: Boolean = false,
   val sunday: Boolean = false,
-
-  val slotCategoryCode: SlotCategory = SlotCategory.AM,
-
 ) {
-  fun build(courseActivity: CourseActivity, date: LocalDate) =
-    CourseScheduleRule(
+  fun build(courseActivity: CourseActivity): CourseScheduleRule {
+    val date = LocalDate.now().withDayOfMonth(1)
+    return CourseScheduleRule(
       id = id,
       courseActivity = courseActivity,
       startTime = date.atTime(startTimeHours, startTimeMinutes),
@@ -36,6 +34,7 @@ class CourseScheduleRuleBuilder(
       friday = friday,
       saturday = saturday,
       sunday = sunday,
-      slotCategory = slotCategoryCode,
+      slotCategory = SlotCategory.of(date.atTime(startTimeHours, startTimeMinutes).toLocalTime()),
     )
+  }
 }

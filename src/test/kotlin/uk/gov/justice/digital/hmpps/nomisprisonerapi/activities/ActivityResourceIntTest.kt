@@ -212,7 +212,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create activity with correct details`() {
-
+      val monthStart = LocalDate.now().withDayOfMonth(1).toString()
       val id = callCreateEndpoint()
 
       // Spot check that the database has been populated.
@@ -237,8 +237,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(friday).isTrue
         assertThat(saturday).isFalse
         assertThat(sunday).isFalse
-        assertThat(startTime).isEqualTo(LocalDateTime.parse("2022-10-01T11:45:00"))
-        assertThat(endTime).isEqualTo(LocalDateTime.parse("2022-10-01T12:35:00"))
+        assertThat(startTime).isEqualTo(LocalDateTime.parse("${monthStart}T11:45:00"))
+        assertThat(endTime).isEqualTo(LocalDateTime.parse("${monthStart}T12:35:00"))
         assertThat(slotCategory).isEqualTo(SlotCategory.AM)
       }
     }
@@ -310,12 +310,26 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               "incentiveLevel" : "STD",
               "payBand" : "5",
               "rate" : 0.8
-              } ]
+              } ],
       """.trimIndent(),
+      scheduleRulesJson: String? = """
+          "scheduleRules": [{
+              "startTime": "09:30",
+              "endTime": "12:30",
+              "monday": true,
+              "tuesday": true,
+              "wednesday": true,
+              "thursday": true,
+              "friday": true,
+              "saturday": false,
+              "sunday": false
+              }]
+      """.trimIndent()
     ) = """{
             ${endDateJson ?: ""}
             ${internalLocationJson ?: ""}
             ${payRatesJson ?: ""}
+            ${scheduleRulesJson ?: ""}
           }"""
 
     @Nested
@@ -390,19 +404,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return bad request for missing data`() {
-        callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(internalLocationJson = """"internalLocationId" : -27""", payRatesJson = null),
-        )
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("payRates")
-            assertThat(it).contains("NULL")
-          }
-      }
-
-      @Test
       fun `should return bad request for malformed number`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
@@ -436,7 +437,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "incentiveLevel" : "BAS",
                   "payBand" : "5",
                   "rate" : "NOT_A_NUMBER"
-                  } ]
+                  } ],
             """.trimIndent()
           ),
         )
@@ -456,7 +457,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "incentiveLevel" : "BAS",
                   "payBand" : "99",
                   "rate" : "1.2"
-                  } ]
+                  } ],
             """.trimIndent()
           ),
         )
@@ -476,7 +477,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "incentiveLevel" : "EN2",
                   "payBand" : "5",
                   "rate" : "1.2"
-                  } ]
+                  } ],
             """.trimIndent()
           ),
         )
@@ -490,7 +491,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for missing pay rates`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(payRatesJson = null, internalLocationJson = """"internalLocationId" : -27"""),
+          jsonBody = updateActivityRequestJson(payRatesJson = null, internalLocationJson = """"internalLocationId" : -27,"""),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -505,7 +506,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         callUpdateEndpoint(
           courseActivityId = existingActivityId,
-          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : []"""),
+          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : [],"""),
         )
           .expectStatus().isOk
 
@@ -521,7 +522,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : []"""),
+          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : [],"""),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -543,12 +544,97 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         callUpdateEndpoint(
           courseActivityId = existingActivityId,
-          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : []"""),
+          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : [],"""),
         )
           .expectStatus().isOk
 
         val updated = repository.lookupActivity(existingActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
+      }
+
+      @Test
+      fun `should return bad request for malformed schedule time`() {
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(
+            scheduleRulesJson = """
+              "scheduleRules": [{
+                  "startTime": "INVALID",
+                  "endTime": "12:30",
+                  "monday": true,
+                  "tuesday": true,
+                  "wednesday": true,
+                  "thursday": true,
+                  "friday": true,
+                  "saturday": false,
+                  "sunday": false
+              }]
+            """.trimIndent()
+          ),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("INVALID")
+          }
+      }
+
+      @Test
+      fun `should return bad request if schedule rules fail validation`() {
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(
+            scheduleRulesJson = """
+              "scheduleRules": [{
+                  "startTime": "13:00",
+                  "endTime": "12:30",
+                  "monday": true,
+                  "tuesday": true,
+                  "wednesday": true,
+                  "thursday": true,
+                  "friday": true,
+                  "saturday": false,
+                  "sunday": false
+              }]
+            """.trimIndent()
+          ),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Schedule rule has times out of order - 13:00 to 12:30")
+          }
+      }
+
+      @Test
+      fun `should return OK if schedule rules updated`() {
+        val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(
+            scheduleRulesJson = """
+              "scheduleRules": [{
+                  "startTime": "09:00",
+                  "endTime": "12:00",
+                  "monday": true,
+                  "tuesday": true,
+                  "wednesday": true,
+                  "thursday": true,
+                  "friday": false,
+                  "saturday": false,
+                  "sunday": false
+              }]
+            """.trimIndent()
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.lookupActivity(existingActivityId)
+        assertThat(updated.courseScheduleRules.size).isEqualTo(1)
+        with(updated.courseScheduleRules[0]) {
+          assertThat(startTime.toLocalTime()).isEqualTo("09:00")
+          assertThat(endTime?.toLocalTime()).isEqualTo("12:00")
+          assertThat(this.friday).isEqualTo(false)
+        }
       }
     }
 
