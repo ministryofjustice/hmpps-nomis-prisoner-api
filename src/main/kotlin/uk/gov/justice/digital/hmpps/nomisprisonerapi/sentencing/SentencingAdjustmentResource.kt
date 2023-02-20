@@ -554,8 +554,8 @@ data class CreateSentenceAdjustmentRequest(
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
-  @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
-  val adjustmentDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Date adjustment is applied", required = false)
+  val adjustmentDate: LocalDate?,
   @Schema(description = "Start of the period which contributed to the adjustment", required = false)
   val adjustmentFromDate: LocalDate?,
   @Schema(description = "Number of days for the adjustment", required = true)
@@ -576,7 +576,8 @@ data class UpdateSentenceAdjustmentRequest(
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
-  val adjustmentDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Date adjustment is applied", required = false)
+  val adjustmentDate: LocalDate?,
   @Schema(description = "Start of the period which contributed to the adjustment", required = false)
   val adjustmentFromDate: LocalDate?,
   @Schema(description = "Number of days for the adjustment", required = true)
@@ -598,8 +599,8 @@ data class CreateKeyDateAdjustmentRequest(
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
-  @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
-  val adjustmentDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Date adjustment is applied", required = false)
+  val adjustmentDate: LocalDate?,
   @Schema(description = "Start of the period which contributed to the adjustment", required = true)
   val adjustmentFromDate: LocalDate,
   @Schema(description = "Number of days for the adjustment", required = true)
@@ -620,8 +621,8 @@ data class UpdateKeyDateAdjustmentRequest(
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
-  @Schema(description = "Date adjustment is applied", required = false, defaultValue = "current date")
-  val adjustmentDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Date adjustment is applied", required = false)
+  val adjustmentDate: LocalDate?,
   @Schema(description = "Start of the period which contributed to the adjustment", required = true)
   val adjustmentFromDate: LocalDate,
   @Schema(description = "Number of days for the adjustment", required = true)
