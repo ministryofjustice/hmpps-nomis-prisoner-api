@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
 
 class CourseScheduleRuleBuilder(
+  val id: Long = 0,
   val startTimeHours: Int = 9,
   val startTimeMinutes: Int = 30,
   val endTimeHours: Int = 12,
@@ -24,6 +25,7 @@ class CourseScheduleRuleBuilder(
 ) {
   fun build(courseActivity: CourseActivity, date: LocalDate) =
     CourseScheduleRule(
+      id = id,
       courseActivity = courseActivity,
       startTime = date.atTime(startTimeHours, startTimeMinutes),
       endTime = date.atTime(endTimeHours, endTimeMinutes),
