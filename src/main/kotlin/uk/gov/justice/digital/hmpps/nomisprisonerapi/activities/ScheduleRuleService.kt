@@ -40,26 +40,29 @@ class ScheduleRuleService {
 
   fun buildNewRules(requestedRules: List<ScheduleRuleRequest>, existingActivity: CourseActivity): List<CourseScheduleRule> {
     val monthStart = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
-    return requestedRules.map {
-      validateRequest(it)
-      CourseScheduleRule(
-        id = findExistingRuleId(it, existingActivity.courseScheduleRules),
-        courseActivity = existingActivity,
-        startTime = LocalDateTime.of(monthStart, it.startTime),
-        endTime = LocalDateTime.of(monthStart, it.endTime),
-        slotCategory = SlotCategory.of(it.startTime),
-        monday = it.monday,
-        tuesday = it.tuesday,
-        wednesday = it.wednesday,
-        thursday = it.thursday,
-        friday = it.friday,
-        saturday = it.saturday,
-        sunday = it.sunday,
-      )
+    return requestedRules.map { request ->
+      validateRequest(request)
+      findExistingRule(request, existingActivity.courseScheduleRules)
+        ?: with(request) {
+          CourseScheduleRule(
+            id = 0,
+            courseActivity = existingActivity,
+            startTime = LocalDateTime.of(monthStart, startTime),
+            endTime = LocalDateTime.of(monthStart, endTime),
+            slotCategory = SlotCategory.of(startTime),
+            monday = monday,
+            tuesday = tuesday,
+            wednesday = wednesday,
+            thursday = thursday,
+            friday = friday,
+            saturday = saturday,
+            sunday = sunday,
+          )
+        }
     }
   }
 
-  private fun findExistingRuleId(requestedRule: ScheduleRuleRequest, existingRules: List<CourseScheduleRule>): Long =
+  private fun findExistingRule(requestedRule: ScheduleRuleRequest, existingRules: List<CourseScheduleRule>): CourseScheduleRule? =
     existingRules.find {
       it.startTime.toLocalTime() == requestedRule.startTime &&
         it.endTime?.toLocalTime() == requestedRule.endTime &&
@@ -71,6 +74,4 @@ class ScheduleRuleService {
         it.saturday == requestedRule.saturday &&
         it.sunday == requestedRule.sunday
     }
-      ?.id
-      ?: let { 0 }
 }

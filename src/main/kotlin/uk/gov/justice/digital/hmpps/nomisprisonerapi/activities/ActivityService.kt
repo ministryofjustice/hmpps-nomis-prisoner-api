@@ -93,5 +93,9 @@ class ActivityService(
       existingActivity.payRates.clear()
       existingActivity.payRates.addAll(newPayRates)
     }
+    scheduleRuleService.buildNewRules(updateActivityRequest.scheduleRules, existingActivity).also { newRules ->
+      existingActivity.courseScheduleRules.clear()
+      existingActivity.courseScheduleRules.addAll(newRules)
+    }
   }
 }

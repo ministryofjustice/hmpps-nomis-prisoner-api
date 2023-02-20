@@ -80,7 +80,7 @@ class CourseActivityBuilder(
       ).apply {
         payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
         courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
-        courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this, this.scheduleStartDate!!) })
+        courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this) })
       }
     }
       ?: throw IllegalStateException("No repository - is this a unit test? Try create() instead.")
@@ -104,7 +104,7 @@ class CourseActivityBuilder(
     ).apply {
       payRates.addAll(this@CourseActivityBuilder.payRates.map { it.create(this) })
       courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
-      courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this, this.scheduleStartDate!!) })
+      courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this) })
     }
 
   private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()

@@ -16,4 +16,7 @@ data class UpdateActivityRequest(
 
   @Schema(description = "Pay rates", required = true)
   val payRates: List<PayRateRequest>,
+
+  @Schema(description = "Course schedule rules", required = true)
+  val scheduleRules: List<ScheduleRuleRequest>,
 )
