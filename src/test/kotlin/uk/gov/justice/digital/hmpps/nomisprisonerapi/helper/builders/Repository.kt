@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
@@ -36,6 +37,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -70,6 +72,7 @@ class Repository(
   val payBandRepository: ReferenceCodeRepository<PayBand>,
   val programStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
   val programEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
+  val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -182,8 +185,11 @@ class Repository(
   fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation =
     agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
 
-  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation =
-    agencyInternalLocationRepository.findById(locationId).orElse(null)
+  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
+    agencyInternalLocationRepository.findByIdOrNull(locationId)
+
+  fun lookupAppointment(id: Long): OffenderIndividualSchedule? =
+    offenderIndividualScheduleRepository.findByIdOrNull(id)
 
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun deleteOffenders() = offenderRepository.deleteAll()
