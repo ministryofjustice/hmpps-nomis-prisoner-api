@@ -55,7 +55,7 @@ class OffenderIndividualSchedule(
   val eventType: String = "APP", // APP for appointment
 
   @ManyToOne(optional = false)
-  @NotFound(action = NotFoundAction.EXCEPTION)
+  @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -69,7 +69,7 @@ class OffenderIndividualSchedule(
   val eventSubType: EventSubType,
 
   @ManyToOne(optional = false)
-  @NotFound(action = NotFoundAction.EXCEPTION)
+  @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(

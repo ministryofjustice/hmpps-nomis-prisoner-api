@@ -45,6 +45,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
   @AfterEach
   internal fun deletePrisoner() {
     repository.delete(offenderAtMoorlands)
+    repository.delete(offenderAtOtherPrison)
   }
 
   @Nested
