@@ -197,8 +197,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `Invalidschedule rule day of week list should return bad request`() {
-      val invalidScheduleRule = validJsonRequest().replace(""""monday": true,""", """"monday": INVALID,""")
+    fun `Invalid schedule rule day of week should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""monday": false,""", """"monday": "INVALID",""")
       webTestClient.post().uri("/activities")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
