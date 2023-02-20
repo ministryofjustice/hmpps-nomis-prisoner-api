@@ -78,7 +78,7 @@ data class SchedulesRequest(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Course activity creation request schedules")
+@Schema(description = "Course activity creation request schedule rules")
 data class ScheduleRuleRequest(
   @Schema(description = "Days of the week that the schedule applies to", required = true, example = "[MONDAY,WEDNESDAY]")
   val daysOfWeek: List<DayOfWeek>,

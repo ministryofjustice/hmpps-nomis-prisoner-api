@@ -1,0 +1,29 @@
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.appointments
+
+import com.fasterxml.jackson.annotation.JsonInclude
+import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDate
+import java.time.LocalTime
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Offender individual schedule creation request")
+data class CreateAppointmentRequest(
+
+  @Schema(description = "Booking id of the prisoner", required = true, example = "1234567")
+  val bookingId: Long,
+
+  @Schema(description = "Appointment date", required = true, example = "2022-08-12")
+  val eventDate: LocalDate,
+
+  @Schema(description = "Appointment start time", required = true, example = "09:45")
+  val startTime: LocalTime,
+
+  @Schema(description = "Activity end time", required = true, example = "15:20")
+  val endTime: LocalTime,
+
+  @Schema(description = "Room where the appointment is to occur", required = true, example = "112233")
+  val internalLocationId: Long,
+
+  @Schema(description = "Appointment event sub-type", required = true, example = "MEOT")
+  val eventSubType: String,
+)

@@ -36,7 +36,7 @@ class ActivitiesResource(private val activityService: ActivityService, private v
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Activity information with created sequence",
+        description = "Activity information with created id",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class))
         ]
