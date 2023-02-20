@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -293,7 +292,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentType.code").isEqualTo("LAL")
           .jsonPath("adjustmentType.description").isEqualTo("Lawfully at Large")
           .jsonPath("adjustmentDays").isEqualTo(10)
-          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentDate").doesNotExist()
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
           .jsonPath("adjustmentToDate").isEqualTo("2023-01-10")
           .jsonPath("comment").doesNotExist()
@@ -582,7 +581,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentType.code").isEqualTo("ADA")
           .jsonPath("adjustmentType.description").isEqualTo("Additional Days Awarded")
           .jsonPath("adjustmentDays").isEqualTo(10)
-          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentDate").doesNotExist()
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
           .jsonPath("adjustmentToDate").isEqualTo("2023-01-11")
           .jsonPath("comment").doesNotExist()
@@ -1067,7 +1066,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentType.code").isEqualTo("RX")
           .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDays").isEqualTo(10)
-          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentDate").doesNotExist()
           .jsonPath("adjustmentFromDate").doesNotExist()
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("comment").doesNotExist()
@@ -1208,7 +1207,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentType.code").isEqualTo("RX")
           .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDays").isEqualTo(10)
-          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentDate").doesNotExist()
           .jsonPath("adjustmentFromDate").doesNotExist()
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("comment").doesNotExist()
@@ -1451,7 +1450,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentType.code").isEqualTo("RX")
           .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDays").isEqualTo(10)
-          .jsonPath("adjustmentDate").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+          .jsonPath("adjustmentDate").doesNotExist()
           .jsonPath("adjustmentFromDate").doesNotExist()
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("comment").doesNotExist()
