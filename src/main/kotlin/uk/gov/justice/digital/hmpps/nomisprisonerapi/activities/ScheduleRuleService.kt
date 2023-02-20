@@ -43,6 +43,7 @@ class ScheduleRuleService {
   fun buildNewRules(requestedRules: List<ScheduleRuleRequest>, existingActivity: CourseActivity): List<CourseScheduleRule> {
     val monthStart = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
     return requestedRules.map {
+      validateRequest(it)
       CourseScheduleRule(
         id = findExistingRuleId(it, existingActivity.courseScheduleRules),
         courseActivity = existingActivity,

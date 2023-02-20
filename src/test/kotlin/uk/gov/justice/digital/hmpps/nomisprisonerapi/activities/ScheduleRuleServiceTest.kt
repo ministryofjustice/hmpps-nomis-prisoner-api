@@ -124,178 +124,224 @@ class ScheduleRuleServiceTest {
 
     private val monthStart = LocalDate.now().withDayOfMonth(1).toString()
 
-    @Test
-    fun `should do nothing if no rules`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
-      val requestedRules = listOf<ScheduleRuleRequest>()
+    @Nested
+    inner class Validation {
 
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+      @Test
+      fun `should throw if start after end time`() {
+        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
+        val requestedRules =
+          listOf(scheduleRuleRequest.copy(startTime = LocalTime.of(12, 0), endTime = LocalTime.of(11, 59)))
 
-      assertThat(newRules).isEmpty()
-    }
-
-    @Test
-    fun `should add a single rule`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
-      val requestedRules = listOf(scheduleRuleRequest)
-
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
-
-      assertThat(newRules.size).isEqualTo(1)
-      with(newRules.first()) {
-        assertNewRule()
-        assertThat(startTime).isEqualTo("${monthStart}T09:30")
-        assertThat(endTime).isEqualTo("${monthStart}T12:30")
-        assertThat(monday).isEqualTo(true)
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        assertThatThrownBy {
+          scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+        }
+          .isInstanceOf(BadDataException::class.java)
+          .hasMessageContaining("Schedule rule has times out of order - 12:00 to 11:59")
       }
     }
 
-    @Test
-    fun `should add multiple rules`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
-      val requestedRules = listOf(
-        scheduleRuleRequest,
-        scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 30), monday = false)
-      )
+    @Nested
+    inner class Update {
+      @Test
+      fun `should do nothing if no rules`() {
+        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
+        val requestedRules = listOf<ScheduleRuleRequest>()
 
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
 
-      assertThat(newRules.size).isEqualTo(2)
-      with(newRules[0]) {
-        assertNewRule()
-        assertThat(startTime).isEqualTo("${monthStart}T09:30")
-        assertThat(endTime).isEqualTo("${monthStart}T12:30")
-        assertThat(monday).isEqualTo(true)
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        assertThat(newRules).isEmpty()
       }
-      with(newRules[1]) {
-        assertNewRule()
-        assertThat(startTime).isEqualTo("${monthStart}T14:00")
-        assertThat(endTime).isEqualTo("${monthStart}T15:30")
-        assertThat(monday).isEqualTo(false)
-        assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+
+      @Test
+      fun `should add a single rule`() {
+        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
+        val requestedRules = listOf(scheduleRuleRequest)
+
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+
+        assertThat(newRules.size).isEqualTo(1)
+        with(newRules.first()) {
+          assertNewRule()
+          assertThat(startTime).isEqualTo("${monthStart}T09:30")
+          assertThat(endTime).isEqualTo("${monthStart}T12:30")
+          assertThat(monday).isEqualTo(true)
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        }
       }
-    }
 
-    @Test
-    fun `should do nothing for an unchanged rule`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1))).create()
-      val requestedRules = listOf(scheduleRuleRequest)
-
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
-
-      assertThat(newRules.size).isEqualTo(1)
-      with(newRules.first()) {
-        assertExistingRule()
-        assertThat(startTime).isEqualTo("${monthStart}T09:30")
-        assertThat(endTime).isEqualTo("${monthStart}T12:30")
-        assertThat(monday).isEqualTo(true)
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
-      }
-    }
-
-    @Test
-    fun `should remove a single rule`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1))).create()
-      val requestedRules = listOf<ScheduleRuleRequest>()
-
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
-
-      assertThat(newRules).isEmpty()
-    }
-
-    @Test
-    fun `should remove and add a changed rule`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1))).create()
-      val requestedRules = listOf(scheduleRuleRequest.copy(monday = false))
-
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
-
-      assertThat(newRules.size).isEqualTo(1)
-      with(newRules.first()) {
-        assertNewRule()
-        assertThat(startTime).isEqualTo("${monthStart}T09:30")
-        assertThat(endTime).isEqualTo("${monthStart}T12:30")
-        assertThat(monday).isEqualTo(false)
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
-      }
-    }
-
-    @Test
-    fun `should add an extra rule`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1))).create()
-      val requestedRules = listOf(
-        scheduleRuleRequest,
-        scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 0))
-      )
-
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
-
-      assertThat(newRules.size).isEqualTo(2)
-      with(newRules[0]) {
-        assertExistingRule()
-        assertThat(startTime).isEqualTo("${monthStart}T09:30")
-        assertThat(endTime).isEqualTo("${monthStart}T12:30")
-        assertThat(monday).isEqualTo(true)
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
-      }
-      with(newRules[1]) {
-        assertNewRule()
-        assertThat(startTime).isEqualTo("${monthStart}T14:00")
-        assertThat(endTime).isEqualTo("${monthStart}T15:00")
-        assertThat(monday).isEqualTo(true)
-        assertThat(slotCategory).isEqualTo(SlotCategory.PM)
-      }
-    }
-
-    @Test
-    fun `should handle add, remove, unchanged and changed rules at the same time`() {
-      val existingActivity = CourseActivityBuilderFactory().builder(
-        courseScheduleRules = listOf(
-          CourseScheduleRuleBuilder(id = 1),
-          CourseScheduleRuleBuilder(id = 2, startTimeHours = 14, endTimeHours = 15, thursday = false, friday = false),
-          CourseScheduleRuleBuilder(id = 3, startTimeHours = 13, endTimeHours = 15, monday = false, tuesday = false, wednesday = false),
+      @Test
+      fun `should add multiple rules`() {
+        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
+        val requestedRules = listOf(
+          scheduleRuleRequest,
+          scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 30), monday = false)
         )
-      ).create()
-      val requestedRules = listOf(
-        scheduleRuleRequest.copy(startTime = LocalTime.of(14, 15), endTime = LocalTime.of(15, 15), thursday = false, friday = false),
-        scheduleRuleRequest.copy(startTime = LocalTime.of(13, 30), endTime = LocalTime.of(15, 30), monday = false, tuesday = false, wednesday = false),
-        scheduleRuleRequest.copy(startTime = LocalTime.of(19, 0), endTime = LocalTime.of(21, 0))
-      )
 
-      val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
 
-      assertThat(newRules.size).isEqualTo(3)
-      // recreates the Monday afternoon rule with new times
-      with(newRules[0]) {
-        assertNewRule()
-        assertThat(startTime).isEqualTo("${monthStart}T14:15")
-        assertThat(endTime).isEqualTo("${monthStart}T15:15")
-        assertThat(monday).isEqualTo(true)
-        assertThat(thursday).isEqualTo(false)
-        assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+        assertThat(newRules.size).isEqualTo(2)
+        with(newRules[0]) {
+          assertNewRule()
+          assertThat(startTime).isEqualTo("${monthStart}T09:30")
+          assertThat(endTime).isEqualTo("${monthStart}T12:30")
+          assertThat(monday).isEqualTo(true)
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        }
+        with(newRules[1]) {
+          assertNewRule()
+          assertThat(startTime).isEqualTo("${monthStart}T14:00")
+          assertThat(endTime).isEqualTo("${monthStart}T15:30")
+          assertThat(monday).isEqualTo(false)
+          assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+        }
       }
-      // retains the unchanged Thursday afternoon rule
-      with(newRules[1]) {
-        assertExistingRule()
-        assertThat(startTime).isEqualTo("${monthStart}T13:30")
-        assertThat(endTime).isEqualTo("${monthStart}T15:30")
-        assertThat(monday).isEqualTo(false)
-        assertThat(thursday).isEqualTo(true)
-        assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+
+      @Test
+      fun `should do nothing for an unchanged rule`() {
+        val existingActivity =
+          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
+            .create()
+        val requestedRules = listOf(scheduleRuleRequest)
+
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+
+        assertThat(newRules.size).isEqualTo(1)
+        with(newRules.first()) {
+          assertExistingRule()
+          assertThat(startTime).isEqualTo("${monthStart}T09:30")
+          assertThat(endTime).isEqualTo("${monthStart}T12:30")
+          assertThat(monday).isEqualTo(true)
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        }
       }
-      // creates the new evening rule
-      with(newRules[2]) {
-        assertNewRule()
-        assertThat(startTime).isEqualTo("${monthStart}T19:00")
-        assertThat(endTime).isEqualTo("${monthStart}T21:00")
-        assertThat(monday).isEqualTo(true)
-        assertThat(slotCategory).isEqualTo(SlotCategory.ED)
+
+      @Test
+      fun `should remove a single rule`() {
+        val existingActivity =
+          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
+            .create()
+        val requestedRules = listOf<ScheduleRuleRequest>()
+
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+
+        assertThat(newRules).isEmpty()
       }
+
+      @Test
+      fun `should remove and add a changed rule`() {
+        val existingActivity =
+          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
+            .create()
+        val requestedRules = listOf(scheduleRuleRequest.copy(monday = false))
+
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+
+        assertThat(newRules.size).isEqualTo(1)
+        with(newRules.first()) {
+          assertNewRule()
+          assertThat(startTime).isEqualTo("${monthStart}T09:30")
+          assertThat(endTime).isEqualTo("${monthStart}T12:30")
+          assertThat(monday).isEqualTo(false)
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        }
+      }
+
+      @Test
+      fun `should add an extra rule`() {
+        val existingActivity =
+          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
+            .create()
+        val requestedRules = listOf(
+          scheduleRuleRequest,
+          scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 0))
+        )
+
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+
+        assertThat(newRules.size).isEqualTo(2)
+        with(newRules[0]) {
+          assertExistingRule()
+          assertThat(startTime).isEqualTo("${monthStart}T09:30")
+          assertThat(endTime).isEqualTo("${monthStart}T12:30")
+          assertThat(monday).isEqualTo(true)
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        }
+        with(newRules[1]) {
+          assertNewRule()
+          assertThat(startTime).isEqualTo("${monthStart}T14:00")
+          assertThat(endTime).isEqualTo("${monthStart}T15:00")
+          assertThat(monday).isEqualTo(true)
+          assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+        }
+      }
+
+      @Test
+      fun `should handle add, remove, unchanged and changed rules at the same time`() {
+        val existingActivity = CourseActivityBuilderFactory().builder(
+          courseScheduleRules = listOf(
+            CourseScheduleRuleBuilder(id = 1),
+            CourseScheduleRuleBuilder(id = 2, startTimeHours = 14, endTimeHours = 15, thursday = false, friday = false),
+            CourseScheduleRuleBuilder(
+              id = 3,
+              startTimeHours = 13,
+              endTimeHours = 15,
+              monday = false,
+              tuesday = false,
+              wednesday = false
+            ),
+          )
+        ).create()
+        val requestedRules = listOf(
+          scheduleRuleRequest.copy(
+            startTime = LocalTime.of(14, 15),
+            endTime = LocalTime.of(15, 15),
+            thursday = false,
+            friday = false
+          ),
+          scheduleRuleRequest.copy(
+            startTime = LocalTime.of(13, 30),
+            endTime = LocalTime.of(15, 30),
+            monday = false,
+            tuesday = false,
+            wednesday = false
+          ),
+          scheduleRuleRequest.copy(startTime = LocalTime.of(19, 0), endTime = LocalTime.of(21, 0))
+        )
+
+        val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
+
+        assertThat(newRules.size).isEqualTo(3)
+        // recreates the Monday afternoon rule with new times
+        with(newRules[0]) {
+          assertNewRule()
+          assertThat(startTime).isEqualTo("${monthStart}T14:15")
+          assertThat(endTime).isEqualTo("${monthStart}T15:15")
+          assertThat(monday).isEqualTo(true)
+          assertThat(thursday).isEqualTo(false)
+          assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+        }
+        // retains the unchanged Thursday afternoon rule
+        with(newRules[1]) {
+          assertExistingRule()
+          assertThat(startTime).isEqualTo("${monthStart}T13:30")
+          assertThat(endTime).isEqualTo("${monthStart}T15:30")
+          assertThat(monday).isEqualTo(false)
+          assertThat(thursday).isEqualTo(true)
+          assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+        }
+        // creates the new evening rule
+        with(newRules[2]) {
+          assertNewRule()
+          assertThat(startTime).isEqualTo("${monthStart}T19:00")
+          assertThat(endTime).isEqualTo("${monthStart}T21:00")
+          assertThat(monday).isEqualTo(true)
+          assertThat(slotCategory).isEqualTo(SlotCategory.ED)
+        }
+      }
+
+      private fun CourseScheduleRule.assertNewRule() = assertThat(this.id).isEqualTo(0)
+      private fun CourseScheduleRule.assertExistingRule() = assertThat(this.id).isGreaterThan(0)
     }
-
-    private fun CourseScheduleRule.assertNewRule() = assertThat(this.id).isEqualTo(0)
-    private fun CourseScheduleRule.assertExistingRule() = assertThat(this.id).isGreaterThan(0)
   }
 }
