@@ -98,4 +98,6 @@ class ActivityService(
       existingActivity.courseScheduleRules.addAll(newRules)
     }
   }
+
+  fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
 }
