@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -689,5 +690,114 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private fun getSavedActivityId() =
       repository.activityRepository.findAll().firstOrNull()?.courseActivityId
         ?: throw BadDataException("No activities in database")
+  }
+
+  @Nested
+  inner class DeleteActivity {
+    private fun createRequestJson() = """{
+            "prisonId" : "$PRISON_ID",
+            "code" : "CA",
+            "programCode" : "$PROGRAM_CODE",
+            "description" : "test description",
+            "capacity" : 23,
+            "startDate" : "2022-10-31",
+            "minimumIncentiveLevelCode" : "$IEP_LEVEL",
+            "internalLocationId" : "$ROOM_ID",
+            "payRates" : [
+              {
+                "incentiveLevel" : "BAS",
+                "payBand" : "4",
+                "rate" : 0.4
+              },
+              {
+                "incentiveLevel" : "BAS",
+                "payBand" : "5",
+                "rate" : 0.5
+              }
+            ],
+            "payPerSession": "F",
+            "schedules" : [ 
+              {
+                "date": "2022-10-31",
+                "startTime" : "09:00",
+                "endTime" : "11:00"
+              },
+              {
+                "date": "2022-11-30",
+                "startTime" : "14:00",
+                "endTime" : "15:00"
+              }
+            ],
+            "scheduleRules": [
+              {
+                "startTime": "09:00",
+                "endTime": "11:00",
+                "monday": false,
+                "tuesday": true,
+                "wednesday": false,
+                "thursday": true,
+                "friday": true,
+                "saturday": false,
+                "sunday": false
+              },
+              {
+                "startTime": "14:00",
+                "endTime": "15:00",
+                "monday": true,
+                "tuesday": true,
+                "wednesday": true,
+                "thursday": false,
+                "friday": false,
+                "saturday": false,
+                "sunday": false
+              }
+            ]
+          }
+    """.trimIndent()
+
+    fun allocateOffenderJson(bookingId: Long) = """
+      {
+        "bookingId": $bookingId,
+        "startDate": "2022-12-01",
+        "payBandCode": "4"
+      }
+    """.trimIndent()
+
+    @Test
+    fun `should delete activity`() {
+      // create activity
+      val activityId = webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createRequestJson()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateActivityResponse::class.java)
+        .returnResult().responseBody
+        ?.courseActivityId
+
+      // allocate offender
+      val offenderAtMoorlands =
+        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
+      webTestClient.post().uri("/activities/$activityId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
+        .exchange()
+        .expectStatus().isCreated
+
+      val savedActivity = repository.lookupActivity(activityId!!)
+      val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())
+      assertThat(savedAllocation).isNotNull
+
+      // delete activity and deallocate
+      webTestClient.delete().uri("/activities/$activityId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
+      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isNull()
+    }
   }
 }

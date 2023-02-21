@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
+import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -245,4 +247,10 @@ class ActivitiesResource(private val activityService: ActivityService, private v
     @RequestBody @Valid createRequest: EndOffenderProgramProfileRequest
   ) =
     allocationService.endOffenderProgramProfile(courseActivityId, bookingId, createRequest)
+
+  @Hidden
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @DeleteMapping("/activities/{courseActivityId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  fun deleteActivity(@PathVariable courseActivityId: Long) = activityService.deleteActivity(courseActivityId)
 }
