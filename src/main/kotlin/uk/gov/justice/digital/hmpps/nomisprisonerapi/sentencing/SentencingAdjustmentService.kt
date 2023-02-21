@@ -45,6 +45,7 @@ class SentencingAdjustmentService(
         adjustmentDays = it.adjustmentNumberOfDays,
         comment = it.comment,
         active = it.active,
+        hiddenFromUsers = it.offenderKeyDateAdjustmentId != null,
       )
     } ?: throw NotFoundException("Sentence adjustment $adjustmentId not found")
 

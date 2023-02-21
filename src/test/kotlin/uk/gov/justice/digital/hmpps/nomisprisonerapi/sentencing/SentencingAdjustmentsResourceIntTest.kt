@@ -643,6 +643,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           eq(bookingId)
         )
       }
+
       @Test
       fun `will call store procedure to audit key date adjustment update`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
@@ -811,6 +812,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         eq(bookingId)
       )
     }
+
     @Test
     fun `will call audit store procedure to record key date adjustments delete`() {
       webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
@@ -826,23 +828,40 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /sentence-adjustments/{adjustmentId}")
   inner class GetSentenceAdjustment {
     private lateinit var anotherPrisoner: Offender
+    private lateinit var dummyPrisoner: Offender
     var adjustmentId: Long = 0
+    private var keydateRelatedAdjustmentId: Long = 0
 
     @BeforeEach
     internal fun createPrisoner() {
+      dummyPrisoner = repository.save(
+        OffenderBuilder(nomsId = "A1238TX")
+          .withBooking(
+            OffenderBookingBuilder()
+              .withKeyDateAdjustments(KeyDateAdjustmentBuilder())
+          )
+      )
+      // hack to create a key-date adjustment so I have a valid ID for the next adjustment
+      val keyDateAdjustmentId = dummyPrisoner.bookings.first().keyDateAdjustments.first().id
+
       anotherPrisoner = repository.save(
         OffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withSentences(SentenceBuilder().withAdjustment())
+              .withSentences(
+                SentenceBuilder().withAdjustment(),
+                SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(kayDateAdjustmentId = keyDateAdjustmentId))
+              )
           )
       )
       adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
+      keydateRelatedAdjustmentId = anotherPrisoner.bookings.first().sentences.last().adjustments.first().id
     }
 
     @AfterEach
     internal fun deletePrisoner() {
       repository.delete(anotherPrisoner)
+      repository.delete(dummyPrisoner)
     }
 
     @Nested
@@ -887,6 +906,17 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(adjustmentId)
+        .jsonPath("hiddenFromUsers").isEqualTo(false)
+    }
+    @Test
+    internal fun `adjustment has hidden flag set when related to a key date adjustment`() {
+      webTestClient.get().uri("/sentence-adjustments/$keydateRelatedAdjustmentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(keydateRelatedAdjustmentId)
+        .jsonPath("hiddenFromUsers").isEqualTo(true)
     }
   }
 
@@ -1653,6 +1683,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         isNull()
       )
     }
+
     @Test
     fun `will call store procedure to audit sentence adjustment update`() {
       webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")

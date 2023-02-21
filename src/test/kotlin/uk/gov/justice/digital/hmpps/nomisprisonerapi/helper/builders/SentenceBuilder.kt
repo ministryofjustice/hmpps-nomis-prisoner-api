@@ -44,6 +44,7 @@ class SentenceAdjustmentBuilder(
   var adjustmentDate: LocalDate = LocalDate.now(),
   var createdDate: LocalDateTime = LocalDateTime.now(),
   var adjustmentNumberOfDays: Long = 10,
+  var kayDateAdjustmentId: Long? = null,
 ) {
   fun build(sentenceAdjustment: SentenceAdjustment, sentence: OffenderSentence): OffenderSentenceAdjustment =
     OffenderSentenceAdjustment(
@@ -54,5 +55,6 @@ class SentenceAdjustmentBuilder(
       adjustmentDate = adjustmentDate,
       createdDate = createdDate,
       adjustmentNumberOfDays = adjustmentNumberOfDays,
+      offenderKeyDateAdjustmentId = kayDateAdjustmentId,
     )
 }

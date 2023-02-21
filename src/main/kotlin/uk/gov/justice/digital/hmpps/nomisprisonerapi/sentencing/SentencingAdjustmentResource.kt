@@ -535,6 +535,8 @@ data class SentenceAdjustmentResponse(
   val comment: String?,
   @Schema(description = "Flag to indicate if the adjustment is being applied", required = true)
   val active: Boolean,
+  @Schema(description = "Flag to indicate the adjustment is hidden from end users. This is true when it was created as part of a key date adjustment", required = true)
+  val hiddenFromUsers: Boolean = false,
 )
 
 data class SentencingAdjustmentType(
