@@ -90,7 +90,7 @@ class ActivityServiceTest {
       internalLocationId = ROOM_ID,
       payRates = listOf(
         PayRateRequest(
-          incentiveLevel = "BASIC",
+          incentiveLevel = "BAS",
           payBand = "5",
           rate = BigDecimal(3.2),
         )
@@ -149,7 +149,7 @@ class ActivityServiceTest {
     fun prisonNotFound() {
       whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(Optional.empty())
 
-      val thrown = assertThrows<BadDataException>() {
+      val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
       Assertions.assertThat(thrown.message).isEqualTo("Prison with id=$PRISON_ID does not exist")
@@ -159,7 +159,7 @@ class ActivityServiceTest {
     fun invalidRoom() {
       whenever(agencyInternalLocationRepository.findById(any())).thenReturn(Optional.empty())
 
-      val thrown = assertThrows<BadDataException>() {
+      val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
       Assertions.assertThat(thrown.message).isEqualTo("Location with id=$ROOM_ID does not exist")
@@ -169,7 +169,7 @@ class ActivityServiceTest {
     fun invalidProgramService() {
       whenever(programServiceRepository.findByProgramCode(any())).thenReturn(null)
 
-      val thrown = assertThrows<BadDataException>() {
+      val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
       Assertions.assertThat(thrown.message).isEqualTo("Program Service with code=$PROGRAM_CODE does not exist")
@@ -179,20 +179,10 @@ class ActivityServiceTest {
     fun invalidIEP() {
       whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), eq(IEP_LEVEL))).thenReturn(null)
 
-      val thrown = assertThrows<BadDataException>() {
+      val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
       Assertions.assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $PRISON_ID")
-    }
-
-    // TODO @Test
-    fun invalidPayBandIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), eq("BASIC"))).thenReturn(null)
-
-      val thrown = assertThrows<BadDataException>() {
-        activityService.createActivity(createRequest)
-      }
-      Assertions.assertThat(thrown.message).isEqualTo("Pay rate IEP type BASIC does not exist for prison $PRISON_ID")
     }
   }
 }

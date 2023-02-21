@@ -446,6 +446,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("NOT_A_NUMBER")
           }
       }
+    }
+
+    @Nested
+    inner class PayRates {
 
       @Test
       fun `should return bad request for invalid pay band`() {
@@ -551,6 +555,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val updated = repository.lookupActivity(existingActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
       }
+    }
+
+    @Nested
+    inner class ScheduleRules {
 
       @Test
       fun `should return bad request for malformed schedule time`() {

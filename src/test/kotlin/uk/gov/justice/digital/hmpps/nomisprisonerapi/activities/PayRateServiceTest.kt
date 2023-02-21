@@ -1,13 +1,16 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -56,8 +59,6 @@ class PayRateServiceTest {
 
   private fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
 
-  private fun defaultPayBand(code: String) = PayBand(code, "Pay band $code")
-
   @Nested
   internal inner class CreatePayRates {
 
@@ -85,15 +86,21 @@ class PayRateServiceTest {
       ),
       payPerSession = "H",
     )
-    @Test
-    fun `Pay rates are mapped correctly`() {
+
+    @BeforeEach
+    fun `set up validation mocks`() {
       whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
         val prison = (it.arguments[0] as AgencyLocation)
         val code = (it.arguments[1] as String)
-        return@thenAnswer AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
+        AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
       }
-      whenever(payBandRepository.findById(PayBand.pk(PAY_BAND_CODE))).thenReturn(Optional.of(defaultPayBand(PAY_BAND_CODE)))
+      whenever(payBandRepository.findById(any())).thenAnswer {
+        Optional.of(PayBand((it.arguments[0] as ReferenceCode.Pk).code!!, ""))
+      }
+    }
 
+    @Test
+    fun `Pay rates are mapped correctly`() {
       val payRates = payRatesService.mapRates(createRequest, courseActivity)
 
       val rate = payRates.first()
@@ -102,6 +109,28 @@ class PayRateServiceTest {
       assertThat(rate.id.startDate).isEqualTo(LocalDate.parse("2022-10-31"))
       assertThat(rate.endDate).isEqualTo(LocalDate.parse("2022-11-30"))
       assertThat(rate.halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal("0.001")))
+    }
+
+    @Test
+    fun invalidPayBand() {
+      whenever(payBandRepository.findById(PayBand.pk(PAY_BAND_CODE))).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        payRatesService.mapRates(createRequest, courseActivity)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Pay band code $PAY_BAND_CODE does not exist")
+    }
+
+    @Test
+    fun invalidPayBandIEP() {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), eq("BAS"))).thenReturn(null)
+
+      assertThatThrownBy {
+        payRatesService.mapRates(createRequest, courseActivity)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Pay rate IEP type BAS does not exist for prison $PRISON_ID")
     }
   }
 
@@ -303,6 +332,30 @@ class PayRateServiceTest {
         assertThat(halfDayRate).isCloseTo(BigDecimal(8.7), within(BigDecimal(0.001)))
         assertThat(endDate).isEqualTo(today)
       }
+    }
+
+    @Test
+    fun invalidPayBandIEP() {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), eq("BAS"))).thenReturn(null)
+      val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = BigDecimal(3.2)))
+
+      assertThatThrownBy {
+        payRatesService.buildNewPayRates(request, courseActivity)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Pay rate IEP type BAS does not exist for prison $PRISON_ID")
+    }
+
+    @Test
+    fun invalidPayBand() {
+      whenever(payBandRepository.findById(PayBand.pk("A"))).thenReturn(Optional.empty())
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "A", rate = BigDecimal(3.2)))
+
+      assertThatThrownBy {
+        payRatesService.buildNewPayRates(request, courseActivity)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Pay band code A does not exist")
     }
 
     private fun rateFactory() = CourseActivityPayRateBuilderFactory()
