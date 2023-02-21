@@ -55,6 +55,9 @@ class OffenderSentenceAdjustment(
   @Column(name = "SENTENCE_SEQ", nullable = false)
   val sentenceSequence: Long,
 
+  @Column(name = "OFFENDER_KEY_DATE_ADJUST_ID", nullable = true)
+  val offenderKeyDateAdjustmentId: Long? = null,
+
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumns(
     value = [
