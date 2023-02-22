@@ -12,6 +12,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -144,6 +146,10 @@ data class CourseActivity(
 
   @Column
   val commentText: String = "Copied from the DPS activities service",
+
+  @PrimaryKeyJoinColumn
+  @OneToOne(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  var area: CourseActivityAreas? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

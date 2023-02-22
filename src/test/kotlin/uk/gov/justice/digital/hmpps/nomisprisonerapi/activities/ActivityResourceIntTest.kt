@@ -13,6 +13,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
@@ -23,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityAreas
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
@@ -694,6 +696,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Nested
   inner class DeleteActivity {
+
+    @Autowired
+    private lateinit var courseAreaRepository: CourseAreaRepository
+
     private fun createRequestJson() = """{
             "prisonId" : "$PRISON_ID",
             "code" : "CA",
@@ -763,8 +769,48 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     """.trimIndent()
 
+    fun updateRequestJson() = """
+      "internalLocationId" : ${ROOM_ID + 1},
+      "payRates" : [
+        {
+          "incentiveLevel" : "BAS",
+          "payBand" : "4",
+          "rate" : 0.4
+        },
+        {
+          "incentiveLevel" : "BAS",
+          "payBand" : "5",
+          "rate" : 0.5
+        }
+      ],
+      "scheduleRules": [
+        {
+          "startTime": "09:00",
+          "endTime": "11:00",
+          "monday": false,
+          "tuesday": true,
+          "wednesday": false,
+          "thursday": true,
+          "friday": true,
+          "saturday": false,
+          "sunday": false
+        },
+        {
+          "startTime": "14:00",
+          "endTime": "15:00",
+          "monday": true,
+          "tuesday": true,
+          "wednesday": true,
+          "thursday": false,
+          "friday": false,
+          "saturday": false,
+          "sunday": false
+        }
+      ]
+    """.trimIndent()
+
     @Test
-    fun `should delete activity`() {
+    fun `should delete activity and activity area`() {
       // create activity
       val activityId = webTestClient.post().uri("/activities")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
@@ -774,7 +820,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .expectStatus().isCreated
         .expectBody(CreateActivityResponse::class.java)
         .returnResult().responseBody
-        ?.courseActivityId
+        ?.courseActivityId!!
+
+      // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
+      repository.runInTransaction {
+        val activity = repository.lookupActivity(activityId)
+        activity.area = CourseActivityAreas(activityId, activity, "AREA")
+        repository.activityRepository.save(activity)
+      }
 
       // allocate offender
       val offenderAtMoorlands =
@@ -786,7 +839,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isCreated
 
-      val savedActivity = repository.lookupActivity(activityId!!)
+      val savedActivity = repository.lookupActivity(activityId)
       val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())
       assertThat(savedAllocation).isNotNull
 
@@ -796,8 +849,42 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
+      // check everything is deleted
       assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
       assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isNull()
+      assertThat(courseAreaRepository.findByIdOrNull(activityId)).isNull()
+    }
+
+    @Test
+    fun `should retain activity area after an update`() {
+      // create activity
+      val activityId = webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createRequestJson()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateActivityResponse::class.java)
+        .returnResult().responseBody
+        ?.courseActivityId!!
+
+      // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
+      repository.runInTransaction {
+        val activity = repository.lookupActivity(activityId)
+        activity.area = CourseActivityAreas(activityId, activity, "AREA")
+        repository.activityRepository.save(activity)
+      }
+
+      // update the activity
+      webTestClient.put().uri("/activities/$activityId")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateRequestJson()))
+        .exchange()
+
+      // check the activity still has an activity area
+      val savedActivity = repository.lookupActivity(activityId)
+      assertThat(savedActivity.area!!.areaCode).isEqualTo("AREA")
     }
   }
 }
