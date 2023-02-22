@@ -8,6 +8,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
@@ -38,6 +43,8 @@ private const val PROGRAM_CODE = "INTTEST"
 private const val IEP_LEVEL = "STD"
 
 class ActivityResourceIntTest : IntegrationTestBase() {
+
+  private val log = LoggerFactory.getLogger(this::class.java)
 
   @Autowired
   private lateinit var repository: Repository
@@ -244,6 +251,29 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(endTime).isEqualTo(LocalDateTime.parse("${monthStart}T12:35:00"))
         assertThat(slotCategory).isEqualTo(SlotCategory.AM)
       }
+    }
+
+    @Test
+    fun `should raise telemetry event`() {
+      val id = callCreateEndpoint()
+      val courseActivity = repository.lookupActivity(id)
+
+      verify(telemetryClient).trackEvent(
+        eq("activity-created"),
+        check<MutableMap<String, String>> { actual ->
+          mapOf(
+            "courseActivityId" to id.toString(),
+            "prisonId" to PRISON_ID,
+            "courseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
+            "courseActivityPayRateIds" to "[BAS-5-2022-10-31]",
+            "courseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
+          ).also { expected ->
+            log.info("expected telemetry details to be: $expected")
+            assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected)
+          }
+        },
+        isNull()
+      )
     }
 
     private fun callCreateEndpoint(): Long {
