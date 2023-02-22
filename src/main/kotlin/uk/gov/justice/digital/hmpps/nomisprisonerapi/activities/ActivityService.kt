@@ -32,6 +32,7 @@ class ActivityService(
       .apply { payRates.addAll(payRatesService.mapRates(dto, this)) }
       .apply { courseSchedules.addAll(scheduleService.mapSchedules(dto, this)) }
       .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(dto, this)) }
+      .let { activityRepository.save(it) }
       .also {
         telemetryClient.trackEvent(
           "activity-created",
@@ -42,7 +43,7 @@ class ActivityService(
           null
         )
       }
-      .let { CreateActivityResponse(activityRepository.save(it).courseActivityId) }
+      .let { CreateActivityResponse(it.courseActivityId) }
 
   private fun mapActivityModel(dto: CreateActivityRequest): CourseActivity {
 

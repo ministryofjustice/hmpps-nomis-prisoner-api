@@ -1,13 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -122,26 +124,39 @@ class ActivityServiceTest {
 
     @Test
     fun `Activity data is mapped correctly`() {
-      Assertions.assertThat(activityService.createActivity(createRequest))
+      assertThat(activityService.createActivity(createRequest))
         .isEqualTo(CreateActivityResponse(COURSE_ACTIVITY_ID))
 
       verify(activityRepository).save(
-        org.mockito.kotlin.check { activity ->
-          Assertions.assertThat(activity.code).isEqualTo("CA")
-          Assertions.assertThat(activity.prison.description).isEqualTo(PRISON_DESCRIPTION)
-          Assertions.assertThat(activity.caseloadId).isEqualTo(PRISON_ID)
-          Assertions.assertThat(activity.description).isEqualTo("test description")
-          Assertions.assertThat(activity.capacity).isEqualTo(23)
-          Assertions.assertThat(activity.active).isTrue
-          Assertions.assertThat(activity.program.programCode).isEqualTo(PROGRAM_CODE)
-          Assertions.assertThat(activity.scheduleStartDate).isEqualTo(LocalDate.parse("2022-10-31"))
-          Assertions.assertThat(activity.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
-          Assertions.assertThat(activity.providerPartyCode).isEqualTo(PRISON_ID)
-          Assertions.assertThat(activity.courseActivityType).isEqualTo("PA")
-          Assertions.assertThat(activity.iepLevel.code).isEqualTo(IEP_LEVEL)
-          Assertions.assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
-          Assertions.assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
+        check { activity ->
+          assertThat(activity.code).isEqualTo("CA")
+          assertThat(activity.prison.description).isEqualTo(PRISON_DESCRIPTION)
+          assertThat(activity.caseloadId).isEqualTo(PRISON_ID)
+          assertThat(activity.description).isEqualTo("test description")
+          assertThat(activity.capacity).isEqualTo(23)
+          assertThat(activity.active).isTrue
+          assertThat(activity.program.programCode).isEqualTo(PROGRAM_CODE)
+          assertThat(activity.scheduleStartDate).isEqualTo(LocalDate.parse("2022-10-31"))
+          assertThat(activity.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
+          assertThat(activity.providerPartyCode).isEqualTo(PRISON_ID)
+          assertThat(activity.courseActivityType).isEqualTo("PA")
+          assertThat(activity.iepLevel.code).isEqualTo(IEP_LEVEL)
+          assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
+          assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
         }
+      )
+    }
+
+    @Test
+    fun `telemetry event is created`() {
+      activityService.createActivity(createRequest)
+
+      verify(telemetryClient).trackEvent(
+        eq("activity-created"),
+        check<MutableMap<String, String>> {
+          assertThat(it).containsExactlyInAnyOrderEntriesOf(mapOf("id" to "1", "prisonId" to PRISON_ID))
+        },
+        isNull()
       )
     }
 
@@ -152,7 +167,7 @@ class ActivityServiceTest {
       val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo("Prison with id=$PRISON_ID does not exist")
+      assertThat(thrown.message).isEqualTo("Prison with id=$PRISON_ID does not exist")
     }
 
     @Test
@@ -162,7 +177,7 @@ class ActivityServiceTest {
       val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo("Location with id=$ROOM_ID does not exist")
+      assertThat(thrown.message).isEqualTo("Location with id=$ROOM_ID does not exist")
     }
 
     @Test
@@ -172,7 +187,7 @@ class ActivityServiceTest {
       val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo("Program Service with code=$PROGRAM_CODE does not exist")
+      assertThat(thrown.message).isEqualTo("Program Service with code=$PROGRAM_CODE does not exist")
     }
 
     @Test
@@ -182,7 +197,7 @@ class ActivityServiceTest {
       val thrown = assertThrows<BadDataException> {
         activityService.createActivity(createRequest)
       }
-      Assertions.assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $PRISON_ID")
+      assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $PRISON_ID")
     }
   }
 }
