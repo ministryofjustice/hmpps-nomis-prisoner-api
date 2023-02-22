@@ -244,6 +244,8 @@ class Repository(
     it.courseScheduleRules.size
   }
 
+  fun runInTransaction(block: () -> Unit) = block()
+
   fun deleteProgramServices() = programServiceRepository.deleteAll()
   fun deleteActivities() = activityRepository.deleteAll()
 
