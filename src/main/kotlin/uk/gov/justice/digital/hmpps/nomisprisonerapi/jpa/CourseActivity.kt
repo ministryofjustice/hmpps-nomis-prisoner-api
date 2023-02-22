@@ -149,7 +149,7 @@ data class CourseActivity(
 
   @PrimaryKeyJoinColumn
   @OneToOne(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  var area: CourseActivityAreas? = null,
+  var area: CourseActivityArea? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

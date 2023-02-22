@@ -13,7 +13,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseAreaRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityAreas
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
@@ -698,7 +698,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   inner class DeleteActivity {
 
     @Autowired
-    private lateinit var courseAreaRepository: CourseAreaRepository
+    private lateinit var courseActivityAreaRepository: CourseActivityAreaRepository
 
     private fun createRequestJson() = """{
             "prisonId" : "$PRISON_ID",
@@ -825,7 +825,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
       repository.runInTransaction {
         val activity = repository.lookupActivity(activityId)
-        activity.area = CourseActivityAreas(activityId, activity, "AREA")
+        activity.area = CourseActivityArea(activityId, activity, "AREA")
         repository.activityRepository.save(activity)
       }
 
@@ -852,7 +852,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // check everything is deleted
       assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
       assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isNull()
-      assertThat(courseAreaRepository.findByIdOrNull(activityId)).isNull()
+      assertThat(courseActivityAreaRepository.findByIdOrNull(activityId)).isNull()
     }
 
     @Test
@@ -871,7 +871,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
       repository.runInTransaction {
         val activity = repository.lookupActivity(activityId)
-        activity.area = CourseActivityAreas(activityId, activity, "AREA")
+        activity.area = CourseActivityArea(activityId, activity, "AREA")
         repository.activityRepository.save(activity)
       }
 

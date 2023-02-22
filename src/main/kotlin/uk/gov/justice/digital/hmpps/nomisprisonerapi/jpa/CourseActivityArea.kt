@@ -12,7 +12,7 @@ import java.io.Serializable
 
 @Entity
 @Table(name = "COURSE_ACTIVITY_AREAS")
-data class CourseActivityAreas(
+data class CourseActivityArea(
 
   @Id
   @Column(name = "CRS_ACTY_ID", nullable = false)
@@ -30,7 +30,7 @@ data class CourseActivityAreas(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    other as CourseActivityAreas
+    other as CourseActivityArea
 
     return courseActivityId == other.courseActivityId
   }
