@@ -2,10 +2,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -13,6 +16,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
@@ -184,6 +188,50 @@ class ActivityServiceTest {
         activityService.createActivity(createRequest)
       }
       assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $PRISON_ID")
+    }
+  }
+
+  @Nested
+  inner class UpdateActivity {
+
+    private lateinit var courseActivity: CourseActivity
+    private val updateRequest = UpdateActivityRequest(endDate = null, internalLocationId = ROOM_ID, payRates = listOf(), scheduleRules = listOf())
+
+    @BeforeEach
+    fun setUp() {
+      courseActivity = CourseActivityBuilderFactory().builder().create()
+      whenever(activityRepository.findById(anyLong())).thenReturn(Optional.of(courseActivity))
+    }
+
+    @Test
+    fun `should throw if location not found`() {
+      whenever(agencyInternalLocationRepository.findById(anyLong())).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Location with id=$ROOM_ID does not exist")
+
+      verify(agencyInternalLocationRepository).findById(ROOM_ID)
+    }
+
+    @Test
+    fun `should throw if location in different prison`() {
+      whenever(agencyInternalLocationRepository.findById(anyLong())).thenReturn(Optional.of(defaultRoom.copy(agencyId = "WRONG_PRISON")))
+
+      assertThatThrownBy {
+        activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Location with id=$ROOM_ID not found in prison ${courseActivity.caseloadId}")
+    }
+
+    @Test
+    fun `should update OK if location not passed`() {
+      assertDoesNotThrow {
+        activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(internalLocationId = null))
+      }
     }
   }
 }
