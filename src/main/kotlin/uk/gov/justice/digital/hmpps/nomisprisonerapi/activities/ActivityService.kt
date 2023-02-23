@@ -90,6 +90,12 @@ class ActivityService(
         ?: throw BadDataException("Location with id=${updateActivityRequest.internalLocationId} does not exist")
     }
 
+    location?.also {
+      if (location.agencyId != existingActivity.caseloadId) {
+        throw BadDataException("Location with id=${updateActivityRequest.internalLocationId} not found in prison ${existingActivity.caseloadId}")
+      }
+    }
+
     // TODO SDI-599 Which fields to update and what to do when they are updated will be picked up on this ticket
     existingActivity.scheduleEndDate = updateActivityRequest.endDate
     existingActivity.internalLocation = location
