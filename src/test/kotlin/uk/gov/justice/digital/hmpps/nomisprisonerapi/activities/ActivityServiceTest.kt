@@ -9,7 +9,6 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -144,19 +143,6 @@ class ActivityServiceTest {
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
         }
-      )
-    }
-
-    @Test
-    fun `telemetry event is created`() {
-      activityService.createActivity(createRequest)
-
-      verify(telemetryClient).trackEvent(
-        eq("activity-created"),
-        check<MutableMap<String, String>> {
-          assertThat(it).containsExactlyInAnyOrderEntriesOf(mapOf("id" to "1", "prisonId" to PRISON_ID))
-        },
-        isNull()
       )
     }
 

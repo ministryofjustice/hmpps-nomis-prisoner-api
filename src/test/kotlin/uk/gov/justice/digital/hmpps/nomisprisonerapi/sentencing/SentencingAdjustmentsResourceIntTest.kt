@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -35,9 +34,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
   @SpyBean
   private lateinit var spRepository: StoredProcedureRepository
-
-  @SpyBean
-  private lateinit var telemetryClient: TelemetryClient
 
   @BeforeEach
   internal fun createPrisoner() {
