@@ -221,6 +221,62 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `Invalid activity code should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""code" : "CA",""", """"code" : "1234567890123",""")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidScheduleRule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("code").contains("1234567890123").contains("length must be between 1 and 12")
+        }
+    }
+
+    @Test
+    fun `Invalid capacity should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""capacity" : 23,""", """"capacity" : 1000,""")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidScheduleRule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("capacity").contains("1000").contains("must be less than or equal to 999")
+        }
+    }
+
+    @Test
+    fun `Invalid description should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""description" : "test description",""", """"description" : "12345678901234567890123456789012345678901",""")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidScheduleRule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("description").contains("length must be between 1 and 40")
+        }
+    }
+
+    @Test
+    fun `Invalid pay per session should return bad request`() {
+      val invalidScheduleRule = validJsonRequest().replace(""""payPerSession": "F",""", """"payPerSession": "f",""")
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidScheduleRule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("payPerSession").contains("""must match "[H|F]"""")
+        }
+    }
+
+    @Test
     fun `will create activity with correct details`() {
       val monthStart = LocalDate.now().withDayOfMonth(1).toString()
       val id = callCreateEndpoint()

@@ -2,6 +2,9 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Pattern
+import org.hibernate.validator.constraints.Length
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -11,6 +14,7 @@ import java.time.LocalTime
 data class CreateActivityRequest(
 
   @Schema(description = "Code generated from the activity and schedule ids and mapped", required = true)
+  @field:Length(min = 1, max = 12)
   val code: String,
 
   @Schema(description = "Activity start date", required = true, example = "2022-08-12")
@@ -26,12 +30,14 @@ data class CreateActivityRequest(
   val internalLocationId: Long?,
 
   @Schema(description = "Capacity of activity (from activity schedule)", required = true)
+  @field:Max(999)
   val capacity: Int,
 
   @Schema(description = "Pay rates", required = true)
   val payRates: List<PayRateRequest>,
 
   @Schema(description = "Description from concatenated activity and activity schedule", required = true)
+  @field:Length(min = 1, max = 40)
   val description: String,
 
   @Schema(description = "Minimum Incentive Level")
@@ -41,6 +47,7 @@ data class CreateActivityRequest(
   val programCode: String,
 
   @Schema(description = "Half or Full day (H or F)", required = true, example = "H")
+  @field:Pattern(regexp = "[H|F]")
   val payPerSession: String,
 
   @Schema(description = "Schedules", required = false)
@@ -106,59 +113,3 @@ data class ScheduleRuleRequest(
   @Schema(description = "Scheduled on Sunday", required = true, example = "false")
   val sunday: Boolean = false,
 )
-
-/*
- "prisonCode": "PVI",
-  "attendanceRequired": false, -- ignore
-  "summary": "Maths level 1", -- ignore
-  "description": "A basic maths course suitable for introduction to the subject",
-  "categoryId": 0,  program service code ***
-  "tierId": 1,      --- ignore
-  "eligibilityRuleIds": [  -- course_activity_profiles TBC
-  ],
-  "pay": [
-    {
-      "incentiveLevel": "Basic", -- desc not code
-      "payBand": "A", -- 1 to 10 = nomis
-      "rate": 150, *** half day rate
-      "pieceRate": 150, -- ignore or might be a slot in nomis
-      "pieceRateItems": 10 -- ignore
-    }
-  ],
-  "riskLevel": "High", -- ignore
-  "minimumIncentiveLevel": "Basic",
-  "startDate": "2022-12-23",
-  "endDate": "2022-12-23"
-
-  NOTE slots being refactored out of the activity schedule.
-schedule =
-  {
-  "id": 123456,
-  "description": "Monday AM Houseblock 3",
-  "suspensions": [
-    {
-      "suspendedFrom": "2022-12-23",
-      "suspendedUntil": "2022-12-23"
-    }
-  ],
-  "startTime": "9:00",
-  "endTime": "11:30",
-  "internalLocation": 98877667,
-  "capacity": 10,
-  "activity": {
-    "id": 123456,
-    "prisonCode": "PVI",
-    "attendanceRequired": false,
-    "summary": "Maths level 1",
-    "description": "A basic maths course suitable for introduction to the subject",
-    "category": {
-      "id": 1,
-      "code": "LEISURE_SOCIAL",
-      "name": "Leisure and social",
-      "description": "Such as association, library time and social clubs, like music or art"
-    },
-    "riskLevel": "High",
-    "minimumIncentiveLevel": "Basic"
-  }
-}
- */
