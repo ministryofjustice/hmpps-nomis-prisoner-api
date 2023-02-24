@@ -35,7 +35,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 private const val PRISON_ID = "MDI"
 private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
@@ -72,40 +71,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Nested
   inner class CreateActivity {
-
-    private val createActivityRequest: () -> CreateActivityRequest = {
-      CreateActivityRequest(
-        prisonId = PRISON_ID,
-        code = "CA",
-        programCode = PROGRAM_CODE,
-        description = "test description",
-        capacity = 23,
-        startDate = LocalDate.parse("2022-10-31"),
-        endDate = LocalDate.parse("2022-11-30"),
-        minimumIncentiveLevelCode = IEP_LEVEL,
-        internalLocationId = ROOM_ID,
-        payRates = listOf(payRateRequest),
-        payPerSession = "F",
-        schedules = listOf(schedulesRequest)
-      )
-    }
-    private val payRateRequest =
-      PayRateRequest(
-        incentiveLevel = "BAS",
-        payBand = "5",
-        rate = BigDecimal(3.2),
-      )
-    private val schedulesRequest =
-      SchedulesRequest(
-        date = LocalDate.parse("2022-10-31"),
-        startTime = LocalTime.of(8, 0),
-        endTime = LocalTime.of(11, 0),
-      )
-
     @Test
     fun `access forbidden when no authority`() {
       webTestClient.post().uri("/activities")
-        .body(BodyInserters.fromValue(createActivityRequest()))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(validJsonRequest()))
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -113,8 +83,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden when no role`() {
       webTestClient.post().uri("/activities")
+        .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf()))
-        .body(BodyInserters.fromValue(createActivityRequest()))
+        .body(BodyInserters.fromValue(validJsonRequest()))
         .exchange()
         .expectStatus().isForbidden
     }
@@ -122,29 +93,28 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden with wrong role`() {
       webTestClient.post().uri("/activities")
+        .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-        .body(BodyInserters.fromValue(createActivityRequest()))
+        .body(BodyInserters.fromValue(validJsonRequest()))
         .exchange()
         .expectStatus().isForbidden
     }
 
     @Test
-    fun `access with prison not found`() {
-      webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createActivityRequest().copy(prisonId = "ZZX")))
-        .exchange()
-        .expectStatus().isBadRequest
+    fun `invalid prison should return bad request`() {
+      val invalidPrison = validJsonRequest().replace(""""prisonId" : "$PRISON_ID",""", """"prisonId" : "ZZX",""")
+
+      createActivityExpectingBadRequest(invalidPrison)
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Prison with id=ZZX does not exist")
+        }
     }
 
     @Test
     fun `error from pay rate service should return bad request`() {
-      val invalidPayRate = payRateRequest.copy(payBand = "INVALID")
-      webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createActivityRequest().copy(payRates = listOf(invalidPayRate))))
-        .exchange()
-        .expectStatus().isBadRequest
+      val invalidSchedule = validJsonRequest().replace(""""payBand" : "5",""", """"payBand" : "INVALID",""")
+
+      createActivityExpectingBadRequest(invalidSchedule)
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("Pay band code INVALID does not exist")
         }
@@ -153,12 +123,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid schedule start time should return bad request`() {
       val invalidSchedule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:65",""")
-      webTestClient.post().uri("/activities")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(invalidSchedule))
-        .exchange()
-        .expectStatus().isBadRequest
+
+      createActivityExpectingBadRequest(invalidSchedule)
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("11:65")
         }
@@ -167,12 +133,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid schedule end time should return bad request`() {
       val invalidSchedule = validJsonRequest().replace(""""endTime": "12:35"""", """"endTime": "12:65"""")
-      webTestClient.post().uri("/activities")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(invalidSchedule))
-        .exchange()
-        .expectStatus().isBadRequest
+
+      createActivityExpectingBadRequest(invalidSchedule)
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("12:65")
         }
@@ -181,12 +143,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid schedule date should return bad request`() {
       val invalidSchedule = validJsonRequest().replace(""""date": "2022-10-31",""", """"date": "2022-13-31",""")
-      webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(invalidSchedule))
-        .exchange()
-        .expectStatus().isBadRequest
+
+      createActivityExpectingBadRequest(invalidSchedule)
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("2022-13-31")
         }
@@ -195,12 +153,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid schedule rule time should return bad request`() {
       val invalidScheduleRule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:61"""")
-      webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(invalidScheduleRule))
-        .exchange()
-        .expectStatus().isBadRequest
+
+      createActivityExpectingBadRequest(invalidScheduleRule)
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("Invalid value for MinuteOfHour (valid values 0 - 59): 61")
         }
@@ -209,14 +163,50 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Test
     fun `Invalid schedule rule day of week should return bad request`() {
       val invalidScheduleRule = validJsonRequest().replace(""""monday": false,""", """"monday": "INVALID",""")
-      webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(invalidScheduleRule))
-        .exchange()
-        .expectStatus().isBadRequest
+
+      createActivityExpectingBadRequest(invalidScheduleRule)
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("INVALID")
+        }
+    }
+
+    @Test
+    fun `Invalid activity code should return bad request`() {
+      val invalidSchedule = validJsonRequest().replace(""""code" : "CA",""", """"code" : "1234567890123",""")
+
+      createActivityExpectingBadRequest(invalidSchedule)
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("code").contains("1234567890123").contains("length must be between 1 and 12")
+        }
+    }
+
+    @Test
+    fun `Invalid capacity should return bad request`() {
+      val invalidSchedule = validJsonRequest().replace(""""capacity" : 23,""", """"capacity" : 1000,""")
+
+      createActivityExpectingBadRequest(invalidSchedule)
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("capacity").contains("1000").contains("must be less than or equal to 999")
+        }
+    }
+
+    @Test
+    fun `Invalid description should return bad request`() {
+      val invalidSchedule = validJsonRequest().replace(""""description" : "test description",""", """"description" : "12345678901234567890123456789012345678901",""")
+
+      createActivityExpectingBadRequest(invalidSchedule)
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("description").contains("length must be between 1 and 40")
+        }
+    }
+
+    @Test
+    fun `Invalid pay per session should return bad request`() {
+      val invalidSchedule = validJsonRequest().replace(""""payPerSession": "F",""", """"payPerSession": "f",""")
+
+      createActivityExpectingBadRequest(invalidSchedule)
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("payPerSession").contains("""must match "[H|F]"""")
         }
     }
 
@@ -275,6 +265,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         isNull()
       )
     }
+
+    private fun createActivityExpectingBadRequest(body: String) =
+      webTestClient.post().uri("/activities")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(body))
+        .exchange()
+        .expectStatus().isBadRequest
 
     private fun callCreateEndpoint(): Long {
       val response = webTestClient.post().uri("/activities")
