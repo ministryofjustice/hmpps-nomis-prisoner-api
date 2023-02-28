@@ -739,6 +739,110 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  inner class UpdateSchedules {
+
+    private lateinit var courseActivity: CourseActivity
+
+    private val updateSchedulesJson = """[
+        {
+          "date": "2022-11-01",
+          "startTime": "09:00",
+          "endTime": "12:00"
+        }
+    ]
+    """.trimIndent()
+
+    @BeforeEach
+    fun setUp() {
+      courseActivity = repository.save(courseActivityBuilderFactory.builder())
+    }
+
+    @Test
+    fun `no authority should return unauthorized`() {
+      webTestClient.put().uri("/activities/1/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(updateSchedulesJson))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `no role should return forbidden`() {
+      webTestClient.put().uri("/activities/1/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(updateSchedulesJson))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `wrong role should return forbidden`() {
+      webTestClient.put().uri("/activities/1/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(updateSchedulesJson))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `valid request should return OK and call the service`() {
+      webTestClient.put().uri("/activities/1/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateSchedulesJson))
+        .exchange()
+        .expectStatus().isOk
+    }
+
+    @Test
+    fun `invalid date should return bad request`() {
+      val request = updateSchedulesJson.replace(""""date": "2022-11-01",""", """"date": "2022-13-01",""")
+
+      webTestClient.put().uri("/activities/1/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(request))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("2022-13-01")
+        }
+    }
+
+    @Test
+    fun `invalid start time should return bad request`() {
+      val request = updateSchedulesJson.replace(""""startTime": "09:00",""", """"startTime": "09:70",""")
+
+      webTestClient.put().uri("/activities/1/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(request))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("09:70")
+        }
+    }
+
+    @Test
+    fun `invalid end time should return bad request`() {
+      val request = updateSchedulesJson.replace(""""endTime": "12:00"""", """"endTime": "25:00"""")
+
+      webTestClient.put().uri("/activities/1/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(request))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("25:00")
+        }
+    }
+  }
+
+  @Nested
   inner class DeleteActivity {
 
     @Autowired
