@@ -100,7 +100,7 @@ class ActivityServiceTest {
           rate = BigDecimal(3.2),
         )
       ),
-      payPerSession = "H",
+      payPerSession = PayPerSession.H,
     )
 
     @BeforeEach

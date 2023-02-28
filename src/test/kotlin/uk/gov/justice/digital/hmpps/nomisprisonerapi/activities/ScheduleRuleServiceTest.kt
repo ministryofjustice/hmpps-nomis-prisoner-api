@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleRuleBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
 import java.time.LocalTime
@@ -28,7 +29,7 @@ class ScheduleRuleServiceTest {
       payRates = listOf(),
       description = "any",
       programCode = "ANY",
-      payPerSession = "H",
+      payPerSession = PayPerSession.H,
       internalLocationId = null,
     )
     private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()

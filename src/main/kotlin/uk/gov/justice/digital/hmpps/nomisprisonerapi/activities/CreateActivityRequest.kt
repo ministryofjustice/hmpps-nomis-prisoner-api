@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Pattern
 import org.hibernate.validator.constraints.Length
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -47,8 +48,7 @@ data class CreateActivityRequest(
   val programCode: String,
 
   @Schema(description = "Half or Full day (H or F)", required = true, example = "H")
-  @field:Pattern(regexp = "[H|F]")
-  val payPerSession: String,
+  val payPerSession: PayPerSession,
 
   @Schema(description = "Schedules", required = false)
   val schedules: List<SchedulesRequest> = listOf(),

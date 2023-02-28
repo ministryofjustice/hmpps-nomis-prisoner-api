@@ -5,6 +5,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
@@ -30,14 +31,14 @@ class AppointmentService(
         telemetryClient.trackEvent(
           "appointment-created",
           mapOf(
-            "id" to it.id.toString(),
+            "id" to it.eventId.toString(),
             "bookingId" to it.offenderBooking.bookingId.toString(),
             "location" to it.internalLocation?.locationId.toString(),
           ),
           null
         )
       }
-      .let { CreateAppointmentResponse(offenderIndividualScheduleRepository.save(it).id) }
+      .let { CreateAppointmentResponse(offenderIndividualScheduleRepository.save(it).eventId) }
 
   private fun mapModel(dto: CreateAppointmentRequest): OffenderIndividualSchedule {
 
@@ -69,4 +70,22 @@ class AppointmentService(
       eventSubType = eventSubType,
     )
   }
+
+  fun getAppointment(bookingId: Long, locationId: Long, date: LocalDateTime): AppointmentResponse =
+    offenderIndividualScheduleRepository.findOneByBookingLocationDateAndStartTime(
+      bookingId = bookingId,
+      locationId = locationId,
+      date = date.toLocalDate(),
+      hour = date.hour,
+      minute = date.minute
+    )?.let {
+      return mapModel(it)
+    }
+      ?: throw NotFoundException("Appointment not found")
+}
+
+private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse {
+  return AppointmentResponse(
+    bookingId = entity.offenderBooking.bookingId,
+  )
 }

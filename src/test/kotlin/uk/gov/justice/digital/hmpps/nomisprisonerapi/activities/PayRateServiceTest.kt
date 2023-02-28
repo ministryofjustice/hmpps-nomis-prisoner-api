@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
@@ -84,7 +85,7 @@ class PayRateServiceTest {
           rate = BigDecimal(3.2),
         )
       ),
-      payPerSession = "H",
+      payPerSession = PayPerSession.H,
     )
 
     @BeforeEach

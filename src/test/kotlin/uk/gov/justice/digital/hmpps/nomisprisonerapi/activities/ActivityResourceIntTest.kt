@@ -43,6 +43,8 @@ private const val IEP_LEVEL = "STD"
 
 class ActivityResourceIntTest : IntegrationTestBase() {
 
+  // TODO: nest classes
+
   private val log = LoggerFactory.getLogger(this::class.java)
 
   @Autowired

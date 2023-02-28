@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.AM
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.ED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.PM
@@ -27,7 +28,7 @@ class ScheduleServiceTest {
       payRates = listOf(),
       description = "any",
       programCode = "ANY",
-      payPerSession = "H",
+      payPerSession = PayPerSession.H,
       internalLocationId = null,
     )
     private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()

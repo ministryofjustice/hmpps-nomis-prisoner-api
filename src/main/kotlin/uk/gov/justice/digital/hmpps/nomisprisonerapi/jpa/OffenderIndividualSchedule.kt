@@ -32,7 +32,7 @@ class OffenderIndividualSchedule(
   @SequenceGenerator(name = "EVENT_ID", sequenceName = "EVENT_ID", allocationSize = 1)
   @GeneratedValue(generator = "EVENT_ID")
   @Column(name = "EVENT_ID", nullable = false)
-  val id: Long = 0,
+  val eventId: Long = 0,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
@@ -96,13 +96,13 @@ class OffenderIndividualSchedule(
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as OffenderIndividualSchedule
 
-    return id == other.id
+    return eventId == other.eventId
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(id = $id, booking = ${offenderBooking.bookingId}, eventDate = $eventDate, startTime = $startTime)"
+    return this::class.simpleName + "(id = $eventId, booking = ${offenderBooking.bookingId}, eventDate = $eventDate, startTime = $startTime)"
   }
 }
