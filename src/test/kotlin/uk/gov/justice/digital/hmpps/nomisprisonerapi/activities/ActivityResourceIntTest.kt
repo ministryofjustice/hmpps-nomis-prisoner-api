@@ -71,199 +71,215 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Nested
   inner class CreateActivity {
-    @Test
-    fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/activities")
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validJsonRequest()))
-        .exchange()
-        .expectStatus().isUnauthorized
-    }
 
-    @Test
-    fun `access forbidden when no role`() {
-      webTestClient.post().uri("/activities")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf()))
-        .body(BodyInserters.fromValue(validJsonRequest()))
-        .exchange()
-        .expectStatus().isForbidden
-    }
+    @Nested
+    inner class Api {
+      @Test
+      fun `access forbidden when no authority`() {
+        webTestClient.post().uri("/activities")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(validJsonRequest()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
 
-    @Test
-    fun `access forbidden with wrong role`() {
-      webTestClient.post().uri("/activities")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-        .body(BodyInserters.fromValue(validJsonRequest()))
-        .exchange()
-        .expectStatus().isForbidden
-    }
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/activities")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf()))
+          .body(BodyInserters.fromValue(validJsonRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
 
-    @Test
-    fun `invalid prison should return bad request`() {
-      val invalidPrison = validJsonRequest().replace(""""prisonId" : "$PRISON_ID",""", """"prisonId" : "ZZX",""")
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/activities")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .body(BodyInserters.fromValue(validJsonRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
 
-      createActivityExpectingBadRequest(invalidPrison)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Prison with id=ZZX does not exist")
-        }
-    }
+      @Test
+      fun `invalid prison should return bad request`() {
+        val invalidPrison = validJsonRequest().replace(""""prisonId" : "$PRISON_ID",""", """"prisonId" : "ZZX",""")
 
-    @Test
-    fun `error from pay rate service should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""payBand" : "5",""", """"payBand" : "INVALID",""")
+        createActivityExpectingBadRequest(invalidPrison)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Prison with id=ZZX does not exist")
+          }
+      }
 
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Pay band code INVALID does not exist")
-        }
-    }
+      @Test
+      fun `Invalid activity code should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""code" : "CA",""", """"code" : "1234567890123",""")
 
-    @Test
-    fun `invalid schedule start time should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:65",""")
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("code").contains("1234567890123").contains("length must be between 1 and 12")
+          }
+      }
 
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("11:65")
-        }
-    }
+      @Test
+      fun `Invalid capacity should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""capacity" : 23,""", """"capacity" : 1000,""")
 
-    @Test
-    fun `invalid schedule end time should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""endTime": "12:35"""", """"endTime": "12:65"""")
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("capacity").contains("1000").contains("must be less than or equal to 999")
+          }
+      }
 
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("12:65")
-        }
-    }
+      @Test
+      fun `Invalid description should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""description" : "test description",""", """"description" : "12345678901234567890123456789012345678901",""")
 
-    @Test
-    fun `invalid schedule date should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""date": "2022-10-31",""", """"date": "2022-13-31",""")
-
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("2022-13-31")
-        }
-    }
-
-    @Test
-    fun `invalid schedule rule time should return bad request`() {
-      val invalidScheduleRule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:61"""")
-
-      createActivityExpectingBadRequest(invalidScheduleRule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Invalid value for MinuteOfHour (valid values 0 - 59): 61")
-        }
-    }
-
-    @Test
-    fun `Invalid schedule rule day of week should return bad request`() {
-      val invalidScheduleRule = validJsonRequest().replace(""""monday": false,""", """"monday": "INVALID",""")
-
-      createActivityExpectingBadRequest(invalidScheduleRule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("INVALID")
-        }
-    }
-
-    @Test
-    fun `Invalid activity code should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""code" : "CA",""", """"code" : "1234567890123",""")
-
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("code").contains("1234567890123").contains("length must be between 1 and 12")
-        }
-    }
-
-    @Test
-    fun `Invalid capacity should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""capacity" : 23,""", """"capacity" : 1000,""")
-
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("capacity").contains("1000").contains("must be less than or equal to 999")
-        }
-    }
-
-    @Test
-    fun `Invalid description should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""description" : "test description",""", """"description" : "12345678901234567890123456789012345678901",""")
-
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("description").contains("length must be between 1 and 40")
-        }
-    }
-
-    @Test
-    fun `Invalid pay per session should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""payPerSession": "F",""", """"payPerSession": "f",""")
-
-      createActivityExpectingBadRequest(invalidSchedule)
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("payPerSession").contains("""must match "[H|F]"""")
-        }
-    }
-
-    @Test
-    fun `will create activity with correct details`() {
-      val monthStart = LocalDate.now().withDayOfMonth(1).toString()
-      val id = callCreateEndpoint()
-
-      // Spot check that the database has been populated.
-      val courseActivity = repository.lookupActivity(id)
-
-      assertThat(courseActivity.courseActivityId).isEqualTo(id)
-      assertThat(courseActivity.capacity).isEqualTo(23)
-      assertThat(courseActivity.prison.id).isEqualTo(PRISON_ID)
-      assertThat(courseActivity.payRates.first().halfDayRate).isCloseTo(
-        BigDecimal(0.4),
-        within(BigDecimal("0.001"))
-      )
-      assertThat(courseActivity.payPerSession).isEqualTo(PayPerSession.F)
-      assertThat(courseActivity.courseSchedules.first().scheduleDate).isEqualTo("2022-10-31")
-      with(courseActivity.courseScheduleRules.first()) {
-        assertThat(id).isGreaterThan(0)
-        assertThat(this.courseActivity.courseActivityId).isEqualTo(courseActivity.courseActivityId)
-        assertThat(monday).isFalse
-        assertThat(tuesday).isTrue
-        assertThat(wednesday).isFalse
-        assertThat(thursday).isTrue
-        assertThat(friday).isTrue
-        assertThat(saturday).isFalse
-        assertThat(sunday).isFalse
-        assertThat(startTime).isEqualTo(LocalDateTime.parse("${monthStart}T11:45:00"))
-        assertThat(endTime).isEqualTo(LocalDateTime.parse("${monthStart}T12:35:00"))
-        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("description").contains("length must be between 1 and 40")
+          }
       }
     }
 
-    @Test
-    fun `should raise telemetry event`() {
-      val id = callCreateEndpoint()
-      val courseActivity = repository.lookupActivity(id)
+    @Nested
+    inner class Schedules {
+      @Test
+      fun `invalid schedule start time should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:65",""")
 
-      verify(telemetryClient).trackEvent(
-        eq("activity-created"),
-        check<MutableMap<String, String>> { actual ->
-          mapOf(
-            "courseActivityId" to id.toString(),
-            "prisonId" to PRISON_ID,
-            "courseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
-            "courseActivityPayRateIds" to "[BAS-5-2022-10-31]",
-            "courseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
-          ).also { expected ->
-            log.info("expected telemetry details to be: $expected")
-            assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected)
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("11:65")
           }
-        },
-        isNull()
-      )
+      }
+
+      @Test
+      fun `invalid schedule end time should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""endTime": "12:35"""", """"endTime": "12:65"""")
+
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("12:65")
+          }
+      }
+
+      @Test
+      fun `invalid schedule date should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""date": "2022-10-31",""", """"date": "2022-13-31",""")
+
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("2022-13-31")
+          }
+      }
+    }
+
+    @Nested
+    inner class ScheduleRules {
+      @Test
+      fun `invalid schedule rule time should return bad request`() {
+        val invalidScheduleRule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:61"""")
+
+        createActivityExpectingBadRequest(invalidScheduleRule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Invalid value for MinuteOfHour (valid values 0 - 59): 61")
+          }
+      }
+
+      @Test
+      fun `Invalid schedule rule day of week should return bad request`() {
+        val invalidScheduleRule = validJsonRequest().replace(""""monday": false,""", """"monday": "INVALID",""")
+
+        createActivityExpectingBadRequest(invalidScheduleRule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("INVALID")
+          }
+      }
+    }
+
+    @Nested
+    inner class PayRates {
+      @Test
+      fun `error from pay rate service should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""payBand" : "5",""", """"payBand" : "INVALID",""")
+
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Pay band code INVALID does not exist")
+          }
+      }
+
+      @Test
+      fun `Invalid pay per session should return bad request`() {
+        val invalidSchedule = validJsonRequest().replace(""""payPerSession": "F",""", """"payPerSession": "f",""")
+
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("PayPerSession").contains("""String "f": not one of the values accepted for Enum class: [H, F]""")
+          }
+      }
+    }
+
+    @Nested
+    inner class ActivityDetails {
+      @Test
+      fun `will create activity with correct details`() {
+        val monthStart = LocalDate.now().withDayOfMonth(1).toString()
+        val id = callCreateEndpoint()
+
+        // Spot check that the database has been populated.
+        val courseActivity = repository.lookupActivity(id)
+
+        assertThat(courseActivity.courseActivityId).isEqualTo(id)
+        assertThat(courseActivity.capacity).isEqualTo(23)
+        assertThat(courseActivity.prison.id).isEqualTo(PRISON_ID)
+        assertThat(courseActivity.payRates.first().halfDayRate).isCloseTo(
+          BigDecimal(0.4),
+          within(BigDecimal("0.001"))
+        )
+        assertThat(courseActivity.payPerSession).isEqualTo(PayPerSession.F)
+        assertThat(courseActivity.courseSchedules.first().scheduleDate).isEqualTo("2022-10-31")
+        with(courseActivity.courseScheduleRules.first()) {
+          assertThat(id).isGreaterThan(0)
+          assertThat(this.courseActivity.courseActivityId).isEqualTo(courseActivity.courseActivityId)
+          assertThat(monday).isFalse
+          assertThat(tuesday).isTrue
+          assertThat(wednesday).isFalse
+          assertThat(thursday).isTrue
+          assertThat(friday).isTrue
+          assertThat(saturday).isFalse
+          assertThat(sunday).isFalse
+          assertThat(startTime).isEqualTo(LocalDateTime.parse("${monthStart}T11:45:00"))
+          assertThat(endTime).isEqualTo(LocalDateTime.parse("${monthStart}T12:35:00"))
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        }
+      }
+
+      @Test
+      fun `should raise telemetry event`() {
+        val id = callCreateEndpoint()
+        val courseActivity = repository.lookupActivity(id)
+
+        verify(telemetryClient).trackEvent(
+          eq("activity-created"),
+          check<MutableMap<String, String>> { actual ->
+            mapOf(
+              "courseActivityId" to id.toString(),
+              "prisonId" to PRISON_ID,
+              "courseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
+              "courseActivityPayRateIds" to "[BAS-5-2022-10-31]",
+              "courseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
+            ).also { expected ->
+              log.info("expected telemetry details to be: $expected")
+              assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected)
+            }
+          },
+          isNull()
+        )
+      }
     }
 
     private fun createActivityExpectingBadRequest(body: String) =

@@ -198,7 +198,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       // Check the database
       val offenderIndividualSchedule = repository.lookupAppointment(id)!!
 
-      assertThat(offenderIndividualSchedule.id).isEqualTo(id)
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
       assertThat(offenderIndividualSchedule.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
       assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-27"))
       assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
@@ -220,8 +220,8 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isCreated
         .expectBody(CreateAppointmentResponse::class.java)
         .returnResult().responseBody
-      assertThat(response?.id).isGreaterThan(0)
-      return response!!.id
+      assertThat(response?.eventId).isGreaterThan(0)
+      return response!!.eventId
     }
 
     private fun validJsonRequest() = """{
