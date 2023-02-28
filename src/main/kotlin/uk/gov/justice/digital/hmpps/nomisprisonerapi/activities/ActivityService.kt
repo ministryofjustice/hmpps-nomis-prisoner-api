@@ -109,5 +109,8 @@ class ActivityService(
     }
   }
 
+  // TODO SDIT-422 implement this service
+  fun updateActivitySchedules(courseActivityId: Long, scheduleRequests: List<SchedulesRequest>) = Unit
+
   fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
 }

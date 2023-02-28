@@ -248,6 +248,53 @@ class ActivitiesResource(private val activityService: ActivityService, private v
   ) =
     allocationService.endOffenderProgramProfile(courseActivityId, bookingId, createRequest)
 
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PutMapping("/activities/{courseActivityId}/schedules")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Updates activity schedules",
+    description = "Recreates schedules from tomorrow. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityRequest::class))
+      ]
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Schedules updated",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class))
+        ]
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "There was an error with the request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
+        ]
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
+        ]
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))
+        ]
+      ),
+    ]
+  )
+  fun updateSchedules(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @RequestBody @Valid scheduleRequests: List<SchedulesRequest>
+  ) = activityService.updateActivitySchedules(courseActivityId, scheduleRequests)
+
   @Hidden
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @DeleteMapping("/activities/{courseActivityId}")
