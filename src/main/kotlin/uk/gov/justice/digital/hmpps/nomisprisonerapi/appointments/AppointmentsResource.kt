@@ -31,10 +31,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     description = "Creates a new appointment. Requires role NOMIS_APPOINTMENTS",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreateAppointmentRequest::class)
-        )
+        Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class))
       ]
     ),
     responses = [
@@ -42,10 +39,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
         responseCode = "201",
         description = "Appointment information with created id",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CreateAppointmentRequest::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class))
         ]
       ),
       ApiResponse(
@@ -80,10 +74,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
         responseCode = "200",
         description = "Appointment information with created id",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CreateAppointmentRequest::class)
-          )
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class))
         ]
       ),
       ApiResponse(
