@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Pattern
 import org.hibernate.validator.constraints.Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import java.math.BigDecimal
