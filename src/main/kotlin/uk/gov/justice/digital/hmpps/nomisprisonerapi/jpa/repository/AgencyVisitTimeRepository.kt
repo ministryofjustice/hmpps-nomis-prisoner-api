@@ -16,12 +16,12 @@ interface AgencyVisitTimeRepository :
   fun findByStartTimeAndAgencyVisitTimesId_WeekDayAndAgencyVisitTimesId_Location(
     startTime: LocalTime,
     weekDay: String,
-    location: AgencyLocation
+    location: AgencyLocation,
   ): AgencyVisitTime?
 
   // roundabout way of getting the max timeslot sequence for a prison and day
   fun findFirstByAgencyVisitTimesId_LocationAndAgencyVisitTimesId_WeekDayOrderByAgencyVisitTimesId_TimeSlotSequenceDesc(
     agencyId: AgencyLocation,
-    weekDay: String
+    weekDay: String,
   ): AgencyVisitTime?
 }

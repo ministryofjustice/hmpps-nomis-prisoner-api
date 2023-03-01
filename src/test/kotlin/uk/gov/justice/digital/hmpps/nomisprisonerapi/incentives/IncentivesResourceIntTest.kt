@@ -45,8 +45,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       offenderAtMoorlands = repository.save(
         OffenderBuilder(nomsId = "A1234TT")
           .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "WAI")
-          )
+            OffenderBookingBuilder(agencyLocationId = "WAI"),
+          ),
       )
     }
 
@@ -135,8 +135,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             "prisonId"    : "WAI",
             "comments"    : "a comment",
             "userId"      : "steve"
-          }"""
-          )
+          }""",
+          ),
         )
         .exchange()
         .expectStatus().isCreated
@@ -162,9 +162,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             OffenderBookingBuilder(agencyLocationId = "MDI")
               .withIncentives(
                 IncentiveBuilder(iepLevel = "STD", sequence = 1, iepDateTime = LocalDateTime.parse("2022-01-01T12:00")),
-                IncentiveBuilder(iepLevel = "ENH", sequence = 2, iepDateTime = LocalDateTime.parse("2022-01-02T12:00"))
-              )
-          )
+                IncentiveBuilder(iepLevel = "ENH", sequence = 2, iepDateTime = LocalDateTime.parse("2022-01-02T12:00")),
+              ),
+          ),
       )
       offenderAtLeeds = repository.save(
         OffenderBuilder(nomsId = "A4567TT")
@@ -172,9 +172,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             OffenderBookingBuilder(agencyLocationId = "LEI")
               .withIncentives(
                 IncentiveBuilder(iepLevel = "STD", sequence = 1),
-                IncentiveBuilder(iepLevel = "ENH", sequence = 2)
-              )
-          )
+                IncentiveBuilder(iepLevel = "ENH", sequence = 2),
+              ),
+          ),
       )
       offenderAtBrixton = repository.save(
         OffenderBuilder(nomsId = "A7897TT")
@@ -182,9 +182,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             OffenderBookingBuilder(agencyLocationId = "BXI")
               .withIncentives(
                 IncentiveBuilder(iepLevel = "STD", sequence = 1),
-                IncentiveBuilder(iepLevel = "ENH", sequence = 2)
-              )
-          )
+                IncentiveBuilder(iepLevel = "ENH", sequence = 2),
+              ),
+          ),
       )
     }
 
@@ -207,7 +207,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get incentives issued within a given date range`() {
-
       webTestClient.get().uri {
         it.path("/incentives/ids")
           .queryParam("fromDate", LocalDate.now().minusDays(1).toString())
@@ -260,7 +259,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `malformed date returns bad request`() {
-
       webTestClient.get().uri {
         it.path("/incentives/ids")
           .queryParam("fromDate", "202-10-01")
@@ -277,7 +275,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri("/incentives/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
-          .expectStatus().isForbidden
+          .expectStatus().isForbidden,
       )
     }
 
@@ -286,7 +284,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(
         webTestClient.get().uri("/incentives/ids")
           .exchange()
-          .expectStatus().isUnauthorized
+          .expectStatus().isUnauthorized,
       )
     }
   }
@@ -321,9 +319,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                   iepLevel = "BAS",
                   sequence = 3,
                   iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"),
-                )
-              )
-          )
+                ),
+              ),
+          ),
       )
     }
 
@@ -400,7 +398,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
-          .expectStatus().isForbidden
+          .expectStatus().isForbidden,
       )
     }
 
@@ -410,7 +408,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
           .exchange()
-          .expectStatus().isUnauthorized
+          .expectStatus().isUnauthorized,
       )
     }
   }
@@ -432,7 +430,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                   iepLevel = "STD",
                   sequence = 1,
                   iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
-                  userId = "JOHN_GEN"
+                  userId = "JOHN_GEN",
                 ),
                 IncentiveBuilder(
                   iepLevel = "ENH",
@@ -444,15 +442,15 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                   iepLevel = "BAS",
                   sequence = 3,
                   iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"),
-                )
-              )
-          )
+                ),
+              ),
+          ),
       )
       offenderAtMoorlandsWithoutIncentives = repository.save(
         OffenderBuilder(nomsId = "A1234TT")
           .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI")
-          )
+            OffenderBookingBuilder(agencyLocationId = "MDI"),
+          ),
       )
     }
 
@@ -504,7 +502,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
-          .expectStatus().isForbidden
+          .expectStatus().isForbidden,
       )
     }
 
@@ -514,7 +512,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
           .exchange()
-          .expectStatus().isUnauthorized
+          .expectStatus().isUnauthorized,
       )
     }
   }

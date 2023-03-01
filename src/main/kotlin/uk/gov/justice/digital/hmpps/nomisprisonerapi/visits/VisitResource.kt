@@ -45,14 +45,14 @@ class VisitResource(private val visitService: VisitService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateVisitRequest::class)
-        )
-      ]
+          schema = Schema(implementation = CreateVisitRequest::class),
+        ),
+      ],
     ),
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Visit information with created id"
+        description = "Visit information with created id",
       ),
       ApiResponse(
         responseCode = "400",
@@ -60,9 +60,9 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -70,9 +70,9 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -80,18 +80,19 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun createVisit(
     @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
     @PathVariable
     @Pattern(regexp = OFFENDER_NO_PATTERN)
     offenderNo: String,
-    @RequestBody @Valid createVisitRequest: CreateVisitRequest
+    @RequestBody @Valid
+    createVisitRequest: CreateVisitRequest,
   ): CreateVisitResponse =
     visitService.createVisit(offenderNo, createVisitRequest)
 
@@ -104,14 +105,14 @@ class VisitResource(private val visitService: VisitService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = UpdateVisitRequest::class)
-        )
-      ]
+          schema = Schema(implementation = UpdateVisitRequest::class),
+        ),
+      ],
     ),
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Visit information updated"
+        description = "Visit information updated",
       ),
       ApiResponse(
         responseCode = "400",
@@ -119,9 +120,9 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -129,9 +130,9 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -139,11 +140,11 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun updateVisit(
     @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
@@ -153,7 +154,8 @@ class VisitResource(private val visitService: VisitService) {
     @Schema(description = "Nomis visit Id", example = "123456", required = true)
     @PathVariable
     visitId: Long,
-    @RequestBody @Valid updateVisitRequest: UpdateVisitRequest
+    @RequestBody @Valid
+    updateVisitRequest: UpdateVisitRequest,
   ): Unit =
     visitService.updateVisit(offenderNo, visitId, updateVisitRequest)
 
@@ -164,7 +166,7 @@ class VisitResource(private val visitService: VisitService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Visit cancelled"
+        description = "Visit cancelled",
       ),
       ApiResponse(
         responseCode = "400",
@@ -172,9 +174,9 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -182,9 +184,9 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -192,11 +194,11 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun cancelVisit(
     @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
@@ -206,7 +208,8 @@ class VisitResource(private val visitService: VisitService) {
     @Schema(description = "Nomis Visit Id", required = true)
     @PathVariable
     visitId: Long,
-    @RequestBody @Valid cancelVisitRequest: CancelVisitRequest
+    @RequestBody @Valid
+    cancelVisitRequest: CancelVisitRequest,
   ) {
     visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
   }
@@ -221,7 +224,7 @@ class VisitResource(private val visitService: VisitService) {
       ApiResponse(
         responseCode = "200",
         description = "Visit Information Returned",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = VisitResponse::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = VisitResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
@@ -229,9 +232,9 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -239,11 +242,11 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getVisit(
     @Schema(description = "Nomis Visit Id", example = "12345", required = true)
@@ -260,7 +263,7 @@ class VisitResource(private val visitService: VisitService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Pageable list of visit ids is returned"
+        description = "Pageable list of visit ids is returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -268,11 +271,11 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getVisitsByFilter(
     @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC)
@@ -280,25 +283,29 @@ class VisitResource(private val visitService: VisitService) {
     @RequestParam(value = "prisonIds", required = false)
     @Parameter(
       description = "Filter results by prison ids (returns all prisons if not specified)",
-      example = "['MDI','LEI']"
-    ) prisonIds: List<String>?,
+      example = "['MDI','LEI']",
+    )
+    prisonIds: List<String>?,
     @RequestParam(value = "visitTypes", required = false)
     @Parameter(
       description = "Filter results by visitType (returns all types if not specified)",
-      example = "['SCON','OFFI']"
-    ) visitTypes: List<String>?,
+      example = "['SCON','OFFI']",
+    )
+    visitTypes: List<String>?,
     @RequestParam(value = "fromDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
       description = "Filter results by visits that were created on or after the given timestamp",
-      example = "2021-11-03T09:00:00"
-    ) fromDateTime: LocalDateTime?,
+      example = "2021-11-03T09:00:00",
+    )
+    fromDateTime: LocalDateTime?,
     @RequestParam(value = "toDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
       description = "Filter results by visits that were created on or before the given timestamp",
-      example = "2021-11-03T09:00:00"
-    ) toDateTime: LocalDateTime?
+      example = "2021-11-03T09:00:00",
+    )
+    toDateTime: LocalDateTime?,
   ): Page<VisitIdResponse> =
     visitService.findVisitIdsByFilter(
       pageRequest = pageRequest,
@@ -306,8 +313,8 @@ class VisitResource(private val visitService: VisitService) {
         visitTypes = visitTypes ?: listOf(),
         prisonIds = prisonIds ?: listOf(),
         toDateTime = toDateTime,
-        fromDateTime = fromDateTime
-      )
+        fromDateTime = fromDateTime,
+      ),
     )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
@@ -318,7 +325,7 @@ class VisitResource(private val visitService: VisitService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "list of visit room and count is returned"
+        description = "list of visit room and count is returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -326,11 +333,11 @@ class VisitResource(private val visitService: VisitService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getVisitRoomCountsByFilter(
     @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC)
@@ -338,30 +345,35 @@ class VisitResource(private val visitService: VisitService) {
     @RequestParam(value = "prisonIds", required = false)
     @Parameter(
       description = "Filter results by prison ids (returns all prisons if not specified)",
-      example = "['MDI','LEI']"
-    ) prisonIds: List<String>?,
+      example = "['MDI','LEI']",
+    )
+    prisonIds: List<String>?,
     @RequestParam(value = "visitTypes", required = false)
     @Parameter(
       description = "Filter results by visitType (returns all types if not specified)",
-      example = "['SCON','OFFI']"
-    ) visitTypes: List<String>?,
+      example = "['SCON','OFFI']",
+    )
+    visitTypes: List<String>?,
     @RequestParam(value = "fromDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
       description = "Filter results by visits that were created on or after the given timestamp",
-      example = "2021-11-03T09:00:00"
-    ) fromDateTime: LocalDateTime?,
+      example = "2021-11-03T09:00:00",
+    )
+    fromDateTime: LocalDateTime?,
     @RequestParam(value = "toDateTime", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     @Parameter(
       description = "Filter results by visits that were created on or before the given timestamp",
-      example = "2021-11-03T09:00:00"
-    ) toDateTime: LocalDateTime?,
+      example = "2021-11-03T09:00:00",
+    )
+    toDateTime: LocalDateTime?,
     @RequestParam(value = "futureVisitsOnly", required = false)
     @Parameter(
       description = "Filter results by restricting to future visit usage only",
-      example = "true"
-    ) futureVisitsOnly: Boolean?,
+      example = "true",
+    )
+    futureVisitsOnly: Boolean?,
 
   ): List<VisitRoomCountResponse> =
     visitService.findRoomCountsByFilter(
@@ -372,6 +384,6 @@ class VisitResource(private val visitService: VisitService) {
         fromDateTime = fromDateTime,
         futureVisits = futureVisitsOnly ?: true,
         excludeExtremeFutureDates = futureVisitsOnly ?: true, // apply filtering of bad data if only restricting usage to future dates
-      )
+      ),
     )
 }

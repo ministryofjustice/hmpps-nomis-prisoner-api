@@ -14,7 +14,7 @@ import java.io.Serializable
 @Table(name = "AGENCY_VISIT_DAYS")
 data class AgencyVisitDay(
   @EmbeddedId
-  val agencyVisitDayId: AgencyVisitDayId
+  val agencyVisitDayId: AgencyVisitDayId,
 )
 
 @Embeddable
@@ -24,5 +24,5 @@ data class AgencyVisitDayId(
   val location: AgencyLocation,
 
   @Column(name = "WEEK_DAY", nullable = false)
-  val weekDay: String
+  val weekDay: String,
 ) : Serializable

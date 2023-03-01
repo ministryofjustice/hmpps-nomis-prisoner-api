@@ -46,10 +46,10 @@ data class OffenderProgramProfile(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + OffenderProgramStatus.OFFENDER_PROGRAM_STATUS + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_PROGRAM_STATUS", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_PROGRAM_STATUS", referencedColumnName = "code")),
+    ],
   )
   val programStatus: OffenderProgramStatus,
 
@@ -74,10 +74,10 @@ data class OffenderProgramProfile(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + ProgramServiceEndReason.END_REASON + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_END_REASON", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_END_REASON", referencedColumnName = "code")),
+    ],
   )
   var endReason: ProgramServiceEndReason? = null,
 

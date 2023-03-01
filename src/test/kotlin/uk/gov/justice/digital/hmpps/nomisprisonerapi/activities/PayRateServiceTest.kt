@@ -55,7 +55,7 @@ class PayRateServiceTest {
     description = PRISON_DESCRIPTION,
     locationType = "ROOM",
     locationCode = "ROOM-1",
-    locationId = ROOM_ID
+    locationId = ROOM_ID,
   )
 
   private fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
@@ -64,8 +64,13 @@ class PayRateServiceTest {
   internal inner class CreatePayRates {
 
     private val courseActivity = CourseActivity(
-      courseActivityId = 1L, code = "CA", caseloadId = PRISON_ID, prison = defaultPrison,
-      program = defaultProgramService, iepLevel = defaultIepLevel("BAS"), internalLocation = defaultRoom
+      courseActivityId = 1L,
+      code = "CA",
+      caseloadId = PRISON_ID,
+      prison = defaultPrison,
+      program = defaultProgramService,
+      iepLevel = defaultIepLevel("BAS"),
+      internalLocation = defaultRoom,
     )
 
     private val createRequest = CreateActivityRequest(
@@ -83,7 +88,7 @@ class PayRateServiceTest {
           incentiveLevel = "BAS",
           payBand = "5",
           rate = BigDecimal(3.2),
-        )
+        ),
       ),
       payPerSession = PayPerSession.H,
     )
@@ -173,7 +178,7 @@ class PayRateServiceTest {
     fun `adding should create new pay rate effective today`() {
       val request = listOf(
         PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
-        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4))
+        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -303,7 +308,7 @@ class PayRateServiceTest {
 
       val request = listOf(
         PayRateRequest("STD", "5", BigDecimal(4.4)),
-        PayRateRequest("STD", "6", BigDecimal(5.4))
+        PayRateRequest("STD", "6", BigDecimal(5.4)),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 

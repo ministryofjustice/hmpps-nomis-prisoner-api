@@ -57,10 +57,10 @@ data class VisitVisitor(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + EventStatus.EVENT_STS + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code")),
+    ],
   )
   var eventStatus: EventStatus? = null,
 
@@ -74,8 +74,8 @@ data class VisitVisitor(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + VisitOutcomeReason.VISIT_OUTCOME_REASON + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "OUTCOME_REASON_CODE",
@@ -83,9 +83,9 @@ data class VisitVisitor(
           nullable = true,
           updatable = false,
           insertable = false,
-        )
-      )
-    ]
+        ),
+      ),
+    ],
   )
   var outcomeReason: VisitOutcomeReason? = null,
 
@@ -100,16 +100,16 @@ data class VisitVisitor(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + EventOutcome.EVENT_OUTCOME + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "EVENT_OUTCOME",
           referencedColumnName = "code",
-          nullable = true
-        )
-      )
-    ]
+          nullable = true,
+        ),
+      ),
+    ],
   )
   var eventOutcome: EventOutcome? = null,
 ) {

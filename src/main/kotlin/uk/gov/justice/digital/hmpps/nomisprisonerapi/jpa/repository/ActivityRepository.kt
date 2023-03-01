@@ -5,4 +5,4 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 
 @Repository
-interface ActivityRepository : JpaRepository <CourseActivity, Long>
+interface ActivityRepository : JpaRepository<CourseActivity, Long>

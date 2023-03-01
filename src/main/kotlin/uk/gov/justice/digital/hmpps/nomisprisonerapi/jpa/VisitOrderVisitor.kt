@@ -33,7 +33,7 @@ data class VisitOrderVisitor(
 
   @Column(name = "GROUP_LEADER_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val groupLeader: Boolean = false
+  val groupLeader: Boolean = false,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

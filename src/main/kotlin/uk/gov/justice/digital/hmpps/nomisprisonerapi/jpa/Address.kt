@@ -36,7 +36,7 @@ abstract class Address(
   val noFixedAddressFlag: String = "N",
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @Where(clause = "OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
-  val phones: MutableList<AddressPhone> = ArrayList()
+  val phones: MutableList<AddressPhone> = ArrayList(),
 ) {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
@@ -51,10 +51,10 @@ abstract class Address(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + AddressType.ADDR_TYPE + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_TYPE", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_TYPE", referencedColumnName = "code")),
+    ],
   )
   open val addressType: AddressType? = null
   open val flat: String? = null
@@ -81,10 +81,10 @@ abstract class Address(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + County.COUNTY + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTY_CODE", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTY_CODE", referencedColumnName = "code")),
+    ],
   )
   open val county: County? = null
 
@@ -95,10 +95,10 @@ abstract class Address(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + City.CITY + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "CITY_CODE", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "CITY_CODE", referencedColumnName = "code")),
+    ],
   )
   open val city: City? = null
 
@@ -109,10 +109,10 @@ abstract class Address(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + Country.COUNTRY + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTRY_CODE", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTRY_CODE", referencedColumnName = "code")),
+    ],
   )
   open val country: Country? = null
 
@@ -131,7 +131,6 @@ abstract class Address(
   }
 
   override fun equals(other: Any?): Boolean {
-
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as Address

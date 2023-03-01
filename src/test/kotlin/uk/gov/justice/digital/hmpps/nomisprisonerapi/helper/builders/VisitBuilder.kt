@@ -25,7 +25,7 @@ class VisitBuilder(
     visitType: VisitType,
     visitStatus: VisitStatus,
     agencyLocation: AgencyLocation,
-    agencyInternalLocation: AgencyInternalLocation?
+    agencyInternalLocation: AgencyInternalLocation?,
   ): Visit {
     val startDateTime = LocalDateTime.parse(startDateTimeString)
     return Visit(
@@ -36,7 +36,7 @@ class VisitBuilder(
       visitStatus = visitStatus,
       location = agencyLocation,
       visitDate = startDateTime.toLocalDate(),
-      agencyInternalLocation = agencyInternalLocation
+      agencyInternalLocation = agencyInternalLocation,
     )
   }
 
@@ -52,11 +52,13 @@ class VisitBuilder(
 
 class VisitVisitorBuilder(
   val person: Person,
-  val leadVisitor: Boolean = false
+  val leadVisitor: Boolean = false,
 ) {
   fun build(person: Person, leadVisitor: Boolean, visit: Visit): VisitVisitor =
     VisitVisitor(
-      person = person, visit = visit, groupLeader = leadVisitor
+      person = person,
+      visit = visit,
+      groupLeader = leadVisitor,
     )
 }
 
@@ -65,6 +67,9 @@ class VisitOutcomeBuilder(
 ) {
   fun build(visit: Visit): VisitVisitor =
     VisitVisitor(
-      person = null, visit = visit, groupLeader = false, outcomeReasonCode = outcomeCode
+      person = null,
+      visit = visit,
+      groupLeader = false,
+      outcomeReasonCode = outcomeCode,
     )
 }

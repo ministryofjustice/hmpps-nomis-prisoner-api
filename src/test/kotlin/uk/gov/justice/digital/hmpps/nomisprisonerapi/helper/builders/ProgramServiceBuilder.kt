@@ -12,6 +12,6 @@ class ProgramServiceBuilder(
     programCode = programCode,
     programId = programId,
     description = description,
-    active = active
+    active = active,
   )
 }

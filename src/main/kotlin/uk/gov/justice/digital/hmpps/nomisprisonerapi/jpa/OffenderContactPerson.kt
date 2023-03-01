@@ -25,7 +25,7 @@ data class OffenderContactPerson(
   @SequenceGenerator(
     name = "OFFENDER_CONTACT_PERSON_ID",
     sequenceName = "OFFENDER_CONTACT_PERSON_ID",
-    allocationSize = 1
+    allocationSize = 1,
   )
   @GeneratedValue(generator = "OFFENDER_CONTACT_PERSON_ID")
   @Column(name = "OFFENDER_CONTACT_PERSON_ID", nullable = false)
@@ -46,10 +46,10 @@ data class OffenderContactPerson(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + RelationshipType.RELATIONSHIP + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "RELATIONSHIP_TYPE", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "RELATIONSHIP_TYPE", referencedColumnName = "code")),
+    ],
   )
   val relationshipType: RelationshipType,
 
@@ -60,16 +60,16 @@ data class OffenderContactPerson(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + ContactType.CONTACTS + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "CONTACT_TYPE",
           referencedColumnName = "code",
-          nullable = true
-        )
-      )
-    ]
+          nullable = true,
+        ),
+      ),
+    ],
   )
   val contactType: ContactType,
 

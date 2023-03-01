@@ -105,7 +105,7 @@ internal class VisitServiceTest {
     visitDayRepository,
     visitTimeRepository,
     visitSlotRepository,
-    internalLocationRepository
+    internalLocationRepository,
   )
 
   val visitType = VisitType("SCON", "desc")
@@ -113,7 +113,7 @@ internal class VisitServiceTest {
   private val defaultOffenderBooking = OffenderBooking(
     bookingId = offenderBookingId,
     offender = defaultOffender,
-    bookingBeginDate = LocalDateTime.now()
+    bookingBeginDate = LocalDateTime.now(),
   ).apply { // add circular reference
     visitBalance = OffenderVisitBalance(
       offenderBooking = this,
@@ -137,10 +137,11 @@ internal class VisitServiceTest {
     visitDate = LocalDate.parse("2022-01-01"),
     location = AgencyLocation(id = "MDI", description = "Moorlands"),
     visitType = VisitType(
-      code = "SCON", description = "Social contact"
+      code = "SCON",
+      description = "Social contact",
     ),
     commentText = "some comments",
-    visitorConcernText = "concerns"
+    visitorConcernText = "concerns",
   ).apply { // add circular reference
     visitors.add(VisitVisitor(visit = this, offenderBooking = defaultOffenderBooking))
     visitors.add(VisitVisitor(visit = this, person = Person(-7L, "First", "Last")))
@@ -149,7 +150,7 @@ internal class VisitServiceTest {
   @BeforeEach
   fun setup() {
     whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
-      Optional.of(defaultOffenderBooking)
+      Optional.of(defaultOffenderBooking),
     )
     whenever(personRepository.findById(any())).thenAnswer {
       return@thenAnswer Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There"))
@@ -211,7 +212,7 @@ internal class VisitServiceTest {
           assertThat(visit.visitType).isEqualTo(visitType)
           assertThat(visit.visitStatus.code).isEqualTo("SCH")
           assertThat(visit.location.id).isEqualTo(prisonId)
-        }
+        },
       )
     }
 
@@ -228,7 +229,7 @@ internal class VisitServiceTest {
           assertThat(visit.location.id).isEqualTo(prisonId)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
           assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
-        }
+        },
       )
     }
 
@@ -239,7 +240,7 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-SOC")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINSOC")
-        }
+        },
       )
     }
 
@@ -250,7 +251,7 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-CLO")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINCLO")
-        }
+        },
       )
     }
 
@@ -261,9 +262,10 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-BIG-ANNEX-SOC")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPBIGANNEXSO")
-        }
+        },
       )
     }
+
     @Test
     internal fun `room description for closed visit is based on room description without 'visit(s)' and 'room'`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "HUGE visits room annex", openClosedStatus = "CLOSED"))
@@ -271,7 +273,7 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-HUGE-ANNEX-CLO")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPHUGEANNEXC")
-        }
+        },
       )
     }
 
@@ -282,13 +284,12 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-THE-WHALE-IS-AN-1851-NOVEL-BY-AMERICAN-WRITER-HERMAN-MELVILLE-THE-BOOK-IS-THE-SAILOR-ISHMAELS-NARRATIVE-OF-THE-OBSESSIVE-QUEST-OF-AHAB-CAPTAIN-OF-THE-WHALING-SHIP-PEQUOD-FOR-REVENGE-AGAINST-MOBY-DICK-THE-GIANT-WHITE-SPERM-WHALE-CLO")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPTHEWHALEIS")
-        }
+        },
       )
     }
 
     @Test
     fun `balance decrement is saved correctly when no privileged is available`() {
-
       defaultVisit.offenderBooking.visitBalance =
         OffenderVisitBalance(
           remainingVisitOrders = 3,
@@ -310,13 +311,12 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(-1)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
-        }
+        },
       )
     }
 
     @Test
     fun `privilege balance decrement is saved correctly when available`() {
-
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest)
@@ -327,13 +327,12 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.remainingVisitOrders).isNull()
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(-1)
           assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
-        }
+        },
       )
     }
 
     @Test
     fun `Visit order and balance adjustment is still created when balance is negative`() {
-
       defaultVisit.offenderBooking.visitBalance =
         OffenderVisitBalance(
           remainingVisitOrders = -1,
@@ -341,7 +340,7 @@ internal class VisitServiceTest {
           offenderBooking = OffenderBooking(
             bookingId = offenderBookingId,
             bookingBeginDate = LocalDateTime.now(),
-            offender = defaultOffender
+            offender = defaultOffender,
           ),
         )
 
@@ -355,7 +354,6 @@ internal class VisitServiceTest {
 
     @Test
     fun `No visit order or balance adjustment is created when no balance record exists`() {
-
       defaultVisit.offenderBooking.visitBalance = null
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
@@ -367,7 +365,6 @@ internal class VisitServiceTest {
 
     @Test
     fun `visitor records are saved correctly`() {
-
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest)
@@ -380,13 +377,12 @@ internal class VisitServiceTest {
               Tuple.tuple(null, 45L, "SCH", null),
               Tuple.tuple(null, 46L, "SCH", null),
             )
-        }
+        },
       )
     }
 
     @Test
     fun `agency visit days are created if not found`() {
-
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
       visitService.createVisit(offenderNo, createVisitRequest)
@@ -399,14 +395,14 @@ internal class VisitServiceTest {
               Tuple.tuple(null, 45L, "SCH", null),
               Tuple.tuple(null, 46L, "SCH", null),
             )
-        }
+        },
       )
     }
 
     @Test
     fun offenderNotFound() {
       whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
-        Optional.empty()
+        Optional.empty(),
       )
 
       val thrown = assertThrows(NotFoundException::class.java) {
@@ -443,7 +439,6 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data is amended correctly`() {
-
       whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
 
       visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
@@ -466,7 +461,6 @@ internal class VisitServiceTest {
 
     @Test
     fun `balance increment is saved correctly`() {
-
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
@@ -479,13 +473,12 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(1)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
-        }
+        },
       )
     }
 
     @Test
     fun `privilege balance increment is saved correctly`() {
-
       whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
 
       visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
@@ -496,13 +489,12 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(1)
           assertThat(balanceArgument.remainingVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
-        }
+        },
       )
     }
 
     @Test
     fun `No balance exists`() {
-
       defaultVisit.offenderBooking.visitBalance = null
 
       whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
@@ -514,7 +506,6 @@ internal class VisitServiceTest {
 
     @Test
     fun `No visit order exists`() {
-
       defaultVisit.visitOrder = null
 
       whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
@@ -530,7 +521,6 @@ internal class VisitServiceTest {
   internal inner class GetVisit {
     @Test
     fun `visit data is mapped correctly`() {
-
       whenever(visitRepository.findById(123)).thenReturn(Optional.of(defaultVisit))
 
       val visitResponse = visitService.getVisit(123)
@@ -548,21 +538,20 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit ids by filter data are mapped correctly`() {
-
       val visitFilter = VisitFilter(
         prisonIds = listOf(),
         visitTypes = listOf(),
         toDateTime = LocalDateTime.now(),
-        fromDateTime = LocalDateTime.now()
+        fromDateTime = LocalDateTime.now(),
       )
       val pageRequest = PageRequest.of(0, 1)
 
       whenever(visitRepository.findAll(any<VisitSpecification>(), any<PageRequest>())).thenReturn(
-        PageImpl(listOf(defaultVisit))
+        PageImpl(listOf(defaultVisit)),
       )
       val visitList = visitService.findVisitIdsByFilter(
         pageRequest,
-        visitFilter
+        visitFilter,
       )
       assertThat(visitList).extracting("visitId").containsExactly(defaultVisit.id)
     }

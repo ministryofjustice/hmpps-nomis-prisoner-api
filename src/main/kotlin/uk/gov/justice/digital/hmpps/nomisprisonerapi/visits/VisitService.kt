@@ -69,7 +69,7 @@ class VisitService(
   private val visitDayRepository: AgencyVisitDayRepository,
   private val visitTimeRepository: AgencyVisitTimeRepository,
   private val visitSlotRepository: AgencyVisitSlotRepository,
-  private val internalLocationRepository: AgencyInternalLocationRepository
+  private val internalLocationRepository: AgencyInternalLocationRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -80,12 +80,11 @@ class VisitService(
       4 to "THU",
       5 to "FRI",
       6 to "SAT",
-      7 to "SUN"
+      7 to "SUN",
     )
   }
 
   fun createVisit(offenderNo: String, visitDto: CreateVisitRequest): CreateVisitResponse {
-
     val offenderBooking = offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)
       .orElseThrow(NotFoundException(offenderNo))
 
@@ -104,7 +103,7 @@ class VisitService(
         "offenderNo" to offenderNo,
         "prisonId" to visitDto.prisonId,
       ),
-      null
+      null,
     )
     log.debug("Visit created with Nomis visit id = ${visit.id}")
 
@@ -166,7 +165,7 @@ class VisitService(
         "offenderNo" to offenderNo,
         "prisonId" to visit.location.id,
       ),
-      null
+      null,
     )
     log.debug("Visit with Nomis visit id = ${visit.id} cancelled")
   }
@@ -184,7 +183,7 @@ class VisitService(
       VisitVisitor(
         visit = visit,
         person = personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist")),
-        eventStatus = eventStatus
+        eventStatus = eventStatus,
       )
     }
 
@@ -198,7 +197,7 @@ class VisitService(
         endDateTime = endDateTime,
         location = visit.location,
         roomDescription = updateVisitRequest.room,
-        isClosedVisit = "CLOSED" == updateVisitRequest.openClosedStatus
+        isClosedVisit = "CLOSED" == updateVisitRequest.openClosedStatus,
       )
     visit.visitDate = updateVisitRequest.startDateTime.toLocalDate()
     visit.startDateTime = updateVisitRequest.startDateTime
@@ -228,7 +227,6 @@ class VisitService(
   ) {
     val offenderVisitBalance = offenderBooking.visitBalance
     if (offenderVisitBalance != null) {
-
       if (offenderVisitBalance.remainingPrivilegedVisitOrders!! > 0) {
         val adjustReasonCode =
           visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_ISSUE).orElseThrow()
@@ -241,7 +239,7 @@ class VisitService(
             remainingPrivilegedVisitOrders = -1,
             previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
             commentText = visitDto.visitOrderComment,
-          )
+          ),
         )
         visit.visitOrder = VisitOrder(
           offenderBooking = offenderBooking,
@@ -250,12 +248,12 @@ class VisitService(
           status = visitStatusRepository.findById(VisitStatus.pk("SCH")).orElseThrow(),
           issueDate = visitDto.issueDate,
           expiryDate = visitDto.issueDate.plusDays(28),
-          commentText = visitDto.visitOrderComment
+          commentText = visitDto.visitOrderComment,
         ).apply {
           this.visitors = visitDto.visitorPersonIds.mapIndexed { index, personId ->
             this.createVisitor(
               personId,
-              groupLeader = index == 0
+              groupLeader = index == 0,
             ) // randomly choose first visitor as lead since VSIP has to no concept of a lead visitor but we need it for data integrity
           }
         }
@@ -271,7 +269,7 @@ class VisitService(
             remainingVisitOrders = -1,
             previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
             commentText = visitDto.visitOrderComment,
-          )
+          ),
         )
         visit.visitOrder = VisitOrder(
           offenderBooking = offenderBooking,
@@ -295,7 +293,7 @@ class VisitService(
     visitOrder = this,
     person = personRepository.findById(personId)
       .orElseThrow(BadDataException("Person with id=$personId does not exist")),
-    groupLeader = groupLeader
+    groupLeader = groupLeader,
   )
 
   private fun cancelBalance(
@@ -305,10 +303,9 @@ class VisitService(
   ) {
     val offenderVisitBalance = offenderBooking.visitBalance
     if (offenderVisitBalance != null) {
-
       offenderVisitBalanceAdjustmentRepository.save(
 
-        if (visitOrder.visitOrderType.isPrivileged())
+        if (visitOrder.visitOrderType.isPrivileged()) {
           OffenderVisitBalanceAdjustment(
             offenderBooking = offenderBooking,
             adjustDate = today,
@@ -318,7 +315,7 @@ class VisitService(
             remainingPrivilegedVisitOrders = 1,
             previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
           )
-        else
+        } else {
           OffenderVisitBalanceAdjustment(
             offenderBooking = offenderBooking,
             adjustDate = today,
@@ -328,12 +325,12 @@ class VisitService(
             remainingVisitOrders = 1,
             previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
           )
+        },
       )
     }
   }
 
   private fun mapVisitModel(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
-
     val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))
       .orElseThrow(BadDataException("Invalid visit type: ${visitDto.visitType}"))
 
@@ -347,7 +344,7 @@ class VisitService(
         endDateTime = endDateTime,
         location = location,
         roomDescription = visitDto.room,
-        isClosedVisit = "CLOSED" == visitDto.openClosedStatus
+        isClosedVisit = "CLOSED" == visitDto.openClosedStatus,
       )
 
     return Visit(
@@ -360,14 +357,14 @@ class VisitService(
       location = location,
       commentText = visitDto.visitComment,
       agencyVisitSlot = visitSlot,
-      agencyInternalLocation = visitSlot.agencyInternalLocation
+      agencyInternalLocation = visitSlot.agencyInternalLocation,
     )
   }
 
   private fun addVisitors(
     visit: Visit,
     offenderBooking: OffenderBooking,
-    visitDto: CreateVisitRequest
+    visitDto: CreateVisitRequest,
   ) {
     val scheduledEventStatus = eventStatusRepository.findById(SCHEDULED_APPROVED).orElseThrow()
 
@@ -378,14 +375,14 @@ class VisitService(
         visit = visit,
         offenderBooking = offenderBooking,
         eventStatus = scheduledEventStatus,
-        eventId = getNextEvent()
-      )
+        eventId = getNextEvent(),
+      ),
     )
 
     visitDto.visitorPersonIds.forEach {
       val person = personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist"))
       visit.visitors.add(
-        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus)
+        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus),
       )
     }
   }
@@ -404,9 +401,10 @@ class VisitService(
     return visitSlotRepository.findByAgencyInternalLocation_DescriptionAndAgencyVisitTime_StartTimeAndWeekDay(
       roomDescription = vsipVisitRoom.description,
       startTime = agencyVisitTime.startTime,
-      weekDay = agencyVisitTime.agencyVisitTimesId.weekDay
+      weekDay = agencyVisitTime.agencyVisitTimesId.weekDay,
     ) ?: createVisitSlot(
-      visitTime = agencyVisitTime, vsipRoom = vsipVisitRoom
+      visitTime = agencyVisitTime,
+      vsipRoom = vsipVisitRoom,
     )
   }
 
@@ -419,26 +417,26 @@ class VisitService(
     return visitTimeRepository.findByStartTimeAndAgencyVisitTimesId_WeekDayAndAgencyVisitTimesId_Location(
       startTime = startDateTime.toLocalTime(),
       weekDay = weekDay.agencyVisitDayId.weekDay,
-      location = location
+      location = location,
     ) ?: createVisitTime(
       location = location,
       weekDay = weekDay,
       startDateTime = startDateTime,
-      endDateTime = endDateTime
+      endDateTime = endDateTime,
     )
   }
 
   private fun getOrCreateVisitDay(
     startDateTime: LocalDateTime,
-    location: AgencyLocation
+    location: AgencyLocation,
   ): AgencyVisitDay {
     val weekDayNomis = dayOfWeekNomisMap[startDateTime.dayOfWeek.value]
       ?: throw BadDataException("Invalid day of week: ${startDateTime.dayOfWeek}")
     return visitDayRepository.findByIdOrNull(
-      AgencyVisitDayId(location = location, weekDay = weekDayNomis)
+      AgencyVisitDayId(location = location, weekDay = weekDayNomis),
     ) ?: createDayOfWeek(
       location = location,
-      weekDayNomis = weekDayNomis
+      weekDayNomis = weekDayNomis,
     )
   }
 
@@ -454,7 +452,7 @@ class VisitService(
       ?: createVsipVisitRoom(
         location = location,
         roomDescription = internalLocationDescription,
-        roomCode = internalLocationDescription.toInternalLocationCode(location.id)
+        roomCode = internalLocationDescription.toInternalLocationCode(location.id),
       )
   }
 
@@ -481,8 +479,8 @@ class VisitService(
   private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay {
     return visitDayRepository.save(
       AgencyVisitDay(
-        AgencyVisitDayId(location, weekDayNomis)
-      )
+        AgencyVisitDayId(location, weekDayNomis),
+      ),
     )
   }
 
@@ -490,12 +488,12 @@ class VisitService(
     startDateTime: LocalDateTime,
     endDateTime: LocalDateTime,
     location: AgencyLocation,
-    weekDay: AgencyVisitDay
+    weekDay: AgencyVisitDay,
   ): AgencyVisitTime {
     val timeSlotSeq =
       visitTimeRepository.findFirstByAgencyVisitTimesId_LocationAndAgencyVisitTimesId_WeekDayOrderByAgencyVisitTimesId_TimeSlotSequenceDesc(
         agencyId = location,
-        weekDay = weekDay.agencyVisitDayId.weekDay
+        weekDay = weekDay.agencyVisitDayId.weekDay,
       )?.let { it.agencyVisitTimesId.timeSlotSequence + 1 } ?: 1
     return visitTimeRepository.save(
       AgencyVisitTime(
@@ -504,21 +502,21 @@ class VisitService(
         endTime = endDateTime.toLocalTime(),
         effectiveDate = startDateTime.toLocalDate()
           .minusDays(1), // effective and expiry in the past to avoid the slot being available in pnomis
-        expiryDate = startDateTime.toLocalDate().minusDays(1)
-      )
+        expiryDate = startDateTime.toLocalDate().minusDays(1),
+      ),
     )
   }
 
   private fun createVisitSlot(
     visitTime: AgencyVisitTime,
-    vsipRoom: AgencyInternalLocation
+    vsipRoom: AgencyInternalLocation,
   ): AgencyVisitSlot {
     log.info(
       "Creating visit slot for day of week ${visitTime.agencyVisitTimesId.weekDay}, start time: ${
       visitTime.startTime.format(
-        DateTimeFormatter.ISO_TIME
+        DateTimeFormatter.ISO_TIME,
       )
-      } at ${vsipRoom.agencyId}"
+      } at ${vsipRoom.agencyId}",
     )
     return visitSlotRepository.save(
       AgencyVisitSlot(
@@ -528,15 +526,15 @@ class VisitService(
         weekDay = visitTime.agencyVisitTimesId.weekDay,
         timeSlotSequence = visitTime.agencyVisitTimesId.timeSlotSequence,
         maxAdults = 0,
-        maxGroups = 0
-      )
+        maxGroups = 0,
+      ),
     )
   }
 
   private fun createVsipVisitRoom(
     location: AgencyLocation,
     roomDescription: String,
-    roomCode: String
+    roomCode: String,
   ): AgencyInternalLocation {
     log.info("Creating VSIP visit room: $roomDescription ($roomCode)")
     return internalLocationRepository.save(
@@ -545,7 +543,7 @@ class VisitService(
         description = roomDescription,
         locationType = "VISIT",
         locationCode = roomCode,
-      )
+      ),
     )
   }
 

@@ -10,12 +10,12 @@ interface AgencyInternalLocationRepository : JpaRepository<AgencyInternalLocatio
   fun findAgencyInternalLocationsByAgencyIdAndLocationTypeAndActive(
     agencyId: String,
     locationType: String,
-    active: Boolean
+    active: Boolean,
   ): List<AgencyInternalLocation>
 
   fun findAgencyInternalLocationsByAgencyIdAndLocationType(
     agencyId: String,
-    locationType: String
+    locationType: String,
   ): List<AgencyInternalLocation>
 
   fun findOneByDescription(description: String): Optional<AgencyInternalLocation>
@@ -26,6 +26,6 @@ interface AgencyInternalLocationRepository : JpaRepository<AgencyInternalLocatio
   fun findByAgencyIdAndLocationTypeAndActiveAndParentLocationIsNull(
     agencyId: String,
     locationType: String,
-    active: Boolean
+    active: Boolean,
   ): List<AgencyInternalLocation>
 }

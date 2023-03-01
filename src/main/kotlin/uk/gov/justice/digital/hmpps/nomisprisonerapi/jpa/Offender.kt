@@ -39,8 +39,8 @@ data class Offender(
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(formula = JoinFormula(value = "'$SEX'", referencedColumnName = "domain")),
-      JoinColumnOrFormula(column = JoinColumn(name = "SEX_CODE", referencedColumnName = "code", nullable = true))
-    ]
+      JoinColumnOrFormula(column = JoinColumn(name = "SEX_CODE", referencedColumnName = "code", nullable = true)),
+    ],
   )
   val gender: Gender,
 

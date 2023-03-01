@@ -47,8 +47,8 @@ class ClientTrackingConfigurationTest {
       t.hasSpansSatisfyingExactly({
         it.hasAttribute(AttributeKey.stringKey("username"), "AUTH_ADM")
         it.hasAttribute(AttributeKey.stringKey("clientId"), "nomis-prisoner")
-      })
-    })
+      },)
+    },)
   }
 
   @Test
@@ -63,8 +63,8 @@ class ClientTrackingConfigurationTest {
       t.hasSpansSatisfyingExactly({
         it.hasAttribute(AttributeKey.stringKey("username"), "Fred")
         it.hasAttribute(AttributeKey.stringKey("clientId"), "nomis-prisoner")
-      })
-    })
+      },)
+    },)
   }
 
   private companion object {

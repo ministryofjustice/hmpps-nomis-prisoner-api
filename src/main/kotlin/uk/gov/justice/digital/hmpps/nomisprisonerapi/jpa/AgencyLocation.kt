@@ -32,16 +32,16 @@ data class AgencyLocation(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + AgencyLocationType.AGY_LOC_TYPE + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "AGENCY_LOCATION_TYPE",
           referencedColumnName = "code",
-          nullable = true
-        )
-      )
-    ]
+          nullable = true,
+        ),
+      ),
+    ],
   )
   val type: AgencyLocationType? = null,
 
@@ -68,16 +68,16 @@ data class AgencyLocation(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + CourtType.JURISDICTION + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "JURISDICTION_CODE",
           referencedColumnName = "code",
-          nullable = true
-        )
-      )
-    ]
+          nullable = true,
+        ),
+      ),
+    ],
   )
   val courtType: CourtType? = null,
 

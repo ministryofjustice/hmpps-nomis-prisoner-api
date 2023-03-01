@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfile, Long> {
   fun findByCourseActivityAndOffenderBooking(
     courseActivity: CourseActivity,
-    offenderBooking: OffenderBooking
+    offenderBooking: OffenderBooking,
   ): OffenderProgramProfile?
 
   fun findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCode(

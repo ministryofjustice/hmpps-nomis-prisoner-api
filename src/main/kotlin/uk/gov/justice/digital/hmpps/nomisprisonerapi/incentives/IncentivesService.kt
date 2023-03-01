@@ -47,7 +47,7 @@ class IncentivesService(
         "sequence" to incentive.id.sequence.toString(),
         "prisonId" to incentive.location.id,
       ),
-      null
+      null,
     )
     log.debug("Incentive created with Nomis id = ($bookingId, ${incentive.id.sequence})")
 
@@ -65,8 +65,8 @@ class IncentivesService(
     return incentiveRepository.findByIdOrNull(
       IncentiveId(
         offenderBooking = offenderBooking,
-        sequence = incentiveSequence
-      )
+        sequence = incentiveSequence,
+      ),
     )?.let {
       // determine if this incentive is the current IEP for the booking
       val currentIep =
@@ -98,12 +98,11 @@ class IncentivesService(
       offenderNo = incentiveEntity.id.offenderBooking.offender.nomsId,
       auditModule = incentiveEntity.auditModuleName,
       whenCreated = incentiveEntity.whenCreated,
-      whenUpdated = incentiveEntity.whenUpdated
+      whenUpdated = incentiveEntity.whenUpdated,
     )
   }
 
   private fun mapIncentiveModel(dto: CreateIncentiveRequest, offenderBooking: OffenderBooking): Incentive {
-
     val sequence = offenderBooking.getNextSequence()
 
     val location = agencyLocationRepository.findById(dto.prisonId)

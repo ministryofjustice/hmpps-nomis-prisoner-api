@@ -45,16 +45,16 @@ data class VisitOrder(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + VisitOrderType.VISIT_ORDER_TYPE + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "VISIT_ORDER_TYPE",
           referencedColumnName = "code",
-          nullable = true
-        )
-      )
-    ]
+          nullable = true,
+        ),
+      ),
+    ],
   )
   var visitOrderType: VisitOrderType,
 
@@ -66,10 +66,10 @@ data class VisitOrder(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + VisitStatus.VISIT_STATUS + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "STATUS", referencedColumnName = "code", nullable = true))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "STATUS", referencedColumnName = "code", nullable = true)),
+    ],
   )
   var status: VisitStatus,
 
@@ -97,12 +97,12 @@ data class VisitOrder(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'${VisitOutcomeReason.VISIT_OUTCOME_REASON}'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
-        column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code", nullable = true)
-      )
-    ]
+        column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code", nullable = true),
+      ),
+    ],
   )
   var outcomeReason: VisitOutcomeReason? = null,
 ) {

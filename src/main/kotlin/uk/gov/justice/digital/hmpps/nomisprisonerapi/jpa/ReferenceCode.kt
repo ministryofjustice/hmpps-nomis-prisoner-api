@@ -29,7 +29,7 @@ abstract class ReferenceCode(
 
   data class Pk(
     val domain: String? = null,
-    val code: String? = null
+    val code: String? = null,
   ) : Serializable {
     constructor() : this(null, null)
   }

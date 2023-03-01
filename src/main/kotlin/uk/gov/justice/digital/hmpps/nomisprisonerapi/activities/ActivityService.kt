@@ -42,13 +42,12 @@ class ActivityService(
             "courseActivityPayRateIds" to it.payRates.map { payRate -> "${payRate.id.iepLevelCode}-${payRate.id.payBandCode}-${payRate.id.startDate}" }.toString(),
             "courseScheduleRuleIds" to it.courseScheduleRules.map { rule -> rule.id }.toString(),
           ),
-          null
+          null,
         )
       }
       .let { CreateActivityResponse(it.courseActivityId) }
 
   private fun mapActivityModel(dto: CreateActivityRequest): CourseActivity {
-
     val prison = agencyLocationRepository.findByIdOrNull(dto.prisonId)
       ?: throw BadDataException("Prison with id=${dto.prisonId} does not exist")
 

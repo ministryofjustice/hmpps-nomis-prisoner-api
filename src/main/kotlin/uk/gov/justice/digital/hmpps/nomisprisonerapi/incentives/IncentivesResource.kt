@@ -40,14 +40,14 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateIncentiveRequest::class)
-        )
-      ]
+          schema = Schema(implementation = CreateIncentiveRequest::class),
+        ),
+      ],
     ),
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Incentive information with created sequence"
+        description = "Incentive information with created sequence",
       ),
       ApiResponse(
         responseCode = "400",
@@ -55,9 +55,9 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -65,9 +65,9 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -75,17 +75,18 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun createIncentive(
     @Schema(description = "Offender Booking Id", example = "1234567", required = true)
     @PathVariable
     bookingId: Long,
-    @RequestBody @Valid createIncentiveRequest: CreateIncentiveRequest
+    @RequestBody @Valid
+    createIncentiveRequest: CreateIncentiveRequest,
   ): CreateIncentiveResponse =
     incentivesService.createIncentive(bookingId, createIncentiveRequest)
 
@@ -97,7 +98,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Pageable list of composite ids are returned"
+        description = "Pageable list of composite ids are returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -105,9 +106,9 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -115,11 +116,11 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getIncentivesByFilter(
     @PageableDefault(sort = ["whenCreated", "id.offenderBooking", "id.sequence"], direction = Sort.Direction.ASC)
@@ -128,27 +129,30 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
       description = "Filter results by incentives that were created on or after the given date",
-      example = "2021-11-03"
-    ) fromDate: LocalDate?,
+      example = "2021-11-03",
+    )
+    fromDate: LocalDate?,
     @RequestParam(value = "toDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
       description = "Filter results by incentives that were created on or before the given date",
-      example = "2021-11-03"
-    ) toDate: LocalDate?,
+      example = "2021-11-03",
+    )
+    toDate: LocalDate?,
     @RequestParam(value = "latestOnly", required = false)
     @Parameter(
       description = "if true only retrieve latest incentive for each prisoner",
-      example = "true"
-    ) latestOnly: Boolean? = false
+      example = "true",
+    )
+    latestOnly: Boolean? = false,
   ): Page<IncentiveIdResponse> =
     incentivesService.findIncentiveIdsByFilter(
       pageRequest = pageRequest,
       IncentiveFilter(
         toDate = toDate,
         fromDate = fromDate,
-        latestOnly = latestOnly ?: false
-      )
+        latestOnly = latestOnly ?: false,
+      ),
     )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
@@ -159,7 +163,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "the incentive level details"
+        description = "the incentive level details",
       ),
       ApiResponse(
         responseCode = "401",
@@ -167,9 +171,9 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -177,11 +181,11 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getIncentive(
     @Schema(description = "NOMIS booking Id", example = "12345", required = true)
@@ -189,11 +193,11 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     bookingId: Long,
     @Schema(description = "NOMIS Incentive sequence ", example = "1", required = true)
     @PathVariable
-    incentiveSequence: Long
+    incentiveSequence: Long,
   ): IncentiveResponse =
     incentivesService.getIncentive(
       bookingId = bookingId,
-      incentiveSequence = incentiveSequence
+      incentiveSequence = incentiveSequence,
     )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
@@ -204,7 +208,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "the incentive level details"
+        description = "the incentive level details",
       ),
       ApiResponse(
         responseCode = "401",
@@ -212,9 +216,9 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -222,18 +226,18 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getCurrentIncentive(
     @Schema(description = "NOMIS booking Id", example = "12345", required = true)
     @PathVariable
-    bookingId: Long
+    bookingId: Long,
   ): IncentiveResponse =
     incentivesService.getCurrentIncentive(
-      bookingId = bookingId
+      bookingId = bookingId,
     )
 }

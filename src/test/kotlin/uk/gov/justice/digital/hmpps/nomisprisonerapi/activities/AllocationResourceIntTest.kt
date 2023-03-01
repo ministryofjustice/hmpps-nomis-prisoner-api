@@ -48,8 +48,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             "startDate"  : "2022-11-14",
             "endDate"    : "${TEN_DAYS_TIME.format(DateTimeFormatter.ISO_DATE)}",
             "payBandCode": "5"
-          }"""
-        )
+          }""",
+        ),
       )
       .exchange()
       .expectStatus().isCreated
@@ -196,8 +196,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             """{
             "bookingId" : "1234",
             "endDate"   : "2022-11-30"
-          }"""
-          )
+          }""",
+          ),
         )
         .exchange()
         .expectStatus().isBadRequest
@@ -208,7 +208,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create profile with correct details`() {
-
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       val id = callCreateActivityEndpoint(courseActivity.courseActivityId, bookingId)
 
@@ -322,8 +321,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """{
             "endReason" : "REL"
-          }"""
-            )
+          }""",
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -342,8 +341,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """{
             "endDate" : "invalid"
-          }"""
-            )
+          }""",
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -379,7 +378,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create profile with correct details`() {
-
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       val id = callEndpoint(courseActivity.courseActivityId, bookingId)
 
@@ -405,8 +403,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             "endDate"   : "2023-01-28",
             "endReason" : "REL",
             "endComment": "A comment"
-          }"""
-            )
+          }""",
+            ),
           )
           .exchange()
           .expectStatus().isOk

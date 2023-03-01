@@ -44,7 +44,7 @@ internal class VisitResponseTest {
       agencyId = "LEI",
       description = "LEI-VIS-01",
       locationCode = "VIS-01",
-      locationType = "VIS"
+      locationType = "VIS",
     ),
     visitStatus = VisitStatus(code = "SCH", description = "Scheduled"),
     visitors = mutableListOf(),
@@ -53,7 +53,7 @@ internal class VisitResponseTest {
       VisitVisitor(
         person = PersonBuilder().build().apply { id = 88L },
         groupLeader = true,
-        visit = this
+        visit = this,
       ),
     )
     this.visitors.add(
@@ -61,8 +61,8 @@ internal class VisitResponseTest {
         person = null,
         offenderBooking = this.offenderBooking,
         groupLeader = true,
-        visit = this
-      )
+        visit = this,
+      ),
     )
   }
 
@@ -121,13 +121,13 @@ internal class VisitResponseTest {
                   Triple(
                     "HOME",
                     "0123456789",
-                    "ext: 876"
-                  )
-                )
+                    "ext: 876",
+                  ),
+                ),
               ).build(),
             ),
-            outcomeVisitorRecord
-          )
+            outcomeVisitorRecord,
+          ),
         )
       val response = VisitResponse(theVisit)
 
@@ -143,12 +143,12 @@ internal class VisitResponseTest {
               person = PersonBuilder(
                 phoneNumbers = listOf(
                   Triple("HOME", "0123456789", null),
-                  Triple("MOBL", "07973 121212", null)
-                )
-              ).build()
+                  Triple("MOBL", "07973 121212", null),
+                ),
+              ).build(),
             ),
-            outcomeVisitorRecord
-          )
+            outcomeVisitorRecord,
+          ),
         )
       val response = VisitResponse(theVisit)
 
@@ -168,16 +168,16 @@ internal class VisitResponseTest {
                 ),
                 addressBuilders = listOf(
                   PersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null))
+                    phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null)),
                   ),
                   PersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null))
-                  )
-                )
-              ).build()
+                    phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null)),
+                  ),
+                ),
+              ).build(),
             ),
-            outcomeVisitorRecord
-          )
+            outcomeVisitorRecord,
+          ),
         )
       val response = VisitResponse(theVisitor)
 
@@ -187,7 +187,7 @@ internal class VisitResponseTest {
         "1234567890",
         "07973 333333",
         "2345678901 x888",
-        "07973 444444"
+        "07973 444444",
       )
     }
 
@@ -204,12 +204,12 @@ internal class VisitResponseTest {
                 ),
                 addressBuilders = listOf(
                   PersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null))
+                    phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null)),
                   ),
                   PersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null))
-                  )
-                )
+                    phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null)),
+                  ),
+                ),
               ).build().apply {
                 this.phones[0].whenCreated = LocalDateTime.now().minusDays(10) // 6th
                 this.phones[1].whenCreated = LocalDateTime.now().minusDays(11)
@@ -221,8 +221,8 @@ internal class VisitResponseTest {
                 this.addresses[1].phones[1].whenCreated = LocalDateTime.now().minusDays(3) // 3rd
               },
             ),
-            outcomeVisitorRecord
-          )
+            outcomeVisitorRecord,
+          ),
         )
       val response = VisitResponse(theVisitor)
 
@@ -244,7 +244,7 @@ internal class VisitResponseTest {
             visitor.copy(outcomeReason = VisitOutcomeReason("BANANAS", "Visit ended due to bananas")),
             outcomeVisitorRecord.copy(outcomeReason = VisitOutcomeReason("REFUSED", "Offender Refused Visit")),
             visitor.copy(outcomeReason = VisitOutcomeReason("APPLES", "Visit ended due to apples")),
-          )
+          ),
         )
       val response = VisitResponse(theVisit)
 
@@ -258,8 +258,8 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor,
-            outcomeVisitorRecord.copy(outcomeReason = null)
-          )
+            outcomeVisitorRecord.copy(outcomeReason = null),
+          ),
         )
       val response = VisitResponse(theVisit)
 
@@ -272,6 +272,6 @@ fun anOffenderBooking(nomsId: String): OffenderBooking {
   return OffenderBookingBuilder().build(
     offender = OffenderBuilder(nomsId = nomsId).build(Gender("F", "FEMALE")),
     bookingSequence = 1,
-    AgencyLocation(id = "LEI", description = "Leeds HMP")
+    AgencyLocation(id = "LEI", description = "Leeds HMP"),
   )
 }

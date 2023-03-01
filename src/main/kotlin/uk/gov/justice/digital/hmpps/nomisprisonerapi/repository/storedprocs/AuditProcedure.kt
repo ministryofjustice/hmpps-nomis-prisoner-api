@@ -16,11 +16,12 @@ class AuditProcedure(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
       .withNamedBinding()
       .declareParameters(
         SqlParameter("V_NAME", Types.VARCHAR),
-        SqlParameter("V_VALUE", Types.VARCHAR)
+        SqlParameter("V_VALUE", Types.VARCHAR),
       )
       .compile()
   }
 }
+
 @Component
 class ClearAuditProcedure(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
   init {

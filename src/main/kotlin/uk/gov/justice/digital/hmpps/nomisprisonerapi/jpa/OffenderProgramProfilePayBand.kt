@@ -33,10 +33,10 @@ data class OffenderProgramProfilePayBand(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + PayBand.PAY_BAND + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true)),
+    ],
   )
   val payBand: PayBand,
 ) {

@@ -18,14 +18,14 @@ class PersonAddress(
   locality: String? = null,
   startDate: LocalDate = LocalDate.now(),
   noFixedAddressFlag: String = "N",
-  phones: MutableList<AddressPhone> = mutableListOf()
+  phones: MutableList<AddressPhone> = mutableListOf(),
 ) : Address(
   premise = premise,
   street = street,
   locality = locality,
   startDate = startDate,
   noFixedAddressFlag = noFixedAddressFlag,
-  phones = phones
+  phones = phones,
 ) {
   companion object {
     const val ADDR_TYPE = "PER"

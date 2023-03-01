@@ -36,18 +36,18 @@ data class AvailablePrisonIepLevel(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + IEPLevel.IEP_LEVEL + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ),
       JoinColumnOrFormula(
         column = JoinColumn(
           name = "IEP_LEVEL",
           referencedColumnName = "code",
           updatable = false,
-          insertable = false
-        )
-      )
-    ]
+          insertable = false,
+        ),
+      ),
+    ],
   )
   val iepLevel: IEPLevel,
 

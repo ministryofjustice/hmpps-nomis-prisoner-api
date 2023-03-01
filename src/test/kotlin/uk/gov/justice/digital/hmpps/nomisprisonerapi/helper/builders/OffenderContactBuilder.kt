@@ -14,11 +14,11 @@ class OffenderContactBuilder(
   fun build(
     offenderBooking: OffenderBooking,
     contactType: ContactType,
-    relationshipType: RelationshipType
+    relationshipType: RelationshipType,
   ): OffenderContactPerson = OffenderContactPerson(
     offenderBooking = offenderBooking,
     person = person,
     contactType = contactType,
-    relationshipType = relationshipType
+    relationshipType = relationshipType,
   )
 }

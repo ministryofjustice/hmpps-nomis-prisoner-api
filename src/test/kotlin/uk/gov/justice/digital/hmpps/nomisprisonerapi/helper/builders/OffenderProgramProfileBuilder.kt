@@ -9,7 +9,7 @@ import java.time.LocalDate
 @Component
 class OffenderProgramProfileBuilderFactory(
   private val repository: Repository,
-  private val offenderProgramProfilePayBandBuilderFactory: OffenderProgramProfilePayBandBuilderFactory
+  private val offenderProgramProfilePayBandBuilderFactory: OffenderProgramProfilePayBandBuilderFactory,
 ) {
   fun builder(
     programId: Long = 20,

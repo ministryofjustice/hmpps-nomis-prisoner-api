@@ -22,7 +22,7 @@ class OffenderSentenceAdjustment(
   @SequenceGenerator(
     name = "OFFENDER_SENTENCE_ADJUST_ID",
     sequenceName = "OFFENDER_SENTENCE_ADJUST_ID",
-    allocationSize = 1
+    allocationSize = 1,
   )
   @GeneratedValue(generator = "OFFENDER_SENTENCE_ADJUST_ID")
   @Id
@@ -65,15 +65,15 @@ class OffenderSentenceAdjustment(
         name = "OFFENDER_BOOK_ID",
         referencedColumnName = "OFFENDER_BOOK_ID",
         insertable = false,
-        updatable = false
+        updatable = false,
       ),
       JoinColumn(
         name = "SENTENCE_SEQ",
         referencedColumnName = "SENTENCE_SEQ",
         insertable = false,
-        updatable = false
-      )
-    ]
+        updatable = false,
+      ),
+    ],
   )
   val sentence: OffenderSentence,
 

@@ -47,10 +47,10 @@ data class CourseActivityPayRate(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + PayBand.PAY_BAND + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true, updatable = false, insertable = false))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PAY_BAND_CODE", referencedColumnName = "code", nullable = true, updatable = false, insertable = false)),
+    ],
   )
   val payBand: PayBand,
 
@@ -60,10 +60,10 @@ data class CourseActivityPayRate(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + IEPLevel.IEP_LEVEL + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code", nullable = true, updatable = false, insertable = false))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code", nullable = true, updatable = false, insertable = false)),
+    ],
   )
   val iepLevel: IEPLevel,
 

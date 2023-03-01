@@ -25,7 +25,7 @@ class SentenceBuilder(
       id = SentenceId(offenderBooking = offenderBooking, sequence = sequence),
       status = status,
       startDate = startDate,
-      calculationType = calculationType
+      calculationType = calculationType,
     )
 
   fun withAdjustment(sentenceAdjustmentBuilder: SentenceAdjustmentBuilder = SentenceAdjustmentBuilder()): SentenceBuilder {

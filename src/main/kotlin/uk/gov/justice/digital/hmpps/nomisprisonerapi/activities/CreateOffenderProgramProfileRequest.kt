@@ -12,7 +12,7 @@ data class CreateOffenderProgramProfileRequest(
   @Schema(
     description = "Booking id of the prisoner to be allocated to the activity",
     required = true,
-    example = "1234567"
+    example = "1234567",
   )
   val bookingId: Long,
 
@@ -25,5 +25,5 @@ data class CreateOffenderProgramProfileRequest(
   @Schema(description = "The prisoner's pay band", example = "2")
   @field:NotBlank
   @field:Length(min = 1, max = 12)
-  val payBandCode: String
+  val payBandCode: String,
 )

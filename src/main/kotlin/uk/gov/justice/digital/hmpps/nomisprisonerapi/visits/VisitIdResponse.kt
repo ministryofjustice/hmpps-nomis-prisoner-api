@@ -7,5 +7,5 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(description = "Visit id")
 data class VisitIdResponse(
   @Schema(description = "The visit id", required = true)
-  val visitId: Long
+  val visitId: Long,
 )

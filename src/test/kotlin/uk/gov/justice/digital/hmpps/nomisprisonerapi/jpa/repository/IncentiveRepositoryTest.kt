@@ -45,7 +45,7 @@ class IncentiveRepositoryTest {
   fun saveIncentive() {
     val seedOffenderBooking = builderRepository.save(
       OffenderBuilder()
-        .withBooking(OffenderBookingBuilder().withVisitBalance())
+        .withBooking(OffenderBookingBuilder().withVisitBalance()),
     ).bookings.first()
 
     val incentive = Incentive(
@@ -56,7 +56,7 @@ class IncentiveRepositoryTest {
       iepLevel = iepLevelRepository.findById(IEPLevel.pk("BAS")).orElseThrow(),
       location = agencyRepository.findById("LEI").orElseThrow(),
       userId = "me",
-      auditModuleName = "audit"
+      auditModuleName = "audit",
     )
 
     repository.save(incentive)
