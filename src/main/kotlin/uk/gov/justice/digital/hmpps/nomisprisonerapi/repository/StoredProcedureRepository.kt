@@ -13,12 +13,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyD
 interface StoredProcedureRepository {
   fun postKeyDateAdjustmentUpsert(
     keyDateAdjustmentId: Long,
-    bookingId: Long
+    bookingId: Long,
   )
 
   fun preKeyDateAdjustmentDeletion(
     keyDateAdjustmentId: Long,
-    bookingId: Long
+    bookingId: Long,
   )
 
   fun audit(name: String)
@@ -37,7 +37,7 @@ class StoredProcedureRepositoryOracle(
 
   override fun postKeyDateAdjustmentUpsert(
     keyDateAdjustmentId: Long,
-    bookingId: Long
+    bookingId: Long,
   ) {
     val params = MapSqlParameterSource()
       .addValue("p_offbook_id", bookingId)
@@ -47,7 +47,7 @@ class StoredProcedureRepositoryOracle(
 
   override fun preKeyDateAdjustmentDeletion(
     keyDateAdjustmentId: Long,
-    bookingId: Long
+    bookingId: Long,
   ) {
     val params = MapSqlParameterSource()
       .addValue("p_offender_book_id", bookingId)
@@ -78,14 +78,14 @@ class StoredProcedureRepositoryH2() : StoredProcedureRepository {
 
   override fun postKeyDateAdjustmentUpsert(
     keyDateAdjustmentId: Long,
-    bookingId: Long
+    bookingId: Long,
   ) {
     log.info("calling H2 version of StoreProcedure postKeyDateAdjustmentUpsert")
   }
 
   override fun preKeyDateAdjustmentDeletion(
     keyDateAdjustmentId: Long,
-    bookingId: Long
+    bookingId: Long,
   ) {
     log.info("calling H2 version of StoreProcedure preKeyDateAdjustmentDeletion")
   }

@@ -24,7 +24,7 @@ data class SentenceId(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "SENTENCE_SEQ", nullable = false)
-  val sequence: Long
+  val sequence: Long,
 ) : Serializable
 
 @Entity
@@ -43,10 +43,11 @@ data class OffenderSentence(
     value = [
       JoinColumn(
         name = "SENTENCE_CALC_TYPE",
-        referencedColumnName = "SENTENCE_CALC_TYPE"
-      ), JoinColumn(name = "SENTENCE_CATEGORY", referencedColumnName = "SENTENCE_CATEGORY")
-    ]
-  ) @BatchSize(size = 25)
+        referencedColumnName = "SENTENCE_CALC_TYPE",
+      ), JoinColumn(name = "SENTENCE_CATEGORY", referencedColumnName = "SENTENCE_CATEGORY"),
+    ],
+  )
+  @BatchSize(size = 25)
   val calculationType: SentenceCalculationType,
   @Column(name = "START_DATE")
   val startDate: LocalDate,

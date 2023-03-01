@@ -59,7 +59,7 @@ class CourseActivityPayRateBuilder(
         courseActivity = courseActivity,
         iepLevelCode = iepLevelCode,
         payBandCode = payBandCode,
-        startDate = LocalDate.parse(startDate)
+        startDate = LocalDate.parse(startDate),
       ),
       payBand = payBand(payBandCode),
       iepLevel = iepLevel(iepLevelCode),

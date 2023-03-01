@@ -27,15 +27,16 @@ const val adjustmentIdsInner = "select adjustment_id, adjustment_category, creat
   "    where offender_key_date_adjust_id is null" +
   "    )" +
   "    where (:fromDate is null or create_datetime >= :fromDate) and (:toDate is null or create_datetime < :toDate)"
+
 @NamedNativeQuery(
   name = "OffenderKeyDateAdjustment.adjustmentIdsQuery_named",
   query = "$adjustmentIdsInner order by create_datetime",
-  resultSetMapping = "adjustmentIdsMapping"
+  resultSetMapping = "adjustmentIdsMapping",
 )
 @NamedNativeQuery(
   name = "OffenderKeyDateAdjustment.adjustmentIdsQuery_named.count",
   query = "select count(*) cresult  from ($adjustmentIdsInner)",
-  resultSetMapping = "adjustmentIdsMapping.count"
+  resultSetMapping = "adjustmentIdsMapping.count",
 )
 @SqlResultSetMapping(
   name = "adjustmentIdsMapping",
@@ -44,20 +45,19 @@ const val adjustmentIdsInner = "select adjustment_id, adjustment_category, creat
       targetClass = AdjustmentIdResponse::class,
       columns = arrayOf(
         ColumnResult(name = "adjustment_id"),
-        ColumnResult(name = "adjustment_category")
-      )
-    )
-  ]
+        ColumnResult(name = "adjustment_category"),
+      ),
+    ),
+  ],
 )
 @SqlResultSetMapping(name = "adjustmentIdsMapping.count", columns = arrayOf(ColumnResult(name = "cresult")))
-
 @Entity
 @Table(name = "OFFENDER_KEY_DATE_ADJUSTS")
 class OffenderKeyDateAdjustment(
   @SequenceGenerator(
     name = "OFFENDER_KEY_DATE_ADJUST_ID",
     sequenceName = "OFFENDER_KEY_DATE_ADJUST_ID",
-    allocationSize = 1
+    allocationSize = 1,
   )
   @GeneratedValue(generator = "OFFENDER_KEY_DATE_ADJUST_ID")
   @Id

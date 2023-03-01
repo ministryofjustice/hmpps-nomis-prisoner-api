@@ -21,7 +21,7 @@ class PersonBuilder(
             phoneType = type,
             phoneNo = number,
             extNo = extension,
-          )
+          ),
         )
       }
     }.apply {

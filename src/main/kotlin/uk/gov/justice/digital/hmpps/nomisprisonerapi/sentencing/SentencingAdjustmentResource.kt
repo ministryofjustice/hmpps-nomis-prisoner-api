@@ -41,7 +41,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "the sentence adjustment details"
+        description = "the sentence adjustment details",
       ),
       ApiResponse(
         responseCode = "401",
@@ -49,9 +49,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -59,9 +59,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -69,11 +69,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getSentenceAdjustment(
     @Schema(description = "Sentence adjustment id", example = "12345", required = true)
@@ -90,7 +90,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     responses = [
       ApiResponse(
         responseCode = "204",
-        description = "the sentence adjustment has been deleted"
+        description = "the sentence adjustment has been deleted",
       ),
       ApiResponse(
         responseCode = "401",
@@ -98,9 +98,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -108,11 +108,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun deleteSentenceAdjustment(
     @Schema(description = "Sentence adjustment id", example = "12345", required = true)
@@ -128,7 +128,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "the sentence adjustment has been updated"
+        description = "the sentence adjustment has been updated",
       ),
       ApiResponse(
         responseCode = "400",
@@ -136,9 +136,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -146,9 +146,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -156,17 +156,18 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun updateSentenceAdjustment(
     @Schema(description = "Sentence adjustment id", example = "12345", required = true)
     @PathVariable
     adjustmentId: Long,
-    @RequestBody @Valid request: UpdateSentenceAdjustmentRequest
+    @RequestBody @Valid
+    request: UpdateSentenceAdjustmentRequest,
   ): Unit = sentencingAdjustmentService.updateSentenceAdjustment(adjustmentId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
@@ -179,14 +180,14 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateSentenceAdjustmentRequest::class)
-        )
-      ]
+          schema = Schema(implementation = CreateSentenceAdjustmentRequest::class),
+        ),
+      ],
     ),
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Created Sentence adjustment id"
+        description = "Created Sentence adjustment id",
       ),
       ApiResponse(
         responseCode = "400",
@@ -194,9 +195,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -204,9 +205,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -214,9 +215,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -224,11 +225,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun createSentenceAdjustment(
     @Schema(description = "Booking Id", example = "12345", required = true)
@@ -237,7 +238,8 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     @Schema(description = "Sentence sequence number", example = "1", required = true)
     @PathVariable
     sentenceSequence: Long,
-    @RequestBody @Valid request: CreateSentenceAdjustmentRequest
+    @RequestBody @Valid
+    request: CreateSentenceAdjustmentRequest,
   ): CreateAdjustmentResponse =
     sentencingAdjustmentService.createSentenceAdjustment(bookingId, sentenceSequence, request)
 
@@ -249,7 +251,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "the key date adjustment details"
+        description = "the key date adjustment details",
       ),
       ApiResponse(
         responseCode = "401",
@@ -257,9 +259,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -267,9 +269,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -277,11 +279,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getKeyDateAdjustment(
     @Schema(description = "Key date adjustment id", example = "12345", required = true)
@@ -297,7 +299,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "the key date adjustment has been updated"
+        description = "the key date adjustment has been updated",
       ),
       ApiResponse(
         responseCode = "400",
@@ -305,9 +307,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -315,9 +317,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -325,9 +327,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -335,17 +337,18 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun updateKeyDateAdjustment(
     @Schema(description = "Key date adjustment id", example = "12345", required = true)
     @PathVariable
     adjustmentId: Long,
-    @RequestBody @Valid request: UpdateKeyDateAdjustmentRequest
+    @RequestBody @Valid
+    request: UpdateKeyDateAdjustmentRequest,
   ): Unit = sentencingAdjustmentService.updateKeyDateAdjustment(adjustmentId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
@@ -357,7 +360,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     responses = [
       ApiResponse(
         responseCode = "204",
-        description = "the key date adjustment has been deleted"
+        description = "the key date adjustment has been deleted",
       ),
       ApiResponse(
         responseCode = "401",
@@ -365,9 +368,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -375,11 +378,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun deleteKeyDateAdjustment(
     @Schema(description = "Key date adjustment id", example = "12345", required = true)
@@ -397,14 +400,14 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateKeyDateAdjustmentRequest::class)
-        )
-      ]
+          schema = Schema(implementation = CreateKeyDateAdjustmentRequest::class),
+        ),
+      ],
     ),
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Created key date adjustment"
+        description = "Created key date adjustment",
       ),
       ApiResponse(
         responseCode = "400",
@@ -412,9 +415,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -422,9 +425,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -432,9 +435,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -442,17 +445,18 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun createKeyDateAdjustment(
     @Schema(description = "Booking Id", example = "12345", required = true)
     @PathVariable
     bookingId: Long,
-    @RequestBody @Valid request: CreateKeyDateAdjustmentRequest
+    @RequestBody @Valid
+    request: CreateKeyDateAdjustmentRequest,
   ): CreateAdjustmentResponse =
     sentencingAdjustmentService.createKeyDateAdjustment(bookingId, request)
 
@@ -464,7 +468,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Pageable list of ids are returned"
+        description = "Pageable list of ids are returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -472,9 +476,9 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -482,11 +486,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class)
-          )
-        ]
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
-    ]
+    ],
   )
   fun getAdjustmentsByFilter(
     pageRequest: Pageable,
@@ -494,21 +498,23 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
       description = "Filter results by adjustments that were created on or after the given date",
-      example = "2021-11-03"
-    ) fromDate: LocalDate?,
+      example = "2021-11-03",
+    )
+    fromDate: LocalDate?,
     @RequestParam(value = "toDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
       description = "Filter results by adjustments that were created on or before the given date",
-      example = "2021-11-03"
-    ) toDate: LocalDate?
+      example = "2021-11-03",
+    )
+    toDate: LocalDate?,
   ): Page<AdjustmentIdResponse> =
     sentencingAdjustmentService.findAdjustmentIdsByFilter(
       pageRequest = pageRequest,
       AdjustmentFilter(
         toDate = toDate,
-        fromDate = fromDate
-      )
+        fromDate = fromDate,
+      ),
     )
 }
 
@@ -552,7 +558,7 @@ data class CreateSentenceAdjustmentRequest(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
     required = true,
     example = "RX",
-    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"]
+    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"],
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
@@ -568,13 +574,14 @@ data class CreateSentenceAdjustmentRequest(
   @Schema(description = "Flag to indicate if the adjustment is being applied", required = false, defaultValue = "true")
   val active: Boolean = true,
 )
+
 @Schema(description = "Sentence adjustment update request")
 data class UpdateSentenceAdjustmentRequest(
   @Schema(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
     required = true,
     example = "RX",
-    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"]
+    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"],
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
@@ -597,7 +604,7 @@ data class CreateKeyDateAdjustmentRequest(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
     required = true,
     example = "ADA",
-    allowableValues = ["LAL", "UAL", "RADA", "ADA", "SREM"]
+    allowableValues = ["LAL", "UAL", "RADA", "ADA", "SREM"],
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
@@ -613,13 +620,14 @@ data class CreateKeyDateAdjustmentRequest(
   @Schema(description = "Flag to indicate if the adjustment is being applied", required = false, defaultValue = "true")
   val active: Boolean = true,
 )
+
 @Schema(description = "Key date adjustment update request")
 data class UpdateKeyDateAdjustmentRequest(
   @Schema(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
     required = true,
     example = "ADA",
-    allowableValues = ["LAL", "UAL", "RADA", "ADA", "SREM"]
+    allowableValues = ["LAL", "UAL", "RADA", "ADA", "SREM"],
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",

@@ -94,7 +94,7 @@ class ScheduleRuleServiceTest {
           scheduleRules = listOf(
             createScheduleRuleRequest,
             createScheduleRuleRequest.copy(startTime = LocalTime.parse("08:00")),
-          )
+          ),
         )
 
         val newScheduleRules = scheduleRuleService.mapRules(request, courseActivity)
@@ -177,7 +177,7 @@ class ScheduleRuleServiceTest {
         val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
         val requestedRules = listOf(
           scheduleRuleRequest,
-          scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 30), monday = false)
+          scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 30), monday = false),
         )
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
@@ -256,7 +256,7 @@ class ScheduleRuleServiceTest {
             .create()
         val requestedRules = listOf(
           scheduleRuleRequest,
-          scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 0))
+          scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 0)),
         )
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
@@ -290,25 +290,25 @@ class ScheduleRuleServiceTest {
               endTimeHours = 15,
               monday = false,
               tuesday = false,
-              wednesday = false
+              wednesday = false,
             ),
-          )
+          ),
         ).create()
         val requestedRules = listOf(
           scheduleRuleRequest.copy(
             startTime = LocalTime.of(14, 15),
             endTime = LocalTime.of(15, 15),
             thursday = false,
-            friday = false
+            friday = false,
           ),
           scheduleRuleRequest.copy(
             startTime = LocalTime.of(13, 30),
             endTime = LocalTime.of(15, 30),
             monday = false,
             tuesday = false,
-            wednesday = false
+            wednesday = false,
           ),
-          scheduleRuleRequest.copy(startTime = LocalTime.of(19, 0), endTime = LocalTime.of(21, 0))
+          scheduleRuleRequest.copy(startTime = LocalTime.of(19, 0), endTime = LocalTime.of(21, 0)),
         )
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)

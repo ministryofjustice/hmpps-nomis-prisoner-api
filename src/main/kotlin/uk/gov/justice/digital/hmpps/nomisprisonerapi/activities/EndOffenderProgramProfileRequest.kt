@@ -17,5 +17,5 @@ data class EndOffenderProgramProfileRequest(
 
   @Schema(description = "Activity end comment")
   @field:Length(max = 240)
-  val endComment: String? = null
+  val endComment: String? = null,
 )

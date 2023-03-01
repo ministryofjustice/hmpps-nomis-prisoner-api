@@ -61,10 +61,10 @@ class OffenderIndividualSchedule(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'${EventSubType.INT_SCH_RSN}'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_SUB_TYPE", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_SUB_TYPE", referencedColumnName = "code")),
+    ],
   )
   val eventSubType: EventSubType,
 
@@ -75,10 +75,10 @@ class OffenderIndividualSchedule(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'${EventStatus.EVENT_STS}'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code")),
+    ],
   )
   val eventStatus: EventStatus,
 

@@ -10,7 +10,7 @@ class KeyDateAdjustmentBuilder(
   var adjustmentTypeCode: String = "ADA",
   var adjustmentDate: LocalDate = LocalDate.now(),
   var createdDate: LocalDateTime = LocalDateTime.now(), // used in migration date filtering
-  var adjustmentNumberOfDays: Long = 10
+  var adjustmentNumberOfDays: Long = 10,
 ) {
   fun build(offenderBooking: OffenderBooking, adjustmentType: SentenceAdjustment): OffenderKeyDateAdjustment =
     OffenderKeyDateAdjustment(
@@ -18,6 +18,6 @@ class KeyDateAdjustmentBuilder(
       sentenceAdjustment = adjustmentType,
       adjustmentDate = adjustmentDate,
       adjustmentNumberOfDays = adjustmentNumberOfDays,
-      createdDate = createdDate
+      createdDate = createdDate,
     )
 }

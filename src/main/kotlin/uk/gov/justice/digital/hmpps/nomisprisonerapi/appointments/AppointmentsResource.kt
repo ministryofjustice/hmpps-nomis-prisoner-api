@@ -31,36 +31,37 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     description = "Creates a new appointment. Requires role NOMIS_APPOINTMENTS",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class))
-      ]
+        Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+      ],
     ),
     responses = [
       ApiResponse(
         responseCode = "201",
         description = "Appointment information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class))
-        ]
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+        ],
       ),
       ApiResponse(
         responseCode = "400",
         description = "Invalid data such as booking or location do not exist etc.",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires role NOMIS_APPOINTMENTS",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
-    ]
+    ],
   )
   fun createAppointment(
-    @RequestBody @Valid createAppointmentRequest: CreateAppointmentRequest
+    @RequestBody @Valid
+    createAppointmentRequest: CreateAppointmentRequest,
   ): CreateAppointmentResponse =
     appointmentService.createAppointment(createAppointmentRequest)
 
@@ -74,33 +75,36 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
         responseCode = "200",
         description = "Appointment information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class))
-        ]
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+        ],
       ),
       ApiResponse(
         responseCode = "404",
         description = "Booking, location and timestamp combination does not exist",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden, requires role NOMIS_APPOINTMENTS",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
-    ]
+    ],
   )
   fun getAppointment(
     @Schema(description = "NOMIS booking Id", example = "1234567", required = true)
-    @PathVariable bookingId: Long,
+    @PathVariable
+    bookingId: Long,
     @Schema(description = "Appointment room internal location Id", example = "1234567", required = true)
-    @PathVariable locationId: Long,
+    @PathVariable
+    locationId: Long,
     @Schema(description = "Appointment date and start time", example = "2023-02-27T14:40", required = true)
-    @PathVariable dateTime: LocalDateTime,
+    @PathVariable
+    dateTime: LocalDateTime,
   ): AppointmentResponse =
     appointmentService.getAppointment(bookingId, locationId, dateTime)
 }

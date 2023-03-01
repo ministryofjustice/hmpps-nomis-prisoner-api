@@ -11,16 +11,16 @@ import java.time.LocalDate
 interface OffenderIndividualScheduleRepository :
   CrudRepository<OffenderIndividualSchedule, Long>, JpaSpecificationExecutor<OffenderIndividualSchedule> {
 
+  // should use index OFFENDER_IND_SCHEDULES_X02 on OFFENDER_BOOK_ID, EVENT_DATE
   @Query(
     "from OffenderIndividualSchedule ois where ois.offenderBooking.bookingId = :bookingId and ois.internalLocation.locationId = :locationId " +
-      "and ois.eventDate = :date and hour(ois.startTime) = :hour and minute(ois.startTime) = :minute"
+      "and ois.eventDate = :date and hour(ois.startTime) = :hour and minute(ois.startTime) = :minute",
   )
-  // should use index OFFENDER_IND_SCHEDULES_X02 on OFFENDER_BOOK_ID, EVENT_DATE
   fun findOneByBookingLocationDateAndStartTime(
     bookingId: Long,
     locationId: Long,
     date: LocalDate,
     hour: Int,
-    minute: Int
+    minute: Int,
   ): OffenderIndividualSchedule?
 }

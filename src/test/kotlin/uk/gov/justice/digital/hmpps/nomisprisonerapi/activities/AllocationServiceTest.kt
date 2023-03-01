@@ -76,7 +76,7 @@ class AllocationServiceTest {
     description = PRISON_DESCRIPTION,
     locationType = "ROOM",
     locationCode = "ROOM-1",
-    locationId = ROOM_ID
+    locationId = ROOM_ID,
   )
 
   private fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
@@ -86,13 +86,13 @@ class AllocationServiceTest {
   private val defaultOffender = Offender(
     nomsId = OFFENDER_NO,
     lastName = "Smith",
-    gender = Gender("MALE", "Male")
+    gender = Gender("MALE", "Male"),
   )
   private val defaultOffenderBooking = OffenderBooking(
     bookingId = OFFENDER_BOOKING_ID,
     offender = defaultOffender,
     location = defaultPrison,
-    bookingBeginDate = LocalDateTime.now()
+    bookingBeginDate = LocalDateTime.now(),
   )
   private val defaultCourseActivity = CourseActivity(
     courseActivityId = COURSE_ACTIVITY_ID,
@@ -107,13 +107,13 @@ class AllocationServiceTest {
           courseActivity = this,
           startDate = LocalDate.parse("2022-11-01"),
           payBandCode = PAY_BAND_CODE,
-          iepLevelCode = "ENH"
+          iepLevelCode = "ENH",
         ),
         payBand = defaultPayBand(PAY_BAND_CODE),
         iepLevel = defaultIepLevel("ENH"),
         endDate = LocalDate.parse("2022-11-03"),
         halfDayRate = BigDecimal("0.50"),
-      )
+      ),
     )
   }
   private val createRequest = CreateOffenderProgramProfileRequest(
@@ -122,16 +122,17 @@ class AllocationServiceTest {
     endDate = LocalDate.parse("2022-11-30"),
     payBandCode = PAY_BAND_CODE,
   )
+
   @Nested
   internal inner class CreateOffenderProgramProfile {
 
     @BeforeEach
     fun setup() {
       whenever(activityRepository.findById(COURSE_ACTIVITY_ID)).thenReturn(
-        Optional.of(defaultCourseActivity)
+        Optional.of(defaultCourseActivity),
       )
       whenever(offenderBookingRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(
-        Optional.of(defaultOffenderBooking)
+        Optional.of(defaultOffenderBooking),
       )
 
       whenever(offenderProgramProfileRepository.save(any())).thenAnswer {
@@ -141,13 +142,13 @@ class AllocationServiceTest {
       whenever(payBandRepository.findById(PayBand.pk(PAY_BAND_CODE))).thenReturn(
         Optional.of(
           defaultPayBand(
-            PAY_BAND_CODE
-          )
-        )
+            PAY_BAND_CODE,
+          ),
+        ),
       )
 
       whenever(offenderProgramStatusRepository.findById(OffenderProgramStatus.pk("ALLOC"))).thenReturn(
-        Optional.of(OffenderProgramStatus("ALLOC", "Allocated"))
+        Optional.of(OffenderProgramStatus("ALLOC", "Allocated")),
       )
     }
 
@@ -175,7 +176,7 @@ class AllocationServiceTest {
               Assertions.assertThat(payBand.code).isEqualTo(PAY_BAND_CODE)
             }
           }
-        }
+        },
       )
     }
 
@@ -204,7 +205,7 @@ class AllocationServiceTest {
       val thrown = assertThrows<BadDataException>() {
         allocationService.createOffenderProgramProfile(
           COURSE_ACTIVITY_ID,
-          createRequest.copy(payBandCode = "doesnotexist")
+          createRequest.copy(payBandCode = "doesnotexist"),
         )
       }
       Assertions.assertThat(thrown.message).isEqualTo("Pay band code doesnotexist does not exist")
@@ -218,7 +219,7 @@ class AllocationServiceTest {
       val thrown = assertThrows<BadDataException>() {
         allocationService.createOffenderProgramProfile(
           COURSE_ACTIVITY_ID,
-          createRequest.copy(payBandCode = "not_on_course")
+          createRequest.copy(payBandCode = "not_on_course"),
         )
       }
       Assertions.assertThat(thrown.message).isEqualTo("Pay band code not_on_course does not exist for course activity with id=$COURSE_ACTIVITY_ID")

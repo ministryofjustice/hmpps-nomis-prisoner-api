@@ -92,7 +92,7 @@ class Repository(
         booking.contacts.addAll(
           bookingBuilder.contacts.map {
             it.build(booking, lookupContactType(it.contactTypeCode), lookupRelationshipType(it.relationshipTypeCode))
-          }
+          },
         )
         booking.visits.addAll(
           bookingBuilder.visits.map { visitBuilder ->
@@ -103,21 +103,21 @@ class Repository(
               agencyLocation = lookupAgency(visitBuilder.agyLocId),
               agencyInternalLocation = visitBuilder.agencyInternalLocationDescription?.run {
                 lookupAgencyInternalLocationByDescription(
-                  this
+                  this,
                 )
-              }
+              },
             )
             visit.visitors.addAll(
               visitBuilder.visitors.map {
                 it.build(it.person, leadVisitor = it.leadVisitor, visit)
-              } + visitBuilder.visitOutcome.build(visit)
+              } + visitBuilder.visitOutcome.build(visit),
             )
             visit
-          }
+          },
         )
 
         booking
-      }
+      },
     )
 
     offenderRepository.saveAndFlush(offender)
@@ -127,30 +127,30 @@ class Repository(
       booking.incentives.addAll(
         offenderBuilder.bookingBuilders[bookingIndex].incentives.map {
           it.build(booking, lookupIepLevel(it.iepLevel))
-        }
+        },
       )
       booking.sentences.addAll(
         offenderBuilder.bookingBuilders[bookingIndex].sentences.mapIndexed { sentenceIndex, sentenceBuilder ->
           val sentence = sentenceBuilder.build(
             booking,
             sentenceIndex.toLong() + 1,
-            lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category)
+            lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category),
           )
           sentence.adjustments.addAll(
             sentenceBuilder.adjustments.map {
               it.build(lookupSentenceAdjustment(it.adjustmentTypeCode), sentence)
-            }
+            },
           )
           sentence
-        }
+        },
       )
       booking.keyDateAdjustments.addAll(
         offenderBuilder.bookingBuilders[bookingIndex].keyDateAdjustments.map {
           it.build(
             booking,
-            lookupSentenceAdjustment(it.adjustmentTypeCode)
+            lookupSentenceAdjustment(it.adjustmentTypeCode),
           )
-        }
+        },
       )
     }
     return offender
@@ -267,7 +267,7 @@ class Repository(
   fun save(
     offenderProgramProfileBuilder: OffenderProgramProfileBuilder,
     offenderBooking: OffenderBooking,
-    courseActivity: CourseActivity
+    courseActivity: CourseActivity,
   ): OffenderProgramProfile =
     offenderProgramProfileBuilder.build(offenderBooking, courseActivity)
       .let { offenderProgramProfileRepository.save(it) }

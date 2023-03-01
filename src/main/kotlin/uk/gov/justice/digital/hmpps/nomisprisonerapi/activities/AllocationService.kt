@@ -30,11 +30,10 @@ class AllocationService(
 ) {
   fun createOffenderProgramProfile(
     courseActivityId: Long,
-    dto: CreateOffenderProgramProfileRequest
+    dto: CreateOffenderProgramProfileRequest,
   ): OffenderProgramProfileResponse =
 
     offenderProgramProfileRepository.save(mapOffenderProgramProfileModel(courseActivityId, dto)).run {
-
       telemetryClient.trackEvent(
         "offender-program-profile-created",
         mapOf(
@@ -42,7 +41,7 @@ class AllocationService(
           "courseActivityId" to courseActivity?.courseActivityId.toString(),
           "bookingId" to offenderBooking.bookingId.toString(),
         ),
-        null
+        null,
       )
       OffenderProgramProfileResponse(offenderProgramReferenceId)
     }
@@ -50,16 +49,15 @@ class AllocationService(
   fun endOffenderProgramProfile(
     courseActivityId: Long,
     bookingId: Long,
-    dto: EndOffenderProgramProfileRequest
+    dto: EndOffenderProgramProfileRequest,
   ): OffenderProgramProfileResponse =
 
     offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCode(
       courseActivityId,
       bookingId,
-      "ALLOC"
+      "ALLOC",
     )
       ?.run {
-
         endReason =
           dto.endReason?.let { programServiceEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(it)) }
             ?: throw BadDataException("End reason code=${dto.endReason} is invalid")
@@ -73,7 +71,7 @@ class AllocationService(
             "courseActivityId" to courseActivity?.courseActivityId.toString(),
             "bookingId" to offenderBooking.bookingId.toString(),
           ),
-          null
+          null,
         )
         OffenderProgramProfileResponse(offenderProgramReferenceId)
       }
@@ -88,9 +86,8 @@ class AllocationService(
 
   private fun mapOffenderProgramProfileModel(
     courseActivityId: Long,
-    dto: CreateOffenderProgramProfileRequest
+    dto: CreateOffenderProgramProfileRequest,
   ): OffenderProgramProfile {
-
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
 
@@ -131,7 +128,7 @@ class AllocationService(
           startDate = dto.startDate,
           payBand = payBand,
           endDate = dto.endDate,
-        )
+        ),
       )
     }
   }

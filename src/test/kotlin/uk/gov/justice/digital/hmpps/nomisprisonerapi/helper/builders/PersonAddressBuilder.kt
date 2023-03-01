@@ -15,7 +15,7 @@ class PersonAddressBuilder(
       person = person,
       premise = premise,
       street = street,
-      locality = locality
+      locality = locality,
     ).apply {
       phoneNumbers.map { (type, number, extension) ->
         this.addPhone(
@@ -23,8 +23,8 @@ class PersonAddressBuilder(
             this,
             phoneType = type,
             phoneNo = number,
-            extNo = extension
-          )
+            extNo = extension,
+          ),
         )
       }
     }

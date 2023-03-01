@@ -15,7 +15,7 @@ interface AgencyLocationRepository :
   fun findByIdAndTypeAndActiveAndDeactivationDateIsNull(
     id: String,
     type: AgencyLocationType,
-    active: Boolean
+    active: Boolean,
   ): Optional<AgencyLocation>
 
   fun findByTypeAndActiveAndDeactivationDateIsNull(type: AgencyLocationType, active: Boolean): List<AgencyLocation>

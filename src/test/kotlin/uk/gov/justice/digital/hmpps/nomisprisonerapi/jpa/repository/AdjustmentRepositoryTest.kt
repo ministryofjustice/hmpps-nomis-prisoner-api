@@ -48,9 +48,9 @@ class AdjustmentRepositoryTest {
         .withBooking(
           OffenderBookingBuilder().withKeyDateAdjustments(KeyDateAdjustmentBuilder(createdDate = dateTimeJan1))
             .withSentences(
-              SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(createdDate = dateTimeJan30))
-            )
-        )
+              SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(createdDate = dateTimeJan30)),
+            ),
+        ),
     )
 
     entityManager.flush()
@@ -84,7 +84,7 @@ class AdjustmentRepositoryTest {
     val persistedVisitList = repository.adjustmentIdsQuery_named(
       fromDate = dateTimeJan1.toLocalDate(),
       toDate = dateTimeJan30.toLocalDate().plusDays(1),
-      pageable = Pageable.ofSize(10)
+      pageable = Pageable.ofSize(10),
     )
 
     assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactly("KEY_DATE", "SENTENCE")
@@ -95,12 +95,12 @@ class AdjustmentRepositoryTest {
     val page1 = repository.adjustmentIdsQuery_named(
       fromDate = dateTimeJan1.toLocalDate(),
       toDate = dateTimeJan30.toLocalDate().plusDays(1),
-      pageable = Pageable.ofSize(1)
+      pageable = Pageable.ofSize(1),
     )
     val page2 = repository.adjustmentIdsQuery_named(
       fromDate = dateTimeJan1.toLocalDate(),
       toDate = dateTimeJan30.toLocalDate().plusDays(1),
-      pageable = Pageable.ofSize(1).withPage(1) // zero indexed
+      pageable = Pageable.ofSize(1).withPage(1), // zero indexed
     )
 
     assertThat(page1.totalPages).isEqualTo(2)

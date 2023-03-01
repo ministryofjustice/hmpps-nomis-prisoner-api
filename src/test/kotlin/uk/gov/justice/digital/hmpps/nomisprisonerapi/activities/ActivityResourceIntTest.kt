@@ -238,7 +238,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(courseActivity.prison.id).isEqualTo(PRISON_ID)
         assertThat(courseActivity.payRates.first().halfDayRate).isCloseTo(
           BigDecimal(0.4),
-          within(BigDecimal("0.001"))
+          within(BigDecimal("0.001")),
         )
         assertThat(courseActivity.payPerSession).isEqualTo(PayPerSession.F)
         assertThat(courseActivity.courseSchedules.first().scheduleDate).isEqualTo("2022-10-31")
@@ -277,7 +277,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected)
             }
           },
-          isNull()
+          isNull(),
         )
       }
     }
@@ -371,7 +371,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               "saturday": false,
               "sunday": false
               }]
-      """.trimIndent()
+      """.trimIndent(),
     ) = """{
             ${endDateJson ?: ""}
             ${internalLocationJson ?: ""}
@@ -485,7 +485,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "payBand" : "5",
                   "rate" : "NOT_A_NUMBER"
                   } ],
-            """.trimIndent()
+            """.trimIndent(),
           ),
         )
           .expectStatus().isBadRequest
@@ -509,7 +509,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "payBand" : "99",
                   "rate" : "1.2"
                   } ],
-            """.trimIndent()
+            """.trimIndent(),
           ),
         )
           .expectStatus().isBadRequest
@@ -529,7 +529,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "payBand" : "5",
                   "rate" : "1.2"
                   } ],
-            """.trimIndent()
+            """.trimIndent(),
           ),
         )
           .expectStatus().isBadRequest
@@ -588,9 +588,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val existingActivityId = getSavedActivityId()
         repository.save(
           offenderProgramProfileBuilderFactory.builder(
-            payBands = listOf(offenderProgramProfilePayBandBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()))
+            payBands = listOf(offenderProgramProfilePayBandBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString())),
           ),
-          offender.latestBooking(), courseActivity
+          offender.latestBooking(),
+          courseActivity,
         )
 
         callUpdateEndpoint(
@@ -624,7 +625,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "saturday": false,
                   "sunday": false
               }]
-            """.trimIndent()
+            """.trimIndent(),
           ),
         )
           .expectStatus().isBadRequest
@@ -650,7 +651,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "saturday": false,
                   "sunday": false
               }]
-            """.trimIndent()
+            """.trimIndent(),
           ),
         )
           .expectStatus().isBadRequest
@@ -678,7 +679,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "saturday": false,
                   "sunday": false
               }]
-            """.trimIndent()
+            """.trimIndent(),
           ),
         )
           .expectStatus().isOk

@@ -16,11 +16,12 @@ class KeyDateAdjustmentUpsert(dataSource: DataSource) : SimpleJdbcCall(dataSourc
       .withNamedBinding()
       .declareParameters(
         SqlParameter("p_offbook_id", Types.NUMERIC),
-        SqlParameter("p_key_date_id", Types.NUMERIC)
+        SqlParameter("p_key_date_id", Types.NUMERIC),
       )
     compile()
   }
 }
+
 @Component
 class KeyDateAdjustmentDelete(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
   init {
@@ -31,7 +32,7 @@ class KeyDateAdjustmentDelete(dataSource: DataSource) : SimpleJdbcCall(dataSourc
       .withNamedBinding()
       .declareParameters(
         SqlParameter("p_offender_book_id", Types.NUMERIC),
-        SqlParameter("p_offender_key_date_adjust_id", Types.NUMERIC)
+        SqlParameter("p_offender_key_date_adjust_id", Types.NUMERIC),
       )
     compile()
   }

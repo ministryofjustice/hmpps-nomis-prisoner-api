@@ -75,7 +75,7 @@ class ActivityServiceTest {
     description = PRISON_DESCRIPTION,
     locationType = "ROOM",
     locationCode = "ROOM-1",
-    locationId = ROOM_ID
+    locationId = ROOM_ID,
   )
 
   private fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
@@ -98,7 +98,7 @@ class ActivityServiceTest {
           incentiveLevel = "BAS",
           payBand = "5",
           rate = BigDecimal(3.2),
-        )
+        ),
       ),
       payPerSession = PayPerSession.H,
     )
@@ -106,10 +106,10 @@ class ActivityServiceTest {
     @BeforeEach
     fun setup() {
       whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(
-        Optional.of(defaultPrison)
+        Optional.of(defaultPrison),
       )
       whenever(programServiceRepository.findByProgramCode(PROGRAM_CODE)).thenReturn(
-        defaultProgramService
+        defaultProgramService,
       )
       whenever(agencyInternalLocationRepository.findById(ROOM_ID)).thenReturn(Optional.of(defaultRoom))
       whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
@@ -146,7 +146,7 @@ class ActivityServiceTest {
           assertThat(activity.iepLevel.code).isEqualTo(IEP_LEVEL)
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
-        }
+        },
       )
     }
 

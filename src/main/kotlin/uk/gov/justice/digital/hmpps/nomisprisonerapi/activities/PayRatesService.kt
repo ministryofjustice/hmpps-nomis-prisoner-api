@@ -22,12 +22,11 @@ class PayRatesService(
 ) {
 
   fun mapRates(dto: CreateActivityRequest, courseActivity: CourseActivity): MutableList<CourseActivityPayRate> {
-
     return dto.payRates.map { rate ->
 
       val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(
         courseActivity.prison,
-        rate.incentiveLevel
+        rate.incentiveLevel,
       )
         ?: throw BadDataException("Pay rate IEP type ${rate.incentiveLevel} does not exist for prison ${dto.prisonId}")
 
@@ -150,7 +149,7 @@ class PayRatesService(
       payBand = payBand,
       iepLevel = availableIepLevel.iepLevel,
       endDate = null,
-      halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate)
+      halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate),
     )
   }
 }

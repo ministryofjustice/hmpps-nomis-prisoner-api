@@ -11,7 +11,6 @@ class ScheduleService {
 
   fun mapSchedules(request: CreateActivityRequest, courseActivity: CourseActivity): List<CourseSchedule> =
     request.schedules.map {
-
       validateRequest(it, courseActivity)
 
       CourseSchedule(
@@ -19,7 +18,7 @@ class ScheduleService {
         scheduleDate = it.date,
         startTime = it.date.atTime(it.startTime),
         endTime = it.date.atTime(it.endTime),
-        slotCategory = SlotCategory.of(it.startTime)
+        slotCategory = SlotCategory.of(it.startTime),
       )
     }.toList()
 

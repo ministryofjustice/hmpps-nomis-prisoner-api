@@ -55,10 +55,10 @@ data class Visit(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + VisitType.VISIT_TYPE + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = true))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = true)),
+    ],
   )
   val visitType: VisitType,
 
@@ -69,16 +69,16 @@ data class Visit(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + VisitStatus.VISIT_STATUS + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "VISIT_STATUS",
           referencedColumnName = "code",
-          nullable = true
-        )
-      )
-    ]
+          nullable = true,
+        ),
+      ),
+    ],
   )
   var visitStatus: VisitStatus,
 
@@ -89,12 +89,11 @@ data class Visit(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + SearchLevel.SEARCH_LEVEL + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "SEARCH_TYPE", referencedColumnName = "code", nullable = true))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "SEARCH_TYPE", referencedColumnName = "code", nullable = true)),
+    ],
   )
-
   val searchLevel: SearchLevel? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -127,7 +126,7 @@ data class Visit(
   val createUserId: String = "",
 
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  val modifyUserId: String? = null
+  val modifyUserId: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

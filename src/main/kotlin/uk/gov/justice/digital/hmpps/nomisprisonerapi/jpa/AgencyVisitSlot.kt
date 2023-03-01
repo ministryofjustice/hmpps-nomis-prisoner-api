@@ -37,8 +37,8 @@ data class AgencyVisitSlot(
     value = [
       JoinColumn(name = "WEEK_DAY", referencedColumnName = "WEEK_DAY", insertable = false, updatable = false),
       JoinColumn(name = "AGY_LOC_ID", referencedColumnName = "AGY_LOC_ID", insertable = false, updatable = false),
-      JoinColumn(name = "TIME_SLOT_SEQ", referencedColumnName = "TIME_SLOT_SEQ", insertable = false, updatable = false)
-    ]
+      JoinColumn(name = "TIME_SLOT_SEQ", referencedColumnName = "TIME_SLOT_SEQ", insertable = false, updatable = false),
+    ],
   )
   var agencyVisitTime: AgencyVisitTime,
 
@@ -50,7 +50,7 @@ data class AgencyVisitSlot(
   var maxGroups: Int? = null,
 
   @Column
-  var maxAdults: Int? = null
+  var maxAdults: Int? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

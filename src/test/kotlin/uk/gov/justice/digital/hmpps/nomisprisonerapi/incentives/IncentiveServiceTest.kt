@@ -50,19 +50,20 @@ internal class IncentiveServiceTest {
   )
 
   private val defaultOffender = Offender(
-    nomsId = offenderNo, lastName = "Smith",
-    gender = Gender("MALE", "Male")
+    nomsId = offenderNo,
+    lastName = "Smith",
+    gender = Gender("MALE", "Male"),
   )
   private val defaultOffenderBooking = OffenderBooking(
     bookingId = offenderBookingId,
     offender = defaultOffender,
-    bookingBeginDate = LocalDateTime.now()
+    bookingBeginDate = LocalDateTime.now(),
   )
 
   @BeforeEach
   fun setup() {
     whenever(offenderBookingRepository.findById(offenderBookingId)).thenReturn(
-      Optional.of(defaultOffenderBooking)
+      Optional.of(defaultOffenderBooking),
     )
     whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
       val prison = (it.arguments[0] as AgencyLocation)
@@ -70,7 +71,7 @@ internal class IncentiveServiceTest {
       return@thenAnswer AvailablePrisonIepLevel(code, prison, IEPLevel(code, "$code-desc"))
     }
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(
-      Optional.of(AgencyLocation(prisonId, "desc"))
+      Optional.of(AgencyLocation(prisonId, "desc")),
     )
     whenever(incentiveRepository.save(any())).thenAnswer {
       (it.arguments[0] as Incentive).copy(id = IncentiveId(defaultOffenderBooking, 1))
@@ -107,7 +108,7 @@ internal class IncentiveServiceTest {
     @Test
     fun offenderNotFound() {
       whenever(offenderBookingRepository.findById(offenderBookingId)).thenReturn(
-        Optional.empty()
+        Optional.empty(),
       )
 
       val thrown = assertThrows<NotFoundException>() {

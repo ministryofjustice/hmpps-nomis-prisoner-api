@@ -65,7 +65,7 @@ class SentencingAdjustmentService(
             toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1), // dates are inclusive so a 1-day remand starts and end on dame day
             comment = request.comment,
             active = request.active,
-          )
+          ),
         )
         entityManager.flush()
         val adjustmentId = sentence.adjustments.last().id
@@ -78,7 +78,7 @@ class SentencingAdjustmentService(
             "adjustmentId" to adjustmentId.toString(),
             "adjustmentType" to request.adjustmentTypeCode,
           ),
-          null
+          null,
         )
         CreateAdjustmentResponse(adjustmentId)
       }
@@ -104,7 +104,7 @@ class SentencingAdjustmentService(
           "adjustmentId" to adjustmentId.toString(),
           "adjustmentType" to this.sentenceAdjustment.id,
         ),
-        null
+        null,
       )
     } ?: throw NotFoundException("Sentence adjustment with id $adjustmentId not found")
 
@@ -121,13 +121,13 @@ class SentencingAdjustmentService(
           "adjustmentId" to adjustmentId.toString(),
           "adjustmentType" to it.sentenceAdjustment.id,
         ),
-        null
+        null,
       )
     }
       ?: telemetryClient.trackEvent(
         "sentence-adjustment-delete-not-found",
         mapOf("adjustmentId" to adjustmentId.toString()),
-        null
+        null,
       )
   }
 
@@ -171,7 +171,7 @@ class SentencingAdjustmentService(
           toDate = request.adjustmentFromDate.plusDays(request.adjustmentDays - 1),
           comment = request.comment,
           active = request.active,
-        )
+        ),
       )
       entityManager.flush()
       val adjustmentId = it.keyDateAdjustments.last().id
@@ -183,12 +183,12 @@ class SentencingAdjustmentService(
           "adjustmentId" to adjustmentId.toString(),
           "adjustmentType" to request.adjustmentTypeCode,
         ),
-        null
+        null,
       )
       CreateAdjustmentResponse(adjustmentId).also { createAdjustmentResponse ->
         storedProcedureRepository.postKeyDateAdjustmentUpsert(
           keyDateAdjustmentId = createAdjustmentResponse.id,
-          bookingId = bookingId
+          bookingId = bookingId,
         )
       }
     } ?: throw NotFoundException("Booking $bookingId not found")
@@ -206,7 +206,7 @@ class SentencingAdjustmentService(
       entityManager.flush()
       storedProcedureRepository.postKeyDateAdjustmentUpsert(
         keyDateAdjustmentId = adjustmentId,
-        bookingId = this.offenderBooking.bookingId
+        bookingId = this.offenderBooking.bookingId,
       )
       telemetryClient.trackEvent(
         "key-date-adjustment-updated",
@@ -216,7 +216,7 @@ class SentencingAdjustmentService(
           "adjustmentId" to adjustmentId.toString(),
           "adjustmentType" to request.adjustmentTypeCode,
         ),
-        null
+        null,
       )
     } ?: throw NotFoundException("Key date adjustment with id $adjustmentId not found")
 
@@ -225,7 +225,7 @@ class SentencingAdjustmentService(
     keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.also {
       storedProcedureRepository.preKeyDateAdjustmentDeletion(
         keyDateAdjustmentId = adjustmentId,
-        bookingId = it.offenderBooking.bookingId
+        bookingId = it.offenderBooking.bookingId,
       )
       keyDateAdjustmentRepository.deleteById(adjustmentId)
       telemetryClient.trackEvent(
@@ -236,12 +236,12 @@ class SentencingAdjustmentService(
           "adjustmentId" to adjustmentId.toString(),
           "adjustmentType" to it.sentenceAdjustment.id,
         ),
-        null
+        null,
       )
     } ?: telemetryClient.trackEvent(
       "key-date-adjustment-delete-not-found",
       mapOf("adjustmentId" to adjustmentId.toString()),
-      null
+      null,
     )
   }
 
@@ -250,7 +250,7 @@ class SentencingAdjustmentService(
     return keyDateAdjustmentRepository.adjustmentIdsQuery_named(
       fromDate = adjustmentFilter.fromDate,
       toDate = adjustedToDate,
-      pageRequest
+      pageRequest,
     )
   }
 }

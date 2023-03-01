@@ -12,7 +12,7 @@ class IncentiveSpecification(private val filter: IncentiveFilter) : Specificatio
   override fun toPredicate(
     root: Root<Incentive>,
     query: CriteriaQuery<*>,
-    criteriaBuilder: CriteriaBuilder
+    criteriaBuilder: CriteriaBuilder,
   ): Predicate? {
     val predicates = mutableListOf<Predicate>()
 

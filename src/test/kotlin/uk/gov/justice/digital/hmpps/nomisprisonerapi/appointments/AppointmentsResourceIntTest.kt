@@ -34,11 +34,11 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
   internal fun createPrisoner() {
     offenderAtMoorlands = repository.save(
       OffenderBuilder(nomsId = "A1234TT")
-        .withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))
+        .withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)),
     )
     offenderAtOtherPrison = repository.save(
       OffenderBuilder(nomsId = "A1234TU")
-        .withBooking(OffenderBookingBuilder(agencyLocationId = "LEI"))
+        .withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")),
     )
   }
 
@@ -192,7 +192,6 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create appointment with correct details`() {
-
       val id = callCreateEndpoint()
 
       // Check the database

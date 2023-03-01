@@ -20,7 +20,7 @@ interface VisitCustomRepository {
 @Repository
 class VisitCustomRepositoryImpl(
   @PersistenceContext
-  private val entityManager: EntityManager
+  private val entityManager: EntityManager,
 ) : VisitCustomRepository {
 
   override fun findRoomUsageWithFilter(filter: VisitFilter): List<VisitRoomCountResponse> {
@@ -39,11 +39,11 @@ class VisitCustomRepositoryImpl(
     criteriaQuery.multiselect(
       roomDescriptionExpression,
       criteriaBuilder.count(root),
-      prisonIdExpression
+      prisonIdExpression,
     ).where(toPredicate).groupBy(roomDescriptionExpression, prisonIdExpression).orderBy(
       criteriaBuilder.asc(
-        roomDescriptionExpression
-      )
+        roomDescriptionExpression,
+      ),
     )
     return entityManager.createQuery(criteriaQuery).resultList
   }

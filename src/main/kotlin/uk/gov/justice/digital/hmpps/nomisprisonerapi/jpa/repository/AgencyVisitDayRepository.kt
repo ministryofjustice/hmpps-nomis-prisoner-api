@@ -11,6 +11,6 @@ interface AgencyVisitDayRepository :
 
   fun findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(
     weekDay: String,
-    locationId: String
+    locationId: String,
   ): AgencyVisitDay?
 }

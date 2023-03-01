@@ -69,7 +69,7 @@ class VisitRepositoryTest {
   fun saveVisit() {
     val seedOffenderBooking = builderRepository.save(
       OffenderBuilder()
-        .withBooking(OffenderBookingBuilder().withVisitBalance())
+        .withBooking(OffenderBookingBuilder().withVisitBalance()),
     ).bookings.first()
 
     val seedPerson1 = builderRepository.save(PersonBuilder())
@@ -95,16 +95,16 @@ class VisitRepositoryTest {
         visit = visit,
         person = seedPerson1,
         assistedVisit = true,
-        groupLeader = true
-      )
+        groupLeader = true,
+      ),
     )
     visit.visitors.add(
       VisitVisitor(
         offenderBooking = seedOffenderBooking,
         visit = visit,
         person = seedPerson2,
-        eventId = visitVisitorRepository.getEventId()
-      )
+        eventId = visitVisitorRepository.getEventId(),
+      ),
     )
 
     repository.save(visit)
@@ -142,10 +142,10 @@ class VisitRepositoryTest {
           OffenderBookingBuilder().withVisitBalance(
             VisitBalanceBuilder(
               remainingPrivilegedVisitOrders = 2,
-              remainingVisitOrders = 25
-            )
-          )
-        )
+              remainingVisitOrders = 25,
+            ),
+          ),
+        ),
     ).bookings.first()
     val seedBalance = seedOffenderBooking.visitBalance ?: throw IllegalStateException("No visit balance")
     assertThat(seedBalance.remainingVisitOrders).isEqualTo(25)
@@ -162,7 +162,7 @@ class VisitRepositoryTest {
         commentText = "test comment",
         authorisedStaffId = 123L,
         endorsedStaffId = 123L,
-      )
+      ),
     )
     entityManager.flush()
 

@@ -24,7 +24,7 @@ data class OffenderVisitBalanceAdjustment(
   @SequenceGenerator(
     name = "OFFENDER_VISIT_BALANCE_ADJ_ID",
     sequenceName = "OFFENDER_VISIT_BALANCE_ADJ_ID",
-    allocationSize = 1
+    allocationSize = 1,
   )
   @GeneratedValue(generator = "OFFENDER_VISIT_BALANCE_ADJ_ID")
   @Id
@@ -54,16 +54,16 @@ data class OffenderVisitBalanceAdjustment(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + VisitOrderAdjustmentReason.VISIT_ORDER_ADJUSTMENT + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
           name = "ADJUST_REASON_CODE",
           referencedColumnName = "code",
-          nullable = true
-        )
-      )
-    ]
+          nullable = true,
+        ),
+      ),
+    ],
   )
   val adjustReasonCode: VisitOrderAdjustmentReason? = null,
 
@@ -88,7 +88,7 @@ data class OffenderVisitBalanceAdjustment(
 
   @Column(name = "EXPIRY_STATUS")
   @Size(max = 3)
-  val expiryStatus: String? = null
+  val expiryStatus: String? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {

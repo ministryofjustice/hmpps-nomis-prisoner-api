@@ -35,13 +35,12 @@ class AppointmentService(
             "bookingId" to it.offenderBooking.bookingId.toString(),
             "location" to it.internalLocation?.locationId.toString(),
           ),
-          null
+          null,
         )
       }
       .let { CreateAppointmentResponse(offenderIndividualScheduleRepository.save(it).eventId) }
 
   private fun mapModel(dto: CreateAppointmentRequest): OffenderIndividualSchedule {
-
     val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)
       ?: throw BadDataException("Booking with id=${dto.bookingId} not found")
 
@@ -77,7 +76,7 @@ class AppointmentService(
       locationId = locationId,
       date = date.toLocalDate(),
       hour = date.hour,
-      minute = date.minute
+      minute = date.minute,
     )?.let {
       return mapModel(it)
     }

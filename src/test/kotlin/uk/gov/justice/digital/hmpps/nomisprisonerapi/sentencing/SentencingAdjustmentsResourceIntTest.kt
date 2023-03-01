@@ -41,8 +41,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       OffenderBuilder(nomsId = "A1234TT")
         .withBooking(
           OffenderBookingBuilder()
-            .withSentences(SentenceBuilder())
-        )
+            .withSentences(SentenceBuilder()),
+        ),
     )
     bookingId = prisoner.bookings.first().bookingId
   }
@@ -64,8 +64,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder())
-          )
+              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
+          ),
       )
       adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
     }
@@ -181,8 +181,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "LAL",
               "adjustmentFromDate": "2023-01-01"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -203,8 +203,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "BANANAS",
               "adjustmentFromDate": "2023-01-01"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -225,8 +225,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "RX",
               "adjustmentFromDate": "2023-01-01"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -246,8 +246,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentFromDate": "2023-01-01"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -271,8 +271,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "LAL",
               "adjustmentFromDate": "2023-01-01"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -311,8 +311,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "comment": "a comment",
               "active": false
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -336,7 +336,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
         verify(spRepository).postKeyDateAdjustmentUpsert(
           eq(adjustmentId),
-          eq(bookingId)
+          eq(bookingId),
         )
       }
 
@@ -346,7 +346,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest())
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest()),
           )
           .exchange()
           .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -360,7 +360,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", "A1234TT")
             assertThat(it).containsEntry("adjustmentType", "ADA")
           },
-          isNull()
+          isNull(),
         )
       }
 
@@ -370,7 +370,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest())
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest()),
           )
           .exchange()
           .expectStatus().isCreated
@@ -401,8 +401,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1239TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder())
-          )
+              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
+          ),
       )
       bookingId = anotherPrisoner.bookings.first().bookingId
       adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
@@ -471,8 +471,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "RX",
               "adjustmentFromDate": "2023-01-02"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -493,8 +493,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "BANANAS",
               "adjustmentFromDate": "2023-01-02"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -515,8 +515,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "RX",
               "adjustmentFromDate": "2023-01-02"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -536,8 +536,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentFromDate": "2023-01-02"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -561,8 +561,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentTypeCode": "ADA",
               "adjustmentFromDate": "2023-01-02"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isOk
@@ -600,8 +600,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "comment": "12 days",
               "active": false
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isOk
@@ -629,14 +629,14 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest())
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()),
           )
           .exchange()
           .expectStatus().isOk
 
         verify(spRepository).postKeyDateAdjustmentUpsert(
           eq(adjustmentId),
-          eq(bookingId)
+          eq(bookingId),
         )
       }
 
@@ -646,7 +646,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest())
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()),
           )
           .exchange()
           .expectStatus().isOk
@@ -660,7 +660,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest())
+            BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()),
           )
           .exchange()
           .expectStatus().isOk
@@ -673,7 +673,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", "A1239TX")
             assertThat(it).containsEntry("adjustmentType", "ADA")
           },
-          isNull()
+          isNull(),
         )
       }
     }
@@ -700,8 +700,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1239TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder())
-          )
+              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
+          ),
       )
       adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
       bookingId = anotherPrisoner.bookings.first().bookingId
@@ -755,7 +755,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         check {
           assertThat(it).containsEntry("adjustmentId", "9999")
         },
-        isNull()
+        isNull(),
       )
     }
 
@@ -792,7 +792,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           assertThat(it).containsEntry("offenderNo", "A1239TX")
           assertThat(it).containsEntry("adjustmentType", "ADA")
         },
-        isNull()
+        isNull(),
       )
     }
 
@@ -805,7 +805,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       verify(spRepository).preKeyDateAdjustmentDeletion(
         eq(adjustmentId),
-        eq(bookingId)
+        eq(bookingId),
       )
     }
 
@@ -834,8 +834,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1238TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder())
-          )
+              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
+          ),
       )
       // hack to create a key-date adjustment so I have a valid ID for the next adjustment
       val keyDateAdjustmentId = dummyPrisoner.bookings.first().keyDateAdjustments.first().id
@@ -846,9 +846,9 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             OffenderBookingBuilder()
               .withSentences(
                 SentenceBuilder().withAdjustment(),
-                SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(kayDateAdjustmentId = keyDateAdjustmentId))
-              )
-          )
+                SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(kayDateAdjustmentId = keyDateAdjustmentId)),
+              ),
+          ),
       )
       adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
       keydateRelatedAdjustmentId = anotherPrisoner.bookings.first().sentences.last().adjustments.first().id
@@ -904,6 +904,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(adjustmentId)
         .jsonPath("hiddenFromUsers").isEqualTo(false)
     }
+
     @Test
     internal fun `adjustment has hidden flag set when related to a key date adjustment`() {
       webTestClient.get().uri("/sentence-adjustments/$keydateRelatedAdjustmentId")
@@ -988,8 +989,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               {
               "adjustmentTypeCode": "RX"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1009,8 +1010,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentTypeCode": "BANANAS"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1030,8 +1031,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentTypeCode": "ADA"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1050,8 +1051,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               {
               "adjustmentDays": 10
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1074,8 +1075,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentTypeCode": "RX"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -1115,8 +1116,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "comment": "Remand for 10 days",
               "active": false
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -1146,7 +1147,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicSentenceAdjustmentRequest())
+            BodyInserters.fromValue(createBasicSentenceAdjustmentRequest()),
           )
           .exchange()
           .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -1161,7 +1162,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", "A1234TT")
             assertThat(it).containsEntry("adjustmentType", "RX")
           },
-          isNull()
+          isNull(),
         )
       }
 
@@ -1171,7 +1172,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicSentenceAdjustmentRequest())
+            BodyInserters.fromValue(createBasicSentenceAdjustmentRequest()),
           )
           .exchange()
           .expectStatus().isCreated
@@ -1191,8 +1192,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           OffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
-                .withSentences(SentenceBuilder(), SentenceBuilder().withAdjustment())
-            )
+                .withSentences(SentenceBuilder(), SentenceBuilder().withAdjustment()),
+            ),
         )
         anotherBookingId = anotherPrisoner.bookings.first().bookingId
       }
@@ -1215,8 +1216,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
                 "adjustmentDays": 10,
                 "adjustmentTypeCode": "RX"
                 }
-                """
-              )
+                """,
+              ),
             )
             .exchange()
             .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -1257,8 +1258,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
                 "comment": "Remand for 2 days",
                 "active": false
                 }
-                """
-              )
+                """,
+              ),
             )
             .exchange()
             .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
@@ -1304,8 +1305,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1239TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withSentences(SentenceBuilder().withAdjustment())
-          )
+              .withSentences(SentenceBuilder().withAdjustment()),
+          ),
       )
       bookingId = anotherPrisoner.bookings.first().bookingId
       sentenceAdjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
@@ -1373,8 +1374,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               {
               "adjustmentTypeCode": "RX"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1394,8 +1395,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentTypeCode": "BANANAS"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1415,8 +1416,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentTypeCode": "ADA"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1435,8 +1436,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               {
               "adjustmentDays": 10
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isBadRequest
@@ -1459,8 +1460,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 10,
               "adjustmentTypeCode": "RX"
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isOk
@@ -1499,8 +1500,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "comment": "12 days",
               "active": false
               }
-              """
-            )
+              """,
+            ),
           )
           .exchange()
           .expectStatus().isOk
@@ -1529,7 +1530,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest())
+            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()),
           )
           .exchange()
           .expectStatus().isOk
@@ -1543,7 +1544,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", "A1239TX")
             assertThat(it).containsEntry("adjustmentType", "RX")
           },
-          isNull()
+          isNull(),
         )
       }
 
@@ -1553,7 +1554,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest())
+            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()),
           )
           .exchange()
           .expectStatus().isOk
@@ -1583,8 +1584,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withSentences(SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(adjustmentTypeCode = "UR")))
-          )
+              .withSentences(SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(adjustmentTypeCode = "UR"))),
+          ),
       )
       adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
       bookingId = anotherPrisoner.bookings.first().bookingId
@@ -1638,7 +1639,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         check {
           assertThat(it).containsEntry("adjustmentId", "9999")
         },
-        isNull()
+        isNull(),
       )
     }
 
@@ -1676,7 +1677,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           assertThat(it).containsEntry("offenderNo", "A1234TX")
           assertThat(it).containsEntry("adjustmentType", "UR")
         },
-        isNull()
+        isNull(),
       )
     }
 
@@ -1705,24 +1706,24 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               .withSentences(
                 SentenceBuilder().withAdjustments(
                   SentenceAdjustmentBuilder(
-                    createdDate = LocalDateTime.of(2023, 1, 1, 13, 30)
+                    createdDate = LocalDateTime.of(2023, 1, 1, 13, 30),
                   ),
                   SentenceAdjustmentBuilder(
-                    createdDate = LocalDateTime.of(2023, 1, 5, 13, 30)
+                    createdDate = LocalDateTime.of(2023, 1, 5, 13, 30),
                   ),
                   SentenceAdjustmentBuilder(
-                    createdDate = LocalDateTime.of(2023, 1, 10, 13, 30)
-                  )
-                )
+                    createdDate = LocalDateTime.of(2023, 1, 10, 13, 30),
+                  ),
+                ),
               )
               .withKeyDateAdjustments(
                 KeyDateAdjustmentBuilder(createdDate = LocalDateTime.of(2023, 1, 2, 13, 30)),
 
                 KeyDateAdjustmentBuilder(createdDate = LocalDateTime.of(2023, 1, 3, 13, 30)),
 
-                KeyDateAdjustmentBuilder(createdDate = LocalDateTime.of(2023, 1, 15, 13, 30))
-              )
-          )
+                KeyDateAdjustmentBuilder(createdDate = LocalDateTime.of(2023, 1, 15, 13, 30)),
+              ),
+          ),
       )
     }
 

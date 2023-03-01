@@ -87,7 +87,7 @@ class CourseActivityBuilder(
 
   fun create(
     programCode: String = "CA",
-    internalLocationCode: String? = "CRM1"
+    internalLocationCode: String? = "CRM1",
   ): CourseActivity =
     CourseActivity(
       code = code,
@@ -119,6 +119,6 @@ class CourseActivityBuilder(
     locationType = "CLAS",
     agencyId = prisonId,
     description = "Classroom 1",
-    locationCode = code
+    locationCode = code,
   )
 }

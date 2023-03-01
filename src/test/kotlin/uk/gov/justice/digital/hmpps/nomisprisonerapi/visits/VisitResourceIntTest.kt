@@ -84,15 +84,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
     threePeople.addAll(
       (1..3).map {
         repository.save(PersonBuilder())
-      }
+      },
     )
     offenderAtMoorlands = repository.save(
       OffenderBuilder()
         .withBooking(
           OffenderBookingBuilder()
             .withVisitBalance()
-            .withContacts(*threePeople.map { OffenderContactBuilder(it) }.toTypedArray())
-        )
+            .withContacts(*threePeople.map { OffenderContactBuilder(it) }.toTypedArray()),
+        ),
     )
 
     offenderNo = offenderAtMoorlands.nomsId
@@ -193,8 +193,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
             "room"              : "Main visit room",
             "openClosedStatus"  : "OPEN"
-          }"""
-          )
+          }""",
+          ),
         )
         .exchange()
         .expectStatus().isCreated
@@ -237,8 +237,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
             "room"              : "Main visit room",
             "openClosedStatus"  : "OPEN"
-          }"""
-          )
+          }""",
+          ),
         )
         .exchange()
         .expectStatus().isCreated
@@ -273,8 +273,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
             "room"              : "Main visit room",
             "openClosedStatus"  : "OPEN"
-          }"""
-          )
+          }""",
+          ),
         )
         .exchange()
         .expectStatus().isCreated
@@ -316,8 +316,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
             "room"              : "Main visit room",
             "openClosedStatus"  : "OPEN"
-          }"""
-          )
+          }""",
+          ),
         )
         .exchange()
         .expectStatus().isCreated
@@ -354,8 +354,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
 
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
@@ -366,8 +366,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-11T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visitForFollowingWeek.agencyVisitSlot!!.id }
@@ -377,8 +377,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-12T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitForNextDay.agencyVisitSlot!!.id }
@@ -393,8 +393,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
 
         assertThat(visit.agencyInternalLocation!!.description).isEqualTo("$prisonId-VSIP-MAIN-SOC")
@@ -406,8 +406,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "CLOSED"
-          )
+            openClosedStatus = "CLOSED",
+          ),
         )
         assertThat(visitInDifferentRestrictionRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VSIP-MAIN-CLO")
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
@@ -418,8 +418,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
             room = "Big blue room",
-            openClosedStatus = "CLOSED"
-          )
+            openClosedStatus = "CLOSED",
+          ),
         )
         assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VSIP-BIG-BLUE-CLO")
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(3)
@@ -435,8 +435,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
 
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
@@ -447,8 +447,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "14:30",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visitThatEndAtDifferentTime.agencyVisitSlot!!.id }
@@ -463,8 +463,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
 
         assertThat(repository.findAllAgencyVisitTimes(prisonId)).hasSize(1)
@@ -475,8 +475,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2021-11-04T14:00",
             endTime = "14:30",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
         assertThat(repository.findAllAgencyVisitTimes(prisonId)).hasSize(1)
           .anyMatch { it.agencyVisitTimesId == visitThatEndAtDifferentTime.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId }
@@ -491,8 +491,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2022-08-01T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
 
         assertThat(repository.findAllAgencyVisitDays("MON", prisonId))
@@ -505,8 +505,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2022-08-08T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
         assertThat(repository.findAllAgencyVisitDays("MON", prisonId))
           .isNotNull
@@ -518,14 +518,14 @@ class VisitResourceIntTest : IntegrationTestBase() {
             startDateTime = "2022-08-09T14:00",
             endTime = "16:00",
             room = "Main visit room",
-            openClosedStatus = "OPEN"
-          )
+            openClosedStatus = "OPEN",
+          ),
         )
         assertThat(
           repository.findAllAgencyVisitDays(
             "TUE",
-            prisonId
-          )
+            prisonId,
+          ),
         )
           .isNotNull
           .matches { it!!.agencyVisitDayId.weekDay == visitForNextDay.agencyVisitSlot!!.weekDay }
@@ -551,8 +551,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
                   "room"              : "$room",
                   "openClosedStatus"  : "$openClosedStatus"
-                }"""
-        )
+                }""",
+        ),
       )
       .exchange()
       .expectStatus().isCreated
@@ -584,8 +584,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
           BodyInserters.fromValue(
             """{
             "outcome" : "VISCANC"
-          }"""
-          )
+          }""",
+          ),
         )
         .exchange()
         .expectStatus().isOk
@@ -623,12 +623,12 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue("""{ "outcome" : "VISCANC" }""")
+            BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""),
           )
           .exchange()
           .expectStatus().isNotFound
           .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody?.userMessage
+          .returnResult().responseBody?.userMessage,
       ).isEqualTo("Not Found: Nomis visit id 9999 not found")
     }
 
@@ -644,7 +644,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
           .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody?.userMessage
+          .returnResult().responseBody?.userMessage,
       ).isEqualTo("Bad request: Invalid cancellation reason: NOT-A-CANC-REASON")
     }
 
@@ -667,7 +667,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isEqualTo(409)
           .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody?.userMessage
+          .returnResult().responseBody?.userMessage,
       ).isEqualTo("Visit already cancelled, with outcome VISCANC")
 
       repository.changeVisitStatus(visitId)
@@ -680,7 +680,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isEqualTo(409)
           .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody?.userMessage
+          .returnResult().responseBody?.userMessage,
       ).isEqualTo("Visit status is not scheduled but is NORM")
     }
 
@@ -696,7 +696,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
           .expectBody(ErrorResponse::class.java)
-          .returnResult().responseBody?.userMessage
+          .returnResult().responseBody?.userMessage,
       ).isEqualTo("Bad request: Visit's offenderNo = A5194DY does not match argument = B1234BB")
     }
   }
@@ -775,8 +775,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
           OffenderBuilder(nomsId = "A9999AA")
             .withBooking(
               OffenderBookingBuilder()
-                .withVisitBalance()
-            )
+                .withVisitBalance(),
+            ),
         )
       }
 
@@ -816,9 +816,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
                 .withVisitBalance()
                 .withContacts(
                   *listOf(johnSmith, neoAyomide, KashfAbidi).map { OffenderContactBuilder(it) }
-                    .toTypedArray()
-                )
-            )
+                    .toTypedArray(),
+                ),
+            ),
         )
 
         existingVisitId = createVisit(
@@ -832,7 +832,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             issueDate = LocalDate.parse("2021-11-02"),
             room = "Main visit room",
             openClosedStatus = "OPEN",
-          )
+          ),
         )!!
 
         updateRequest = UpdateVisitRequest(
@@ -855,7 +855,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .body(
-            BodyInserters.fromValue(updateRequest.copy(visitorPersonIds = listOf(neoAyomide.id, KashfAbidi.id)))
+            BodyInserters.fromValue(updateRequest.copy(visitorPersonIds = listOf(neoAyomide.id, KashfAbidi.id))),
           )
           .exchange()
           .expectStatus().isOk
@@ -876,7 +876,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .body(
-            BodyInserters.fromValue(updateRequest.copy(room = "Another room", openClosedStatus = "OPEN"))
+            BodyInserters.fromValue(updateRequest.copy(room = "Another room", openClosedStatus = "OPEN")),
           )
           .exchange()
           .expectStatus().isOk
@@ -893,8 +893,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
         val visits = jdbcTemplate.query(
           """SELECT * FROM V_OFFENDER_VISITS 
             |JOIN AGENCY_INTERNAL_LOCATIONS location ON VISIT_INTERNAL_LOCATION_ID = location.INTERNAL_LOCATION_ID 
-            |WHERE OFFENDER_ID_DISPLAY = '${offenderWithVisit.nomsId}'""".trimMargin(),
-          ColumnMapRowMapper()
+            |WHERE OFFENDER_ID_DISPLAY = '${offenderWithVisit.nomsId}'
+          """.trimMargin(),
+          ColumnMapRowMapper(),
         )
 
         assertThat(visits).hasSize(1)
@@ -906,7 +907,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .body(
-            BodyInserters.fromValue(updateRequest.copy(openClosedStatus = "CLOSED"))
+            BodyInserters.fromValue(updateRequest.copy(openClosedStatus = "CLOSED")),
           )
           .exchange()
           .expectStatus().isOk
@@ -926,7 +927,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .body(
-            BodyInserters.fromValue(updateRequest.copy(LocalDateTime.parse("2021-11-05T14:00"), LocalTime.parse("15:30")))
+            BodyInserters.fromValue(updateRequest.copy(LocalDateTime.parse("2021-11-05T14:00"), LocalTime.parse("15:30"))),
           )
           .exchange()
           .expectStatus().isOk
@@ -943,8 +944,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         val visits = jdbcTemplate.query(
           """SELECT * FROM V_OFFENDER_VISITS 
-            |WHERE OFFENDER_ID_DISPLAY = '${offenderWithVisit.nomsId}'""".trimMargin(),
-          ColumnMapRowMapper()
+            |WHERE OFFENDER_ID_DISPLAY = '${offenderWithVisit.nomsId}'
+          """.trimMargin(),
+          ColumnMapRowMapper(),
         )
 
         assertThat(visits).hasSize(1)
@@ -983,10 +985,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
                 .withVisits(
                   VisitBuilder().withVisitors(
                     VisitVisitorBuilder(person1, leadVisitor = false),
-                    VisitVisitorBuilder(person2, leadVisitor = false)
-                  )
-                )
-            )
+                    VisitVisitorBuilder(person2, leadVisitor = false),
+                  ),
+                ),
+            ),
         )
 
         offenderNo = offenderAtMoorlands.nomsId
@@ -1022,7 +1024,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.whenCreated).isNotNull()
         assertThat(visit.visitors).extracting("leadVisitor")
           .containsExactly(
-            false, false
+            false,
+            false,
           )
       }
 
@@ -1034,7 +1037,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isNotFound
             .expectBody(ErrorResponse::class.java)
-            .returnResult().responseBody?.userMessage
+            .returnResult().responseBody?.userMessage,
         ).isEqualTo("Not Found: visit id 123")
       }
 
@@ -1045,7 +1048,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           webTestClient.get().uri("/visits/$visitId")
             .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
             .exchange()
-            .expectStatus().isForbidden
+            .expectStatus().isForbidden,
         )
       }
 
@@ -1055,7 +1058,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(
           webTestClient.get().uri("/visits/$visitId")
             .exchange()
-            .expectStatus().isUnauthorized
+            .expectStatus().isUnauthorized,
         )
       }
     }
@@ -1072,9 +1075,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
             lastName = "Dupont",
             phoneNumbers = listOf(Triple("HOME", "01145551234", "ext456"), Triple("MOB", "07973555123", null)),
             addressBuilders = listOf(
-              PersonAddressBuilder(phoneNumbers = listOf(Triple("HOME", "01145559999", null)))
-            )
-          )
+              PersonAddressBuilder(phoneNumbers = listOf(Triple("HOME", "01145559999", null))),
+            ),
+          ),
         )
 
         offenderAtMoorlands = repository.save(
@@ -1083,10 +1086,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
               OffenderBookingBuilder()
                 .withVisits(
                   VisitBuilder().withVisitors(
-                    VisitVisitorBuilder(leadVisitor, leadVisitor = true)
-                  )
-                )
-            )
+                    VisitVisitorBuilder(leadVisitor, leadVisitor = true),
+                  ),
+                ),
+            ),
         )
 
         offenderNo = offenderAtMoorlands.nomsId
@@ -1113,11 +1116,11 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.leadVisitor?.telephones).containsExactlyInAnyOrder(
           "01145551234 ext456",
           "07973555123",
-          "01145559999"
+          "01145559999",
         )
         assertThat(visit.visitors).extracting("leadVisitor")
           .containsExactly(
-            true
+            true,
           )
       }
     }
@@ -1132,7 +1135,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           PersonBuilder(
             firstName = "Manon",
             lastName = "Dupont",
-          )
+          ),
         )
 
         offenderAtMoorlands = repository.save(
@@ -1142,9 +1145,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
                 .withVisits(
                   VisitBuilder()
                     .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
-                    .withVisitOutcome("REFUSED")
-                )
-            )
+                    .withVisitOutcome("REFUSED"),
+                ),
+            ),
         )
 
         offenderNo = offenderAtMoorlands.nomsId
@@ -1171,8 +1174,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.visitOutcome).isEqualTo(
           CodeDescription(
             code = "REFUSED",
-            description = "Offender Refused Visit"
-          )
+            description = "Offender Refused Visit",
+          ),
         )
       }
     }
@@ -1187,7 +1190,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           PersonBuilder(
             firstName = "Manon",
             lastName = "Dupont",
-          )
+          ),
         )
 
         offenderAtMoorlands = repository.save(
@@ -1197,9 +1200,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
                 .withVisits(
                   VisitBuilder()
                     .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
-                    .withVisitOutcome("BATCH_CANC")
-                )
-            )
+                    .withVisitOutcome("BATCH_CANC"),
+                ),
+            ),
         )
 
         offenderNo = offenderAtMoorlands.nomsId
@@ -1226,8 +1229,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.visitOutcome).isEqualTo(
           CodeDescription(
             code = "BATCH_CANC",
-            description = "BATCH_CANC"
-          )
+            description = "BATCH_CANC",
+          ),
         )
       }
     }
@@ -1248,10 +1251,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
                 VisitBuilder(
                   agyLocId = "MDI",
                   startDateTimeString = "2022-01-01T09:00",
-                  endDateTimeString = "2022-01-01T10:00"
+                  endDateTimeString = "2022-01-01T10:00",
                 ).withVisitors(
                   VisitVisitorBuilder(person1),
-                  VisitVisitorBuilder(person2, leadVisitor = true)
+                  VisitVisitorBuilder(person2, leadVisitor = true),
                 ),
                 VisitBuilder(
                   agyLocId = "MDI",
@@ -1259,10 +1262,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   endDateTimeString = "2022-01-01T13:00",
                   agencyInternalLocationDescription = null, // no room specified
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
-              )
-          )
+              ),
+          ),
       )
       offenderAtLeeds = repository.save(
         OffenderBuilder(nomsId = "A4567TT")
@@ -1270,19 +1273,21 @@ class VisitResourceIntTest : IntegrationTestBase() {
             OffenderBookingBuilder(agencyLocationId = "LEI")
               .withVisits(
                 VisitBuilder(
-                  agyLocId = "LEI", startDateTimeString = "2022-01-02T09:00",
-                  endDateTimeString = "2022-01-02T10:00"
+                  agyLocId = "LEI",
+                  startDateTimeString = "2022-01-02T09:00",
+                  endDateTimeString = "2022-01-02T10:00",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 VisitBuilder(
-                  agyLocId = "LEI", startDateTimeString = "2022-01-02T14:00",
-                  endDateTimeString = "2022-01-02T15:00"
+                  agyLocId = "LEI",
+                  startDateTimeString = "2022-01-02T14:00",
+                  endDateTimeString = "2022-01-02T15:00",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
-              )
-          )
+              ),
+          ),
       )
       offenderAtBrixton = repository.save(
         OffenderBuilder(nomsId = "A7897TT")
@@ -1293,33 +1298,33 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   agyLocId = "BXI",
                   startDateTimeString = "2022-01-01T09:00",
                   endDateTimeString = "2022-01-01T10:00",
-                  visitTypeCode = "OFFI"
+                  visitTypeCode = "OFFI",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
                   startDateTimeString = "2023-01-01T09:00",
-                  endDateTimeString = "2023-01-01T10:00"
+                  endDateTimeString = "2023-01-01T10:00",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
                   startDateTimeString = "2023-02-01T09:00",
-                  endDateTimeString = "2023-02-01T10:00"
+                  endDateTimeString = "2023-02-01T10:00",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
                   startDateTimeString = "2023-03-01T09:00",
-                  endDateTimeString = "2023-03-01T10:00"
+                  endDateTimeString = "2023-03-01T10:00",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
-              )
-          )
+              ),
+          ),
       )
       repository.updateCreatedToMatchVisitStart() // hack to allow easier testing of date ranges (CREATED is not updateable via JPA)
     }
@@ -1352,8 +1357,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.numberOfElements").isEqualTo(2)
         .jsonPath("$.content..visitId").value(
           Matchers.contains(
-            *leedsVisitIds
-          )
+            *leedsVisitIds,
+          ),
         )
     }
 
@@ -1374,8 +1379,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.content..visitId").value(
           Matchers.contains(
-            *brixtonVisitIds + leedsVisitIds
-          )
+            *brixtonVisitIds + leedsVisitIds,
+          ),
         )
     }
 
@@ -1388,8 +1393,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.content..visitId").value(
           Matchers.contains(
-            offenderAtBrixton.latestBooking().visits[0].id.toInt()
-          )
+            offenderAtBrixton.latestBooking().visits[0].id.toInt(),
+          ),
         )
     }
 
@@ -1405,7 +1410,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get visits starting within a given date and time range`() {
-
       webTestClient.get().uri {
         it.path("/visits/ids")
           .queryParam("fromDateTime", "2022-01-01T09:00:00")
@@ -1420,14 +1424,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.content..visitId").value(
           Matchers.contains(
             offenderAtBrixton.latestBooking().visits[0].id.toInt(),
-            offenderAtMoorlands.latestBooking().visits[0].id.toInt()
-          )
+            offenderAtMoorlands.latestBooking().visits[0].id.toInt(),
+          ),
         )
     }
 
     @Test
     fun `get visits starting after a given date and time`() {
-
       webTestClient.get().uri {
         it.path("/visits/ids")
           .queryParam("fromDateTime", "2022-10-01T09:00:00")
@@ -1442,14 +1445,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
           Matchers.contains(
             offenderAtBrixton.latestBooking().visits[1].id.toInt(),
             offenderAtBrixton.latestBooking().visits[2].id.toInt(),
-            offenderAtBrixton.latestBooking().visits[3].id.toInt()
-          )
+            offenderAtBrixton.latestBooking().visits[3].id.toInt(),
+          ),
         )
     }
 
     @Test
     fun `get visits for a prison, in a date range and of type`() {
-
       webTestClient.get().uri {
         it.path("/visits/ids")
           .queryParam("prisonIds", "MDI")
@@ -1465,8 +1467,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.content..visitId").value(
           Matchers.contains(
-            offenderAtMoorlands.latestBooking().visits[0].id.toInt()
-          )
+            offenderAtMoorlands.latestBooking().visits[0].id.toInt(),
+          ),
         )
     }
 
@@ -1511,7 +1513,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `malformed date returns bad request`() {
-
       webTestClient.get().uri {
         it.path("/visits/ids")
           .queryParam("fromDateTime", "202-10-01T09:00:00")
@@ -1528,7 +1529,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri("/visits/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
-          .expectStatus().isForbidden
+          .expectStatus().isForbidden,
       )
     }
 
@@ -1537,7 +1538,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(
         webTestClient.get().uri("/visits/ids")
           .exchange()
-          .expectStatus().isUnauthorized
+          .expectStatus().isUnauthorized,
       )
     }
   }
@@ -1561,10 +1562,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   agencyInternalLocationDescription = "MDI-1-1-001",
                 ).withVisitors(
                   VisitVisitorBuilder(person1),
-                  VisitVisitorBuilder(person2, leadVisitor = true)
+                  VisitVisitorBuilder(person2, leadVisitor = true),
                 ),
-              )
-          )
+              ),
+          ),
       )
       offenderAtLeeds = repository.save(
         OffenderBuilder(nomsId = "A4567TT")
@@ -1575,21 +1576,21 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   agyLocId = "LEI",
                   startDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "LEI-VISITS-NEW_SOC_VIS"
+                  agencyInternalLocationDescription = "LEI-VISITS-NEW_SOC_VIS",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 /* bad data - visit booked way in the future */
                 VisitBuilder(
                   agyLocId = "LEI",
                   startDateTimeString = LocalDateTime.of(LocalDate.now().plusYears(24), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().plusYears(24), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "LEI-VISITS-SEG_VIS"
+                  agencyInternalLocationDescription = "LEI-VISITS-SEG_VIS",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
-              )
-          )
+              ),
+          ),
       )
       offenderAtBrixton = repository.save(
         OffenderBuilder(nomsId = "A7897TT")
@@ -1601,36 +1602,36 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(10, 0)).toString(),
                   visitTypeCode = "OFFI",
-                  agencyInternalLocationDescription = "BXI-VISIT"
+                  agencyInternalLocationDescription = "BXI-VISIT",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
                   startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "BXI-VISIT"
+                  agencyInternalLocationDescription = "BXI-VISIT",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
                   startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "BXI-VISIT2"
+                  agencyInternalLocationDescription = "BXI-VISIT2",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
                 VisitBuilder(
                   agyLocId = "BXI",
                   startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(9, 0)).toString(),
                   endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "BXI-VISIT2"
+                  agencyInternalLocationDescription = "BXI-VISIT2",
                 ).withVisitors(
-                  VisitVisitorBuilder(person1)
+                  VisitVisitorBuilder(person1),
                 ),
-              )
-          )
+              ),
+          ),
       )
       repository.updateCreatedToMatchVisitStart() // hack to allow easier testing of date ranges (CREATED is not updateable via JPA)
     }
@@ -1697,7 +1698,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `malformed date returns bad request`() {
-
       webTestClient.get().uri {
         it.path("/visits/rooms/usage-count")
           .queryParam("fromDateTime", "202-10-01T09:00:00")
@@ -1714,7 +1714,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri("/visits/rooms/usage-count")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
-          .expectStatus().isForbidden
+          .expectStatus().isForbidden,
       )
     }
 
@@ -1723,7 +1723,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(
         webTestClient.get().uri("/visits/rooms/usage-count")
           .exchange()
-          .expectStatus().isUnauthorized
+          .expectStatus().isUnauthorized,
       )
     }
   }

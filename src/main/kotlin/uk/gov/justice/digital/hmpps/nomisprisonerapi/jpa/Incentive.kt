@@ -23,7 +23,7 @@ data class IncentiveId(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "IEP_LEVEL_SEQ", nullable = false)
-  val sequence: Long
+  val sequence: Long,
 ) : Serializable
 
 @Entity
@@ -57,11 +57,11 @@ data class Incentive(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + IEPLevel.IEP_LEVEL + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ),
-      JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code"))
-    ]
+      JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code")),
+    ],
   )
   val iepLevel: IEPLevel,
 

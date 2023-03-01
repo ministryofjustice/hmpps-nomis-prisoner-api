@@ -10,7 +10,7 @@ class OffenderBuilder(
   var firstName: String = "LEKAN",
   var birthDate: LocalDate = LocalDate.of(1965, 7, 19),
   var genderCode: String = "M",
-  var bookingBuilders: Array<OffenderBookingBuilder> = Array(1) { OffenderBookingBuilder() }
+  var bookingBuilders: Array<OffenderBookingBuilder> = Array(1) { OffenderBookingBuilder() },
 ) {
   fun build(gender: Gender): Offender =
     Offender(
@@ -19,7 +19,7 @@ class OffenderBuilder(
       firstName = firstName,
       birthDate = birthDate,
       gender = gender,
-      lastNameKey = lastName.uppercase()
+      lastNameKey = lastName.uppercase(),
     )
 
   fun withBooking(vararg bookingBuilder: OffenderBookingBuilder): OffenderBuilder {

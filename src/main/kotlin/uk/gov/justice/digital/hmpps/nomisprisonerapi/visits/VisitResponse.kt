@@ -47,9 +47,9 @@ data class VisitResponse(
       "OFFEND",
       "SCH",
       "VISITOR",
-      "VDE"
+      "VDE",
     ],
-    required = true
+    required = true,
   )
   val visitStatus: CodeDescription,
 
@@ -68,7 +68,7 @@ data class VisitResponse(
       "BATCH_CANC",
       "ADMIN_CANCEL",
     ],
-    required = true
+    required = true,
   )
   val visitOutcome: CodeDescription?,
 
@@ -76,57 +76,57 @@ data class VisitResponse(
   val agencyInternalLocation: CodeDescription? = null,
 
   @Schema(
-    description = "Visit comments"
+    description = "Visit comments",
   )
   val commentText: String? = null,
 
   @Schema(
-    description = "Visitor concerns text"
+    description = "Visitor concerns text",
   )
   val visitorConcernText: String? = null,
 
   @Schema(
-    description = "date and time of creation"
+    description = "date and time of creation",
   )
   val whenCreated: LocalDateTime,
 
   @Schema(
-    description = "date and time of last update"
+    description = "date and time of last update",
   )
   val whenUpdated: LocalDateTime? = null,
 
   @Schema(
-    description = "User id for visit creation"
+    description = "User id for visit creation",
   )
   val createUserId: String,
 
   @Schema(
-    description = "User id for last visit update"
+    description = "User id for last visit update",
   )
   val modifyUserId: String? = null,
 ) {
   data class Visitor(
     @Schema(
-      description = "visitor NOMIS person Id"
+      description = "visitor NOMIS person Id",
     )
     val personId: Long,
     @Schema(
-      description = "Indicates lead visitor for the visit"
+      description = "Indicates lead visitor for the visit",
     )
-    val leadVisitor: Boolean
+    val leadVisitor: Boolean,
   )
 
   data class LeadVisitor(
     @Schema(
-      description = "visitor NOMIS person Id"
+      description = "visitor NOMIS person Id",
     )
     val personId: Long,
     @Schema(
-      description = "full name of visitor"
+      description = "full name of visitor",
     )
     val fullName: String,
     @Schema(
-      description = "Ordered list of telephone numbers for contact with latest first"
+      description = "Ordered list of telephone numbers for contact with latest first",
     )
     val telephones: List<String>,
   )
@@ -142,7 +142,7 @@ data class VisitResponse(
     agencyInternalLocation = visitEntity.agencyInternalLocation?.let {
       CodeDescription(
         it.locationCode,
-        it.description
+        it.description,
       )
     },
     commentText = visitEntity.commentText,
@@ -157,13 +157,13 @@ data class VisitResponse(
         personId = it.id,
         fullName = "${it.firstName} ${it.lastName}",
         telephones = (it.phones + it.addresses.flatMap { address -> address.phones }).sortedByDescending { phone -> phone.lastChanged }
-          .toTelephoneList()
+          .toTelephoneList(),
       )
     },
     modifyUserId = visitEntity.modifyUserId,
     whenUpdated = visitEntity.whenUpdated,
     createUserId = visitEntity.createUserId,
-    whenCreated = visitEntity.whenCreated
+    whenCreated = visitEntity.whenCreated,
   )
 }
 

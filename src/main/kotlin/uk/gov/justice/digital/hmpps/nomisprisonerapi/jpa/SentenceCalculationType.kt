@@ -15,12 +15,12 @@ data class SentenceCalculationTypeId(
   val calculationType: String,
 
   @Column(name = "SENTENCE_CATEGORY", nullable = false)
-  val category: String
+  val category: String,
 ) : Serializable
 
+// Warning: on mandatory fields mapped - just enough to create test entities
 @Entity
 @Table(name = "SENTENCE_CALC_TYPES")
-// Warning: on mandatory fields mapped - just enough to create test entities
 class SentenceCalculationType(
   @EmbeddedId
   val id: SentenceCalculationTypeId,

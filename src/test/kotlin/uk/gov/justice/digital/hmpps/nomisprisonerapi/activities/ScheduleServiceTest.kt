@@ -16,6 +16,7 @@ import java.time.LocalTime
 class ScheduleServiceTest {
 
   private val scheduleService = ScheduleService()
+
   @Nested
   inner class CreateSchedules {
 
@@ -55,8 +56,8 @@ class ScheduleServiceTest {
       fun `should throw if starts after end time`() {
         val request = createActivityRequest.copy(
           schedules = listOf(
-            createSchedulesRequest.copy(startTime = LocalTime.of(9, 1), endTime = LocalTime.of(9, 0))
-          )
+            createSchedulesRequest.copy(startTime = LocalTime.of(9, 1), endTime = LocalTime.of(9, 0)),
+          ),
         )
 
         assertThatThrownBy {
@@ -100,9 +101,9 @@ class ScheduleServiceTest {
             createSchedulesRequest.copy(
               date = LocalDate.of(2022, 11, 2),
               startTime = LocalTime.of(10, 0),
-              endTime = LocalTime.of(13, 0)
-            )
-          )
+              endTime = LocalTime.of(13, 0),
+            ),
+          ),
         )
 
         val newSchedules = scheduleService.mapSchedules(request, courseActivity)
@@ -130,7 +131,7 @@ class ScheduleServiceTest {
             createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 3), startTime = LocalTime.of(11, 59), endTime = LocalTime.of(11, 59)),
             createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 3), startTime = LocalTime.of(16, 59), endTime = LocalTime.of(16, 59)),
             createSchedulesRequest.copy(date = LocalDate.of(2022, 11, 3), startTime = LocalTime.of(23, 59), endTime = LocalTime.of(23, 59)),
-          )
+          ),
         )
 
         val newSchedules = scheduleService.mapSchedules(request, courseActivity)

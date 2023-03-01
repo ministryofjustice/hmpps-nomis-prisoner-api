@@ -115,11 +115,11 @@ data class CourseActivity(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + IEPLevel.IEP_LEVEL + "'",
-          referencedColumnName = "domain"
-        )
+          referencedColumnName = "domain",
+        ),
       ),
-      JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code"))
-    ]
+      JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code")),
+    ],
   )
   val iepLevel: IEPLevel,
 

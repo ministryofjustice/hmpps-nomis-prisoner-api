@@ -68,7 +68,7 @@ class ActivityRepositoryTest {
         iepLevel = seedIep,
         internalLocation = seedRoom,
         payPerSession = PayPerSession.F,
-      )
+      ),
     ).apply {
       payRates.add(
         CourseActivityPayRate(
@@ -82,7 +82,7 @@ class ActivityRepositoryTest {
           iepLevel = seedIep,
           endDate = LocalDate.parse("2022-12-02"),
           halfDayRate = BigDecimal(0.6),
-        )
+        ),
       )
     }
 
@@ -128,12 +128,12 @@ class ActivityRepositoryTest {
         active = true,
         iepLevel = seedIep,
         internalLocation = seedRoom,
-      )
+      ),
     )
 
     val seedOffenderBooking = builderRepository.save(
       OffenderBuilder()
-        .withBooking(OffenderBookingBuilder())
+        .withBooking(OffenderBookingBuilder()),
     ).bookings.first()
 
     offenderProgramProfileRepository.saveAndFlush(
@@ -145,7 +145,7 @@ class ActivityRepositoryTest {
         courseActivity = seedCourseActivity,
         prison = seedPrison,
         endDate = LocalDate.parse("2023-01-11"),
-      )
+      ),
     )
 
     val persistedRecord = offenderProgramProfileRepository.findAll().first()

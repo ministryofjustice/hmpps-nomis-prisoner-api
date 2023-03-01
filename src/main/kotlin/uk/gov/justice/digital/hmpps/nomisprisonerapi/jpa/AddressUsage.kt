@@ -39,18 +39,18 @@ data class AddressUsage(
       JoinColumnOrFormula(
         formula = JoinFormula(
           value = "'" + AddressUsageType.ADDRESS_TYPE + "'",
-          referencedColumnName = "domain"
-        )
-      ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_USAGE", referencedColumnName = "code"))
-    ]
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_USAGE", referencedColumnName = "code")),
+    ],
   )
-  val addressUsageType: AddressUsageType
+  val addressUsageType: AddressUsageType,
 ) {
   data class PK(
     @Column(name = "ADDRESS_ID", updatable = false, insertable = false)
     val id: Long,
 
     @Column(name = "ADDRESS_USAGE", updatable = false, insertable = false)
-    val addressUsage: String
+    val addressUsage: String,
   ) : Serializable
 }

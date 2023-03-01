@@ -13,6 +13,6 @@ interface AgencyVisitSlotRepository : CrudRepository<AgencyVisitSlot, Long> {
   fun findByAgencyInternalLocation_DescriptionAndAgencyVisitTime_StartTimeAndWeekDay(
     roomDescription: String,
     startTime: LocalTime,
-    weekDay: String
+    weekDay: String,
   ): AgencyVisitSlot?
 }

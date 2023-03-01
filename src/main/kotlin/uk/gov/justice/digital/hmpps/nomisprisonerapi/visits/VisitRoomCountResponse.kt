@@ -11,5 +11,5 @@ data class VisitRoomCountResponse(
   @Schema(description = "The room usage count")
   val count: Long,
   @Schema(description = "The prison id")
-  val prisonId: String
+  val prisonId: String,
 )

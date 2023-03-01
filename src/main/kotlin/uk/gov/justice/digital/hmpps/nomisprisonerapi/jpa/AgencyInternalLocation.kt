@@ -57,7 +57,7 @@ data class AgencyInternalLocation(
   val locationCode: String,
 
   @Column(name = "CAPACITY")
-  val capacity: Int? = null
+  val capacity: Int? = null,
 ) {
   val isCell: Boolean
     get() = locationType == "CELL"
