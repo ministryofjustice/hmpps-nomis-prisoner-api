@@ -35,7 +35,7 @@ dependencies {
   testImplementation("org.mockito:mockito-inline:5.1.1")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.12")
   testImplementation("org.springframework.security:spring-security-test")
-  testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.23.1")
+  testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 }
 
 java {
