@@ -9,6 +9,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
 interface VisitVisitorRepository : CrudRepository<VisitVisitor, Long> {
   fun findByVisitId(visitId: Long): List<VisitVisitor>
 
-  @Query(value = "SELECT EVENT_ID.nextval FROM dual", nativeQuery = true)
+  @Query(value = "SELECT EVENT_ID.nextval FROM dual d", nativeQuery = true)
   fun getEventId(): Long
 }
