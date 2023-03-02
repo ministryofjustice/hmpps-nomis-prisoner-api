@@ -29,7 +29,7 @@ class ActivityService(
   fun createActivity(dto: CreateActivityRequest): CreateActivityResponse =
     mapActivityModel(dto)
       .apply { payRates.addAll(payRatesService.mapRates(dto, this)) }
-      .apply { courseSchedules.addAll(scheduleService.mapSchedules(dto, this)) }
+      .apply { courseSchedules.addAll(scheduleService.mapSchedules(dto.schedules, this)) }
       .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(dto, this)) }
       .let { activityRepository.save(it) }
       .also {
@@ -107,8 +107,17 @@ class ActivityService(
     }
   }
 
-  // TODO SDIT-422 implement this service
-  fun updateActivitySchedules(courseActivityId: Long, scheduleRequests: List<SchedulesRequest>) = Unit
+  fun updateActivitySchedules(courseActivityId: Long, scheduleRequests: List<SchedulesRequest>) {
+    activityRepository.findByIdOrNull(courseActivityId)
+      ?.also { courseActivity ->
+        scheduleService.updateSchedules(scheduleRequests, courseActivity)
+          .also { updatedSchedules ->
+            courseActivity.courseSchedules.clear()
+            courseActivity.courseSchedules.addAll(updatedSchedules)
+          }
+      }
+      ?: throw NotFoundException("Activity $courseActivityId not found")
+  }
 
   fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
 }

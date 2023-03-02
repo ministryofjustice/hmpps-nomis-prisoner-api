@@ -5,12 +5,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
+import java.time.LocalDate
 
 @Service
 class ScheduleService {
 
-  fun mapSchedules(request: CreateActivityRequest, courseActivity: CourseActivity): List<CourseSchedule> =
-    request.schedules.map {
+  fun mapSchedules(requests: List<SchedulesRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
+    requests.map {
       validateRequest(it, courseActivity)
 
       CourseSchedule(
@@ -21,6 +22,38 @@ class ScheduleService {
         slotCategory = SlotCategory.of(it.startTime),
       )
     }.toList()
+
+  fun updateSchedules(scheduleRequests: List<SchedulesRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
+    mapSchedules(scheduleRequests, courseActivity)
+      .let { requestedSchedules ->
+        findPastSchedules(requestedSchedules, courseActivity) + findOrAddFutureSchedules(requestedSchedules, courseActivity)
+      }
+
+  private fun findPastSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> =
+    courseActivity.courseSchedules.filterNot { it.isFutureSchedule() }
+      .map { savedSchedule ->
+        requestedSchedules.filterNot { it.isFutureSchedule() }
+          .find { requestedSchedule -> requestedSchedule matches savedSchedule }
+          ?.let { savedSchedule }
+          ?: let { throw BadDataException("Cannot update schedules starting before tomorrow") }
+      }
+      .toList()
+
+  private fun findOrAddFutureSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> =
+    requestedSchedules.filter { it.isFutureSchedule() }
+      .map { requestedSchedule ->
+        courseActivity.courseSchedules.filter { it.isFutureSchedule() }
+          .find { savedSchedule -> requestedSchedule matches savedSchedule }
+          ?: let { requestedSchedule }
+      }
+      .toList()
+
+  private fun CourseSchedule.isFutureSchedule() = scheduleDate > LocalDate.now()
+
+  private infix fun CourseSchedule.matches(other: CourseSchedule) =
+    scheduleDate == other.scheduleDate &&
+      startTime == other.startTime &&
+      endTime == other.endTime
 
   private fun validateRequest(request: SchedulesRequest, courseActivity: CourseActivity) {
     if (request.date < courseActivity.scheduleStartDate) {
