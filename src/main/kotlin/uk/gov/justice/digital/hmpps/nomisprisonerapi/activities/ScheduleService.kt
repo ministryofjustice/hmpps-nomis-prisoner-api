@@ -29,15 +29,22 @@ class ScheduleService {
         findPastSchedules(requestedSchedules, courseActivity) + findOrAddFutureSchedules(requestedSchedules, courseActivity)
       }
 
-  private fun findPastSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> =
-    courseActivity.courseSchedules.filterNot { it.isFutureSchedule() }
-      .map { savedSchedule ->
-        requestedSchedules.filterNot { it.isFutureSchedule() }
-          .find { requestedSchedule -> requestedSchedule matches savedSchedule }
-          ?.let { savedSchedule }
-          ?: let { throw BadDataException("Cannot update schedules starting before tomorrow") }
-      }
+  private fun findPastSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> {
+    val savedPastSchedules = courseActivity.courseSchedules.filterNot { it.isFutureSchedule() }
+    val requestedPastSchedules = requestedSchedules.filterNot { it.isFutureSchedule() }
+
+    if (savedPastSchedules.size != requestedPastSchedules.size) {
+      throw BadDataException("Cannot remove or add schedules starting before tomorrow")
+    }
+
+    return savedPastSchedules.map { savedSchedule ->
+      requestedPastSchedules
+        .find { requestedSchedule -> requestedSchedule matches savedSchedule }
+        ?.let { savedSchedule }
+        ?: let { throw BadDataException("Cannot update schedules starting before tomorrow") }
+    }
       .toList()
+  }
 
   private fun findOrAddFutureSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> =
     requestedSchedules.filter { it.isFutureSchedule() }
