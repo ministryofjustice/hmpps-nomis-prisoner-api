@@ -129,9 +129,9 @@ class ScheduleServiceTest {
     private val today = LocalDate.now()
     private val yesterday = today.minusDays(1)
     private val tomorrow = today.plusDays(1)
-    private val twoDaysTime = tomorrow.plusDays(2)
-    private val threeDaysTime = tomorrow.plusDays(3)
-    private val fourDaysTime = tomorrow.plusDays(4)
+    private val twoDaysTime = today.plusDays(2)
+    private val threeDaysTime = today.plusDays(3)
+    private val fourDaysTime = today.plusDays(4)
 
     private val courseSchedules = listOf(
       CourseScheduleBuilder(scheduleDate = today.toString()),
@@ -176,7 +176,18 @@ class ScheduleServiceTest {
         scheduleService.updateSchedules(request, courseActivity)
       }
         .isInstanceOf(BadDataException::class.java)
-        .hasMessageContaining("Cannot update schedules starting before tomorrow")
+        .hasMessageContaining("Cannot remove or add schedules starting before tomorrow")
+    }
+
+    @Test
+    fun `should throw if adding a schedule before tomorrow`() {
+      val request = listOf(requestTemplate.copy(date = yesterday), requestTemplate, requestTemplate.copy(date = tomorrow))
+
+      assertThatThrownBy {
+        scheduleService.updateSchedules(request, courseActivity)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Cannot remove or add schedules starting before tomorrow")
     }
 
     @Test
