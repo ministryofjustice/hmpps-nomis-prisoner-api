@@ -138,7 +138,7 @@ data class CourseActivity(
   @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderProgramProfiles: MutableList<OffenderProgramProfile> = mutableListOf(),
 
-  @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val courseSchedules: MutableList<CourseSchedule> = mutableListOf(),
 
   @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)

@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
@@ -743,10 +744,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   inner class UpdateSchedules {
 
     private lateinit var courseActivity: CourseActivity
+    private val today = LocalDate.now()
+    private val tomorrow = today.plusDays(1)
 
     private val updateSchedulesJson = """[
         {
-          "date": "2022-11-01",
+          "date": "$tomorrow",
           "startTime": "09:00",
           "endTime": "12:00"
         }
@@ -755,7 +758,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      courseActivity = repository.save(courseActivityBuilderFactory.builder())
+      val schedule = CourseScheduleBuilder(scheduleDate = "$tomorrow")
+      courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = listOf(schedule)))
     }
 
     @Test
@@ -788,8 +792,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `valid request should return OK and call the service`() {
-      webTestClient.put().uri("/activities/1/schedules")
+    fun `valid request should return OK`() {
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedules")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .body(BodyInserters.fromValue(updateSchedulesJson))
@@ -799,7 +803,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid date should return bad request`() {
-      val request = updateSchedulesJson.replace(""""date": "2022-11-01",""", """"date": "2022-13-01",""")
+      val request = updateSchedulesJson.replace(""""date": "$tomorrow",""", """"date": "2022-13-01",""")
 
       webTestClient.put().uri("/activities/1/schedules")
         .contentType(MediaType.APPLICATION_JSON)
@@ -839,6 +843,78 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("25:00")
+        }
+    }
+
+    @Test
+    fun `updates should be saved to the database`() {
+      val schedules = listOf(
+        CourseScheduleBuilder(scheduleDate = today.toString()),
+        CourseScheduleBuilder(scheduleDate = tomorrow.toString()),
+      )
+      courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = schedules))
+      val updateSchedulesJson = """[
+        {
+          "date": "$today",
+          "startTime": "08:00",
+          "endTime": "11:00"
+        },
+        {
+          "date": "$tomorrow",
+          "startTime": "13:00",
+          "endTime": "15:00"
+        }
+    ]
+      """.trimIndent()
+
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateSchedulesJson))
+        .exchange()
+        .expectStatus().isOk
+
+      val saved = repository.lookupActivity(courseActivity.courseActivityId)
+      assertThat(saved.courseSchedules.size).isEqualTo(2)
+      with(saved.courseSchedules[0]) {
+        assertThat(scheduleDate).isEqualTo(today)
+        assertThat(startTime).isEqualTo("${today}T08:00")
+        assertThat(endTime).isEqualTo("${today}T11:00")
+        assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+      }
+      with(saved.courseSchedules[1]) {
+        assertThat(scheduleDate).isEqualTo(tomorrow)
+        assertThat(startTime).isEqualTo("${tomorrow}T13:00:00")
+        assertThat(endTime).isEqualTo("${tomorrow}T15:00:00")
+        assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+      }
+    }
+
+    @Test
+    fun `service validation errors should return bad request`() {
+      val invalidRequest = updateSchedulesJson.replace(""""endTime": "12:00"""", """"endTime": "01:00"""")
+
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(invalidRequest))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Schedule for date $tomorrow has times out of order - 09:00 to 01:00")
+        }
+    }
+
+    @Test
+    fun `missing activity should return not found`() {
+      webTestClient.put().uri("/activities/9999/schedules")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(updateSchedulesJson))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Activity 9999 not found")
         }
     }
   }
