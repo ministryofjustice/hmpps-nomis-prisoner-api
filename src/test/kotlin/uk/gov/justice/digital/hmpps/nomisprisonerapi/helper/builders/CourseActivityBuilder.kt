@@ -14,6 +14,7 @@ class CourseActivityBuilderFactory(
   private val repository: Repository? = null,
 ) {
   fun builder(
+    courseActivityId: Long = 0,
     code: String = "CA",
     programId: Long = 20,
     prisonId: String = "LEI",
@@ -30,6 +31,7 @@ class CourseActivityBuilderFactory(
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
       repository,
+      courseActivityId,
       code,
       programId,
       prisonId,
@@ -49,6 +51,7 @@ class CourseActivityBuilderFactory(
 
 class CourseActivityBuilder(
   val repository: Repository?,
+  val courseActivityId: Long,
   var code: String,
   var programId: Long,
   var prisonId: String,
@@ -90,6 +93,7 @@ class CourseActivityBuilder(
     internalLocationCode: String? = "CRM1",
   ): CourseActivity =
     CourseActivity(
+      courseActivityId = courseActivityId,
       code = code,
       program = programService(programCode),
       caseloadId = prisonId,

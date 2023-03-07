@@ -105,6 +105,15 @@ class ActivityService(
       existingActivity.courseScheduleRules.clear()
       existingActivity.courseScheduleRules.addAll(newRules)
     }
+
+    telemetryClient.trackEvent(
+      "activity-updated",
+      mapOf(
+        "courseActivityId" to existingActivity.courseActivityId.toString(),
+        "prisonId" to existingActivity.prison.id,
+      ),
+      null,
+    )
   }
 
   fun updateActivitySchedules(courseActivityId: Long, scheduleRequests: List<SchedulesRequest>) {
