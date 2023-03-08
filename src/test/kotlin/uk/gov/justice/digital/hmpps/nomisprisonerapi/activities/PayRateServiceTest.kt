@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
@@ -8,11 +7,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
@@ -46,8 +42,11 @@ class PayRateServiceTest {
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
   private val payBandRepository: ReferenceCodeRepository<PayBand> = mock()
-  private val telemetryClient: TelemetryClient = mock()
-  private val payRatesService = PayRatesService(availablePrisonIepLevelRepository, offenderProgramProfileRepository, payBandRepository, telemetryClient)
+  private val payRatesService = PayRatesService(
+    availablePrisonIepLevelRepository,
+    offenderProgramProfileRepository,
+    payBandRepository,
+  )
 
   private val defaultPrison = AgencyLocation(PRISON_ID, PRISON_DESCRIPTION)
   private val defaultProgramService = ProgramService(
@@ -64,6 +63,11 @@ class PayRateServiceTest {
   )
 
   private fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
+
+  private val today = LocalDate.now()
+  private val yesterday = today.minusDays(1)
+  private val tomorrow = today.plusDays(1)
+  private val threeDaysAgo = today.minusDays(3)
 
   @Nested
   internal inner class CreatePayRates {
@@ -149,10 +153,6 @@ class PayRateServiceTest {
   inner class BuildNewPayRates {
     // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2
     private var courseActivity = activityFactory().builder(courseActivityId = 1).create()
-    private val today = LocalDate.now()
-    private val yesterday = today.minusDays(1)
-    private val tomorrow = today.plusDays(1)
-    private val threeDaysAgo = today.minusDays(3)
 
     @BeforeEach
     fun `set up validation mocks`() {
@@ -343,22 +343,6 @@ class PayRateServiceTest {
         assertThat(halfDayRate).isCloseTo(BigDecimal(8.7), within(BigDecimal(0.001)))
         assertThat(endDate).isEqualTo(today)
       }
-
-      // check telemetry published
-      verify(telemetryClient).trackEvent(
-        eq("activity-payRates-updated"),
-        check<MutableMap<String, String>> {
-          assertThat(it).containsExactlyInAnyOrderEntriesOf(
-            mapOf(
-              "courseActivityId" to "1",
-              "activity-payRates-created" to "[STD-6-$tomorrow]",
-              "activity-payRates-updated" to "[STD-5-$tomorrow]",
-              "activity-payRates-expired" to "[STD-7-2022-10-31]",
-            ),
-          )
-        },
-        isNull(),
-      )
     }
 
     @Test
@@ -385,10 +369,6 @@ class PayRateServiceTest {
         .hasMessageContaining("Pay band code A does not exist")
     }
 
-    private fun rateFactory() = CourseActivityPayRateBuilderFactory()
-
-    private fun activityFactory() = CourseActivityBuilderFactory()
-
     private fun MutableList<CourseActivityPayRate>.findRate(
       iepLevelCode: String,
       payBandCode: String,
@@ -396,4 +376,34 @@ class PayRateServiceTest {
     ): CourseActivityPayRate =
       firstOrNull { it.id.iepLevelCode == iepLevelCode && it.id.payBandCode == payBandCode && if (expired) it.endDate != null else it.endDate == null }!!
   }
+
+  @Nested
+  inner class BuildUpdateTelemetry {
+
+    private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
+
+    @Test
+    fun `should publish expiry, creation and update of pay rates`() {
+      val oldRates = listOf(
+        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity),
+        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3).create(courseActivity),
+        rateFactory().builder(payBandCode = "7", halfDayRate = 8.7).create(courseActivity),
+      )
+      val newRates = listOf(
+        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity), // unchanged
+        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.4).create(courseActivity), // updated
+        rateFactory().builder(startDate = tomorrow.toString(), payBandCode = "6", halfDayRate = 5.4).create(courseActivity), // created
+        rateFactory().builder(endDate = today.toString(), payBandCode = "7", halfDayRate = 8.7).create(courseActivity), // expired
+      )
+
+      val telemetry = payRatesService.buildUpdateTelemetry(oldRates, newRates)
+
+      assertThat(telemetry["created-courseActivityPayRateIds"]).isEqualTo("[STD-6-$tomorrow]")
+      assertThat(telemetry["updated-courseActivityPayRateIds"]).isEqualTo("[STD-5-$tomorrow]")
+      assertThat(telemetry["expired-courseActivityPayRateIds"]).isEqualTo("[STD-7-2022-10-31]")
+    }
+  }
+
+  private fun rateFactory() = CourseActivityPayRateBuilderFactory()
+  private fun activityFactory() = CourseActivityBuilderFactory()
 }

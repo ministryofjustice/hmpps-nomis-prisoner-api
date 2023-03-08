@@ -58,6 +58,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var offenderProgramProfilePayBandBuilderFactory: OffenderProgramProfilePayBandBuilderFactory
 
+  private val today = LocalDate.now()
+  private val tomorrow = today.plusDays(1)
+
   @BeforeEach
   fun setup() {
     repository.save(ProgramServiceBuilder())
@@ -431,6 +434,28 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should raise telemetry event`() {
+        val existingActivityId = getSavedActivityId()
+
+        callUpdateEndpoint(
+          courseActivityId = existingActivityId,
+          jsonBody = updateActivityRequestJson(),
+        )
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("activity-updated"),
+          check<MutableMap<String, String>> {
+            assertThat(it["courseActivityId"]).isEqualTo(existingActivityId.toString())
+            assertThat(it["prisonId"]).isEqualTo("LEI")
+            assertThat(it["created-courseActivityPayRateIds"]).isEqualTo("[STD-5-$tomorrow]")
+            assertThat(it["expired-courseActivityPayRateIds"]).isEqualTo("[STD-5-2022-10-31]")
+          },
+          isNull(),
+        )
+      }
+
+      @Test
       fun `should return bad request for unknown data`() {
         val existingActivity =
           repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
@@ -664,9 +689,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if schedule rules updated`() {
         val existingActivityId = getSavedActivityId()
+        val existingRuleId = getSavedRuleId()
 
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = existingActivityId,
           jsonBody = updateActivityRequestJson(
             scheduleRulesJson = """
               "scheduleRules": [{
@@ -692,6 +718,17 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           assertThat(endTime?.toLocalTime()).isEqualTo("12:00")
           assertThat(this.friday).isEqualTo(false)
         }
+
+        verify(telemetryClient).trackEvent(
+          eq("activity-updated"),
+          check<MutableMap<String, String>> {
+            assertThat(it["courseActivityId"]).isEqualTo(existingActivityId.toString())
+            assertThat(it["prisonId"]).isEqualTo("LEI")
+            assertThat(it["removed-courseScheduleRuleIds"]).isEqualTo("[$existingRuleId]")
+            assertThat(it["created-courseScheduleRuleIds"]).isEqualTo("[${updated.courseScheduleRules.first().id}]")
+          },
+          isNull(),
+        )
       }
     }
 
@@ -738,14 +775,18 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private fun getSavedActivityId() =
       repository.activityRepository.findAll().firstOrNull()?.courseActivityId
         ?: throw BadDataException("No activities in database")
+
+    private fun getSavedRuleId() =
+      repository.runInTransaction {
+        repository.activityRepository.findAll().firstOrNull()?.courseScheduleRules?.firstOrNull()?.id
+          ?: throw BadDataException("Could not find course schedule rule in database")
+      }
   }
 
   @Nested
   inner class UpdateSchedules {
 
     private lateinit var courseActivity: CourseActivity
-    private val today = LocalDate.now()
-    private val tomorrow = today.plusDays(1)
 
     private val updateSchedulesJson = """[
         {
