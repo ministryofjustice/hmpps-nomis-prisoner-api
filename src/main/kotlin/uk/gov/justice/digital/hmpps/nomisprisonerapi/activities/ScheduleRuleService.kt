@@ -74,4 +74,14 @@ class ScheduleRuleService {
         it.saturday == requestedRule.saturday &&
         it.sunday == requestedRule.sunday
     }
+
+  fun buildUpdateTelemetry(savedRules: List<CourseScheduleRule>, newRules: List<CourseScheduleRule>): Map<String, String> {
+    val removedRuleIds = savedRules.map { it.id } - newRules.map { it.id }.toSet()
+    val createdRuleIds = newRules.map { it.id } - savedRules.map { it.id }.toSet()
+
+    return mapOf(
+      "removed-courseScheduleRuleIds" to removedRuleIds.toString(),
+      "created-courseScheduleRuleIds" to createdRuleIds.toString(),
+    )
+  }
 }

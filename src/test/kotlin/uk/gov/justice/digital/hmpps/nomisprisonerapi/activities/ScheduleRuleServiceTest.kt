@@ -346,4 +346,28 @@ class ScheduleRuleServiceTest {
       private fun CourseScheduleRule.assertExistingRule() = assertThat(this.id).isGreaterThan(0)
     }
   }
+
+  @Nested
+  inner class BuildUpdateTelemetry {
+
+    private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
+
+    @Test
+    fun `should publish deletions, creation and update of rules`() {
+      val oldRules = listOf(
+        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
+        CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),
+      )
+      val newRules = listOf(
+        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
+        CourseScheduleRuleBuilder(id = 3, startTimeHours = 11).build(courseActivity),
+        CourseScheduleRuleBuilder(id = 4, saturday = false).build(courseActivity = courseActivity),
+      )
+
+      val telemetry = scheduleRuleService.buildUpdateTelemetry(oldRules, newRules)
+
+      assertThat(telemetry["removed-courseScheduleRuleIds"]).isEqualTo("[2]")
+      assertThat(telemetry["created-courseScheduleRuleIds"]).isEqualTo("[3, 4]")
+    }
+  }
 }
