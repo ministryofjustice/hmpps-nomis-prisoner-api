@@ -8,15 +8,18 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
@@ -232,6 +235,25 @@ class ActivityServiceTest {
       assertDoesNotThrow {
         activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(internalLocationId = null))
       }
+    }
+
+    @Test
+    fun `should capture telemetry`() {
+      courseActivity = CourseActivityBuilderFactory().builder(courseActivityId = 1).create()
+      whenever(activityRepository.findById(anyLong())).thenReturn(Optional.of(courseActivity))
+      val newPayRate = CourseActivityPayRateBuilderFactory().builder(halfDayRate = 4.3).create(courseActivity)
+      whenever(payRatesService.buildNewPayRates(anyList(), any())).thenReturn(mutableListOf(newPayRate))
+
+      activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(internalLocationId = null))
+
+      verify(telemetryClient).trackEvent(
+        eq("activity-updated"),
+        check {
+          assertThat(it).containsEntry("courseActivityId", courseActivity.courseActivityId.toString())
+          assertThat(it).containsEntry("prisonId", courseActivity.prison.id)
+        },
+        isNull(),
+      )
     }
   }
 }

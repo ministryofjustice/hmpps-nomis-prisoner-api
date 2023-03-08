@@ -26,35 +26,6 @@ import java.time.LocalDate
 @Entity
 @Table(name = "COURSE_ACTIVITIES")
 data class CourseActivity(
-
-  /* data that new service stores:
-  {
-    "prisonCode": "PVI",
-    "attendanceRequired": false, ----
-    "summary": "Maths level 1", ---
-    "description": "A basic maths course suitable for introduction to the subject",
-    "categoryId": 0,  ---
-    "tierId": 1,      ---
-    "eligibilityRuleIds": [  ---- course_activity_profiles ?
-      1,
-      2,
-      3
-    ],
-    "pay": [ ---
-      {
-        "incentiveLevel": "Basic",
-        "payBand": "A",
-        "rate": 150,
-        "pieceRate": 150,
-        "pieceRateItems": 10
-      }
-    ],
-    "riskLevel": "High", ----
-    "minimumIncentiveLevel": "Basic",
-    "startDate": "2022-12-23",
-    "endDate": "2022-12-23"
-  }
-     */
   @Id
   @SequenceGenerator(name = "CRS_ACTY_ID", sequenceName = "CRS_ACTY_ID", allocationSize = 1)
   @GeneratedValue(generator = "CRS_ACTY_ID")
@@ -168,21 +139,3 @@ data class CourseActivity(
 }
 
 enum class PayPerSession { F, H }
-
-/*
-other cols, All nullable:
-
-EXPIRY_DATE	DATE	                    		7	Date the Course/Activity Date became inactive - Retrofitted
-SERVICES_ADDRESS_ID	NUMBER(10,0)	            		11	The address where the services(course/activity) takes place
-PARENT_CRS_ACTY_ID	NUMBER(10,0)	            		13	The parent of course activity ID
-PROVIDER_PARTY_ID	NUMBER(10,0)	            		16	The party id of the provider
-BENEFICIARY_NAME	VARCHAR2(80 CHAR)	            		18	The name of the beneficiary
-BENEFICIARY_CONTACT	VARCHAR2(80 CHAR)	            		19	The contact details of the beneficiary
-LIST_SEQ	NUMBER(6,0)	                        		20	The order of the listing
-PLACEMENT_CORPORATE_ID	NUMBER(10,0)	            		21	The corporate of the placement
-COMMENT_TEXT	VARCHAR2(240 CHAR)	            		22	The general comment text
-AGENCY_LOCATION_TYPE	VARCHAR2(12 CHAR)	            		23	The agency location type
-PROVIDER_TYPE	VARCHAR2(12 CHAR)	            		24	The Provider Type
-BENEFICIARY_TYPE	VARCHAR2(12 CHAR)	            		25	The beneficiary type.  Reference Code(PS_BENEF)
-PLACEMENT_TEXT	VARCHAR2(240 CHAR)	            		26	The general text of the placement
- */

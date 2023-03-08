@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +20,7 @@ class PayRatesService(
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val payBandRepository: ReferenceCodeRepository<PayBand>,
+  private val telemetryClient: TelemetryClient,
 ) {
 
   fun mapRates(dto: CreateActivityRequest, courseActivity: CourseActivity): MutableList<CourseActivityPayRate> {
@@ -61,6 +63,7 @@ class PayRatesService(
   fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity): MutableList<CourseActivityPayRate> {
     val newPayRates = mutableListOf<CourseActivityPayRate>()
     val existingPayRates = existingActivity.payRates
+    val oldPayRates = existingPayRates.map { it.copy() }.toList()
 
     requestedPayRates.forEach { requestedPayRate ->
       val existingPayRate = existingPayRates.findExistingPayRate(requestedPayRate)
@@ -77,6 +80,8 @@ class PayRatesService(
 
     newPayRates.addAll(existingPayRates.getExpiredPayRates() - newPayRates.toSet())
     newPayRates.addAll(existingPayRates.expirePayRatesIfMissingFrom(newPayRates))
+
+    publishTelemetry(existingActivity.courseActivityId, oldPayRates, newPayRates)
 
     return newPayRates
   }
@@ -152,4 +157,53 @@ class PayRatesService(
       halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate),
     )
   }
+
+  private fun publishTelemetry(
+    courseActivityId: Long,
+    savedPayRates: List<CourseActivityPayRate>,
+    newPayRates: MutableList<CourseActivityPayRate>,
+  ) {
+    val createdIds = findCreatedIds(savedPayRates, newPayRates)
+    val updatedIds = findUpdatedIds(savedPayRates, newPayRates)
+    val expiredIds = findExpiredIds(savedPayRates, newPayRates)
+    telemetryClient.trackEvent(
+      "activity-payRates-updated",
+      mapOf(
+        "courseActivityId" to courseActivityId.toString(),
+        "activity-payRates-created" to createdIds.map { it.toTelemetry() }.toString(),
+        "activity-payRates-updated" to updatedIds.map { it.toTelemetry() }.toString(),
+        "activity-payRates-expired" to expiredIds.map { it.toTelemetry() }.toString(),
+      ),
+      null,
+    )
+  }
+
+  private fun findCreatedIds(
+    savedRates: List<CourseActivityPayRate>,
+    newRates: MutableList<CourseActivityPayRate>,
+  ) = newRates.map { it.id } - savedRates.map { it.id }.toSet()
+
+  private fun findExpiredIds(
+    savedRates: List<CourseActivityPayRate>,
+    newRates: MutableList<CourseActivityPayRate>,
+  ) =
+    savedRates
+      .filter { savedRate -> !savedRate.hasExpiryDate() }
+      .filter { activeSavedRate -> newRates.isNowExpired(activeSavedRate) }
+      .map { it.id }
+
+  private fun List<CourseActivityPayRate>.isNowExpired(savedRate: CourseActivityPayRate) =
+    find { newRate -> newRate.id == savedRate.id && newRate.hasExpiryDate() } != null
+
+  private fun findUpdatedIds(
+    savedRates: List<CourseActivityPayRate>,
+    newRates: MutableList<CourseActivityPayRate>,
+  ) =
+    savedRates
+      .filter { it.hasFutureStartDate() }
+      .filter { savedRateNotYetActive -> newRates.rateHasChanged(savedRateNotYetActive) }
+      .map { it.id }
+
+  private fun List<CourseActivityPayRate>.rateHasChanged(savedRate: CourseActivityPayRate) =
+    find { it.id == savedRate.id && it.halfDayRate.compareTo(savedRate.halfDayRate) != 0 } != null
 }

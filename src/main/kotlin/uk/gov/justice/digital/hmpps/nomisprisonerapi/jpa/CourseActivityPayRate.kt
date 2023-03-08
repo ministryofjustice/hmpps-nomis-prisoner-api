@@ -32,7 +32,10 @@ data class CourseActivityPayRateId(
 
   @Column(nullable = false)
   val startDate: LocalDate,
-) : Serializable
+) : Serializable {
+
+  fun toTelemetry() = "$iepLevelCode-$payBandCode-$startDate"
+}
 
 @Entity
 @Table(name = "COURSE_ACTIVITY_PAY_RATES")

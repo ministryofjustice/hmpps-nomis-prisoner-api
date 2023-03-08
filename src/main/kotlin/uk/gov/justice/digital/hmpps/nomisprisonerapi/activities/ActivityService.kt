@@ -39,7 +39,7 @@ class ActivityService(
             "courseActivityId" to it.courseActivityId.toString(),
             "prisonId" to it.prison.id,
             "courseScheduleIds" to it.courseSchedules.map { schedule -> schedule.courseScheduleId }.toString(),
-            "courseActivityPayRateIds" to it.payRates.map { payRate -> "${payRate.id.iepLevelCode}-${payRate.id.payBandCode}-${payRate.id.startDate}" }.toString(),
+            "courseActivityPayRateIds" to it.payRates.map { payRate -> payRate.id.toTelemetry() }.toString(),
             "courseScheduleRuleIds" to it.courseScheduleRules.map { rule -> rule.id }.toString(),
           ),
           null,
@@ -105,6 +105,15 @@ class ActivityService(
       existingActivity.courseScheduleRules.clear()
       existingActivity.courseScheduleRules.addAll(newRules)
     }
+
+    telemetryClient.trackEvent(
+      "activity-updated",
+      mapOf(
+        "courseActivityId" to existingActivity.courseActivityId.toString(),
+        "prisonId" to existingActivity.prison.id,
+      ),
+      null,
+    )
   }
 
   fun updateActivitySchedules(courseActivityId: Long, scheduleRequests: List<SchedulesRequest>) {
