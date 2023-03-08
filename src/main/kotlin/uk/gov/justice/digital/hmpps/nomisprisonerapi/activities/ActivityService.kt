@@ -94,7 +94,9 @@ class ActivityService(
       }
     }
 
-    // TODO SDI-599 Which fields to update and what to do when they are updated will be picked up on this ticket
+    // TODO SDIT-431 Which fields to update and what to do when they are updated will be picked up on this ticket
+    val oldRules = existingActivity.courseScheduleRules.map { it.copy() }
+    val oldPayRates = existingActivity.payRates.map { it.copy() }
     existingActivity.scheduleEndDate = updateActivityRequest.endDate
     existingActivity.internalLocation = location
     payRatesService.buildNewPayRates(updateActivityRequest.payRates, existingActivity).also { newPayRates ->
@@ -106,12 +108,16 @@ class ActivityService(
       existingActivity.courseScheduleRules.addAll(newRules)
     }
 
+    activityRepository.saveAndFlush(existingActivity)
+
     telemetryClient.trackEvent(
       "activity-updated",
       mapOf(
         "courseActivityId" to existingActivity.courseActivityId.toString(),
         "prisonId" to existingActivity.prison.id,
-      ),
+      ) +
+        scheduleRuleService.buildUpdateTelemetry(oldRules, existingActivity.courseScheduleRules) +
+        payRatesService.buildUpdateTelemetry(oldPayRates, existingActivity.payRates),
       null,
     )
   }
