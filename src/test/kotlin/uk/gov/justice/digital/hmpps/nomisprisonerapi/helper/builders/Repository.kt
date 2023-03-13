@@ -10,12 +10,16 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AttendanceOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
@@ -37,6 +41,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -73,6 +78,9 @@ class Repository(
   val programStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
   val programEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
   val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
+  val attendanceOutcomeRepository: ReferenceCodeRepository<AttendanceOutcome>,
+  val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
+  val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -256,7 +264,19 @@ class Repository(
     courseActivityBuilder.build()
       .let { activityRepository.saveAndFlush(it) }
 
+  fun save(
+    offenderCourseAttendanceBuilder: OffenderCourseAttendanceBuilder,
+    courseSchedule: CourseSchedule,
+    offenderProgramProfile: OffenderProgramProfile,
+  ): OffenderCourseAttendance =
+    offenderCourseAttendanceBuilder.build(courseSchedule, offenderProgramProfile)
+      .let { offenderCourseAttendanceRepository.saveAndFlush(it) }
+
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
+
+  fun lookupAttendanceOutcomeCode(code: String): AttendanceOutcome = attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(code))!!
+
+  fun lookupEventStatusCode(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
 
   fun lookupProgramStatus(code: String): OffenderProgramStatus =
     programStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(code))!!
