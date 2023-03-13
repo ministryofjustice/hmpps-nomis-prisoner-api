@@ -92,8 +92,8 @@ class OffenderCourseAttendance(
   val outTime: LocalDateTime? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "CRS_ACTY_ID", nullable = false)
-  val courseActivity: CourseActivity,
+  @JoinColumn(name = "CRS_ACTY_ID")
+  val courseActivity: CourseActivity? = null,
 
   @Column(nullable = false)
   val eventType: String = "PRISON_ACT",
@@ -108,7 +108,7 @@ class OffenderCourseAttendance(
 
   @Column(name = "UNEXCUSED_ABSENCE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val unexcusedAbsence: Boolean = false,
+  val unexcusedAbsence: Boolean? = false,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "PROGRAM_ID")
@@ -119,11 +119,11 @@ class OffenderCourseAttendance(
 
   @Column(name = "PAY_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val paid: Boolean = false,
+  val paid: Boolean? = false,
 
   @Column(name = "AUTHORISED_ABSENCE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val authorisedAbsence: Boolean = false,
+  val authorisedAbsence: Boolean? = false,
 ) : Serializable {
 
   override fun equals(other: Any?): Boolean {
