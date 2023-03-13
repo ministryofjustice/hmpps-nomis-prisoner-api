@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActiv
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfilePayBandBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
@@ -57,6 +58,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var offenderProgramProfilePayBandBuilderFactory: OffenderProgramProfilePayBandBuilderFactory
+
+  @Autowired
+  private lateinit var offenderCourseAttendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
 
   private val today = LocalDate.now()
   private val tomorrow = today.plusDays(1)
@@ -1119,6 +1123,55 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
       assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isNull()
       assertThat(courseActivityAreaRepository.findByIdOrNull(activityId)).isNull()
+    }
+
+    @Test
+    fun `should delete activity and attendance`() {
+      // create activity
+      val activityId = webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createRequestJson()))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateActivityResponse::class.java)
+        .returnResult().responseBody
+        ?.courseActivityId!!
+
+      // allocate offender
+      val offenderAtMoorlands =
+        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
+      webTestClient.post().uri("/activities/$activityId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
+        .exchange()
+        .expectStatus().isCreated
+
+      val savedActivity = repository.lookupActivity(activityId)
+      val savedSchedule = repository.lookupActivity(activityId).courseSchedules.firstOrNull()
+      assertThat(savedSchedule).isNotNull
+      val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())
+      assertThat(savedAllocation).isNotNull
+
+      // create an attendance record (TODO switch to doing this through the API once that is in place)
+      repository.runInTransaction {
+        repository.save(offenderCourseAttendanceBuilderFactory.builder(), savedSchedule!!, savedAllocation!!)
+      }
+
+      val savedAttendance = repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule!!, offenderAtMoorlands.latestBooking())
+      assertThat(savedAttendance).isNotNull
+
+      // delete activity, allocation and attendance
+      webTestClient.delete().uri("/activities/$activityId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      // check everything is deleted
+      assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
+      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isNull()
+      assertThat(repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule, offenderAtMoorlands.latestBooking())).isNull()
     }
 
     @Test

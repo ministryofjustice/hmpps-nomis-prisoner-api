@@ -15,5 +15,6 @@ class EventStatus(code: String, description: String) : ReferenceCode(EVENT_STS, 
     val CANCELLED = Pk(EVENT_STS, "CANC")
     val SCHEDULED_APPROVED = Pk(EVENT_STS, SCHEDULED)
     val COMPLETED = Pk(EVENT_STS, "COMP")
+    fun pk(code: String): Pk = Pk(EVENT_STS, code)
   }
 }
