@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRuleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule

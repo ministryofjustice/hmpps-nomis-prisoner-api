@@ -18,12 +18,24 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAttendanceRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class ActivitiesResource(private val activityService: ActivityService, private val allocationService: AllocationService) {
+class ActivitiesResource(
+  private val activityService: ActivityService,
+  private val allocationService: AllocationService,
+  private val attendanceService: AttendanceService,
+) {
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities")
   @ResponseStatus(HttpStatus.CREATED)
@@ -299,6 +311,63 @@ class ActivitiesResource(private val activityService: ActivityService, private v
     @RequestBody @Valid
     scheduleRequests: List<SchedulesRequest>,
   ) = activityService.updateActivitySchedules(courseActivityId, scheduleRequests)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PostMapping("/schedules/{scheduleId}/booking/{bookingId}/attendance")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new attendance record",
+    description = "Creates a new attendance for the booking and schedule. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityRequest::class)),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Attendance created",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Conflict, probably that the attendance already exists",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun createAttendance(
+    @Schema(description = "Activity schedule id", required = true) @PathVariable scheduleId: Long,
+    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
+    @RequestBody @Valid
+    createAttendanceRequest: CreateAttendanceRequest,
+  ): Unit =
+    attendanceService.createAttendance(scheduleId, bookingId, createAttendanceRequest)
 
   @Hidden
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")

@@ -4,6 +4,9 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile

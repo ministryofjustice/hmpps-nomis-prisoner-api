@@ -17,6 +17,10 @@ import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory

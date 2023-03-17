@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
