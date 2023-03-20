@@ -117,6 +117,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(adjustmentId)
+        .jsonPath("offenderNo").isEqualTo("A1234TX")
     }
   }
 
@@ -846,7 +847,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             OffenderBookingBuilder()
               .withSentences(
                 SentenceBuilder().withAdjustment(),
-                SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(kayDateAdjustmentId = keyDateAdjustmentId)),
+                SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(keyDateAdjustmentId = keyDateAdjustmentId)),
               ),
           ),
       )
@@ -902,6 +903,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(adjustmentId)
+        .jsonPath("offenderNo").isEqualTo("A1234TX")
         .jsonPath("hiddenFromUsers").isEqualTo(false)
     }
 

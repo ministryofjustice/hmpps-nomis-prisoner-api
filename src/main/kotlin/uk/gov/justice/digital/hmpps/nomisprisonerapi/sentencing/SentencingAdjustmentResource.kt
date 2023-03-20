@@ -525,6 +525,8 @@ data class SentenceAdjustmentResponse(
   val id: Long,
   @Schema(description = "The booking id", required = true)
   val bookingId: Long,
+  @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
+  val offenderNo: String,
   @Schema(description = "The sequence of the sentence within this booking", required = true)
   val sentenceSequence: Long,
   @Schema(description = "Adjustment type", required = true)
@@ -656,6 +658,8 @@ data class KeyDateAdjustmentResponse(
   val id: Long,
   @Schema(description = "The booking id", required = true)
   val bookingId: Long,
+  @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
+  val offenderNo: String,
   @Schema(description = "Adjustment type", required = true)
   val adjustmentType: SentencingAdjustmentType,
   @Schema(description = "Date adjustment is applied", required = false)
