@@ -828,7 +828,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     private lateinit var dummyPrisoner: Offender
     var adjustmentId: Long = 0
     private var keydateRelatedAdjustmentId: Long = 0
-    var nomsId = "A1238TX"
 
     @BeforeEach
     internal fun createPrisoner() {
