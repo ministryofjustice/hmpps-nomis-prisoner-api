@@ -252,10 +252,13 @@ class Repository(
     it.courseScheduleRules.size
   }
 
+  fun lookupAttendance(eventId: Long): OffenderCourseAttendance = offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
+
   fun <T> runInTransaction(block: () -> T) = block()
 
   fun deleteProgramServices() = programServiceRepository.deleteAll()
   fun deleteActivities() = activityRepository.deleteAll()
+  fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
   fun save(programServiceBuilder: ProgramServiceBuilder): ProgramService =
     programServiceRepository.save(programServiceBuilder.build())

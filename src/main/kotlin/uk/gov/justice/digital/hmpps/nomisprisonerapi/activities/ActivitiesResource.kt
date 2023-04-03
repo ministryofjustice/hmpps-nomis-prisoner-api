@@ -362,11 +362,11 @@ class ActivitiesResource(
     ],
   )
   fun createAttendance(
-    @Schema(description = "Activity schedule id", required = true) @PathVariable scheduleId: Long,
+    @Schema(description = "Course schedule id", required = true) @PathVariable scheduleId: Long,
     @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
     @RequestBody @Valid
     createAttendanceRequest: CreateAttendanceRequest,
-  ): Unit =
+  ) =
     attendanceService.createAttendance(scheduleId, bookingId, createAttendanceRequest)
 
   @Hidden
