@@ -7,6 +7,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 class CourseScheduleBuilder(
+  val courseScheduleId: Long = 0,
   val scheduleDate: String = "2022-11-01",
   val startTime: String = "08:00",
   val endTime: String = "11:00",
@@ -15,6 +16,7 @@ class CourseScheduleBuilder(
   fun build(courseActivity: CourseActivity) =
     LocalDate.parse(scheduleDate).let { date ->
       CourseSchedule(
+        courseScheduleId = courseScheduleId,
         courseActivity = courseActivity,
         scheduleDate = date,
         startTime = date.atTime(LocalTime.parse(startTime)),

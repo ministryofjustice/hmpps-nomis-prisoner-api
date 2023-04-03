@@ -11,5 +11,5 @@ interface OffenderCourseAttendanceRepository : JpaRepository<OffenderCourseAtten
   fun findByCourseScheduleAndOffenderBooking(
     courseSchedule: CourseSchedule,
     offenderBooking: OffenderBooking,
-  ): OffenderCourseAttendance?
+  ): List<OffenderCourseAttendance>
 }

@@ -19,6 +19,7 @@ import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
 import java.io.Serializable
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -76,7 +77,7 @@ class OffenderCourseAttendance(
           value = "'" + AttendanceOutcome.ATTENDANCE_OUTCOME + "'",
           referencedColumnName = "domain",
         ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code", nullable = true, updatable = false, insertable = false)),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code")),
     ],
   )
   val attendanceOutcome: AttendanceOutcome? = null,
@@ -124,7 +125,14 @@ class OffenderCourseAttendance(
   @Column(name = "AUTHORISED_ABSENCE_FLAG")
   @Convert(converter = YesNoConverter::class)
   val authorisedAbsence: Boolean? = false,
+
+  @Column
+  val commentText: String? = null,
 ) : Serializable {
+
+  init {
+    bonusPay?.also { bonusPay = it.setScale(3, RoundingMode.HALF_UP) }
+  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
