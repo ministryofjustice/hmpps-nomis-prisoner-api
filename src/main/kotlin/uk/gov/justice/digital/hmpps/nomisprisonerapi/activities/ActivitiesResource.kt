@@ -313,7 +313,7 @@ class ActivitiesResource(
   ) = activityService.updateActivitySchedules(courseActivityId, scheduleRequests)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PostMapping("/schedules/{scheduleId}/booking/{bookingId}/attendance")
+  @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new attendance record",
@@ -362,12 +362,12 @@ class ActivitiesResource(
     ],
   )
   fun createAttendance(
-    @Schema(description = "Course schedule id", required = true) @PathVariable scheduleId: Long,
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
     @RequestBody @Valid
     createAttendanceRequest: CreateAttendanceRequest,
   ) =
-    attendanceService.createAttendance(scheduleId, bookingId, createAttendanceRequest)
+    attendanceService.createAttendance(courseActivityId, bookingId, createAttendanceRequest)
 
   @Hidden
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
