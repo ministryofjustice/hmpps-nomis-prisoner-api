@@ -5,8 +5,14 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Repository
 interface CourseScheduleRepository : JpaRepository<CourseSchedule, Long> {
-  fun findByCourseActivityAndScheduleDate(courseActivity: CourseActivity, scheduleDate: LocalDate): List<CourseSchedule>
+  fun findByCourseActivityAndScheduleDateAndStartTimeAndEndTime(
+    courseActivity: CourseActivity,
+    scheduleDate: LocalDate,
+    startTime: LocalDateTime,
+    endTime: LocalDateTime,
+  ): CourseSchedule?
 }
