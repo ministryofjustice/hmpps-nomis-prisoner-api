@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -40,12 +41,14 @@ internal class IncentiveServiceTest {
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val incentivesCodeRepository: ReferenceCodeRepository<IEPLevel> = mock()
 
   private val incentivesService = IncentivesService(
     incentiveRepository,
     offenderBookingRepository,
     agencyLocationRepository,
     availablePrisonIepLevelRepository,
+    incentivesCodeRepository,
     telemetryClient,
   )
 

@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -17,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncentiveSpecification
 import java.time.LocalDateTime
 
@@ -27,6 +30,7 @@ class IncentivesService(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
+  private val incentiveReferenceCodeRepository: ReferenceCodeRepository<IEPLevel>,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -85,6 +89,89 @@ class IncentivesService(
       } ?: throw NotFoundException("Current Incentive not found, booking id $bookingId")
   }
 
+  fun createGlobalIncentiveLevel(createIncentiveRequest: ReferenceCode): ReferenceCode {
+    return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createIncentiveRequest.code))
+      ?.let { ReferenceCode(it.code, it.domain, it.description, it.active) }
+      .also { log.info("Global IEP level: $createIncentiveRequest already exists") } // TODO call update??
+      ?: let {
+        incentiveReferenceCodeRepository.save(
+          IEPLevel(
+            createIncentiveRequest.code,
+            createIncentiveRequest.description,
+            createIncentiveRequest.active,
+          ),
+        ).let { ReferenceCode(it.code, it.domain, it.description, it.active) }.also {
+          telemetryClient.trackEvent(
+            "global-incentive-level-created",
+            mapOf(
+              "code" to it.code,
+              "active" to it.active.toString(),
+              "description" to it.description,
+            ),
+            null,
+          )
+        }
+      }
+  }
+
+  fun updateGlobalIncentiveLevel(code: String, updateIncentiveRequest: UpdateGlobalIncentiveRequest): ReferenceCode {
+    return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
+      ?.let {
+        it.active = updateIncentiveRequest.active
+        it.description = updateIncentiveRequest.description
+        telemetryClient.trackEvent(
+          "global-incentive-level-updated",
+          mapOf(
+            "code" to code,
+            "active" to it.active.toString(),
+            "description" to it.description,
+          ),
+          null,
+        )
+        return ReferenceCode(it.code, it.domain, it.description, it.active)
+      } ?: throw NotFoundException("Incentive level: $code not found")
+  }
+
+  fun getGlobalIncentiveLevel(code: String): IEPLevel {
+    return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
+      ?: throw NotFoundException("Incentive level: $code not found")
+  }
+
+  fun deleteGlobalIncentiveLevel(code: String) {
+    incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
+      ?.let {
+        incentiveReferenceCodeRepository.delete(it)
+        telemetryClient.trackEvent(
+          "global-incentive-level-deleted",
+          mapOf(
+            "code" to code,
+          ),
+          null,
+        )
+        log.info("Global Incentive level deleted: $code")
+      } ?: log.info("Global Incentive level deletion request for: $code ignored. Level does not exist")
+  }
+
+  fun reorderGlobalIncentiveLevels(codeList: List<String>) {
+    codeList.mapIndexed { index, levelCode ->
+      incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(levelCode))?.let { iepLevel ->
+        iepLevel.sequence = (index + 1)
+      } ?: log.error("Attempted to reorder missing Incentive level $levelCode")
+    }
+    val reorderedIncentiveLevels =
+      incentiveReferenceCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL)
+        .map { ReferenceCode(it.code, it.domain, it.description, it.active) }
+
+    telemetryClient.trackEvent(
+      "global-incentive-level-reordered",
+      mapOf(
+        "orderedListRequest" to codeList.toString(),
+        "reorderedIncentiveLevels" to reorderedIncentiveLevels.map { it.code }.toString(),
+      ),
+      null,
+    )
+  }
+
   private fun mapIncentiveModel(incentiveEntity: Incentive, currentIep: Boolean): IncentiveResponse {
     return IncentiveResponse(
       bookingId = incentiveEntity.id.offenderBooking.bookingId,
@@ -108,8 +195,9 @@ class IncentivesService(
     val location = agencyLocationRepository.findById(dto.prisonId)
       .orElseThrow(BadDataException("Prison with id=${dto.prisonId} does not exist"))
 
-    val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(location, dto.iepLevel)
-      ?: throw BadDataException("IEP type ${dto.iepLevel} does not exist for prison ${dto.prisonId}")
+    val availablePrisonIepLevel =
+      availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(location, dto.iepLevel)
+        ?: throw BadDataException("IEP type ${dto.iepLevel} does not exist for prison ${dto.prisonId}")
 
     return Incentive(
       id = IncentiveId(offenderBooking, sequence),

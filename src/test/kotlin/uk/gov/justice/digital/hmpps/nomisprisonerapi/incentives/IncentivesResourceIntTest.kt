@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.IncentiveBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
@@ -31,6 +32,7 @@ private val createIncentive: () -> CreateIncentiveRequest = {
     userId = "me",
   )
 }
+
 class IncentivesResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
@@ -511,6 +513,267 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       assertThat(
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @DisplayName("get global incentive level")
+  @Nested
+  inner class getGlobalIncentiveLevel {
+    @Test
+    fun `get global incentive level`() {
+      webTestClient.get().uri("/incentives/reference-codes/STD")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("code").isEqualTo("STD")
+        .jsonPath("active").isEqualTo(true)
+    }
+
+    @Test
+    fun `get global incentive level returns 404 if IEP_LEVEL doesn't exist`() {
+      webTestClient.get().uri("/incentives/reference-codes/HHH")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get global incentive prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get().uri("/incentives/reference-codes/STD")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `get global incentive prevents access without authorization`() {
+      assertThat(
+        webTestClient.get().uri("/incentives/reference-codes/STD")
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @DisplayName("create global incentive level")
+  @Nested
+  inner class createGlobalIncentiveLevel {
+
+    @AfterEach
+    internal fun deleteIncentiveLevel() {
+      webTestClient.delete().uri("/incentives/reference-codes/NIEP")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+    }
+
+    @Test
+    fun `create global incentive level`() {
+      val response = webTestClient.post().uri("/incentives/reference-codes")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "code"    : "NIEP",
+            "domain" : "IEP_LEVEL",
+            "description"    : "description for NIEP",
+            "active"    : false
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(ReferenceCode::class.java)
+        .returnResult().responseBody
+      assertThat(response?.code).isEqualTo("NIEP")
+      assertThat(response?.domain).isEqualTo("IEP_LEVEL")
+      assertThat(response?.description).isEqualTo("description for NIEP")
+      assertThat(response?.active).isFalse()
+    }
+
+    @Test
+    fun `create global incentive prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/reference-codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "code"    : "NIEP",
+            "domain" : "IEP_LEVEL",
+            "description"    : "description for NIEP",
+            "active"    : false
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `create global incentive prevents access without authorization`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/reference-codes")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "code"    : "NIEP",
+            "domain" : "IEP_LEVEL",
+            "description"    : "description for NIEP",
+            "active"    : false
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @DisplayName("update global incentive level")
+  @Nested
+  inner class updateGlobalIncentiveLevel {
+    @Test
+    fun `update global incentive level`() {
+      val response = webTestClient.put().uri("/incentives/reference-codes/EN2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "description"    : "new description for EN2",
+            "active"    : false
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBody(ReferenceCode::class.java)
+        .returnResult().responseBody
+      assertThat(response?.code).isEqualTo("EN2")
+      assertThat(response?.domain).isEqualTo("IEP_LEVEL")
+      assertThat(response?.description).isEqualTo("new description for EN2")
+      assertThat(response?.active).isFalse()
+    }
+
+    @Test
+    fun `update global incentive prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.put().uri("/incentives/reference-codes/EN2")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "description"    : "description for EN2",
+            "active"    : false
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `update global incentive prevents access without authorization`() {
+      assertThat(
+        webTestClient.put().uri("/incentives/reference-codes/EN2")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "description"    : "description for EN2",
+            "active"    : false
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @DisplayName("reorder global incentive levels")
+  @Nested
+  inner class reorderGlobalIncentiveLevels {
+    @Test
+    fun `reorder global incentive levels`() {
+      webTestClient.post().uri("/incentives/reference-codes/reorder")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "codeList"    : ["STD","BAS","ENT","EN2","ENH"]
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBodyList(ReferenceCode::class.java)
+        .returnResult().responseBody
+    }
+
+    @Test
+    fun `reorder incentive levels ignores missing levels`() {
+      webTestClient.post().uri("/incentives/reference-codes/reorder")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "codeList"    : ["FFF","BAS","STD","ENT","EN2","ENH"]
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBodyList(ReferenceCode::class.java)
+        .returnResult()
+        .responseBody
+    }
+
+    @Test
+    fun `reorder global incentive levels prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/reference-codes/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "codeList"    : ["STD","BAS","ENT","EN2","ENH"]
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `reorder global incentive levels prevents access without authorization`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/reference-codes/reorder")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "codeList"    : ["STD","BAS","ENT","EN2","ENH"]
+          }""",
+            ),
+          )
           .exchange()
           .expectStatus().isUnauthorized,
       )

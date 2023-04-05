@@ -6,4 +6,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 
 @Repository
-interface ReferenceCodeRepository<T : ReferenceCode> : JpaRepository<T, Pk>
+interface ReferenceCodeRepository<T : ReferenceCode> : JpaRepository<T, Pk> {
+  fun findAllByDomainOrderBySequenceAsc(domain: String): List<T>
+}

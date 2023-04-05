@@ -157,22 +157,22 @@ internal class VisitServiceTest {
     }
     whenever(visitTypeRepository.findById(VisitType.pk("SCON"))).thenReturn(Optional.of(visitType))
     whenever(visitStatusRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitStatus((it.arguments[0] as ReferenceCode.Pk).code!!, "desc"))
+      return@thenAnswer Optional.of(VisitStatus((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(eventStatusRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(EventStatus((it.arguments[0] as ReferenceCode.Pk).code!!, "desc"))
+      return@thenAnswer Optional.of(EventStatus((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(visitOrderAdjustmentReasonRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitOrderAdjustmentReason((it.arguments[0] as ReferenceCode.Pk).code!!, "desc"))
+      return@thenAnswer Optional.of(VisitOrderAdjustmentReason((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(visitOrderTypeRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitOrderType((it.arguments[0] as ReferenceCode.Pk).code!!, "desc"))
+      return@thenAnswer Optional.of(VisitOrderType((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(visitOutcomeRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitOutcomeReason((it.arguments[0] as ReferenceCode.Pk).code!!, "desc"))
+      return@thenAnswer Optional.of(VisitOutcomeReason((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(eventOutcomeRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(EventOutcome((it.arguments[0] as ReferenceCode.Pk).code!!, "desc"))
+      return@thenAnswer Optional.of(EventOutcome((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.of(AgencyLocation(prisonId, "desc")))
 
