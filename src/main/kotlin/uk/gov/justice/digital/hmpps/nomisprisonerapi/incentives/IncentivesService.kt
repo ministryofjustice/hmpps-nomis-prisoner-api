@@ -102,7 +102,7 @@ class IncentivesService(
           ),
         ).let { ReferenceCode(it.code, it.domain, it.description, it.active) }.also {
           telemetryClient.trackEvent(
-            "global-incentive-level-updated",
+            "global-incentive-level-created",
             mapOf(
               "code" to it.code,
               "active" to it.active.toString(),
