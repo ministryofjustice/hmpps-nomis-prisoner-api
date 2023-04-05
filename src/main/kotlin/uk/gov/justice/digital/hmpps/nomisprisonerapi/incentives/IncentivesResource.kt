@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import java.time.LocalDate
 
 @RestController
@@ -288,7 +287,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   )
   fun createGlobalIncentiveLevel(
     @RequestBody @Valid
-    createIncentiveRequest: ReferenceCode,
+    createIncentiveRequest: CreateGlobalIncentiveRequest,
   ): ReferenceCode =
     incentivesService.createGlobalIncentiveLevel(createIncentiveRequest)
 
@@ -389,7 +388,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     @Schema(description = "Incentive reference code", example = "STD", required = true)
     @PathVariable
     code: String,
-  ): IEPLevel =
+  ): ReferenceCode =
     incentivesService.getGlobalIncentiveLevel(code)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")

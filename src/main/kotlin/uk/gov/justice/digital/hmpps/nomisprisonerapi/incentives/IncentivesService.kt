@@ -89,7 +89,7 @@ class IncentivesService(
       } ?: throw NotFoundException("Current Incentive not found, booking id $bookingId")
   }
 
-  fun createGlobalIncentiveLevel(createIncentiveRequest: ReferenceCode): ReferenceCode {
+  fun createGlobalIncentiveLevel(createIncentiveRequest: CreateGlobalIncentiveRequest): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createIncentiveRequest.code))
       ?.let { ReferenceCode(it.code, it.domain, it.description, it.active) }
       .also { log.info("Global IEP level: $createIncentiveRequest already exists") } // TODO call update??
@@ -132,8 +132,9 @@ class IncentivesService(
       } ?: throw NotFoundException("Incentive level: $code not found")
   }
 
-  fun getGlobalIncentiveLevel(code: String): IEPLevel {
+  fun getGlobalIncentiveLevel(code: String): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
+      ?.let { ReferenceCode(it.code, it.domain, it.description, it.active) }
       ?: throw NotFoundException("Incentive level: $code not found")
   }
 
