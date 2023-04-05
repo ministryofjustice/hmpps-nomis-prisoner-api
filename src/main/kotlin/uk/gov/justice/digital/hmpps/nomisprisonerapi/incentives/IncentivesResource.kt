@@ -15,15 +15,19 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import java.time.LocalDate
 
 @RestController
@@ -240,4 +244,240 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     incentivesService.getCurrentIncentive(
       bookingId = bookingId,
     )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PostMapping("/incentives/reference-codes")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new global incentive level",
+    description = "Creates a new global incentive level",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateIncentiveRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Global Incentive level",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createGlobalIncentiveLevel(
+    @RequestBody @Valid
+    createIncentiveRequest: ReferenceCode,
+  ): ReferenceCode =
+    incentivesService.createGlobalIncentiveLevel(createIncentiveRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PutMapping("/incentives/reference-codes/{code}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Updates an existing global incentive level",
+    description = "Updates an existing global incentive level, updateable fields are description and active",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateIncentiveRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Updated Global Incentive level",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Global incentive level not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateGlobalIncentiveLevel(
+    @Schema(description = "Incentive reference code", example = "STD", required = true)
+    @PathVariable
+    code: String,
+    @RequestBody @Valid
+    updateIncentiveRequest: UpdateGlobalIncentiveRequest,
+  ): ReferenceCode =
+    incentivesService.updateGlobalIncentiveLevel(code, updateIncentiveRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @GetMapping("/incentives/reference-codes/{code}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets the global incentive level by code",
+    description = "Gets a global incentive level by provided code and domain of IEP_LEVEL",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "return the Global Incentive level",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Global Incentive Level does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getGlobalIncentiveLevel(
+    @Schema(description = "Incentive reference code", example = "STD", required = true)
+    @PathVariable
+    code: String,
+  ): IEPLevel =
+    incentivesService.getGlobalIncentiveLevel(code)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PostMapping("/incentives/reference-codes/reorder")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "reorders all global incentive levels",
+    description = "reorders all global incentive levels using provided list of Incentive codes, including inactive. 1-based index",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = ReorderRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Reorder successful",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun reorderGlobalIncentiveLevels(
+    @RequestBody
+    request: ReorderRequest,
+  ) {
+    incentivesService.reorderGlobalIncentiveLevels(request.codeList)
+  }
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @DeleteMapping("/incentives/reference-codes/{code}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Deletes an existing global incentive level",
+    description = "Deletes an existing global incentive level, if level doesn't exist request is ignored",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Deletion successful (or ignored)",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteGlobalIncentiveLevel(
+    @Schema(description = "Incentive reference code", example = "STD", required = true)
+    @PathVariable
+    code: String,
+  ) {
+    incentivesService.deleteGlobalIncentiveLevel(code)
+  }
 }

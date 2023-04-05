@@ -21,10 +21,10 @@ class AgencyLocationType : ReferenceCode {
     val CRT = pk("CRT")
     val HSHOSP = pk("HSHOSP")
     val HOSPITAL = pk("HOSPITAL")
-    val COURT_TYPE = AgencyLocationType(CRT.code!!, "Court")
-    val PRISON_TYPE = AgencyLocationType(INST.code!!, "Prison")
-    val HS_HOSPITAL_TYPE = AgencyLocationType(HSHOSP.code!!, "Secure Hospital")
-    val HOSPITAL_TYPE = AgencyLocationType(HOSPITAL.code!!, "Hospital")
+    val COURT_TYPE = AgencyLocationType(CRT.code, "Court")
+    val PRISON_TYPE = AgencyLocationType(INST.code, "Prison")
+    val HS_HOSPITAL_TYPE = AgencyLocationType(HSHOSP.code, "Secure Hospital")
+    val HOSPITAL_TYPE = AgencyLocationType(HOSPITAL.code, "Hospital")
     fun pk(code: String): Pk = Pk(AGY_LOC_TYPE, code)
   }
 }

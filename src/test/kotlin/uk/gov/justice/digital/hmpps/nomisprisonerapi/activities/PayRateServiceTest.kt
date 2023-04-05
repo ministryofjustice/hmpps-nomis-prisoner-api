@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -112,7 +112,7 @@ class PayRateServiceTest {
         AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
       }
       whenever(payBandRepository.findById(any())).thenAnswer {
-        Optional.of(PayBand((it.arguments[0] as ReferenceCode.Pk).code!!, ""))
+        Optional.of(PayBand((it.arguments[0] as Pk).code, ""))
       }
     }
 
@@ -164,7 +164,7 @@ class PayRateServiceTest {
         AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
       }
       whenever(payBandRepository.findById(any())).thenAnswer {
-        Optional.of(PayBand((it.arguments[0] as ReferenceCode.Pk).code!!, ""))
+        Optional.of(PayBand((it.arguments[0] as Pk).code, ""))
       }
     }
 

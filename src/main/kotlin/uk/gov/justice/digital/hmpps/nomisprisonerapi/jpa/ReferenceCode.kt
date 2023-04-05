@@ -1,38 +1,54 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
-import jakarta.persistence.DiscriminatorColumn
+import jakarta.persistence.Convert
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.IdClass
 import jakarta.persistence.Inheritance
 import org.hibernate.Hibernate
+import org.hibernate.type.YesNoConverter
 import java.io.Serializable
 import java.util.Objects
 
 @Entity(name = "REFERENCE_CODES")
-@DiscriminatorColumn(name = "domain")
+@org.hibernate.annotations.DiscriminatorFormula(value = "domain")
 @Inheritance
-@IdClass(ReferenceCode.Pk::class)
 abstract class ReferenceCode(
 
-  @Id
   @Column(insertable = false, updatable = false)
   open val domain: String,
 
-  @Id
+  @Column(insertable = false, updatable = false)
   open val code: String,
 
-  open val description: String,
+  @EmbeddedId
+  open val id: Pk,
+
+  open var description: String,
+
+  @Column(name = "ACTIVE_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  open var active: Boolean = true,
+
+  @Column(name = "LIST_SEQ")
+  open var sequence: Int? = 0,
 
 ) : Serializable {
+  constructor(domain: String, code: String, description: String) : this(
+    domain = domain,
+    code = code,
+    id = Pk(domain, code),
+    description = description,
+  )
 
-  data class Pk(
-    val domain: String? = null,
-    val code: String? = null,
-  ) : Serializable {
-    constructor() : this(null, null)
-  }
+  constructor(domain: String, code: String, description: String, active: Boolean) : this(
+    domain = domain,
+    code = code,
+    id = Pk(domain, code),
+    description = description,
+    active = active,
+  )
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -56,4 +72,13 @@ abstract class ReferenceCode(
       return referenceCode?.code
     }
   }
+  @Embeddable
+  data class Pk(
+    @Column(name = "DOMAIN", nullable = false)
+    val domain: String,
+    @Column(name = "CODE", nullable = false)
+    val code: String,
+  ) : Serializable
 }
+
+
