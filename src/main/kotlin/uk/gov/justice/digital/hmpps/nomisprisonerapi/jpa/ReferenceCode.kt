@@ -72,6 +72,7 @@ abstract class ReferenceCode(
       return referenceCode?.code
     }
   }
+
   @Embeddable
   data class Pk(
     @Column(name = "DOMAIN", nullable = false)
@@ -80,5 +81,3 @@ abstract class ReferenceCode(
     val code: String,
   ) : Serializable
 }
-
-
