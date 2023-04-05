@@ -574,11 +574,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `create global incxvcxvcentive level`() {
-      assertThat("NIEP").isEqualTo("NIEP")
-    }
-
-    @Test
     fun `create global incentive level`() {
       val response = webTestClient.post().uri("/incentives/reference-codes")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
