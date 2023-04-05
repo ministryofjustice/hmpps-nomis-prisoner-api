@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "IEP Global Incentive level update request")
+@Schema(description = "IEP Global Incentive level create request")
 data class CreateGlobalIncentiveRequest(
   @Schema(description = "incentive level code", example = "STD", required = true)
   val code: String,
