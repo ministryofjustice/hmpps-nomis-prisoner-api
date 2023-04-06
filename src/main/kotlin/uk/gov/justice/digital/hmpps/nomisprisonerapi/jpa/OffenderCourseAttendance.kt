@@ -77,7 +77,7 @@ class OffenderCourseAttendance(
           value = "'" + AttendanceOutcome.ATTENDANCE_OUTCOME + "'",
           referencedColumnName = "domain",
         ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code")),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_OUTCOME", referencedColumnName = "code")),
     ],
   )
   val attendanceOutcome: AttendanceOutcome? = null,

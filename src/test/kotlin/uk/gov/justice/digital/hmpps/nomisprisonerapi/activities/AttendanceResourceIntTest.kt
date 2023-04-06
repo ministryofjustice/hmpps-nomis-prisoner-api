@@ -5,18 +5,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAttendanceResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
@@ -47,10 +40,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var attendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
-
-  // TODO SDIT-689 Remove spy bean once the service has been implemented
-  @SpyBean
-  private lateinit var attendanceService: AttendanceService
 
   @Nested
   inner class CreateAttendance {
@@ -102,23 +91,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return conflict`() {
-        doThrow(ConflictException("Attendance record already exists"))
-          .whenever(attendanceService).createAttendance(anyLong(), anyLong(), any())
-
-        webTestClient.post().uri("/activities/1/booking/2/attendance")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(validJsonRequest))
-          .exchange()
-          .expectStatus().isEqualTo(409)
-      }
-
-      @Test
       fun `should return not found`() {
-        doThrow(NotFoundException("Schedule id 1 does not exist"))
-          .whenever(attendanceService).createAttendance(anyLong(), anyLong(), any())
-
         webTestClient.post().uri("/activities/1/booking/2/attendance")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
