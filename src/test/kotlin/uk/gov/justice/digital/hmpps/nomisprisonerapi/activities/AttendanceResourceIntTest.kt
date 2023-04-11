@@ -5,6 +5,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
+import org.mozilla.javascript.ScriptRuntime.eq
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -232,9 +237,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(inTime).isEqualTo("2022-11-01T08:00")
           assertThat(outTime).isEqualTo("2022-11-01T11:00")
           assertThat(eventStatus.code).isEqualTo("SCH")
-          assertThat(courseSchedule?.courseScheduleId).isEqualTo(this@UpsertAttendance.courseSchedule.courseScheduleId)
+          assertThat(courseSchedule.courseScheduleId).isEqualTo(this@UpsertAttendance.courseSchedule.courseScheduleId)
           assertThat(toInternalLocation?.locationId).isEqualTo(-8)
-          assertThat(courseActivity?.courseActivityId).isEqualTo(this@UpsertAttendance.courseActivity.courseActivityId)
+          assertThat(courseActivity.courseActivityId).isEqualTo(this@UpsertAttendance.courseActivity.courseActivityId)
           assertThat(prison?.id).isEqualTo("LEI")
           assertThat(program?.programId).isEqualTo(20)
         }
@@ -254,6 +259,48 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
         val saved = repository.lookupAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("SCH")
+      }
+
+      @Test
+      fun `should publish telemetry when creating`() {
+        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+
+        val response = webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId)
+          .expectStatus().isOk
+          .expectBody(UpsertAttendanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        verify(telemetryClient).trackEvent(
+          eq("attendance-created"),
+          check<MutableMap<String, String>> {
+            assertThat(it["courseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
+            assertThat(it["courseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
+            assertThat(it["offenderBookingId"]).isEqualTo(offenderBooking.bookingId.toString())
+            assertThat(it["attendanceEventId"]).isEqualTo(response.eventId.toString())
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `should publish telemetry when updating`() {
+        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        val attendance = saveAttendance("SCH", courseSchedule, allocation)
+
+        webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId)
+          .expectStatus().isOk
+          .expectBody()
+
+        verify(telemetryClient).trackEvent(
+          eq("attendance-updated"),
+          check<MutableMap<String, String>> {
+            assertThat(it["courseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
+            assertThat(it["courseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
+            assertThat(it["offenderBookingId"]).isEqualTo(offenderBooking.bookingId.toString())
+            assertThat(it["attendanceEventId"]).isEqualTo(attendance.eventId.toString())
+          },
+          isNull(),
+        )
       }
 
       @Test

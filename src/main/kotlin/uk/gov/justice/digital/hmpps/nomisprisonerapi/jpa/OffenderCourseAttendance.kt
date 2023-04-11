@@ -67,7 +67,7 @@ class OffenderCourseAttendance(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_SCH_ID")
-  val courseSchedule: CourseSchedule? = null,
+  val courseSchedule: CourseSchedule,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -84,7 +84,7 @@ class OffenderCourseAttendance(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFF_PRGREF_ID")
-  val offenderProgramProfile: OffenderProgramProfile? = null,
+  val offenderProgramProfile: OffenderProgramProfile,
 
   @Column
   val inTime: LocalDateTime? = null,
@@ -94,7 +94,7 @@ class OffenderCourseAttendance(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID")
-  val courseActivity: CourseActivity? = null,
+  val courseActivity: CourseActivity,
 
   @Column(nullable = false)
   val eventType: String = "PRISON_ACT",
