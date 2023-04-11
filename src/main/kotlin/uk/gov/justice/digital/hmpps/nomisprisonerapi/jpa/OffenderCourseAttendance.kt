@@ -59,7 +59,7 @@ class OffenderCourseAttendance(
       ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code")),
     ],
   )
-  val eventStatus: EventStatus,
+  var eventStatus: EventStatus,
 
   @ManyToOne(optional = true, fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_INTERNAL_LOCATION_ID")
@@ -80,7 +80,7 @@ class OffenderCourseAttendance(
       ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_OUTCOME", referencedColumnName = "code")),
     ],
   )
-  val attendanceOutcome: AttendanceOutcome? = null,
+  var attendanceOutcome: AttendanceOutcome? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFF_PRGREF_ID")
@@ -109,30 +109,29 @@ class OffenderCourseAttendance(
 
   @Column(name = "UNEXCUSED_ABSENCE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val unexcusedAbsence: Boolean? = false,
+  var unexcusedAbsence: Boolean? = false,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "PROGRAM_ID")
   val program: ProgramService? = null,
 
-  @Column
-  var bonusPay: BigDecimal? = null,
+  bonusPay: BigDecimal? = null,
 
   @Column(name = "PAY_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val paid: Boolean? = false,
+  var paid: Boolean? = false,
 
   @Column(name = "AUTHORISED_ABSENCE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val authorisedAbsence: Boolean? = false,
+  var authorisedAbsence: Boolean? = false,
 
   @Column
-  val commentText: String? = null,
+  var commentText: String? = null,
 ) : Serializable {
 
-  init {
-    bonusPay?.also { bonusPay = it.setScale(3, RoundingMode.HALF_UP) }
-  }
+  @Column
+  var bonusPay = bonusPay?.setScale(3, RoundingMode.HALF_UP)
+    set(value) { field = value?.setScale(3, RoundingMode.HALF_UP) }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

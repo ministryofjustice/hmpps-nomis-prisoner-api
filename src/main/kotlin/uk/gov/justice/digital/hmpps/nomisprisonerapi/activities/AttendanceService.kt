@@ -3,10 +3,9 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAttendanceRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAttendanceResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AttendanceOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -14,12 +13,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Service
 @Transactional
@@ -33,51 +35,69 @@ class AttendanceService(
   private val attendanceOutcomeRepository: ReferenceCodeRepository<AttendanceOutcome>,
 ) {
 
-  fun createAttendance(
+  fun upsertAttendance(
     scheduleId: Long,
     bookingId: Long,
-    createAttendanceRequest: CreateAttendanceRequest,
-  ): CreateAttendanceResponse =
-    attendanceRepository.save(createAttendanceRequest.toOffenderCourseAttendance(scheduleId, bookingId))
-      .let { CreateAttendanceResponse(it.eventId, it.courseSchedule!!.courseScheduleId) }
+    upsertAttendanceRequest: UpsertAttendanceRequest,
+  ): UpsertAttendanceResponse {
+    val attendance = toOffenderCourseAttendance(scheduleId, bookingId, upsertAttendanceRequest)
+    val created = attendance.eventId == 0L
+    return attendanceRepository.save(attendance)
+      .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule!!.courseScheduleId, created) }
+  }
 
-  private fun CreateAttendanceRequest.toOffenderCourseAttendance(courseActivityId: Long, bookingId: Long): OffenderCourseAttendance {
+  private fun toOffenderCourseAttendance(courseActivityId: Long, bookingId: Long, request: UpsertAttendanceRequest): OffenderCourseAttendance {
     val courseActivity = findCourseActivityOrThrow(courseActivityId)
 
-    val courseSchedule = findCourseScheduleOrThrow(courseActivity, courseActivityId)
+    val courseSchedule = with(request) {
+      findCourseScheduleOrThrow(courseActivity, courseActivityId, scheduleDate, startTime, endTime)
+    }
 
     val offenderBooking = findOffenderBookingOrThrow(bookingId)
 
     val offenderProgramProfile = findOffenderProgramProfileOrThrow(courseSchedule, offenderBooking, bookingId)
 
-    throwIfActiveAttendanceExists(courseSchedule, offenderBooking)
+    val status = findEventStatusOrThrow(request.eventStatusCode)
 
-    val eventStatus = findEventStatusOrThrow()
+    val attendance = findAttendance(courseSchedule, offenderBooking)
+      ?: newAttendance(
+        courseSchedule,
+        offenderBooking,
+        offenderProgramProfile,
+        status,
+      )
 
-    val attendanceOutcome = this.eventOutcomeCode?.let { findAttendanceOutcomeOrThrow(it) }
-
-    return OffenderCourseAttendance(
-      offenderBooking = offenderBooking,
-      courseSchedule = courseSchedule,
-      offenderProgramProfile = offenderProgramProfile,
-      courseActivity = courseSchedule.courseActivity,
-      eventDate = courseSchedule.scheduleDate,
-      startTime = courseSchedule.startTime,
-      endTime = courseSchedule.endTime,
-      inTime = courseSchedule.startTime,
-      outTime = courseSchedule.endTime,
-      eventStatus = eventStatus,
-      toInternalLocation = courseSchedule.courseActivity.internalLocation,
-      attendanceOutcome = attendanceOutcome,
-      prison = courseSchedule.courseActivity.prison,
-      unexcusedAbsence = this.unexcusedAbsence,
-      program = courseSchedule.courseActivity.program,
-      bonusPay = this.bonusPay,
-      paid = this.paid,
-      authorisedAbsence = this.authorisedAbsence,
-      commentText = this.comments,
-    )
+    return attendance.apply {
+      eventStatus = status
+      attendanceOutcome = request.eventOutcomeCode?.let { findAttendanceOutcomeOrThrow(it) }
+      unexcusedAbsence = request.unexcusedAbsence
+      bonusPay = request.bonusPay
+      paid = request.paid
+      authorisedAbsence = request.authorisedAbsence
+      commentText = request.comments
+    }
   }
+
+  private fun newAttendance(
+    courseSchedule: CourseSchedule,
+    offenderBooking: OffenderBooking,
+    offenderProgramProfile: OffenderProgramProfile,
+    eventStatus: EventStatus,
+  ) = OffenderCourseAttendance(
+    offenderBooking = offenderBooking,
+    courseSchedule = courseSchedule,
+    offenderProgramProfile = offenderProgramProfile,
+    courseActivity = courseSchedule.courseActivity,
+    eventDate = courseSchedule.scheduleDate,
+    startTime = courseSchedule.startTime,
+    endTime = courseSchedule.endTime,
+    inTime = courseSchedule.startTime,
+    outTime = courseSchedule.endTime,
+    eventStatus = eventStatus,
+    toInternalLocation = courseSchedule.courseActivity.internalLocation,
+    prison = courseSchedule.courseActivity.prison,
+    program = courseSchedule.courseActivity.program,
+  )
 
   private fun findAttendanceOutcomeOrThrow(it: String) =
     (
@@ -85,21 +105,17 @@ class AttendanceService(
         ?: throw BadDataException("Attendance outcome code $it does not exist")
       )
 
-  private fun CreateAttendanceRequest.findEventStatusOrThrow() =
+  private fun findEventStatusOrThrow(eventStatusCode: String) =
     (
       eventStatusRepository.findByIdOrNull(EventStatus.pk(eventStatusCode))
         ?: throw BadDataException("Event status code $eventStatusCode does not exist")
       )
 
-  private fun throwIfActiveAttendanceExists(
+  private fun findAttendance(
     courseSchedule: CourseSchedule,
     offenderBooking: OffenderBooking,
-  ) {
+  ): OffenderCourseAttendance? =
     attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, offenderBooking)
-      .filter { listOf("SCH", "COMP").contains(it.eventStatus.code) }
-      .takeIf { it.isNotEmpty() }
-      ?.run { throw ConflictException("Offender course attendance already exists with eventId=${this.first().eventId} and eventStatus=${this.first().eventStatus.code}") }
-  }
 
   private fun findOffenderProgramProfileOrThrow(
     courseSchedule: CourseSchedule,
@@ -115,9 +131,12 @@ class AttendanceService(
   private fun findOffenderBookingOrThrow(bookingId: Long) = offenderBookingRepository.findByIdOrNull(bookingId)
     ?: throw NotFoundException("Offender booking with id=$bookingId not found")
 
-  private fun CreateAttendanceRequest.findCourseScheduleOrThrow(
+  private fun findCourseScheduleOrThrow(
     courseActivity: CourseActivity,
     courseActivityId: Long,
+    scheduleDate: LocalDate,
+    startTime: LocalTime,
+    endTime: LocalTime,
   ) =
     scheduleRepository.findByCourseActivityAndScheduleDateAndStartTimeAndEndTime(
       courseActivity,

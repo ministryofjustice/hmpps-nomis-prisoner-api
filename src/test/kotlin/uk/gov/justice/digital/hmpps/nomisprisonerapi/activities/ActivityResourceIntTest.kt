@@ -1161,7 +1161,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       val savedAttendances = repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule!!, offenderAtMoorlands.latestBooking())
-      assertThat(savedAttendances).isNotEmpty
+      assertThat(savedAttendances).isNotNull
 
       // delete activity, allocation and attendance
       webTestClient.delete().uri("/activities/$activityId")
@@ -1172,7 +1172,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // check everything is deleted
       assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
       assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isNull()
-      assertThat(repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule, offenderAtMoorlands.latestBooking())).isEmpty()
+      assertThat(repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule, offenderAtMoorlands.latestBooking())).isNull()
     }
 
     @Test
