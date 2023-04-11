@@ -67,7 +67,7 @@ class OffenderCourseAttendance(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_SCH_ID")
-  val courseSchedule: CourseSchedule? = null,
+  val courseSchedule: CourseSchedule,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -84,7 +84,7 @@ class OffenderCourseAttendance(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFF_PRGREF_ID")
-  val offenderProgramProfile: OffenderProgramProfile? = null,
+  val offenderProgramProfile: OffenderProgramProfile,
 
   @Column
   val inTime: LocalDateTime? = null,
@@ -94,7 +94,7 @@ class OffenderCourseAttendance(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID")
-  val courseActivity: CourseActivity? = null,
+  val courseActivity: CourseActivity,
 
   @Column(nullable = false)
   val eventType: String = "PRISON_ACT",
@@ -127,11 +127,16 @@ class OffenderCourseAttendance(
 
   @Column
   var commentText: String? = null,
+
+  @Column(name = "TXN_ID", updatable = false)
+  val paidTransactionId: Long? = null,
 ) : Serializable {
 
   @Column
   var bonusPay = bonusPay?.setScale(3, RoundingMode.HALF_UP)
     set(value) { field = value?.setScale(3, RoundingMode.HALF_UP) }
+
+  fun isUpdatable() = paidTransactionId == null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -143,5 +148,5 @@ class OffenderCourseAttendance(
 
   override fun hashCode(): Int = javaClass.hashCode()
   override fun toString(): String =
-    "OffenderCourseAttendance(eventId=$eventId, offenderBookingId=${offenderBooking.bookingId}, courseScheduleId=${courseSchedule?.courseScheduleId}, eventDate=$eventDate, attendanceOutcome=${attendanceOutcome?.code}, paid=$paid)"
+    "OffenderCourseAttendance(eventId=$eventId, offenderBookingId=${offenderBooking.bookingId}, courseScheduleId=${courseSchedule.courseScheduleId}, eventDate=$eventDate, attendanceOutcome=${attendanceOutcome?.code}, paid=$paid)"
 }

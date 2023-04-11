@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -33,6 +34,7 @@ class AttendanceService(
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val attendanceOutcomeRepository: ReferenceCodeRepository<AttendanceOutcome>,
+  private val telemetryClient: TelemetryClient,
 ) {
 
   fun upsertAttendance(
@@ -43,7 +45,19 @@ class AttendanceService(
     val attendance = toOffenderCourseAttendance(scheduleId, bookingId, upsertAttendanceRequest)
     val created = attendance.eventId == 0L
     return attendanceRepository.save(attendance)
-      .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule!!.courseScheduleId, created) }
+      .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule.courseScheduleId, created) }
+      .also {
+        telemetryClient.trackEvent(
+          "attendance-${if (it.created) "created" else "updated"}",
+          mapOf(
+            "courseActivityId" to attendance.courseActivity.courseActivityId.toString(),
+            "courseScheduleId" to attendance.courseSchedule.courseScheduleId.toString(),
+            "offenderBookingId" to attendance.offenderBooking.bookingId.toString(),
+            "attendanceEventId" to attendance.eventId.toString(),
+          ),
+          null,
+        )
+      }
   }
 
   private fun toOffenderCourseAttendance(courseActivityId: Long, bookingId: Long, request: UpsertAttendanceRequest): OffenderCourseAttendance {
@@ -116,6 +130,7 @@ class AttendanceService(
     offenderBooking: OffenderBooking,
   ): OffenderCourseAttendance? =
     attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, offenderBooking)
+      ?.also { if (!it.isUpdatable()) throw BadDataException("Attendance ${it.eventId} cannot be changed after it has already been paid") }
 
   private fun findOffenderProgramProfileOrThrow(
     courseSchedule: CourseSchedule,
