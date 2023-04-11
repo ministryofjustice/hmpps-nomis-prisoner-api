@@ -9,7 +9,6 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
-import org.mozilla.javascript.ScriptRuntime.eq
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -211,6 +210,18 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("Attendance outcome code INVALID does not exist")
           }
       }
+
+      @Test
+      fun `should return bad request if attendance already paid`() {
+        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        val attendance = saveAttendance("COMP", courseSchedule, allocation, paidTransactionId = 123456)
+
+        webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId)
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Attendance ${attendance.eventId} cannot be changed after it has already been paid")
+          }
+      }
     }
 
     @Nested
@@ -375,21 +386,22 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(bonusPay).isEqualTo(BigDecimal(1.5).setScale(3, RoundingMode.HALF_UP))
         }
       }
-
-      private fun saveAttendance(eventStatus: String, courseSchedule: CourseSchedule, allocation: OffenderProgramProfile) =
-        with(courseSchedule) {
-          repository.save(
-            attendanceBuilderFactory.builder(
-              eventStatusCode = eventStatus,
-              eventDate = this.scheduleDate,
-              startTime = this.startTime,
-              endTime = this.endTime,
-            ),
-            courseSchedule,
-            allocation,
-          )
-        }
     }
+
+    private fun saveAttendance(eventStatus: String, courseSchedule: CourseSchedule, allocation: OffenderProgramProfile, paidTransactionId: Long? = null) =
+      with(courseSchedule) {
+        repository.save(
+          attendanceBuilderFactory.builder(
+            eventStatusCode = eventStatus,
+            eventDate = this.scheduleDate,
+            startTime = this.startTime,
+            endTime = this.endTime,
+            paidTransactionId = paidTransactionId,
+          ),
+          courseSchedule,
+          allocation,
+        )
+      }
 
     private fun WebTestClient.upsertAttendance(
       courseActivityId: Long,

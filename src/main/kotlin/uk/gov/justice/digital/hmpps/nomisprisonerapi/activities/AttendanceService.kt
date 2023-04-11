@@ -130,6 +130,7 @@ class AttendanceService(
     offenderBooking: OffenderBooking,
   ): OffenderCourseAttendance? =
     attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, offenderBooking)
+      ?.also { if (!it.isUpdatable()) throw BadDataException("Attendance ${it.eventId} cannot be changed after it has already been paid") }
 
   private fun findOffenderProgramProfileOrThrow(
     courseSchedule: CourseSchedule,

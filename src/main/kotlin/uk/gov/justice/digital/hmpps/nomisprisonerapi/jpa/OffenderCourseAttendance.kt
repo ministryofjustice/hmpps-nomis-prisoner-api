@@ -127,11 +127,16 @@ class OffenderCourseAttendance(
 
   @Column
   var commentText: String? = null,
+
+  @Column(name = "TXN_ID", updatable = false)
+  val paidTransactionId: Long? = null,
 ) : Serializable {
 
   @Column
   var bonusPay = bonusPay?.setScale(3, RoundingMode.HALF_UP)
     set(value) { field = value?.setScale(3, RoundingMode.HALF_UP) }
+
+  fun isUpdatable() = paidTransactionId == null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -143,5 +148,5 @@ class OffenderCourseAttendance(
 
   override fun hashCode(): Int = javaClass.hashCode()
   override fun toString(): String =
-    "OffenderCourseAttendance(eventId=$eventId, offenderBookingId=${offenderBooking.bookingId}, courseScheduleId=${courseSchedule?.courseScheduleId}, eventDate=$eventDate, attendanceOutcome=${attendanceOutcome?.code}, paid=$paid)"
+    "OffenderCourseAttendance(eventId=$eventId, offenderBookingId=${offenderBooking.bookingId}, courseScheduleId=${courseSchedule.courseScheduleId}, eventDate=$eventDate, attendanceOutcome=${attendanceOutcome?.code}, paid=$paid)"
 }

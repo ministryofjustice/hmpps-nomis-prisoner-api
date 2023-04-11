@@ -19,6 +19,7 @@ class OffenderCourseAttendanceBuilderFactory(
     eventStatusCode: String = "SCH",
     toInternalLocationId: Long? = -8,
     outcomeReasonCode: String? = null,
+    paidTransactionId: Long? = null,
   ): OffenderCourseAttendanceBuilder {
     return OffenderCourseAttendanceBuilder(
       repository,
@@ -29,6 +30,7 @@ class OffenderCourseAttendanceBuilderFactory(
       eventStatusCode,
       toInternalLocationId,
       outcomeReasonCode,
+      paidTransactionId,
     )
   }
 }
@@ -42,6 +44,7 @@ class OffenderCourseAttendanceBuilder(
   val eventStatusCode: String,
   val toInternalLocationId: Long?,
   val outcomeReasonCode: String?,
+  val paidTransactionId: Long?,
 ) {
   fun build(
     courseSchedule: CourseSchedule,
@@ -63,5 +66,6 @@ class OffenderCourseAttendanceBuilder(
       courseActivity = courseSchedule.courseActivity,
       prison = courseSchedule.courseActivity.prison,
       program = courseSchedule.courseActivity.program,
+      paidTransactionId = paidTransactionId,
     )
 }
