@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndOffenderProgramProfileRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
 @RestController
@@ -314,10 +314,9 @@ class ActivitiesResource(
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance")
-  @ResponseStatus(HttpStatus.CREATED)
   @Operation(
-    summary = "Creates a new attendance record",
-    description = "Creates a new attendance for the booking and schedule. Requires role NOMIS_ACTIVITIES",
+    summary = "Creates or updates an attendance record",
+    description = "Creates or updates an attendance for the booking and schedule. Requires role NOMIS_ACTIVITIES",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityRequest::class)),
@@ -325,8 +324,8 @@ class ActivitiesResource(
     ),
     responses = [
       ApiResponse(
-        responseCode = "201",
-        description = "Attendance created",
+        responseCode = "200",
+        description = "Attendance updated",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class)),
         ],
@@ -353,8 +352,8 @@ class ActivitiesResource(
         ],
       ),
       ApiResponse(
-        responseCode = "409",
-        description = "Conflict, probably that the attendance already exists",
+        responseCode = "404",
+        description = "Not found, see error for details",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -365,9 +364,9 @@ class ActivitiesResource(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
     @RequestBody @Valid
-    createAttendanceRequest: CreateAttendanceRequest,
+    upsertAttendanceRequest: UpsertAttendanceRequest,
   ) =
-    attendanceService.createAttendance(courseActivityId, bookingId, createAttendanceRequest)
+    attendanceService.upsertAttendance(courseActivityId, bookingId, upsertAttendanceRequest)
 
   @Hidden
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")

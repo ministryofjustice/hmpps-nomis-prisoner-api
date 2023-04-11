@@ -7,8 +7,8 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Course activity creation request")
-data class CreateAttendanceRequest(
+@Schema(description = "Course activity create/update request")
+data class UpsertAttendanceRequest(
 
   @Schema(description = "The date of the course schedule", example = "2023-04-03", required = true)
   val scheduleDate: LocalDate,
