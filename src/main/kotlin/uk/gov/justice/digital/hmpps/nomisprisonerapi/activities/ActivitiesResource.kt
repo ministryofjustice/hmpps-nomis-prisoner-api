@@ -22,6 +22,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
@@ -351,13 +353,6 @@ class ActivitiesResource(
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
       ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Not found, see error for details",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
     ],
   )
   fun createAttendance(
@@ -367,6 +362,50 @@ class ActivitiesResource(
     upsertAttendanceRequest: UpsertAttendanceRequest,
   ) =
     attendanceService.upsertAttendance(courseActivityId, bookingId, upsertAttendanceRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance-status")
+  @Operation(
+    summary = "Get Nomis attendance status",
+    description = "Returns the current event status of a Nomis attendance record. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Attendance status found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = GetAttendanceStatusResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The attendance record does not exist",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getAttendanceStatus(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
+    @RequestBody @Valid
+    request: GetAttendanceStatusRequest,
+  ) =
+    attendanceService.findAttendanceStatus(courseActivityId, bookingId, request)
 
   @Hidden
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
