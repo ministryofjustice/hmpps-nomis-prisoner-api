@@ -596,6 +596,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(response?.domain).isEqualTo("IEP_LEVEL")
       assertThat(response?.description).isEqualTo("description for NIEP")
       assertThat(response?.active).isFalse()
+      assertThat(response?.sequence).isEqualTo(6)
+      assertThat(response?.parentCode).isEqualTo("6")
     }
 
     @Test
@@ -721,8 +723,22 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBodyList(ReferenceCode::class.java)
-        .returnResult().responseBody
+
+      webTestClient.get().uri("/incentives/reference-codes/STD")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("sequence").isEqualTo(1)
+        .jsonPath("parentCode").isEqualTo("1")
+
+      webTestClient.get().uri("/incentives/reference-codes/ENH")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("sequence").isEqualTo(5)
+        .jsonPath("parentCode").isEqualTo("5")
     }
 
     @Test
@@ -739,9 +755,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBodyList(ReferenceCode::class.java)
-        .returnResult()
-        .responseBody
     }
 
     @Test
