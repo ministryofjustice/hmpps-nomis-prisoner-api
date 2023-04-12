@@ -10,8 +10,9 @@ class IEPLevel(
   code: String,
   description: String,
   active: Boolean = true,
+  sequence: Int = 0,
 ) :
-  ReferenceCode(IEP_LEVEL, code, description, active) {
+  ReferenceCode(IEP_LEVEL, code, description, active, sequence, sequence.toString()) {
   companion object {
     const val IEP_LEVEL = "IEP_LEVEL"
     fun pk(code: String): Pk = Pk(IEP_LEVEL, code)

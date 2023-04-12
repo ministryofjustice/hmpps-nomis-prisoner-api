@@ -34,6 +34,8 @@ abstract class ReferenceCode(
   @Column(name = "LIST_SEQ")
   open var sequence: Int? = 0,
 
+  open var parentCode: String? = null,
+
 ) : Serializable {
   constructor(domain: String, code: String, description: String) : this(
     domain = domain,
@@ -42,12 +44,14 @@ abstract class ReferenceCode(
     description = description,
   )
 
-  constructor(domain: String, code: String, description: String, active: Boolean) : this(
+  constructor(domain: String, code: String, description: String, active: Boolean, sequence: Int?, parentCode: String?) : this(
     domain = domain,
     code = code,
     id = Pk(domain, code),
     description = description,
     active = active,
+    sequence = sequence,
+    parentCode = parentCode,
   )
 
   override fun equals(other: Any?): Boolean {

@@ -91,28 +91,37 @@ class IncentivesService(
 
   fun createGlobalIncentiveLevel(createIncentiveRequest: CreateGlobalIncentiveRequest): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createIncentiveRequest.code))
-      ?.let { ReferenceCode(it.code, it.domain, it.description, it.active) }
-      .also { log.info("Global IEP level: $createIncentiveRequest already exists") } // TODO call update??
+      ?.let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }
+      .also { log.warn("Ignoring Global IEP creation - IEP level: $createIncentiveRequest already exists") }
       ?: let {
+        val nextIepLevelSequence = getNextIepLevelSequence()
         incentiveReferenceCodeRepository.save(
           IEPLevel(
             createIncentiveRequest.code,
             createIncentiveRequest.description,
             createIncentiveRequest.active,
+            nextIepLevelSequence,
           ),
-        ).let { ReferenceCode(it.code, it.domain, it.description, it.active) }.also {
+        ).let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }.also {
           telemetryClient.trackEvent(
             "global-incentive-level-created",
             mapOf(
               "code" to it.code,
               "active" to it.active.toString(),
               "description" to it.description,
+              "sequence" to nextIepLevelSequence.toString(),
+              "parentCode" to nextIepLevelSequence.toString(),
             ),
             null,
           )
         }
       }
   }
+
+  private fun getNextIepLevelSequence() = incentiveReferenceCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL).lastOrNull()
+    ?.takeIf { it.sequence != null }?.let { maxSequenceIepLevel ->
+      (maxSequenceIepLevel.sequence!! + 1)
+    } ?: 1
 
   fun updateGlobalIncentiveLevel(code: String, updateIncentiveRequest: UpdateGlobalIncentiveRequest): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
@@ -128,13 +137,13 @@ class IncentivesService(
           ),
           null,
         )
-        return ReferenceCode(it.code, it.domain, it.description, it.active)
+        return ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode)
       } ?: throw NotFoundException("Incentive level: $code not found")
   }
 
   fun getGlobalIncentiveLevel(code: String): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
-      ?.let { ReferenceCode(it.code, it.domain, it.description, it.active) }
+      ?.let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }
       ?: throw NotFoundException("Incentive level: $code not found")
   }
 
@@ -157,11 +166,12 @@ class IncentivesService(
     codeList.mapIndexed { index, levelCode ->
       incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(levelCode))?.let { iepLevel ->
         iepLevel.sequence = (index + 1)
+        iepLevel.parentCode = iepLevel.sequence.toString()
       } ?: log.error("Attempted to reorder missing Incentive level $levelCode")
     }
     val reorderedIncentiveLevels =
       incentiveReferenceCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL)
-        .map { ReferenceCode(it.code, it.domain, it.description, it.active) }
+        .map { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }
 
     telemetryClient.trackEvent(
       "global-incentive-level-reordered",

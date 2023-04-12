@@ -5,4 +5,6 @@ data class ReferenceCode(
   val domain: String,
   val description: String,
   val active: Boolean,
+  val sequence: Int?,
+  val parentCode: String?,
 )
