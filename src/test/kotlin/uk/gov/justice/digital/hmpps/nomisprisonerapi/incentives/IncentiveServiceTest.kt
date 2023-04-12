@@ -146,13 +146,6 @@ internal class IncentiveServiceTest {
   @DisplayName("create global incentive level")
   @Nested
   internal inner class CreateGlobalIncentiveLevel {
-    private val createRequest = CreateIncentiveRequest(
-      iepLevel = "STD",
-      comments = "a comment",
-      iepDateTime = LocalDateTime.parse("2021-12-01T13:04"),
-      prisonId = prisonId,
-      userId = "me",
-    )
 
     @Test
     fun `sequence and parent code are set to max(sequence) + 1`() {
