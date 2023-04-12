@@ -130,6 +130,9 @@ class OffenderCourseAttendance(
 
   @Column(name = "TXN_ID", updatable = false)
   val paidTransactionId: Long? = null,
+
+  @Column(name = "REFERENCE_ID")
+  val referenceId: Long? = null,
 ) : Serializable {
 
   @Column

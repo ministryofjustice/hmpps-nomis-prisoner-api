@@ -131,6 +131,7 @@ class AttendanceService(
     toInternalLocation = courseSchedule.courseActivity.internalLocation,
     prison = courseSchedule.courseActivity.prison,
     program = courseSchedule.courseActivity.program,
+    referenceId = courseSchedule.courseScheduleId,
   )
 
   private fun findAttendanceOutcomeOrThrow(it: String) =
