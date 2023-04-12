@@ -243,6 +243,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(courseActivity.courseActivityId).isEqualTo(this@UpsertAttendance.courseActivity.courseActivityId)
           assertThat(prison?.id).isEqualTo("LEI")
           assertThat(program?.programId).isEqualTo(20)
+          assertThat(referenceId).isEqualTo(this@UpsertAttendance.courseSchedule.courseScheduleId)
         }
       }
 
