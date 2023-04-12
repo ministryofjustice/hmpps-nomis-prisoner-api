@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -138,6 +140,65 @@ internal class IncentiveServiceTest {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
       assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison SWI")
+    }
+  }
+
+  @DisplayName("create global incentive level")
+  @Nested
+  internal inner class CreateGlobalIncentiveLevel {
+    private val createRequest = CreateIncentiveRequest(
+      iepLevel = "STD",
+      comments = "a comment",
+      iepDateTime = LocalDateTime.parse("2021-12-01T13:04"),
+      prisonId = prisonId,
+      userId = "me",
+    )
+
+    @Test
+    fun `sequence and parent code are set to max(sequence) + 1`() {
+      whenever(incentivesCodeRepository.findById(IEPLevel.pk("BIG"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(incentivesCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL)).thenReturn(
+        listOf(IEPLevel("AAA", "desc", true, 1)),
+      )
+      whenever(incentivesCodeRepository.save(any())).thenReturn(IEPLevel("BIG", "desc"))
+      incentivesService.createGlobalIncentiveLevel(CreateGlobalIncentiveRequest("BIG", "desc", true))
+
+      verify(incentivesCodeRepository).save(
+        org.mockito.kotlin.check { iep ->
+          assertThat(iep.sequence).isEqualTo(2)
+          assertThat(iep.parentCode).isEqualTo("2")
+        },
+      )
+    }
+
+    @Test
+    fun `sequence and parent code are are set to 1 if no other IEP levels found`() {
+      whenever(incentivesCodeRepository.findById(IEPLevel.pk("BIG"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(incentivesCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL)).thenReturn(
+        emptyList(),
+      )
+      whenever(incentivesCodeRepository.save(any())).thenReturn(IEPLevel("BIG", "desc"))
+
+      incentivesService.createGlobalIncentiveLevel(CreateGlobalIncentiveRequest("BIG", "desc", true))
+      verify(incentivesCodeRepository).save(
+        org.mockito.kotlin.check { iep ->
+          assertThat(iep.sequence).isEqualTo(1)
+          assertThat(iep.parentCode).isEqualTo("1")
+        },
+      )
+    }
+
+    @Test
+    fun `Attempt to create an existing global IEP level is ignored`() {
+      whenever(incentivesCodeRepository.findById(IEPLevel.pk("BIG"))).thenReturn(
+        Optional.of(IEPLevel("AAA", "desc", true, 1)),
+      )
+      incentivesService.createGlobalIncentiveLevel(CreateGlobalIncentiveRequest("BIG", "desc", true))
+      verify(incentivesCodeRepository, never()).save(any())
     }
   }
 }
