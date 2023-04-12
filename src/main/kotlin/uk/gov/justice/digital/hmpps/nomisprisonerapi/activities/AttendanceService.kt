@@ -4,6 +4,8 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -60,7 +62,25 @@ class AttendanceService(
       }
   }
 
-  private fun toOffenderCourseAttendance(courseActivityId: Long, bookingId: Long, request: UpsertAttendanceRequest): OffenderCourseAttendance {
+  fun findAttendanceStatus(courseActivityId: Long, bookingId: Long, request: GetAttendanceStatusRequest): GetAttendanceStatusResponse {
+    val courseActivity = findCourseActivityOrThrow(courseActivityId)
+
+    val courseSchedule = with(request) {
+      findCourseScheduleOrThrow(courseActivity, courseActivityId, scheduleDate, startTime, endTime)
+    }
+
+    val offenderBooking = findOffenderBookingOrThrow(bookingId)
+
+    val attendance = findAttendanceOrThrow(courseSchedule, offenderBooking)
+
+    return GetAttendanceStatusResponse(attendance.eventStatus.code)
+  }
+
+  private fun toOffenderCourseAttendance(
+    courseActivityId: Long,
+    bookingId: Long,
+    request: UpsertAttendanceRequest,
+  ): OffenderCourseAttendance {
     val courseActivity = findCourseActivityOrThrow(courseActivityId)
 
     val courseSchedule = with(request) {
@@ -73,7 +93,7 @@ class AttendanceService(
 
     val status = findEventStatusOrThrow(request.eventStatusCode)
 
-    val attendance = findAttendance(courseSchedule, offenderBooking)
+    val attendance = findUpdatableAttendanceOrThrow(courseSchedule, offenderBooking)
       ?: newAttendance(
         courseSchedule,
         offenderBooking,
@@ -130,7 +150,22 @@ class AttendanceService(
     offenderBooking: OffenderBooking,
   ): OffenderCourseAttendance? =
     attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, offenderBooking)
+
+  private fun findUpdatableAttendanceOrThrow(
+    courseSchedule: CourseSchedule,
+    offenderBooking: OffenderBooking,
+  ): OffenderCourseAttendance? =
+    findAttendance(courseSchedule, offenderBooking)
       ?.also { if (!it.isUpdatable()) throw BadDataException("Attendance ${it.eventId} cannot be changed after it has already been paid") }
+
+  private fun findAttendanceOrThrow(
+    courseSchedule: CourseSchedule,
+    offenderBooking: OffenderBooking,
+  ): OffenderCourseAttendance =
+    findAttendance(courseSchedule, offenderBooking)
+      ?: with(courseSchedule) {
+        throw NotFoundException("Attendance for activity=${courseActivity.courseActivityId}, offender booking=${offenderBooking.bookingId}, date=$scheduleDate, start time=${startTime.toLocalTime()} and end time=${endTime.toLocalTime()} not found")
+      }
 
   private fun findOffenderProgramProfileOrThrow(
     courseSchedule: CourseSchedule,
@@ -141,10 +176,10 @@ class AttendanceService(
       courseSchedule.courseActivity,
       offenderBooking,
     )
-      ?: throw NotFoundException("Offender program profile for offender booking with id=$bookingId and course activity id=${courseSchedule.courseActivity.courseActivityId} not found")
+      ?: throw BadDataException("Offender program profile for offender booking with id=$bookingId and course activity id=${courseSchedule.courseActivity.courseActivityId} not found")
 
   private fun findOffenderBookingOrThrow(bookingId: Long) = offenderBookingRepository.findByIdOrNull(bookingId)
-    ?: throw NotFoundException("Offender booking with id=$bookingId not found")
+    ?: throw BadDataException("Offender booking with id=$bookingId not found")
 
   private fun findCourseScheduleOrThrow(
     courseActivity: CourseActivity,
@@ -159,10 +194,10 @@ class AttendanceService(
       scheduleDate.atTime(startTime),
       scheduleDate.atTime(endTime),
     )
-      ?: throw NotFoundException("Course schedule for activity=$courseActivityId, date=$scheduleDate, start time=$startTime and end time=$endTime not found")
+      ?: throw BadDataException("Course schedule for activity=$courseActivityId, date=$scheduleDate, start time=$startTime and end time=$endTime not found")
 
   private fun findCourseActivityOrThrow(courseActivityId: Long) = (
     activityRepository.findByIdOrNull(courseActivityId)
-      ?: throw NotFoundException("Course activity with id=$courseActivityId not found")
+      ?: throw BadDataException("Course activity with id=$courseActivityId not found")
     )
 }

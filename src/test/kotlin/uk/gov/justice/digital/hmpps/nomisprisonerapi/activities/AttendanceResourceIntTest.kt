@@ -118,16 +118,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return not found`() {
-        webTestClient.post().uri("/activities/1/booking/2/attendance")
-          .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(validJsonRequest))
-          .exchange()
-          .expectStatus().isNotFound
-      }
-
-      @Test
       fun `should return bad request`() {
         webTestClient.post().uri("/activities/1/booking/2/attendance")
           .contentType(MediaType.APPLICATION_JSON)
@@ -149,38 +139,38 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     inner class Validation {
 
       @Test
-      fun `should return not found if activity not found`() {
+      fun `should return bad request if activity not found`() {
         webTestClient.upsertAttendance(111, offenderBooking.bookingId)
-          .expectStatus().isNotFound
+          .expectStatus().isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Course activity with id=111 not found")
           }
       }
 
       @Test
-      fun `should return not found if course schedule not found`() {
+      fun `should return bad request if course schedule not found`() {
         val jsonRequest = validJsonRequest.replace(""""endTime": "11:00",""", """"endTime": "12:00",""")
 
         webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId, jsonRequest)
-          .expectStatus().isNotFound
+          .expectStatus().isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Course schedule for activity=${courseActivity.courseActivityId}, date=2022-11-01, start time=08:00 and end time=12:00 not found")
           }
       }
 
       @Test
-      fun `should return not found if offender booking not found`() {
+      fun `should return bad request if offender booking not found`() {
         webTestClient.upsertAttendance(courseActivity.courseActivityId, 222)
-          .expectStatus().isNotFound
+          .expectStatus().isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Offender booking with id=222 not found")
           }
       }
 
       @Test
-      fun `should return not found if allocation not found`() {
+      fun `should return bad request if allocation not found`() {
         webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId)
-          .expectStatus().isNotFound
+          .expectStatus().isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Offender program profile for offender booking with id=${offenderBooking.bookingId} and course activity id=${courseActivity.courseActivityId} not found")
           }
@@ -388,21 +378,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    private fun saveAttendance(eventStatus: String, courseSchedule: CourseSchedule, allocation: OffenderProgramProfile, paidTransactionId: Long? = null) =
-      with(courseSchedule) {
-        repository.save(
-          attendanceBuilderFactory.builder(
-            eventStatusCode = eventStatus,
-            eventDate = this.scheduleDate,
-            startTime = this.startTime,
-            endTime = this.endTime,
-            paidTransactionId = paidTransactionId,
-          ),
-          courseSchedule,
-          allocation,
-        )
-      }
-
     private fun WebTestClient.upsertAttendance(
       courseActivityId: Long,
       bookingId: Long,
@@ -414,4 +389,136 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         .body(BodyInserters.fromValue(jsonRequest))
         .exchange()
   }
+
+  @Nested
+  inner class GetAttendanceStatus {
+
+    private lateinit var courseActivity: CourseActivity
+    private lateinit var courseSchedule: CourseSchedule
+    private lateinit var offender: Offender
+    private lateinit var offenderBooking: OffenderBooking
+
+    val jsonRequest = """
+      {
+        "scheduleDate": "2022-11-01",
+        "startTime": "08:00",
+        "endTime": "11:00"
+      }
+    """.trimIndent()
+
+    @BeforeEach
+    fun setUp() {
+      repository.save(ProgramServiceBuilder())
+      courseActivity = repository.save(courseActivityBuilderFactory.builder())
+      courseSchedule = courseActivity.courseSchedules.first()
+      offender =
+        repository.save(OffenderBuilder(nomsId = "A1234AR").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
+      offenderBooking = offender.latestBooking()
+    }
+
+    @AfterEach
+    fun cleanUp() {
+      repository.deleteAttendances()
+      repository.deleteOffenders()
+      repository.deleteActivities()
+      repository.deleteProgramServices()
+    }
+
+    @Test
+    fun `should return OK if attendance status found`() {
+      val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+      saveAttendance("SCH", courseSchedule, allocation)
+
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/booking/${offenderBooking.bookingId}/attendance-status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(jsonRequest))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody().jsonPath("$.eventStatus").isEqualTo("SCH")
+    }
+
+    @Test
+    fun `should return bad request if activity not found`() {
+      webTestClient.post().uri("/activities/1111/booking/${offenderBooking.bookingId}/attendance-status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(jsonRequest))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Course activity with id=1111 not found")
+        }
+    }
+
+    @Test
+    fun `should return bad request if offender booking not found`() {
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/booking/2222/attendance-status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(jsonRequest))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Offender booking with id=2222 not found")
+        }
+    }
+
+    @Test
+    fun `should return not found if attendance not found`() {
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/booking/${offenderBooking.bookingId}/attendance-status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(jsonRequest))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Attendance for activity=${courseActivity.courseActivityId}, offender booking=${offenderBooking.bookingId}, date=2022-11-01, start time=08:00 and end time=11:00 not found")
+        }
+    }
+
+    @Test
+    fun `should return unauthorised if no token`() {
+      webTestClient.post().uri("/activities/1/booking/2/attendance")
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(jsonRequest))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden if no role`() {
+      webTestClient.post().uri("/activities/1/booking/2/attendance-status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(jsonRequest))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden with wrong role`() {
+      webTestClient.post().uri("/activities/1/booking/2/attendance-status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(jsonRequest))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+  }
+
+  private fun saveAttendance(eventStatus: String, courseSchedule: CourseSchedule, allocation: OffenderProgramProfile, paidTransactionId: Long? = null) =
+    with(courseSchedule) {
+      repository.save(
+        attendanceBuilderFactory.builder(
+          eventStatusCode = eventStatus,
+          eventDate = this.scheduleDate,
+          startTime = this.startTime,
+          endTime = this.endTime,
+          paidTransactionId = paidTransactionId,
+        ),
+        courseSchedule,
+        allocation,
+      )
+    }
 }
