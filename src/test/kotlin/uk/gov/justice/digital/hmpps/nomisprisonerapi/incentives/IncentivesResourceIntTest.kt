@@ -40,7 +40,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
   @DisplayName("Create")
   @Nested
   inner class CreateIncentive {
-    lateinit var offenderAtMoorlands: Offender
+    private lateinit var offenderAtMoorlands: Offender
 
     @BeforeEach
     internal fun createPrisoner() {
@@ -152,9 +152,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
   @DisplayName("filter incentives")
   @Nested
   inner class GetIncentiveIdsByFilterRequest {
-    lateinit var offenderAtMoorlands: Offender
-    lateinit var offenderAtLeeds: Offender
-    lateinit var offenderAtBrixton: Offender
+    private lateinit var offenderAtMoorlands: Offender
+    private lateinit var offenderAtLeeds: Offender
+    private lateinit var offenderAtBrixton: Offender
 
     @BeforeEach
     internal fun createPrisonerWithIEPs() {
@@ -294,7 +294,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
   @DisplayName("get incentive by id")
   @Nested
   inner class GetIncentiveByIdRequest {
-    lateinit var offenderAtMoorlands: Offender
+    private lateinit var offenderAtMoorlands: Offender
 
     @BeforeEach
     internal fun createPrisonerWithIEPs() {
@@ -418,8 +418,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
   @DisplayName("get current incentive for booking")
   @Nested
   inner class GetCurrentIncentiveByBookingRequest {
-    lateinit var offenderAtMoorlands: Offender
-    lateinit var offenderAtMoorlandsWithoutIncentives: Offender
+    private lateinit var offenderAtMoorlands: Offender
+    private lateinit var offenderAtMoorlandsWithoutIncentives: Offender
 
     @BeforeEach
     internal fun createPrisonerWithIEPs() {
@@ -521,7 +521,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("get global incentive level")
   @Nested
-  inner class getGlobalIncentiveLevel {
+  inner class GetGlobalIncentiveLevel {
     @Test
     fun `get global incentive level`() {
       webTestClient.get().uri("/incentives/reference-codes/STD")
@@ -563,7 +563,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("create global incentive level")
   @Nested
-  inner class createGlobalIncentiveLevel {
+  inner class CreateGlobalIncentiveLevel {
 
     @AfterEach
     internal fun deleteIncentiveLevel() {
@@ -595,9 +595,10 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(response?.code).isEqualTo("NIEP")
       assertThat(response?.domain).isEqualTo("IEP_LEVEL")
       assertThat(response?.description).isEqualTo("description for NIEP")
-      assertThat(response?.active).isFalse()
+      assertThat(response?.active).isFalse
       assertThat(response?.sequence).isEqualTo(6)
       assertThat(response?.parentCode).isEqualTo("6")
+      assertThat(response?.systemDataFlag).isFalse
     }
 
     @Test
@@ -644,7 +645,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("update global incentive level")
   @Nested
-  inner class updateGlobalIncentiveLevel {
+  inner class UpdateGlobalIncentiveLevel {
     @Test
     fun `update global incentive level`() {
       val response = webTestClient.put().uri("/incentives/reference-codes/EN2")
@@ -665,8 +666,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(response?.code).isEqualTo("EN2")
       assertThat(response?.domain).isEqualTo("IEP_LEVEL")
       assertThat(response?.description).isEqualTo("new description for EN2")
-      assertThat(response?.active).isFalse()
+      assertThat(response?.active).isFalse
       assertThat(response?.expiredDate).isToday
+      assertThat(response?.systemDataFlag).isFalse
     }
 
     @Test
@@ -709,7 +711,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("reorder global incentive levels")
   @Nested
-  inner class reorderGlobalIncentiveLevels {
+  inner class ReorderGlobalIncentiveLevels {
     @Test
     fun `reorder global incentive levels`() {
       webTestClient.post().uri("/incentives/reference-codes/reorder")
