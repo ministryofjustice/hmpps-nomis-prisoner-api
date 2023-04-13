@@ -8,7 +8,7 @@ import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Course activity allocation request")
-data class CreateOffenderProgramProfileRequest(
+data class CreateAllocationRequest(
   @Schema(
     description = "Booking id of the prisoner to be allocated to the activity",
     required = true,

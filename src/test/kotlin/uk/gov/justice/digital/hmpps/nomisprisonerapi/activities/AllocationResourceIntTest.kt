@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndOffenderProgramProfileRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
@@ -41,7 +41,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   private lateinit var offenderAtOtherPrison: Offender
 
   private fun callCreateActivityEndpoint(courseActivityId: Long, bookingId: Long): Long {
-    val response = webTestClient.post().uri("/activities/$courseActivityId")
+    val response = webTestClient.post().uri("/activities/$courseActivityId/allocations")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .contentType(MediaType.APPLICATION_JSON)
       .body(
@@ -56,7 +56,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       )
       .exchange()
       .expectStatus().isCreated
-      .expectBody(OffenderProgramProfileResponse::class.java)
+      .expectBody(CreateAllocationResponse::class.java)
       .returnResult().responseBody
     assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
     return response!!.offenderProgramReferenceId
@@ -79,12 +79,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class CreateOffenderProgramProfile {
+  inner class CreateAllocation {
 
     private lateinit var courseActivity: CourseActivity
 
-    private val createOffenderProgramProfileRequest: () -> CreateOffenderProgramProfileRequest = {
-      CreateOffenderProgramProfileRequest(
+    private val createAllocationRequest: () -> CreateAllocationRequest = {
+      CreateAllocationRequest(
         bookingId = offenderAtMoorlands.latestBooking().bookingId,
         startDate = LocalDate.parse("2022-11-14"),
         endDate = TEN_DAYS_TIME,
@@ -99,35 +99,35 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/allocations")
+        .body(BodyInserters.fromValue(createAllocationRequest()))
         .exchange()
         .expectStatus().isUnauthorized
     }
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf()))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(createAllocationRequest()))
         .exchange()
         .expectStatus().isForbidden
     }
 
     @Test
     fun `access forbidden with wrong role`() {
-      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(createAllocationRequest()))
         .exchange()
         .expectStatus().isForbidden
     }
 
     @Test
     fun `access with activity not found`() {
-      val response = webTestClient.post().uri("/activities/999888")
+      val response = webTestClient.post().uri("/activities/999888/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(createAllocationRequest()))
         .exchange()
         .expectStatus().isNotFound
         .expectBody(ErrorResponse::class.java)
@@ -137,9 +137,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access with booking not found`() {
-      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest().copy(bookingId = 999888)))
+        .body(BodyInserters.fromValue(createAllocationRequest().copy(bookingId = 999888)))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
@@ -149,14 +149,14 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `allocation already exists`() {
-      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+      webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(createAllocationRequest()))
         .exchange()
         .expectStatus().isCreated
-      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(createAllocationRequest()))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
@@ -166,9 +166,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `prisoner at different prison`() {
-      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}")
+      val response = webTestClient.post().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest().copy(bookingId = offenderAtOtherPrison.latestBooking().bookingId)))
+        .body(BodyInserters.fromValue(createAllocationRequest().copy(bookingId = offenderAtOtherPrison.latestBooking().bookingId)))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
@@ -179,9 +179,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `activity expired`() {
       val expired = repository.save(courseActivityBuilderFactory.builder(prisonId = PRISON_ID, endDate = "2022-12-14"))
-      val response = webTestClient.post().uri("/activities/${expired.courseActivityId}")
+      val response = webTestClient.post().uri("/activities/${expired.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(createOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(createAllocationRequest()))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
@@ -191,7 +191,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `start date missing`() {
-      val response = webTestClient.post().uri("/activities/4567")
+      val response = webTestClient.post().uri("/activities/4567/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
@@ -232,18 +232,18 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class EndOffenderProgramProfile {
+  inner class UpdateAllocation {
 
     private lateinit var courseActivity: CourseActivity
     private var bookingId: Long = 0
 
-    private val endOffenderProgramProfileRequest: () -> EndOffenderProgramProfileRequest = {
-      EndOffenderProgramProfileRequest(
+    private fun updateAllocationRequest(bookingId: Long): UpdateAllocationRequest =
+      UpdateAllocationRequest(
+        bookingId = bookingId,
         endDate = LocalDate.parse("2023-01-28"),
         endReason = "REL",
         endComment = "A comment",
       )
-    }
 
     @BeforeEach
     fun setup() {
@@ -254,35 +254,35 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
-        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
+        .body(BodyInserters.fromValue(updateAllocationRequest(bookingId)))
         .exchange()
         .expectStatus().isUnauthorized
     }
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf()))
-        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(updateAllocationRequest(bookingId)))
         .exchange()
         .expectStatus().isForbidden
     }
 
     @Test
     fun `access forbidden with wrong role`() {
-      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(updateAllocationRequest(bookingId)))
         .exchange()
         .expectStatus().isForbidden
     }
 
     @Test
     fun `course activity not found`() {
-      webTestClient.put().uri("/activities/999888/booking-id/$bookingId/end")
+      webTestClient.put().uri("/activities/999888/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(updateAllocationRequest(bookingId)))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -291,9 +291,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `booking not found`() {
-      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/999888/end")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(updateAllocationRequest(999888)))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -304,9 +304,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `the prisoner is not allocated to the course`() {
       val otherBookingId = offenderAtOtherPrison.latestBooking().bookingId
 
-      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$otherBookingId/end")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest()))
+        .body(BodyInserters.fromValue(updateAllocationRequest(otherBookingId)))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody()
@@ -317,12 +317,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `end date missing`() {
       val response =
-        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               """{
+            "bookingId" : $bookingId,
             "endReason" : "REL"
           }""",
             ),
@@ -337,12 +338,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `end date invalid`() {
       val response =
-        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               """{
+            "bookingId" : $bookingId,
             "endDate" : "invalid"
           }""",
             ),
@@ -357,10 +359,10 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `text too long`() {
       val response =
-        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(endOffenderProgramProfileRequest().copy(endReason = "ThirteenChars")))
+          .body(BodyInserters.fromValue(updateAllocationRequest(bookingId).copy(endReason = "ThirteenChars")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody(ErrorResponse::class.java)
@@ -370,9 +372,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `the end reason is invalid`() {
-      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/booking-id/$bookingId/end")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(endOffenderProgramProfileRequest().copy(endReason = "DUFF")))
+        .body(BodyInserters.fromValue(updateAllocationRequest(bookingId).copy(endReason = "DUFF")))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody()
@@ -397,12 +399,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     private fun callEndpoint(courseActivityId: Long, bookingId: Long): Long {
       val response =
-        webTestClient.put().uri("/activities/$courseActivityId/booking-id/$bookingId/end")
+        webTestClient.put().uri("/activities/$courseActivityId/allocations")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               """{
+            "bookingId" : $bookingId,
             "endDate"   : "2023-01-28",
             "endReason" : "REL",
             "endComment": "A comment"
@@ -411,7 +414,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
-          .expectBody(OffenderProgramProfileResponse::class.java)
+          .expectBody(CreateAllocationResponse::class.java)
           .returnResult().responseBody
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       return response!!.offenderProgramReferenceId
