@@ -39,6 +39,9 @@ abstract class ReferenceCode(
 
   open var expiredDate: LocalDate? = null,
 
+  @Convert(converter = YesNoConverter::class)
+  open var systemDataFlag: Boolean = false,
+
 ) : Serializable {
   constructor(domain: String, code: String, description: String) : this(
     domain = domain,

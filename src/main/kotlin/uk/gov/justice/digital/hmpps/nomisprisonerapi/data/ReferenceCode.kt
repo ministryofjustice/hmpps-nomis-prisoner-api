@@ -10,4 +10,5 @@ data class ReferenceCode(
   val sequence: Int?,
   val parentCode: String?,
   val expiredDate: LocalDate? = null,
+  val systemDataFlag: Boolean = false,
 )

@@ -94,7 +94,17 @@ class IncentivesService(
   @Audit
   fun createGlobalIncentiveLevel(createIncentiveRequest: CreateGlobalIncentiveRequest): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createIncentiveRequest.code))
-      ?.let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }
+      ?.let {
+        ReferenceCode(
+          code = it.code,
+          domain = it.domain,
+          description = it.description,
+          active = it.active,
+          sequence = it.sequence,
+          parentCode = it.parentCode,
+          systemDataFlag = it.systemDataFlag,
+        )
+      }
       .also { log.warn("Ignoring Global IEP creation - IEP level: $createIncentiveRequest already exists") }
       ?: let {
         val nextIepLevelSequence = getNextIepLevelSequence()
@@ -106,7 +116,17 @@ class IncentivesService(
             nextIepLevelSequence,
             expiredDate = if (createIncentiveRequest.active) null else LocalDate.now(),
           ),
-        ).let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }.also {
+        ).let {
+          ReferenceCode(
+            code = it.code,
+            domain = it.domain,
+            description = it.description,
+            active = it.active,
+            sequence = it.sequence,
+            parentCode = it.parentCode,
+            systemDataFlag = it.systemDataFlag,
+          )
+        }.also {
           telemetryClient.trackEvent(
             "global-incentive-level-created",
             mapOf(
