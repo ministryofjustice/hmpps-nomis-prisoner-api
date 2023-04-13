@@ -10,8 +10,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -118,7 +118,7 @@ class AllocationServiceTest {
       ),
     )
   }
-  private val createRequest = CreateOffenderProgramProfileRequest(
+  private val createRequest = CreateAllocationRequest(
     bookingId = OFFENDER_BOOKING_ID,
     startDate = LocalDate.parse("2022-10-31"),
     endDate = LocalDate.parse("2022-11-30"),
@@ -156,8 +156,8 @@ class AllocationServiceTest {
 
     @Test
     fun `Data is mapped correctly`() {
-      Assertions.assertThat(allocationService.createOffenderProgramProfile(COURSE_ACTIVITY_ID, createRequest))
-        .isEqualTo(OffenderProgramProfileResponse(OFFENDER_PROGRAM_REFERENCE_ID))
+      Assertions.assertThat(allocationService.createAllocation(COURSE_ACTIVITY_ID, createRequest))
+        .isEqualTo(CreateAllocationResponse(OFFENDER_PROGRAM_REFERENCE_ID))
 
       verify(offenderProgramProfileRepository).save(
         org.mockito.kotlin.check {
@@ -187,7 +187,7 @@ class AllocationServiceTest {
       whenever(activityRepository.findById(COURSE_ACTIVITY_ID)).thenReturn(Optional.empty())
 
       val thrown = assertThrows<NotFoundException>() {
-        allocationService.createOffenderProgramProfile(COURSE_ACTIVITY_ID, createRequest)
+        allocationService.createAllocation(COURSE_ACTIVITY_ID, createRequest)
       }
       Assertions.assertThat(thrown.message).isEqualTo("Course activity with id=$COURSE_ACTIVITY_ID does not exist")
     }
@@ -197,7 +197,7 @@ class AllocationServiceTest {
       whenever(offenderBookingRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.empty())
 
       val thrown = assertThrows<BadDataException>() {
-        allocationService.createOffenderProgramProfile(COURSE_ACTIVITY_ID, createRequest)
+        allocationService.createAllocation(COURSE_ACTIVITY_ID, createRequest)
       }
       Assertions.assertThat(thrown.message).isEqualTo("Booking with id=$OFFENDER_BOOKING_ID does not exist")
     }
@@ -205,7 +205,7 @@ class AllocationServiceTest {
     @Test
     fun invalidPayBandCode() {
       val thrown = assertThrows<BadDataException>() {
-        allocationService.createOffenderProgramProfile(
+        allocationService.createAllocation(
           COURSE_ACTIVITY_ID,
           createRequest.copy(payBandCode = "doesnotexist"),
         )
@@ -219,7 +219,7 @@ class AllocationServiceTest {
       whenever(payBandRepository.findById(PayBand.pk("not_on_course"))).thenReturn(Optional.of(defaultPayBand("not_on_course")))
 
       val thrown = assertThrows<BadDataException>() {
-        allocationService.createOffenderProgramProfile(
+        allocationService.createAllocation(
           COURSE_ACTIVITY_ID,
           createRequest.copy(payBandCode = "not_on_course"),
         )

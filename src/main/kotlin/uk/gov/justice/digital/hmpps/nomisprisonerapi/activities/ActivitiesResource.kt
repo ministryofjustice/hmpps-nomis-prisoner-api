@@ -20,13 +20,13 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndOffenderProgramProfileRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
@@ -138,7 +138,7 @@ class ActivitiesResource(
   ) = activityService.updateActivity(courseActivityId, updateActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PostMapping("/activities/{courseActivityId}")
+  @PostMapping("/activities/{courseActivityId}/allocations")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Allocates a prisoner to an activity",
@@ -147,7 +147,7 @@ class ActivitiesResource(
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateOffenderProgramProfileRequest::class),
+          schema = Schema(implementation = CreateAllocationRequest::class),
         ),
       ],
     ),
@@ -158,7 +158,7 @@ class ActivitiesResource(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = OffenderProgramProfileResponse::class),
+            schema = Schema(implementation = CreateAllocationResponse::class),
           ),
         ],
       ),
@@ -200,20 +200,20 @@ class ActivitiesResource(
   fun createOffenderProgramProfile(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid
-    createRequest: CreateOffenderProgramProfileRequest,
-  ): OffenderProgramProfileResponse =
-    allocationService.createOffenderProgramProfile(courseActivityId, createRequest)
+    createRequest: CreateAllocationRequest,
+  ): CreateAllocationResponse =
+    allocationService.createAllocation(courseActivityId, createRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PutMapping("/activities/{courseActivityId}/booking-id/{bookingId}/end")
+  @PutMapping("/activities/{courseActivityId}/allocations")
   @Operation(
-    summary = "Ends a prisoner's allocation to an activity",
-    description = "Ends a prisoner's allocation to an activity. Requires role NOMIS_ACTIVITIES",
+    summary = "Updates a prisoner's allocation to an activity",
+    description = "Updates a prisoner's allocation to an activity. Requires role NOMIS_ACTIVITIES",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = EndOffenderProgramProfileRequest::class),
+          schema = Schema(implementation = UpdateAllocationRequest::class),
         ),
       ],
     ),
@@ -260,11 +260,10 @@ class ActivitiesResource(
   )
   fun endOffenderProgramProfile(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
-    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
     @RequestBody @Valid
-    createRequest: EndOffenderProgramProfileRequest,
+    updateRequest: UpdateAllocationRequest,
   ) =
-    allocationService.endOffenderProgramProfile(courseActivityId, bookingId, createRequest)
+    allocationService.updateAllocation(courseActivityId, updateRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/schedules")

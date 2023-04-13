@@ -4,9 +4,9 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateOffenderProgramProfileRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndOffenderProgramProfileRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.OffenderProgramProfileResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
@@ -31,10 +31,10 @@ class AllocationService(
   private val programServiceEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createOffenderProgramProfile(
+  fun createAllocation(
     courseActivityId: Long,
-    dto: CreateOffenderProgramProfileRequest,
-  ): OffenderProgramProfileResponse =
+    dto: CreateAllocationRequest,
+  ): CreateAllocationResponse =
 
     offenderProgramProfileRepository.save(mapOffenderProgramProfileModel(courseActivityId, dto)).run {
       telemetryClient.trackEvent(
@@ -46,18 +46,17 @@ class AllocationService(
         ),
         null,
       )
-      OffenderProgramProfileResponse(offenderProgramReferenceId)
+      CreateAllocationResponse(offenderProgramReferenceId)
     }
 
-  fun endOffenderProgramProfile(
+  fun updateAllocation(
     courseActivityId: Long,
-    bookingId: Long,
-    dto: EndOffenderProgramProfileRequest,
-  ): OffenderProgramProfileResponse =
+    dto: UpdateAllocationRequest,
+  ): CreateAllocationResponse =
 
     offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCode(
       courseActivityId,
-      bookingId,
+      dto.bookingId,
       "ALLOC",
     )
       ?.run {
@@ -76,20 +75,20 @@ class AllocationService(
           ),
           null,
         )
-        OffenderProgramProfileResponse(offenderProgramReferenceId)
+        CreateAllocationResponse(offenderProgramReferenceId)
       }
 
       ?: run {
         activityRepository.findByIdOrNull(courseActivityId)
           ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
-        offenderBookingRepository.findByIdOrNull(bookingId)
-          ?: throw NotFoundException("Booking with id=$bookingId does not exist")
-        throw BadDataException("Offender Program Profile with courseActivityId=$courseActivityId and bookingId=$bookingId and status=ALLOC does not exist")
+        offenderBookingRepository.findByIdOrNull(dto.bookingId)
+          ?: throw NotFoundException("Booking with id=${dto.bookingId} does not exist")
+        throw BadDataException("Offender Program Profile with courseActivityId=$courseActivityId and bookingId=${dto.bookingId} and status=ALLOC does not exist")
       }
 
   private fun mapOffenderProgramProfileModel(
     courseActivityId: Long,
-    dto: CreateOffenderProgramProfileRequest,
+    dto: CreateAllocationRequest,
   ): OffenderProgramProfile {
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")

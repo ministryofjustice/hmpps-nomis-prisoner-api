@@ -1103,7 +1103,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // allocate offender
       val offenderAtMoorlands =
         repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
-      webTestClient.post().uri("/activities/$activityId")
+      webTestClient.post().uri("/activities/$activityId/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
@@ -1142,7 +1142,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // allocate offender
       val offenderAtMoorlands =
         repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
-      webTestClient.post().uri("/activities/$activityId")
+      webTestClient.post().uri("/activities/$activityId/allocations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
