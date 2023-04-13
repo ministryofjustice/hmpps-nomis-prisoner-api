@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel.Companion.IEP_LEVEL
+import java.time.LocalDate
 
 @Entity
 @DiscriminatorValue(IEP_LEVEL)
@@ -11,8 +12,17 @@ class IEPLevel(
   description: String,
   active: Boolean = true,
   sequence: Int = 0,
+  expiredDate: LocalDate? = null,
 ) :
-  ReferenceCode(IEP_LEVEL, code, description, active, sequence, sequence.toString()) {
+  ReferenceCode(
+    domain = IEP_LEVEL,
+    code = code,
+    description = description,
+    active = active,
+    sequence = sequence,
+    parentCode = sequence.toString(),
+    expiredDate = expiredDate,
+  ) {
   companion object {
     const val IEP_LEVEL = "IEP_LEVEL"
     fun pk(code: String): Pk = Pk(IEP_LEVEL, code)

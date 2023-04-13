@@ -194,4 +194,51 @@ internal class IncentiveServiceTest {
       verify(incentivesCodeRepository, never()).save(any())
     }
   }
+
+  @DisplayName("update global incentive level")
+  @Nested
+  internal inner class UpdateGlobalIncentiveLevel {
+    val existingActiveIepLevel = IEPLevel("ABC", "desc", true)
+    val existingInactiveIepLevel =
+      IEPLevel(code = "ABC", description = "desc", active = false, expiredDate = LocalDate.of(2023, 1, 10))
+
+    @Test
+    fun `expiredDate is set to today when incentive level is made inactive`() {
+      whenever(incentivesCodeRepository.findById(IEPLevel.pk("ABC"))).thenReturn(
+        Optional.of(existingActiveIepLevel),
+      )
+      assertThat(
+        incentivesService.updateGlobalIncentiveLevel(
+          "ABC",
+          UpdateGlobalIncentiveRequest("desc", false),
+        ).expiredDate,
+      ).isToday
+    }
+
+    @Test
+    fun `expiredDate is set to previous value when an inactive incentive level is updated `() {
+      whenever(incentivesCodeRepository.findById(IEPLevel.pk("ABC"))).thenReturn(
+        Optional.of(existingInactiveIepLevel),
+      )
+      assertThat(
+        incentivesService.updateGlobalIncentiveLevel(
+          "ABC",
+          UpdateGlobalIncentiveRequest("desc", false),
+        ).expiredDate,
+      ).isEqualTo(LocalDate.of(2023, 1, 10))
+    }
+
+    @Test
+    fun `expiredDate is set to null for update to active incentive level`() {
+      whenever(incentivesCodeRepository.findById(IEPLevel.pk("ABC"))).thenReturn(
+        Optional.of(existingInactiveIepLevel),
+      )
+      assertThat(
+        incentivesService.updateGlobalIncentiveLevel(
+          "ABC",
+          UpdateGlobalIncentiveRequest("desc", true),
+        ).expiredDate,
+      ).isNull()
+    }
+  }
 }
