@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncentiveSpecification
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -89,6 +91,7 @@ class IncentivesService(
       } ?: throw NotFoundException("Current Incentive not found, booking id $bookingId")
   }
 
+  @Audit
   fun createGlobalIncentiveLevel(createIncentiveRequest: CreateGlobalIncentiveRequest): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createIncentiveRequest.code))
       ?.let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }
@@ -101,6 +104,7 @@ class IncentivesService(
             createIncentiveRequest.description,
             createIncentiveRequest.active,
             nextIepLevelSequence,
+            expiredDate = if (createIncentiveRequest.active) null else LocalDate.now(),
           ),
         ).let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }.also {
           telemetryClient.trackEvent(
@@ -118,14 +122,17 @@ class IncentivesService(
       }
   }
 
-  private fun getNextIepLevelSequence() = incentiveReferenceCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL).lastOrNull()
-    ?.takeIf { it.sequence != null }?.let { maxSequenceIepLevel ->
-      (maxSequenceIepLevel.sequence!! + 1)
-    } ?: 1
+  private fun getNextIepLevelSequence() =
+    incentiveReferenceCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL).lastOrNull()
+      ?.takeIf { it.sequence != null }?.let { maxSequenceIepLevel ->
+        (maxSequenceIepLevel.sequence!! + 1)
+      } ?: 1
 
+  @Audit
   fun updateGlobalIncentiveLevel(code: String, updateIncentiveRequest: UpdateGlobalIncentiveRequest): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
       ?.let {
+        it.expiredDate = synchroniseExpiredDateOnUpdate(updateIncentiveRequest.active, it)
         it.active = updateIncentiveRequest.active
         it.description = updateIncentiveRequest.description
         telemetryClient.trackEvent(
@@ -137,8 +144,15 @@ class IncentivesService(
           ),
           null,
         )
-        return ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode)
+        return ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode, it.expiredDate)
       } ?: throw NotFoundException("Incentive level: $code not found")
+  }
+
+  fun synchroniseExpiredDateOnUpdate(newActiveStatus: Boolean, persistedLevel: IEPLevel): LocalDate? {
+    if (!newActiveStatus) {
+      return persistedLevel.expiredDate ?: LocalDate.now()
+    }
+    return null
   }
 
   fun getGlobalIncentiveLevel(code: String): ReferenceCode {
@@ -147,6 +161,7 @@ class IncentivesService(
       ?: throw NotFoundException("Incentive level: $code not found")
   }
 
+  @Audit
   fun deleteGlobalIncentiveLevel(code: String) {
     incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
       ?.let {
@@ -162,6 +177,7 @@ class IncentivesService(
       } ?: log.info("Global Incentive level deletion request for: $code ignored. Level does not exist")
   }
 
+  @Audit
   fun reorderGlobalIncentiveLevels(codeList: List<String>) {
     codeList.mapIndexed { index, levelCode ->
       incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(levelCode))?.let { iepLevel ->

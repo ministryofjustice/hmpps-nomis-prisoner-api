@@ -666,6 +666,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(response?.domain).isEqualTo("IEP_LEVEL")
       assertThat(response?.description).isEqualTo("new description for EN2")
       assertThat(response?.active).isFalse()
+      assertThat(response?.expiredDate).isToday
     }
 
     @Test

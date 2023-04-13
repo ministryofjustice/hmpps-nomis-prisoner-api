@@ -9,6 +9,7 @@ import jakarta.persistence.Inheritance
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
 import java.io.Serializable
+import java.time.LocalDate
 import java.util.Objects
 
 @Entity(name = "REFERENCE_CODES")
@@ -36,6 +37,8 @@ abstract class ReferenceCode(
 
   open var parentCode: String? = null,
 
+  open var expiredDate: LocalDate? = null,
+
 ) : Serializable {
   constructor(domain: String, code: String, description: String) : this(
     domain = domain,
@@ -44,7 +47,7 @@ abstract class ReferenceCode(
     description = description,
   )
 
-  constructor(domain: String, code: String, description: String, active: Boolean, sequence: Int?, parentCode: String?) : this(
+  constructor(domain: String, code: String, description: String, active: Boolean, sequence: Int?, parentCode: String?, expiredDate: LocalDate?) : this(
     domain = domain,
     code = code,
     id = Pk(domain, code),
@@ -52,6 +55,7 @@ abstract class ReferenceCode(
     active = active,
     sequence = sequence,
     parentCode = parentCode,
+    expiredDate = expiredDate,
   )
 
   override fun equals(other: Any?): Boolean {
