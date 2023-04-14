@@ -133,6 +133,9 @@ class OffenderCourseAttendance(
 
   @Column(name = "REFERENCE_ID")
   val referenceId: Long? = null,
+
+  @Column(name = "PERFORMANCE_CODE")
+  val performanceCode: String? = "STANDARD",
 ) : Serializable {
 
   @Column
