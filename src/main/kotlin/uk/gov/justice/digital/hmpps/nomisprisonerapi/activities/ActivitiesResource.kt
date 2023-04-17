@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanc
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateAllocationRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
@@ -37,6 +38,7 @@ class ActivitiesResource(
   private val activityService: ActivityService,
   private val allocationService: AllocationService,
   private val attendanceService: AttendanceService,
+  private val scheduleService: ScheduleService,
 ) {
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities")
@@ -312,6 +314,61 @@ class ActivitiesResource(
     @RequestBody @Valid
     scheduleRequests: List<SchedulesRequest>,
   ) = activityService.updateActivitySchedules(courseActivityId, scheduleRequests)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PutMapping("/activities/{courseActivityId}/schedule")
+  @Operation(
+    summary = "Updates a course schedule",
+    description = "Updates a course schedule. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = UpdateCourseScheduleRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Success",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The course schedule does not exist",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun updateCourseSchedule(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @RequestBody @Valid
+    updateRequest: UpdateCourseScheduleRequest,
+  ) =
+    scheduleService.updateCourseSchedule(courseActivityId, updateRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance")

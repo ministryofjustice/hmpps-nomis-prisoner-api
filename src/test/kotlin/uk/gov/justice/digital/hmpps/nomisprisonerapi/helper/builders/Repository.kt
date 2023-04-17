@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
@@ -81,6 +82,7 @@ class Repository(
   val attendanceOutcomeRepository: ReferenceCodeRepository<AttendanceOutcome>,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
+  val courseScheduleRepository: CourseScheduleRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -251,6 +253,8 @@ class Repository(
     it.courseSchedules.size
     it.courseScheduleRules.size
   }
+
+  fun lookupSchedule(id: Long): CourseSchedule = courseScheduleRepository.findByIdOrNull(id)!!
 
   fun lookupAttendance(eventId: Long): OffenderCourseAttendance = offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
 

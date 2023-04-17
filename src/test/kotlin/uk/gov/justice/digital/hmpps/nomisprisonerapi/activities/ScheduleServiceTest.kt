@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
@@ -11,12 +13,17 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseSched
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.AM
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.ED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.PM
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import java.time.LocalDate
 import java.time.LocalTime
 
 class ScheduleServiceTest {
 
-  private val scheduleService = ScheduleService()
+  private val scheduleRepository: CourseScheduleRepository = mock()
+  private val activityRepository: CourseActivityRepository = mock()
+  private val telemetryClient: TelemetryClient = mock()
+  private val scheduleService = ScheduleService(scheduleRepository, activityRepository, telemetryClient)
 
   @Nested
   inner class CreateSchedules {

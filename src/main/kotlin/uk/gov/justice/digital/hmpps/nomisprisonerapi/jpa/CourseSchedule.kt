@@ -40,7 +40,7 @@ data class CourseSchedule(
   val endTime: LocalDateTime,
 
   @Column
-  val scheduleStatus: String = "SCH",
+  var scheduleStatus: String = "SCH",
 
   @Column(name = "SLOT_CATEGORY_CODE")
   @Enumerated(EnumType.STRING)
