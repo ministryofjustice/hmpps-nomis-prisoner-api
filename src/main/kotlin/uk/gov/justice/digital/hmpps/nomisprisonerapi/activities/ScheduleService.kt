@@ -1,15 +1,27 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
+import com.microsoft.applicationinsights.TelemetryClient
+import jakarta.transaction.Transactional
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import java.time.LocalDate
 
 @Service
-class ScheduleService {
+class ScheduleService(
+  private val scheduleRepository: CourseScheduleRepository,
+  private val activityRepository: CourseActivityRepository,
+  private val telemetryClient: TelemetryClient,
+) {
 
   fun mapSchedules(requests: List<SchedulesRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
     requests.map {
@@ -71,5 +83,29 @@ class ScheduleService {
     if (request.endTime < request.startTime) {
       throw BadDataException("Schedule for date ${request.date} has times out of order - ${request.startTime} to ${request.endTime}")
     }
+  }
+
+  @Transactional
+  fun updateCourseSchedule(
+    courseActivityId: Long,
+    updateRequest: UpdateCourseScheduleRequest,
+  ): UpdateCourseScheduleResponse {
+    val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
+      ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
+
+    val schedule = with(updateRequest) {
+      scheduleRepository.findByCourseActivityAndScheduleDateAndStartTimeAndEndTime(
+        courseActivity,
+        scheduleDate,
+        scheduleDate.atTime(startTime),
+        scheduleDate.atTime(endTime),
+      )
+        ?.apply { scheduleStatus = if (cancelled) "CANC" else "SCH" }
+        ?: throw NotFoundException("Course schedule for activity id=$courseActivityId, scheduleDate=$scheduleDate, startTime=$startTime, endTime=$endTime not found")
+    }
+
+    telemetryClient.trackEvent("schedule-updated", mapOf("courseScheduleId" to schedule.courseScheduleId.toString()), null)
+
+    return UpdateCourseScheduleResponse(schedule.courseScheduleId)
   }
 }
