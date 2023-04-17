@@ -275,6 +275,15 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `appointment does not exist`() {
+      webTestClient.put().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(updateAppointmentRequest()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
     fun `access with room not found`() {
       val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
@@ -422,6 +431,14 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `appointment does not exist`() {
+      webTestClient.put().uri("/appointments/1/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
     fun `will cancel appointment correctly`() {
       val eventId = callCreateEndpoint()
       callCancelEndpoint(eventId)
@@ -465,6 +482,14 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .exchange()
         .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `appointment does not exist`() {
+      webTestClient.delete().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isNotFound
     }
 
     @Test
