@@ -6,11 +6,8 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Offender individual schedule creation request")
-data class CreateAppointmentRequest(
-
-  @Schema(description = "Booking id of the prisoner", required = true, example = "1234567")
-  val bookingId: Long,
+@Schema(description = "Offender individual schedule update request")
+data class UpdateAppointmentRequest(
 
   @Schema(description = "Appointment date", required = true, example = "2022-08-12")
   val eventDate: LocalDate,
