@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incentives
 
+import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -442,6 +443,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @DeleteMapping("/incentives/reference-codes/{code}")
   @ResponseStatus(HttpStatus.OK)
+  @Hidden
   @Operation(
     summary = "Deletes an existing global incentive level",
     description = "Deletes an existing global incentive level, if level doesn't exist request is ignored",
@@ -478,5 +480,100 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     code: String,
   ) {
     incentivesService.deleteGlobalIncentiveLevel(code)
+  }
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PostMapping("/incentives/prison/{prison}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Prison Incentive level data",
+    description = "Creates incentive level data associated with a Prison",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreatePrisonIncentiveRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Prison Incentive level data created",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPrisonIncentiveLevelData(
+    @Schema(description = "Prison Id", example = "MDI", required = true)
+    @PathVariable
+    prison: String,
+    @RequestBody @Valid
+    createIncentiveRequest: CreatePrisonIncentiveRequest,
+  ): PrisonIncentiveLevelDataResponse =
+    incentivesService.createPrisonIncentiveLevelData(prison, createIncentiveRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @DeleteMapping("/incentives/prison/{prison}/code/{code}")
+  @ResponseStatus(HttpStatus.OK)
+  @Hidden
+  @Operation(
+    summary = "FOR TESTING ONLY - Deletes an existing global incentive level",
+    description = "FOR TESTING ONLY - Deletes existing prison incentive level data, if level doesn't exist request is ignored",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Deletion successful (or ignored)",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deletePrisonIncentiveLevel(
+    @Schema(description = "Prison id", example = "MDI", required = true)
+    @PathVariable
+    prison: String,
+    @Schema(description = "Incentive level code", example = "STD", required = true)
+    @PathVariable
+    code: String,
+  ) {
+    incentivesService.deletePrisonIncentiveLevelData(prison, code)
   }
 }
