@@ -31,7 +31,7 @@ class AppointmentService(
         telemetryClient.trackEvent(
           "appointment-created",
           mapOf(
-            "id" to it.eventId.toString(),
+            "eventId" to it.eventId.toString(),
             "bookingId" to it.offenderBooking.bookingId.toString(),
             "location" to it.internalLocation?.locationId.toString(),
           ),
@@ -39,6 +39,73 @@ class AppointmentService(
         )
       }
       .let { CreateAppointmentResponse(offenderIndividualScheduleRepository.save(it).eventId) }
+
+  fun updateAppointment(eventId: Long, dto: UpdateAppointmentRequest) {
+    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+      ?.apply {
+        val location = agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
+          ?: throw BadDataException("Room with id=${dto.internalLocationId} does not exist")
+
+        val subType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
+          ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
+
+        if (dto.endTime < dto.startTime) {
+          throw BadDataException("End time must be after start time")
+        }
+
+        internalLocation = location
+        startTime = LocalDateTime.of(dto.eventDate, dto.startTime)
+        endTime = LocalDateTime.of(dto.eventDate, dto.endTime)
+        eventDate = dto.eventDate
+        eventSubType = subType
+
+        telemetryClient.trackEvent(
+          "appointment-updated",
+          mapOf(
+            "eventId" to eventId.toString(),
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "location" to internalLocation?.locationId.toString(),
+          ),
+          null,
+        )
+      }
+      ?: throw NotFoundException("Appointment with event id $eventId not found")
+  }
+
+  fun cancelAppointment(eventId: Long) {
+    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+      ?.apply {
+        eventStatus = eventStatusRepository.findById(EventStatus.CANCELLED).orElseThrow()
+
+        telemetryClient.trackEvent(
+          "appointment-cancelled",
+          mapOf(
+            "eventId" to eventId.toString(),
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "location" to internalLocation?.locationId.toString(),
+          ),
+          null,
+        )
+      }
+      ?: throw NotFoundException("Appointment with event id $eventId not found")
+  }
+
+  fun deleteAppointment(eventId: Long) {
+    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+      ?.also {
+        offenderIndividualScheduleRepository.delete(it)
+        telemetryClient.trackEvent(
+          "appointment-deleted",
+          mapOf(
+            "eventId" to it.eventId.toString(),
+            "bookingId" to it.offenderBooking.bookingId.toString(),
+            "location" to it.internalLocation?.locationId.toString(),
+          ),
+          null,
+        )
+      }
+      ?: throw NotFoundException("Appointment with event id $eventId not found")
+  }
 
   private fun mapModel(dto: CreateAppointmentRequest): OffenderIndividualSchedule {
     val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)

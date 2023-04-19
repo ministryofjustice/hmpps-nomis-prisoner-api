@@ -39,13 +39,13 @@ class OffenderIndividualSchedule(
   val offenderBooking: OffenderBooking,
 
   @Column
-  val eventDate: LocalDate? = null,
+  var eventDate: LocalDate? = null,
 
   @Column
-  val startTime: LocalDateTime? = null,
+  var startTime: LocalDateTime? = null,
 
   @Column
-  val endTime: LocalDateTime? = null,
+  var endTime: LocalDateTime? = null,
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
@@ -66,7 +66,7 @@ class OffenderIndividualSchedule(
       ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_SUB_TYPE", referencedColumnName = "code")),
     ],
   )
-  val eventSubType: EventSubType,
+  var eventSubType: EventSubType,
 
   @ManyToOne(optional = false)
   @NotFound(action = NotFoundAction.IGNORE)
@@ -80,7 +80,7 @@ class OffenderIndividualSchedule(
       ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code")),
     ],
   )
-  val eventStatus: EventStatus,
+  var eventStatus: EventStatus,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
@@ -88,7 +88,7 @@ class OffenderIndividualSchedule(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_INTERNAL_LOCATION_ID")
-  val internalLocation: AgencyInternalLocation? = null,
+  var internalLocation: AgencyInternalLocation? = null,
 
 ) {
   override fun equals(other: Any?): Boolean {
