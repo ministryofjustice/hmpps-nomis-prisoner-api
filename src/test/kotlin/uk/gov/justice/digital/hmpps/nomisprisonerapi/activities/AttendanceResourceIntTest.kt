@@ -313,10 +313,10 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             "startTime": "08:00",
             "endTime": "11:00",
             "eventStatusCode": "COMP",
-            "eventOutcomeCode": "ATT",
-            "comments": "Attended",
+            "eventOutcomeCode": "CANC",
+            "comments": "Cancelled",
             "unexcusedAbsence": "false",
-            "authorisedAbsence": "false",
+            "authorisedAbsence": "true",
             "paid": "true",
             "bonusPay": "1.50"
           }
@@ -332,12 +332,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         val saved = repository.lookupAttendance(response.eventId)
         with(saved) {
           assertThat(eventStatus.code).isEqualTo("COMP")
-          assertThat(attendanceOutcome?.code).isEqualTo("ATT")
-          assertThat(commentText).isEqualTo("Attended")
+          assertThat(attendanceOutcome?.code).isEqualTo("CANC")
+          assertThat(commentText).isEqualTo("Cancelled")
           assertThat(unexcusedAbsence).isEqualTo(false)
-          assertThat(authorisedAbsence).isEqualTo(false)
+          assertThat(authorisedAbsence).isEqualTo(true)
           assertThat(paid).isEqualTo(true)
           assertThat(bonusPay).isEqualTo(BigDecimal(1.5).setScale(3, RoundingMode.HALF_UP))
+          assertThat(performanceCode).isNull()
         }
       }
 
@@ -375,6 +376,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(authorisedAbsence).isEqualTo(false)
           assertThat(paid).isEqualTo(true)
           assertThat(bonusPay).isEqualTo(BigDecimal(1.5).setScale(3, RoundingMode.HALF_UP))
+          assertThat(performanceCode).isEqualTo("STANDARD")
         }
       }
     }
