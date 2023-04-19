@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incentives
 
+import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -442,6 +443,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @DeleteMapping("/incentives/reference-codes/{code}")
   @ResponseStatus(HttpStatus.OK)
+  @Hidden
   @Operation(
     summary = "Deletes an existing global incentive level",
     description = "Deletes an existing global incentive level, if level doesn't exist request is ignored",
@@ -533,6 +535,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @DeleteMapping("/incentives/prison/{prison}/code/{code}")
   @ResponseStatus(HttpStatus.OK)
+  @Hidden
   @Operation(
     summary = "FOR TESTING ONLY - Deletes an existing global incentive level",
     description = "FOR TESTING ONLY - Deletes existing prison incentive level data, if level doesn't exist request is ignored",

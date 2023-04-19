@@ -265,27 +265,24 @@ class IncentivesService(
       defaultOnAdmission = prisonIncentiveLevel.default,
       active = prisonIncentiveLevel.active,
       remandSpendLimitInPence = prisonIncentiveLevel.remandSpendLimit?.let {
-        prisonIncentiveLevel.remandSpendLimit.multiply(
-          BigDecimal.valueOf(100),
-        ).toInt()
+        prisonIncentiveLevel.remandSpendLimit.toPence()
       },
       remandTransferLimitInPence = prisonIncentiveLevel.remandTransferLimit?.let {
-        prisonIncentiveLevel.remandTransferLimit.times(
-          BigDecimal.valueOf(100),
-        ).toInt()
+        prisonIncentiveLevel.remandTransferLimit.toPence()
       },
       convictedSpendLimitInPence = prisonIncentiveLevel.convictedSpendLimit?.let {
-        prisonIncentiveLevel.convictedSpendLimit.times(
-          BigDecimal.valueOf(100),
-        ).toInt()
+        prisonIncentiveLevel.convictedSpendLimit.toPence()
       },
       convictedTransferLimitInPence = prisonIncentiveLevel.convictedTransferLimit?.let {
-        prisonIncentiveLevel.convictedTransferLimit.times(
-          BigDecimal.valueOf(100),
-        ).toInt()
+        prisonIncentiveLevel.convictedTransferLimit.toPence()
       },
     )
   }
+
+  private fun BigDecimal.toPence(): Int = this.movePointRight(2).toInt()
+  private fun Int.toPounds(): BigDecimal = this.div(
+    100.toFloat(),
+  ).toBigDecimal()
 
   private fun saveVisitAllowanceLevelData(
     prison: AgencyLocation,
@@ -326,24 +323,16 @@ class IncentivesService(
             active = createRequest.active,
             default = createRequest.defaultOnAdmission,
             remandTransferLimit = createRequest.remandTransferLimitInPence?.let {
-              createRequest.remandTransferLimitInPence.div(
-                100.toFloat(),
-              ).toBigDecimal()
+              createRequest.remandTransferLimitInPence.toPounds()
             },
             remandSpendLimit = createRequest.remandSpendLimitInPence?.let {
-              createRequest.remandSpendLimitInPence.div(
-                100.toFloat(),
-              ).toBigDecimal()
+              createRequest.remandSpendLimitInPence.toPounds()
             },
             convictedTransferLimit = createRequest.convictedTransferLimitInPence?.let {
-              createRequest.convictedTransferLimitInPence.div(
-                100.toFloat(),
-              ).toBigDecimal()
+              createRequest.convictedTransferLimitInPence.toPounds()
             },
             convictedSpendLimit = createRequest.convictedSpendLimitInPence?.let {
-              createRequest.convictedSpendLimitInPence.div(
-                100.toFloat(),
-              ).toBigDecimal()
+              createRequest.convictedSpendLimitInPence.toPounds()
             },
             expiryDate = if (createRequest.active) null else LocalDate.now(),
           ),
