@@ -36,7 +36,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
     private val validJsonRequest = """
         {
-          "scheduleDate": "2022-11-01",
+          "date": "2022-11-01",
           "startTime": "08:00",
           "endTime": "11:00",
           "cancelled": true
@@ -94,7 +94,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest.replace(""""scheduleDate": "2022-11-01",""", """"scheduleDate": "2022-11-61","""),
+              validJsonRequest.replace(""""date": "2022-11-01",""", """"date": "2022-11-61","""),
             ),
           )
           .exchange()
@@ -175,13 +175,13 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest.replace(""""scheduleDate": "2022-11-01",""", """"scheduleDate": "2022-11-02","""),
+              validJsonRequest.replace(""""date": "2022-11-01",""", """"date": "2022-11-02","""),
             ),
           )
           .exchange()
           .expectStatus().isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Course schedule for activity id=${courseActivity.courseActivityId}, scheduleDate=2022-11-02, startTime=08:00, endTime=11:00 not found")
+            assertThat(it).contains("Course schedule for activity id=${courseActivity.courseActivityId}, date=2022-11-02, startTime=08:00, endTime=11:00 not found")
           }
       }
     }
@@ -229,7 +229,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .body(
             BodyInserters.fromValue(
               validJsonRequest
-                .replace(""""scheduleDate": "2022-11-01",""", """"scheduleDate": "2022-11-03",""")
+                .replace(""""date": "2022-11-01",""", """"date": "2022-11-03",""")
                 .replace(""""cancelled": true""", """"cancelled": false"""),
             ),
           )
@@ -263,7 +263,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest.replace(""""scheduleDate": "2022-11-01",""", """"scheduleDate": "2022-11-03","""),
+              validJsonRequest.replace(""""date": "2022-11-01",""", """"date": "2022-11-03","""),
             ),
           )
           .exchange()

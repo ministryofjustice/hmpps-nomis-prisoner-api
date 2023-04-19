@@ -96,12 +96,12 @@ class ScheduleService(
     val schedule = with(updateRequest) {
       scheduleRepository.findByCourseActivityAndScheduleDateAndStartTimeAndEndTime(
         courseActivity,
-        scheduleDate,
-        scheduleDate.atTime(startTime),
-        scheduleDate.atTime(endTime),
+        date,
+        date.atTime(startTime),
+        date.atTime(endTime),
       )
         ?.apply { scheduleStatus = if (cancelled) "CANC" else "SCH" }
-        ?: throw NotFoundException("Course schedule for activity id=$courseActivityId, scheduleDate=$scheduleDate, startTime=$startTime, endTime=$endTime not found")
+        ?: throw NotFoundException("Course schedule for activity id=$courseActivityId, date=$date, startTime=$startTime, endTime=$endTime not found")
     }
 
     telemetryClient.trackEvent("schedule-updated", mapOf("courseScheduleId" to schedule.courseScheduleId.toString()), null)
