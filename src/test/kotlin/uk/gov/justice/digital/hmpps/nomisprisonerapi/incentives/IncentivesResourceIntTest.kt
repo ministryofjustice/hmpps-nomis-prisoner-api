@@ -582,7 +582,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           BodyInserters.fromValue(
             """{
             "code"    : "NIEP",
-            "domain" : "IEP_LEVEL",
             "description"    : "description for NIEP",
             "active"    : false
           }""",
@@ -611,7 +610,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """{
             "code"    : "NIEP",
-            "domain" : "IEP_LEVEL",
             "description"    : "description for NIEP",
             "active"    : false
           }""",
@@ -631,7 +629,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """{
             "code"    : "NIEP",
-            "domain" : "IEP_LEVEL",
             "description"    : "description for NIEP",
             "active"    : false
           }""",
@@ -787,6 +784,129 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """{
             "codeList"    : ["STD","BAS","ENT","EN2","ENH"]
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @DisplayName("create prison incentive level data")
+  @Nested
+  inner class CreatePrisonIncentiveLevel {
+    @BeforeEach
+    internal fun setupIncentiveLevel() {
+      webTestClient.post().uri("/incentives/reference-codes")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "code"    : "PILD",
+            "description"    : "description for PILD",
+            "active"    : false
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      webTestClient.delete().uri("/incentives/prison/MDI/code/PILD")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.delete().uri("/incentives/reference-codes/PILD")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+    }
+
+    @Test
+    fun `create prison incentive level data`() {
+      val response = webTestClient.post().uri("/incentives/prison/MDI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "levelCode"    : "PILD",
+            "defaultOnAdmission" : false,
+            "active"    : true,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.iepLevelCode).isEqualTo("PILD")
+      assertThat(response?.prisonId).isEqualTo("MDI")
+      assertThat(response?.active).isTrue
+      assertThat(response?.defaultOnAdmission).isFalse
+      assertThat(response?.privilegedVisitOrderAllowance).isEqualTo(6)
+      assertThat(response?.visitOrderAllowance).isEqualTo(3)
+      assertThat(response?.remandSpendLimitInPence).isEqualTo(7)
+      assertThat(response?.remandTransferLimitInPence).isEqualTo(2)
+      assertThat(response?.convictedSpendLimitInPence).isEqualTo(9)
+      assertThat(response?.convictedTransferLimitInPence).isEqualTo(1)
+      assertThat(response?.expiryDate).isNull()
+    }
+
+    @Test
+    fun `create prison incentive prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/prison/MDI")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "levelCode"    : "PILD",
+            "defaultOnAdmission" : false,
+            "active"    : false,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `create global incentive prevents access without authorization`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/prison/MDI")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "levelCode"    : "PILD",
+            "defaultOnAdmission" : false,
+            "active"    : false,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
           }""",
             ),
           )

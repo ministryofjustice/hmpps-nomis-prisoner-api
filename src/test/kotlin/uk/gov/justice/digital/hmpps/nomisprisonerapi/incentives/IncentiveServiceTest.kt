@@ -22,11 +22,18 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevelId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevelId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIncentiveLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitAllowanceLevelRepository
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -44,6 +51,8 @@ internal class IncentiveServiceTest {
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val incentivesCodeRepository: ReferenceCodeRepository<IEPLevel> = mock()
+  private val prisonIncentiveLevelRepository: PrisonIncentiveLevelRepository = mock()
+  private val visitAllowanceLevelRepository: VisitAllowanceLevelRepository = mock()
 
   private val incentivesService = IncentivesService(
     incentiveRepository,
@@ -51,6 +60,8 @@ internal class IncentiveServiceTest {
     agencyLocationRepository,
     availablePrisonIepLevelRepository,
     incentivesCodeRepository,
+    visitAllowanceLevelRepository,
+    prisonIncentiveLevelRepository,
     telemetryClient,
   )
 
@@ -99,7 +110,7 @@ internal class IncentiveServiceTest {
       assertThat(incentivesService.createIncentive(offenderBookingId, createRequest))
         .isEqualTo(CreateIncentiveResponse(offenderBookingId, 1))
 
-      val incentive = defaultOffenderBooking.incentives.get(0)
+      val incentive = defaultOffenderBooking.incentives[0]
 
       assertThat(incentive.commentText).isEqualTo("a comment")
       assertThat(incentive.iepDate).isEqualTo(LocalDate.parse("2021-12-01"))
@@ -116,7 +127,7 @@ internal class IncentiveServiceTest {
         Optional.empty(),
       )
 
-      val thrown = assertThrows<NotFoundException>() {
+      val thrown = assertThrows<NotFoundException> {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
       assertThat(thrown.message).isEqualTo(offenderBookingId.toString())
@@ -126,7 +137,7 @@ internal class IncentiveServiceTest {
     fun prisonNotFound() {
       whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.empty())
 
-      val thrown = assertThrows<BadDataException>() {
+      val thrown = assertThrows<BadDataException> {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
       assertThat(thrown.message).isEqualTo("Prison with id=$prisonId does not exist")
@@ -136,7 +147,7 @@ internal class IncentiveServiceTest {
     fun invalidIEP() {
       whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenReturn(null)
 
-      val thrown = assertThrows<BadDataException>() {
+      val thrown = assertThrows<BadDataException> {
         incentivesService.createIncentive(offenderBookingId, createRequest)
       }
       assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison SWI")
@@ -198,8 +209,8 @@ internal class IncentiveServiceTest {
   @DisplayName("update global incentive level")
   @Nested
   internal inner class UpdateGlobalIncentiveLevel {
-    val existingActiveIepLevel = IEPLevel("ABC", "desc", true)
-    val existingInactiveIepLevel =
+    private val existingActiveIepLevel = IEPLevel("ABC", "desc", true)
+    private val existingInactiveIepLevel =
       IEPLevel(code = "ABC", description = "desc", active = false, expiredDate = LocalDate.of(2023, 1, 10))
 
     @Test
@@ -240,5 +251,158 @@ internal class IncentiveServiceTest {
         ).expiredDate,
       ).isNull()
     }
+  }
+
+  @DisplayName("create prison incentive level data")
+  @Nested
+  internal inner class CreatePrisonIncentiveLevelData {
+    val prison = AgencyLocation("MDI", "desc")
+
+    @Test
+    fun `data is mapped correctly during creation`() {
+      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
+        Optional.of(prison),
+      )
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(prisonIncentiveLevelRepository.save(any())).thenReturn(getPrisonIncentiveLevel())
+      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+      incentivesService.createPrisonIncentiveLevelData(
+        "MDI",
+        CreatePrisonIncentiveRequest(
+          levelCode = "NSTD",
+          active = true,
+          defaultOnAdmission = true,
+          visitOrderAllowance = 3,
+          privilegedVisitOrderAllowance = 4,
+          remandTransferLimitInPence = 350,
+          remandSpendLimitInPence = 3700,
+          convictedTransferLimitInPence = 650,
+          convictedSpendLimitInPence = 6600,
+        ),
+      )
+
+      verify(prisonIncentiveLevelRepository).save(
+        org.mockito.kotlin.check { data ->
+          assertThat(data.active).isEqualTo(true)
+          assertThat(data.default).isEqualTo(true)
+          assertThat(data.expiryDate).isNull()
+          assertThat(data.remandTransferLimit).isEqualTo(BigDecimal.valueOf(3.5))
+          assertThat(data.remandSpendLimit).isEqualTo(BigDecimal.valueOf(37.0))
+          assertThat(data.convictedTransferLimit).isEqualTo(BigDecimal.valueOf(6.5))
+          assertThat(data.convictedSpendLimit).isEqualTo(BigDecimal.valueOf(66.0))
+        },
+      )
+
+      verify(visitAllowanceLevelRepository).save(
+        org.mockito.kotlin.check { data ->
+          assertThat(data.active).isEqualTo(true)
+          assertThat(data.expiryDate).isNull()
+          assertThat(data.visitOrderAllowance).isEqualTo(3)
+          assertThat(data.privilegedVisitOrderAllowance).isEqualTo(4)
+        },
+      )
+    }
+
+    @Test
+    fun `expiry date is set for inactive entities`() {
+      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
+        Optional.of(prison),
+      )
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(prisonIncentiveLevelRepository.save(any())).thenReturn(getPrisonIncentiveLevel())
+      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+      incentivesService.createPrisonIncentiveLevelData(
+        "MDI",
+        CreatePrisonIncentiveRequest(
+          levelCode = "NSTD",
+          active = false,
+          defaultOnAdmission = true,
+          visitOrderAllowance = 3,
+          privilegedVisitOrderAllowance = 4,
+          remandTransferLimitInPence = 350,
+          remandSpendLimitInPence = 3700,
+          convictedTransferLimitInPence = 650,
+          convictedSpendLimitInPence = 6600,
+        ),
+      )
+
+      verify(prisonIncentiveLevelRepository).save(
+        org.mockito.kotlin.check { data ->
+          assertThat(data.active).isEqualTo(false)
+          assertThat(data.expiryDate).isEqualTo(LocalDate.now())
+        },
+      )
+
+      verify(visitAllowanceLevelRepository).save(
+        org.mockito.kotlin.check { data ->
+          assertThat(data.active).isEqualTo(false)
+          assertThat(data.expiryDate).isEqualTo(LocalDate.now())
+        },
+      )
+    }
+
+    @Test
+    fun `data isn't created if entities already exist`() {
+      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
+        Optional.of(prison),
+      )
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+        Optional.of(getPrisonIncentiveLevel()),
+      )
+      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
+        Optional.of(getVisitAllowanceLevel()),
+      )
+      incentivesService.createPrisonIncentiveLevelData(
+        "MDI",
+        CreatePrisonIncentiveRequest(
+          levelCode = "NSTD",
+          active = false,
+          defaultOnAdmission = true,
+          visitOrderAllowance = 3,
+          privilegedVisitOrderAllowance = 4,
+          remandTransferLimitInPence = 350,
+          remandSpendLimitInPence = 3700,
+          convictedTransferLimitInPence = 650,
+          convictedSpendLimitInPence = 6600,
+        ),
+      )
+
+      verify(prisonIncentiveLevelRepository, never()).save(any())
+      verify(visitAllowanceLevelRepository, never()).save(any())
+    }
+  }
+
+  private fun getPrisonIncentiveLevel(): PrisonIncentiveLevel {
+    val prison = AgencyLocation("MDI", "desc")
+    return PrisonIncentiveLevel(
+      id = PrisonIncentiveLevelId(location = prison, iepLevelCode = "STD"),
+      active = false,
+      default = false,
+      remandTransferLimit = BigDecimal.valueOf(3.5),
+      remandSpendLimit = BigDecimal.valueOf(0.5),
+      convictedTransferLimit = BigDecimal.valueOf(45.5),
+      convictedSpendLimit = BigDecimal.valueOf(4.5),
+    )
+  }
+
+  private fun getVisitAllowanceLevel(): VisitAllowanceLevel {
+    val prison = AgencyLocation("MDI", "desc")
+    return VisitAllowanceLevel(
+      id = VisitAllowanceLevelId(location = prison, iepLevelCode = "STD"),
+      visitOrderAllowance = 3,
+      privilegedVisitOrderAllowance = 4,
+      active = true,
+      expiryDate = null,
+    )
   }
 }
