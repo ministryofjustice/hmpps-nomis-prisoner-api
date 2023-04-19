@@ -891,7 +891,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `create global incentive prevents access without authorization`() {
+    fun `create prison incentive prevents access without authorization`() {
       assertThat(
         webTestClient.post().uri("/incentives/prison/MDI")
           .contentType(MediaType.APPLICATION_JSON)
