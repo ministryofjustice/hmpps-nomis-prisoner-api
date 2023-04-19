@@ -80,6 +80,7 @@ class ActivityService(
       iepLevel = availablePrisonIepLevel!!.iepLevel,
       internalLocation = location,
       payPerSession = dto.payPerSession,
+      holiday = dto.runsOnBankHolidays,
     )
   }
 
