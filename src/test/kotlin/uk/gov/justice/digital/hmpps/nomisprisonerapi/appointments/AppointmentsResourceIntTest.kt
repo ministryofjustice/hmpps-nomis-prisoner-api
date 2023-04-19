@@ -20,7 +20,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 private const val PRISON_ID = "MDI"
-private const val MDI_ROOM_ID: Long = -46 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
+private const val MDI_ROOM_ID: Long = -46 // random locations from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
+private const val MDI_ROOM_ID_2: Long = -47
 
 class AppointmentsResourceIntTest : IntegrationTestBase() {
 
@@ -29,6 +30,29 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
+
+  private fun callCreateEndpoint(): Long {
+    val response = webTestClient.post().uri("/appointments")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .contentType(MediaType.APPLICATION_JSON)
+      .body(BodyInserters.fromValue(validCreateJsonRequest()))
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody(CreateAppointmentResponse::class.java)
+      .returnResult().responseBody
+    assertThat(response?.eventId).isGreaterThan(0)
+    return response!!.eventId
+  }
+
+  private fun validCreateJsonRequest() = """{
+            "bookingId"          : ${offenderAtMoorlands.latestBooking().bookingId},
+            "eventDate"          : "2023-02-27",
+            "startTime"          : "10:40",
+            "endTime"            : "12:10",
+            "internalLocationId" : $MDI_ROOM_ID,
+            "eventSubType"       : "ACTI"
+          }
+  """.trimIndent()
 
   @BeforeEach
   internal fun createPrisoner() {
@@ -150,7 +174,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid start time should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
+      val invalidSchedule = validCreateJsonRequest().replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -164,7 +188,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid end time should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""endTime"            : "12:10"""", """"endTime": "12:65"""")
+      val invalidSchedule = validCreateJsonRequest().replace(""""endTime"            : "12:10"""", """"endTime": "12:65"""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -178,7 +202,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validJsonRequest().replace(""""eventDate"          : "2023-02-27"""", """"eventDate": "2022-13-31",""")
+      val invalidSchedule = validCreateJsonRequest().replace(""""eventDate"          : "2023-02-27"""", """"eventDate": "2022-13-31",""")
       webTestClient.post().uri("/appointments")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -209,28 +233,280 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
       assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID)
     }
+  }
 
-    private fun callCreateEndpoint(): Long {
-      val response = webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validJsonRequest()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(CreateAppointmentResponse::class.java)
-        .returnResult().responseBody
-      assertThat(response?.eventId).isGreaterThan(0)
-      return response!!.eventId
+  @Nested
+  inner class UpdateAppointment {
+
+    private val updateAppointmentRequest: () -> UpdateAppointmentRequest = {
+      UpdateAppointmentRequest(
+        eventDate = LocalDate.parse("2022-10-31"),
+        startTime = LocalTime.of(8, 0),
+        endTime = LocalTime.of(11, 0),
+        internalLocationId = MDI_ROOM_ID,
+        eventSubType = "ACTI",
+      )
     }
 
-    private fun validJsonRequest() = """{
-            "bookingId"          : ${offenderAtMoorlands.latestBooking().bookingId},
-            "eventDate"          : "2023-02-27",
-            "startTime"          : "10:40",
-            "endTime"            : "12:10",
-            "internalLocationId" : $MDI_ROOM_ID,
-            "eventSubType"       : "ACTI"
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/appointments/1")
+        .body(BodyInserters.fromValue(updateAppointmentRequest()))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(updateAppointmentRequest()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(updateAppointmentRequest()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `appointment does not exist`() {
+      webTestClient.put().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(updateAppointmentRequest()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `access with room not found`() {
+      val eventId = callCreateEndpoint()
+      webTestClient.put().uri("/appointments/$eventId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(updateAppointmentRequest().copy(internalLocationId = 999998)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Room with id=999998 does not exist")
+        }
+    }
+
+    @Test
+    fun `EventSubType does not exist`() {
+      val eventId = callCreateEndpoint()
+      webTestClient.put().uri("/appointments/$eventId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(updateAppointmentRequest().copy(eventSubType = "INVALID")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("EventSubType with code=INVALID does not exist")
+        }
+    }
+
+    @Test
+    fun `end time before start`() {
+      val eventId = callCreateEndpoint()
+      webTestClient.put().uri("/appointments/$eventId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(updateAppointmentRequest().copy(endTime = LocalTime.of(7, 0))))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("End time must be after start time")
+        }
+    }
+
+    @Test
+    fun `invalid start time should return bad request`() {
+      val invalidSchedule = validUpdateJsonRequest().replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
+      val eventId = callCreateEndpoint()
+      webTestClient.put().uri("/appointments/$eventId")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(invalidSchedule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("11:65")
+        }
+    }
+
+    @Test
+    fun `invalid end time should return bad request`() {
+      val invalidSchedule = validUpdateJsonRequest().replace(""""endTime"            : "12:20"""", """"endTime": "12:65"""")
+      val eventId = callCreateEndpoint()
+      webTestClient.put().uri("/appointments/$eventId")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(invalidSchedule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("12:65")
+        }
+    }
+
+    @Test
+    fun `invalid date should return bad request`() {
+      val invalidSchedule = validUpdateJsonRequest().replace(""""eventDate"          : "2023-02-28"""", """"eventDate": "2022-13-31",""")
+      val eventId = callCreateEndpoint()
+      webTestClient.put().uri("/appointments/$eventId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(invalidSchedule))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("2022-13-31")
+        }
+    }
+
+    @Test
+    fun `will update appointment with correct details`() {
+      val eventId = callCreateEndpoint()
+      callUpdateEndpoint(eventId)
+
+      // Check the database
+      val offenderIndividualSchedule = repository.lookupAppointment(eventId)!!
+
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
+      assertThat(offenderIndividualSchedule.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+      assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
+      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
+      assertThat(offenderIndividualSchedule.endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
+      assertThat(offenderIndividualSchedule.eventSubType.code).isEqualTo("CABA")
+      assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
+      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
+    }
+
+    private fun callUpdateEndpoint(eventId: Long) {
+      webTestClient.put().uri("/appointments/$eventId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(validUpdateJsonRequest()))
+        .exchange()
+        .expectStatus().isOk
+    }
+
+    private fun validUpdateJsonRequest() = """{
+            "eventDate"          : "2023-02-28",
+            "startTime"          : "10:50",
+            "endTime"            : "12:20",
+            "internalLocationId" : $MDI_ROOM_ID_2,
+            "eventSubType"       : "CABA"
           }
     """.trimIndent()
+  }
+
+  @Nested
+  inner class CancelAppointment {
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/appointments/1/cancel")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/appointments/1/cancel")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/appointments/1/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `appointment does not exist`() {
+      webTestClient.put().uri("/appointments/1/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will cancel appointment correctly`() {
+      val eventId = callCreateEndpoint()
+      callCancelEndpoint(eventId)
+
+      // Check the database
+      val offenderIndividualSchedule = repository.lookupAppointment(eventId)!!
+
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
+      assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("CANC")
+    }
+
+    private fun callCancelEndpoint(eventId: Long) {
+      webTestClient.put().uri("/appointments/$eventId/cancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+    }
+  }
+
+  @Nested
+  inner class DeleteAppointment {
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.delete().uri("/appointments/1")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.delete().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.delete().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `appointment does not exist`() {
+      webTestClient.delete().uri("/appointments/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will delete appointment correctly`() {
+      val eventId = callCreateEndpoint()
+      callDeleteEndpoint(eventId)
+
+      // Check the database
+
+      assertThat(repository.lookupAppointment(eventId)).isNull()
+    }
+
+    private fun callDeleteEndpoint(eventId: Long) {
+      webTestClient.delete().uri("/appointments/$eventId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isNoContent
+    }
   }
 }
