@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -30,12 +31,17 @@ class ActivityService(
   private val scheduleRuleService: ScheduleRuleService,
   private val telemetryClient: TelemetryClient,
 ) {
+  private val logger = LoggerFactory.getLogger(this::class.java)
+
   fun createActivity(dto: CreateActivityRequest): CreateActivityResponse =
     mapActivityModel(dto)
+      .also { logger.info("requestedHolidayFlag=${dto.runsOnBankHolidays}") }
+      .also { logger.info("mappedHolidayFlag=${it.holiday}") }
       .apply { payRates.addAll(payRatesService.mapRates(dto, this)) }
       .apply { courseSchedules.addAll(scheduleService.mapSchedules(dto.schedules, this)) }
       .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(dto, this)) }
       .let { activityRepository.save(it) }
+      .also { logger.info("savedHolidayFlag=${it.holiday}") }
       .also {
         telemetryClient.trackEvent(
           "activity-created",
