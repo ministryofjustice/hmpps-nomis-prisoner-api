@@ -265,6 +265,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           assertThat(endTime).isEqualTo(LocalDateTime.parse("${monthStart}T12:35:00"))
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
+        assertThat(courseActivity.holiday).isEqualTo(true)
       }
 
       @Test
@@ -343,7 +344,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               "friday": true,
               "saturday": false,
               "sunday": false
-              }]
+              }],
+            "runsOnBankHolidays": true
           }
     """.trimIndent()
   }
