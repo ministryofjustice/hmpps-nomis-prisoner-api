@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventClass
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -507,6 +508,269 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .exchange()
         .expectStatus().isNoContent
+    }
+  }
+
+  @Nested
+  inner class GetAppointmentById {
+
+    private lateinit var appointment1: OffenderIndividualSchedule
+
+    @BeforeEach
+    internal fun createAppointments() {
+      appointment1 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = LocalDate.parse("2023-01-01"),
+          startTime = LocalDateTime.parse("2020-01-01T10:00"),
+          endTime = LocalDateTime.parse("2020-01-01T11:00"),
+          eventSubType = repository.lookupEventSubtype("MEDE"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+          internalLocation = repository.lookupAgencyInternalLocation(-1L),
+          comment = "hit the gym",
+        ),
+      )
+    }
+
+    @AfterEach
+    internal fun deleteAppointments() {
+      repository.delete(appointment1)
+    }
+
+    @Test
+    fun `get by id`() {
+      webTestClient.get().uri("/appointments/${appointment1.eventId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookingId").isEqualTo(appointment1.offenderBooking.bookingId)
+        .jsonPath("$.offenderNo").isEqualTo(appointment1.offenderBooking.offender.nomsId)
+        .jsonPath("$.prisonId").isEqualTo("MDI")
+        .jsonPath("$.internalLocation").isEqualTo(appointment1.internalLocation?.locationId.toString())
+        .jsonPath("$.startDateTime").isEqualTo("2023-01-01T10:00:00")
+        .jsonPath("$.endDateTime").isEqualTo("2023-01-01T11:00:00")
+        .jsonPath("$.comment").isEqualTo("hit the gym")
+        .jsonPath("$.subtype").isEqualTo("MEDE")
+        .jsonPath("$.status").isEqualTo("SCH")
+    }
+
+    @Test
+    fun `appointments not found`() {
+      webTestClient.get().uri("/appointments/99999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `malformed id returns bad request`() {
+      webTestClient.get().uri("/appointments/stuff")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `get appointments prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get().uri("/appointments/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `get appointments prevents access without authorization`() {
+      assertThat(
+        webTestClient.get().uri("/appointments/1")
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @Nested
+  inner class GetAppointmentIdsByFilterRequest {
+
+    private lateinit var appointment1: OffenderIndividualSchedule
+    private lateinit var appointment2: OffenderIndividualSchedule
+    private lateinit var appointment3: OffenderIndividualSchedule
+    private lateinit var appointment4: OffenderIndividualSchedule
+
+    @BeforeEach
+    internal fun createAppointments() {
+      appointment1 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = LocalDate.parse("2023-01-01"),
+          eventSubType = repository.lookupEventSubtype("MEDE"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+        ),
+      )
+      appointment2 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtOtherPrison.latestBooking(),
+          eventDate = LocalDate.parse("2023-01-02"),
+          eventSubType = repository.lookupEventSubtype("MEDO"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("BXI"),
+        ),
+      )
+      appointment3 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = LocalDate.parse("2023-01-03"),
+          eventSubType = repository.lookupEventSubtype("MEOP"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+        ),
+      )
+      appointment4 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventSubType = repository.lookupEventSubtype("MEOP"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          eventType = "OTHER", // should never find this
+        ),
+      )
+    }
+
+    @AfterEach
+    internal fun deleteAppointments() {
+      repository.delete(appointment1)
+      repository.delete(appointment2)
+      repository.delete(appointment3)
+      repository.delete(appointment4)
+    }
+
+    @Test
+    fun `get all ids - no filter specified`() {
+      webTestClient.get().uri("/appointments/ids")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.numberOfElements").isEqualTo(3)
+    }
+
+    @Test
+    fun `get appointments issued within a given date range 1`() {
+      webTestClient.get().uri {
+        it.path("/appointments/ids")
+          .queryParam("fromDate", "2000-01-01")
+          .queryParam("toDate", "2023-01-01")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.numberOfElements").isEqualTo(1)
+        .jsonPath("$.content[0].eventId").isEqualTo(appointment1.eventId)
+    }
+
+    @Test
+    fun `get appointments issued within a given date range 2`() {
+      webTestClient.get().uri {
+        it.path("/appointments/ids")
+          .queryParam("fromDate", "2023-01-03")
+          .queryParam("toDate", "2026-01-01")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.numberOfElements").isEqualTo(1)
+        .jsonPath("$.content[0].eventId").isEqualTo(appointment3.eventId)
+    }
+
+    @Test
+    fun `get appointments issued within a given prison`() {
+      webTestClient.get().uri {
+        it.path("/appointments/ids")
+          .queryParam("prisonIds", "MDI", "SWI")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.content[0].eventId").isEqualTo(appointment1.eventId)
+        .jsonPath("$.content[1].eventId").isEqualTo(appointment3.eventId)
+        .jsonPath("$.numberOfElements").isEqualTo(2)
+    }
+
+    @Test
+    fun `can request a different page size`() {
+      webTestClient.get().uri {
+        it.path("/appointments/ids")
+          .queryParam("size", "2")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(3)
+        .jsonPath("numberOfElements").isEqualTo(2)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(2)
+        .jsonPath("size").isEqualTo(2)
+    }
+
+    @Test
+    fun `can request a different page`() {
+      webTestClient.get().uri {
+        it.path("/appointments/ids")
+          .queryParam("size", "2")
+          .queryParam("page", "1")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(3)
+        .jsonPath("numberOfElements").isEqualTo(1)
+        .jsonPath("number").isEqualTo(1)
+        .jsonPath("totalPages").isEqualTo(2)
+        .jsonPath("size").isEqualTo(2)
+    }
+
+    @Test
+    fun `malformed date returns bad request`() {
+      webTestClient.get().uri {
+        it.path("/appointments/ids")
+          .queryParam("fromDate", "202-10-01")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `get appointments prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get().uri("/appointments/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `get appointments prevents access without authorization`() {
+      assertThat(
+        webTestClient.get().uri("/appointments/ids")
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
     }
   }
 }

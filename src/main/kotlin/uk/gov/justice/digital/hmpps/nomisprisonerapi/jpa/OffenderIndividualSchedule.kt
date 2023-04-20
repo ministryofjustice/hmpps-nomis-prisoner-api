@@ -90,6 +90,8 @@ class OffenderIndividualSchedule(
   @JoinColumn(name = "TO_INTERNAL_LOCATION_ID")
   var internalLocation: AgencyInternalLocation? = null,
 
+  @Column(name = "COMMENT_TEXT")
+  val comment: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

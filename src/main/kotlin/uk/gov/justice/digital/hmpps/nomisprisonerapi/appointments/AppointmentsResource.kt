@@ -1,10 +1,16 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.appointments
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -16,9 +22,11 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @RestController
@@ -227,4 +235,92 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     dateTime: LocalDateTime,
   ): AppointmentResponse =
     appointmentService.getAppointment(bookingId, locationId, dateTime)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @GetMapping("/appointments/{eventId}")
+  @Operation(
+    summary = "Get appointment by event id",
+    description = "Get an appointment given the unique event id. Requires role NOMIS_APPOINTMENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Appointment information with created id",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking, location and timestamp combination does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAppointmentById(
+    @Schema(description = "Event Id", example = "12345678", required = true)
+    @PathVariable
+    eventId: Long,
+  ): AppointmentResponse =
+    appointmentService.getAppointment(eventId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @GetMapping("/appointments/ids")
+  @Operation(
+    summary = "get appointments by filter",
+    description = "Retrieves a paged list of incentive composite ids by filter. Requires ROLE_NOMIS_APPOINTMENTS.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Pageable list of composite ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAppointmentsByFilter(
+    @PageableDefault(sort = ["eventId"], direction = Sort.Direction.ASC)
+    pageRequest: Pageable,
+    @RequestParam(value = "prisonIds", required = false)
+    @Parameter(
+      description = "Filter results by prison ids (returns all prisons if not specified)",
+      example = "['MDI','LEI']",
+    )
+    prisonIds: List<String>?,
+    @RequestParam(value = "fromDate", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by appointments that were created on or after the given date",
+      example = "2021-11-03",
+    )
+    fromDate: LocalDate?,
+    @RequestParam(value = "toDate", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by appointments that were created on or before the given date",
+      example = "2022-04-11",
+    )
+    toDate: LocalDate?,
+  ): Page<AppointmentIdResponse> =
+    appointmentService.findIdsByFilter(
+      pageRequest = pageRequest,
+      AppointmentFilter(prisonIds = prisonIds ?: listOf(), toDate = toDate, fromDate = fromDate),
+    )
 }
