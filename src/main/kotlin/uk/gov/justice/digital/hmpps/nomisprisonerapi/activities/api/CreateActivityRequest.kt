@@ -54,6 +54,9 @@ data class CreateActivityRequest(
 
   @Schema(description = "Schedule rules", required = false)
   val scheduleRules: List<ScheduleRuleRequest> = listOf(),
+
+  @Schema(description = "Runs on bank holidays?", required = true)
+  val runsOnBankHolidays: Boolean,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

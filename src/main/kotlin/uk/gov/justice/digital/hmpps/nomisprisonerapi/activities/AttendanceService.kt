@@ -109,6 +109,7 @@ class AttendanceService(
       paid = request.paid
       authorisedAbsence = request.authorisedAbsence
       commentText = request.comments
+      performanceCode = attendanceOutcome?.let { if (it.code == "ATT" && paid == true) "STANDARD" else null }
     }
   }
 
