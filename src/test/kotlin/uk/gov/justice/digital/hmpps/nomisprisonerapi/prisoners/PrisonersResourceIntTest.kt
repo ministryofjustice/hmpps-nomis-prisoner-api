@@ -51,7 +51,9 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       lateinit var inactivePrisoner1: Offender
 
       @BeforeEach
-      internal fun createPrisoner() {
+      internal fun createPrisoners() {
+        deletePrisoners()
+
         activePrisoner1 = repository.save(
           OffenderBuilder(nomsId = "A1234TT")
             .withBooking(OffenderBookingBuilder()),
@@ -67,7 +69,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
 
       @AfterEach
-      fun tearDown() {
+      fun deletePrisoners() {
         repository.deleteOffenders()
       }
 
@@ -80,6 +82,21 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("$.totalElements").isEqualTo(2)
           .jsonPath("$.numberOfElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `will return a page of prisoners ordered by booking id ASC`() {
+        webTestClient.get().uri("/prisoners/ids?page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.totalElements").isEqualTo(2)
+          .jsonPath("$.numberOfElements").isEqualTo(2)
+          .jsonPath("$.content[0].bookingId").isNumber
+          .jsonPath("$.content[0].offenderNo").isEqualTo("A1234TT")
+          .jsonPath("$.content[1].bookingId").isNumber
+          .jsonPath("$.content[1].offenderNo").isEqualTo("A1234SS")
       }
 
       @Test
