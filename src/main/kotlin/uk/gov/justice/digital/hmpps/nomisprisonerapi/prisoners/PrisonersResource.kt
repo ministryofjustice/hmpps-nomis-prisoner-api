@@ -25,7 +25,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
   @GetMapping("/prisoners/ids")
   @Operation(
-    summary = "Gets the identifiers for all prisoners",
+    summary = "Gets the identifiers for all prisoners. Currently only active prisoners are supported",
     description = "Requires role SYNCHRONISATION_REPORTING.",
     responses = [
       ApiResponse(
@@ -57,12 +57,12 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   fun getPrisonerIdentifiers(
     @PageableDefault(sort = ["bookingId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
-    @RequestParam(value = "active", required = false, defaultValue = "false")
+    @RequestParam(value = "active", required = false, defaultValue = "true")
     @Parameter(
       description = "Only return active prisoners currently in prison",
     )
     active: Boolean = false,
-  ): Page<PrisonerId> = prisonerService.findAllPrisoners(pageRequest, active)
+  ): Page<PrisonerId> = if (active) prisonerService.findAllActivePrisoners(pageRequest) else throw UnsupportedOperationException("Not implemented - only active prisoners can be found")
 }
 
 data class PrisonerId(
