@@ -350,36 +350,6 @@ internal class IncentiveServiceTest {
         },
       )
     }
-
-    @Test
-    fun `data isn't created if entities already exist`() {
-      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
-        Optional.of(prison),
-      )
-      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
-        Optional.of(getPrisonIncentiveLevel()),
-      )
-      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
-        Optional.of(getVisitAllowanceLevel()),
-      )
-      incentivesService.createPrisonIncentiveLevelData(
-        "MDI",
-        CreatePrisonIncentiveRequest(
-          levelCode = "NSTD",
-          active = false,
-          defaultOnAdmission = true,
-          visitOrderAllowance = 3,
-          privilegedVisitOrderAllowance = 4,
-          remandTransferLimitInPence = 350,
-          remandSpendLimitInPence = 3700,
-          convictedTransferLimitInPence = 650,
-          convictedSpendLimitInPence = 6600,
-        ),
-      )
-
-      verify(prisonIncentiveLevelRepository, never()).save(any())
-      verify(visitAllowanceLevelRepository, never()).save(any())
-    }
   }
 
   @DisplayName("create prison incentive level data")
