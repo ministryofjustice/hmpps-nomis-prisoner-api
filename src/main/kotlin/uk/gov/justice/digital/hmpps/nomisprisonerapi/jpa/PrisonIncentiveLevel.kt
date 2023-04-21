@@ -21,15 +21,15 @@ data class PrisonIncentiveLevel(
   val id: PrisonIncentiveLevelId,
   @Column(name = "ACTIVE_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = false,
+  var active: Boolean = false,
   @Column(name = "DEFAULT_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val default: Boolean = false,
-  val remandTransferLimit: BigDecimal? = null,
-  val remandSpendLimit: BigDecimal? = null,
-  val convictedTransferLimit: BigDecimal? = null,
-  val convictedSpendLimit: BigDecimal? = null,
-  val expiryDate: LocalDate? = null,
+  var default: Boolean = false,
+  var remandTransferLimit: BigDecimal? = null,
+  var remandSpendLimit: BigDecimal? = null,
+  var convictedTransferLimit: BigDecimal? = null,
+  var convictedSpendLimit: BigDecimal? = null,
+  var expiryDate: LocalDate? = null,
 )
 
 @Embeddable

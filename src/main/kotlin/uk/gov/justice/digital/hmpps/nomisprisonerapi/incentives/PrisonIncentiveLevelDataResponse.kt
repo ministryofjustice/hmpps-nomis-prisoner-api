@@ -12,10 +12,12 @@ data class PrisonIncentiveLevelDataResponse(
   val visitOrderAllowance: Int? = null,
   val privilegedVisitOrderAllowance: Int? = null,
   val defaultOnAdmission: Boolean,
-  val active: Boolean,
   val remandTransferLimitInPence: Int? = null,
   val remandSpendLimitInPence: Int? = null,
   val convictedTransferLimitInPence: Int? = null,
   val convictedSpendLimitInPence: Int? = null,
+  val active: Boolean,
   val expiryDate: LocalDate? = null,
+  val visitAllowanceActive: Boolean?,
+  val visitAllowanceExpiryDate: LocalDate? = null,
 )

@@ -533,6 +533,102 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     incentivesService.createPrisonIncentiveLevelData(prison, createIncentiveRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PutMapping("/incentives/prison/{prison}/code/{code}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Prison Incentive level data",
+    description = "Creates incentive level data associated with a Prison",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreatePrisonIncentiveRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prison Incentive level data updated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePrisonIncentiveLevelData(
+    @Schema(description = "Prison Id", example = "MDI", required = true)
+    @PathVariable
+    prison: String,
+    @Schema(description = "Incentive level code", example = "STD", required = true)
+    @PathVariable
+    code: String,
+    @RequestBody @Valid
+    updateIncentiveRequest: UpdatePrisonIncentiveRequest,
+  ): PrisonIncentiveLevelDataResponse =
+    incentivesService.updatePrisonIncentiveLevelData(prison, code, updateIncentiveRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @GetMapping("/incentives/prison/{prison}/code/{code}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets the prison incentive level",
+    description = "Gets prison incentive level data by provided code and prison",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "return the Prison Incentive level",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prison Incentive Level does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonIncentiveLevel(
+    @Schema(description = "Prison id", example = "MDI", required = true)
+    @PathVariable
+    prison: String,
+    @Schema(description = "Incentive level code", example = "STD", required = true)
+    @PathVariable
+    code: String,
+  ): PrisonIncentiveLevelDataResponse =
+    incentivesService.getPrisonIncentiveLevel(prison, code)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @DeleteMapping("/incentives/prison/{prison}/code/{code}")
   @ResponseStatus(HttpStatus.OK)
   @Hidden

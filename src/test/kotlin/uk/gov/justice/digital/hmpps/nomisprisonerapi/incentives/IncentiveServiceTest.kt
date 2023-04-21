@@ -382,6 +382,147 @@ internal class IncentiveServiceTest {
     }
   }
 
+  @DisplayName("create prison incentive level data")
+  @Nested
+  internal inner class UpdatePrisonIncentiveLevelData {
+    val prison = AgencyLocation("MDI", "desc")
+
+    @Test
+    fun `update handles no existing Visit Allowance data by creating the visit allowance`() {
+      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
+        Optional.of(prison),
+      )
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+        Optional.of(getPrisonIncentiveLevel()),
+      )
+      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+
+      val updatedResponse = incentivesService.updatePrisonIncentiveLevelData(
+        "MDI",
+        "NSTD",
+        UpdatePrisonIncentiveRequest(
+          active = true,
+          defaultOnAdmission = true,
+          visitOrderAllowance = 3,
+          privilegedVisitOrderAllowance = 4,
+          remandTransferLimitInPence = 350,
+          remandSpendLimitInPence = 3700,
+          convictedTransferLimitInPence = 650,
+          convictedSpendLimitInPence = 6600,
+        ),
+      )
+
+      assertThat(updatedResponse.remandTransferLimitInPence).isEqualTo(350)
+      assertThat(updatedResponse.visitOrderAllowance).isEqualTo(3)
+      assertThat(updatedResponse.privilegedVisitOrderAllowance).isEqualTo(4)
+    }
+
+    @Test
+    fun `expiry date is set for inactive entities`() {
+      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
+        Optional.of(prison),
+      )
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+      whenever(prisonIncentiveLevelRepository.save(any())).thenReturn(getPrisonIncentiveLevel())
+      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+      incentivesService.createPrisonIncentiveLevelData(
+        "MDI",
+        CreatePrisonIncentiveRequest(
+          levelCode = "NSTD",
+          active = false,
+          defaultOnAdmission = true,
+          visitOrderAllowance = 3,
+          privilegedVisitOrderAllowance = 4,
+          remandTransferLimitInPence = 350,
+          remandSpendLimitInPence = 3700,
+          convictedTransferLimitInPence = 650,
+          convictedSpendLimitInPence = 6600,
+        ),
+      )
+
+      verify(prisonIncentiveLevelRepository).save(
+        org.mockito.kotlin.check { data ->
+          assertThat(data.active).isEqualTo(false)
+          assertThat(data.expiryDate).isEqualTo(LocalDate.now())
+        },
+      )
+
+      verify(visitAllowanceLevelRepository).save(
+        org.mockito.kotlin.check { data ->
+          assertThat(data.active).isEqualTo(false)
+          assertThat(data.expiryDate).isEqualTo(LocalDate.now())
+        },
+      )
+    }
+
+    @Test
+    fun `data isn't created if entities already exist`() {
+      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
+        Optional.of(prison),
+      )
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+        Optional.of(getPrisonIncentiveLevel()),
+      )
+      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
+        Optional.of(getVisitAllowanceLevel()),
+      )
+      incentivesService.createPrisonIncentiveLevelData(
+        "MDI",
+        CreatePrisonIncentiveRequest(
+          levelCode = "NSTD",
+          active = false,
+          defaultOnAdmission = true,
+          visitOrderAllowance = 3,
+          privilegedVisitOrderAllowance = 4,
+          remandTransferLimitInPence = 350,
+          remandSpendLimitInPence = 3700,
+          convictedTransferLimitInPence = 650,
+          convictedSpendLimitInPence = 6600,
+        ),
+      )
+
+      verify(prisonIncentiveLevelRepository, never()).save(any())
+      verify(visitAllowanceLevelRepository, never()).save(any())
+    }
+  }
+
+  @DisplayName("get prison incentive level data")
+  @Nested
+  internal inner class GetPrisonIncentiveLevelData {
+    val prison = AgencyLocation("MDI", "desc")
+
+    @Test
+    fun `handles no existing Visit Allowance data`() {
+      whenever(agencyLocationRepository.findById("MDI")).thenReturn(
+        Optional.of(prison),
+      )
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+        Optional.of(getPrisonIncentiveLevel()),
+      )
+      whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
+        Optional.empty(),
+      )
+
+      val response = incentivesService.getPrisonIncentiveLevel(
+        "MDI",
+        "NSTD",
+      )
+
+      assertThat(response.visitAllowanceExpiryDate).isNull()
+      assertThat(response.visitAllowanceActive).isNull()
+      assertThat(response.visitOrderAllowance).isNull()
+      assertThat(response.privilegedVisitOrderAllowance).isNull()
+    }
+  }
+
   private fun getPrisonIncentiveLevel(): PrisonIncentiveLevel {
     val prison = AgencyLocation("MDI", "desc")
     return PrisonIncentiveLevel(

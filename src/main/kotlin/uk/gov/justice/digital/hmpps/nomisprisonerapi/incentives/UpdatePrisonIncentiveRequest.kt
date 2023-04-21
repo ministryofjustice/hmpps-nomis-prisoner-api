@@ -5,9 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Prison Incentive level data create request")
-data class CreatePrisonIncentiveRequest(
-  @Schema(description = "Incentive Level code", example = "STD", required = true)
-  val levelCode: String,
+data class UpdatePrisonIncentiveRequest(
   @Schema(description = "active status of the Global Incentive Level", example = "true", required = true)
   val active: Boolean,
   @Schema(description = "default on admission", example = "true", required = true)
@@ -25,7 +23,8 @@ data class CreatePrisonIncentiveRequest(
   @Schema(description = "The maximum amount allowed in the spends account for a convicted prisoner", example = "5500", required = false)
   val convictedSpendLimitInPence: Int? = null,
 ) {
-  fun toUpdateRequest(): UpdatePrisonIncentiveRequest = UpdatePrisonIncentiveRequest(
+  fun toCreateRequest(levelCode: String): CreatePrisonIncentiveRequest = CreatePrisonIncentiveRequest(
+    levelCode = levelCode,
     active = active,
     defaultOnAdmission = defaultOnAdmission,
     visitOrderAllowance = visitOrderAllowance,
