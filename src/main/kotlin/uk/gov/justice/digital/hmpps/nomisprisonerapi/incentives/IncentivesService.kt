@@ -238,10 +238,10 @@ class IncentivesService(
       ?: throw BadDataException("Prison with id=$prisonId does not exist")
 
     val prisonIncentiveLevel =
-      savePrisonIncentiveLevelData(prison, createRequest)
+      savePrisonIncentiveLevel(prison, createRequest)
 
     val visitAllowanceLevel =
-      saveVisitAllowanceLevelData(prison, createRequest)
+      saveVisitAllowanceLevel(prison, createRequest)
 
     telemetryClient.trackEvent(
       "prison-incentive-level-data-created",
@@ -265,14 +265,14 @@ class IncentivesService(
     100.toFloat(),
   ).toBigDecimal()
 
-  private fun saveVisitAllowanceLevelData(
+  private fun saveVisitAllowanceLevel(
     prison: AgencyLocation,
     createRequest: CreatePrisonIncentiveRequest,
   ): VisitAllowanceLevel =
     (
       visitAllowanceLevelsRepository.findByIdOrNull(VisitAllowanceLevelId(prison, createRequest.levelCode))
         ?.let {
-          log.warn("Updating Visit allowance as: $it already exists")
+          log.warn("saveVisitAllowanceLevel: Updating Visit allowance as ${prison.id} ${createRequest.levelCode} already exists")
           updateVisitAllowanceLevel(
             prison = prison,
             levelCode = createRequest.levelCode,
@@ -291,14 +291,14 @@ class IncentivesService(
       }
       )
 
-  private fun savePrisonIncentiveLevelData(
+  private fun savePrisonIncentiveLevel(
     prison: AgencyLocation,
     createRequest: CreatePrisonIncentiveRequest,
   ): PrisonIncentiveLevel =
 
     prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(prison, createRequest.levelCode))
       ?.also {
-        log.warn("Prison IEP creation - Prison IEP level: ${prison.id} $createRequest.levelCode already exists, updating instead.")
+        log.warn("savePrisonIncentiveLevel: - Updating Prison IEP level as ${prison.id} ${createRequest.levelCode} already exists.")
         updatePrisonIncentiveLevelData(prison.id, createRequest.levelCode, createRequest.toUpdateRequest())
       }
       ?: let {
@@ -365,8 +365,8 @@ class IncentivesService(
           it.convictedTransferLimit = updateRequest.convictedTransferLimitInPence?.toPounds()
         } ?: let {
         val createRequest = updateRequest.toCreateRequest(levelCode)
-        log.warn("Update Prison Incentive Level is creating the record as it does not exist: $createRequest")
-        savePrisonIncentiveLevelData(prison, createRequest)
+        log.warn("updatePrisonIncentiveLevel: creating the PrisonIncentiveLevel as it does not exist: $createRequest")
+        savePrisonIncentiveLevel(prison, createRequest)
       }
       )
 
@@ -384,8 +384,8 @@ class IncentivesService(
           it.privilegedVisitOrderAllowance = updateRequest.privilegedVisitOrderAllowance
         } ?: let {
         val createRequest = updateRequest.toCreateRequest(levelCode)
-        log.warn("Update Visit allowance is creating the record as it does not exist: $createRequest")
-        saveVisitAllowanceLevelData(prison, createRequest)
+        log.warn("updateVisitAllowanceLevel: creating the record as it does not exist: $createRequest")
+        saveVisitAllowanceLevel(prison, createRequest)
       }
       )
 
@@ -427,21 +427,7 @@ class IncentivesService(
     val visitAllowanceLevel =
       visitAllowanceLevelsRepository.findByIdOrNull(VisitAllowanceLevelId(location, code))
 
-    return PrisonIncentiveLevelDataResponse(
-      prisonId = prison,
-      iepLevelCode = code,
-      defaultOnAdmission = prisonIncentiveLevel.default,
-      active = prisonIncentiveLevel.active,
-      expiryDate = prisonIncentiveLevel.expiryDate,
-      remandTransferLimitInPence = prisonIncentiveLevel.remandTransferLimit?.toPence(),
-      remandSpendLimitInPence = prisonIncentiveLevel.remandSpendLimit?.toPence(),
-      convictedSpendLimitInPence = prisonIncentiveLevel.convictedSpendLimit?.toPence(),
-      convictedTransferLimitInPence = prisonIncentiveLevel.convictedTransferLimit?.toPence(),
-      visitOrderAllowance = visitAllowanceLevel?.visitOrderAllowance,
-      privilegedVisitOrderAllowance = visitAllowanceLevel?.privilegedVisitOrderAllowance,
-      visitAllowanceActive = visitAllowanceLevel?.active,
-      visitAllowanceExpiryDate = visitAllowanceLevel?.expiryDate,
-    )
+    return mapPrisonLevelDataResponse(prison, code, prisonIncentiveLevel, visitAllowanceLevel)
   }
 
   private fun mapIncentiveModel(incentiveEntity: Incentive, currentIep: Boolean): IncentiveResponse {
