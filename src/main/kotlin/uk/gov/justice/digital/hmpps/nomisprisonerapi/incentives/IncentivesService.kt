@@ -162,7 +162,7 @@ class IncentivesService(
   fun updateGlobalIncentiveLevel(code: String, updateIncentiveRequest: UpdateGlobalIncentiveRequest): ReferenceCode {
     return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
       ?.let {
-        it.expiredDate = synchroniseExpiredDateOnUpdate(updateIncentiveRequest.active, it)
+        it.expiredDate = synchroniseExpiredDateOnUpdate(updateIncentiveRequest.active, it.expiredDate)
         it.active = updateIncentiveRequest.active
         it.description = updateIncentiveRequest.description
         telemetryClient.trackEvent(
@@ -174,13 +174,13 @@ class IncentivesService(
           ),
           null,
         )
-        return ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode, it.expiredDate)
+        ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode, it.expiredDate)
       } ?: throw NotFoundException("Incentive level: $code not found")
   }
 
-  fun synchroniseExpiredDateOnUpdate(newActiveStatus: Boolean, persistedLevel: IEPLevel): LocalDate? {
+  fun synchroniseExpiredDateOnUpdate(newActiveStatus: Boolean, expiredDate: LocalDate?): LocalDate? {
     if (!newActiveStatus) {
-      return persistedLevel.expiredDate ?: LocalDate.now()
+      return expiredDate ?: LocalDate.now()
     }
     return null
   }
@@ -238,10 +238,10 @@ class IncentivesService(
       ?: throw BadDataException("Prison with id=$prisonId does not exist")
 
     val prisonIncentiveLevel =
-      savePrisonIncentiveLevelData(prison, createRequest)
+      savePrisonIncentiveLevel(prison, createRequest)
 
     val visitAllowanceLevel =
-      saveVisitAllowanceLevelData(prison, createRequest)
+      saveVisitAllowanceLevel(prison, createRequest)
 
     telemetryClient.trackEvent(
       "prison-incentive-level-data-created",
@@ -257,26 +257,7 @@ class IncentivesService(
       ),
       null,
     )
-    return PrisonIncentiveLevelDataResponse(
-      prisonId = prisonId,
-      iepLevelCode = createRequest.levelCode,
-      visitOrderAllowance = visitAllowanceLevel.visitOrderAllowance,
-      privilegedVisitOrderAllowance = visitAllowanceLevel.privilegedVisitOrderAllowance,
-      defaultOnAdmission = prisonIncentiveLevel.default,
-      active = prisonIncentiveLevel.active,
-      remandSpendLimitInPence = prisonIncentiveLevel.remandSpendLimit?.let {
-        prisonIncentiveLevel.remandSpendLimit.toPence()
-      },
-      remandTransferLimitInPence = prisonIncentiveLevel.remandTransferLimit?.let {
-        prisonIncentiveLevel.remandTransferLimit.toPence()
-      },
-      convictedSpendLimitInPence = prisonIncentiveLevel.convictedSpendLimit?.let {
-        prisonIncentiveLevel.convictedSpendLimit.toPence()
-      },
-      convictedTransferLimitInPence = prisonIncentiveLevel.convictedTransferLimit?.let {
-        prisonIncentiveLevel.convictedTransferLimit.toPence()
-      },
-    )
+    return mapPrisonLevelDataResponse(prisonId, createRequest.levelCode, prisonIncentiveLevel, visitAllowanceLevel)
   }
 
   private fun BigDecimal.toPence(): Int = this.movePointRight(2).toInt()
@@ -284,15 +265,19 @@ class IncentivesService(
     100.toFloat(),
   ).toBigDecimal()
 
-  private fun saveVisitAllowanceLevelData(
+  private fun saveVisitAllowanceLevel(
     prison: AgencyLocation,
     createRequest: CreatePrisonIncentiveRequest,
   ): VisitAllowanceLevel =
     (
       visitAllowanceLevelsRepository.findByIdOrNull(VisitAllowanceLevelId(prison, createRequest.levelCode))
-        ?.also {
-          log.warn("Ignoring Visit allowance creation: $it already exists")
-          // TODO call UPDATE when implemented
+        ?.let {
+          log.warn("saveVisitAllowanceLevel: Updating Visit allowance as ${prison.id} ${createRequest.levelCode} already exists")
+          updateVisitAllowanceLevel(
+            prison = prison,
+            levelCode = createRequest.levelCode,
+            createRequest.toUpdateRequest(),
+          )
         } ?: let {
         visitAllowanceLevelsRepository.save(
           VisitAllowanceLevel(
@@ -306,15 +291,15 @@ class IncentivesService(
       }
       )
 
-  private fun savePrisonIncentiveLevelData(
+  private fun savePrisonIncentiveLevel(
     prison: AgencyLocation,
     createRequest: CreatePrisonIncentiveRequest,
   ): PrisonIncentiveLevel =
 
     prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(prison, createRequest.levelCode))
       ?.also {
-        log.warn("Ignoring Global IEP creation - Prison IEP level: $it already exists")
-        // TODO call UPDATE when implemented
+        log.warn("savePrisonIncentiveLevel: - Updating Prison IEP level as ${prison.id} ${createRequest.levelCode} already exists.")
+        updatePrisonIncentiveLevelData(prison.id, createRequest.levelCode, createRequest.toUpdateRequest())
       }
       ?: let {
         prisonIncentiveLevelRepository.save(
@@ -322,22 +307,87 @@ class IncentivesService(
             id = PrisonIncentiveLevelId(location = prison, iepLevelCode = createRequest.levelCode),
             active = createRequest.active,
             default = createRequest.defaultOnAdmission,
-            remandTransferLimit = createRequest.remandTransferLimitInPence?.let {
-              createRequest.remandTransferLimitInPence.toPounds()
-            },
-            remandSpendLimit = createRequest.remandSpendLimitInPence?.let {
-              createRequest.remandSpendLimitInPence.toPounds()
-            },
-            convictedTransferLimit = createRequest.convictedTransferLimitInPence?.let {
-              createRequest.convictedTransferLimitInPence.toPounds()
-            },
-            convictedSpendLimit = createRequest.convictedSpendLimitInPence?.let {
-              createRequest.convictedSpendLimitInPence.toPounds()
-            },
+            remandTransferLimit = createRequest.remandTransferLimitInPence?.toPounds(),
+            remandSpendLimit = createRequest.remandSpendLimitInPence?.toPounds(),
+            convictedTransferLimit = createRequest.convictedTransferLimitInPence?.toPounds(),
+            convictedSpendLimit = createRequest.convictedSpendLimitInPence?.toPounds(),
             expiryDate = if (createRequest.active) null else LocalDate.now(),
           ),
         )
       }
+
+  @Audit
+  fun updatePrisonIncentiveLevelData(
+    prisonId: String,
+    levelCode: String,
+    updateRequest: UpdatePrisonIncentiveRequest,
+  ): PrisonIncentiveLevelDataResponse {
+    val prison = agencyLocationRepository.findByIdOrNull(prisonId)
+      ?: throw BadDataException("Prison with id=$prisonId does not exist")
+
+    val prisonIncentiveLevel =
+      updatePrisonIncentiveLevel(prison, levelCode, updateRequest)
+
+    val visitAllowanceLevel =
+      updateVisitAllowanceLevel(prison, levelCode, updateRequest)
+
+    telemetryClient.trackEvent(
+      "prison-incentive-level-data-updated",
+      mapOf(
+        "code" to levelCode,
+        "location" to prisonId,
+        "active" to prisonIncentiveLevel.active.toString(),
+        "defaultFlag" to prisonIncentiveLevel.default.toString(),
+        "remandTransferLimit" to prisonIncentiveLevel.remandTransferLimit.toString(),
+        "remandSpendLimit" to prisonIncentiveLevel.remandSpendLimit.toString(),
+        "convictedTransferLimit" to prisonIncentiveLevel.convictedTransferLimit.toString(),
+        "convictedSpendLimit" to prisonIncentiveLevel.convictedSpendLimit.toString(),
+      ),
+      null,
+    )
+    return mapPrisonLevelDataResponse(prisonId, levelCode, prisonIncentiveLevel, visitAllowanceLevel)
+  }
+
+  private fun updatePrisonIncentiveLevel(
+    prison: AgencyLocation,
+    levelCode: String,
+    updateRequest: UpdatePrisonIncentiveRequest,
+  ): PrisonIncentiveLevel =
+    (
+      prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(prison, levelCode))
+        ?.also {
+          it.expiryDate = synchroniseExpiredDateOnUpdate(updateRequest.active, it.expiryDate)
+          it.active = updateRequest.active
+          it.default = updateRequest.defaultOnAdmission
+          it.remandSpendLimit = updateRequest.remandSpendLimitInPence?.toPounds()
+          it.remandTransferLimit = updateRequest.remandTransferLimitInPence?.toPounds()
+          it.convictedSpendLimit = updateRequest.convictedSpendLimitInPence?.toPounds()
+          it.convictedTransferLimit = updateRequest.convictedTransferLimitInPence?.toPounds()
+        } ?: let {
+        val createRequest = updateRequest.toCreateRequest(levelCode)
+        log.warn("updatePrisonIncentiveLevel: creating the PrisonIncentiveLevel as it does not exist: $createRequest")
+        savePrisonIncentiveLevel(prison, createRequest)
+      }
+      )
+
+  private fun updateVisitAllowanceLevel(
+    prison: AgencyLocation,
+    levelCode: String,
+    updateRequest: UpdatePrisonIncentiveRequest,
+  ): VisitAllowanceLevel =
+    (
+      visitAllowanceLevelsRepository.findByIdOrNull(VisitAllowanceLevelId(prison, levelCode))
+        ?.also {
+          it.expiryDate = synchroniseExpiredDateOnUpdate(updateRequest.active, it.expiryDate)
+          it.active = updateRequest.active
+          it.visitOrderAllowance = updateRequest.visitOrderAllowance
+          it.privilegedVisitOrderAllowance = updateRequest.privilegedVisitOrderAllowance
+        } ?: let {
+        val createRequest = updateRequest.toCreateRequest(levelCode)
+        log.warn("updateVisitAllowanceLevel: creating the record as it does not exist: $createRequest")
+        saveVisitAllowanceLevel(prison, createRequest)
+      }
+      )
 
   @Audit
   fun deletePrisonIncentiveLevelData(prisonId: String, code: String) {
@@ -363,6 +413,21 @@ class IncentivesService(
       null,
     )
     log.info("Prison Incentive level deleted: $prisonId")
+  }
+
+  fun getPrisonIncentiveLevel(prison: String, code: String): PrisonIncentiveLevelDataResponse {
+    // it is possible for Prison Incentive Level to exist without VisitAllowanceLevel but not vice versa
+    val location = agencyLocationRepository.findById(prison)
+      .orElseThrow(BadDataException("Prison with id=$prison does not exist"))
+
+    val prisonIncentiveLevel =
+      prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(location, code))
+        ?: throw NotFoundException("Prison incentive level for level $code at $prison not found")
+
+    val visitAllowanceLevel =
+      visitAllowanceLevelsRepository.findByIdOrNull(VisitAllowanceLevelId(location, code))
+
+    return mapPrisonLevelDataResponse(prison, code, prisonIncentiveLevel, visitAllowanceLevel)
   }
 
   private fun mapIncentiveModel(incentiveEntity: Incentive, currentIep: Boolean): IncentiveResponse {
@@ -402,4 +467,26 @@ class IncentivesService(
       userId = dto.userId,
     )
   }
+
+  private fun mapPrisonLevelDataResponse(
+    prisonId: String,
+    code: String,
+    prisonIncentiveLevel: PrisonIncentiveLevel,
+    visitAllowanceLevel: VisitAllowanceLevel?,
+  ): PrisonIncentiveLevelDataResponse =
+    PrisonIncentiveLevelDataResponse(
+      prisonId = prisonId,
+      iepLevelCode = code,
+      defaultOnAdmission = prisonIncentiveLevel.default,
+      active = prisonIncentiveLevel.active,
+      expiryDate = prisonIncentiveLevel.expiryDate,
+      remandTransferLimitInPence = prisonIncentiveLevel.remandTransferLimit?.toPence(),
+      remandSpendLimitInPence = prisonIncentiveLevel.remandSpendLimit?.toPence(),
+      convictedSpendLimitInPence = prisonIncentiveLevel.convictedSpendLimit?.toPence(),
+      convictedTransferLimitInPence = prisonIncentiveLevel.convictedTransferLimit?.toPence(),
+      visitOrderAllowance = visitAllowanceLevel?.visitOrderAllowance,
+      privilegedVisitOrderAllowance = visitAllowanceLevel?.privilegedVisitOrderAllowance,
+      visitAllowanceActive = visitAllowanceLevel?.active,
+      visitAllowanceExpiryDate = visitAllowanceLevel?.expiryDate,
+    )
 }

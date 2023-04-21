@@ -865,6 +865,65 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `create prison incentive will update if data exists`() {
+      webTestClient.post().uri("/incentives/prison/MDI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "levelCode"    : "PILD",
+            "defaultOnAdmission" : false,
+            "active"    : true,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      // call create again (will update)
+      val response = webTestClient.post().uri("/incentives/prison/MDI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "levelCode"    : "PILD",
+            "defaultOnAdmission" : false,
+            "active"    : true,
+            "visitOrderAllowance"    : 10,
+            "privilegedVisitOrderAllowance"    : 11,
+            "remandTransferLimitInPence"    : 100,
+            "remandSpendLimitInPence"    : 101,
+            "convictedSpendLimitInPence"    : 400,
+            "convictedTransferLimitInPence"    : 401
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.iepLevelCode).isEqualTo("PILD")
+      assertThat(response?.prisonId).isEqualTo("MDI")
+      assertThat(response?.active).isTrue
+      assertThat(response?.defaultOnAdmission).isFalse
+      assertThat(response?.privilegedVisitOrderAllowance).isEqualTo(11)
+      assertThat(response?.visitOrderAllowance).isEqualTo(10)
+      assertThat(response?.remandSpendLimitInPence).isEqualTo(101)
+      assertThat(response?.remandTransferLimitInPence).isEqualTo(100)
+      assertThat(response?.convictedSpendLimitInPence).isEqualTo(400)
+      assertThat(response?.convictedTransferLimitInPence).isEqualTo(401)
+      assertThat(response?.expiryDate).isNull()
+    }
+
+    @Test
     fun `create prison incentive prevents access without appropriate role`() {
       assertThat(
         webTestClient.post().uri("/incentives/prison/MDI")
@@ -899,6 +958,250 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """{
             "levelCode"    : "PILD",
+            "defaultOnAdmission" : false,
+            "active"    : false,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @DisplayName("update prison incentive level data")
+  @Nested
+  inner class UpdatePrisonIncentiveLevel {
+    @BeforeEach
+    internal fun setupIncentiveLevel() {
+      // creates ABC and DEF global incentive levels with only ABC having prison level incentive data at MDI prison
+      webTestClient.post().uri("/incentives/reference-codes")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "code"    : "ABC",
+            "description"    : "description for ABC",
+            "active"    : true
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      webTestClient.post().uri("/incentives/reference-codes")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "code"    : "DEF",
+            "description"    : "description for DEF",
+            "active"    : false
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      webTestClient.post().uri("/incentives/prison/MDI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "levelCode"    : "ABC",
+            "defaultOnAdmission" : false,
+            "active"    : true,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      webTestClient.delete().uri("/incentives/prison/MDI/code/ABC")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.delete().uri("/incentives/prison/MDI/code/DEF")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.delete().uri("/incentives/reference-codes/ABC")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.delete().uri("/incentives/reference-codes/DEF")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+    }
+
+    @Test
+    fun `update prison incentive level data`() {
+      val response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "defaultOnAdmission" : true,
+            "active"    : true,
+            "visitOrderAllowance"    : 33,
+            "privilegedVisitOrderAllowance"    : 66,
+            "remandTransferLimitInPence"    : 22,
+            "remandSpendLimitInPence"    : 77,
+            "convictedSpendLimitInPence"    : 99,
+            "convictedTransferLimitInPence"    : 11
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.iepLevelCode).isEqualTo("ABC")
+      assertThat(response?.prisonId).isEqualTo("MDI")
+      assertThat(response?.active).isTrue
+      assertThat(response?.defaultOnAdmission).isTrue
+      assertThat(response?.privilegedVisitOrderAllowance).isEqualTo(66)
+      assertThat(response?.visitOrderAllowance).isEqualTo(33)
+      assertThat(response?.remandSpendLimitInPence).isEqualTo(77)
+      assertThat(response?.remandTransferLimitInPence).isEqualTo(22)
+      assertThat(response?.convictedSpendLimitInPence).isEqualTo(99)
+      assertThat(response?.convictedTransferLimitInPence).isEqualTo(11)
+      assertThat(response?.expiryDate).isNull()
+    }
+
+    @Test
+    fun `update prison incentive request for data that doesn't exist will create`() {
+      webTestClient.put().uri("/incentives/prison/MDI/code/DEF")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "defaultOnAdmission" : true,
+            "active"    : true,
+            "visitOrderAllowance"    : 33,
+            "privilegedVisitOrderAllowance"    : 66,
+            "remandTransferLimitInPence"    : 22,
+            "remandSpendLimitInPence"    : 77,
+            "convictedSpendLimitInPence"    : 99,
+            "convictedTransferLimitInPence"    : 11
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.get().uri("/incentives/prison/MDI/code/DEF")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("prisonId").isEqualTo("MDI")
+        .jsonPath("iepLevelCode").isEqualTo("DEF")
+        .jsonPath("defaultOnAdmission").isEqualTo(true)
+        .jsonPath("active").isEqualTo(true)
+        .jsonPath("expiryDate").doesNotExist()
+        .jsonPath("visitOrderAllowance").isEqualTo(33)
+        .jsonPath("privilegedVisitOrderAllowance").isEqualTo(66)
+        .jsonPath("remandTransferLimitInPence").isEqualTo(22)
+        .jsonPath("remandSpendLimitInPence").isEqualTo(77)
+        .jsonPath("convictedTransferLimitInPence").isEqualTo(11)
+        .jsonPath("convictedSpendLimitInPence").isEqualTo(99)
+        .jsonPath("visitAllowanceActive").isEqualTo(true)
+        .jsonPath("visitAllowanceExpiryDate").doesNotExist()
+    }
+
+    @Test
+    fun `update prison incentive to disable the record`() {
+      webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "defaultOnAdmission" : false,
+            "active"    : false,
+            "visitOrderAllowance"    : 1,
+            "privilegedVisitOrderAllowance"    : 2,
+            "remandTransferLimitInPence"    : 550,
+            "remandSpendLimitInPence"    : 660,
+            "convictedSpendLimitInPence"    : 350,
+            "convictedTransferLimitInPence"    : 750
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.get().uri("/incentives/prison/MDI/code/ABC")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("prisonId").isEqualTo("MDI")
+        .jsonPath("iepLevelCode").isEqualTo("ABC")
+        .jsonPath("active").isEqualTo(false)
+        .jsonPath("expiryDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("visitAllowanceActive").isEqualTo(false)
+        .jsonPath("visitAllowanceExpiryDate").isEqualTo(LocalDate.now().toString())
+    }
+
+    @Test
+    fun `update prison incentive prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "defaultOnAdmission" : false,
+            "active"    : false,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `update prison incentive prevents access without authorization`() {
+      assertThat(
+        webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
             "defaultOnAdmission" : false,
             "active"    : false,
             "visitOrderAllowance"    : 3,

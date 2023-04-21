@@ -19,13 +19,13 @@ data class VisitAllowanceLevel(
   @EmbeddedId
   val id: VisitAllowanceLevelId,
   @Column(name = "REMAND_VISITS", nullable = true)
-  val visitOrderAllowance: Int? = null,
+  var visitOrderAllowance: Int? = null,
   @Column(name = "WEEKENDS", nullable = true)
-  val privilegedVisitOrderAllowance: Int? = null,
+  var privilegedVisitOrderAllowance: Int? = null,
   @Convert(converter = YesNoConverter::class)
   @Column(name = "ACTIVE_FLAG", nullable = false)
-  val active: Boolean = false,
-  val expiryDate: LocalDate? = null,
+  var active: Boolean = false,
+  var expiryDate: LocalDate? = null,
 )
 
 @Embeddable
