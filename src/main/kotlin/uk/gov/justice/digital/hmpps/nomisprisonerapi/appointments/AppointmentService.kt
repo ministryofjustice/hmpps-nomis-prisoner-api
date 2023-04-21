@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.appointments
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AppointmentSpecification
 import java.time.LocalDateTime
 
 @Service
@@ -148,10 +151,27 @@ class AppointmentService(
       return mapModel(it)
     }
       ?: throw NotFoundException("Appointment not found")
+
+  fun getAppointment(eventId: Long): AppointmentResponse =
+    offenderIndividualScheduleRepository.findByIdOrNull(eventId)?.let {
+      return mapModel(it)
+    }
+      ?: throw NotFoundException("Appointment not found")
+
+  fun findIdsByFilter(pageRequest: Pageable, appointmentFilter: AppointmentFilter): Page<AppointmentIdResponse> =
+    offenderIndividualScheduleRepository.findAll(AppointmentSpecification(appointmentFilter), pageRequest)
+      .map { AppointmentIdResponse(eventId = it.eventId) }
 }
 
-private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse {
-  return AppointmentResponse(
+private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse =
+  AppointmentResponse(
     bookingId = entity.offenderBooking.bookingId,
+    offenderNo = entity.offenderBooking.offender.nomsId,
+    startDateTime = entity.startTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
+    endDateTime = entity.endTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
+    status = entity.eventStatus.code,
+    subtype = entity.eventSubType.code,
+    internalLocation = entity.internalLocation?.locationId,
+    prisonId = entity.prison?.id,
+    comment = entity.comment,
   )
-}

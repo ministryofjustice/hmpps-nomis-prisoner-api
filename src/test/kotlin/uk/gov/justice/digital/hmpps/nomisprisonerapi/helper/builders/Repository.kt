@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -81,6 +82,7 @@ class Repository(
   val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
   val attendanceOutcomeRepository: ReferenceCodeRepository<AttendanceOutcome>,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
+  val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
   val courseScheduleRepository: CourseScheduleRepository,
 ) {
@@ -222,8 +224,7 @@ class Repository(
   }
 
   fun updateCreatedToMatchVisitStart() {
-    val sql =
-      "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
+    val sql = "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
     jdbcTemplate.execute(sql)
   }
 
@@ -284,6 +285,7 @@ class Repository(
   fun lookupAttendanceOutcomeCode(code: String): AttendanceOutcome = attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(code))!!
 
   fun lookupEventStatusCode(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
+  fun lookupEventSubtype(code: String): EventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(code))!!
 
   fun lookupProgramStatus(code: String): OffenderProgramStatus =
     programStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(code))!!
@@ -298,4 +300,9 @@ class Repository(
   ): OffenderProgramProfile =
     offenderProgramProfileBuilder.build(offenderBooking, courseActivity)
       .let { offenderProgramProfileRepository.save(it) }
+
+  fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
+    offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
+
+  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) = offenderRepository.deleteById(offenderIndividualSchedule.eventId)
 }
