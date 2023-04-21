@@ -1076,7 +1076,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           ),
         )
         .exchange()
-        .expectStatus().isCreated
+        .expectStatus().isOk
         .expectBody(PrisonIncentiveLevelDataResponse::class.java)
         .returnResult().responseBody
       assertThat(response?.iepLevelCode).isEqualTo("ABC")
@@ -1112,7 +1112,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           ),
         )
         .exchange()
-        .expectStatus().isCreated
+        .expectStatus().isOk
 
       webTestClient.get().uri("/incentives/prison/MDI/code/DEF")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
