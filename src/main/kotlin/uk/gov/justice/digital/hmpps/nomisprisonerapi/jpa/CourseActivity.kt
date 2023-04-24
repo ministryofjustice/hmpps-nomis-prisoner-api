@@ -100,7 +100,7 @@ data class CourseActivity(
 
   @Column(name = "HOLIDAY_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val holiday: Boolean = false, // If the course/activity conforms to national holidays
+  val excludeBankHolidays: Boolean = false, // If the course/activity conforms to national holidays
 
   @Column
   @Enumerated(STRING)

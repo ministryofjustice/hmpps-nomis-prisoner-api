@@ -102,7 +102,7 @@ class PayRateServiceTest {
         ),
       ),
       payPerSession = PayPerSession.H,
-      runsOnBankHolidays = true,
+      excludeBankHolidays = true,
     )
 
     @BeforeEach

@@ -28,7 +28,7 @@ class CourseActivityBuilderFactory(
     payRates: List<CourseActivityPayRateBuilder> = listOf(courseActivityPayRateBuilderFactory.builder()),
     courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
     courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
-    runsOnBankHolidays: Boolean = false,
+    excludeBankHolidays: Boolean = false,
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
       repository,
@@ -46,7 +46,7 @@ class CourseActivityBuilderFactory(
       payRates,
       courseSchedules,
       courseScheduleRules,
-      runsOnBankHolidays,
+      excludeBankHolidays,
     )
   }
 }
@@ -67,7 +67,7 @@ class CourseActivityBuilder(
   var payRates: List<CourseActivityPayRateBuilder>,
   var courseSchedules: List<CourseScheduleBuilder>,
   var courseScheduleRules: List<CourseScheduleRuleBuilder>,
-  var runsOnBankHolidays: Boolean,
+  var excludeBankHolidays: Boolean,
 ) {
   fun build(): CourseActivity =
     repository?.let {
@@ -83,7 +83,7 @@ class CourseActivityBuilder(
         scheduleEndDate = endDate?.let { LocalDate.parse(it) },
         iepLevel = repository.lookupIepLevel(minimumIncentiveLevelCode),
         internalLocation = internalLocationId?.let { repository.lookupAgencyInternalLocation(it) },
-        holiday = runsOnBankHolidays,
+        excludeBankHolidays = excludeBankHolidays,
       ).apply {
         payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
         courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
