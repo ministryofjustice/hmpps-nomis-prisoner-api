@@ -83,8 +83,8 @@ class CourseActivityBuilder(
         scheduleEndDate = endDate?.let { LocalDate.parse(it) },
         iepLevel = repository.lookupIepLevel(minimumIncentiveLevelCode),
         internalLocation = internalLocationId?.let { repository.lookupAgencyInternalLocation(it) },
+        holiday = runsOnBankHolidays,
       ).apply {
-        holiday = runsOnBankHolidays
         payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
         courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
         courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this) })

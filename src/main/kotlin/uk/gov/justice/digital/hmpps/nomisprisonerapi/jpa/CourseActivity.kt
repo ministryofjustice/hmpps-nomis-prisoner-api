@@ -99,7 +99,8 @@ data class CourseActivity(
   var internalLocation: AgencyInternalLocation?,
 
   @Column(name = "HOLIDAY_FLAG")
-  var holidayString: String = "N",
+  @Convert(converter = YesNoConverter::class)
+  val holiday: Boolean = false, // If the course/activity conforms to national holidays
 
   @Column
   @Enumerated(STRING)
@@ -121,13 +122,6 @@ data class CourseActivity(
   @OneToOne(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   var area: CourseActivityArea? = null,
 ) {
-
-  var holiday: Boolean
-    get() = holidayString == "Y"
-    set(value) {
-      holidayString = if (value) "Y" else "N"
-    }
-
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

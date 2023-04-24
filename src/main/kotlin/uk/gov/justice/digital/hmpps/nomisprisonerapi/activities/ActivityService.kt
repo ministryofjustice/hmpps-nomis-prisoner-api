@@ -86,9 +86,8 @@ class ActivityService(
       iepLevel = availablePrisonIepLevel!!.iepLevel,
       internalLocation = location,
       payPerSession = dto.payPerSession,
-    ).apply {
-      holiday = dto.runsOnBankHolidays
-    }
+      holiday = dto.runsOnBankHolidays,
+    )
   }
 
   fun updateActivity(courseActivityId: Long, updateActivityRequest: UpdateActivityRequest) {
