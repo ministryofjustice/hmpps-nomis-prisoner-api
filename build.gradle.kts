@@ -1,7 +1,7 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.4-beta-2"
-  kotlin("plugin.spring") version "1.8.10"
-  kotlin("plugin.jpa") version "1.8.10"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.4-beta-3"
+  kotlin("plugin.spring") version "1.8.20"
+  kotlin("plugin.jpa") version "1.8.20"
   idea
 }
 
@@ -21,7 +21,7 @@ dependencies {
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0")
 
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0")
 
   implementation("com.zaxxer:HikariCP:5.0.1")
   runtimeOnly("com.h2database:h2:2.1.214")
