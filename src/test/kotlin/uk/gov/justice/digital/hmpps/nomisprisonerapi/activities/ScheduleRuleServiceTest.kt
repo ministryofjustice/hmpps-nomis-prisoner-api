@@ -33,7 +33,7 @@ class ScheduleRuleServiceTest {
       programCode = "ANY",
       payPerSession = PayPerSession.H,
       internalLocationId = null,
-      runsOnBankHolidays = true,
+      excludeBankHolidays = true,
     )
     private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
     private val createScheduleRuleRequest = ScheduleRuleRequest(

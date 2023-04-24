@@ -108,7 +108,7 @@ class ActivityServiceTest {
         ),
       ),
       payPerSession = PayPerSession.H,
-      runsOnBankHolidays = true,
+      excludeBankHolidays = true,
     )
 
     @BeforeEach
@@ -154,7 +154,7 @@ class ActivityServiceTest {
           assertThat(activity.iepLevel.code).isEqualTo(IEP_LEVEL)
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
-          assertThat(activity.holiday).isTrue()
+          assertThat(activity.excludeBankHolidays).isTrue()
         },
       )
     }

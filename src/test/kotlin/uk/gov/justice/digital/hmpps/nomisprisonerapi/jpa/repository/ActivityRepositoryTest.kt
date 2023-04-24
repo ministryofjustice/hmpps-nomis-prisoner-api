@@ -103,7 +103,7 @@ class ActivityRepositoryTest {
     assertThat(persistedRecord?.providerPartyCode).isEqualTo("LEI")
     assertThat(persistedRecord?.iepLevel?.description).isEqualTo("Standard")
     assertThat(persistedRecord?.internalLocation?.locationId).isEqualTo(-9)
-    assertThat(persistedRecord?.holiday).isFalse()
+    assertThat(persistedRecord?.excludeBankHolidays).isFalse()
     assertThat(persistedRecord?.payPerSession).isEqualTo(PayPerSession.F)
     val rate = persistedRecord?.payRates?.first()
     assertThat(rate?.id?.courseActivity?.courseActivityId).isEqualTo(persistedRecord?.courseActivityId)
