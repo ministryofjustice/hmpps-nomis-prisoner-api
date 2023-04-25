@@ -277,11 +277,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           eq("activity-created"),
           check<MutableMap<String, String>> { actual ->
             mapOf(
-              "courseActivityId" to id.toString(),
+              "nomisCourseActivityId" to id.toString(),
               "prisonId" to PRISON_ID,
-              "courseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
-              "courseActivityPayRateIds" to "[BAS-5-2022-10-31]",
-              "courseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
+              "nomisCourseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
+              "nomisCourseActivityPayRateIds" to "[BAS-5-2022-10-31]",
+              "nomisCourseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
             ).also { expected ->
               log.info("expected telemetry details to be: $expected")
               assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected)
@@ -453,7 +453,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         verify(telemetryClient).trackEvent(
           eq("activity-updated"),
           check<MutableMap<String, String>> {
-            assertThat(it["courseActivityId"]).isEqualTo(existingActivityId.toString())
+            assertThat(it["nomisCourseActivityId"]).isEqualTo(existingActivityId.toString())
             assertThat(it["prisonId"]).isEqualTo("LEI")
             assertThat(it["created-courseActivityPayRateIds"]).isEqualTo("[STD-5-$tomorrow]")
             assertThat(it["expired-courseActivityPayRateIds"]).isEqualTo("[STD-5-2022-10-31]")
@@ -729,7 +729,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         verify(telemetryClient).trackEvent(
           eq("activity-updated"),
           check<MutableMap<String, String>> {
-            assertThat(it["courseActivityId"]).isEqualTo(existingActivityId.toString())
+            assertThat(it["nomisCourseActivityId"]).isEqualTo(existingActivityId.toString())
             assertThat(it["prisonId"]).isEqualTo("LEI")
             assertThat(it["removed-courseScheduleRuleIds"]).isEqualTo("[$existingRuleId]")
             assertThat(it["created-courseScheduleRuleIds"]).isEqualTo("[${updated.courseScheduleRules.first().id}]")

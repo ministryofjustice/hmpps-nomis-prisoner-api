@@ -255,7 +255,7 @@ class ActivityServiceTest {
       verify(telemetryClient).trackEvent(
         eq("activity-updated"),
         check {
-          assertThat(it).containsEntry("courseActivityId", courseActivity.courseActivityId.toString())
+          assertThat(it).containsEntry("nomisCourseActivityId", courseActivity.courseActivityId.toString())
           assertThat(it).containsEntry("prisonId", courseActivity.prison.id)
         },
         isNull(),

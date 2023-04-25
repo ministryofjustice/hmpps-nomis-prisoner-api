@@ -287,9 +287,10 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         verify(telemetryClient).trackEvent(
-          eq("schedule-updated"),
+          eq("activity-course-schedule-updated"),
           check<MutableMap<String, String>> {
-            assertThat(it["courseScheduleId"]).isEqualTo("${courseSchedule.courseScheduleId}")
+            assertThat(it["nomisCourseScheduleId"]).isEqualTo("${courseSchedule.courseScheduleId}")
+            assertThat(it["nomisCourseActivityId"]).isEqualTo("${courseSchedule.courseActivity.courseActivityId}")
           },
           isNull(),
         )
