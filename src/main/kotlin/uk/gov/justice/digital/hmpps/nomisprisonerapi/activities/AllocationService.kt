@@ -38,11 +38,12 @@ class AllocationService(
 
     offenderProgramProfileRepository.save(mapOffenderProgramProfileModel(courseActivityId, dto)).run {
       telemetryClient.trackEvent(
-        "offender-program-profile-created",
+        "activity-allocation-created",
         mapOf(
-          "id" to offenderProgramReferenceId.toString(),
-          "courseActivityId" to courseActivity?.courseActivityId.toString(),
+          "nomisAllocationId" to offenderProgramReferenceId.toString(),
+          "nomisCourseActivityId" to courseActivity?.courseActivityId.toString(),
           "bookingId" to offenderBooking.bookingId.toString(),
+          "offenderNo" to offenderBooking.offender.nomsId,
         ),
         null,
       )
@@ -67,11 +68,12 @@ class AllocationService(
         endComment = dto.endComment
 
         telemetryClient.trackEvent(
-          "offender-program-profile-ended",
+          "activity-allocation-ended",
           mapOf(
-            "id" to offenderProgramReferenceId.toString(),
-            "courseActivityId" to courseActivity?.courseActivityId.toString(),
+            "nomisAllocationId" to offenderProgramReferenceId.toString(),
+            "nomisCourseActivityId" to courseActivity?.courseActivityId.toString(),
             "bookingId" to offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderBooking.offender.nomsId,
           ),
           null,
         )

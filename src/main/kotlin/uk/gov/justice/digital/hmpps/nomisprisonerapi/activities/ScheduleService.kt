@@ -104,7 +104,14 @@ class ScheduleService(
         ?: throw NotFoundException("Course schedule for activity id=$courseActivityId, date=$date, startTime=$startTime, endTime=$endTime not found")
     }
 
-    telemetryClient.trackEvent("schedule-updated", mapOf("courseScheduleId" to schedule.courseScheduleId.toString()), null)
+    telemetryClient.trackEvent(
+      "activity-course-schedule-updated",
+      mapOf(
+        "nomisCourseScheduleId" to schedule.courseScheduleId.toString(),
+        "nomisCourseActivityId" to courseActivityId.toString(),
+      ),
+      null,
+    )
 
     return UpdateCourseScheduleResponse(schedule.courseScheduleId)
   }

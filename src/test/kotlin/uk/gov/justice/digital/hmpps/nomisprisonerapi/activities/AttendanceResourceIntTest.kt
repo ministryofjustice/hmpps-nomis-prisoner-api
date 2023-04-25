@@ -273,12 +273,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         verify(telemetryClient).trackEvent(
-          eq("attendance-created"),
+          eq("activity-attendance-created"),
           check<MutableMap<String, String>> {
-            assertThat(it["courseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
-            assertThat(it["courseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
-            assertThat(it["offenderBookingId"]).isEqualTo(offenderBooking.bookingId.toString())
-            assertThat(it["attendanceEventId"]).isEqualTo(response.eventId.toString())
+            assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
+            assertThat(it["nomisCourseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
+            assertThat(it["bookingId"]).isEqualTo(offenderBooking.bookingId.toString())
+            assertThat(it["offenderNo"]).isEqualTo(offenderBooking.offender.nomsId)
+            assertThat(it["nomisAttendanceEventId"]).isEqualTo(response.eventId.toString())
           },
           isNull(),
         )
@@ -294,12 +295,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .expectBody()
 
         verify(telemetryClient).trackEvent(
-          eq("attendance-updated"),
+          eq("activity-attendance-updated"),
           check<MutableMap<String, String>> {
-            assertThat(it["courseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
-            assertThat(it["courseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
-            assertThat(it["offenderBookingId"]).isEqualTo(offenderBooking.bookingId.toString())
-            assertThat(it["attendanceEventId"]).isEqualTo(attendance.eventId.toString())
+            assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
+            assertThat(it["nomisCourseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
+            assertThat(it["bookingId"]).isEqualTo(offenderBooking.bookingId.toString())
+            assertThat(it["offenderNo"]).isEqualTo(offenderBooking.offender.nomsId)
+            assertThat(it["nomisAttendanceEventId"]).isEqualTo(attendance.eventId.toString())
           },
           isNull(),
         )
