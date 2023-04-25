@@ -50,12 +50,13 @@ class AttendanceService(
       .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule.courseScheduleId, created) }
       .also {
         telemetryClient.trackEvent(
-          "attendance-${if (it.created) "created" else "updated"}",
+          "activity-attendance-${if (it.created) "created" else "updated"}",
           mapOf(
-            "courseActivityId" to attendance.courseActivity.courseActivityId.toString(),
-            "courseScheduleId" to attendance.courseSchedule.courseScheduleId.toString(),
-            "offenderBookingId" to attendance.offenderBooking.bookingId.toString(),
-            "attendanceEventId" to attendance.eventId.toString(),
+            "nomisCourseActivityId" to attendance.courseActivity.courseActivityId.toString(),
+            "nomisCourseScheduleId" to attendance.courseSchedule.courseScheduleId.toString(),
+            "bookingId" to attendance.offenderBooking.bookingId.toString(),
+            "offenderNo" to attendance.offenderBooking.offender.nomsId,
+            "nomisAttendanceEventId" to attendance.eventId.toString(),
           ),
           null,
         )
