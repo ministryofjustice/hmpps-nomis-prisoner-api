@@ -235,7 +235,10 @@ class IncentivesService(
     createRequest: CreatePrisonIncentiveRequest,
   ): PrisonIncentiveLevelDataResponse {
     val prison = agencyLocationRepository.findByIdOrNull(prisonId)
-      ?: throw BadDataException("Prison with id=$prisonId does not exist")
+      ?: throw NotFoundException("Prison with id=$prisonId does not exist")
+
+    incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createRequest.levelCode))
+      ?: throw BadDataException("Incentive level with code=${createRequest.levelCode} does not exist")
 
     val prisonIncentiveLevel =
       savePrisonIncentiveLevel(prison, createRequest)
@@ -323,7 +326,10 @@ class IncentivesService(
     updateRequest: UpdatePrisonIncentiveRequest,
   ): PrisonIncentiveLevelDataResponse {
     val prison = agencyLocationRepository.findByIdOrNull(prisonId)
-      ?: throw BadDataException("Prison with id=$prisonId does not exist")
+      ?: throw NotFoundException("Prison with id=$prisonId does not exist")
+
+    incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(levelCode))
+      ?: throw NotFoundException("Incentive level with code=$levelCode does not exist")
 
     val prisonIncentiveLevel =
       updatePrisonIncentiveLevel(prison, levelCode, updateRequest)
