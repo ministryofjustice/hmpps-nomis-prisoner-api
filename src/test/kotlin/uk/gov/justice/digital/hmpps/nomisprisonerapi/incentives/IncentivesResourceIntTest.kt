@@ -1087,7 +1087,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `update prison incentive level data`() {
-      var response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
+      val response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
