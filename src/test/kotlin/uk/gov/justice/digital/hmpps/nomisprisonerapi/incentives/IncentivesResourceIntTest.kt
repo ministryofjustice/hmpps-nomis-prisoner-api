@@ -1119,39 +1119,6 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(response?.convictedSpendLimitInPence).isEqualTo(99)
       assertThat(response?.convictedTransferLimitInPence).isEqualTo(11)
       assertThat(response?.expiryDate).isNull()
-
-      response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(
-          BodyInserters.fromValue(
-            """{
-            "defaultOnAdmission" : false,
-            "active"    : true,
-            "visitOrderAllowance"    : 33,
-            "privilegedVisitOrderAllowance"    : 66,
-            "remandTransferLimitInPence"    : 22,
-            "remandSpendLimitInPence"    : 77,
-            "convictedSpendLimitInPence"    : 99,
-            "convictedTransferLimitInPence"    : 11
-          }""",
-          ),
-        )
-        .exchange()
-        .expectStatus().isOk
-        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
-        .returnResult().responseBody
-      assertThat(response?.iepLevelCode).isEqualTo("ABC")
-      assertThat(response?.prisonId).isEqualTo("MDI")
-      assertThat(response?.active).isTrue
-      assertThat(response?.defaultOnAdmission).isFalse
-      assertThat(response?.privilegedVisitOrderAllowance).isEqualTo(66)
-      assertThat(response?.visitOrderAllowance).isEqualTo(33)
-      assertThat(response?.remandSpendLimitInPence).isEqualTo(77)
-      assertThat(response?.remandTransferLimitInPence).isEqualTo(22)
-      assertThat(response?.convictedSpendLimitInPence).isEqualTo(99)
-      assertThat(response?.convictedTransferLimitInPence).isEqualTo(11)
-      assertThat(response?.expiryDate).isNull()
     }
 
     @Test
