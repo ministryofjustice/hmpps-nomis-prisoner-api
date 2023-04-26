@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevelId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevelId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -263,6 +264,9 @@ internal class IncentiveServiceTest {
       whenever(agencyLocationRepository.findById("MDI")).thenReturn(
         Optional.of(prison),
       )
+      whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
+        Optional.of(IEPLevel("NSTD", "desc", true, 1)),
+      )
       whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
         Optional.empty(),
       )
@@ -313,6 +317,9 @@ internal class IncentiveServiceTest {
       whenever(agencyLocationRepository.findById("MDI")).thenReturn(
         Optional.of(prison),
       )
+      whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
+        Optional.of(IEPLevel("NSTD", "desc", true, 1)),
+      )
       whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
         Optional.empty(),
       )
@@ -362,6 +369,9 @@ internal class IncentiveServiceTest {
       whenever(agencyLocationRepository.findById("MDI")).thenReturn(
         Optional.of(prison),
       )
+      whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
+        Optional.of(IEPLevel("NSTD", "desc", true, 1)),
+      )
       whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
         Optional.of(getPrisonIncentiveLevel()),
       )
@@ -394,6 +404,9 @@ internal class IncentiveServiceTest {
     fun `expiry date is set for inactive entities`() {
       whenever(agencyLocationRepository.findById("MDI")).thenReturn(
         Optional.of(prison),
+      )
+      whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
+        Optional.of(IEPLevel("NSTD", "desc", true, 1)),
       )
       whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
         Optional.empty(),
@@ -437,6 +450,9 @@ internal class IncentiveServiceTest {
     fun `data isn't created if entities already exist`() {
       whenever(agencyLocationRepository.findById("MDI")).thenReturn(
         Optional.of(prison),
+      )
+      whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
+        Optional.of(IEPLevel("NSTD", "desc", true, 1)),
       )
       whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
         Optional.of(getPrisonIncentiveLevel()),

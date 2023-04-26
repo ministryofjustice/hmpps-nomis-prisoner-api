@@ -924,6 +924,35 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `create prison incentive will reject reject missing request with Incentive level`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/prison/MDI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "levelCode"    : "BBB",
+            "defaultOnAdmission" : false,
+            "active"    : true,
+            "visitOrderAllowance"    : 10,
+            "privilegedVisitOrderAllowance"    : 11,
+            "remandTransferLimitInPence"    : 100,
+            "remandSpendLimitInPence"    : 101,
+            "convictedSpendLimitInPence"    : 400,
+            "convictedTransferLimitInPence"    : 401
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Bad request: Incentive level with code=BBB does not exist")
+          },
+      )
+    }
+
+    @Test
     fun `create prison incentive prevents access without appropriate role`() {
       assertThat(
         webTestClient.post().uri("/incentives/prison/MDI")
@@ -1058,7 +1087,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `update prison incentive level data`() {
-      val response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
+      var response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
@@ -1083,6 +1112,39 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       assertThat(response?.prisonId).isEqualTo("MDI")
       assertThat(response?.active).isTrue
       assertThat(response?.defaultOnAdmission).isTrue
+      assertThat(response?.privilegedVisitOrderAllowance).isEqualTo(66)
+      assertThat(response?.visitOrderAllowance).isEqualTo(33)
+      assertThat(response?.remandSpendLimitInPence).isEqualTo(77)
+      assertThat(response?.remandTransferLimitInPence).isEqualTo(22)
+      assertThat(response?.convictedSpendLimitInPence).isEqualTo(99)
+      assertThat(response?.convictedTransferLimitInPence).isEqualTo(11)
+      assertThat(response?.expiryDate).isNull()
+
+      response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "defaultOnAdmission" : false,
+            "active"    : true,
+            "visitOrderAllowance"    : 33,
+            "privilegedVisitOrderAllowance"    : 66,
+            "remandTransferLimitInPence"    : 22,
+            "remandSpendLimitInPence"    : 77,
+            "convictedSpendLimitInPence"    : 99,
+            "convictedTransferLimitInPence"    : 11
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.iepLevelCode).isEqualTo("ABC")
+      assertThat(response?.prisonId).isEqualTo("MDI")
+      assertThat(response?.active).isTrue
+      assertThat(response?.defaultOnAdmission).isFalse
       assertThat(response?.privilegedVisitOrderAllowance).isEqualTo(66)
       assertThat(response?.visitOrderAllowance).isEqualTo(33)
       assertThat(response?.remandSpendLimitInPence).isEqualTo(77)
@@ -1167,6 +1229,34 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("expiryDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("visitAllowanceActive").isEqualTo(false)
         .jsonPath("visitAllowanceExpiryDate").isEqualTo(LocalDate.now().toString())
+    }
+
+    @Test
+    fun `update prison will reject reject missing request with Incentive level`() {
+      assertThat(
+        webTestClient.put().uri("/incentives/prison/MDI/code/BBB")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "defaultOnAdmission" : false,
+            "active"    : false,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Not Found: Incentive level with code=BBB does not exist")
+          },
+      )
     }
 
     @Test
