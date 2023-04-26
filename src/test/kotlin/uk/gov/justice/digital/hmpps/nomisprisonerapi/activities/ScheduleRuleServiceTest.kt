@@ -30,6 +30,7 @@ class ScheduleRuleServiceTest {
       capacity = 10,
       payRates = listOf(),
       description = "any",
+      minimumIncentiveLevelCode = "STD",
       programCode = "ANY",
       payPerSession = PayPerSession.H,
       internalLocationId = null,

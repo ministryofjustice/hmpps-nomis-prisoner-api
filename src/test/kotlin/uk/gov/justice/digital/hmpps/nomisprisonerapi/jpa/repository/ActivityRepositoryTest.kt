@@ -124,6 +124,7 @@ class ActivityRepositoryTest {
     val seedCourseActivity = activityRepository.save(
       CourseActivity(
         program = seedProgramService,
+        scheduleStartDate = LocalDate.parse("2022-10-31"),
         prison = seedPrison,
         active = true,
         iepLevel = seedIep,

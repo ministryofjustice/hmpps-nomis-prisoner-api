@@ -10,12 +10,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesReq
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -30,11 +33,11 @@ class ActivityService(
   private val scheduleRuleService: ScheduleRuleService,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createActivity(dto: CreateActivityRequest): CreateActivityResponse =
-    mapActivityModel(dto)
-      .apply { payRates.addAll(payRatesService.mapRates(dto, this)) }
-      .apply { courseSchedules.addAll(scheduleService.mapSchedules(dto.schedules, this)) }
-      .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(dto, this)) }
+  fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
+    mapActivityModel(request)
+      .apply { payRates.addAll(payRatesService.mapRates(request, this)) }
+      .apply { courseSchedules.addAll(scheduleService.mapSchedules(request.schedules, this)) }
+      .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(request, this)) }
       .let { activityRepository.save(it) }
       .also {
         telemetryClient.trackEvent(
@@ -51,81 +54,118 @@ class ActivityService(
       }
       .let { CreateActivityResponse(it.courseActivityId) }
 
-  private fun mapActivityModel(dto: CreateActivityRequest): CourseActivity {
-    val prison = agencyLocationRepository.findByIdOrNull(dto.prisonId)
-      ?: throw BadDataException("Prison with id=${dto.prisonId} does not exist")
+  private fun mapActivityModel(request: CreateActivityRequest): CourseActivity {
+    val prison = findPrisonOrThrow(request.prisonId)
 
-    val location = dto.internalLocationId?.run {
-      agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
-        ?: throw BadDataException("Location with id=${dto.internalLocationId} does not exist")
-    }
+    val location = findLocationInPrisonOrThrow(request.internalLocationId, request.prisonId)
 
-    val programService = programServiceRepository.findByProgramCode(dto.programCode)
-      ?: throw BadDataException("Program Service with code=${dto.programCode} does not exist")
+    val programService = findProgramServiceOrThrow(request.programCode)
 
-    val availablePrisonIepLevel = dto.minimumIncentiveLevelCode?.run {
-      availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(prison, dto.minimumIncentiveLevelCode)
-        ?: throw BadDataException("IEP type ${dto.minimumIncentiveLevelCode} does not exist for prison ${dto.prisonId}")
-    }
+    val prisonIepLevel = findAvailablePrisonIepLevelOrThrow(request.minimumIncentiveLevelCode, prison)
+
     return CourseActivity(
-      code = dto.code,
+      code = request.code,
       program = programService,
-      caseloadId = dto.prisonId,
+      caseloadId = request.prisonId,
       prison = prison,
-      description = dto.description,
-      capacity = dto.capacity,
+      description = request.description,
+      capacity = request.capacity,
       active = true,
-      scheduleStartDate = dto.startDate,
-      scheduleEndDate = dto.endDate,
-      iepLevel = availablePrisonIepLevel!!.iepLevel,
+      scheduleStartDate = request.startDate,
+      scheduleEndDate = request.endDate,
+      iepLevel = prisonIepLevel.iepLevel,
       internalLocation = location,
-      payPerSession = dto.payPerSession,
-      excludeBankHolidays = dto.excludeBankHolidays,
+      payPerSession = request.payPerSession,
+      excludeBankHolidays = request.excludeBankHolidays,
     )
   }
 
-  fun updateActivity(courseActivityId: Long, updateActivityRequest: UpdateActivityRequest) {
+  fun updateActivity(courseActivityId: Long, request: UpdateActivityRequest) {
     val existingActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id $courseActivityId not found")
 
-    val location = updateActivityRequest.internalLocationId?.run {
-      agencyInternalLocationRepository.findByIdOrNull(updateActivityRequest.internalLocationId)
-        ?: throw BadDataException("Location with id=${updateActivityRequest.internalLocationId} does not exist")
-    }
+    val oldRules = existingActivity.courseScheduleRules.map { it.copy() }
+    val oldPayRates = existingActivity.payRates.map { it.copy() }
 
-    location?.also {
-      if (location.agencyId != existingActivity.caseloadId) {
-        throw BadDataException("Location with id=${updateActivityRequest.internalLocationId} not found in prison ${existingActivity.caseloadId}")
+    mapActivityModel(existingActivity, request)
+      .also { activityRepository.saveAndFlush(it) }
+      .also { savedCourseActivity ->
+        telemetryClient.trackEvent(
+          "activity-updated",
+          mapOf(
+            "nomisCourseActivityId" to savedCourseActivity.courseActivityId.toString(),
+            "prisonId" to savedCourseActivity.prison.id,
+          ) +
+            scheduleRuleService.buildUpdateTelemetry(oldRules, savedCourseActivity.courseScheduleRules) +
+            payRatesService.buildUpdateTelemetry(oldPayRates, savedCourseActivity.payRates),
+          null,
+        )
+      }
+  }
+
+  private fun mapActivityModel(existingActivity: CourseActivity, request: UpdateActivityRequest): CourseActivity {
+    val location = findLocationInPrisonOrThrow(request.internalLocationId, existingActivity.prison.id)
+
+    val prisonIepLevel = findAvailablePrisonIepLevelOrThrow(request.minimumIncentiveLevelCode, existingActivity.prison)
+
+    checkDatesInOrder(request.startDate, request.endDate)
+
+    with(existingActivity) {
+      scheduleStartDate = request.startDate
+      scheduleEndDate = request.endDate
+      internalLocation = location
+      capacity = request.capacity
+      description = request.description
+      iepLevel = prisonIepLevel.iepLevel
+      payPerSession = request.payPerSession
+      excludeBankHolidays = request.excludeBankHolidays
+      payRatesService.buildNewPayRates(request.payRates, this).also { newPayRates ->
+        payRates.clear()
+        payRates.addAll(newPayRates)
+      }
+      scheduleRuleService.buildNewRules(request.scheduleRules, this).also { newRules ->
+        courseScheduleRules.clear()
+        courseScheduleRules.addAll(newRules)
       }
     }
 
-    // TODO SDIT-431 Which fields to update and what to do when they are updated will be picked up on this ticket
-    val oldRules = existingActivity.courseScheduleRules.map { it.copy() }
-    val oldPayRates = existingActivity.payRates.map { it.copy() }
-    existingActivity.scheduleEndDate = updateActivityRequest.endDate
-    existingActivity.internalLocation = location
-    payRatesService.buildNewPayRates(updateActivityRequest.payRates, existingActivity).also { newPayRates ->
-      existingActivity.payRates.clear()
-      existingActivity.payRates.addAll(newPayRates)
-    }
-    scheduleRuleService.buildNewRules(updateActivityRequest.scheduleRules, existingActivity).also { newRules ->
-      existingActivity.courseScheduleRules.clear()
-      existingActivity.courseScheduleRules.addAll(newRules)
-    }
-
-    activityRepository.saveAndFlush(existingActivity)
-
-    telemetryClient.trackEvent(
-      "activity-updated",
-      mapOf(
-        "nomisCourseActivityId" to existingActivity.courseActivityId.toString(),
-        "prisonId" to existingActivity.prison.id,
-      ) +
-        scheduleRuleService.buildUpdateTelemetry(oldRules, existingActivity.courseScheduleRules) +
-        payRatesService.buildUpdateTelemetry(oldPayRates, existingActivity.payRates),
-      null,
-    )
+    return existingActivity
   }
+
+  private fun checkDatesInOrder(startDate: LocalDate, endDate: LocalDate?) =
+    endDate?.run {
+      if (startDate > endDate) {
+        throw BadDataException("Start date $startDate must not be after end date $endDate")
+      }
+    }
+
+  private fun findAvailablePrisonIepLevelOrThrow(iepLevelCode: String, prison: AgencyLocation) =
+    availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(prison, iepLevelCode)
+      ?: throw BadDataException("IEP type $iepLevelCode does not exist for prison ${prison.id}")
+
+  private fun findProgramServiceOrThrow(programCode: String) =
+    (
+      programServiceRepository.findByProgramCode(programCode)
+        ?: throw BadDataException("Program Service with code=$programCode does not exist")
+      )
+
+  private fun findLocationInPrisonOrThrow(internalLocationId: Long?, prisonId: String): AgencyInternalLocation? {
+    val location = internalLocationId?.let {
+      agencyInternalLocationRepository.findByIdOrNull(it)
+        ?: throw BadDataException("Location with id=$it does not exist")
+    }?.also {
+      if (it.agencyId != prisonId) {
+        throw BadDataException("Location with id=$internalLocationId not found in prison $prisonId")
+      }
+    }
+    return location
+  }
+
+  private fun findPrisonOrThrow(prisonId: String) =
+    (
+      agencyLocationRepository.findByIdOrNull(prisonId)
+        ?: throw BadDataException("Prison with id=$prisonId does not exist")
+      )
 
   fun updateActivitySchedules(courseActivityId: Long, scheduleRequests: List<SchedulesRequest>) {
     activityRepository.findByIdOrNull(courseActivityId)

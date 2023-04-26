@@ -41,7 +41,7 @@ data class CreateActivityRequest(
   val description: String,
 
   @Schema(description = "Minimum Incentive Level")
-  val minimumIncentiveLevelCode: String? = null,
+  val minimumIncentiveLevelCode: String,
 
   @Schema(description = "Program Service code (from activity category)", required = true)
   val programCode: String,
