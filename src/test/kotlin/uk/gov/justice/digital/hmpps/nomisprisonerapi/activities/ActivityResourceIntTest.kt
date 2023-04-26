@@ -39,7 +39,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-private const val PRISON_ID = "MDI"
+private const val PRISON_ID = "LEI"
 private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
 private const val PROGRAM_CODE = "INTTEST"
 private const val IEP_LEVEL = "STD"
@@ -360,32 +360,45 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       courseActivity = repository.save(courseActivityBuilderFactory.builder())
     }
 
+    private fun detailsJson(): String = """
+      "startDate" : "2022-11-01",
+      "endDate" : "2022-11-30",
+      "internalLocationId" : -27,
+      "capacity": 30,
+      "description": "updated description", 
+      "minimumIncentiveLevelCode": "BAS", 
+      "payPerSession": "F", 
+      "excludeBankHolidays": true, 
+    """.trimIndent()
+
+    private fun payRatesJson(): String = """
+      "payRates" : [ {
+          "incentiveLevel" : "STD",
+          "payBand" : "5",
+          "rate" : 0.8
+          } ],
+    """.trimIndent()
+
+    private fun scheduleRulesJson(): String = """
+      "scheduleRules": [{
+          "startTime": "09:30",
+          "endTime": "12:30",
+          "monday": true,
+          "tuesday": true,
+          "wednesday": true,
+          "thursday": true,
+          "friday": true,
+          "saturday": false,
+          "sunday": false
+          }]
+    """.trimIndent()
+
     private fun updateActivityRequestJson(
-      endDateJson: String? = """"endDate" : "2022-11-30",""",
-      internalLocationJson: String? = """"internalLocationId" : -27,""",
-      payRatesJson: String? = """
-          "payRates" : [ {
-              "incentiveLevel" : "STD",
-              "payBand" : "5",
-              "rate" : 0.8
-              } ],
-      """.trimIndent(),
-      scheduleRulesJson: String? = """
-          "scheduleRules": [{
-              "startTime": "09:30",
-              "endTime": "12:30",
-              "monday": true,
-              "tuesday": true,
-              "wednesday": true,
-              "thursday": true,
-              "friday": true,
-              "saturday": false,
-              "sunday": false
-              }]
-      """.trimIndent(),
+      detailsJson: String = detailsJson(),
+      payRatesJson: String? = payRatesJson(),
+      scheduleRulesJson: String? = scheduleRulesJson(),
     ) = """{
-            ${endDateJson ?: ""}
-            ${internalLocationJson ?: ""}
+            $detailsJson
             ${payRatesJson ?: ""}
             ${scheduleRulesJson ?: ""}
           }"""
@@ -469,7 +482,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         callUpdateEndpoint(
           courseActivityId = existingActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(internalLocationJson = """"internalLocationId: -99999,"""),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId: -99999,""")),
         )
           .expectStatus().isBadRequest
       }
@@ -487,7 +500,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed number`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(internalLocationJson = """"internalLocationId": "NOT_A_NUMBER","""),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId": "NOT_A_NUMBER",""")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -496,14 +509,38 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return bad request for malformed date`() {
+      fun `should return bad request for malformed start date`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(endDateJson = """"endDate": "2022-11-35","""),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""startDate" : "2022-11-01",""", """"startDate": "2021-13-01",""")),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("2021-13-01")
+          }
+      }
+
+      @Test
+      fun `should return bad request for malformed end date`() {
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-11-35",""")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
             assertThat(it).contains("2022-11-35")
+          }
+      }
+
+      @Test
+      fun `should return bad request for dates out of order`() {
+        callUpdateEndpoint(
+          courseActivityId = getSavedActivityId(),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-10-31",""")),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Start date 2022-11-01 must not be after end date 2022-10-31")
           }
       }
 
@@ -575,7 +612,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for missing pay rates`() {
         callUpdateEndpoint(
           courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(payRatesJson = null, internalLocationJson = """"internalLocationId" : -27,"""),
+          jsonBody = updateActivityRequestJson(payRatesJson = null),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -752,8 +789,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.lookupActivity(existingActivityId)
+        assertThat(updated.scheduleStartDate).isEqualTo(LocalDate.parse("2022-11-01"))
         assertThat(updated.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
         assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
+        assertThat(updated.capacity).isEqualTo(30)
+        assertThat(updated.description).isEqualTo("updated description")
+        assertThat(updated.iepLevel.code).isEqualTo("BAS")
+        assertThat(updated.payPerSession).isEqualTo(PayPerSession.F)
+        assertThat(updated.excludeBankHolidays).isTrue()
       }
 
       @Test
@@ -762,7 +805,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         callUpdateEndpoint(
           courseActivityId = existingActivityId,
-          jsonBody = updateActivityRequestJson(endDateJson = null, internalLocationJson = null),
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .replace(""""endDate" : "2022-11-30",""", "")
+              .replace(""""internalLocationId" : -27,""", ""),
+          ),
         )
           .expectStatus().isOk
 

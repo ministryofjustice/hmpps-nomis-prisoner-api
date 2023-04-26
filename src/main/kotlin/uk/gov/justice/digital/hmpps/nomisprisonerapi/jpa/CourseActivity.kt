@@ -43,10 +43,10 @@ data class CourseActivity(
   val prison: AgencyLocation,
 
   @Column
-  val description: String? = null,
+  var description: String? = null,
 
   @Column
-  val capacity: Int? = null,
+  var capacity: Int? = null,
 
   @Column(name = "ACTIVE_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
@@ -57,7 +57,7 @@ data class CourseActivity(
   val program: ProgramService,
 
   @Column
-  val scheduleStartDate: LocalDate? = null,
+  var scheduleStartDate: LocalDate,
 
   @Column
   var scheduleEndDate: LocalDate? = null,
@@ -92,7 +92,7 @@ data class CourseActivity(
       JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code")),
     ],
   )
-  val iepLevel: IEPLevel,
+  var iepLevel: IEPLevel,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID")
@@ -100,11 +100,11 @@ data class CourseActivity(
 
   @Column(name = "HOLIDAY_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val excludeBankHolidays: Boolean = false, // If the course/activity conforms to national holidays
+  var excludeBankHolidays: Boolean = false, // If the course/activity conforms to national holidays
 
   @Column
   @Enumerated(STRING)
-  val payPerSession: PayPerSession? = null,
+  var payPerSession: PayPerSession? = null,
 
   @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderProgramProfiles: MutableList<OffenderProgramProfile> = mutableListOf(),

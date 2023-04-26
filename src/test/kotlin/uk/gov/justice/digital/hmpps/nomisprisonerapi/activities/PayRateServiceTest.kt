@@ -80,6 +80,7 @@ class PayRateServiceTest {
       caseloadId = PRISON_ID,
       prison = defaultPrison,
       program = defaultProgramService,
+      scheduleStartDate = LocalDate.parse("2022-10-31"),
       iepLevel = defaultIepLevel("BAS"),
       internalLocation = defaultRoom,
     )

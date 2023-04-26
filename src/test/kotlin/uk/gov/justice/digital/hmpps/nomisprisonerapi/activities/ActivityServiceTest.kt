@@ -10,6 +10,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -20,6 +21,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRuleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
@@ -37,7 +39,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Optional
 
 private const val COURSE_ACTIVITY_ID = 1L
@@ -204,12 +208,55 @@ class ActivityServiceTest {
   inner class UpdateActivity {
 
     private lateinit var courseActivity: CourseActivity
-    private val updateRequest = UpdateActivityRequest(endDate = null, internalLocationId = ROOM_ID, payRates = listOf(), scheduleRules = listOf())
+    private var returnedCourseActivity: CourseActivity? = null
+    private val updateRequest = UpdateActivityRequest(
+      startDate = LocalDate.parse("2022-11-01"),
+      endDate = LocalDate.parse("2022-11-02"),
+      internalLocationId = ROOM_ID + 1,
+      capacity = 24,
+      payRates = listOf(
+        PayRateRequest(
+          incentiveLevel = "BAS",
+          payBand = "6",
+          rate = BigDecimal(3.3).setScale(3, RoundingMode.HALF_UP),
+        ),
+      ),
+      description = "test course activity updated",
+      minimumIncentiveLevelCode = "BAS",
+      payPerSession = PayPerSession.F,
+      scheduleRules = listOf(
+        ScheduleRuleRequest(
+          startTime = LocalTime.parse("10:30"),
+          endTime = LocalTime.parse("13:30"),
+          monday = false,
+          tuesday = false,
+          wednesday = false,
+          thursday = false,
+          friday = false,
+          saturday = true,
+          sunday = true,
+        ),
+      ),
+      excludeBankHolidays = false,
+    )
 
     @BeforeEach
     fun setUp() {
       courseActivity = CourseActivityBuilderFactory().builder().create()
       whenever(activityRepository.findById(anyLong())).thenReturn(Optional.of(courseActivity))
+      whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(
+        Optional.of(defaultPrison),
+      )
+      whenever(agencyInternalLocationRepository.findById(ROOM_ID + 1)).thenReturn(Optional.of(defaultRoom.copy(locationId = ROOM_ID + 1)))
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
+        val prison = (it.arguments[0] as AgencyLocation)
+        val code = (it.arguments[1] as String)
+        return@thenAnswer AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
+      }
+      whenever(activityRepository.saveAndFlush(any())).thenAnswer {
+        returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
+        returnedCourseActivity
+      }
     }
 
     @Test
@@ -220,9 +267,9 @@ class ActivityServiceTest {
         activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
       }
         .isInstanceOf(BadDataException::class.java)
-        .hasMessageContaining("Location with id=$ROOM_ID does not exist")
+        .hasMessageContaining("Location with id=${ROOM_ID + 1} does not exist")
 
-      verify(agencyInternalLocationRepository).findById(ROOM_ID)
+      verify(agencyInternalLocationRepository).findById(ROOM_ID + 1)
     }
 
     @Test
@@ -233,14 +280,51 @@ class ActivityServiceTest {
         activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
       }
         .isInstanceOf(BadDataException::class.java)
-        .hasMessageContaining("Location with id=$ROOM_ID not found in prison ${courseActivity.caseloadId}")
+        .hasMessageContaining("Location with id=${ROOM_ID + 1} not found in prison ${courseActivity.caseloadId}")
     }
 
     @Test
-    fun `should update OK if location not passed`() {
-      assertDoesNotThrow {
-        activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(internalLocationId = null))
+    fun `should throw if iep level not available in prison`() {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), anyString())).thenReturn(null)
+
+      assertThatThrownBy {
+        activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
       }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("IEP type BAS does not exist for prison ${courseActivity.caseloadId}")
+    }
+
+    @Test
+    fun `should update OK`() {
+      activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
+
+      verify(activityRepository).saveAndFlush(
+        check { activity ->
+          assertThat(activity.description).isEqualTo("test course activity updated")
+          assertThat(activity.capacity).isEqualTo(24)
+          assertThat(activity.active).isTrue
+          assertThat(activity.scheduleStartDate).isEqualTo(LocalDate.parse("2022-11-01"))
+          assertThat(activity.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-02"))
+          assertThat(activity.iepLevel.code).isEqualTo("BAS")
+          assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID + 1)
+          assertThat(activity.payPerSession).isEqualTo(PayPerSession.F)
+          assertThat(activity.excludeBankHolidays).isFalse()
+        },
+      )
+    }
+
+    @Test
+    fun `should update nullables OK`() {
+      assertDoesNotThrow {
+        activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(endDate = null, internalLocationId = null))
+      }
+
+      verify(activityRepository).saveAndFlush(
+        check { activity ->
+          assertThat(activity.scheduleEndDate).isNull()
+          assertThat(activity.internalLocation).isNull()
+        },
+      )
     }
 
     @Test

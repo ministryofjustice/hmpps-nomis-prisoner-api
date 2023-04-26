@@ -100,6 +100,7 @@ class AllocationServiceTest {
     courseActivityId = COURSE_ACTIVITY_ID,
     prison = defaultPrison,
     program = defaultProgramService,
+    scheduleStartDate = LocalDate.parse("2022-10-31"),
     iepLevel = defaultIepLevel("STD"),
     internalLocation = defaultRoom,
   ).apply {
