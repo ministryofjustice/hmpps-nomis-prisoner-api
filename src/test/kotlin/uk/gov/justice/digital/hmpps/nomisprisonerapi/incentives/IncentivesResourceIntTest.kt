@@ -924,6 +924,35 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `create prison incentive will reject reject missing request with Incentive level`() {
+      assertThat(
+        webTestClient.post().uri("/incentives/prison/MDI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "levelCode"    : "BBB",
+            "defaultOnAdmission" : false,
+            "active"    : true,
+            "visitOrderAllowance"    : 10,
+            "privilegedVisitOrderAllowance"    : 11,
+            "remandTransferLimitInPence"    : 100,
+            "remandSpendLimitInPence"    : 101,
+            "convictedSpendLimitInPence"    : 400,
+            "convictedTransferLimitInPence"    : 401
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Bad request: Incentive level with code=BBB does not exist")
+          },
+      )
+    }
+
+    @Test
     fun `create prison incentive prevents access without appropriate role`() {
       assertThat(
         webTestClient.post().uri("/incentives/prison/MDI")
@@ -1167,6 +1196,34 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("expiryDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("visitAllowanceActive").isEqualTo(false)
         .jsonPath("visitAllowanceExpiryDate").isEqualTo(LocalDate.now().toString())
+    }
+
+    @Test
+    fun `update prison will reject reject missing request with Incentive level`() {
+      assertThat(
+        webTestClient.put().uri("/incentives/prison/MDI/code/BBB")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """{
+            "defaultOnAdmission" : false,
+            "active"    : false,
+            "visitOrderAllowance"    : 3,
+            "privilegedVisitOrderAllowance"    : 6,
+            "remandTransferLimitInPence"    : 2,
+            "remandSpendLimitInPence"    : 7,
+            "convictedSpendLimitInPence"    : 9,
+            "convictedTransferLimitInPence"    : 1
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Not Found: Incentive level with code=BBB does not exist")
+          },
+      )
     }
 
     @Test
