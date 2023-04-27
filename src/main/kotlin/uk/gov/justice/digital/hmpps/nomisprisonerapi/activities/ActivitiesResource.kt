@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -28,7 +29,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesReq
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
 @RestController
@@ -199,7 +202,7 @@ class ActivitiesResource(
       ),
     ],
   )
-  fun createOffenderProgramProfile(
+  fun createAllocation(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     createRequest: CreateAllocationRequest,
@@ -260,7 +263,7 @@ class ActivitiesResource(
       ),
     ],
   )
-  fun endOffenderProgramProfile(
+  fun updateAllocation(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     updateRequest: UpdateAllocationRequest,
@@ -275,16 +278,13 @@ class ActivitiesResource(
     description = "Recreates schedules from tomorrow. Requires role NOMIS_ACTIVITIES",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityRequest::class)),
+        Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = SchedulesRequest::class))),
       ],
     ),
     responses = [
       ApiResponse(
         responseCode = "200",
         description = "Schedules updated",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -332,6 +332,9 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "200",
         description = "Success",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = UpdateCourseScheduleResponse::class)),
+        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -377,7 +380,7 @@ class ActivitiesResource(
     description = "Creates or updates an attendance for the booking and schedule. Requires role NOMIS_ACTIVITIES",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityRequest::class)),
+        Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceRequest::class)),
       ],
     ),
     responses = [
@@ -385,7 +388,7 @@ class ActivitiesResource(
         responseCode = "200",
         description = "Attendance updated",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceResponse::class)),
         ],
       ),
       ApiResponse(
@@ -424,6 +427,11 @@ class ActivitiesResource(
   @Operation(
     summary = "Get Nomis attendance status",
     description = "Returns the current event status of a Nomis attendance record. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(mediaType = "application/json", schema = Schema(implementation = GetAttendanceStatusRequest::class)),
+      ],
+    ),
     responses = [
       ApiResponse(
         responseCode = "200",
