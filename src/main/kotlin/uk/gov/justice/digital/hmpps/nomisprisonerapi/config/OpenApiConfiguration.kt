@@ -71,4 +71,9 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       }
     }
   }
+
+  @Bean
+  fun enableLocalTimePrimitiveType() {
+    PrimitiveType.enablePartialTime()
+  }
 }
