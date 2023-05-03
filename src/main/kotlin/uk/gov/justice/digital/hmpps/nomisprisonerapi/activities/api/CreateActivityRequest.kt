@@ -17,10 +17,10 @@ data class CreateActivityRequest(
   @field:Length(min = 1, max = 12)
   val code: String,
 
-  @Schema(description = "Activity start date", required = true, example = "2022-08-12")
+  @Schema(description = "Activity start date", pattern = "yyyy-MM-dd", required = true, example = "2022-08-12")
   val startDate: LocalDate,
 
-  @Schema(description = "Activity end date", example = "2022-08-12")
+  @Schema(description = "Activity end date", pattern = "yyyy-MM-dd", example = "2022-08-12")
   val endDate: LocalDate?,
 
   @Schema(description = "Prison where the activity is to occur", required = true)
