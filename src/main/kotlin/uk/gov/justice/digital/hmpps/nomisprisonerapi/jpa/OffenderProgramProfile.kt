@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -17,6 +18,7 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
+import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
 
 @Entity
@@ -64,7 +66,7 @@ data class OffenderProgramProfile(
   @Column(name = "OFFENDER_END_DATE")
   var endDate: LocalDate? = null,
 
-  @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "id.offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf(),
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -83,6 +85,10 @@ data class OffenderProgramProfile(
 
   @Column(name = "OFFENDER_END_COMMENT_TEXT")
   var endComment: String? = null,
+
+  @Column(name = "SUSPENDED_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  var suspended: Boolean = false,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

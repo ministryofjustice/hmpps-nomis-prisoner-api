@@ -173,8 +173,8 @@ class AllocationServiceTest {
             Assertions.assertThat(endDate).isEqualTo(LocalDate.parse("2022-11-30"))
             Assertions.assertThat(payBands).hasSize(1)
             with(payBands.first()) {
-              Assertions.assertThat(offenderProgramProfile).isSameAs(this@outer)
-              Assertions.assertThat(startDate).isSameAs(this@outer.startDate)
+              Assertions.assertThat(id.offenderProgramProfile).isSameAs(this@outer)
+              Assertions.assertThat(id.startDate).isSameAs(this@outer.startDate)
               Assertions.assertThat(endDate).isSameAs(this@outer.endDate)
               Assertions.assertThat(payBand.code).isEqualTo(PAY_BAND_CODE)
             }
