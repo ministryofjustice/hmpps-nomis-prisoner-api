@@ -223,8 +223,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         assertThat(startDate).isEqualTo(LocalDate.parse("2022-11-14"))
         assertThat(endDate).isEqualTo(TEN_DAYS_TIME)
         val payBand = payBands.first()
-        assertThat(payBand.offenderProgramProfile.offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
-        assertThat(payBand.startDate).isEqualTo(startDate)
+        assertThat(payBand.id.offenderProgramProfile.offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
+        assertThat(payBand.id.startDate).isEqualTo(startDate)
         assertThat(payBand.endDate).isEqualTo(endDate)
         assertThat(payBand.payBand.code).isEqualTo("5")
       }

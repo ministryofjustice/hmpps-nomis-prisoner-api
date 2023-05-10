@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -269,6 +270,54 @@ class ActivitiesResource(
     updateRequest: UpdateAllocationRequest,
   ) =
     allocationService.updateAllocation(courseActivityId, updateRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PutMapping("/activities/{courseActivityId}/allocation")
+  @Operation(
+    summary = "Creates or Updates a prisoner's allocation to an activity",
+    description = "Creates or updates a prisoner's allocation to an activity. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = UpsertAllocationRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Success",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "There was an error with the request, see the response for details",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun upsertAllocation(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @RequestBody @Valid
+    upsertRequest: UpsertAllocationRequest,
+  ) =
+    allocationService.upsertAllocation(courseActivityId, upsertRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/schedules")
