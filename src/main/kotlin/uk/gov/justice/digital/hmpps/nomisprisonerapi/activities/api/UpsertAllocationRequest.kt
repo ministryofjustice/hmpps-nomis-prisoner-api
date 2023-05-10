@@ -26,7 +26,7 @@ data class UpsertAllocationRequest(
   @Schema(description = "Activity start date", required = true, example = "2022-08-12")
   val startDate: LocalDate,
 
-  @Schema(description = "Activity end date", required = true, example = "2022-08-12")
+  @Schema(description = "Activity end date", example = "2022-08-12")
   val endDate: LocalDate? = null,
 
   @Schema(description = "Activity end reason (from domain PS_END_RSN)", example = "REL")
@@ -38,7 +38,7 @@ data class UpsertAllocationRequest(
   val endComment: String? = null,
 
   @Schema(description = "Offender is suspended from Activity?")
-  val suspended: Boolean = false,
+  val suspended: Boolean? = false,
 
   @Schema(description = "Activity suspended comment")
   @field:Length(max = 240)

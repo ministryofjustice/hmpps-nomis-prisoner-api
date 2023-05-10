@@ -185,7 +185,7 @@ class AllocationService(
     return allocation.apply {
       endDate = request.endDate
       endReason = requestedEndReason
-      suspended = request.suspended
+      suspended = request.suspended ?: false
       endComment = updateEndComment(request)
       updatePayBands(requestedPayBand)
     }
@@ -261,7 +261,7 @@ class AllocationService(
   private fun updateEndComment(request: UpsertAllocationRequest) =
     if (request.endDate != null) {
       request.endComment
-    } else if (request.suspended) {
+    } else if (request.suspended == true) {
       request.suspendedComment
     } else {
       null
