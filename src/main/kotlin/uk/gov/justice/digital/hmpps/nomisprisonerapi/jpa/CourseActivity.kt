@@ -54,7 +54,7 @@ data class CourseActivity(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "PROGRAM_ID", nullable = false)
-  val program: ProgramService,
+  var program: ProgramService,
 
   @Column
   var scheduleStartDate: LocalDate,

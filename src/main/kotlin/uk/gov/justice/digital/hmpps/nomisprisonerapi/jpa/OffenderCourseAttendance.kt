@@ -113,7 +113,7 @@ class OffenderCourseAttendance(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "PROGRAM_ID")
-  val program: ProgramService? = null,
+  var program: ProgramService? = null,
 
   bonusPay: BigDecimal? = null,
 

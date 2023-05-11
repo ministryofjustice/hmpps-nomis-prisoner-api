@@ -238,6 +238,7 @@ class ActivityServiceTest {
         ),
       ),
       excludeBankHolidays = false,
+      programCode = "INTTEST",
     )
 
     @BeforeEach
@@ -257,6 +258,9 @@ class ActivityServiceTest {
         returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
         returnedCourseActivity
       }
+      whenever(programServiceRepository.findByProgramCode(anyString())).thenReturn(
+        ProgramService(20, "INTTEST", "test", true),
+      )
     }
 
     @Test
