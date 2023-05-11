@@ -21,13 +21,10 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
@@ -142,134 +139,6 @@ class ActivitiesResource(
     @RequestBody @Valid
     updateActivityRequest: UpdateActivityRequest,
   ) = activityService.updateActivity(courseActivityId, updateActivityRequest)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PostMapping("/activities/{courseActivityId}/allocations")
-  @ResponseStatus(HttpStatus.CREATED)
-  @Operation(
-    summary = "Allocates a prisoner to an activity",
-    description = "Allocates a prisoner to an activity. Requires role NOMIS_ACTIVITIES",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreateAllocationRequest::class),
-        ),
-      ],
-    ),
-    responses = [
-      ApiResponse(
-        responseCode = "201",
-        description = "Offender program profile information with created id",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CreateAllocationResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = """One or more of the following is true:<ul>
-        <li>the booking id does not exist,</li>
-        <li>the prisoner is already allocated,</li>
-        <li>the course is held at a different prison to the prisoner's location,</li>
-        <li>the pay band code does not exist for the given course activity.</li></ul>
-        """,
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The course activity does not exist",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-    ],
-  )
-  fun createAllocation(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
-    @RequestBody @Valid
-    createRequest: CreateAllocationRequest,
-  ): CreateAllocationResponse =
-    allocationService.createAllocation(courseActivityId, createRequest)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PutMapping("/activities/{courseActivityId}/allocations")
-  @Operation(
-    summary = "Updates a prisoner's allocation to an activity",
-    description = "Updates a prisoner's allocation to an activity. Requires role NOMIS_ACTIVITIES",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = UpdateAllocationRequest::class),
-        ),
-      ],
-    ),
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Success",
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = """One or more of the following is true:<ul>
-        <li>the prisoner is not allocated to the course,</li>
-        <li>the course or prisoner does not exist,</li>
-        <li>the end date is missing or invalid,</li>
-        <li>the reason is invalid</li>
-        </ul>
-        """,
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The course activity or booking id do not exist",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-    ],
-  )
-  fun updateAllocation(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
-    @RequestBody @Valid
-    updateRequest: UpdateAllocationRequest,
-  ) =
-    allocationService.updateAllocation(courseActivityId, updateRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/allocation")
