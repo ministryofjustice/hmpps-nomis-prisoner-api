@@ -1152,12 +1152,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // allocate offender
       val offenderAtMoorlands =
         repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
-      webTestClient.post().uri("/activities/$activityId/allocations")
+      webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
         .exchange()
-        .expectStatus().isCreated
+        .expectStatus().isOk
 
       val savedActivity = repository.lookupActivity(activityId)
       val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())
@@ -1191,12 +1191,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // allocate offender
       val offenderAtMoorlands =
         repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
-      webTestClient.post().uri("/activities/$activityId/allocations")
+      webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
         .exchange()
-        .expectStatus().isCreated
+        .expectStatus().isOk
 
       val savedActivity = repository.lookupActivity(activityId)
       val savedSchedule = repository.lookupActivity(activityId).courseSchedules.firstOrNull()
