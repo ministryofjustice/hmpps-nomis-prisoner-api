@@ -384,6 +384,8 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       assertThat(offenderIndividualSchedule.eventSubType.code).isEqualTo("CABA")
       assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
       assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
+      assertThat(offenderIndividualSchedule.modifiedBy).isEqualTo("SA")
+      assertThat(offenderIndividualSchedule.modifiedBy).isNotBlank()
     }
 
     private fun callUpdateEndpoint(eventId: Long) {
@@ -554,6 +556,8 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.comment").isEqualTo("hit the gym")
         .jsonPath("$.subtype").isEqualTo("MEDE")
         .jsonPath("$.status").isEqualTo("SCH")
+        .jsonPath("$.createdDate").isNotEmpty()
+        .jsonPath("$.createdBy").isEqualTo("SA")
     }
 
     @Test

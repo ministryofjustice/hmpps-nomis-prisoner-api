@@ -27,4 +27,12 @@ data class AppointmentResponse(
   val subtype: String,
   @Schema(description = "Status")
   val status: String,
+  @Schema(description = "Record created date", required = true)
+  val createdDate: LocalDateTime,
+  @Schema(description = "Record created by", required = true)
+  val createdBy: String,
+  @Schema(description = "Record modified date")
+  val modifiedDate: LocalDateTime? = null,
+  @Schema(description = "Record modified by")
+  val modifiedBy: String? = null,
 )
