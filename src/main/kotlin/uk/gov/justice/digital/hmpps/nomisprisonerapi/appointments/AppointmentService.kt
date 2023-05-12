@@ -172,6 +172,10 @@ private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse =
     status = entity.eventStatus.code,
     subtype = entity.eventSubType.code,
     internalLocation = entity.internalLocation?.locationId,
-    prisonId = entity.prison?.id,
+    prisonId = entity.prison?.id ?: entity.toPrison?.id,
     comment = entity.comment,
+    createdDate = entity.createdDate!!,
+    createdBy = entity.createdBy!!,
+    modifiedDate = entity.modifiedDate,
+    modifiedBy = entity.modifiedBy,
   )

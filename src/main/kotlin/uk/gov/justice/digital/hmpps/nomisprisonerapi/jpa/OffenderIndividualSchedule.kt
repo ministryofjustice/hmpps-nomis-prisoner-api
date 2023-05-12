@@ -17,6 +17,10 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
+import org.springframework.data.annotation.CreatedBy
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedBy
+import org.springframework.data.annotation.LastModifiedDate
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -87,11 +91,31 @@ class OffenderIndividualSchedule(
   val prison: AgencyLocation? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "TO_AGY_LOC_ID")
+  val toPrison: AgencyLocation? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_INTERNAL_LOCATION_ID")
   var internalLocation: AgencyInternalLocation? = null,
 
   @Column(name = "COMMENT_TEXT")
   val comment: String? = null,
+
+  @Column(name = "CREATE_DATETIME", nullable = false, updatable = false, insertable = false)
+  @CreatedDate
+  val createdDate: LocalDateTime? = null,
+
+  @Column(name = "CREATE_USER_ID", nullable = false, updatable = false, insertable = false)
+  @CreatedBy
+  val createdBy: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", updatable = false, insertable = false)
+  @LastModifiedDate
+  val modifiedDate: LocalDateTime? = null,
+
+  @Column(name = "MODIFY_USER_ID", updatable = false, insertable = false)
+  @LastModifiedBy
+  val modifiedBy: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
