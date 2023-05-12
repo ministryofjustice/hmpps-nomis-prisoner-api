@@ -108,6 +108,8 @@ class ActivityService(
 
     val prisonIepLevel = findAvailablePrisonIepLevelOrThrow(request.minimumIncentiveLevelCode, existingActivity.prison)
 
+    val requestedProgramService = findProgramServiceOrThrow(request.programCode)
+
     checkDatesInOrder(request.startDate, request.endDate)
 
     with(existingActivity) {
@@ -126,6 +128,12 @@ class ActivityService(
       scheduleRuleService.buildNewRules(request.scheduleRules, this).also { newRules ->
         courseScheduleRules.clear()
         courseScheduleRules.addAll(newRules)
+      }
+      if (program.programCode != requestedProgramService.programCode) {
+        program = requestedProgramService
+        offenderProgramProfiles
+          .filter { it.endDate == null }
+          .forEach { it.program = requestedProgramService }
       }
     }
 

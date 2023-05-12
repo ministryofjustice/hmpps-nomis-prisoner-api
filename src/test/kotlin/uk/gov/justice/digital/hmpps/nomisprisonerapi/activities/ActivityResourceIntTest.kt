@@ -369,6 +369,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       "minimumIncentiveLevelCode": "BAS", 
       "payPerSession": "F", 
       "excludeBankHolidays": true, 
+      "programCode": "INTTEST",
     """.trimIndent()
 
     private fun payRatesJson(): String = """
@@ -819,6 +820,40 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Test
+    fun `should update program for activity and active allocations`() {
+      val existingActivity = getSavedActivity()
+      // create another program to move the activity to
+      repository.save(ProgramServiceBuilder(programId = 30, programCode = "NEW_SERVICE"))
+      // add an allocated offender who should be moved to the new program service
+      val offenderBooking =
+        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
+      repository.save(offenderProgramProfileBuilderFactory.builder(), offenderBooking, existingActivity)
+      // add a deallocated offender who should NOT be moved to the new program service
+      val deallocatedOffenderBooking =
+        repository.save(OffenderBuilder(nomsId = "A1234UU").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
+      repository.save(offenderProgramProfileBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()), deallocatedOffenderBooking, existingActivity)
+
+      callUpdateEndpoint(
+        courseActivityId = existingActivity.courseActivityId,
+        jsonBody = updateActivityRequestJson(
+          detailsJson = detailsJson()
+            .replace(""""programCode": "INTTEST",""", """"programCode": "NEW_SERVICE","""),
+        ),
+      )
+        .expectStatus().isOk
+
+      repository.runInTransaction {
+        val updated = repository.lookupActivity(existingActivity.courseActivityId)
+        assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
+        assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
+        assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST")
+      }
+    }
+
+    private fun CourseActivity.getProgramCode(bookingId: Long): String =
+      offenderProgramProfiles.first { it.offenderBooking.bookingId == bookingId }.program.programCode!!
+
     private fun callUpdateEndpoint(courseActivityId: Long, jsonBody: String) =
       webTestClient.put().uri("/activities/$courseActivityId")
         .contentType(MediaType.APPLICATION_JSON)
@@ -828,6 +863,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun getSavedActivityId() =
       repository.activityRepository.findAll().firstOrNull()?.courseActivityId
+        ?: throw BadDataException("No activities in database")
+
+    private fun getSavedActivity() =
+      repository.activityRepository.findAll().firstOrNull()
         ?: throw BadDataException("No activities in database")
 
     private fun getSavedRuleId() =

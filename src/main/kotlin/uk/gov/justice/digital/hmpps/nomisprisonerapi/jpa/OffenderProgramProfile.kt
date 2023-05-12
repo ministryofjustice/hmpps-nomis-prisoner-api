@@ -36,7 +36,7 @@ data class OffenderProgramProfile(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "PROGRAM_ID", nullable = false)
-  val program: ProgramService,
+  var program: ProgramService,
 
   @Column(name = "OFFENDER_START_DATE")
   val startDate: LocalDate? = null,
