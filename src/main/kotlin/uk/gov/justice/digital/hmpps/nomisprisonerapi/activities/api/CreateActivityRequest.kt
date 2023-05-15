@@ -50,7 +50,7 @@ data class CreateActivityRequest(
   val payPerSession: PayPerSession,
 
   @Schema(description = "Schedules", required = false)
-  val schedules: List<SchedulesRequest> = listOf(),
+  val schedules: List<CourseScheduleRequest> = listOf(),
 
   @Schema(description = "Schedule rules", required = false)
   val scheduleRules: List<ScheduleRuleRequest> = listOf(),
@@ -70,19 +70,6 @@ data class PayRateRequest(
 
   @Schema(description = "The half day rate", example = "0.50", required = true)
   val rate: BigDecimal,
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Course activity creation request schedules")
-data class SchedulesRequest(
-  @Schema(description = "Schedule date", required = true, example = "2022-08-12")
-  val date: LocalDate,
-
-  @Schema(description = "Schedule start time in 24 hour clock", required = true, example = "08:00")
-  val startTime: LocalTime,
-
-  @Schema(description = "Schedule end time in 24 hour clock", required = true, example = "11:00")
-  val endTime: LocalTime,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -114,4 +101,21 @@ data class ScheduleRuleRequest(
 
   @Schema(description = "Scheduled on Sunday", required = true, example = "false")
   val sunday: Boolean = false,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Course schedule request")
+data class CourseScheduleRequest(
+
+  @Schema(description = "The date of the course schedule", example = "2023-04-03", required = true)
+  val date: LocalDate,
+
+  @Schema(description = "The time of the course schedule", example = "10:00", required = true)
+  val startTime: LocalTime,
+
+  @Schema(description = "The time the course schedule ends", example = "11:00", required = true)
+  val endTime: LocalTime,
+
+  @Schema(description = "Whether the course schedule has been cancelled", example = "true", required = false)
+  val cancelled: Boolean = false,
 )

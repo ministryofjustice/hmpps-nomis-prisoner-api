@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -19,13 +18,12 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
@@ -189,51 +187,6 @@ class ActivitiesResource(
     allocationService.upsertAllocation(courseActivityId, upsertRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PutMapping("/activities/{courseActivityId}/schedules")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-    summary = "Updates activity schedules",
-    description = "Recreates schedules from tomorrow. Requires role NOMIS_ACTIVITIES",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = SchedulesRequest::class))),
-      ],
-    ),
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Schedules updated",
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "There was an error with the request",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-    ],
-  )
-  fun updateSchedules(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
-    @RequestBody @Valid
-    scheduleRequests: List<SchedulesRequest>,
-  ) = activityService.updateActivitySchedules(courseActivityId, scheduleRequests)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/schedule")
   @Operation(
     summary = "Updates a course schedule",
@@ -242,7 +195,7 @@ class ActivitiesResource(
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = UpdateCourseScheduleRequest::class),
+          schema = Schema(implementation = CourseScheduleRequest::class),
         ),
       ],
     ),
@@ -287,7 +240,7 @@ class ActivitiesResource(
   fun updateCourseSchedule(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid
-    updateRequest: UpdateCourseScheduleRequest,
+    updateRequest: CourseScheduleRequest,
   ) =
     scheduleService.updateCourseSchedule(courseActivityId, updateRequest)
 
