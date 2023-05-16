@@ -353,7 +353,7 @@ class ScheduleServiceTest {
       }
 
     @Test
-    fun `should publish deletions and creation of rules`() {
+    fun `should publish deletions and creation of schedules`() {
       val oldSchedules = courseActivity.courseSchedules
       val newSchedules = listOf(
         CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()).build(courseActivity),
