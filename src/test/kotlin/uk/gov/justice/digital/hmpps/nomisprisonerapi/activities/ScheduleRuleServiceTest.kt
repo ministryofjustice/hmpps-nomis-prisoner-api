@@ -357,7 +357,7 @@ class ScheduleRuleServiceTest {
     private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
 
     @Test
-    fun `should publish deletions, creation and update of rules`() {
+    fun `should publish deletions and creation of rules`() {
       val oldRules = listOf(
         CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
         CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),
@@ -372,6 +372,23 @@ class ScheduleRuleServiceTest {
 
       assertThat(telemetry["removed-courseScheduleRuleIds"]).isEqualTo("[2]")
       assertThat(telemetry["created-courseScheduleRuleIds"]).isEqualTo("[3, 4]")
+    }
+
+    @Test
+    fun `should not publish telemetry if no change`() {
+      val oldRules = listOf(
+        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
+        CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),
+      )
+      val newRules = listOf(
+        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
+        CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),
+      )
+
+      val telemetry = scheduleRuleService.buildUpdateTelemetry(oldRules, newRules)
+
+      assertThat(telemetry["removed-courseScheduleRuleIds"]).isNull()
+      assertThat(telemetry["created-courseScheduleRuleIds"]).isNull()
     }
   }
 }

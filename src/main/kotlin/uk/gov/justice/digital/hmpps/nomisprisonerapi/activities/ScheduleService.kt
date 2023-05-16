@@ -119,4 +119,17 @@ class ScheduleService(
 
     return UpdateCourseScheduleResponse(schedule.courseScheduleId)
   }
+
+  fun buildUpdateTelemetry(savedSchedules: List<CourseSchedule>, newSchedules: List<CourseSchedule>): Map<String, String> {
+    val removedSchedules = savedSchedules.map { it.courseScheduleId } - newSchedules.map { it.courseScheduleId }.toSet()
+    val createdSchedules = newSchedules.map { it.courseScheduleId } - savedSchedules.map { it.courseScheduleId }.toSet()
+    val telemetry = mutableMapOf<String, String>()
+    if (removedSchedules.isNotEmpty()) {
+      telemetry["removed-courseScheduleIds"] = removedSchedules.toString()
+    }
+    if (createdSchedules.isNotEmpty()) {
+      telemetry["created-courseScheduleIds"] = createdSchedules.toString()
+    }
+    return telemetry
+  }
 }

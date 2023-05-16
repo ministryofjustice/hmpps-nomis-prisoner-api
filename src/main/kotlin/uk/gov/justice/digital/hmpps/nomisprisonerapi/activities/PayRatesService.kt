@@ -162,11 +162,17 @@ class PayRatesService(
     val createdIds = findCreatedIds(savedPayRates, newPayRates)
     val updatedIds = findUpdatedIds(savedPayRates, newPayRates)
     val expiredIds = findExpiredIds(savedPayRates, newPayRates)
-    return mapOf(
-      "created-courseActivityPayRateIds" to createdIds.map { it.toTelemetry() }.toString(),
-      "updated-courseActivityPayRateIds" to updatedIds.map { it.toTelemetry() }.toString(),
-      "expired-courseActivityPayRateIds" to expiredIds.map { it.toTelemetry() }.toString(),
-    )
+    val telemetry = mutableMapOf<String, String>()
+    if (createdIds.isNotEmpty()) {
+      telemetry["created-courseActivityPayRateIds"] = createdIds.map { it.toTelemetry() }.toString()
+    }
+    if (updatedIds.isNotEmpty()) {
+      telemetry["updated-courseActivityPayRateIds"] = updatedIds.map { it.toTelemetry() }.toString()
+    }
+    if (expiredIds.isNotEmpty()) {
+      telemetry["expired-courseActivityPayRateIds"] = expiredIds.map { it.toTelemetry() }.toString()
+    }
+    return telemetry.toMap()
   }
 
   private fun findCreatedIds(

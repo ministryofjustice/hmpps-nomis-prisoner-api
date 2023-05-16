@@ -406,6 +406,26 @@ class PayRateServiceTest {
       assertThat(telemetry["updated-courseActivityPayRateIds"]).isEqualTo("[STD-5-$tomorrow]")
       assertThat(telemetry["expired-courseActivityPayRateIds"]).isEqualTo("[STD-7-2022-10-31]")
     }
+
+    @Test
+    fun `should not publish telemetry for no change`() {
+      val oldRates = listOf(
+        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity),
+        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3).create(courseActivity),
+        rateFactory().builder(payBandCode = "7", halfDayRate = 8.7).create(courseActivity),
+      )
+      val newRates = listOf(
+        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity),
+        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3).create(courseActivity),
+        rateFactory().builder(payBandCode = "7", halfDayRate = 8.7).create(courseActivity),
+      )
+
+      val telemetry = payRatesService.buildUpdateTelemetry(oldRates, newRates)
+
+      assertThat(telemetry["created-courseActivityPayRateIds"]).isNull()
+      assertThat(telemetry["updated-courseActivityPayRateIds"]).isNull()
+      assertThat(telemetry["expired-courseActivityPayRateIds"]).isNull()
+    }
   }
 
   private fun rateFactory() = CourseActivityPayRateBuilderFactory()
