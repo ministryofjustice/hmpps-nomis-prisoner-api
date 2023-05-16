@@ -357,7 +357,7 @@ class ScheduleRuleServiceTest {
     private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
 
     @Test
-    fun `should publish deletions, creation and update of rules`() {
+    fun `should publish deletions and creation of rules`() {
       val oldRules = listOf(
         CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
         CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),

@@ -338,4 +338,46 @@ class ScheduleServiceTest {
       }
     }
   }
+
+  @Nested
+  inner class BuildUpdateTelemetry {
+    private val today = LocalDate.now()
+    private val tomorrow = today.plusDays(1)
+
+    private val courseActivity =
+      listOf(
+        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()),
+        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = tomorrow.toString()),
+      ).let {
+        CourseActivityBuilderFactory().builder(startDate = today.toString(), courseSchedules = it).create()
+      }
+
+    @Test
+    fun `should publish deletions and creation of rules`() {
+      val oldSchedules = courseActivity.courseSchedules
+      val newSchedules = listOf(
+        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()).build(courseActivity),
+        CourseScheduleBuilder(courseScheduleId = 3, scheduleDate = tomorrow.toString(), startTime = "09:00").build(courseActivity),
+      )
+
+      val telemetry = scheduleService.buildUpdateTelemetry(oldSchedules, newSchedules)
+
+      assertThat(telemetry["removed-courseScheduleIds"]).isEqualTo("[2]")
+      assertThat(telemetry["created-courseScheduleIds"]).isEqualTo("[3]")
+    }
+
+    @Test
+    fun `should not publish telemetry if nothing changed`() {
+      val oldSchedules = courseActivity.courseSchedules
+      val newSchedules = listOf(
+        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()).build(courseActivity),
+        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = tomorrow.toString()).build(courseActivity),
+      )
+
+      val telemetry = scheduleService.buildUpdateTelemetry(oldSchedules, newSchedules)
+
+      assertThat(telemetry["removed-courseScheduleIds"]).isNull()
+      assertThat(telemetry["created-courseScheduleIds"]).isNull()
+    }
+  }
 }
