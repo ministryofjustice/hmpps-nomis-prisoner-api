@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -129,6 +128,10 @@ class ActivityService(
         courseScheduleRules.clear()
         courseScheduleRules.addAll(newRules)
       }
+      scheduleService.buildNewSchedules(request.schedules, this).also { newSchedules ->
+        courseSchedules.clear()
+        courseSchedules.addAll(newSchedules)
+      }
       if (program.programCode != requestedProgramService.programCode) {
         program = requestedProgramService
         offenderProgramProfiles
@@ -174,18 +177,6 @@ class ActivityService(
       agencyLocationRepository.findByIdOrNull(prisonId)
         ?: throw BadDataException("Prison with id=$prisonId does not exist")
       )
-
-  fun updateActivitySchedules(courseActivityId: Long, scheduleRequests: List<SchedulesRequest>) {
-    activityRepository.findByIdOrNull(courseActivityId)
-      ?.also { courseActivity ->
-        scheduleService.updateSchedules(scheduleRequests, courseActivity)
-          .also { updatedSchedules ->
-            courseActivity.courseSchedules.clear()
-            courseActivity.courseSchedules.addAll(updatedSchedules)
-          }
-      }
-      ?: throw NotFoundException("Activity $courseActivityId not found")
-  }
 
   fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
 }

@@ -45,4 +45,7 @@ data class UpdateActivityRequest(
 
   @Schema(description = "Program Service code (from activity category)", required = true)
   val programCode: String,
+
+  @Schema(description = "Schedules", required = false)
+  val schedules: List<CourseScheduleRequest> = listOf(),
 )

@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper
 
 import org.h2.tools.TriggerAdapter
 import java.sql.Connection

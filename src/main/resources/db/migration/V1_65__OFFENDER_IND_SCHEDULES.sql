@@ -178,4 +178,4 @@ CREATE INDEX "OFF_IND_SCH_STF_FK"         ON "OFFENDER_IND_SCHEDULES" ("IN_CHARG
 
 CREATE TRIGGER OFFENDER_IND_SCHEDULES_TA
   BEFORE UPDATE on OFFENDER_IND_SCHEDULES FOR EACH ROW
-  CALL "uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.ModifyTrigger";
+  CALL "uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.ModifyTrigger";

@@ -4,8 +4,7 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.SchedulesRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -15,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Service
 class ScheduleService(
@@ -23,9 +23,9 @@ class ScheduleService(
   private val telemetryClient: TelemetryClient,
 ) {
 
-  fun mapSchedules(requests: List<SchedulesRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
+  fun mapSchedules(requests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
     requests.map {
-      validateRequest(it, courseActivity)
+      validateSchedule(it.date, it.startTime, it.endTime, courseActivity)
 
       CourseSchedule(
         courseActivity = courseActivity,
@@ -33,10 +33,13 @@ class ScheduleService(
         startTime = it.date.atTime(it.startTime),
         endTime = it.date.atTime(it.endTime),
         slotCategory = SlotCategory.of(it.startTime),
+        scheduleStatus = setScheduleStatus(it),
       )
     }.toList()
 
-  fun updateSchedules(scheduleRequests: List<SchedulesRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
+  private fun setScheduleStatus(it: CourseScheduleRequest) = if (it.cancelled) "CANC" else "SCH"
+
+  fun buildNewSchedules(scheduleRequests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
     mapSchedules(scheduleRequests, courseActivity)
       .let { requestedSchedules ->
         findPastSchedules(requestedSchedules, courseActivity) + findOrAddFutureSchedules(requestedSchedules, courseActivity)
@@ -53,7 +56,7 @@ class ScheduleService(
     return savedPastSchedules.map { savedSchedule ->
       requestedPastSchedules
         .find { requestedSchedule -> requestedSchedule matches savedSchedule }
-        ?.let { savedSchedule }
+        ?.let { requestedSchedule -> savedSchedule.apply { scheduleStatus = requestedSchedule.scheduleStatus } }
         ?: let { throw BadDataException("Cannot update schedules starting before tomorrow") }
     }
       .toList()
@@ -64,6 +67,7 @@ class ScheduleService(
       .map { requestedSchedule ->
         courseActivity.courseSchedules.filter { it.isFutureSchedule() }
           .find { savedSchedule -> requestedSchedule matches savedSchedule }
+          ?.let { savedSchedule -> savedSchedule.apply { scheduleStatus = requestedSchedule.scheduleStatus } }
           ?: let { requestedSchedule }
       }
       .toList()
@@ -75,20 +79,20 @@ class ScheduleService(
       startTime == other.startTime &&
       endTime == other.endTime
 
-  private fun validateRequest(request: SchedulesRequest, courseActivity: CourseActivity) {
-    if (request.date < courseActivity.scheduleStartDate) {
-      throw BadDataException("Schedule for date ${request.date} is before the activity starts on ${courseActivity.scheduleStartDate}")
+  private fun validateSchedule(scheduleDate: LocalDate, startTime: LocalTime, endTime: LocalTime, courseActivity: CourseActivity) {
+    if (scheduleDate < courseActivity.scheduleStartDate) {
+      throw BadDataException("Schedule for date $scheduleDate is before the activity starts on ${courseActivity.scheduleStartDate}")
     }
 
-    if (request.endTime < request.startTime) {
-      throw BadDataException("Schedule for date ${request.date} has times out of order - ${request.startTime} to ${request.endTime}")
+    if (endTime < startTime) {
+      throw BadDataException("Schedule for date $scheduleDate has times out of order - $startTime to $endTime")
     }
   }
 
   @Transactional
   fun updateCourseSchedule(
     courseActivityId: Long,
-    updateRequest: UpdateCourseScheduleRequest,
+    updateRequest: CourseScheduleRequest,
   ): UpdateCourseScheduleResponse {
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
@@ -100,7 +104,7 @@ class ScheduleService(
         date.atTime(startTime),
         date.atTime(endTime),
       )
-        ?.apply { scheduleStatus = if (cancelled) "CANC" else "SCH" }
+        ?.apply { scheduleStatus = setScheduleStatus(updateRequest) }
         ?: throw NotFoundException("Course schedule for activity id=$courseActivityId, date=$date, startTime=$startTime, endTime=$endTime not found")
     }
 
