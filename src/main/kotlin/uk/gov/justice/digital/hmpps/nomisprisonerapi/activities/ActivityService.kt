@@ -85,6 +85,7 @@ class ActivityService(
 
     val oldRules = existingActivity.courseScheduleRules.map { it.copy() }
     val oldPayRates = existingActivity.payRates.map { it.copy() }
+    val oldSchedules = existingActivity.courseSchedules.map { it.copy() }
 
     mapActivityModel(existingActivity, request)
       .also { activityRepository.saveAndFlush(it) }
@@ -96,7 +97,8 @@ class ActivityService(
             "prisonId" to savedCourseActivity.prison.id,
           ) +
             scheduleRuleService.buildUpdateTelemetry(oldRules, savedCourseActivity.courseScheduleRules) +
-            payRatesService.buildUpdateTelemetry(oldPayRates, savedCourseActivity.payRates),
+            payRatesService.buildUpdateTelemetry(oldPayRates, savedCourseActivity.payRates) +
+            scheduleService.buildUpdateTelemetry(oldSchedules, savedCourseActivity.courseSchedules),
           null,
         )
       }
