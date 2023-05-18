@@ -54,7 +54,7 @@ class SentencingAdjustmentService(
   fun createSentenceAdjustment(bookingId: Long, sentenceSequence: Long, request: CreateSentenceAdjustmentRequest) =
     offenderBookingRepository.findByIdOrNull(bookingId)?.let { booking ->
       offenderSentenceRepository.findByIdOrNull(SentenceId(booking, sentenceSequence))?.let { sentence ->
-        sentence.adjustments.add(
+        val adjustmentId = offenderSentenceAdjustmentRepository.save(
           OffenderSentenceAdjustment(
             offenderBooking = booking,
             sentenceSequence = sentenceSequence,
@@ -67,9 +67,7 @@ class SentencingAdjustmentService(
             comment = request.comment,
             active = request.active,
           ),
-        )
-        entityManager.flush()
-        val adjustmentId = sentence.adjustments.last().id
+        ).id
         telemetryClient.trackEvent(
           "sentence-adjustment-created",
           mapOf(
@@ -163,7 +161,7 @@ class SentencingAdjustmentService(
   @Audit
   fun createKeyDateAdjustment(bookingId: Long, request: CreateKeyDateAdjustmentRequest) =
     offenderBookingRepository.findByIdOrNull(bookingId)?.let {
-      it.keyDateAdjustments.add(
+      val adjustmentId = keyDateAdjustmentRepository.save(
         OffenderKeyDateAdjustment(
           offenderBooking = it,
           sentenceAdjustment = findValidKeyDateAdjustmentType(request.adjustmentTypeCode),
@@ -174,9 +172,7 @@ class SentencingAdjustmentService(
           comment = request.comment,
           active = request.active,
         ),
-      )
-      entityManager.flush()
-      val adjustmentId = it.keyDateAdjustments.last().id
+      ).id
       telemetryClient.trackEvent(
         "key-date-adjustment-created",
         mapOf(
