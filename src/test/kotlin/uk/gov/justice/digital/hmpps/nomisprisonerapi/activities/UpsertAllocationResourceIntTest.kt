@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActiv
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -35,6 +36,9 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var payRateBuilderFactory: CourseActivityPayRateBuilderFactory
+
+  @Autowired
+  private lateinit var allocationBuilderFactory: OffenderProgramProfileBuilderFactory
 
   private lateinit var courseActivity: CourseActivity
   private lateinit var offender: Offender
@@ -484,6 +488,41 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
         },
         isNull(),
       )
+    }
+  }
+
+  @Nested
+  inner class DuplicateAllocation {
+    @Test
+    fun `duplicate allocations can be worked around by deleting one of them`() {
+      repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+      val duplicate = repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+
+      // unable to update the allocation because of a duplicate
+      val request = upsertRequest().withAdditionalJson(""""endDate": "${LocalDate.now()}"""")
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(request))
+        .exchange()
+        .expectStatus().is5xxServerError
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("query did not return a unique result")
+        }
+
+      // delete the duplicate
+      webTestClient.delete().uri("/allocations/${duplicate.offenderProgramReferenceId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      // now able to update the allocation
+      webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue(request))
+        .exchange()
+        .expectStatus().isOk
     }
   }
 }

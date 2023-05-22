@@ -181,4 +181,6 @@ class AllocationService(
           ),
         )
       }
+
+  fun deleteAllocation(referenceId: Long) = offenderProgramProfileRepository.deleteById(referenceId)
 }
