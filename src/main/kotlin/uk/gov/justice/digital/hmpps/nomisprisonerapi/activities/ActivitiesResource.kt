@@ -347,18 +347,10 @@ class ActivitiesResource(
   @Operation(
     summary = "Delete a NOMIS course activity",
     description = "Deletes a course activity and its children - pay rates, schedules, allocations and attendances. Intended to be used for data fixes. Requires role NOMIS_ACTIVITIES",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = GetAttendanceStatusRequest::class)),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "204",
         description = "Activity is deleted",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = GetAttendanceStatusResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -377,4 +369,33 @@ class ActivitiesResource(
     ],
   )
   fun deleteActivity(@PathVariable courseActivityId: Long) = activityService.deleteActivity(courseActivityId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @DeleteMapping("/allocations/{referenceId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a NOMIS allocation (from OFFENDER_PROGRAM_PROFILES table)",
+    description = "Deletes an allocation from NOMIS and any children - pay rates, attendances. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Allocation is deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun deleteAllocation(@PathVariable referenceId: Long) = allocationService.deleteAllocation(referenceId)
 }
