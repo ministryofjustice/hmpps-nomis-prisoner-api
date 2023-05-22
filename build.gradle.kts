@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.4-beta-4"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.2.0-beta"
   kotlin("plugin.spring") version "1.8.21"
   kotlin("plugin.jpa") version "1.8.21"
   idea
@@ -21,7 +21,7 @@ dependencies {
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0")
 
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.1")
 
   implementation("com.zaxxer:HikariCP:5.0.1")
   implementation("com.h2database:h2:2.1.214")
@@ -33,7 +33,7 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-impl:0.11.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.13")
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.14")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 }
