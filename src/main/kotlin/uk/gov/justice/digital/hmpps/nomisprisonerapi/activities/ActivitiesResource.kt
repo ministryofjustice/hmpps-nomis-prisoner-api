@@ -398,4 +398,33 @@ class ActivitiesResource(
     ],
   )
   fun deleteAllocation(@PathVariable referenceId: Long) = allocationService.deleteAllocation(referenceId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @DeleteMapping("/attendances/{eventId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a NOMIS attendance (from OFFENDER_COURSE_ATTENDANCES table)",
+    description = "Deletes an attendance from NOMIS. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Attendance is deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun deleteAttendance(@PathVariable eventId: Long) = attendanceService.deleteAttendance(eventId)
 }
