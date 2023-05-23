@@ -383,6 +383,33 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Nested
+    inner class DuplicateAttendance {
+      @Test
+      fun `duplicate attendance can be worked around by deleting one of them`() {
+        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        saveAttendance("SCH", courseSchedule, allocation)
+        val duplicate = saveAttendance("SCH", courseSchedule, allocation)
+
+        // unable to update the attendance because of a duplicate
+        webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId)
+          .expectStatus().is5xxServerError
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("query did not return a unique result")
+          }
+
+        // delete the duplicate
+        webTestClient.delete().uri("/attendances/${duplicate.eventId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isNoContent
+
+        // now able to update the attendance
+        webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId)
+          .expectStatus().isOk
+      }
+    }
+
     private fun WebTestClient.upsertAttendance(
       courseActivityId: Long,
       bookingId: Long,

@@ -203,4 +203,6 @@ class AttendanceService(
     activityRepository.findByIdOrNull(courseActivityId)
       ?: throw BadDataException("Course activity with id=$courseActivityId not found")
     )
+
+  fun deleteAttendance(eventId: Long) = attendanceRepository.deleteById(eventId)
 }
