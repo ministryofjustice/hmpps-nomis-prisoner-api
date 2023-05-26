@@ -90,14 +90,9 @@ class VisitService(
 
     val mappedVisit = mapVisitModel(visitDto, offenderBooking)
 
-    log.debug("Create visit dro : $visitDto")
-    log.debug("Creating visit: $mappedVisit")
-
     createBalance(mappedVisit, visitDto, offenderBooking)
 
     addVisitors(mappedVisit, offenderBooking, visitDto)
-
-    log.debug("Saving visit with visitors: $mappedVisit")
 
     val visit = visitRepository.save(mappedVisit)
 
