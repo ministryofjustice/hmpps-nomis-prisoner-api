@@ -504,10 +504,12 @@ class IncentivesService(
     incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)?.run {
       // find all IEPs on same date is current, these potentially may not be in time order since NOMIS previously
       // allowed IEP dates to be amended so the highest sequence on a day is current not the one with latest time
-      val allOnSameDateOrderedBySequence = incentiveRepository.findAllById_offenderBookingAndIepDateOrderById_SequenceAsc(offenderBooking, this.iepDate)
+      val allOnSameDateOrderedBySequence =
+        incentiveRepository.findAllById_offenderBookingAndIepDateOrderById_SequenceAsc(offenderBooking, this.iepDate)
 
       val currentSequenceOrder = allOnSameDateOrderedBySequence.map { it.id.sequence }
       val revisedSequenceOrder = allOnSameDateOrderedBySequence.sortedBy { it.iepTime }.map { it.id.sequence }
+      val mappedSequences = revisedSequenceOrder.zip(currentSequenceOrder)
 
       if (currentSequenceOrder != revisedSequenceOrder) {
         log.info("Incentive sequence order for booking $bookingId is not in time order, reordering")
@@ -516,14 +518,14 @@ class IncentivesService(
         val offset = this.id.sequence + 10000
         fun Long.wihOffset() = this + offset
 
-        allOnSameDateOrderedBySequence.forEach {
-          // temporarily update each sequence prior to the swap so each sequence
-          // is available to avoid constraint violation
-          incentiveRepository.updateSequence(offenderBooking, it.id.sequence, it.id.sequence.wihOffset())
+        // temporarily update each sequence prior to the swap so each sequence
+        // is available to avoid constraint violation
+        mappedSequences.forEach {
+          incentiveRepository.updateSequence(offenderBooking, it.first, it.first.wihOffset())
         }
-        allOnSameDateOrderedBySequence.forEachIndexed { index, incentive ->
-          // now update to sequence to the new order
-          incentiveRepository.updateSequence(offenderBooking, incentive.id.sequence.wihOffset(), revisedSequenceOrder[index])
+
+        mappedSequences.forEach {
+          incentiveRepository.updateSequence(offenderBooking, it.first.wihOffset(), it.second)
         }
         telemetryClient.trackEvent(
           "incentive-resequenced",
