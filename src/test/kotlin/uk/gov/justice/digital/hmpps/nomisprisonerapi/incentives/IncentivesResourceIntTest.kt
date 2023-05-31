@@ -558,17 +558,17 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
                 IncentiveBuilder(
                   iepLevel = "ENH",
                   sequence = 4,
-                  iepDateTime = LocalDateTime.parse("2022-01-03T10:00:00"),
+                  iepDateTime = LocalDateTime.parse("2023-05-31T15:18:28"),
                 ),
                 IncentiveBuilder(
                   iepLevel = "STD",
                   sequence = 5,
-                  iepDateTime = LocalDateTime.parse("2022-01-03T09:00:00"),
+                  iepDateTime = LocalDateTime.parse("2023-05-31T15:25:09"),
                 ),
                 IncentiveBuilder(
                   iepLevel = "BAS",
                   sequence = 6,
-                  iepDateTime = LocalDateTime.parse("2022-01-03T08:00:00"),
+                  iepDateTime = LocalDateTime.parse("2023-05-31T10:25:09"),
                 ),
               ),
           ),
@@ -629,7 +629,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("incentiveSequence").isEqualTo(6)
           .jsonPath("iepLevel.code").isEqualTo("BAS")
-          .jsonPath("iepDateTime").isEqualTo("2022-01-03T08:00:00")
+          .jsonPath("iepDateTime").isEqualTo("2023-05-31T10:25:09")
           .jsonPath("currentIep").isEqualTo(true)
 
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
@@ -643,8 +643,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("incentiveSequence").isEqualTo(6)
-          .jsonPath("iepLevel.code").isEqualTo("ENH")
-          .jsonPath("iepDateTime").isEqualTo("2022-01-03T10:00:00")
+          .jsonPath("iepLevel.code").isEqualTo("STD")
+          .jsonPath("iepDateTime").isEqualTo("2023-05-31T15:25:09")
           .jsonPath("currentIep").isEqualTo(true)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/5")
@@ -653,8 +653,8 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("incentiveSequence").isEqualTo(5)
-          .jsonPath("iepLevel.code").isEqualTo("STD")
-          .jsonPath("iepDateTime").isEqualTo("2022-01-03T09:00:00")
+          .jsonPath("iepLevel.code").isEqualTo("ENH")
+          .jsonPath("iepDateTime").isEqualTo("2023-05-31T15:18:28")
           .jsonPath("currentIep").isEqualTo(false)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/4")
@@ -664,7 +664,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("incentiveSequence").isEqualTo(4)
           .jsonPath("iepLevel.code").isEqualTo("BAS")
-          .jsonPath("iepDateTime").isEqualTo("2022-01-03T08:00:00")
+          .jsonPath("iepDateTime").isEqualTo("2023-05-31T10:25:09")
           .jsonPath("currentIep").isEqualTo(false)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/3")
@@ -710,7 +710,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           check {
             assertThat(it["bookingId"]).isEqualTo(bookingId.toString())
             assertThat(it["oldSequence"]).isEqualTo("4, 5, 6")
-            assertThat(it["newSequence"]).isEqualTo("6, 5, 4")
+            assertThat(it["newSequence"]).isEqualTo("6, 4, 5")
           },
           isNull(),
         )
