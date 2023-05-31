@@ -495,4 +495,48 @@ class IncentivesService(
       visitAllowanceActive = visitAllowanceLevel?.active,
       visitAllowanceExpiryDate = visitAllowanceLevel?.expiryDate,
     )
+
+  fun reorderCurrentIncentives(bookingId: Long) {
+    val offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Offender booking $bookingId not found")
+
+    // get current IEP based NOMIS algorithm
+    incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)?.run {
+      // find all IEPs on same date is current, these potentially may not be in time order since NOMIS previously
+      // allowed IEP dates to be amended so the highest sequence on a day is current not the one with latest time
+      val allOnSameDateOrderedBySequence = incentiveRepository.findAllById_offenderBookingAndIepDateOrderById_SequenceAsc(offenderBooking, this.iepDate)
+
+      val currentSequenceOrder = allOnSameDateOrderedBySequence.map { it.id.sequence }
+      val revisedSequenceOrder = allOnSameDateOrderedBySequence.sortedBy { it.iepTime }.map { it.id.sequence }
+
+      if (currentSequenceOrder != revisedSequenceOrder) {
+        log.info("Incentive sequence order for booking $bookingId is not in time order, reordering")
+
+        // temporary offset to avoid clashes with existing sequence numbers
+        val offset = this.id.sequence + 10000
+        fun Long.wihOffset() = this + offset
+
+        allOnSameDateOrderedBySequence.forEach {
+          // temporarily update each sequence prior to the swap so each sequence
+          // is available to avoid constraint violation
+          incentiveRepository.updateSequence(offenderBooking, it.id.sequence, it.id.sequence.wihOffset())
+        }
+        allOnSameDateOrderedBySequence.forEachIndexed { index, incentive ->
+          // now update to sequence to the new order
+          incentiveRepository.updateSequence(offenderBooking, incentive.id.sequence.wihOffset(), revisedSequenceOrder[index])
+        }
+        telemetryClient.trackEvent(
+          "incentive-resequenced",
+          mapOf(
+            "bookingId" to bookingId.toString(),
+            "oldSequence" to currentSequenceOrder.joinToString { it.toString() },
+            "newSequence" to revisedSequenceOrder.joinToString { it.toString() },
+          ),
+          null,
+        )
+      } else {
+        log.warn("Incentive reordering request for booking $bookingId ignored. Incentives already in correct order")
+      }
+    }
+  }
 }

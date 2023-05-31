@@ -246,6 +246,55 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PostMapping("/prisoners/booking-id/{bookingId}/incentives/reorder")
+  @Operation(
+    summary = "Reorder a existing incentives to match time order",
+    description = "Reorder a series of IEPs so the sequence number matches the IEP date time. Latest time gets the higher sequence so the current IEP is the latest. This is required to correct DPS incentives that are created out of order",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Incentives successfully reordered",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Access this endpoint forbidden, incorrect role. Must have NOMIS_INCENTIVES",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun reorderCurrentIncentives(
+    @Schema(description = "Offender Booking Id", example = "1234567", required = true)
+    @PathVariable
+    bookingId: Long,
+  ): Unit =
+    incentivesService.reorderCurrentIncentives(bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @PostMapping("/incentives/reference-codes")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
