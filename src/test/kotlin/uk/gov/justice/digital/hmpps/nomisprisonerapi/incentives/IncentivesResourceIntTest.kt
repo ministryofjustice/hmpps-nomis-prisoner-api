@@ -6,6 +6,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
@@ -516,6 +523,222 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isUnauthorized,
       )
+    }
+  }
+
+  @DisplayName("reorder incentive sequences")
+  @Nested
+  inner class ReorderIncentiveSequences {
+    private lateinit var offender: Offender
+    private var bookingId = 0L
+
+    @BeforeEach
+    internal fun createPrisonerWithIEPs() {
+      offender = repository.save(
+        OffenderBuilder(nomsId = "A1234TT")
+          .withBooking(
+            OffenderBookingBuilder(agencyLocationId = "MDI")
+              .withIncentives(
+                IncentiveBuilder(
+                  iepLevel = "STD",
+                  sequence = 1,
+                  iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
+                  userId = "JOHN_GEN",
+                ),
+                IncentiveBuilder(
+                  iepLevel = "ENH",
+                  sequence = 2,
+                  iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"),
+                ),
+                IncentiveBuilder(
+                  iepLevel = "BAS",
+                  sequence = 3,
+                  iepDateTime = LocalDateTime.parse("2020-01-02T09:00:00"),
+                ),
+                IncentiveBuilder(
+                  iepLevel = "ENH",
+                  sequence = 4,
+                  iepDateTime = LocalDateTime.parse("2022-01-03T10:00:00"),
+                ),
+                IncentiveBuilder(
+                  iepLevel = "STD",
+                  sequence = 5,
+                  iepDateTime = LocalDateTime.parse("2022-01-03T09:00:00"),
+                ),
+                IncentiveBuilder(
+                  iepLevel = "BAS",
+                  sequence = 6,
+                  iepDateTime = LocalDateTime.parse("2022-01-03T08:00:00"),
+                ),
+              ),
+          ),
+      )
+      bookingId = offender.latestBooking().bookingId
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offender)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `403 forbidden without appropriate role`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `401 unauthorised without token`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `404 not found when bookingId not found`() {
+        webTestClient.post().uri("/prisoners/booking-id/999/incentives/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `200 when reordered successfully`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+      }
+
+      @Test
+      fun `will reorder the current IEPs on the same date`() {
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("incentiveSequence").isEqualTo(6)
+          .jsonPath("iepLevel.code").isEqualTo("BAS")
+          .jsonPath("iepDateTime").isEqualTo("2022-01-03T08:00:00")
+          .jsonPath("currentIep").isEqualTo(true)
+
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("incentiveSequence").isEqualTo(6)
+          .jsonPath("iepLevel.code").isEqualTo("ENH")
+          .jsonPath("iepDateTime").isEqualTo("2022-01-03T10:00:00")
+          .jsonPath("currentIep").isEqualTo(true)
+
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("incentiveSequence").isEqualTo(5)
+          .jsonPath("iepLevel.code").isEqualTo("STD")
+          .jsonPath("iepDateTime").isEqualTo("2022-01-03T09:00:00")
+          .jsonPath("currentIep").isEqualTo(false)
+
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/4")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("incentiveSequence").isEqualTo(4)
+          .jsonPath("iepLevel.code").isEqualTo("BAS")
+          .jsonPath("iepDateTime").isEqualTo("2022-01-03T08:00:00")
+          .jsonPath("currentIep").isEqualTo(false)
+
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/3")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("incentiveSequence").isEqualTo(3)
+          .jsonPath("iepLevel.code").isEqualTo("BAS")
+          .jsonPath("iepDateTime").isEqualTo("2020-01-02T09:00:00")
+          .jsonPath("currentIep").isEqualTo(false)
+
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("incentiveSequence").isEqualTo(2)
+          .jsonPath("iepLevel.code").isEqualTo("ENH")
+          .jsonPath("iepDateTime").isEqualTo("2022-01-02T10:00:00")
+          .jsonPath("currentIep").isEqualTo(false)
+
+        webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("incentiveSequence").isEqualTo(1)
+          .jsonPath("iepLevel.code").isEqualTo("STD")
+          .jsonPath("iepDateTime").isEqualTo("2022-01-01T10:00:00")
+          .jsonPath("currentIep").isEqualTo(false)
+      }
+
+      @Test
+      fun `will track analytic event when reorder is complete`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("incentive-resequenced"),
+          check {
+            assertThat(it["bookingId"]).isEqualTo(bookingId.toString())
+            assertThat(it["oldSequence"]).isEqualTo("4, 5, 6")
+            assertThat(it["newSequence"]).isEqualTo("6, 5, 4")
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will not track analytic event when reorder does nothing`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("incentive-resequenced"),
+          any(),
+          isNull(),
+        )
+
+        reset(telemetryClient)
+
+        // 2nd reorder should do nothing
+        webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .exchange()
+          .expectStatus().isOk
+
+        verifyNoInteractions(telemetryClient)
+      }
     }
   }
 
