@@ -673,7 +673,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("Pay band 5 is allocated to offender(s) [A1234TT]")
+            assertThat(it).contains("Pay band 5 for incentive level STD is allocated to offender(s) [A1234TT]")
           }
       }
 

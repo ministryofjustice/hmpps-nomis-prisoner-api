@@ -121,7 +121,7 @@ class PayRatesService(
         .map { offender -> offender.offenderBooking.offender.nomsId }
         .toList()
         .takeIf { nomsIds -> nomsIds.isNotEmpty() }
-        ?.run { throw BadDataException("Pay band ${activityPayRate.payBand.code} is allocated to offender(s) $this") }
+        ?.run { throw BadDataException("Pay band ${activityPayRate.payBand.code} for incentive level ${activityPayRate.iepLevel.code} is allocated to offender(s) $this") }
     }
 
   private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity): CourseActivityPayRate {
