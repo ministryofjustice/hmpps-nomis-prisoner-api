@@ -114,8 +114,11 @@ data class OffenderProgramProfile(
   fun isDateBefore(date: LocalDate?, comparedDate: LocalDate) = date?.isBefore(comparedDate) ?: false
   fun isDateAfter(date: LocalDate?, comparedDate: LocalDate) = date?.isAfter(comparedDate) ?: false
 
-  fun isUsingPayBand(payBandCode: String) =
-    this.payBands
+  fun isPayRateApplicable(payBandCode: String, iepLevelCode: String): Boolean {
+    val iepLevel = this.offenderBooking.incentives.maxBy { it.id.sequence }
+    if (iepLevel.iepLevel.code != iepLevelCode) return false
+    return this.payBands
       .filter { profilePayBands -> profilePayBands.endDate == null }
       .any { profilePayBands -> profilePayBands.payBand.code == payBandCode }
+  }
 }
