@@ -21,7 +21,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.IncentiveBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
@@ -53,6 +55,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
+
+  @Autowired
+  private lateinit var payRateBuilderFactory: CourseActivityPayRateBuilderFactory
 
   @Autowired
   private lateinit var offenderProgramProfileBuilderFactory: OffenderProgramProfileBuilderFactory
@@ -648,24 +653,51 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if pay rate removed which is allocated to an offender`() {
-        val offender =
-          repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
+        val stdPayRate = payRateBuilderFactory.builder(iepLevelCode = "STD")
+        val basPayRate = payRateBuilderFactory.builder(iepLevelCode = "BAS")
+        courseActivity = repository.save(courseActivityBuilderFactory.builder(payRates = listOf(stdPayRate, basPayRate)))
+        val offenderBooking = OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))
+        val offender = repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(offenderBooking))
         repository.save(offenderProgramProfileBuilderFactory.builder(), offender.latestBooking(), courseActivity)
 
+        val payRatesJson = """
+          "payRates" : [ {
+            "incentiveLevel" : "BAS",
+            "payBand" : "5",
+            "rate" : 0.8
+          } ],
+        """.trimIndent()
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
-          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : [],"""),
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(payRatesJson = payRatesJson), // remove the STD pay rate that is being used by the offender
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("Pay band 5 is allocated to offender(s) [A1234TT]")
+            assertThat(it).contains("Pay band 5 for incentive level STD is allocated to offender(s) [A1234TT]")
           }
+      }
+
+      // This might seem an odd test but it replicates a bug found here https://dsdmoj.atlassian.net/browse/SDIT-846
+      @Test
+      fun `should return OK if unused pay rate removed with a pay band used on a different pay rate`() {
+        val stdPayRate = payRateBuilderFactory.builder(iepLevelCode = "STD")
+        val basPayRate = payRateBuilderFactory.builder(iepLevelCode = "BAS")
+        courseActivity = repository.save(courseActivityBuilderFactory.builder(payRates = listOf(stdPayRate, basPayRate)))
+        val offenderBooking = OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))
+        val offender = repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(offenderBooking))
+        repository.save(offenderProgramProfileBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(), // remove the BAS pay rate that is not being used
+        )
+          .expectStatus().isOk
       }
 
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         val offender =
-          repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
+          repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))))
         val existingActivityId = getSavedActivityId()
         repository.save(
           offenderProgramProfileBuilderFactory.builder(
