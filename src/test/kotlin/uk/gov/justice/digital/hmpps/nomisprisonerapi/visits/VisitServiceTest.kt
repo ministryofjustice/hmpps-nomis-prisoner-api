@@ -228,7 +228,19 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.location.id).isEqualTo(prisonId)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
+          assertThat(visit.agencyInternalLocation?.active).isTrue()
+          assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - MAIN VISIT ROOM")
           assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
+        },
+      )
+    }
+
+    @Test
+    fun `visit data room details are truncated to 40 chars for the user description`() {
+      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(room = "This is a really really extremely long name"))).isEqualTo(CreateVisitResponse(visitId))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - THIS IS A REALLY REALLY EXTREME")
         },
       )
     }
