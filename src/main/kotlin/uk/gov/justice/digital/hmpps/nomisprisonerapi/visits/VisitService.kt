@@ -453,6 +453,7 @@ class VisitService(
         location = location,
         roomDescription = internalLocationDescription,
         roomCode = internalLocationDescription.toInternalLocationCode(location.id),
+        userDescription = "VISITS - $roomDescription".take(40),
       )
   }
 
@@ -535,6 +536,7 @@ class VisitService(
     location: AgencyLocation,
     roomDescription: String,
     roomCode: String,
+    userDescription: String,
   ): AgencyInternalLocation {
     log.info("Creating VSIP visit room: $roomDescription ($roomCode)")
     return internalLocationRepository.save(
@@ -543,6 +545,8 @@ class VisitService(
         description = roomDescription,
         locationType = "VISIT",
         locationCode = roomCode,
+        active = true,
+        userDescription = userDescription.uppercase(),
       ),
     )
   }
