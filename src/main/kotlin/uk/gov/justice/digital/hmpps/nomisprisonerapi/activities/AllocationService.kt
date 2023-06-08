@@ -77,7 +77,13 @@ class AllocationService(
       suspended = request.suspended ?: false
       endComment = updateEndComment(request)
       updatePayBands(requestedPayBand)
+      programStatus = findProgramStatus(request.endDate)
     }
+  }
+
+  private fun findProgramStatus(endDate: LocalDate?): OffenderProgramStatus {
+    val statusCode = if (endDate == null) "ALLOC" else "END"
+    return offenderProgramStatusRepository.findById(OffenderProgramStatus.pk(statusCode)).get()
   }
 
   private fun findEndReasonOrThrow(request: UpsertAllocationRequest): ProgramServiceEndReason? =

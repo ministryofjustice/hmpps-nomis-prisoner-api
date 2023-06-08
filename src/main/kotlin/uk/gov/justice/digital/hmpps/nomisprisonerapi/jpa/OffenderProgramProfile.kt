@@ -53,7 +53,7 @@ data class OffenderProgramProfile(
       ), JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_PROGRAM_STATUS", referencedColumnName = "code")),
     ],
   )
-  val programStatus: OffenderProgramStatus,
+  var programStatus: OffenderProgramStatus,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID")
