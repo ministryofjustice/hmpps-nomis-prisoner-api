@@ -51,7 +51,7 @@ class ActivityService(
           null,
         )
       }
-      .let { CreateActivityResponse(it.courseActivityId) }
+      .let { CreateActivityResponse(it) }
 
   private fun mapActivityModel(request: CreateActivityRequest): CourseActivity {
     val prison = findPrisonOrThrow(request.prisonId)

@@ -297,6 +297,40 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Nested
+    inner class Response {
+      @Test
+      fun `will respond with all course schedule details`() {
+        val request = validJsonRequest(
+          """
+              "schedules" : [ 
+                {
+                  "date": "2022-10-31",
+                  "startTime" : "09:00",
+                  "endTime" : "11:00"
+                },
+                {
+                  "date": "2022-11-01",
+                  "startTime" : "13:00",
+                  "endTime" : "15:00"
+                }
+              ],
+          """.trimIndent(),
+        )
+        callCreateEndpointAndExpect(request)
+          .expectBody()
+          .jsonPath("courseActivityId").value<Int> { assertThat(it).isGreaterThan(0) }
+          .jsonPath("courseSchedules[0].courseScheduleId").value<Int> { assertThat(it).isGreaterThan(0) }
+          .jsonPath("courseSchedules[0].date").isEqualTo("2022-10-31")
+          .jsonPath("courseSchedules[0].startTime").isEqualTo("09:00:00")
+          .jsonPath("courseSchedules[0].endTime").isEqualTo("11:00:00")
+          .jsonPath("courseSchedules[1].courseScheduleId").value<Int> { assertThat(it).isGreaterThan(0) }
+          .jsonPath("courseSchedules[1].date").isEqualTo("2022-11-01")
+          .jsonPath("courseSchedules[1].startTime").isEqualTo("13:00:00")
+          .jsonPath("courseSchedules[1].endTime").isEqualTo("15:00:00")
+      }
+    }
+
     private fun createActivityExpectingBadRequest(body: String) =
       webTestClient.post().uri("/activities")
         .contentType(MediaType.APPLICATION_JSON)
@@ -306,19 +340,30 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .expectStatus().isBadRequest
 
     private fun callCreateEndpoint(): Long {
-      val response = webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validJsonRequest()))
-        .exchange()
-        .expectStatus().isCreated
+      val response = callCreateEndpointAndExpect()
         .expectBody(CreateActivityResponse::class.java)
         .returnResult().responseBody
       assertThat(response?.courseActivityId).isGreaterThan(0)
       return response!!.courseActivityId
     }
 
-    private fun validJsonRequest() = """{
+    private fun callCreateEndpointAndExpect(request: String = validJsonRequest()) =
+      webTestClient.post().uri("/activities")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(request))
+        .exchange()
+        .expectStatus().isCreated
+
+    private fun validJsonRequest(
+      schedulesJson: String = """
+              "schedules" : [ {
+                  "date": "2022-10-31",
+                  "startTime" : "09:00",
+                  "endTime" : "11:00"
+              } ],
+      """.trimIndent(),
+    ) = """{
             "prisonId" : "$PRISON_ID",
             "code" : "CA",
             "programCode" : "$PROGRAM_CODE",
@@ -334,11 +379,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                 "rate" : 0.4
                 } ],
             "payPerSession": "F",
-            "schedules" : [ {
-                "date": "2022-10-31",
-                "startTime" : "09:00",
-                "endTime" : "11:00"
-            } ],
+            $schedulesJson
             "scheduleRules": [{
               "startTime": "11:45",
               "endTime": "12:35",
