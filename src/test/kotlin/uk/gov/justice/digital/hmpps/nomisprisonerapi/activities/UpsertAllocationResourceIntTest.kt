@@ -286,17 +286,6 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
           assertThat(it).contains("Prisoner is at prison=MDI, not the Course activity prison=LEI")
         }
     }
-
-    @Test
-    fun `should return bad request if course has already ended`() {
-      courseActivity =
-        repository.save(courseActivityBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()))
-
-      upsertAllocationIsBadRequest()
-        .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Course activity with id=${courseActivity.courseActivityId} has expired")
-        }
-    }
   }
 
   @Nested
@@ -312,6 +301,7 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(startDate).isEqualTo("2022-11-14")
+        assertThat(programStatus.code).isEqualTo("ALLOC")
         assertThat(payBands[0].payBand.code).isEqualTo("5")
       }
     }
@@ -369,6 +359,7 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
         assertThat(endDate).isEqualTo("${LocalDate.now()}")
         assertThat(endReason?.code).isEqualTo("WDRAWN")
         assertThat(endComment).isEqualTo("Withdrawn due to illness")
+        assertThat(programStatus.code).isEqualTo("END")
       }
     }
 
@@ -390,6 +381,7 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(suspended).isTrue()
         assertThat(endComment).isEqualTo("In hospital for a week")
+        assertThat(programStatus.code).isEqualTo("ALLOC")
       }
     }
 
@@ -418,6 +410,7 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
         assertThat(endDate).isEqualTo("${LocalDate.now()}")
         assertThat(endReason?.code).isEqualTo("WDRAWN")
         assertThat(endComment).isEqualTo("Withdrawn due to illness")
+        assertThat(programStatus.code).isEqualTo("END")
       }
     }
 

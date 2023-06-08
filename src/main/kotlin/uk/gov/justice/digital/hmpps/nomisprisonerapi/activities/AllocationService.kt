@@ -77,7 +77,13 @@ class AllocationService(
       suspended = request.suspended ?: false
       endComment = updateEndComment(request)
       updatePayBands(requestedPayBand)
+      programStatus = findProgramStatus(request.endDate)
     }
+  }
+
+  private fun findProgramStatus(endDate: LocalDate?): OffenderProgramStatus {
+    val statusCode = if (endDate == null) "ALLOC" else "END"
+    return offenderProgramStatusRepository.findById(OffenderProgramStatus.pk(statusCode)).get()
   }
 
   private fun findEndReasonOrThrow(request: UpsertAllocationRequest): ProgramServiceEndReason? =
@@ -96,10 +102,6 @@ class AllocationService(
 
     if (courseActivity.prison.id != offenderBooking.location?.id) {
       throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
-    }
-
-    if (courseActivity.scheduleEndDate?.isBefore(LocalDate.now()) == true) {
-      throw BadDataException("Course activity with id=$courseActivityId has expired")
     }
 
     if (courseActivity.payRates.find { it.payBand.code == requestedPayBand.code } == null) {
