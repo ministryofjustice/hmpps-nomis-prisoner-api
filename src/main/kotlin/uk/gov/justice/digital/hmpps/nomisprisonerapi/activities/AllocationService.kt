@@ -104,10 +104,6 @@ class AllocationService(
       throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
     }
 
-    if (courseActivity.scheduleEndDate?.isBefore(LocalDate.now()) == true) {
-      throw BadDataException("Course activity with id=$courseActivityId has expired")
-    }
-
     if (courseActivity.payRates.find { it.payBand.code == requestedPayBand.code } == null) {
       throw BadDataException("Pay band code ${requestedPayBand.code} does not exist for course activity with id=$courseActivityId")
     }

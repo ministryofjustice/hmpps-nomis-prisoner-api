@@ -286,17 +286,6 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
           assertThat(it).contains("Prisoner is at prison=MDI, not the Course activity prison=LEI")
         }
     }
-
-    @Test
-    fun `should return bad request if course has already ended`() {
-      courseActivity =
-        repository.save(courseActivityBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()))
-
-      upsertAllocationIsBadRequest()
-        .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Course activity with id=${courseActivity.courseActivityId} has expired")
-        }
-    }
   }
 
   @Nested
