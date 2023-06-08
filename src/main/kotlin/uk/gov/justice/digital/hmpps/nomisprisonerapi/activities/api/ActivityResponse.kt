@@ -10,7 +10,7 @@ import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Activity creation response")
-data class CreateActivityResponse(
+data class ActivityResponse(
   @Schema(description = "The created course activity id", required = true)
   @NotNull
   val courseActivityId: Long,

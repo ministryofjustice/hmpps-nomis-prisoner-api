@@ -18,8 +18,8 @@ import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRuleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
@@ -140,7 +140,7 @@ class ActivityServiceTest {
     @Test
     fun `Activity data is mapped correctly`() {
       assertThat(activityService.createActivity(createRequest))
-        .isEqualTo(CreateActivityResponse(COURSE_ACTIVITY_ID))
+        .isEqualTo(ActivityResponse(COURSE_ACTIVITY_ID))
 
       verify(activityRepository).save(
         check { activity ->

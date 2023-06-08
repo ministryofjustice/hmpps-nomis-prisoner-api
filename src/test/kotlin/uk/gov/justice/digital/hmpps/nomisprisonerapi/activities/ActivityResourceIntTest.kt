@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
@@ -341,7 +341,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun callCreateEndpoint(): Long {
       val response = callCreateEndpointAndExpect()
-        .expectBody(CreateActivityResponse::class.java)
+        .expectBody(ActivityResponse::class.java)
         .returnResult().responseBody
       assertThat(response?.courseActivityId).isGreaterThan(0)
       return response!!.courseActivityId
@@ -1078,36 +1078,73 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(updated.scheduleEndDate).isNull()
         assertThat(updated.internalLocation).isNull()
       }
+
+      @Test
+      fun `should update program for activity and active allocations`() {
+        val existingActivity = getSavedActivity()
+        // create another program to move the activity to
+        repository.save(ProgramServiceBuilder(programId = 30, programCode = "NEW_SERVICE"))
+        // add an allocated offender who should be moved to the new program service
+        val offenderBooking =
+          repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
+        repository.save(offenderProgramProfileBuilderFactory.builder(), offenderBooking, existingActivity)
+        // add a deallocated offender who should NOT be moved to the new program service
+        val deallocatedOffenderBooking =
+          repository.save(OffenderBuilder(nomsId = "A1234UU").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
+        repository.save(offenderProgramProfileBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()), deallocatedOffenderBooking, existingActivity)
+
+        callUpdateEndpoint(
+          courseActivityId = existingActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .replace(""""programCode": "INTTEST",""", """"programCode": "NEW_SERVICE","""),
+          ),
+        )
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          val updated = repository.lookupActivity(existingActivity.courseActivityId)
+          assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
+          assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
+          assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST")
+        }
+      }
     }
 
-    @Test
-    fun `should update program for activity and active allocations`() {
-      val existingActivity = getSavedActivity()
-      // create another program to move the activity to
-      repository.save(ProgramServiceBuilder(programId = 30, programCode = "NEW_SERVICE"))
-      // add an allocated offender who should be moved to the new program service
-      val offenderBooking =
-        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
-      repository.save(offenderProgramProfileBuilderFactory.builder(), offenderBooking, existingActivity)
-      // add a deallocated offender who should NOT be moved to the new program service
-      val deallocatedOffenderBooking =
-        repository.save(OffenderBuilder(nomsId = "A1234UU").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
-      repository.save(offenderProgramProfileBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()), deallocatedOffenderBooking, existingActivity)
-
-      callUpdateEndpoint(
-        courseActivityId = existingActivity.courseActivityId,
-        jsonBody = updateActivityRequestJson(
-          detailsJson = detailsJson()
-            .replace(""""programCode": "INTTEST",""", """"programCode": "NEW_SERVICE","""),
-        ),
-      )
-        .expectStatus().isOk
-
-      repository.runInTransaction {
-        val updated = repository.lookupActivity(existingActivity.courseActivityId)
-        assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
-        assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
-        assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST")
+    @Nested
+    inner class Response {
+      @Test
+      fun `should return course schedule details`() {
+        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = listOf(CourseScheduleBuilder(scheduleDate = today.toString()))))
+        val request = updateActivityRequestJson(
+          schedulesJson =
+          """
+              "schedules": [
+                {
+                  "date": "$today",
+                  "startTime": "08:00",
+                  "endTime": "11:00"
+                },
+                {
+                  "date": "$tomorrow",
+                  "startTime": "13:00",
+                  "endTime": "15:00"
+                }
+              ]
+          """.trimIndent(),
+        )
+        callUpdateEndpoint(courseActivityId = courseActivity.courseActivityId, jsonBody = request)
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").value<Int> { assertThat(it).isEqualTo(courseActivity.courseActivityId) }
+          .jsonPath("courseSchedules[0].courseScheduleId").value<Int> { assertThat(it).isEqualTo(courseActivity.courseSchedules[0].courseScheduleId) }
+          .jsonPath("courseSchedules[0].date").isEqualTo("$today")
+          .jsonPath("courseSchedules[0].startTime").isEqualTo("08:00:00")
+          .jsonPath("courseSchedules[0].endTime").isEqualTo("11:00:00")
+          .jsonPath("courseSchedules[1].courseScheduleId").value<Int> { assertThat(it).isGreaterThan(0) }
+          .jsonPath("courseSchedules[1].date").isEqualTo("$tomorrow")
+          .jsonPath("courseSchedules[1].startTime").isEqualTo("13:00:00")
+          .jsonPath("courseSchedules[1].endTime").isEqualTo("15:00:00")
       }
     }
 
@@ -1260,7 +1297,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .body(BodyInserters.fromValue(createRequestJson()))
         .exchange()
         .expectStatus().isCreated
-        .expectBody(CreateActivityResponse::class.java)
+        .expectBody(ActivityResponse::class.java)
         .returnResult().responseBody
         ?.courseActivityId!!
 
@@ -1306,7 +1343,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .body(BodyInserters.fromValue(createRequestJson()))
         .exchange()
         .expectStatus().isCreated
-        .expectBody(CreateActivityResponse::class.java)
+        .expectBody(ActivityResponse::class.java)
         .returnResult().responseBody
         ?.courseActivityId!!
 
@@ -1355,7 +1392,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .body(BodyInserters.fromValue(createRequestJson()))
         .exchange()
         .expectStatus().isCreated
-        .expectBody(CreateActivityResponse::class.java)
+        .expectBody(ActivityResponse::class.java)
         .returnResult().responseBody
         ?.courseActivityId!!
 

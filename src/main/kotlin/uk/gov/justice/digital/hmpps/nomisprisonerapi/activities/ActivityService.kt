@@ -4,8 +4,8 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -32,7 +32,7 @@ class ActivityService(
   private val scheduleRuleService: ScheduleRuleService,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
+  fun createActivity(request: CreateActivityRequest): ActivityResponse =
     mapActivityModel(request)
       .apply { payRates.addAll(payRatesService.mapRates(request, this)) }
       .apply { courseSchedules.addAll(scheduleService.mapSchedules(request.schedules, this)) }
@@ -51,7 +51,7 @@ class ActivityService(
           null,
         )
       }
-      .let { CreateActivityResponse(it) }
+      .let { ActivityResponse(it) }
 
   private fun mapActivityModel(request: CreateActivityRequest): CourseActivity {
     val prison = findPrisonOrThrow(request.prisonId)
@@ -79,7 +79,7 @@ class ActivityService(
     )
   }
 
-  fun updateActivity(courseActivityId: Long, request: UpdateActivityRequest) {
+  fun updateActivity(courseActivityId: Long, request: UpdateActivityRequest): ActivityResponse {
     val existingActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id $courseActivityId not found")
 
@@ -87,8 +87,8 @@ class ActivityService(
     val oldPayRates = existingActivity.payRates.map { it.copy() }
     val oldSchedules = existingActivity.courseSchedules.map { it.copy() }
 
-    mapActivityModel(existingActivity, request)
-      .also { activityRepository.saveAndFlush(it) }
+    return mapActivityModel(existingActivity, request)
+      .let { activityRepository.saveAndFlush(it) }
       .also { savedCourseActivity ->
         telemetryClient.trackEvent(
           "activity-updated",
@@ -102,6 +102,7 @@ class ActivityService(
           null,
         )
       }
+      .let { ActivityResponse(it) }
   }
 
   private fun mapActivityModel(existingActivity: CourseActivity, request: UpdateActivityRequest): CourseActivity {
