@@ -482,6 +482,53 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
         isNull(),
       )
     }
+
+    @Test
+    fun `should allow de-allocation when not in the activity prison`() {
+      // Create an allocation for a prisoner who is out (need to do this directly on the database to avoid validation)
+      offender =
+        repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "OUT")))
+      bookingId = offender.latestBooking().bookingId
+      repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+
+      // De-allocation is allowed
+      val request = upsertRequest().withAdditionalJson(
+        """
+        "endDate": "${LocalDate.now()}",
+        "endReason": "WDRAWN",
+        "endComment": "Withdrawn due to illness"
+        """.trimMargin(),
+      )
+      upsertAllocationIsOk(request)
+
+      // But re-allocating is not allowed
+      upsertAllocationIsBadRequest(upsertRequest())
+    }
+
+    @Test
+    fun `should allow suspension when not in the activity prison`() {
+      // Create an allocation for a prisoner who is out (need to do this directly on the database to avoid validation)
+      offender =
+        repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "OUT")))
+      bookingId = offender.latestBooking().bookingId
+      repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+
+      // Suspending is allowed
+      val request = upsertRequest().withAdditionalJson(
+        """
+        "suspended": true
+        """.trimMargin(),
+      )
+      upsertAllocationIsOk(request)
+
+      // But un-suspending is not allowed
+      val unsuspendRequest = upsertRequest().withAdditionalJson(
+        """
+        "suspended": false
+        """.trimMargin(),
+      )
+      upsertAllocationIsBadRequest(unsuspendRequest)
+    }
   }
 
   @Nested

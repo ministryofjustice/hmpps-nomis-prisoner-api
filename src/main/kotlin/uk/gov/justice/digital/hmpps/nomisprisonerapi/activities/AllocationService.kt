@@ -64,7 +64,8 @@ class AllocationService(
 
     val offenderBooking = findOffenderBookingOrThrow(request.bookingId)
 
-    val courseActivity = findCourseActivityOrThrow(courseActivityId, offenderBooking, requestedPayBand)
+    val allocationIsActive = request.endDate == null && request.suspended != true
+    val courseActivity = findCourseActivityOrThrow(courseActivityId, offenderBooking, requestedPayBand, allocationIsActive)
 
     val requestedEndReason = findEndReasonOrThrow(request)
 
@@ -96,11 +97,12 @@ class AllocationService(
     courseActivityId: Long,
     offenderBooking: OffenderBooking,
     requestedPayBand: PayBand,
+    allocationIsActive: Boolean,
   ): CourseActivity {
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
 
-    if (courseActivity.prison.id != offenderBooking.location?.id) {
+    if (courseActivity.prison.id != offenderBooking.location?.id && allocationIsActive) {
       throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
     }
 
