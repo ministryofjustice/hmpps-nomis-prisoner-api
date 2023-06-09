@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
@@ -54,7 +54,7 @@ class ActivitiesResource(
         responseCode = "201",
         description = "Activity information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = ActivityResponse::class)),
         ],
       ),
       ApiResponse(
@@ -83,7 +83,7 @@ class ActivitiesResource(
   fun createActivity(
     @RequestBody @Valid
     createActivityRequest: CreateActivityRequest,
-  ): CreateActivityResponse =
+  ): ActivityResponse =
     activityService.createActivity(createActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
@@ -135,7 +135,7 @@ class ActivitiesResource(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     updateActivityRequest: UpdateActivityRequest,
-  ) = activityService.updateActivity(courseActivityId, updateActivityRequest)
+  ): ActivityResponse = activityService.updateActivity(courseActivityId, updateActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/allocation")
