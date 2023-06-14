@@ -176,13 +176,13 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""date": "2022-11-01",""", """"date": "2022-11-02","""),
+              validJsonRequest().replace(""""id": ${courseSchedule.courseScheduleId},""", """"id": 99999,"""),
             ),
           )
           .exchange()
           .expectStatus().isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Course schedule for activity id=${courseActivity.courseActivityId}, date=2022-11-02, startTime=08:00, endTime=11:00 not found")
+            assertThat(it).contains("Course schedule id=99999 not found")
           }
       }
     }
