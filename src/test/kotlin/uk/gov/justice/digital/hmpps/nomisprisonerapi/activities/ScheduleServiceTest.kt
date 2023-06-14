@@ -142,8 +142,8 @@ class ScheduleServiceTest {
     private val fourDaysTime = today.plusDays(4)
 
     private val courseSchedules = listOf(
-      CourseScheduleBuilder(scheduleDate = today.toString()),
-      CourseScheduleBuilder(scheduleDate = tomorrow.toString()),
+      CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()),
+      CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = tomorrow.toString()),
     )
     private val courseActivity =
       CourseActivityBuilderFactory().builder(startDate = yesterday.toString(), courseSchedules = courseSchedules)
@@ -155,19 +155,11 @@ class ScheduleServiceTest {
     )
 
     @Test
-    fun `should throw if adding a new schedule before tomorrow`() {
-      val request = listOf(requestTemplate.copy(date = yesterday), requestTemplate.copy(date = tomorrow))
-
-      assertThatThrownBy {
-        scheduleService.buildNewSchedules(request, courseActivity)
-      }
-        .isInstanceOf(BadDataException::class.java)
-        .hasMessageContaining("Cannot update schedules starting before tomorrow")
-    }
-
-    @Test
     fun `should throw if changing a schedule before tomorrow`() {
-      val request = listOf(requestTemplate.copy(startTime = LocalTime.of(9, 0)), requestTemplate.copy(date = tomorrow))
+      val request = listOf(
+        requestTemplate.copy(id = 1, startTime = LocalTime.of(9, 0)),
+        requestTemplate.copy(id = 2, date = tomorrow),
+      )
 
       assertThatThrownBy {
         scheduleService.buildNewSchedules(request, courseActivity)
@@ -178,7 +170,7 @@ class ScheduleServiceTest {
 
     @Test
     fun `should throw if removing a schedule before tomorrow`() {
-      val request = listOf(requestTemplate.copy(date = tomorrow))
+      val request = listOf(requestTemplate.copy(id = 2, date = tomorrow))
 
       assertThatThrownBy {
         scheduleService.buildNewSchedules(request, courseActivity)
@@ -189,7 +181,11 @@ class ScheduleServiceTest {
 
     @Test
     fun `should throw if adding a schedule before tomorrow`() {
-      val request = listOf(requestTemplate.copy(date = yesterday), requestTemplate, requestTemplate.copy(date = tomorrow))
+      val request = listOf(
+        requestTemplate.copy(date = yesterday),
+        requestTemplate.copy(id = 1),
+        requestTemplate.copy(id = 2, date = tomorrow),
+      )
 
       assertThatThrownBy {
         scheduleService.buildNewSchedules(request, courseActivity)
@@ -199,22 +195,41 @@ class ScheduleServiceTest {
     }
 
     @Test
-    fun `should return the old schedule retrieved from the database (and not a copy)`() {
-      val request = listOf(requestTemplate, requestTemplate.copy(date = tomorrow))
+    fun `should throw if schedule to update not found`() {
+      val request = listOf(requestTemplate.copy(id = 99999L))
+
+      assertThatThrownBy {
+        scheduleService.buildNewSchedules(request, courseActivity)
+      }
+        .isInstanceOf(BadDataException::class.java)
+        .hasMessageContaining("Course schedule 99999 does not exist")
+    }
+
+    @Test
+    fun `should return schedules retrieved from the database (and not a copy)`() {
+      val request = listOf(
+        requestTemplate.copy(id = 1),
+        requestTemplate.copy(id = 2, date = tomorrow),
+      )
 
       val updatedSchedules = scheduleService.buildNewSchedules(request, courseActivity)
 
-      assertThat(updatedSchedules.first()).isSameAs(courseActivity.courseSchedules.first())
+      assertThat(updatedSchedules[0]).isSameAs(courseActivity.courseSchedules[0])
+      assertThat(updatedSchedules[1]).isSameAs(courseActivity.courseSchedules[1])
     }
 
     @Test
     fun `should return updated future schedule`() {
-      val request = listOf(requestTemplate, requestTemplate.copy(date = tomorrow, startTime = LocalTime.of(9, 0)))
+      val request = listOf(
+        requestTemplate.copy(id = 1),
+        requestTemplate.copy(id = 2, date = tomorrow, startTime = LocalTime.of(9, 0)),
+      )
 
       val updatedSchedules = scheduleService.buildNewSchedules(request, courseActivity)
 
       assertThat(updatedSchedules.size).isEqualTo(2)
       with(updatedSchedules[1]) {
+        assertThat(courseScheduleId).isEqualTo(2)
         assertThat(scheduleDate).isEqualTo(tomorrow.toString())
         assertThat(startTime).isEqualTo("${tomorrow}T09:00:00")
         assertThat(endTime).isEqualTo("${tomorrow}T11:00:00")
@@ -224,12 +239,16 @@ class ScheduleServiceTest {
 
     @Test
     fun `should return future schedule moved to another day`() {
-      val request = listOf(requestTemplate, requestTemplate.copy(date = twoDaysTime))
+      val request = listOf(
+        requestTemplate.copy(id = 1),
+        requestTemplate.copy(id = 2, date = twoDaysTime),
+      )
 
       val updatedSchedules = scheduleService.buildNewSchedules(request, courseActivity)
 
       assertThat(updatedSchedules.size).isEqualTo(2)
       with(updatedSchedules[1]) {
+        assertThat(courseScheduleId).isEqualTo(2)
         assertThat(scheduleDate).isEqualTo(twoDaysTime.toString())
         assertThat(startTime).isEqualTo("${twoDaysTime}T08:00:00")
         assertThat(endTime).isEqualTo("${twoDaysTime}T11:00:00")
@@ -238,29 +257,25 @@ class ScheduleServiceTest {
     }
 
     @Test
-    fun `should return the existing future schedule from database if not changed (not a copy)`() {
-      val request = listOf(requestTemplate, requestTemplate.copy(date = tomorrow))
-
-      val updatedSchedules = scheduleService.buildNewSchedules(request, courseActivity)
-
-      assertThat(updatedSchedules.size).isEqualTo(2)
-      assertThat(updatedSchedules[1]).isSameAs(courseActivity.courseSchedules[1])
-    }
-
-    @Test
     fun `should return brand new schedule`() {
-      val request = listOf(requestTemplate, requestTemplate.copy(date = tomorrow), requestTemplate.copy(date = twoDaysTime))
+      val request = listOf(
+        requestTemplate.copy(id = 1),
+        requestTemplate.copy(id = 2, date = tomorrow),
+        requestTemplate.copy(date = twoDaysTime),
+      )
 
       val updatedSchedules = scheduleService.buildNewSchedules(request, courseActivity)
 
       assertThat(updatedSchedules.size).isEqualTo(3)
       with(updatedSchedules[1]) {
+        assertThat(courseScheduleId).isEqualTo(2)
         assertThat(scheduleDate).isEqualTo(tomorrow.toString())
         assertThat(startTime).isEqualTo("${tomorrow}T08:00:00")
         assertThat(endTime).isEqualTo("${tomorrow}T11:00:00")
         assertThat(slotCategory).isEqualTo(AM)
       }
       with(updatedSchedules[2]) {
+        assertThat(courseScheduleId).isEqualTo(0)
         assertThat(scheduleDate).isEqualTo(twoDaysTime.toString())
         assertThat(startTime).isEqualTo("${twoDaysTime}T08:00:00")
         assertThat(endTime).isEqualTo("${twoDaysTime}T11:00:00")
@@ -270,7 +285,10 @@ class ScheduleServiceTest {
 
     @Test
     fun `should throw if adding an invalid schedule`() {
-      val request = listOf(requestTemplate, requestTemplate.copy(date = tomorrow, startTime = LocalTime.of(8, 0), endTime = LocalTime.of(7, 59)))
+      val request = listOf(
+        requestTemplate.copy(id = 1),
+        requestTemplate.copy(id = 2, date = tomorrow, startTime = LocalTime.of(8, 0), endTime = LocalTime.of(7, 59)),
+      )
 
       assertThatThrownBy {
         scheduleService.buildNewSchedules(request, courseActivity)
@@ -282,19 +300,19 @@ class ScheduleServiceTest {
     @Test
     fun `should handle multiple past and future schedules with deletes, additions and updates`() {
       val courseSchedules = listOf(
-        CourseScheduleBuilder(scheduleDate = yesterday.toString()),
-        CourseScheduleBuilder(scheduleDate = today.toString()),
-        CourseScheduleBuilder(scheduleDate = tomorrow.toString()),
-        CourseScheduleBuilder(scheduleDate = twoDaysTime.toString()),
-        CourseScheduleBuilder(scheduleDate = threeDaysTime.toString()),
+        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = yesterday.toString()),
+        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = today.toString()),
+        CourseScheduleBuilder(courseScheduleId = 3, scheduleDate = tomorrow.toString()),
+        CourseScheduleBuilder(courseScheduleId = 4, scheduleDate = twoDaysTime.toString()),
+        CourseScheduleBuilder(courseScheduleId = 5, scheduleDate = threeDaysTime.toString()),
       )
       val courseActivity =
         CourseActivityBuilderFactory().builder(startDate = yesterday.toString(), courseSchedules = courseSchedules).create()
       val request = listOf(
-        requestTemplate.copy(date = yesterday),
-        requestTemplate.copy(date = today),
-        requestTemplate.copy(date = twoDaysTime, startTime = LocalTime.of(13, 0), endTime = LocalTime.of(15, 0)),
-        requestTemplate.copy(date = threeDaysTime),
+        requestTemplate.copy(id = 1, date = yesterday),
+        requestTemplate.copy(id = 2, date = today),
+        requestTemplate.copy(id = 4, date = twoDaysTime, startTime = LocalTime.of(13, 0), endTime = LocalTime.of(15, 0)),
+        requestTemplate.copy(id = 5, date = threeDaysTime),
         requestTemplate.copy(date = fourDaysTime),
       )
 
@@ -303,10 +321,12 @@ class ScheduleServiceTest {
       assertThat(updatedSchedules.size).isEqualTo(5)
       // past schedules
       with(updatedSchedules[0]) {
+        assertThat(courseScheduleId).isEqualTo(1)
         assertThat(scheduleDate).isEqualTo(yesterday.toString())
         assertThat(this).isSameAs(courseActivity.courseSchedules[0])
       }
       with(updatedSchedules[1]) {
+        assertThat(courseScheduleId).isEqualTo(2)
         assertThat(scheduleDate).isEqualTo(today.toString())
         assertThat(this).isSameAs(courseActivity.courseSchedules[1])
       }
@@ -314,20 +334,21 @@ class ScheduleServiceTest {
       assertThat(updatedSchedules.find { it.scheduleDate == tomorrow }).isNull()
       // updated
       with(updatedSchedules[2]) {
+        assertThat(courseScheduleId).isEqualTo(4)
         assertThat(scheduleDate).isEqualTo(twoDaysTime.toString())
         assertThat(startTime).isEqualTo("${twoDaysTime}T13:00:00")
         assertThat(endTime).isEqualTo("${twoDaysTime}T15:00:00")
         assertThat(slotCategory).isEqualTo(PM)
-        // this is a delete and add so existing not updated
-        assertThat(this).isNotSameAs(courseActivity.courseSchedules[3])
       }
       // unchanged
       with(updatedSchedules[3]) {
+        assertThat(courseScheduleId).isEqualTo(5)
         assertThat(scheduleDate).isEqualTo(threeDaysTime.toString())
         assertThat(this).isSameAs(courseActivity.courseSchedules[4])
       }
       // added
       with(updatedSchedules[4]) {
+        assertThat(courseScheduleId).isEqualTo(0)
         assertThat(scheduleDate).isEqualTo(fourDaysTime.toString())
         assertThat(startTime).isEqualTo("${fourDaysTime}T08:00:00")
         assertThat(endTime).isEqualTo("${fourDaysTime}T11:00:00")
@@ -367,6 +388,19 @@ class ScheduleServiceTest {
     }
 
     @Test
+    fun `should publish update of schedules`() {
+      val oldSchedules = courseActivity.courseSchedules
+      val newSchedules = listOf(
+        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()).build(courseActivity),
+        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = tomorrow.toString(), startTime = "09:00").build(courseActivity),
+      )
+
+      val telemetry = scheduleService.buildUpdateTelemetry(oldSchedules, newSchedules)
+
+      assertThat(telemetry["updated-courseScheduleIds"]).isEqualTo("[2]")
+    }
+
+    @Test
     fun `should not publish telemetry if nothing changed`() {
       val oldSchedules = courseActivity.courseSchedules
       val newSchedules = listOf(
@@ -378,6 +412,7 @@ class ScheduleServiceTest {
 
       assertThat(telemetry["removed-courseScheduleIds"]).isNull()
       assertThat(telemetry["created-courseScheduleIds"]).isNull()
+      assertThat(telemetry["updated-courseScheduleIds"]).isNull()
     }
   }
 }

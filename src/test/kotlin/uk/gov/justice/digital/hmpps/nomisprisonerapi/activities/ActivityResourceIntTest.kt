@@ -442,6 +442,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun schedulesJson() = """
       "schedules": [{
+          "id": "${courseActivity.courseSchedules[0].courseScheduleId}",
           "date": "2022-11-01",
           "startTime": "08:00",
           "endTime": "11:00"
@@ -870,6 +871,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             schedulesJson = """
               "schedules":[
                 {
+                  "id": "${courseActivity.courseSchedules[0].courseScheduleId}",
                   "date": "2022-13-01",
                   "startTime": "09:00",
                   "endTime": "12:00"
@@ -892,6 +894,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             schedulesJson = """
               "schedules": [
                 {
+                  "id": "${courseActivity.courseSchedules[0].courseScheduleId}",
                   "date": "$tomorrow",
                   "startTime": "09:70",
                   "endTime": "12:00"
@@ -913,6 +916,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(
             schedulesJson = """
               "schedules": [{
+                  "id": "${courseActivity.courseSchedules[0].courseScheduleId}",
                   "date": "$tomorrow",
                   "startTime": "09:00",
                   "endTime": "25:00"
@@ -939,13 +943,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             schedulesJson = """
               "schedules": [
                 {
-                  "id": ${schedules[0].courseScheduleId},
+                  "id": ${courseActivity.courseSchedules[0].courseScheduleId},
                   "date": "$today",
                   "startTime": "08:00",
                   "endTime": "11:00"
                 },
                 {
-                  "id": ${schedules[1].courseScheduleId},
+                  "id": ${courseActivity.courseSchedules[1].courseScheduleId},
                   "date": "$tomorrow",
                   "startTime": "13:00",
                   "endTime": "15:00"
@@ -983,13 +987,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             schedulesJson = """
               "schedules": [
                 {
-                  "id": ${schedules[0].courseScheduleId},
+                  "id": ${courseActivity.courseSchedules[0].courseScheduleId},
                   "date": "$today",
                   "startTime": "08:00",
                   "endTime": "11:00"
                 },
                 {
-                  "id": ${schedules[1].courseScheduleId},
+                  "id": ${courseActivity.courseSchedules[1].courseScheduleId},
                   "date": "$tomorrow",
                   "startTime": "08:00",
                   "endTime": "11:00",

@@ -31,20 +31,20 @@ data class CourseSchedule(
   val courseActivity: CourseActivity,
 
   @Column
-  val scheduleDate: LocalDate,
+  var scheduleDate: LocalDate,
 
   @Column
-  val startTime: LocalDateTime,
+  var startTime: LocalDateTime,
 
   @Column
-  val endTime: LocalDateTime,
+  var endTime: LocalDateTime,
 
   @Column
   var scheduleStatus: String = "SCH",
 
   @Column(name = "SLOT_CATEGORY_CODE")
   @Enumerated(EnumType.STRING)
-  val slotCategory: SlotCategory? = null,
+  var slotCategory: SlotCategory? = null,
 
   @OneToMany(mappedBy = "courseSchedule", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderCourseAttendances: MutableList<OffenderCourseAttendance> = mutableListOf(),

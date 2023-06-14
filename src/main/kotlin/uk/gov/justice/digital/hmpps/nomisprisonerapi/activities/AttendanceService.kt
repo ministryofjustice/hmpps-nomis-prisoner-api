@@ -84,6 +84,7 @@ class AttendanceService(
   ): OffenderCourseAttendance {
     val courseActivity = findCourseActivityOrThrow(courseActivityId)
 
+    // TODO SDIT-838 find the course schedule by its id
     val courseSchedule = with(request) {
       findCourseScheduleOrThrow(courseActivity, courseActivityId, scheduleDate, startTime, endTime)
     }
