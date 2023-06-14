@@ -939,11 +939,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             schedulesJson = """
               "schedules": [
                 {
+                  "id": ${schedules[0].courseScheduleId},
                   "date": "$today",
                   "startTime": "08:00",
                   "endTime": "11:00"
                 },
                 {
+                  "id": ${schedules[1].courseScheduleId},
                   "date": "$tomorrow",
                   "startTime": "13:00",
                   "endTime": "15:00"
@@ -981,11 +983,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             schedulesJson = """
               "schedules": [
                 {
+                  "id": ${schedules[0].courseScheduleId},
                   "date": "$today",
                   "startTime": "08:00",
                   "endTime": "11:00"
                 },
                 {
+                  "id": ${schedules[1].courseScheduleId},
                   "date": "$tomorrow",
                   "startTime": "08:00",
                   "endTime": "11:00",
@@ -1017,6 +1021,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             schedulesJson = """
               "schedules": [
                 {
+                  "id": ${courseActivity.courseSchedules[0].courseScheduleId},
                   "date": "2022-11-01",
                   "startTime": "08:00",
                   "endTime": "11:00"
@@ -1121,6 +1126,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           """
               "schedules": [
                 {
+                  "id": ${courseActivity.courseSchedules[0].courseScheduleId},
                   "date": "$today",
                   "startTime": "08:00",
                   "endTime": "11:00"

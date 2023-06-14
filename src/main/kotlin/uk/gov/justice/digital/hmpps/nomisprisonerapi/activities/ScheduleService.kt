@@ -56,7 +56,7 @@ class ScheduleService(
     return savedPastSchedules.map { savedSchedule ->
       requestedPastSchedules
         .find { requestedSchedule -> requestedSchedule matches savedSchedule }
-        ?.let { requestedSchedule -> savedSchedule.apply { scheduleStatus = requestedSchedule.scheduleStatus } }
+        ?.let { requestedSchedule -> savedSchedule.apply { scheduleStatus = requestedSchedule.scheduleStatus } } // TODO SDIT-838 apply changes to date and time - these can change once we start matching by id
         ?: let { throw BadDataException("Cannot update schedules starting before tomorrow") }
     }
       .toList()
@@ -74,12 +74,14 @@ class ScheduleService(
 
   private fun CourseSchedule.isFutureSchedule() = scheduleDate > LocalDate.now()
 
+  // TODO SDIT-838 match by id once it is passed on the course schedule request
   private infix fun CourseSchedule.matches(other: CourseSchedule) =
     scheduleDate == other.scheduleDate &&
       startTime == other.startTime &&
       endTime == other.endTime
 
   private fun validateSchedule(scheduleDate: LocalDate, startTime: LocalTime, endTime: LocalTime, courseActivity: CourseActivity) {
+    // TODO SDIT-838 if an id is passed with the course schedule request check it exists on the courseActivity
     if (scheduleDate < courseActivity.scheduleStartDate) {
       throw BadDataException("Schedule for date $scheduleDate is before the activity starts on ${courseActivity.scheduleStartDate}")
     }
@@ -97,6 +99,7 @@ class ScheduleService(
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
 
+    // TODO SDIT-838 when the id is passed then find by id and error if not found - this is for updates only
     val schedule = with(updateRequest) {
       scheduleRepository.findByCourseActivityAndScheduleDateAndStartTimeAndEndTime(
         courseActivity,
@@ -124,6 +127,7 @@ class ScheduleService(
     val removedSchedules = savedSchedules.map { it.courseScheduleId } - newSchedules.map { it.courseScheduleId }.toSet()
     val createdSchedules = newSchedules.map { it.courseScheduleId } - savedSchedules.map { it.courseScheduleId }.toSet()
     val telemetry = mutableMapOf<String, String>()
+    // TODO SDIT-838 publish an "updated-courseScheduleIds" event for schedules that have changed
     if (removedSchedules.isNotEmpty()) {
       telemetry["removed-courseScheduleIds"] = removedSchedules.toString()
     }
