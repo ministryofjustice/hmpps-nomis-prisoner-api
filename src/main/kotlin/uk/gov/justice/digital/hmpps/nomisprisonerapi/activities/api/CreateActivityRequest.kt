@@ -107,6 +107,9 @@ data class ScheduleRuleRequest(
 @Schema(description = "Course schedule request")
 data class CourseScheduleRequest(
 
+  @Schema(description = "The id of the course schedule if known", example = "13245")
+  val id: Long? = null,
+
   @Schema(description = "The date of the course schedule", example = "2023-04-03", required = true)
   val date: LocalDate,
 
