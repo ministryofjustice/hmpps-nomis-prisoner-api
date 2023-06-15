@@ -13,8 +13,13 @@ import org.hibernate.Hibernate
 class Staff(
   @Id
   @Column(name = "STAFF_ID", nullable = false)
+  @SequenceGenerator(name = "STAFF_ID", sequenceName = "STAFF_ID", allocationSize = 1)
+  @GeneratedValue(generator = "STAFF_ID")
   val id: Long = 0,
-
+  @Column
+  val firstName: String,
+  @Column
+  val lastName: String,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
