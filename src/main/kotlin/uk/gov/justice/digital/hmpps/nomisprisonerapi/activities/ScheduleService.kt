@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
+import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
@@ -22,6 +23,8 @@ class ScheduleService(
   private val telemetryClient: TelemetryClient,
 ) {
 
+  private val log = LoggerFactory.getLogger(this::class.java)
+
   fun mapSchedules(requests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
     requests.map {
       it.validate(courseActivity)
@@ -40,10 +43,18 @@ class ScheduleService(
   private fun CourseScheduleRequest.getScheduleStatus() = if (cancelled) "CANC" else "SCH"
 
   fun buildNewSchedules(scheduleRequests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
-    mapSchedules(scheduleRequests, courseActivity)
-      .let { requestedSchedules ->
-        findPastSchedules(requestedSchedules, courseActivity) + findOrAddFutureSchedules(requestedSchedules, courseActivity)
-      }
+    try {
+      mapSchedules(scheduleRequests, courseActivity)
+        .let { requestedSchedules ->
+          findPastSchedules(requestedSchedules, courseActivity) + findOrAddFutureSchedules(
+            requestedSchedules,
+            courseActivity,
+          )
+        }
+    } catch (ex: Exception) {
+      log.error("Failed to build new requested schedules $scheduleRequests for existing schedules ${courseActivity.courseSchedules} due to error", ex)
+      throw ex
+    }
 
   private fun findPastSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> {
     val savedPastSchedules = courseActivity.courseSchedules.filterNot { it.isFutureSchedule() }
@@ -57,7 +68,7 @@ class ScheduleService(
       requestedPastSchedules
         .find { requestedSchedule -> requestedSchedule.courseScheduleId == savedSchedule.courseScheduleId }
         ?.let { requestedSchedule -> savedSchedule.update(requestedSchedule) }
-        ?: let { throw BadDataException("Cannot delete schedules starting before tomorrow") }
+        ?: let { throw BadDataException("Cannot delete schedules starting before tomorrow - course schedule id ${savedSchedule.courseScheduleId} not in the request") }
     }
       .toList()
   }
