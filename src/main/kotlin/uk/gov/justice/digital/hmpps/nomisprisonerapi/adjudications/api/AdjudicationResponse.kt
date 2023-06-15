@@ -3,9 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.api
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Adjudication Information")
@@ -22,21 +21,13 @@ data class AdjudicationResponse(
   @Schema(description = "The adjudication number (business key)")
   val adjudicationNumber: Long? = null,
 
-  @Schema(description = "")
-  val incidentRole: String,
-
-  @Schema(description = "Id of the staff member ??????????")
-  val staffId: Long? = null,
-
   @Schema(description = "Date Prisoner was added to the adjudication ????", required = true)
   val partyAddedDate: LocalDate,
 
   @Schema(description = "Adjudication comments")
   val comment: String? = null,
 
-
   // adjudication incident
-
 
   @Schema(description = "Reporting staff member Id", required = true)
   val reportingStaffId: Long,
@@ -45,16 +36,16 @@ data class AdjudicationResponse(
   val incidentDate: LocalDate,
 
   @Schema(description = "Date and time of the associated incident", required = true)
-  val incidentDateTime: LocalDateTime,
+  val incidentTime: LocalTime,
 
   @Schema(description = "Date when the associated incident was reported", required = true)
-  val reportedDate: LocalDate = LocalDate.now(),
+  val reportedDate: LocalDate,
 
   @Schema(description = "Date and time when the associated incident was reported", required = true)
-  val reportedDateTime: LocalDateTime = LocalDateTime.now(),
+  val reportedTime: LocalTime,
 
   @Schema(description = "NOMIS room id", required = true)
-  val internalLocation: Long,
+  val internalLocationId: Long,
 
   @Schema(description = "Incident type ", required = true)
   val incidentType: CodeDescription,
@@ -65,6 +56,6 @@ data class AdjudicationResponse(
   val incidentDetails: String? = null,
 
   @Schema(description = "Prison where the incident took place ??????")
-  val prison: AgencyLocation,
+  val prisonId: String,
 
-  )
+)
