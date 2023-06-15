@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -16,6 +17,7 @@ class OffenderBookingBuilder(
   var visits: List<VisitBuilder> = emptyList(),
   var incentives: List<IncentiveBuilder> = emptyList(),
   var sentences: List<SentenceBuilder> = emptyList(),
+  var adjudications: List<Pair<AdjudicationIncident, AdjudicationPartyBuilder>> = emptyList(),
   var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
 ) {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
@@ -55,6 +57,10 @@ class OffenderBookingBuilder(
   }
   fun withKeyDateAdjustments(vararg keyDateAdjustmentBuilder: KeyDateAdjustmentBuilder): OffenderBookingBuilder {
     this.keyDateAdjustments = arrayOf(*keyDateAdjustmentBuilder).asList()
+    return this
+  }
+  fun withAdjudication(incident: AdjudicationIncident, adjudicationPartyBuilder: AdjudicationPartyBuilder): OffenderBookingBuilder {
+    this.adjudications = listOf(Pair(incident, adjudicationPartyBuilder))
     return this
   }
 }

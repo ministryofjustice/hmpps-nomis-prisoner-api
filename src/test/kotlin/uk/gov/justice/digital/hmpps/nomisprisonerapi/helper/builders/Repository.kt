@@ -5,6 +5,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -18,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
@@ -33,10 +36,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
@@ -52,6 +57,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 
 @Repository
@@ -85,6 +91,10 @@ class Repository(
   val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
   val courseScheduleRepository: CourseScheduleRepository,
+  val adjudicationIncidentRepository: AdjudicationIncidentRepository,
+  val staffRepository: StaffRepository,
+  val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
+  val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -162,6 +172,17 @@ class Repository(
             booking,
             lookupSentenceAdjustment(it.adjustmentTypeCode),
           )
+        },
+      )
+      booking.adjudicationParties.addAll(
+        offenderBuilder.bookingBuilders[bookingIndex].adjudications.map {
+          val party = it.second.build(
+            incident = it.first,
+            offenderBooking = booking,
+            actionDecision = lookupActionDecision(),
+            index = it.first.parties.size + 1,
+          )
+          party
         },
       )
     }
@@ -282,7 +303,8 @@ class Repository(
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
-  fun lookupAttendanceOutcomeCode(code: String): AttendanceOutcome = attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(code))!!
+  fun lookupAttendanceOutcomeCode(code: String): AttendanceOutcome =
+    attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(code))!!
 
   fun lookupEventStatusCode(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
   fun lookupEventSubtype(code: String): EventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(code))!!
@@ -292,6 +314,20 @@ class Repository(
 
   fun lookupProgramEndReason(code: String): ProgramServiceEndReason =
     programEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(code))!!
+
+  fun lookupStaff(id: Long): Staff =
+    staffRepository.findByIdOrNull(id)!!
+
+  fun lookupIncidentType(): AdjudicationIncidentType =
+    adjudicationIncidentTypeRepository.findByIdOrNull(AdjudicationIncidentType.pk(AdjudicationIncidentType.GOVERNORS_REPORT))!!
+
+  fun lookupActionDecision(): IncidentDecisionAction =
+    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE))!!
+
+  fun save(staffBuilder: StaffBuilder): Staff =
+    staffRepository.save(staffBuilder.build())
+
+  fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
 
   fun save(
     offenderProgramProfileBuilder: OffenderProgramProfileBuilder,
@@ -304,5 +340,18 @@ class Repository(
   fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
     offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
 
-  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) = offenderRepository.deleteById(offenderIndividualSchedule.eventId)
+  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) =
+    offenderRepository.deleteById(offenderIndividualSchedule.eventId)
+
+  fun save(adjudicationIncidentBuilder: AdjudicationIncidentBuilder): AdjudicationIncident =
+    adjudicationIncidentRepository.save(
+      adjudicationIncidentBuilder.build(
+        reportingStaff = adjudicationIncidentBuilder.reportingStaff,
+        agencyInternalLocation = lookupAgencyInternalLocation(adjudicationIncidentBuilder.agencyInternalLocationId)!!,
+        incidentType = lookupIncidentType(),
+        prison = lookupAgency(adjudicationIncidentBuilder.prisonId),
+      ),
+    )
+
+  fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
 }
