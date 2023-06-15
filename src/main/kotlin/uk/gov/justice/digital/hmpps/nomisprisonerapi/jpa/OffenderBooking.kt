@@ -15,6 +15,7 @@ import jakarta.persistence.PrimaryKeyJoinColumn
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Where
 import org.hibernate.type.YesNoConverter
 import java.time.LocalDateTime
 
@@ -123,6 +124,10 @@ data class OffenderBooking(
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderIndividualSchedules: MutableList<OffenderIndividualSchedule> = mutableListOf(),
+
+  @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @Where(clause = "OIC_INCIDENT_ID is not null")
+  val adjudicationParties: MutableList<AdjudicationIncidentParty> = mutableListOf(),
 
 ) {
   fun getNextSequence(): Long = incentives.map { it.id.sequence }.maxOrNull()?.let { it + 1 } ?: 1

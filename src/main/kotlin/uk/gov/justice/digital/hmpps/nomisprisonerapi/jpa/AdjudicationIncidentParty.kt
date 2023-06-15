@@ -24,7 +24,6 @@ class AdjudicationIncidentPartyId(
   var partySequence: Int,
 ) : Serializable
 
-
 @Entity
 @Table(name = "AGENCY_INCIDENT_PARTIES")
 class AdjudicationIncidentParty(
@@ -39,8 +38,9 @@ class AdjudicationIncidentParty(
   @Column(name = "OIC_INCIDENT_ID")
   val adjudicationNumber: Long? = null,
 
+  // @MapsId("agencyIncidentId")
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "AGENCY_INCIDENT_ID")
+  @JoinColumn(name = "AGENCY_INCIDENT_ID", insertable = false, updatable = false)
   val incident: AdjudicationIncident,
 
   @Column
@@ -48,7 +48,7 @@ class AdjudicationIncidentParty(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "STAFF_ID")
-  val staff: Staff?,
+  val staff: Staff? = null,
 
   @Column
   val partyAddedDate: LocalDate = LocalDate.now(),
@@ -67,8 +67,8 @@ class AdjudicationIncidentParty(
       ), JoinColumnOrFormula(column = JoinColumn(name = "ACTION_CODE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val actionDecision: IncidentDecisionAction? = null
-){
+  val actionDecision: IncidentDecisionAction? = null,
+) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

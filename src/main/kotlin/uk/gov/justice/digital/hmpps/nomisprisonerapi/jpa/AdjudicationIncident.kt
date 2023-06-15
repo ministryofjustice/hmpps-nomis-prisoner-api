@@ -71,10 +71,10 @@ class AdjudicationIncident(
   val incidentDetails: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "AGY_LOC_ID")
-  val prison: AgencyLocation? = null,
+  @JoinColumn(name = "AGY_LOC_ID", nullable = false)
+  val prison: AgencyLocation,
 
-){
+) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
