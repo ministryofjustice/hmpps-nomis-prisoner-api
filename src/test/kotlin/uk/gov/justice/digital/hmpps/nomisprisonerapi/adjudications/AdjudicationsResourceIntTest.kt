@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationChargeBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationIncidentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationPartyBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
@@ -40,7 +41,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1234TT")
           .withBooking(
             OffenderBookingBuilder()
-              .withAdjudication(incident, AdjudicationPartyBuilder(adjudicationNumber = adjudicationNumber)),
+              .withAdjudication(
+                incident,
+                AdjudicationPartyBuilder(adjudicationNumber = adjudicationNumber)
+                  .withCharges(
+                    AdjudicationChargeBuilder(offenceCode = "51:12A", guiltyEvidence = "HOOCH", reportDetail = "1234/123"),
+                    AdjudicationChargeBuilder(offenceCode = "51:4", guiltyEvidence = "BLOOD", reportDetail = "1235/XXX"),
+                  ),
+              ),
           ),
       )
 
@@ -95,10 +103,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     inner class SimpleAdjudication {
       @Test
       fun `returns adjudication data`() {
-        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+        val result: String = webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
+          .expectBody(String::class.java).returnResult().responseBody!!
+
+        println(result)
       }
     }
   }
