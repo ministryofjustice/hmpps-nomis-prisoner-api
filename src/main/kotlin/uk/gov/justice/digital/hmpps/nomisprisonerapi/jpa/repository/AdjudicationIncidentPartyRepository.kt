@@ -6,4 +6,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPartyId
 
 @Repository
-interface AdjudicationIncidentPartyRepository : JpaRepository<AdjudicationIncidentParty, AdjudicationIncidentPartyId>
+interface AdjudicationIncidentPartyRepository : JpaRepository<AdjudicationIncidentParty, AdjudicationIncidentPartyId> {
+  fun findByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncidentParty?
+}

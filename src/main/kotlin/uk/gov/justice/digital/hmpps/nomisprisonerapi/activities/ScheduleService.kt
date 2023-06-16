@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
-import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
@@ -23,8 +22,6 @@ class ScheduleService(
   private val telemetryClient: TelemetryClient,
 ) {
 
-  private val log = LoggerFactory.getLogger(this::class.java)
-
   fun mapSchedules(requests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
     requests.map {
       it.validate(courseActivity)
@@ -42,51 +39,34 @@ class ScheduleService(
 
   private fun CourseScheduleRequest.getScheduleStatus() = if (cancelled) "CANC" else "SCH"
 
-  fun buildNewSchedules(scheduleRequests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
-    try {
-      mapSchedules(scheduleRequests, courseActivity)
-        .let { requestedSchedules ->
-          findPastSchedules(requestedSchedules, courseActivity) + findOrAddFutureSchedules(
-            requestedSchedules,
-            courseActivity,
-          )
-        }
-    } catch (ex: Exception) {
-      log.error("Failed to build new requested schedules $scheduleRequests for existing schedules ${courseActivity.courseSchedules} due to error", ex)
-      throw ex
+  /*
+   * Build a list of schedules to save against the Activity:
+   * - any past schedules that are already saved are considered to be immutable, you can't change history
+   * - any attempts to change immutable schedules are ignored (which means the request doesn't need to include the full schedule history, we won't delete missing old schedules)
+   * - updatable schedules are any saved schedules from today onwards included in the request
+   * - schedules from today onwards not included in the request are deleted
+   * - unsaved schedules are any schedules included in the request but not yet saved
+   */
+  fun buildNewSchedules(scheduleRequests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> {
+    val immutableSchedules = courseActivity.courseSchedules.filter { it.isImmutable() }
+    val immutableIds = immutableSchedules.map { it.courseScheduleId }
+
+    val requestedSchedules = mapSchedules(scheduleRequests.filter { !immutableIds.contains(it.id) }, courseActivity)
+    val updatableSchedules = requestedSchedules.mapNotNull {
+        req ->
+      courseActivity.courseSchedules
+        .find { req.courseScheduleId == it.courseScheduleId }
+        ?.update(req)
     }
 
-  private fun findPastSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> {
-    val savedPastSchedules = courseActivity.courseSchedules.filterNot { it.isFutureSchedule() }
-    val requestedPastSchedules = requestedSchedules.filterNot { it.isFutureSchedule() }
+    val unsavedSchedules = requestedSchedules - updatableSchedules.toSet()
 
-    if (savedPastSchedules.size != requestedPastSchedules.size) {
-      throw BadDataException("Cannot remove or add schedules starting before tomorrow")
-    }
-
-    return savedPastSchedules.map { savedSchedule ->
-      requestedPastSchedules
-        .find { requestedSchedule -> requestedSchedule.courseScheduleId == savedSchedule.courseScheduleId }
-        ?.let { requestedSchedule -> savedSchedule.update(requestedSchedule) }
-        ?: let { throw BadDataException("Cannot delete schedules starting before tomorrow - course schedule id ${savedSchedule.courseScheduleId} not in the request") }
-    }
-      .toList()
+    return immutableSchedules + updatableSchedules + unsavedSchedules
   }
 
-  private fun findOrAddFutureSchedules(requestedSchedules: List<CourseSchedule>, courseActivity: CourseActivity): List<CourseSchedule> =
-    requestedSchedules.filter { it.isFutureSchedule() }
-      .map { requestedSchedule ->
-        courseActivity.courseSchedules.filter { it.isFutureSchedule() }
-          .find { savedSchedule -> requestedSchedule.courseScheduleId == savedSchedule.courseScheduleId }
-          ?.update(requestedSchedule)
-          ?: let { requestedSchedule }
-      }
-      .toList()
-
-  private fun CourseSchedule.isFutureSchedule() = scheduleDate > LocalDate.now()
+  private fun CourseSchedule.isImmutable() = this.scheduleDate < LocalDate.now()
 
   private fun CourseSchedule.update(requested: CourseSchedule): CourseSchedule {
-    checkForIllegalUpdate(requested)
     return this.apply {
       scheduleDate = requested.scheduleDate
       startTime = requested.startTime
@@ -96,22 +76,10 @@ class ScheduleService(
     }
   }
 
-  private fun CourseSchedule.checkForIllegalUpdate(requested: CourseSchedule) {
-    if (scheduleDate <= LocalDate.now() &&
-      (
-        scheduleDate != requested.scheduleDate ||
-          startTime != requested.startTime ||
-          endTime != requested.endTime
-        )
-    ) {
-      throw BadDataException("Cannot update schedules starting before tomorrow")
-    }
-  }
-
   private fun CourseScheduleRequest.validate(courseActivity: CourseActivity) {
     if (id != null && id > 0) {
       courseActivity.courseSchedules.find { it.courseScheduleId == id }
-        ?: throw BadDataException("Course schedule $id does not exist")
+        ?: throw NotFoundException("Course schedule $id does not exist")
     }
 
     if (date < courseActivity.scheduleStartDate) {
@@ -128,13 +96,19 @@ class ScheduleService(
     courseActivityId: Long,
     updateRequest: CourseScheduleRequest,
   ): UpdateCourseScheduleResponse {
-    if (!activityRepository.existsById(courseActivityId)) {
-      throw NotFoundException("Course activity with id=$courseActivityId does not exist")
-    }
+    val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
+      ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
+
+    updateRequest.validate(courseActivity)
 
     val schedule = scheduleRepository.findByIdOrNull(updateRequest.id)
-      ?.update(updateRequest)
       ?: throw NotFoundException("Course schedule id=${updateRequest.id} not found")
+
+    if (schedule.isImmutable()) {
+      throw BadDataException("Cannot change schedule id=${schedule.courseScheduleId} because it is immutable")
+    } else {
+      schedule.update(updateRequest)
+    }
 
     telemetryClient.trackEvent(
       "activity-course-schedule-updated",
@@ -149,25 +123,12 @@ class ScheduleService(
   }
 
   private fun CourseSchedule.update(requested: CourseScheduleRequest): CourseSchedule {
-    checkForIllegalUpdate(requested)
     return this.apply {
       scheduleDate = requested.date
       startTime = requested.date.atTime(requested.startTime)
       endTime = requested.date.atTime(requested.endTime)
       slotCategory = SlotCategory.of(requested.startTime)
       scheduleStatus = requested.getScheduleStatus()
-    }
-  }
-
-  private fun CourseSchedule.checkForIllegalUpdate(requested: CourseScheduleRequest) {
-    if (scheduleDate <= LocalDate.now() &&
-      (
-        scheduleDate != requested.date ||
-          startTime != requested.date.atTime(requested.startTime) ||
-          endTime != requested.date.atTime(requested.endTime)
-        )
-    ) {
-      throw BadDataException("Cannot update schedules starting before tomorrow")
     }
   }
 

@@ -69,6 +69,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   private lateinit var offenderCourseAttendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
 
   private val today = LocalDate.now()
+  private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
 
   @BeforeEach
@@ -946,7 +947,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "id": ${courseActivity.courseSchedules[0].courseScheduleId},
                   "date": "$today",
                   "startTime": "08:00",
-                  "endTime": "11:00"
+                  "endTime": "11:30"
                 },
                 {
                   "id": ${courseActivity.courseSchedules[1].courseScheduleId},
@@ -964,13 +965,47 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(saved.courseSchedules.size).isEqualTo(2)
         with(saved.courseSchedules.first { it.scheduleDate == today }) {
           assertThat(startTime).isEqualTo("${today}T08:00:00")
-          assertThat(endTime).isEqualTo("${today}T11:00:00")
+          assertThat(endTime).isEqualTo("${today}T11:30:00")
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
         with(saved.courseSchedules.first { it.scheduleDate == tomorrow }) {
           assertThat(startTime).isEqualTo("${tomorrow}T13:00")
           assertThat(endTime).isEqualTo("${tomorrow}T15:00")
           assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+        }
+      }
+
+      @Test
+      fun `do not delete any old schedules`() {
+        val schedules = listOf(
+          CourseScheduleBuilder(scheduleDate = yesterday.toString()),
+          CourseScheduleBuilder(scheduleDate = today.toString()),
+        )
+        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = schedules))
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            schedulesJson = """
+              "schedules": [
+                {
+                  "id": ${courseActivity.courseSchedules[1].courseScheduleId},
+                  "date": "$today",
+                  "startTime": "08:00",
+                  "endTime": "11:00"
+                }
+              ]
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        val saved = repository.lookupActivity(courseActivity.courseActivityId)
+        assertThat(saved.courseSchedules.size).isEqualTo(2)
+        // The course from yesterday was omitted from the request but is not deleted
+        with(saved.courseSchedules.first { it.scheduleDate == yesterday }) {
+          assertThat(startTime).isEqualTo("${yesterday}T08:00:00")
+          assertThat(endTime).isEqualTo("${yesterday}T11:00:00")
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
       }
 
