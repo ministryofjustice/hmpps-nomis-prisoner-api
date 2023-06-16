@@ -61,6 +61,7 @@ class AppointmentService(
         endTime = LocalDateTime.of(dto.eventDate, dto.endTime)
         eventDate = dto.eventDate
         eventSubType = subType
+        comment = dto.comment
 
         telemetryClient.trackEvent(
           "appointment-updated",
@@ -137,6 +138,7 @@ class AppointmentService(
       eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow(),
       internalLocation = location,
       eventSubType = eventSubType,
+      comment = dto.comment,
     )
   }
 

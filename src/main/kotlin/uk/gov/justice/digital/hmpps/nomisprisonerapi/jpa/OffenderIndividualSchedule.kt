@@ -99,7 +99,7 @@ class OffenderIndividualSchedule(
   var internalLocation: AgencyInternalLocation? = null,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @Column(name = "CREATE_DATETIME", nullable = false, updatable = false, insertable = false)
   @CreatedDate

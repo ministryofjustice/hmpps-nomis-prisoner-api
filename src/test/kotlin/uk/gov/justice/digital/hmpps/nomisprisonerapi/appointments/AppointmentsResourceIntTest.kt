@@ -174,6 +174,18 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `comment too long`() {
+      webTestClient.post().uri("/appointments")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .body(BodyInserters.fromValue(createAppointmentRequest().copy(comment = "x".repeat(4001))))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Comment is too long (max allowed 4000 characters)")
+        }
+    }
+
+    @Test
     fun `invalid start time should return bad request`() {
       val invalidSchedule = validCreateJsonRequest().replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
@@ -383,6 +395,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       assertThat(offenderIndividualSchedule.endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
       assertThat(offenderIndividualSchedule.eventSubType.code).isEqualTo("CABA")
       assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
+      assertThat(offenderIndividualSchedule.comment).isEqualTo("Some comment")
       assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
       assertThat(offenderIndividualSchedule.modifiedBy).isEqualTo("SA")
       assertThat(offenderIndividualSchedule.modifiedBy).isNotBlank()
@@ -402,6 +415,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
             "startTime"          : "10:50",
             "endTime"            : "12:20",
             "internalLocationId" : $MDI_ROOM_ID_2,
+            "comment"            : "Some comment",
             "eventSubType"       : "CABA"
           }
     """.trimIndent()
