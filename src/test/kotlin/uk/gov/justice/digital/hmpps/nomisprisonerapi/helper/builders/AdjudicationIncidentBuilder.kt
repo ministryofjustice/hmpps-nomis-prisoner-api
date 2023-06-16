@@ -1,6 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentChargeId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
@@ -50,6 +53,7 @@ class AdjudicationIncidentBuilder(
 
 class AdjudicationPartyBuilder(
   var adjudicationNumber: Long = 1224,
+  var charges: List<AdjudicationChargeBuilder> = listOf(),
 ) {
 
   fun build(
@@ -65,5 +69,32 @@ class AdjudicationPartyBuilder(
       incidentRole = "S",
       incident = incident,
       actionDecision = actionDecision,
+    )
+
+  fun withCharges(vararg chargesBuilder: AdjudicationChargeBuilder): AdjudicationPartyBuilder {
+    this.charges = arrayOf(*chargesBuilder).asList()
+    return this
+  }
+}
+
+class AdjudicationChargeBuilder(
+  var offenceCode: String = "51:1B",
+  var guiltyEvidence: String? = null,
+  var reportDetail: String? = null,
+) {
+
+  fun build(
+    incidentParty: AdjudicationIncidentParty,
+    chargeSequence: Int,
+    offence: AdjudicationIncidentOffence,
+  ): AdjudicationIncidentCharge =
+    AdjudicationIncidentCharge(
+      id = AdjudicationIncidentChargeId(incidentParty.id.agencyIncidentId, chargeSequence),
+      incident = incidentParty.incident,
+      partySequence = incidentParty.id.partySequence,
+      incidentParty = incidentParty,
+      offence = offence,
+      guiltyEvidence = guiltyEvidence,
+      reportDetails = reportDetail,
     )
 }

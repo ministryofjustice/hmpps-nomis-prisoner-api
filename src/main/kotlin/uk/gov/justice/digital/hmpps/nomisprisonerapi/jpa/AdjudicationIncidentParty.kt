@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
@@ -7,6 +8,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -70,6 +72,10 @@ class AdjudicationIncidentParty(
     ],
   )
   val actionDecision: IncidentDecisionAction? = null,
+
+  @OneToMany(mappedBy = "incidentParty", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val charges: MutableList<AdjudicationIncidentCharge> = mutableListOf(),
+
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -81,4 +87,4 @@ class AdjudicationIncidentParty(
   override fun hashCode(): Int = javaClass.hashCode()
 }
 
-fun AdjudicationIncidentParty.suspect(): OffenderBooking = this.offenderBooking.takeIf { this.incidentRole == suspectRole }!!
+fun AdjudicationIncidentParty.asSuspect(): OffenderBooking = this.offenderBooking.takeIf { this.incidentRole == suspectRole }!!
