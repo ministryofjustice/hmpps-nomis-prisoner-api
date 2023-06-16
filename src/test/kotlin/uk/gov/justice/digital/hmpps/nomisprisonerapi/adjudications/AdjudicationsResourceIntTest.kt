@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
+const val adjudicationNumber = 9000123L
 class AdjudicationsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
@@ -26,7 +27,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
   lateinit var incident: AdjudicationIncident
   lateinit var staff: Staff
 
-  @DisplayName("Get Adjudication")
+  @DisplayName("GET /adjudications/adjudication-number/{adjudicationNumber}")
   @Nested
   inner class GetAdjudication {
     private var offenderBookingId: Long = 0
@@ -39,7 +40,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         OffenderBuilder(nomsId = "A1234TT")
           .withBooking(
             OffenderBookingBuilder()
-              .withAdjudication(incident, AdjudicationPartyBuilder(adjudicationNumber = 9000123)),
+              .withAdjudication(incident, AdjudicationPartyBuilder(adjudicationNumber = adjudicationNumber)),
           ),
       )
 
@@ -53,8 +54,52 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       repository.delete(staff)
     }
 
-    @Test
-    fun `get adjudication success`() {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when adjudication not found`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/99999999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class SimpleAdjudication {
+      @Test
+      fun `returns adjudication data`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+      }
     }
   }
 }
