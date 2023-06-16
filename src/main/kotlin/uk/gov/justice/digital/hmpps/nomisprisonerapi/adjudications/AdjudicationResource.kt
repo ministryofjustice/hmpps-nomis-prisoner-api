@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.api
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitResponse
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class AdjudicationResource(
-private val adjudicationService: AdjudicationService,
+  private val adjudicationService: AdjudicationService,
 ) {
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")

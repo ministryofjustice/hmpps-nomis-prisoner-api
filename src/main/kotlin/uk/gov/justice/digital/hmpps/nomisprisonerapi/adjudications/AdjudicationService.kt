@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.api
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
