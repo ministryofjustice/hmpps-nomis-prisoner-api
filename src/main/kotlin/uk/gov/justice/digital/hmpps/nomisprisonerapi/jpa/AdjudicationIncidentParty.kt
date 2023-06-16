@@ -15,6 +15,8 @@ import org.hibernate.annotations.JoinFormula
 import java.io.Serializable
 import java.time.LocalDate
 
+const val suspectRole = "S"
+
 @Embeddable
 class AdjudicationIncidentPartyId(
   @Column(name = "AGENCY_INCIDENT_ID", nullable = false)
@@ -78,3 +80,5 @@ class AdjudicationIncidentParty(
 
   override fun hashCode(): Int = javaClass.hashCode()
 }
+
+fun AdjudicationIncidentParty.suspect(): OffenderBooking = this.offenderBooking.takeIf { this.incidentRole == suspectRole }!!
