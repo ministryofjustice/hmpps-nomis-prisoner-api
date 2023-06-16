@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspect
 
 @Service
 @Transactional
@@ -22,7 +23,7 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
       adjudicationNumber = adjudication.adjudicationNumber,
       adjudicationSequence = adjudication.id.partySequence,
       adjudicationIncidentId = adjudication.id.agencyIncidentId,
-      offenderNo = adjudication.offenderBooking!!.offender.nomsId,
+      offenderNo = adjudication.suspect().offender.nomsId,
       partyAddedDate = adjudication.partyAddedDate,
       comment = adjudication.comment,
       reportingStaffId = adjudication.incident.reportingStaff.id,
