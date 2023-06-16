@@ -9,10 +9,16 @@ import java.time.LocalTime
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Adjudication Information")
 data class AdjudicationResponse(
-  @Schema(description = "The adjudication incident Id, part of the composite key with adjudicationSequence", required = true)
+  @Schema(
+    description = "The adjudication incident Id, part of the composite key with adjudicationSequence",
+    required = true,
+  )
   val adjudicationIncidentId: Long,
 
-  @Schema(description = "The adjudication sequence, part of the composite key with adjudicationIncidentId", required = true)
+  @Schema(
+    description = "The adjudication sequence, part of the composite key with adjudicationIncidentId",
+    required = true,
+  )
   val adjudicationSequence: Int,
 
   @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
@@ -58,4 +64,11 @@ data class AdjudicationResponse(
   @Schema(description = "Prison where the incident took place ??????")
   val prisonId: String,
 
+  @Schema(description = "Charges associated with this adjudication")
+  val charges: List<AdjudicationCharge>,
+)
+
+data class AdjudicationCharge(
+  val code: String,
+  val description: String,
 )

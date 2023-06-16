@@ -5,8 +5,8 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.asSuspect
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspect
 
 @Service
 @Transactional
@@ -23,7 +23,7 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
       adjudicationNumber = adjudication.adjudicationNumber,
       adjudicationSequence = adjudication.id.partySequence,
       adjudicationIncidentId = adjudication.id.agencyIncidentId,
-      offenderNo = adjudication.suspect().offender.nomsId,
+      offenderNo = adjudication.asSuspect().offender.nomsId,
       partyAddedDate = adjudication.partyAddedDate,
       comment = adjudication.comment,
       reportingStaffId = adjudication.incident.reportingStaff.id,
@@ -35,6 +35,8 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
       incidentType = adjudication.incident.incidentType.toCodeDescription(),
       incidentStatus = adjudication.incident.incidentStatus,
       prisonId = adjudication.incident.agencyInternalLocation.agencyId,
+      incidentDetails = adjudication.incident.incidentDetails,
+      charges = adjudication.charges.map { AdjudicationCharge(it.offence.code, it.offence.description) },
     )
   }
 }

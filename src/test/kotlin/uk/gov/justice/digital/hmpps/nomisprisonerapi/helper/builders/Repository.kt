@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -41,6 +42,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -95,6 +97,7 @@ class Repository(
   val staffRepository: StaffRepository,
   val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
   val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
+  val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -174,13 +177,20 @@ class Repository(
           )
         },
       )
+      var chargeSequence = 0
       booking.adjudicationParties.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].adjudications.map {
-          val party = it.second.build(
-            incident = it.first,
+        offenderBuilder.bookingBuilders[bookingIndex].adjudications.mapIndexed { adjudicationIndex, adjudicationPartyPair ->
+          val party = adjudicationPartyPair.second.build(
+            incident = adjudicationPartyPair.first,
             offenderBooking = booking,
             actionDecision = lookupActionDecision(),
-            index = it.first.parties.size + 1,
+            index = adjudicationPartyPair.first.parties.size + 1,
+          )
+          party.charges.addAll(
+            offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.charges.map {
+              chargeSequence += 1
+              it.build(incidentParty = party, chargeSequence = chargeSequence, offence = lookupAdjudicationOffence(it.offenceCode))
+            },
           )
           party
         },
@@ -323,6 +333,9 @@ class Repository(
 
   fun lookupActionDecision(): IncidentDecisionAction =
     incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE))!!
+
+  fun lookupAdjudicationOffence(code: String): AdjudicationIncidentOffence =
+    adjudicationIncidentOffenceRepository.findByCode(code)!!
 
   fun save(staffBuilder: StaffBuilder): Staff =
     staffRepository.save(staffBuilder.build())
