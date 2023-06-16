@@ -43,4 +43,9 @@ data class UpsertAllocationRequest(
   @Schema(description = "Activity suspended comment")
   @field:Length(max = 240)
   val suspendedComment: String? = null,
+
+  @Schema(description = "Offender program status from domain OFF_PRG_STS", example = "ALLOC")
+  @field:NotBlank
+  @field:Length(min = 1, max = 12)
+  val programStatusCode: String,
 )
