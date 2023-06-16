@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
+import java.time.LocalDate
 
 class ScheduleResourceIntTest : IntegrationTestBase() {
 
@@ -34,10 +35,14 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
     private lateinit var courseActivity: CourseActivity
     private lateinit var courseSchedule: CourseSchedule
 
+    private val today = LocalDate.now()
+    private val yesterday = today.minusDays(1)
+    private val tomorrow = today.plusDays(1)
+
     private fun validJsonRequest() = """
         {
           "id": ${courseSchedule.courseScheduleId},
-          "date": "2022-11-01",
+          "date": "$today",
           "startTime": "08:00",
           "endTime": "11:00",
           "cancelled": true
@@ -47,7 +52,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       repository.save(ProgramServiceBuilder())
-      courseActivity = repository.save(courseActivityBuilderFactory.builder())
+      courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = listOf(CourseScheduleBuilder(scheduleDate = today.toString()))))
       courseSchedule = courseActivity.courseSchedules.first()
     }
 
@@ -95,7 +100,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""date": "2022-11-01",""", """"date": "2022-11-61","""),
+              validJsonRequest().replace(""""date": "$today",""", """"date": "2022-11-61","""),
             ),
           )
           .exchange()
@@ -182,7 +187,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Course schedule id=99999 not found")
+            assertThat(it).contains("Course schedule 99999 does not exist")
           }
       }
     }
@@ -203,9 +208,9 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
         val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
         with(saved) {
-          assertThat(scheduleDate).isEqualTo("2022-11-01")
-          assertThat(startTime).isEqualTo("2022-11-01T08:00")
-          assertThat(endTime).isEqualTo("2022-11-01T11:00")
+          assertThat(scheduleDate).isEqualTo("$today")
+          assertThat(startTime).isEqualTo("${today}T08:00")
+          assertThat(endTime).isEqualTo("${today}T11:00")
           assertThat(scheduleStatus).isEqualTo("CANC")
         }
       }
@@ -216,7 +221,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           courseActivityBuilderFactory.builder(
             courseSchedules = listOf(
               CourseScheduleBuilder(
-                scheduleDate = "2022-11-03",
+                scheduleDate = "$today",
                 scheduleStatus = "CANC",
               ),
             ),
@@ -230,7 +235,6 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .body(
             BodyInserters.fromValue(
               validJsonRequest()
-                .replace(""""date": "2022-11-01",""", """"date": "2022-11-03",""")
                 .replace(""""cancelled": true""", """"cancelled": false"""),
             ),
           )
@@ -251,7 +255,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           courseActivityBuilderFactory.builder(
             courseSchedules = listOf(
               CourseScheduleBuilder(
-                scheduleDate = "2022-11-03",
+                scheduleDate = "$today",
                 scheduleStatus = "CANC",
               ),
             ),
@@ -264,7 +268,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""date": "2022-11-01",""", """"date": "2022-11-03","""),
+              validJsonRequest().replace(""""date": "$today",""", """"date": "$tomorrow","""),
             ),
           )
           .exchange()
@@ -275,6 +279,95 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
         val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleStatus).isEqualTo("CANC")
+        }
+      }
+
+      @Test
+      fun `should return bad request if updating old schedule`() {
+        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = listOf(CourseScheduleBuilder(scheduleDate = yesterday.toString()))))
+        courseSchedule = courseActivity.courseSchedules.first()
+
+        val request = """
+            {
+              "id": ${courseSchedule.courseScheduleId},
+              "date": "$yesterday",
+              "startTime": "13:00",
+              "endTime": "15:00"
+            }
+        """.trimIndent()
+
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .body(BodyInserters.fromValue(request))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Cannot change schedule id=${courseSchedule.courseScheduleId} because it is immutable")
+          }
+
+        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        with(saved) {
+          assertThat(scheduleDate).isEqualTo("$yesterday")
+          assertThat(startTime).isEqualTo("${yesterday}T08:00")
+          assertThat(endTime).isEqualTo("${yesterday}T11:00")
+        }
+      }
+
+      @Test
+      fun `should return bad request if dates out of order`() {
+        val request = """
+            {
+              "id": ${courseSchedule.courseScheduleId},
+              "date": "$today",
+              "startTime": "13:00",
+              "endTime": "12:59"
+            }
+        """.trimIndent()
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .body(BodyInserters.fromValue(request))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Schedule for date $today has times out of order - 13:00 to 12:59")
+          }
+
+        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        with(saved) {
+          assertThat(scheduleDate).isEqualTo("$today")
+          assertThat(startTime).isEqualTo("${today}T08:00")
+          assertThat(endTime).isEqualTo("${today}T11:00")
+        }
+      }
+
+      @Test
+      fun `should return OK if updating dates and times`() {
+        val request = """
+            {
+              "id": ${courseSchedule.courseScheduleId},
+              "date": "$today",
+              "startTime": "13:00",
+              "endTime": "15:00"
+            }
+        """.trimIndent()
+        webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .body(BodyInserters.fromValue(request))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
+
+        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        with(saved) {
+          assertThat(scheduleDate).isEqualTo("$today")
+          assertThat(startTime).isEqualTo("${today}T13:00")
+          assertThat(endTime).isEqualTo("${today}T15:00")
         }
       }
 
