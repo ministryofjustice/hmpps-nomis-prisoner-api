@@ -1289,7 +1289,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       {
         "bookingId": $bookingId,
         "startDate": "2022-12-01",
-        "payBandCode": "4"
+        "payBandCode": "4",
+        "programStatusCode": "ALLOC"
       }
     """.trimIndent()
 

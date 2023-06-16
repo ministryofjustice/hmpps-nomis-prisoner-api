@@ -78,14 +78,13 @@ class AllocationService(
       suspended = request.suspended ?: false
       endComment = updateEndComment(request)
       updatePayBands(requestedPayBand)
-      programStatus = findProgramStatus(request.endDate)
+      programStatus = findProgramStatus(request.programStatusCode)
     }
   }
 
-  private fun findProgramStatus(endDate: LocalDate?): OffenderProgramStatus {
-    val statusCode = if (endDate == null) "ALLOC" else "END"
-    return offenderProgramStatusRepository.findById(OffenderProgramStatus.pk(statusCode)).get()
-  }
+  private fun findProgramStatus(programStatusCode: String): OffenderProgramStatus =
+    offenderProgramStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(programStatusCode))
+      ?: throw BadDataException("Program status code=$programStatusCode does not exist")
 
   private fun findEndReasonOrThrow(request: UpsertAllocationRequest): ProgramServiceEndReason? =
     request.endReason?.let {

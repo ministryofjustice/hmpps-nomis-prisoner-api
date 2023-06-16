@@ -44,6 +44,10 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
   private lateinit var offender: Offender
   private var bookingId: Long = 0
 
+  private var today = LocalDate.now()
+  private var yesterday = today.minusDays(1)
+  private var tomorrow = today.plusDays(1)
+
   @BeforeEach
   fun setup() {
     repository.save(ProgramServiceBuilder())
@@ -63,7 +67,8 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
   private fun upsertRequest() = """{
     "bookingId": $bookingId,
     "startDate": "2022-11-14",
-    "payBandCode": "5"
+    "payBandCode": "5",
+    "programStatusCode": "ALLOC"
   }
   """.trimIndent()
 
@@ -74,7 +79,10 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
     replace(""""startDate": "2022-11-14",""", newStartDate?.let { """"startDate": "$newStartDate",""" } ?: "")
 
   private fun String.withPayBandCode(newPayBandCode: String?) =
-    replace(""""payBandCode": "5"""", newPayBandCode?.let { """"payBandCode": "$newPayBandCode"""" } ?: """"ignored": "ignored"""") // hack so we don't have to worry about trailing comma on previous line
+    replace(""""payBandCode": "5",""", newPayBandCode?.let { """"payBandCode": "$newPayBandCode",""" } ?: "")
+
+  private fun String.withProgramStatusCode(programStatusCode: String?) =
+    replace(""""programStatusCode": "ALLOC"""", programStatusCode?.let { """"programStatusCode": "$programStatusCode"""" } ?: """"ignored": "ignored"""") // hack so we don't have to worry about trailing comma on previous line
 
   private fun String.withAdditionalJson(additionalJson: String) =
     replace("}", """, $additionalJson }""")
@@ -246,6 +254,36 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return bad request if program status code missing`() {
+      val request = upsertRequest().withProgramStatusCode(null)
+
+      upsertAllocationIsBadRequest(request)
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("programStatusCode")
+        }
+    }
+
+    @Test
+    fun `should return bad request if program status code empty`() {
+      val request = upsertRequest().withProgramStatusCode("")
+
+      upsertAllocationIsBadRequest(request)
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("programStatusCode")
+        }
+    }
+
+    @Test
+    fun `should return bad request if program status code does not exist`() {
+      val request = upsertRequest().withProgramStatusCode("UNKNOWN")
+
+      upsertAllocationIsBadRequest(request)
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Program status code=UNKNOWN does not exist")
+        }
+    }
+
+    @Test
     fun `should return bad request if end date in bad format`() {
       val request = upsertRequest().withAdditionalJson(""""endDate": "2023-12-35"""")
 
@@ -341,13 +379,15 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should update when allocation ended`() {
-      val request = upsertRequest().withAdditionalJson(
-        """
-        "endDate": "${LocalDate.now()}",
-        "endReason": "WDRAWN",
-        "endComment": "Withdrawn due to illness"
-        """.trimMargin(),
-      )
+      val request = upsertRequest()
+        .withProgramStatusCode("END")
+        .withAdditionalJson(
+          """
+            "endDate": "$yesterday",
+            "endReason": "WDRAWN",
+            "endComment": "Withdrawn due to illness"
+          """.trimMargin(),
+        )
       val response = upsertAllocationIsOk(request)
 
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
@@ -356,7 +396,7 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
       val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
-        assertThat(endDate).isEqualTo("${LocalDate.now()}")
+        assertThat(endDate).isEqualTo("$yesterday")
         assertThat(endReason?.code).isEqualTo("WDRAWN")
         assertThat(endComment).isEqualTo("Withdrawn due to illness")
         assertThat(programStatus.code).isEqualTo("END")
@@ -395,19 +435,21 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
       )
       upsertAllocationIsOk(suspendRequest)
 
-      val endRequest = upsertRequest().withAdditionalJson(
-        """
-        "endDate": "${LocalDate.now()}",
-        "endReason": "WDRAWN",
-        "endComment": "Withdrawn due to illness"
-        """.trimMargin(),
-      )
+      val endRequest = upsertRequest()
+        .withProgramStatusCode("END")
+        .withAdditionalJson(
+          """
+            "endDate": "$yesterday",
+            "endReason": "WDRAWN",
+            "endComment": "Withdrawn due to illness"
+          """.trimMargin(),
+        )
       val response = upsertAllocationIsOk(endRequest)
 
       val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
-        assertThat(endDate).isEqualTo("${LocalDate.now()}")
+        assertThat(endDate).isEqualTo("$yesterday")
         assertThat(endReason?.code).isEqualTo("WDRAWN")
         assertThat(endComment).isEqualTo("Withdrawn due to illness")
         assertThat(programStatus.code).isEqualTo("END")
@@ -425,9 +467,9 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
       val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(payBands[0].payBand.code).isEqualTo("5")
-        assertThat(payBands[0].endDate).isEqualTo(LocalDate.now())
+        assertThat(payBands[0].endDate).isEqualTo(today)
         assertThat(payBands[1].payBand.code).isEqualTo("6")
-        assertThat(payBands[1].id.startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(payBands[1].id.startDate).isEqualTo(tomorrow)
         assertThat(payBands[1].endDate).isNull()
       }
     }
@@ -443,9 +485,9 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
       val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(payBands[0].payBand.code).isEqualTo("5")
-        assertThat(payBands[0].endDate).isEqualTo(LocalDate.now())
+        assertThat(payBands[0].endDate).isEqualTo(today)
         assertThat(payBands[1].payBand.code).isEqualTo("7")
-        assertThat(payBands[1].id.startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(payBands[1].id.startDate).isEqualTo(tomorrow)
         assertThat(payBands[1].endDate).isNull()
       }
     }
@@ -492,13 +534,15 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
       repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
 
       // De-allocation is allowed
-      val request = upsertRequest().withAdditionalJson(
-        """
-        "endDate": "${LocalDate.now()}",
-        "endReason": "WDRAWN",
-        "endComment": "Withdrawn due to illness"
-        """.trimMargin(),
-      )
+      val request = upsertRequest()
+        .withProgramStatusCode("END")
+        .withAdditionalJson(
+          """
+            "endDate": "$today",
+            "endReason": "WDRAWN",
+            "endComment": "Withdrawn due to illness"
+          """.trimMargin(),
+        )
       upsertAllocationIsOk(request)
 
       // But re-allocating is not allowed
@@ -539,7 +583,7 @@ class UpsertAllocationResourceIntTest : IntegrationTestBase() {
       val duplicate = repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
 
       // unable to update the allocation because of a duplicate
-      val request = upsertRequest().withAdditionalJson(""""endDate": "${LocalDate.now()}"""")
+      val request = upsertRequest().withAdditionalJson(""""endDate": "$today"""")
       webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
