@@ -177,13 +177,20 @@ class Repository(
           )
         },
       )
+      var chargeSequence = 0
       booking.adjudicationParties.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].adjudications.map {
-          val party = it.second.build(
-            incident = it.first,
+        offenderBuilder.bookingBuilders[bookingIndex].adjudications.mapIndexed { adjudicationIndex, adjudicationPartyPair ->
+          val party = adjudicationPartyPair.second.build(
+            incident = adjudicationPartyPair.first,
             offenderBooking = booking,
             actionDecision = lookupActionDecision(),
-            index = it.first.parties.size + 1,
+            index = adjudicationPartyPair.first.parties.size + 1,
+          )
+          party.charges.addAll(
+            offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.charges.map {
+              chargeSequence += 1
+              it.build(incidentParty = party, chargeSequence = chargeSequence, offence = lookupAdjudicationOffence(it.offenceCode))
+            },
           )
           party
         },

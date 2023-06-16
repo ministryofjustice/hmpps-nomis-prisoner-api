@@ -72,6 +72,10 @@ class AdjudicationIncidentParty(
     ],
   )
   val actionDecision: IncidentDecisionAction? = null,
+
+  @OneToMany(mappedBy = "incidentParty", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val charges: MutableList<AdjudicationIncidentCharge> = mutableListOf(),
+
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
