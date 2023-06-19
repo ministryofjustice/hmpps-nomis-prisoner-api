@@ -9,11 +9,6 @@ import java.time.LocalTime
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Adjudication Information")
 data class AdjudicationResponse(
-  @Schema(
-    description = "The adjudication incident Id, part of the composite key with adjudicationSequence",
-    required = true,
-  )
-  val adjudicationIncidentId: Long,
 
   @Schema(
     description = "The adjudication sequence, part of the composite key with adjudicationIncidentId",
@@ -23,6 +18,9 @@ data class AdjudicationResponse(
 
   @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
   val offenderNo: String,
+
+  @Schema(description = "The id of the booking associated with the adjudication", required = true)
+  val bookingId: Long,
 
   @Schema(description = "The adjudication number (business key)")
   val adjudicationNumber: Long? = null,
@@ -50,8 +48,8 @@ data class AdjudicationResponse(
   @Schema(description = "Date and time when the associated incident was reported", required = true)
   val reportedTime: LocalTime,
 
-  @Schema(description = "NOMIS room id", required = true)
-  val internalLocationId: Long,
+  @Schema(description = "location where incident took place", required = true)
+  val internalLocation: InternalLocation,
 
   @Schema(description = "Incident type ", required = true)
   val incidentType: CodeDescription,
@@ -71,4 +69,36 @@ data class AdjudicationResponse(
 data class AdjudicationCharge(
   val code: String,
   val description: String,
+)
+
+data class ReportingStaff(
+  @Schema(description = "NOMIS staff id")
+  val staffId: Long,
+  @Schema(description = "First name of staff member")
+  val firstName: String,
+  @Schema(description = "Last name of staff member")
+  val lastName: String,
+)
+
+fun Staff.toReportingStaff() = ReportingStaff(staffId = this.id, firstName = this.firstName, lastName = this.lastName)
+
+data class InternalLocation(
+  val locationId: Long,
+  val code: String,
+  val description: String,
+)
+
+fun AgencyInternalLocation.toInternalLocation() =
+  InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
+
+fun AdjudicationIncidentCharge.toCharge(): AdjudicationCharge = AdjudicationCharge(
+  offence = AdjudicationOffence(
+    code = this.offence.code,
+    description = this.offence.description,
+    type = this.offence.type?.toCodeDescription(),
+  ),
+  evidence = this.guiltyEvidence,
+  reportDetail = this.reportDetails,
+  offenceId = this.offenceId,
+  chargeSequence = this.id.chargeSequence,
 )
