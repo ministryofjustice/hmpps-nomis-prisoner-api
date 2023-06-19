@@ -94,6 +94,24 @@ class AppointmentService(
       ?: throw NotFoundException("Appointment with event id $eventId not found")
   }
 
+  fun uncancelAppointment(eventId: Long) {
+    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+      ?.apply {
+        eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow()
+
+        telemetryClient.trackEvent(
+          "appointment-uncancelled",
+          mapOf(
+            "eventId" to eventId.toString(),
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "location" to internalLocation?.locationId.toString(),
+          ),
+          null,
+        )
+      }
+      ?: throw NotFoundException("Appointment with event id $eventId not found")
+  }
+
   fun deleteAppointment(eventId: Long) {
     offenderIndividualScheduleRepository.findByIdOrNull(eventId)
       ?.also {
