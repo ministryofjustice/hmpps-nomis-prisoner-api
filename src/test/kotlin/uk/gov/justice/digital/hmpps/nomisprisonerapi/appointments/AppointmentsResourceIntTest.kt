@@ -55,6 +55,20 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
           }
   """.trimIndent()
 
+  private fun callCancelEndpoint(eventId: Long) {
+    webTestClient.put().uri("/appointments/$eventId/cancel")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .exchange()
+      .expectStatus().isOk
+  }
+
+  private fun callUncancelEndpoint(eventId: Long) {
+    webTestClient.put().uri("/appointments/$eventId/uncancel")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .exchange()
+      .expectStatus().isOk
+  }
+
   @BeforeEach
   internal fun createPrisoner() {
     offenderAtMoorlands = repository.save(
@@ -466,12 +480,53 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
       assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("CANC")
     }
+  }
 
-    private fun callCancelEndpoint(eventId: Long) {
-      webTestClient.put().uri("/appointments/$eventId/cancel")
+  @Nested
+  inner class UncancelAppointment {
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/appointments/1/uncancel")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/appointments/1/uncancel")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/appointments/1/uncancel")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `appointment does not exist`() {
+      webTestClient.put().uri("/appointments/1/uncancel")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .exchange()
-        .expectStatus().isOk
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will uncancel appointment correctly`() {
+      val eventId = callCreateEndpoint()
+      callCancelEndpoint(eventId)
+      callUncancelEndpoint(eventId)
+
+      // Check the database
+      val offenderIndividualSchedule = repository.lookupAppointment(eventId)!!
+
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
+      assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("SCH")
     }
   }
 

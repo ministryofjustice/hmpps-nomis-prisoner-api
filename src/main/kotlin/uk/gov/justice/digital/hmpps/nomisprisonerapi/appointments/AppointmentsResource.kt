@@ -160,6 +160,42 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
   ) = appointmentService.cancelAppointment(nomisEventId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PutMapping("/appointments/{nomisEventId}/uncancel")
+  @Operation(
+    summary = "Undoes an appointment cancellation",
+    description = "Undoes an appointment cancellation. Requires role NOMIS_APPOINTMENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Success",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Event id does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun uncancelAppointment(
+    @Schema(description = "NOMIS event Id", example = "1234567", required = true)
+    @PathVariable
+    nomisEventId: Long,
+  ) = appointmentService.uncancelAppointment(nomisEventId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/appointments/{nomisEventId}")
   @Operation(
