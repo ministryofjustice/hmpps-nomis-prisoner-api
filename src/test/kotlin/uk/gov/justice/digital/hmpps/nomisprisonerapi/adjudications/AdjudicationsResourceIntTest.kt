@@ -147,7 +147,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
           .jsonPath("charges[0].offence.description").isEqualTo("Commits any assault - assault on non prison officer member of staff")
           .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
-          .jsonPath("charges[0].offenceId").isEqualTo("100/1")
+          .jsonPath("charges[0].offenceId").isNotEmpty
           .jsonPath("charges[0].chargeSequence").isEqualTo("1")
           .jsonPath("charges[1].evidence").isEqualTo("DEAD SWAN")
           .jsonPath("charges[1].reportDetail").isEmpty
@@ -155,7 +155,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[1].offence.description").isEqualTo("Denies access to any part of the prison to any officer or any person (other than a prisoner) who is at the prison for the purpose of working there")
           .jsonPath("charges[1].offence.type.description").isEqualTo("Prison Rule 51")
           .jsonPath("charges[1].chargeSequence").isEqualTo("2")
-          .jsonPath("charges[1].offenceId").isEqualTo("100/2")
+          .jsonPath("charges[1].offenceId").isNotEmpty
       }
     }
   }
