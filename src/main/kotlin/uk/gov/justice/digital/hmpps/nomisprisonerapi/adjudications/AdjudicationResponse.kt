@@ -3,6 +3,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -31,10 +35,37 @@ data class AdjudicationResponse(
   @Schema(description = "Adjudication comments")
   val comment: String? = null,
 
-  // adjudication incident
+  @Schema(description = "Associated incident details")
+  val incident: AdjudicationIncident,
 
-  @Schema(description = "Reporting staff member Id", required = true)
-  val reportingStaffId: Long,
+  @Schema(description = "Charges associated with this adjudication")
+  val charges: List<AdjudicationCharge>,
+)
+
+data class AdjudicationCharge(
+  val offence: AdjudicationOffence,
+  val evidence: String?,
+  val reportDetail: String?,
+  val offenceId: String?,
+  val chargeSequence: Int,
+)
+
+data class AdjudicationOffence(
+  val code: String,
+  val description: String,
+  val type: CodeDescription? = null,
+  val category: CodeDescription? = null,
+)
+
+data class AdjudicationIncident(
+  @Schema(
+    description = "The adjudication incident Id, part of the composite key with adjudicationSequence",
+    required = true,
+  )
+  val adjudicationIncidentId: Long,
+
+  @Schema(description = "Reporting staff member", required = true)
+  val reportingStaff: ReportingStaff,
 
   @Schema(description = "Date of the associated incident", required = true)
   val incidentDate: LocalDate,
@@ -54,21 +85,11 @@ data class AdjudicationResponse(
   @Schema(description = "Incident type ", required = true)
   val incidentType: CodeDescription,
 
-  val incidentStatus: String = "ACTIVE",
-
   @Schema(description = "Incident details")
-  val incidentDetails: String? = null,
+  val details: String? = null,
 
-  @Schema(description = "Prison where the incident took place ??????")
-  val prisonId: String,
-
-  @Schema(description = "Charges associated with this adjudication")
-  val charges: List<AdjudicationCharge>,
-)
-
-data class AdjudicationCharge(
-  val code: String,
-  val description: String,
+  @Schema(description = "Prison where the incident took place")
+  val prison: CodeDescription,
 )
 
 data class ReportingStaff(

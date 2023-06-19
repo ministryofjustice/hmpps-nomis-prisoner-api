@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.asSuspect
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
 
 @Service
@@ -22,21 +22,23 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
     return AdjudicationResponse(
       adjudicationNumber = adjudication.adjudicationNumber,
       adjudicationSequence = adjudication.id.partySequence,
-      adjudicationIncidentId = adjudication.id.agencyIncidentId,
-      offenderNo = adjudication.asSuspect().offender.nomsId,
+      offenderNo = adjudication.prisonerOnReport().offender.nomsId,
+      bookingId = adjudication.prisonerOnReport().bookingId,
       partyAddedDate = adjudication.partyAddedDate,
       comment = adjudication.comment,
-      reportingStaffId = adjudication.incident.reportingStaff.id,
-      incidentDate = adjudication.incident.incidentDate,
-      incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
-      reportedDate = adjudication.incident.reportedDate,
-      reportedTime = adjudication.incident.reportedDateTime.toLocalTime(),
-      internalLocationId = adjudication.incident.agencyInternalLocation.locationId,
-      incidentType = adjudication.incident.incidentType.toCodeDescription(),
-      incidentStatus = adjudication.incident.incidentStatus,
-      prisonId = adjudication.incident.agencyInternalLocation.agencyId,
-      incidentDetails = adjudication.incident.incidentDetails,
-      charges = adjudication.charges.map { AdjudicationCharge(it.offence.code, it.offence.description) },
+      incident = AdjudicationIncident(
+        adjudicationIncidentId = adjudication.id.agencyIncidentId,
+        reportingStaff = adjudication.incident.reportingStaff.toReportingStaff(),
+        incidentDate = adjudication.incident.incidentDate,
+        incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
+        reportedDate = adjudication.incident.reportedDate,
+        reportedTime = adjudication.incident.reportedDateTime.toLocalTime(),
+        internalLocation = adjudication.incident.agencyInternalLocation.toInternalLocation(),
+        incidentType = adjudication.incident.incidentType.toCodeDescription(),
+        prison = adjudication.incident.prison.toCodeDescription(),
+        details = adjudication.incident.incidentDetails,
+      ),
+      charges = adjudication.charges.map { it.toCharge() },
     )
   }
 }
