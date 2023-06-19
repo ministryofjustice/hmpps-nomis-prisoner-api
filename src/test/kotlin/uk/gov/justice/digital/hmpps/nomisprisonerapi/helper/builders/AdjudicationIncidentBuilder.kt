@@ -53,7 +53,9 @@ class AdjudicationIncidentBuilder(
 
 class AdjudicationPartyBuilder(
   var adjudicationNumber: Long = 1224,
+  var comment: String = "party comment",
   var charges: List<AdjudicationChargeBuilder> = listOf(),
+  var partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
 ) {
 
   fun build(
@@ -69,6 +71,8 @@ class AdjudicationPartyBuilder(
       incidentRole = "S",
       incident = incident,
       actionDecision = actionDecision,
+      partyAddedDate = partyAddedDate,
+      comment = comment,
     )
 
   fun withCharges(vararg chargesBuilder: AdjudicationChargeBuilder): AdjudicationPartyBuilder {

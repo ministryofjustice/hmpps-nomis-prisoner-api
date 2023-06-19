@@ -74,3 +74,4 @@ comment on column AGENCY_INCIDENT_CHARGES.MODIFY_DATETIME is 'The timestamp when
 comment on column AGENCY_INCIDENT_CHARGES.MODIFY_USER_ID is 'The user who modifies the record'
 ;
 
+CREATE TRIGGER OFFENCE_ID_GENERATE AFTER INSERT ON AGENCY_INCIDENT_CHARGES FOR EACH ROW CALL "uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.AdjudicationOffenceTrigger";

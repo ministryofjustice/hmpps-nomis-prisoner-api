@@ -87,4 +87,4 @@ class AdjudicationIncidentParty(
   override fun hashCode(): Int = javaClass.hashCode()
 }
 
-fun AdjudicationIncidentParty.asSuspect(): OffenderBooking = this.offenderBooking.takeIf { this.incidentRole == suspectRole }!!
+fun AdjudicationIncidentParty.prisonerOnReport(): OffenderBooking = offenderBooking.takeIf { this.adjudicationNumber != null }!!
