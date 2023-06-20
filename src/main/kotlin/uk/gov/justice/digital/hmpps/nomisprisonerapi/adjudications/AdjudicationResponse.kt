@@ -43,6 +43,7 @@ data class AdjudicationResponse(
   val charges: List<AdjudicationCharge>,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AdjudicationCharge(
   val offence: AdjudicationOffence,
   val evidence: String?,
@@ -51,6 +52,7 @@ data class AdjudicationCharge(
   val chargeSequence: Int,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AdjudicationOffence(
   val code: String,
   val description: String,
@@ -58,6 +60,7 @@ data class AdjudicationOffence(
   val category: CodeDescription? = null,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AdjudicationIncident(
   @Schema(
     description = "The adjudication incident Id, part of the composite key with adjudicationSequence",
@@ -115,6 +118,7 @@ data class AdjudicationIncident(
 
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Staff(
   @Schema(description = "NOMIS staff id")
   val staffId: Long,
@@ -124,6 +128,7 @@ data class Staff(
   val lastName: String,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Prisoner(
   @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
   val offenderNo: String,
@@ -137,6 +142,7 @@ fun Staff.toStaff() = Staff(staffId = id, firstName = firstName, lastName = last
 fun OffenderBooking.toPrisoner() =
   Prisoner(offenderNo = offender.nomsId, firstName = offender.firstName, lastName = offender.lastName)
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class InternalLocation(
   val locationId: Long,
   val code: String,
