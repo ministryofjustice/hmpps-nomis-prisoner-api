@@ -88,3 +88,11 @@ class AdjudicationIncidentParty(
 }
 
 fun AdjudicationIncidentParty.prisonerOnReport(): OffenderBooking = offenderBooking.takeIf { this.adjudicationNumber != null }!!
+fun AdjudicationIncidentParty.staffParty(): Staff = staff!!
+fun AdjudicationIncidentParty.isSuspect(): Boolean = incidentRole == "S"
+fun AdjudicationIncidentParty.isWitness(): Boolean = incidentRole == "W"
+fun AdjudicationIncidentParty.isVictim(): Boolean = incidentRole == "V"
+fun AdjudicationIncidentParty.isReportingOfficer(): Boolean = incidentRole == "RO"
+fun AdjudicationIncidentParty.isInvolvedForForce(): Boolean = incidentRole == "CR"
+fun AdjudicationIncidentParty.isInvolvedForOtherReason(): Boolean = incidentRole == "OTH"
+fun AdjudicationIncidentParty.prisonerParty(): OffenderBooking = offenderBooking!!
