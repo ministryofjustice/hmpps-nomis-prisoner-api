@@ -248,6 +248,28 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should return OK if the prisoner has multiple allocations to the course`() {
+        repository.save(allocationBuilderFactory.builder(programStatusCode = "END", endDate = "2022-10-31"), offenderBooking, courseActivity)
+        repository.save(allocationBuilderFactory.builder(startDate = "2022-11-01"), offenderBooking, courseActivity)
+
+        val response = webTestClient.upsertAttendance(courseActivity.courseActivityId, offenderBooking.bookingId)
+          .expectStatus().isOk
+          .expectBody(UpsertAttendanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
+        assertThat(response.created).isTrue()
+
+        val saved = repository.lookupAttendance(response.eventId)
+        with(saved) {
+          assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
+          assertThat(eventDate).isEqualTo("2022-11-01")
+          assertThat(startTime).isEqualTo("2022-11-01T08:00")
+          assertThat(endTime).isEqualTo("2022-11-01T11:00")
+        }
+      }
+
+      @Test
       fun `should return OK if updated existing attendance`() {
         val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
         val attendance = saveAttendance("SCH", courseSchedule, allocation)

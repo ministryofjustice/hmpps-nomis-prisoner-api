@@ -176,9 +176,10 @@ class AttendanceService(
     offenderBooking: OffenderBooking,
     bookingId: Long,
   ) =
-    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(
-      courseSchedule.courseActivity,
-      offenderBooking,
+    offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCode(
+      courseSchedule.courseActivity.courseActivityId,
+      offenderBooking.bookingId,
+      "ALLOC",
     )
       ?: throw BadDataException("Offender program profile for offender booking with id=$bookingId and course activity id=${courseSchedule.courseActivity.courseActivityId} not found")
 
