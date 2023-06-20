@@ -6,12 +6,16 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCha
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPartyId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepairId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -22,6 +26,7 @@ class AdjudicationIncidentBuilder(
   var incidentDateTime: LocalDateTime = LocalDateTime.now(),
   var incidentDate: LocalDate = LocalDate.now(),
   var parties: List<AdjudicationPartyBuilder> = listOf(),
+  var repairs: List<AdjudicationRepairBuilder> = listOf(),
   var prisonId: String = "MDI",
   val agencyInternalLocationId: Long = -41,
   val reportingStaff: Staff,
@@ -47,6 +52,10 @@ class AdjudicationIncidentBuilder(
 
   fun withParties(vararg parties: AdjudicationPartyBuilder): AdjudicationIncidentBuilder {
     this.parties = arrayOf(*parties).asList()
+    return this
+  }
+  fun withRepairs(vararg repairs: AdjudicationRepairBuilder): AdjudicationIncidentBuilder {
+    this.repairs = arrayOf(*repairs).asList()
     return this
   }
 }
@@ -100,5 +109,25 @@ class AdjudicationChargeBuilder(
       offence = offence,
       guiltyEvidence = guiltyEvidence,
       reportDetails = reportDetail,
+    )
+}
+
+class AdjudicationRepairBuilder(
+  var repairType: String = "CLEA",
+  var comment: String? = null,
+  var repairCost: BigDecimal? = null,
+) {
+
+  fun build(
+    incident: AdjudicationIncident,
+    repairSequence: Int,
+    type: AdjudicationRepairType,
+  ): AdjudicationIncidentRepair =
+    AdjudicationIncidentRepair(
+      id = AdjudicationIncidentRepairId(incident.id, repairSequence),
+      incident = incident,
+      comment = comment,
+      repairCost = repairCost,
+      type = type,
     )
 }
