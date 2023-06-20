@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -189,7 +190,11 @@ class Repository(
           party.charges.addAll(
             offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.charges.map {
               chargeSequence += 1
-              it.build(incidentParty = party, chargeSequence = chargeSequence, offence = lookupAdjudicationOffence(it.offenceCode))
+              it.build(
+                incidentParty = party,
+                chargeSequence = chargeSequence,
+                offence = lookupAdjudicationOffence(it.offenceCode),
+              )
             },
           )
           party
@@ -288,7 +293,8 @@ class Repository(
 
   fun lookupSchedule(id: Long): CourseSchedule = courseScheduleRepository.findByIdOrNull(id)!!
 
-  fun lookupAttendance(eventId: Long): OffenderCourseAttendance = offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
+  fun lookupAttendance(eventId: Long): OffenderCourseAttendance =
+    offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
 
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -337,6 +343,9 @@ class Repository(
   fun lookupAdjudicationOffence(code: String): AdjudicationIncidentOffence =
     adjudicationIncidentOffenceRepository.findByCode(code)!!
 
+  fun lookupRepairType(code: String): AdjudicationRepairType =
+    repairTypeRepository.findByIdOrNull(AdjudicationRepairType.pk(code))!!
+
   fun save(staffBuilder: StaffBuilder): Staff =
     staffRepository.save(staffBuilder.build())
 
@@ -364,7 +373,13 @@ class Repository(
         incidentType = lookupIncidentType(),
         prison = lookupAgency(adjudicationIncidentBuilder.prisonId),
       ),
-    )
+    ).also { incident ->
+      incident.repairs.addAll(
+        adjudicationIncidentBuilder.repairs.mapIndexed { index, repair ->
+          repair.build(incident, index + 1, lookupRepairType(repair.repairType))
+        },
+      )
+    }
 
   fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
 }

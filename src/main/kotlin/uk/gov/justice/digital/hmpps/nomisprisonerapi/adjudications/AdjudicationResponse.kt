@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCha
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -116,6 +117,8 @@ data class AdjudicationIncident(
   @Schema(description = "Other staff that was involved in the incident either using force or some other link. Used in NOMIS in a small percentage of cases")
   val otherStaffInvolved: List<uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff>,
 
+  @Schema(description = "The repairs required due to the damage")
+  val repairs: List<Repair>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -138,16 +141,23 @@ data class Prisoner(
   val lastName: String,
 )
 
-fun Staff.toStaff() = Staff(staffId = id, firstName = firstName, lastName = lastName)
-fun OffenderBooking.toPrisoner() =
-  Prisoner(offenderNo = offender.nomsId, firstName = offender.firstName, lastName = offender.lastName)
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InternalLocation(
   val locationId: Long,
   val code: String,
   val description: String,
 )
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Repair(
+  val type: CodeDescription,
+  val comment: String?,
+  val cost: BigDecimal?,
+)
+
+fun Staff.toStaff() = Staff(staffId = id, firstName = firstName, lastName = lastName)
+fun OffenderBooking.toPrisoner() =
+  Prisoner(offenderNo = offender.nomsId, firstName = offender.firstName, lastName = offender.lastName)
 
 fun AgencyInternalLocation.toInternalLocation() =
   InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationChargeBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationIncidentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationPartyBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationRepairBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -48,6 +50,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           incidentDateTime = LocalDateTime.parse("2023-01-01T18:00"),
           incidentDate = LocalDate.parse("2023-01-01"),
           incidentDetails = "There was a fight in the toilets",
+        ).withRepairs(
+          AdjudicationRepairBuilder(repairType = "PLUM", comment = "Fixed the bog", repairCost = BigDecimal("10.30")),
+          AdjudicationRepairBuilder(repairType = "CLEA"),
         ),
       )
       prisoner = repository.save(
@@ -141,6 +146,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("incident.details").isEqualTo("There was a fight in the toilets")
           .jsonPath("incident.incidentType.code").isEqualTo("GOV")
           .jsonPath("incident.incidentType.description").isEqualTo("Governor's Report")
+          .jsonPath("incident.repairs[0].type.code").isEqualTo("PLUM")
+          .jsonPath("incident.repairs[0].type.description").isEqualTo("Plumbing")
+          .jsonPath("incident.repairs[0].comment").isEqualTo("Fixed the bog")
+          .jsonPath("incident.repairs[0].cost").isEqualTo("10.3")
+          .jsonPath("incident.repairs[1].type.code").isEqualTo("CLEA")
+          .jsonPath("incident.repairs[1].type.description").isEqualTo("Cleaning")
+          .jsonPath("incident.repairs[1].comment").doesNotExist()
+          .jsonPath("incident.repairs[1].cost").doesNotExist()
           .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
           .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].reportDetail").isEqualTo("1234/123")
