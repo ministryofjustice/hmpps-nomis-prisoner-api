@@ -31,6 +31,9 @@ class AdjudicationIncident(
   @OneToMany(mappedBy = "incident", cascade = [CascadeType.ALL], orphanRemoval = true)
   val parties: MutableList<AdjudicationIncidentParty> = mutableListOf(),
 
+  @OneToMany(mappedBy = "incident", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val repairs: MutableList<AdjudicationIncidentRepair> = mutableListOf(),
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REPORTED_STAFF_ID")
   val reportingStaff: Staff,

@@ -98,6 +98,7 @@ class Repository(
   val staffRepository: StaffRepository,
   val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
   val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
+  val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
   val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
 ) {
   @Autowired

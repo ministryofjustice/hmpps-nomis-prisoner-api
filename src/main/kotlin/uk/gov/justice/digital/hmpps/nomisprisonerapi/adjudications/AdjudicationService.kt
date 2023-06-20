@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForOtherReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isReportingOfficer
@@ -52,6 +53,7 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
         staffWitnesses = adjudication.staffInIncident { it.isWitness() },
         staffVictims = adjudication.staffInIncident { it.isVictim() },
         otherStaffInvolved = adjudication.staffInIncident { it.isInvolvedForForce() || it.isInvolvedForOtherReason() },
+        repairs = adjudication.incident.repairs.map { it.toRepair() },
       ),
       charges = adjudication.charges.map { it.toCharge() },
     )
@@ -62,3 +64,5 @@ fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> = 
 fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncidentParty> = this.incident.parties.filter { it.offenderBooking != null }
 fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> = this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff() }
 fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> = this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner() }
+
+fun AdjudicationIncidentRepair.toRepair(): Repair = Repair(type = this.type.toCodeDescription(), comment = this.comment, cost = this.repairCost)
