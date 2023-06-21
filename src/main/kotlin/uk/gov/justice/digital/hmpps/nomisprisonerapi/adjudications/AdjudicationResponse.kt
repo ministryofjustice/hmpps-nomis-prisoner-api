@@ -17,7 +17,7 @@ import java.time.LocalTime
 data class AdjudicationResponse(
 
   @Schema(
-    description = "The adjudication sequence, part of the composite key with adjudicationIncidentId",
+    description = "The adjudication/party sequence, part of the composite key with adjudicationIncidentId",
     required = true,
   )
   val adjudicationSequence: Int,
@@ -42,6 +42,9 @@ data class AdjudicationResponse(
 
   @Schema(description = "Charges associated with this adjudication")
   val charges: List<AdjudicationCharge>,
+
+  @Schema(description = "Investigator that gathers evidence. Used in NOMIS in a small percentage of cases")
+  val investigations: List<Investigation>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -153,6 +156,21 @@ data class Repair(
   val type: CodeDescription,
   val comment: String?,
   val cost: BigDecimal?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Investigation(
+  val investigator: uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff,
+  val comment: String?,
+  val dateAssigned: LocalDate,
+  val evidence: List<Evidence>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Evidence(
+  val type: CodeDescription,
+  val date: LocalDate,
+  val detail: String,
 )
 
 fun Staff.toStaff() = Staff(staffId = id, firstName = firstName, lastName = lastName)

@@ -4,8 +4,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForOtherReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isReportingOfficer
@@ -56,13 +58,35 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
         repairs = adjudication.incident.repairs.map { it.toRepair() },
       ),
       charges = adjudication.charges.map { it.toCharge() },
+      investigations = adjudication.investigations.map { it.toInvestigation() },
     )
   }
 }
 
-fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> = this.incident.parties.filter { it.staff != null }
-fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncidentParty> = this.incident.parties.filter { it.offenderBooking != null }
-fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> = this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff() }
-fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> = this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner() }
+private fun AdjudicationInvestigation.toInvestigation(): Investigation = Investigation(
+  investigator = this.investigator.toStaff(),
+  comment = this.comment,
+  dateAssigned = this.assignedDate,
+  evidence = this.evidence.map { it.toEvidence() },
+)
 
-fun AdjudicationIncidentRepair.toRepair(): Repair = Repair(type = this.type.toCodeDescription(), comment = this.comment, cost = this.repairCost)
+private fun AdjudicationEvidence.toEvidence(): Evidence = Evidence(
+  type = this.statementType.toCodeDescription(),
+  date = this.statementDate,
+  detail = this.statementDetail,
+)
+
+private fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> =
+  this.incident.parties.filter { it.staff != null }
+
+private fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncidentParty> =
+  this.incident.parties.filter { it.offenderBooking != null }
+
+private fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> =
+  this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff() }
+
+private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> =
+  this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner() }
+
+private fun AdjudicationIncidentRepair.toRepair(): Repair =
+  Repair(type = this.type.toCodeDescription(), comment = this.comment, cost = this.repairCost)
