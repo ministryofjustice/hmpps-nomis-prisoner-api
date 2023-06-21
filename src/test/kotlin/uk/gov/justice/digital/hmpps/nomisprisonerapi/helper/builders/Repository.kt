@@ -5,6 +5,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
@@ -99,6 +100,7 @@ class Repository(
   val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
   val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
   val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
+  val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
   val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
 ) {
   @Autowired
@@ -239,6 +241,9 @@ class Repository(
 
   fun lookupAppointment(id: Long): OffenderIndividualSchedule? =
     offenderIndividualScheduleRepository.findByIdOrNull(id)
+
+  fun lookupAdjudicationEvidenceType(code: String): AdjudicationEvidenceType =
+    evidenceTypeRepository.findByIdOrNull(Pk(AdjudicationEvidenceType.OIC_STMT_TYP, code))!!
 
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun deleteOffenders() = offenderRepository.deleteAll()

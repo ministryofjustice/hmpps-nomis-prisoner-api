@@ -78,6 +78,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       repository.delete(incident)
       repository.delete(prisoner)
       repository.delete(staff)
+      repository.delete(staffInvestigator)
     }
 
     @Nested

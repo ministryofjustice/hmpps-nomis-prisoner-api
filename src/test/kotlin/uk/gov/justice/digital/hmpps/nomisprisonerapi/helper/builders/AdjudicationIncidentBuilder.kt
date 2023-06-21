@@ -64,6 +64,7 @@ class AdjudicationPartyBuilder(
   var adjudicationNumber: Long = 1224,
   var comment: String = "party comment",
   var charges: List<AdjudicationChargeBuilder> = listOf(),
+  var investigations: List<AdjudicationInvestigationBuilder> = listOf(),
   var partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
 ) {
 
@@ -86,6 +87,10 @@ class AdjudicationPartyBuilder(
 
   fun withCharges(vararg chargesBuilder: AdjudicationChargeBuilder): AdjudicationPartyBuilder {
     this.charges = arrayOf(*chargesBuilder).asList()
+    return this
+  }
+  fun withInvestigation(vararg investigatorBuilder: AdjudicationInvestigationBuilder): AdjudicationPartyBuilder {
+    this.investigations = arrayOf(*investigatorBuilder).asList()
     return this
   }
 }
