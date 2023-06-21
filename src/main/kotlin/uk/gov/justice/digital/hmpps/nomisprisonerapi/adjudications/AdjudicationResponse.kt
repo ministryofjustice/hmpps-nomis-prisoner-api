@@ -17,7 +17,7 @@ import java.time.LocalTime
 data class AdjudicationResponse(
 
   @Schema(
-    description = "The adjudication sequence, part of the composite key with adjudicationIncidentId",
+    description = "The adjudication/party sequence, part of the composite key with adjudicationIncidentId",
     required = true,
   )
   val adjudicationSequence: Int,
@@ -45,7 +45,7 @@ data class AdjudicationResponse(
 
   @Schema(description = "Investigator that gathers evidence. Used in NOMIS in a small percentage of cases")
   val investigations: List<Investigation>,
-  )
+)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AdjudicationCharge(

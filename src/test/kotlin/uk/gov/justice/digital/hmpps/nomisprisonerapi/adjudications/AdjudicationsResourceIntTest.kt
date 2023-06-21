@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationChargeBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationEvidenceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationIncidentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationInvestigationBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationPartyBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationRepairBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
@@ -24,6 +26,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 const val adjudicationNumber = 9000123L
+
 class AdjudicationsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
@@ -31,6 +34,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
   lateinit var prisoner: Offender
   lateinit var incident: AdjudicationIncident
   lateinit var staff: Staff
+  lateinit var staffInvestigator: Staff
 
   @DisplayName("GET /adjudications/adjudication-number/{adjudicationNumber}")
   @Nested
@@ -40,6 +44,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisonerWithAdjudication() {
       staff = repository.save(StaffBuilder(firstName = "SIMON", lastName = "BROWN"))
+      staffInvestigator = repository.save(StaffBuilder(firstName = "ISLA", lastName = "INVESTIGATOR"))
       incident = repository.save(
         AdjudicationIncidentBuilder(
           reportingStaff = staff,
@@ -63,8 +68,30 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                 incident,
                 AdjudicationPartyBuilder(adjudicationNumber = adjudicationNumber)
                   .withCharges(
-                    AdjudicationChargeBuilder(offenceCode = "51:1N", guiltyEvidence = "HOOCH", reportDetail = "1234/123"),
+                    AdjudicationChargeBuilder(
+                      offenceCode = "51:1N",
+                      guiltyEvidence = "HOOCH",
+                      reportDetail = "1234/123",
+                    ),
                     AdjudicationChargeBuilder(offenceCode = "51:3", guiltyEvidence = "DEAD SWAN", reportDetail = null),
+                  )
+                  .withInvestigation(
+                    AdjudicationInvestigationBuilder(
+                      investigator = staffInvestigator,
+                      comment = "Isla comment for investigation",
+                      assignedDate = LocalDate.parse("2023-01-02"),
+                    ).withEvidence(
+                      AdjudicationEvidenceBuilder(
+                        date = LocalDate.parse("2023-01-03"),
+                        detail = "smashed light bulb",
+                        type = "PHOTO",
+                      ),
+                      AdjudicationEvidenceBuilder(
+                        date = LocalDate.parse("2023-01-04"),
+                        detail = "syringe",
+                        type = "DRUGTEST",
+                      ),
+                    ),
                   ),
               ),
           ),
@@ -159,17 +186,32 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].reportDetail").isEqualTo("1234/123")
           .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
-          .jsonPath("charges[0].offence.description").isEqualTo("Commits any assault - assault on non prison officer member of staff")
+          .jsonPath("charges[0].offence.description")
+          .isEqualTo("Commits any assault - assault on non prison officer member of staff")
           .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
           .jsonPath("charges[0].offenceId").isNotEmpty
           .jsonPath("charges[0].chargeSequence").isEqualTo("1")
           .jsonPath("charges[1].evidence").isEqualTo("DEAD SWAN")
           .jsonPath("charges[1].reportDetail").doesNotExist()
           .jsonPath("charges[1].offence.code").isEqualTo("51:3")
-          .jsonPath("charges[1].offence.description").isEqualTo("Denies access to any part of the prison to any officer or any person (other than a prisoner) who is at the prison for the purpose of working there")
+          .jsonPath("charges[1].offence.description")
+          .isEqualTo("Denies access to any part of the prison to any officer or any person (other than a prisoner) who is at the prison for the purpose of working there")
           .jsonPath("charges[1].offence.type.description").isEqualTo("Prison Rule 51")
           .jsonPath("charges[1].chargeSequence").isEqualTo("2")
           .jsonPath("charges[1].offenceId").isNotEmpty
+          .jsonPath("investigations[0].comment").isEqualTo("Isla comment for investigation")
+          .jsonPath("investigations[0].dateAssigned").isEqualTo("2023-01-02")
+          .jsonPath("investigations[0].investigator.firstName").isEqualTo("ISLA")
+          .jsonPath("investigations[0].investigator.lastName").isEqualTo("INVESTIGATOR")
+          .jsonPath("investigations[0].investigator.staffId").isEqualTo(staffInvestigator.id)
+          .jsonPath("investigations[0].evidence[0].detail").isEqualTo("smashed light bulb")
+          .jsonPath("investigations[0].evidence[0].type.code").isEqualTo("PHOTO")
+          .jsonPath("investigations[0].evidence[0].type.description").isEqualTo("Photographic Evidence")
+          .jsonPath("investigations[0].evidence[0].date").isEqualTo("2023-01-03")
+          .jsonPath("investigations[0].evidence[1].detail").isEqualTo("syringe")
+          .jsonPath("investigations[0].evidence[1].type.code").isEqualTo("DRUGTEST")
+          .jsonPath("investigations[0].evidence[1].type.description").isEqualTo("Drug Test Report")
+          .jsonPath("investigations[0].evidence[1].date").isEqualTo("2023-01-04")
       }
     }
   }

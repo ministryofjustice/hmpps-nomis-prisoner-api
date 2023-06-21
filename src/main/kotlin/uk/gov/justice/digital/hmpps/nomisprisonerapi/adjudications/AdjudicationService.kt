@@ -72,13 +72,15 @@ private fun AdjudicationInvestigation.toInvestigation(): Investigation = Investi
 
 private fun AdjudicationEvidence.toEvidence(): Evidence = Evidence(
   type = this.statementType.toCodeDescription(),
-  date = this.statementDate, detail = this.statementDetail,
+  date = this.statementDate,
+  detail = this.statementDetail,
 )
 
-fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> = this.incident.parties.filter { it.staff != null }
-fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncidentParty> = this.incident.parties.filter { it.offenderBooking != null }
-fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> = this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff() }
-fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> = this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner() }
+private fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> =
+  this.incident.parties.filter { it.staff != null }
+
+private fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncidentParty> =
+  this.incident.parties.filter { it.offenderBooking != null }
 
 private fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> =
   this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff() }

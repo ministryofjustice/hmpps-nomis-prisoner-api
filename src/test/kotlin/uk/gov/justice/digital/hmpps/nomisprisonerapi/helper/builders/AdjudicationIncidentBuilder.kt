@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentChargeId
@@ -9,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepairId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -135,4 +138,29 @@ class AdjudicationRepairBuilder(
       repairCost = repairCost,
       type = type,
     )
+}
+
+class AdjudicationInvestigationBuilder(
+  var investigator: Staff,
+  var comment: String? = null,
+  var assignedDate: LocalDate = LocalDate.now(),
+  var evidence: List<AdjudicationEvidenceBuilder> = listOf(),
+) {
+
+  fun build(incidentParty: AdjudicationIncidentParty): AdjudicationInvestigation =
+    AdjudicationInvestigation(investigator = investigator, assignedDate = assignedDate, comment = comment, incidentParty = incidentParty)
+
+  fun withEvidence(vararg evidenceBuilder: AdjudicationEvidenceBuilder): AdjudicationInvestigationBuilder {
+    this.evidence = arrayOf(*evidenceBuilder).asList()
+    return this
+  }
+}
+
+class AdjudicationEvidenceBuilder(
+  var detail: String = "Knife found",
+  var type: String = "WEAP",
+  var date: LocalDate = LocalDate.now(),
+) {
+  fun build(investigation: AdjudicationInvestigation, type: AdjudicationEvidenceType): AdjudicationEvidence =
+    AdjudicationEvidence(statementDate = date, statementDetail = detail, statementType = type, investigation = investigation)
 }

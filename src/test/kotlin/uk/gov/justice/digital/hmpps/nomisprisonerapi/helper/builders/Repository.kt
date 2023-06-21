@@ -200,6 +200,19 @@ class Repository(
               )
             },
           )
+          party.investigations.addAll(
+            offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.investigations.map { builder ->
+              builder.build(
+                incidentParty = party,
+              ).also { investigation ->
+                investigation.evidence.addAll(
+                  builder.evidence.map {
+                    it.build(investigation, lookupAdjudicationEvidenceType(it.type))
+                  },
+                )
+              }
+            },
+          )
           party
         },
       )
