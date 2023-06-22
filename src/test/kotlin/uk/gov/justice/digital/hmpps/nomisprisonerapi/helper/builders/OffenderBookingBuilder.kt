@@ -4,6 +4,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class OffenderBookingBuilder(
@@ -19,7 +20,7 @@ class OffenderBookingBuilder(
   var sentences: List<SentenceBuilder> = emptyList(),
   var adjudications: List<Pair<AdjudicationIncident, AdjudicationPartyBuilder>> = emptyList(),
   var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
-) {
+) : BookingDsl {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
       offender = offender,
@@ -59,8 +60,21 @@ class OffenderBookingBuilder(
     this.keyDateAdjustments = arrayOf(*keyDateAdjustmentBuilder).asList()
     return this
   }
-  fun withAdjudication(incident: AdjudicationIncident, adjudicationPartyBuilder: AdjudicationPartyBuilder): OffenderBookingBuilder {
-    this.adjudications = listOf(Pair(incident, adjudicationPartyBuilder))
-    return this
+
+  override fun adjudicationParty(
+    incident: AdjudicationIncident,
+    adjudicationNumber: Long,
+    comment: String,
+    partyAddedDate: LocalDate,
+    dsl: AdjudicationPartyDsl.() -> Unit,
+  ) {
+    this.adjudications += Pair(
+      incident,
+      AdjudicationPartyBuilder(
+        adjudicationNumber = adjudicationNumber,
+        comment = comment,
+        partyAddedDate = partyAddedDate,
+      ).apply(dsl),
+    )
   }
 }

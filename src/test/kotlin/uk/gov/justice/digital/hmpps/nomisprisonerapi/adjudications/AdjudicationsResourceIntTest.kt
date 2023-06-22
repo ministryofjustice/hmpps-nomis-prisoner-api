@@ -6,16 +6,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationChargeBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationEvidenceBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationIncidentBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationInvestigationBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationPartyBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AdjudicationRepairBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
@@ -43,59 +34,53 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisonerWithAdjudication() {
-      staff = repository.save(StaffBuilder(firstName = "SIMON", lastName = "BROWN"))
-      staffInvestigator = repository.save(StaffBuilder(firstName = "ISLA", lastName = "INVESTIGATOR"))
-      incident = repository.save(
-        AdjudicationIncidentBuilder(
-          reportingStaff = staff,
-          prisonId = "MDI",
-          agencyInternalLocationId = -41,
-          reportedDateTime = LocalDateTime.parse("2023-01-02T15:00"),
-          reportedDate = LocalDate.parse("2023-01-02"),
-          incidentDateTime = LocalDateTime.parse("2023-01-01T18:00"),
-          incidentDate = LocalDate.parse("2023-01-01"),
-          incidentDetails = "There was a fight in the toilets",
-        ).withRepairs(
-          AdjudicationRepairBuilder(repairType = "PLUM", comment = "Fixed the bog", repairCost = BigDecimal("10.30")),
-          AdjudicationRepairBuilder(repairType = "CLEA"),
-        ),
-      )
-      prisoner = repository.save(
-        OffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withAdjudication(
-                incident,
-                AdjudicationPartyBuilder(adjudicationNumber = adjudicationNumber)
-                  .withCharges(
-                    AdjudicationChargeBuilder(
-                      offenceCode = "51:1N",
-                      guiltyEvidence = "HOOCH",
-                      reportDetail = "1234/123",
-                    ),
-                    AdjudicationChargeBuilder(offenceCode = "51:3", guiltyEvidence = "DEAD SWAN", reportDetail = null),
-                  )
-                  .withInvestigation(
-                    AdjudicationInvestigationBuilder(
-                      investigator = staffInvestigator,
-                      comment = "Isla comment for investigation",
-                      assignedDate = LocalDate.parse("2023-01-02"),
-                    ).withEvidence(
-                      AdjudicationEvidenceBuilder(
-                        date = LocalDate.parse("2023-01-03"),
-                        detail = "smashed light bulb",
-                        type = "PHOTO",
-                      ),
-                      AdjudicationEvidenceBuilder(
-                        date = LocalDate.parse("2023-01-04"),
-                        detail = "syringe",
-                        type = "DRUGTEST",
-                      ),
-                    ),
-                  ),
-              ),
-          ),
-      )
+      staff = repository.staff(firstName = "SIMON", lastName = "BROWN")
+      staffInvestigator = repository.staff(firstName = "ISLA", lastName = "INVESTIGATOR")
+      incident = repository.adjudicationIncident(
+        reportingStaff = staff,
+        prisonId = "MDI",
+        agencyInternalLocationId = -41,
+        reportedDateTime = LocalDateTime.parse("2023-01-02T15:00"),
+        reportedDate = LocalDate.parse("2023-01-02"),
+        incidentDateTime = LocalDateTime.parse("2023-01-01T18:00"),
+        incidentDate = LocalDate.parse("2023-01-01"),
+        incidentDetails = "There was a fight in the toilets",
+      ) {
+        repair(repairType = "PLUM", comment = "Fixed the bog", repairCost = BigDecimal("10.30"))
+        repair(repairType = "CLEA")
+      }
+      prisoner = repository.offender(nomsId = "A1234TT") {
+        booking {
+          adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
+            charge(
+              offenceCode = "51:1N",
+              guiltyEvidence = "HOOCH",
+              reportDetail = "1234/123",
+            )
+            charge(
+              offenceCode = "51:3",
+              guiltyEvidence = "DEAD SWAN",
+              reportDetail = null,
+            )
+            investigation(
+              investigator = staffInvestigator,
+              comment = "Isla comment for investigation",
+              assignedDate = LocalDate.parse("2023-01-02"),
+            ) {
+              evidence(
+                date = LocalDate.parse("2023-01-03"),
+                detail = "smashed light bulb",
+                type = "PHOTO",
+              )
+              evidence(
+                date = LocalDate.parse("2023-01-04"),
+                detail = "syringe",
+                type = "DRUGTEST",
+              )
+            }
+          }
+        }
+      }
 
       offenderBookingId = prisoner.latestBooking().bookingId
     }
