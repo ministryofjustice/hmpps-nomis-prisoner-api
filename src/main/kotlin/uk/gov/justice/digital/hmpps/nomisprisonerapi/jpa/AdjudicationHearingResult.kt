@@ -20,7 +20,7 @@ import java.io.Serializable
 @Embeddable
 class AdjudicationHearingResultId(
   @Column(name = "OIC_HEARING_ID", nullable = false)
-  var agencyIncidentId: Long,
+  var oicHearingId: Long,
 
   @Column(name = "RESULT_SEQ", nullable = false)
   var resultSequence: Int,

@@ -47,7 +47,11 @@ class AdjudicationHearing(
   val scheduleDate: LocalDate? = LocalDate.now(),
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OIC_INCIDENT_ID", nullable = false)
+  @JoinColumn(
+    name = "OIC_INCIDENT_ID",
+    referencedColumnName = "OIC_INCIDENT_ID",
+    nullable = false,
+  )
   val hearingParty: AdjudicationIncidentParty,
 
   @ManyToOne(fetch = FetchType.LAZY)
