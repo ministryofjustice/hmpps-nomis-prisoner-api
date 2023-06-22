@@ -63,6 +63,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdju
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Repository
 @Transactional
@@ -102,7 +104,7 @@ class Repository(
   val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
   val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
   val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
-) {
+) : DataDsl {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
   fun save(offenderBuilder: OffenderBuilder): Offender {
@@ -401,4 +403,39 @@ class Repository(
     }
 
   fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
+
+  override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
+    save(StaffBuilder(firstName, lastName).apply(dsl))
+
+  override fun adjudicationIncident(
+    incidentDetails: String,
+    reportedDateTime: LocalDateTime,
+    reportedDate: LocalDate,
+    incidentDateTime: LocalDateTime,
+    incidentDate: LocalDate,
+    prisonId: String,
+    agencyInternalLocationId: Long,
+    reportingStaff: Staff,
+    dsl: AdjudicationIncidentDsl.() -> Unit,
+  ): AdjudicationIncident = save(
+    AdjudicationIncidentBuilder(
+      incidentDetails = incidentDetails,
+      reportedDateTime = reportedDateTime,
+      reportedDate = reportedDate,
+      incidentDateTime = incidentDateTime,
+      incidentDate = incidentDate,
+      prisonId = prisonId,
+      agencyInternalLocationId = agencyInternalLocationId,
+      reportingStaff = reportingStaff,
+    ).apply(dsl),
+  )
+
+  override fun offender(
+    nomsId: String,
+    lastName: String,
+    firstName: String,
+    birthDate: LocalDate,
+    genderCode: String,
+    dsl: OffenderDsl.() -> Unit,
+  ): Offender = save(OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode).apply(dsl))
 }

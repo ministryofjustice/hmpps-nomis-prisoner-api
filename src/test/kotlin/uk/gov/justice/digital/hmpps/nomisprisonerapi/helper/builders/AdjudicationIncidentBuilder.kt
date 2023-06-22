@@ -23,17 +23,17 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class AdjudicationIncidentBuilder(
-  var incidentDetails: String = "Big fight",
-  var reportedDateTime: LocalDateTime = LocalDateTime.now(),
-  var reportedDate: LocalDate = LocalDate.now(),
-  var incidentDateTime: LocalDateTime = LocalDateTime.now(),
-  var incidentDate: LocalDate = LocalDate.now(),
+  private var incidentDetails: String,
+  private var reportedDateTime: LocalDateTime,
+  private var reportedDate: LocalDate,
+  private var incidentDateTime: LocalDateTime,
+  private var incidentDate: LocalDate,
   var parties: List<AdjudicationPartyBuilder> = listOf(),
   var repairs: List<AdjudicationRepairBuilder> = listOf(),
-  var prisonId: String = "MDI",
-  val agencyInternalLocationId: Long = -41,
+  var prisonId: String,
+  val agencyInternalLocationId: Long,
   val reportingStaff: Staff,
-) {
+) : AdjudicationIncidentDsl {
 
   fun build(
     agencyInternalLocation: AgencyInternalLocation,
@@ -53,23 +53,23 @@ class AdjudicationIncidentBuilder(
       incidentDetails = incidentDetails,
     )
 
-  fun withParties(vararg parties: AdjudicationPartyBuilder): AdjudicationIncidentBuilder {
-    this.parties = arrayOf(*parties).asList()
-    return this
-  }
-  fun withRepairs(vararg repairs: AdjudicationRepairBuilder): AdjudicationIncidentBuilder {
-    this.repairs = arrayOf(*repairs).asList()
-    return this
+  override fun repair(
+    repairType: String,
+    comment: String?,
+    repairCost: BigDecimal?,
+    dsl: AdjudicationRepairDsl.() -> Unit,
+  ) {
+    this.repairs += AdjudicationRepairBuilder(repairType, comment, repairCost).apply(dsl)
   }
 }
 
 class AdjudicationPartyBuilder(
-  var adjudicationNumber: Long = 1224,
-  var comment: String = "party comment",
+  private var adjudicationNumber: Long,
+  private var comment: String,
   var charges: List<AdjudicationChargeBuilder> = listOf(),
   var investigations: List<AdjudicationInvestigationBuilder> = listOf(),
-  var partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
-) {
+  private var partyAddedDate: LocalDate,
+) : AdjudicationPartyDsl {
 
   fun build(
     incident: AdjudicationIncident,
@@ -88,21 +88,34 @@ class AdjudicationPartyBuilder(
       comment = comment,
     )
 
-  fun withCharges(vararg chargesBuilder: AdjudicationChargeBuilder): AdjudicationPartyBuilder {
-    this.charges = arrayOf(*chargesBuilder).asList()
-    return this
+  override fun investigation(
+    investigator: Staff,
+    comment: String?,
+    assignedDate: LocalDate,
+    dsl: AdjudicationInvestigationDsl.() -> Unit,
+  ) {
+    this.investigations += AdjudicationInvestigationBuilder(
+      investigator = investigator,
+      comment = comment,
+      assignedDate = assignedDate,
+    ).apply(dsl)
   }
-  fun withInvestigation(vararg investigatorBuilder: AdjudicationInvestigationBuilder): AdjudicationPartyBuilder {
-    this.investigations = arrayOf(*investigatorBuilder).asList()
-    return this
+
+  override fun charge(
+    offenceCode: String,
+    guiltyEvidence: String?,
+    reportDetail: String?,
+    dsl: AdjudicationChargeDsl.() -> Unit,
+  ) {
+    this.charges += AdjudicationChargeBuilder(offenceCode, guiltyEvidence, reportDetail).apply(dsl)
   }
 }
 
 class AdjudicationChargeBuilder(
-  var offenceCode: String = "51:1B",
-  var guiltyEvidence: String? = null,
-  var reportDetail: String? = null,
-) {
+  var offenceCode: String,
+  private var guiltyEvidence: String?,
+  private var reportDetail: String?,
+) : AdjudicationChargeDsl {
 
   fun build(
     incidentParty: AdjudicationIncidentParty,
@@ -121,10 +134,10 @@ class AdjudicationChargeBuilder(
 }
 
 class AdjudicationRepairBuilder(
-  var repairType: String = "CLEA",
-  var comment: String? = null,
-  var repairCost: BigDecimal? = null,
-) {
+  var repairType: String,
+  private var comment: String?,
+  private var repairCost: BigDecimal?,
+) : AdjudicationRepairDsl {
 
   fun build(
     incident: AdjudicationIncident,
@@ -141,26 +154,35 @@ class AdjudicationRepairBuilder(
 }
 
 class AdjudicationInvestigationBuilder(
-  var investigator: Staff,
-  var comment: String? = null,
-  var assignedDate: LocalDate = LocalDate.now(),
+  private var investigator: Staff,
+  private var comment: String? = null,
+  private var assignedDate: LocalDate = LocalDate.now(),
   var evidence: List<AdjudicationEvidenceBuilder> = listOf(),
-) {
+) : AdjudicationInvestigationDsl {
 
   fun build(incidentParty: AdjudicationIncidentParty): AdjudicationInvestigation =
-    AdjudicationInvestigation(investigator = investigator, assignedDate = assignedDate, comment = comment, incidentParty = incidentParty)
+    AdjudicationInvestigation(
+      investigator = investigator,
+      assignedDate = assignedDate,
+      comment = comment,
+      incidentParty = incidentParty,
+    )
 
-  fun withEvidence(vararg evidenceBuilder: AdjudicationEvidenceBuilder): AdjudicationInvestigationBuilder {
-    this.evidence = arrayOf(*evidenceBuilder).asList()
-    return this
+  override fun evidence(detail: String, type: String, date: LocalDate, dsl: AdjudicationEvidenceDsl.() -> Unit) {
+    this.evidence += AdjudicationEvidenceBuilder(detail = detail, type = type, date = date).apply(dsl)
   }
 }
 
 class AdjudicationEvidenceBuilder(
-  var detail: String = "Knife found",
+  private var detail: String = "Knife found",
   var type: String = "WEAP",
-  var date: LocalDate = LocalDate.now(),
-) {
+  private var date: LocalDate = LocalDate.now(),
+) : AdjudicationEvidenceDsl {
   fun build(investigation: AdjudicationInvestigation, type: AdjudicationEvidenceType): AdjudicationEvidence =
-    AdjudicationEvidence(statementDate = date, statementDetail = detail, statementType = type, investigation = investigation)
+    AdjudicationEvidence(
+      statementDate = date,
+      statementDetail = detail,
+      statementType = type,
+      investigation = investigation,
+    )
 }
