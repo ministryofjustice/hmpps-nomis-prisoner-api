@@ -243,6 +243,7 @@ class ActivitiesResource(
   ) =
     scheduleService.updateCourseSchedule(courseActivityId, updateRequest)
 
+  @Deprecated("This is in the process of being replaced by PUT /schedules/{courseScheduleId}/booking/{bookingId}/attendance")
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance")
   @Operation(
@@ -284,13 +285,62 @@ class ActivitiesResource(
       ),
     ],
   )
-  fun upsertAttendance(
+  fun upsertAttendanceOld(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
     @RequestBody @Valid
     upsertAttendanceRequest: UpsertAttendanceRequest,
   ) =
-    attendanceService.upsertAttendance(courseActivityId, bookingId, upsertAttendanceRequest)
+    attendanceService.upsertAttendanceOld(courseActivityId, bookingId, upsertAttendanceRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PutMapping("/schedules/{courseScheduleId}/booking/{bookingId}/attendance")
+  @Operation(
+    summary = "Creates or updates an attendance record",
+    description = "Creates or updates an attendance for the course schedule. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceRequest::class)),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Attendance updated",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun upsertAttendance(
+    @Schema(description = "Course schedule id", required = true) @PathVariable courseScheduleId: Long,
+    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
+    @RequestBody @Valid
+    upsertAttendanceRequest: UpsertAttendanceRequest,
+  ) =
+    attendanceService.upsertAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance-status")
