@@ -39,12 +39,36 @@ class AttendanceService(
   private val telemetryClient: TelemetryClient,
 ) {
 
-  fun upsertAttendance(
+  @Deprecated("This is in the middle of being replaced by upsertAttendance")
+  fun upsertAttendanceOld(
     scheduleId: Long,
     bookingId: Long,
     upsertAttendanceRequest: UpsertAttendanceRequest,
   ): UpsertAttendanceResponse {
-    val attendance = toOffenderCourseAttendance(scheduleId, bookingId, upsertAttendanceRequest)
+    val attendance = toOffenderCourseAttendanceOld(scheduleId, bookingId, upsertAttendanceRequest)
+    val created = attendance.eventId == 0L
+    return attendanceRepository.save(attendance)
+      .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule.courseScheduleId, created) }
+      .also {
+        telemetryClient.trackEvent(
+          "activity-attendance-${if (it.created) "created" else "updated"}",
+          mapOf(
+            "nomisCourseActivityId" to attendance.courseActivity.courseActivityId.toString(),
+            "nomisCourseScheduleId" to attendance.courseSchedule.courseScheduleId.toString(),
+            "bookingId" to attendance.offenderBooking.bookingId.toString(),
+            "offenderNo" to attendance.offenderBooking.offender.nomsId,
+            "nomisAttendanceEventId" to attendance.eventId.toString(),
+          ),
+          null,
+        )
+      }
+  }
+  fun upsertAttendance(
+    courseScheduleId: Long,
+    bookingId: Long,
+    upsertAttendanceRequest: UpsertAttendanceRequest,
+  ): UpsertAttendanceResponse {
+    val attendance = toOffenderCourseAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
     val created = attendance.eventId == 0L
     return attendanceRepository.save(attendance)
       .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule.courseScheduleId, created) }
@@ -77,7 +101,8 @@ class AttendanceService(
     return GetAttendanceStatusResponse(attendance.eventStatus.code)
   }
 
-  private fun toOffenderCourseAttendance(
+  @Deprecated("This is in the process of being replaced by toOffenderCourseAttendance")
+  private fun toOffenderCourseAttendanceOld(
     courseActivityId: Long,
     bookingId: Long,
     request: UpsertAttendanceRequest,
@@ -104,6 +129,42 @@ class AttendanceService(
       )
 
     return attendance.apply {
+      eventStatus = status
+      attendanceOutcome = request.eventOutcomeCode?.let { findAttendanceOutcomeOrThrow(it) }
+      unexcusedAbsence = request.unexcusedAbsence
+      bonusPay = request.bonusPay
+      paid = request.paid
+      authorisedAbsence = request.authorisedAbsence
+      commentText = request.comments
+      performanceCode = attendanceOutcome?.let { if (it.code == "ATT" && paid == true) "STANDARD" else null }
+    }
+  }
+
+  private fun toOffenderCourseAttendance(
+    courseScheduleId: Long,
+    bookingId: Long,
+    request: UpsertAttendanceRequest,
+  ): OffenderCourseAttendance {
+    val courseSchedule = findCourseScheduleOrThrow(courseScheduleId)
+
+    val offenderBooking = findOffenderBookingOrThrow(bookingId)
+
+    val offenderProgramProfile = findOffenderProgramProfileOrThrow(courseSchedule, offenderBooking, bookingId)
+
+    val status = findEventStatusOrThrow(request.eventStatusCode)
+
+    val attendance = findUpdatableAttendanceOrThrow(courseSchedule, offenderBooking)
+      ?: newAttendance(
+        courseSchedule,
+        offenderBooking,
+        offenderProgramProfile,
+        status,
+      )
+
+    return attendance.apply {
+      eventDate = request.scheduleDate
+      startTime = eventDate.atTime(request.startTime)
+      endTime = eventDate.atTime(request.endTime)
       eventStatus = status
       attendanceOutcome = request.eventOutcomeCode?.let { findAttendanceOutcomeOrThrow(it) }
       unexcusedAbsence = request.unexcusedAbsence
@@ -186,6 +247,7 @@ class AttendanceService(
   private fun findOffenderBookingOrThrow(bookingId: Long) = offenderBookingRepository.findByIdOrNull(bookingId)
     ?: throw BadDataException("Offender booking with id=$bookingId not found")
 
+  @Deprecated("This is in the process of being replaced by findCourseScheduleOrThrow(courseScheduleId)")
   private fun findCourseScheduleOrThrow(
     courseActivity: CourseActivity,
     courseActivityId: Long,
@@ -200,6 +262,10 @@ class AttendanceService(
       scheduleDate.atTime(endTime),
     )
       ?: throw BadDataException("Course schedule for activity=$courseActivityId, date=$scheduleDate, start time=$startTime and end time=$endTime not found")
+
+  private fun findCourseScheduleOrThrow(courseScheduleId: Long) =
+    scheduleRepository.findByIdOrNull(courseScheduleId)
+      ?: throw BadDataException("Course schedule for courseScheduleId=$courseScheduleId not found")
 
   private fun findCourseActivityOrThrow(courseActivityId: Long) = (
     activityRepository.findByIdOrNull(courseActivityId)

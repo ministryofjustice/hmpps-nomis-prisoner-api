@@ -37,13 +37,13 @@ class OffenderCourseAttendance(
   val offenderBooking: OffenderBooking,
 
   @Column
-  val eventDate: LocalDate,
+  var eventDate: LocalDate,
 
   @Column
-  val startTime: LocalDateTime? = null,
+  var startTime: LocalDateTime? = null,
 
   @Column
-  val endTime: LocalDateTime? = null,
+  var endTime: LocalDateTime? = null,
 
   @Column(nullable = false)
   val eventSubType: String = "PA",
