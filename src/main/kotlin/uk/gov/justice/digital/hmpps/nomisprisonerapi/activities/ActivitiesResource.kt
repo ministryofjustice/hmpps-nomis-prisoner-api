@@ -20,8 +20,6 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAttendanceStatusResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
@@ -243,56 +241,6 @@ class ActivitiesResource(
   ) =
     scheduleService.updateCourseSchedule(courseActivityId, updateRequest)
 
-  @Deprecated("This is in the process of being replaced by PUT /schedules/{courseScheduleId}/booking/{bookingId}/attendance")
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance")
-  @Operation(
-    summary = "Creates or updates an attendance record",
-    description = "Creates or updates an attendance for the booking and schedule. Requires role NOMIS_ACTIVITIES",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceRequest::class)),
-      ],
-    ),
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Attendance updated",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "Invalid request",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-    ],
-  )
-  fun upsertAttendanceOld(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
-    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
-    @RequestBody @Valid
-    upsertAttendanceRequest: UpsertAttendanceRequest,
-  ) =
-    attendanceService.upsertAttendanceOld(courseActivityId, bookingId, upsertAttendanceRequest)
-
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/schedules/{courseScheduleId}/booking/{bookingId}/attendance")
   @Operation(
@@ -341,55 +289,6 @@ class ActivitiesResource(
     upsertAttendanceRequest: UpsertAttendanceRequest,
   ) =
     attendanceService.upsertAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PostMapping("/activities/{courseActivityId}/booking/{bookingId}/attendance-status")
-  @Operation(
-    summary = "Get Nomis attendance status",
-    description = "Returns the current event status of a Nomis attendance record. Requires role NOMIS_ACTIVITIES",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = GetAttendanceStatusRequest::class)),
-      ],
-    ),
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Attendance status found",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = GetAttendanceStatusResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The attendance record does not exist",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-    ],
-  )
-  fun getAttendanceStatus(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
-    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
-    @RequestBody @Valid
-    request: GetAttendanceStatusRequest,
-  ) =
-    attendanceService.findAttendanceStatus(courseActivityId, bookingId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @DeleteMapping("/activities/{courseActivityId}")

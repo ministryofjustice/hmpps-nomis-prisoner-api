@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.time.LocalDate
 
-class UpsertAllocationResourceIntTest : IntegrationTestBase() {
+class AllocationResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
