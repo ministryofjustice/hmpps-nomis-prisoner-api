@@ -7,12 +7,13 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@DslMarker
+annotation class DataDslMarker
+
 @DataDslMarker
 interface DataDsl {
-  @StaffDslMarker
   fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit = {}): Staff
 
-  @AdjudicationIncidentDslMarker
   fun adjudicationIncident(
     incidentDetails: String = "Big fight",
     reportedDateTime: LocalDateTime = LocalDateTime.now(),
@@ -25,7 +26,6 @@ interface DataDsl {
     dsl: AdjudicationIncidentDsl.() -> Unit = {},
   ): AdjudicationIncident
 
-  @OffenderDslMarker
   fun offender(
     nomsId: String = "A5194DY",
     lastName: String = "NTHANDA",
@@ -36,10 +36,11 @@ interface DataDsl {
   ): Offender
 }
 
+@DataDslMarker
 interface StaffDsl
 
+@DataDslMarker
 interface OffenderDsl {
-  @BookingDslMarker
   fun booking(
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
     active: Boolean = true,
@@ -51,8 +52,8 @@ interface OffenderDsl {
   )
 }
 
+@DataDslMarker
 interface BookingDsl {
-  @AdjudicationPartyDslMarker
   fun adjudicationParty(
     incident: AdjudicationIncident,
     adjudicationNumber: Long = 1224,
@@ -62,8 +63,8 @@ interface BookingDsl {
   )
 }
 
+@DataDslMarker
 interface AdjudicationIncidentDsl {
-  @AdjudicationRepairDslMarker
   fun repair(
     repairType: String = "CLEA",
     comment: String? = null,
@@ -72,8 +73,8 @@ interface AdjudicationIncidentDsl {
   )
 }
 
+@DataDslMarker
 interface AdjudicationPartyDsl {
-  @AdjudicationInvestigationDslMarker
   fun investigation(
     investigator: Staff,
     comment: String? = null,
@@ -81,7 +82,6 @@ interface AdjudicationPartyDsl {
     dsl: AdjudicationInvestigationDsl.() -> Unit = {},
   )
 
-  @AdjudicationChargeDslMarker
   fun charge(
     offenceCode: String = "51:1B",
     guiltyEvidence: String? = null,
@@ -90,9 +90,11 @@ interface AdjudicationPartyDsl {
   )
 }
 
+@DataDslMarker
 interface AdjudicationRepairDsl
+
+@DataDslMarker
 interface AdjudicationInvestigationDsl {
-  @AdjudicationEvidenceDslMarker
   fun evidence(
     detail: String = "Knife found",
     type: String = "WEAP",
@@ -101,35 +103,8 @@ interface AdjudicationInvestigationDsl {
   )
 }
 
+@DataDslMarker
 interface AdjudicationEvidenceDsl
+
+@DataDslMarker
 interface AdjudicationChargeDsl
-
-@DslMarker
-annotation class DataDslMarker
-
-@DslMarker
-annotation class StaffDslMarker
-
-@DslMarker
-annotation class OffenderDslMarker
-
-@DslMarker
-annotation class BookingDslMarker
-
-@DslMarker
-annotation class AdjudicationIncidentDslMarker
-
-@DslMarker
-annotation class AdjudicationRepairDslMarker
-
-@DslMarker
-annotation class AdjudicationPartyDslMarker
-
-@DslMarker
-annotation class AdjudicationChargeDslMarker
-
-@DslMarker
-annotation class AdjudicationInvestigationDslMarker
-
-@DslMarker
-annotation class AdjudicationEvidenceDslMarker
