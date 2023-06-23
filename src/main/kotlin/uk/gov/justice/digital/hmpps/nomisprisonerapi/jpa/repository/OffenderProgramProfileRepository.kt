@@ -11,7 +11,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
   fun findByCourseActivityAndOffenderBooking(
     courseActivity: CourseActivity,
     offenderBooking: OffenderBooking,
-  ): OffenderProgramProfile?
+  ): List<OffenderProgramProfile>
 
   fun findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCode(
     courseActivityId: Long,

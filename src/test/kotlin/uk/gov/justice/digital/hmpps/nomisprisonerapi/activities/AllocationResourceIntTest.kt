@@ -312,18 +312,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
           assertThat(it).contains("INVALID")
         }
     }
-
-    @Test
-    fun `should return bad request offender in wrong prison`() {
-      val offenderAtWrongPrison =
-        repository.save(OffenderBuilder(nomsId = "A1234YY").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
-      val request = upsertRequest().withBookingId(offenderAtWrongPrison.latestBooking().bookingId.toString())
-
-      upsertAllocationIsBadRequest(request)
-        .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Prisoner is at prison=MDI, not the Course activity prison=LEI")
-        }
-    }
   }
 
   @Nested
@@ -339,6 +327,51 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(startDate).isEqualTo("2022-11-14")
+        assertThat(programStatus.code).isEqualTo("ALLOC")
+        assertThat(payBands[0].payBand.code).isEqualTo("5")
+      }
+    }
+
+    @Test
+    fun `should return bad request offender in wrong prison`() {
+      val offenderAtWrongPrison =
+        repository.save(OffenderBuilder(nomsId = "A1234YY").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
+      val request = upsertRequest().withBookingId(offenderAtWrongPrison.latestBooking().bookingId.toString())
+
+      upsertAllocationIsBadRequest(request)
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Prisoner is at prison=MDI, not the Course activity prison=LEI")
+        }
+    }
+
+    @Test
+    fun `should create new allocation if previously ended allocation exists`() {
+      repository.save(
+        allocationBuilderFactory.builder(
+          endDate = "2022-11-01",
+          programStatusCode = "END",
+        ),
+        offender.latestBooking(),
+        courseActivity,
+      )
+
+      val request = upsertRequest()
+        .withAdditionalJson(""""startDate": "2022-12-01"""")
+        .withProgramStatusCode("ALLOC")
+      val response = upsertAllocationIsOk(request)!!
+
+      val saved = repository.lookupOffenderProgramProfile(courseActivity, offender.latestBooking())
+      with(saved[0]) {
+        assertThat(startDate).isEqualTo("2022-10-31")
+        assertThat(endDate).isEqualTo("2022-11-01")
+        assertThat(programStatus.code).isEqualTo("END")
+        assertThat(payBands[0].payBand.code).isEqualTo("5")
+      }
+      with(saved[1]) {
+        assertThat(response.offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
+        assertThat(response.created).isTrue()
+        assertThat(startDate).isEqualTo("2022-12-01")
+        assertThat(endDate).isNull()
         assertThat(programStatus.code).isEqualTo("ALLOC")
         assertThat(payBands[0].payBand.code).isEqualTo("5")
       }
@@ -526,6 +559,17 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should allow updates if offender in wrong prison`() {
+      val offenderInWrongPrison =
+        repository.save(OffenderBuilder(nomsId = "A1234YY").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
+      bookingId = offenderInWrongPrison.latestBooking().bookingId
+      repository.save(allocationBuilderFactory.builder(), offenderInWrongPrison.latestBooking(), courseActivity)
+      val request = upsertRequest().withBookingId(offenderInWrongPrison.latestBooking().bookingId.toString())
+
+      upsertAllocationIsOk(request)
+    }
+
+    @Test
     fun `should allow de-allocation when not in the activity prison`() {
       // Create an allocation for a prisoner who is out (need to do this directly on the database to avoid validation)
       offender =
@@ -564,14 +608,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         """.trimMargin(),
       )
       upsertAllocationIsOk(request)
-
-      // But un-suspending is not allowed
-      val unsuspendRequest = upsertRequest().withAdditionalJson(
-        """
-        "suspended": false
-        """.trimMargin(),
-      )
-      upsertAllocationIsBadRequest(unsuspendRequest)
     }
   }
 
