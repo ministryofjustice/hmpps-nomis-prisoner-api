@@ -280,6 +280,7 @@ class Repository(
     visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
   }
 
+  @Suppress("SqlWithoutWhere")
   fun updateCreatedToMatchVisitStart() {
     val sql = "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
     jdbcTemplate.execute(sql)
@@ -358,8 +359,8 @@ class Repository(
   fun lookupIncidentType(): AdjudicationIncidentType =
     adjudicationIncidentTypeRepository.findByIdOrNull(AdjudicationIncidentType.pk(AdjudicationIncidentType.GOVERNORS_REPORT))!!
 
-  fun lookupActionDecision(): IncidentDecisionAction =
-    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE))!!
+  fun lookupActionDecision(code: String = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE): IncidentDecisionAction =
+    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(code))!!
 
   fun lookupAdjudicationOffence(code: String): AdjudicationIncidentOffence =
     adjudicationIncidentOffenceRepository.findByCode(code)!!
@@ -398,6 +399,11 @@ class Repository(
       incident.repairs.addAll(
         adjudicationIncidentBuilder.repairs.mapIndexed { index, repair ->
           repair.build(incident, index + 1, lookupRepairType(repair.repairType))
+        },
+      )
+      incident.parties.addAll(
+        adjudicationIncidentBuilder.parties.mapIndexed { index, party ->
+          party.build(incident, lookupActionDecision(party.actionDecision), index + 1)
         },
       )
     }
