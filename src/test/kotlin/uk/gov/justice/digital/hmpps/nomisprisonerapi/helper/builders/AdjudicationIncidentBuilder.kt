@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -61,14 +62,39 @@ class AdjudicationIncidentBuilder(
   ) {
     this.repairs += AdjudicationRepairBuilder(repairType, comment, repairCost).apply(dsl)
   }
+
+  override fun party(
+    comment: String,
+    role: PartyRole,
+    partyAddedDate: LocalDate,
+    offenderBooking: OffenderBooking?,
+    staff: Staff?,
+    adjudicationNumber: Long?,
+    actionDecision: String,
+    dsl: AdjudicationPartyDsl.() -> Unit,
+  ) {
+    this.parties += AdjudicationPartyBuilder(
+      comment = comment,
+      offenderBooking = offenderBooking,
+      staff = staff,
+      partyAddedDate = partyAddedDate,
+      incidentRole = role.code,
+      actionDecision = actionDecision,
+      adjudicationNumber = adjudicationNumber,
+    ).apply(dsl)
+  }
 }
 
 class AdjudicationPartyBuilder(
-  private var adjudicationNumber: Long,
+  private var adjudicationNumber: Long? = null,
   private var comment: String,
+  private var offenderBooking: OffenderBooking?,
+  private var staff: Staff?,
+  private var incidentRole: String = suspectRole,
+  var actionDecision: String = IncidentDecisionAction.NO_FURTHER_ACTION_CODE,
+  private var partyAddedDate: LocalDate,
   var charges: List<AdjudicationChargeBuilder> = listOf(),
   var investigations: List<AdjudicationInvestigationBuilder> = listOf(),
-  private var partyAddedDate: LocalDate,
 ) : AdjudicationPartyDsl {
 
   fun build(
@@ -82,6 +108,22 @@ class AdjudicationPartyBuilder(
       offenderBooking = offenderBooking,
       adjudicationNumber = adjudicationNumber,
       incidentRole = "S",
+      incident = incident,
+      actionDecision = actionDecision,
+      partyAddedDate = partyAddedDate,
+      comment = comment,
+    )
+  fun build(
+    incident: AdjudicationIncident,
+    actionDecision: IncidentDecisionAction,
+    index: Int,
+  ): AdjudicationIncidentParty =
+    AdjudicationIncidentParty(
+      id = AdjudicationIncidentPartyId(incident.id, index),
+      offenderBooking = offenderBooking,
+      staff = staff,
+      adjudicationNumber = adjudicationNumber,
+      incidentRole = incidentRole,
       incident = incident,
       actionDecision = actionDecision,
       partyAddedDate = partyAddedDate,

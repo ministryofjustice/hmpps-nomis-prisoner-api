@@ -18,6 +18,11 @@ import java.io.Serializable
 import java.time.LocalDate
 
 const val suspectRole = "S"
+const val witnessRole = "W"
+const val victimRole = "V"
+const val reportingOfficerRole = "RO"
+const val forceControllingOfficerRole = "CR"
+const val otherRole = "OTH"
 
 @Embeddable
 class AdjudicationIncidentPartyId(
@@ -91,10 +96,10 @@ class AdjudicationIncidentParty(
 
 fun AdjudicationIncidentParty.prisonerOnReport(): OffenderBooking = offenderBooking.takeIf { this.adjudicationNumber != null }!!
 fun AdjudicationIncidentParty.staffParty(): Staff = staff!!
-fun AdjudicationIncidentParty.isSuspect(): Boolean = incidentRole == "S"
-fun AdjudicationIncidentParty.isWitness(): Boolean = incidentRole == "W"
-fun AdjudicationIncidentParty.isVictim(): Boolean = incidentRole == "V"
-fun AdjudicationIncidentParty.isReportingOfficer(): Boolean = incidentRole == "RO"
-fun AdjudicationIncidentParty.isInvolvedForForce(): Boolean = incidentRole == "CR"
-fun AdjudicationIncidentParty.isInvolvedForOtherReason(): Boolean = incidentRole == "OTH"
+fun AdjudicationIncidentParty.isSuspect(): Boolean = incidentRole == suspectRole
+fun AdjudicationIncidentParty.isWitness(): Boolean = incidentRole == witnessRole
+fun AdjudicationIncidentParty.isVictim(): Boolean = incidentRole == victimRole
+fun AdjudicationIncidentParty.isReportingOfficer(): Boolean = incidentRole == reportingOfficerRole
+fun AdjudicationIncidentParty.isInvolvedForForce(): Boolean = incidentRole == forceControllingOfficerRole
+fun AdjudicationIncidentParty.isInvolvedForOtherReason(): Boolean = incidentRole == otherRole
 fun AdjudicationIncidentParty.prisonerParty(): OffenderBooking = offenderBooking!!
