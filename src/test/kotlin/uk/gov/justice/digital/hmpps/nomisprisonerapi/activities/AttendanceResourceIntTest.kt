@@ -181,6 +181,20 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should return bad request if creating attendance for offender in wrong prison`() {
+        offender =
+          repository.save(OffenderBuilder(nomsId = "A1234TU").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
+        offenderBooking = offender.latestBooking()
+        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
+          }
+      }
+
+      @Test
       fun `should return bad request if allocation not found`() {
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isBadRequest
@@ -198,6 +212,17 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .expectStatus().isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Attendance ${attendance.eventId} cannot be changed after it has already been paid")
+          }
+      }
+
+      @Test
+      fun `should return bad request if creating an attendance and allocation has ended`() {
+        val allocation = repository.save(allocationBuilderFactory.builder(programStatusCode = "END"), offenderBooking, courseActivity)
+
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Cannot create an attendance for allocation ${allocation.offenderProgramReferenceId} because it has ended")
           }
       }
 
@@ -320,6 +345,18 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("INVALID")
           }
       }
+
+      @Test
+      fun `should return bad request if trying to update a paid attendance`() {
+        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        val attendance = saveAttendance("COMP", courseSchedule, allocation, paidTransactionId = 123456)
+
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Attendance ${attendance.eventId} cannot be changed after it has already been paid")
+          }
+      }
     }
 
     @Nested
@@ -413,6 +450,35 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         assertThat(saved.eventDate).isEqualTo("2022-11-02")
         assertThat(saved.startTime).isEqualTo("2022-11-02T13:00")
         assertThat(saved.endTime).isEqualTo("2022-11-02T14:00")
+      }
+
+      @Test
+      fun `should return OK if updating attendance for offender in wrong prison`() {
+        offender =
+          repository.save(OffenderBuilder(nomsId = "A1234TU").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
+        offenderBooking = offender.latestBooking()
+        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        val attendance = saveAttendance("SCH", courseSchedule, allocation)
+        val request = validJsonRequest.withEventStatusCode("CANC")
+
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, request)
+          .expectStatus().isOk
+
+        val saved = repository.lookupAttendance(attendance.eventId)
+        assertThat(saved.eventStatus.code).isEqualTo("CANC")
+      }
+
+      @Test
+      fun `should return OK if updating attendance and offender has been deallocated`() {
+        val allocation = repository.save(allocationBuilderFactory.builder(programStatusCode = "END"), offenderBooking, courseActivity)
+        val attendance = saveAttendance("SCH", courseSchedule, allocation)
+        val request = validJsonRequest.withEventStatusCode("EXP")
+
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, request)
+          .expectStatus().isOk
+
+        val saved = repository.lookupAttendance(attendance.eventId)
+        assertThat(saved.eventStatus.code).isEqualTo("EXP")
       }
 
       @Test
