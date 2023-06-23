@@ -6,10 +6,16 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_CONTROL
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_REPORTING_OFFICER
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.SUSPECT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.VICTIM
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.math.BigDecimal
@@ -23,9 +29,17 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
   lateinit var repository: Repository
 
   lateinit var prisoner: Offender
+  lateinit var prisonerVictim: Offender
+  lateinit var prisonerWitness: Offender
+  lateinit var anotherSuspect: Offender
+
   lateinit var incident: AdjudicationIncident
   lateinit var staff: Staff
   lateinit var staffInvestigator: Staff
+  lateinit var staffWitness: Staff
+  lateinit var staffVictim: Staff
+  lateinit var staffInvolvedWithForce: Staff
+  lateinit var staffIncidentReportingOfficer: Staff
 
   @DisplayName("GET /adjudications/adjudication-number/{adjudicationNumber}")
   @Nested
@@ -36,6 +50,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     internal fun createPrisonerWithAdjudication() {
       staff = repository.staff(firstName = "SIMON", lastName = "BROWN")
       staffInvestigator = repository.staff(firstName = "ISLA", lastName = "INVESTIGATOR")
+      staffWitness = repository.staff(firstName = "KOFI", lastName = "WITNESS")
+      staffVictim = repository.staff(firstName = "KWEKU", lastName = "VICTIM")
+      staffInvolvedWithForce = repository.staff(firstName = "JANE", lastName = "MUSCLES")
+      staffIncidentReportingOfficer = repository.staff(firstName = "EAGLE", lastName = "EYES")
+      prisonerVictim = repository.offender(firstName = "CHARLIE", lastName = "VICTIM") { booking {} }
+      prisonerWitness = repository.offender(firstName = "CLIVE", lastName = "SNITCH") { booking {} }
+      anotherSuspect = repository.offender(firstName = "KILLER", lastName = "BROWN") { booking {} }
       incident = repository.adjudicationIncident(
         reportingStaff = staff,
         prisonId = "MDI",
@@ -48,6 +69,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       ) {
         repair(repairType = "PLUM", comment = "Fixed the bog", repairCost = BigDecimal("10.30"))
         repair(repairType = "CLEA")
+        party(role = WITNESS, staff = staffWitness)
+        party(role = VICTIM, staff = staffVictim)
+        party(role = STAFF_CONTROL, staff = staffInvolvedWithForce)
+        party(role = STAFF_REPORTING_OFFICER, staff = staffIncidentReportingOfficer)
+        party(role = VICTIM, offenderBooking = prisonerVictim.latestBooking())
+        party(role = WITNESS, offenderBooking = prisonerWitness.latestBooking())
+        party(role = SUSPECT, offenderBooking = anotherSuspect.latestBooking(), adjudicationNumber = 987654, actionDecision = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE)
       }
       prisoner = repository.offender(nomsId = "A1234TT") {
         booking {
@@ -89,8 +117,15 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     internal fun deletePrisoner() {
       repository.delete(incident)
       repository.delete(prisoner)
+      repository.delete(prisonerVictim)
+      repository.delete(prisonerWitness)
+      repository.delete(anotherSuspect)
       repository.delete(staff)
       repository.delete(staffInvestigator)
+      repository.delete(staffWitness)
+      repository.delete(staffVictim)
+      repository.delete(staffInvolvedWithForce)
+      repository.delete(staffIncidentReportingOfficer)
     }
 
     @Nested
@@ -167,6 +202,18 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("incident.repairs[1].type.description").isEqualTo("Cleaning")
           .jsonPath("incident.repairs[1].comment").doesNotExist()
           .jsonPath("incident.repairs[1].cost").doesNotExist()
+          .jsonPath("incident.staffWitnesses[0].firstName").isEqualTo("KOFI")
+          .jsonPath("incident.staffWitnesses[0].lastName").isEqualTo("WITNESS")
+          .jsonPath("incident.staffWitnesses[0].staffId").isEqualTo(staffWitness.id)
+          .jsonPath("incident.staffVictims[0].staffId").isEqualTo(staffVictim.id)
+          .jsonPath("incident.reportingOfficers[0].staffId").isEqualTo(staffIncidentReportingOfficer.id)
+          .jsonPath("incident.otherStaffInvolved[0].staffId").isEqualTo(staffInvolvedWithForce.id)
+          .jsonPath("incident.prisonerVictims[0].firstName").isEqualTo("CHARLIE")
+          .jsonPath("incident.prisonerVictims[0].lastName").isEqualTo("VICTIM")
+          .jsonPath("incident.prisonerVictims[0].offenderNo").isEqualTo(prisonerVictim.nomsId)
+          .jsonPath("incident.prisonerWitnesses[0].offenderNo").isEqualTo(prisonerWitness.nomsId)
+          .jsonPath("incident.otherPrisonersInvolved[0].offenderNo").isEqualTo(anotherSuspect.nomsId)
+          .jsonPath("incident.otherPrisonersInvolved[1]").doesNotExist()
           .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
           .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].reportDetail").isEqualTo("1234/123")

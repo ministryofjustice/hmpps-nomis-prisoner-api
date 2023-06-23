@@ -1,8 +1,16 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.forceControllingOfficerRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.reportingOfficerRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -74,6 +82,26 @@ interface AdjudicationIncidentDsl {
     repairCost: BigDecimal? = null,
     dsl: AdjudicationRepairDsl.() -> Unit = {},
   )
+
+  @AdjudicationPartyDslMarker
+  fun party(
+    comment: String = "They witnessed everything",
+    role: PartyRole = WITNESS,
+    partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
+    offenderBooking: OffenderBooking? = null,
+    staff: Staff? = null,
+    adjudicationNumber: Long? = null,
+    actionDecision: String = NO_FURTHER_ACTION_CODE,
+    dsl: AdjudicationPartyDsl.() -> Unit = {},
+  )
+}
+enum class PartyRole(val code: String) {
+
+  WITNESS(witnessRole),
+  VICTIM(victimRole),
+  SUSPECT(suspectRole),
+  STAFF_CONTROL(forceControllingOfficerRole),
+  STAFF_REPORTING_OFFICER(reportingOfficerRole),
 }
 
 @ScopeDslMarker

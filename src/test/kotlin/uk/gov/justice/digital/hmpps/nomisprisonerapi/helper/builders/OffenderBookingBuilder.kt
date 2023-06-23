@@ -74,6 +74,8 @@ class OffenderBookingBuilder(
         adjudicationNumber = adjudicationNumber,
         comment = comment,
         partyAddedDate = partyAddedDate,
+        offenderBooking = null,
+        staff = null,
       ).apply(dsl),
     )
   }
