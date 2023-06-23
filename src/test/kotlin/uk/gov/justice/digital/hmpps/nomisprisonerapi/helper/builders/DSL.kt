@@ -7,7 +7,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@DataDslMarker
+@ScopeDslMarker
 interface DataDsl {
   @StaffDslMarker
   fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit = {}): Staff
@@ -36,8 +36,10 @@ interface DataDsl {
   ): Offender
 }
 
+@ScopeDslMarker
 interface StaffDsl
 
+@ScopeDslMarker
 interface OffenderDsl {
   @BookingDslMarker
   fun booking(
@@ -51,6 +53,7 @@ interface OffenderDsl {
   )
 }
 
+@ScopeDslMarker
 interface BookingDsl {
   @AdjudicationPartyDslMarker
   fun adjudicationParty(
@@ -62,6 +65,7 @@ interface BookingDsl {
   )
 }
 
+@ScopeDslMarker
 interface AdjudicationIncidentDsl {
   @AdjudicationRepairDslMarker
   fun repair(
@@ -72,6 +76,7 @@ interface AdjudicationIncidentDsl {
   )
 }
 
+@ScopeDslMarker
 interface AdjudicationPartyDsl {
   @AdjudicationInvestigationDslMarker
   fun investigation(
@@ -90,7 +95,10 @@ interface AdjudicationPartyDsl {
   )
 }
 
+@ScopeDslMarker
 interface AdjudicationRepairDsl
+
+@ScopeDslMarker
 interface AdjudicationInvestigationDsl {
   @AdjudicationEvidenceDslMarker
   fun evidence(
@@ -101,11 +109,14 @@ interface AdjudicationInvestigationDsl {
   )
 }
 
+@ScopeDslMarker
 interface AdjudicationEvidenceDsl
+
+@ScopeDslMarker
 interface AdjudicationChargeDsl
 
 @DslMarker
-annotation class DataDslMarker
+annotation class ScopeDslMarker
 
 @DslMarker
 annotation class StaffDslMarker
