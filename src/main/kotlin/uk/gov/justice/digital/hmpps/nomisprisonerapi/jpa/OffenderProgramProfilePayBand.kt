@@ -58,6 +58,6 @@ data class OffenderProgramProfilePayBand(
   override fun hashCode(): Int = javaClass.hashCode()
 
   override fun toString(): String {
-    return "OffenderProgramProfilePayBands(offenderProgramProfile=${id.offenderProgramProfile.offenderProgramReferenceId}, startDate=$id.startDate, endDate=$endDate, payBandCode='$payBand')"
+    return "OffenderProgramProfilePayBands(offenderProgramProfile=${id.offenderProgramProfile.offenderProgramReferenceId}, startDate=${id.startDate}, endDate=$endDate, payBandCode='$payBand')"
   }
 }
