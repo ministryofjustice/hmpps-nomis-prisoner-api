@@ -13,8 +13,6 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 
 @Entity
@@ -37,7 +35,6 @@ class AdjudicationEvidence(
   val statementDate: LocalDate,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
