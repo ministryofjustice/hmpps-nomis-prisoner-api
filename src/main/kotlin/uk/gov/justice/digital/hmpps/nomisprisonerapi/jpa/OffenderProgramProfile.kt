@@ -39,7 +39,7 @@ data class OffenderProgramProfile(
   var program: ProgramService,
 
   @Column(name = "OFFENDER_START_DATE")
-  val startDate: LocalDate? = null,
+  val startDate: LocalDate,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)

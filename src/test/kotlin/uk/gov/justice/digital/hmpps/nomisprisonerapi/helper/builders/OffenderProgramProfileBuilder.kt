@@ -46,7 +46,7 @@ class OffenderProgramProfileBuilder(
     OffenderProgramProfile(
       offenderBooking = offenderBooking,
       program = repository.lookupProgramService(programId),
-      startDate = startDate?.let { LocalDate.parse(startDate) },
+      startDate = LocalDate.parse(startDate),
       programStatus = repository.lookupProgramStatus(programStatusCode),
       courseActivity = courseActivity,
       prison = courseActivity.prison,

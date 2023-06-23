@@ -74,7 +74,14 @@ class AttendanceService(
         offenderBooking,
         offenderProgramProfile,
         status,
-      )
+      ).also {
+        if (offenderBooking.location?.id != courseSchedule.courseActivity.prison.id) {
+          throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseSchedule.courseActivity.prison.id}")
+        }
+        if (offenderProgramProfile.programStatus.code == "END") {
+          throw BadDataException("Cannot create an attendance for allocation ${offenderProgramProfile.offenderProgramReferenceId} because it has ended")
+        }
+      }
 
     return attendance.apply {
       eventDate = request.scheduleDate
@@ -143,11 +150,8 @@ class AttendanceService(
     offenderBooking: OffenderBooking,
     bookingId: Long,
   ) =
-    offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCode(
-      courseSchedule.courseActivity.courseActivityId,
-      offenderBooking.bookingId,
-      "ALLOC",
-    )
+    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseSchedule.courseActivity, offenderBooking)
+      .maxByOrNull { it.startDate }
       ?: throw BadDataException("Offender program profile for offender booking with id=$bookingId and course activity id=${courseSchedule.courseActivity.courseActivityId} not found")
 
   private fun findOffenderBookingOrThrow(bookingId: Long) = offenderBookingRepository.findByIdOrNull(bookingId)
