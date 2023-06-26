@@ -18,7 +18,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.IncentiveBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
@@ -498,15 +497,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should update the activity and pay rate`() {
-        val existingActivityId = getSavedActivityId()
-
         callUpdateEndpoint(
-          courseActivityId = existingActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(),
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivityId)
+        val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
         assertThat(updated.payRates[1].endDate).isNull()
@@ -516,10 +513,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should raise telemetry event`() {
-        val existingActivityId = getSavedActivityId()
-
         callUpdateEndpoint(
-          courseActivityId = existingActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(),
         )
           .expectStatus().isOk
@@ -527,7 +522,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         verify(telemetryClient).trackEvent(
           eq("activity-updated"),
           check<MutableMap<String, String>> {
-            assertThat(it["nomisCourseActivityId"]).isEqualTo(existingActivityId.toString())
+            assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
             assertThat(it["prisonId"]).isEqualTo("LEI")
             assertThat(it["created-courseActivityPayRateIds"]).isEqualTo("[STD-5-$tomorrow]")
             assertThat(it["expired-courseActivityPayRateIds"]).isEqualTo("[STD-5-2022-10-31]")
@@ -538,11 +533,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request for unknown data`() {
-        val existingActivity =
-          repository.activityRepository.findAll().firstOrNull() ?: throw BadDataException("No activities in database")
-
         callUpdateEndpoint(
-          courseActivityId = existingActivity.courseActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId: -99999,""")),
         )
           .expectStatus().isBadRequest
@@ -551,7 +543,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return not found for missing activity`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId() + 100,
+          courseActivityId = courseActivity.courseActivityId + 100,
           jsonBody = updateActivityRequestJson(),
         )
           .expectStatus().isNotFound
@@ -560,7 +552,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for malformed number`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId": "NOT_A_NUMBER",""")),
         )
           .expectStatus().isBadRequest
@@ -572,7 +564,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for malformed start date`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""startDate" : "2022-11-01",""", """"startDate": "2021-13-01",""")),
         )
           .expectStatus().isBadRequest
@@ -584,7 +576,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for malformed end date`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-11-35",""")),
         )
           .expectStatus().isBadRequest
@@ -596,7 +588,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for dates out of order`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-10-31",""")),
         )
           .expectStatus().isBadRequest
@@ -608,7 +600,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for malformed number in child`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             payRatesJson = """
               "payRates" : [ {
@@ -632,7 +624,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for invalid pay band`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             payRatesJson = """
               "payRates" : [ {
@@ -652,7 +644,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request when incentive level unavailable for prison`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             payRatesJson = """
               "payRates" : [ {
@@ -672,7 +664,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for missing pay rates`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(payRatesJson = null),
         )
           .expectStatus().isBadRequest
@@ -684,15 +676,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK for empty pay rates`() {
-        val existingActivityId = getSavedActivityId()
-
         callUpdateEndpoint(
-          courseActivityId = existingActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : [],"""),
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivityId)
+        val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
       }
 
@@ -764,7 +754,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         val offender =
           repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))))
-        val existingActivityId = getSavedActivityId()
         repository.save(
           offenderProgramProfileBuilderFactory.builder(
             payBands = listOf(offenderProgramProfilePayBandBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString())),
@@ -774,12 +763,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
 
         callUpdateEndpoint(
-          courseActivityId = existingActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : [],"""),
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivityId)
+        val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
       }
     }
@@ -790,7 +779,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request for malformed schedule time`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             scheduleRulesJson = """
               "scheduleRules": [{
@@ -816,7 +805,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request if schedule rules fail validation`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             scheduleRulesJson = """
               "scheduleRules": [{
@@ -841,11 +830,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if schedule rules updated`() {
-        val existingActivityId = getSavedActivityId()
-        val existingRuleId = getSavedRuleId()
+        val existingRuleId = courseActivity.courseScheduleRules.first().id
 
         callUpdateEndpoint(
-          courseActivityId = existingActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             scheduleRulesJson = """
               "scheduleRules": [{
@@ -864,7 +852,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivityId)
+        val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.courseScheduleRules.size).isEqualTo(1)
         with(updated.courseScheduleRules[0]) {
           assertThat(startTime.toLocalTime()).isEqualTo("09:00")
@@ -875,7 +863,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         verify(telemetryClient).trackEvent(
           eq("activity-updated"),
           check<MutableMap<String, String>> {
-            assertThat(it["nomisCourseActivityId"]).isEqualTo(existingActivityId.toString())
+            assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
             assertThat(it["prisonId"]).isEqualTo("LEI")
             assertThat(it["removed-courseScheduleRuleIds"]).isEqualTo("[$existingRuleId]")
             assertThat(it["created-courseScheduleRuleIds"]).isEqualTo("[${updated.courseScheduleRules.first().id}]")
@@ -890,7 +878,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `invalid date should return bad request`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             schedulesJson = """
               "schedules":[
@@ -913,7 +901,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `invalid start time should return bad request`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             schedulesJson = """
               "schedules": [
@@ -936,7 +924,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `invalid end time should return bad request`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             schedulesJson = """
               "schedules": [{
@@ -1096,7 +1084,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `service validation errors should return bad request`() {
         callUpdateEndpoint(
-          courseActivityId = getSavedActivityId(),
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             schedulesJson = """
               "schedules": [
@@ -1126,15 +1114,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class ActivityDetails {
       @Test
       fun `should update details`() {
-        val existingActivityId = getSavedActivityId()
-
         callUpdateEndpoint(
-          courseActivityId = existingActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(),
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivityId)
+        val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.scheduleStartDate).isEqualTo(LocalDate.parse("2022-11-01"))
         assertThat(updated.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
         assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
@@ -1147,10 +1133,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should allow nullable updates`() {
-        val existingActivityId = getSavedActivityId()
-
         callUpdateEndpoint(
-          courseActivityId = existingActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
               .replace(""""endDate" : "2022-11-30",""", "")
@@ -1159,27 +1143,26 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(existingActivityId)
+        val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.scheduleEndDate).isNull()
         assertThat(updated.internalLocation).isNull()
       }
 
       @Test
       fun `should update program for activity and active allocations`() {
-        val existingActivity = getSavedActivity()
         // create another program to move the activity to
         repository.save(ProgramServiceBuilder(programId = 30, programCode = "NEW_SERVICE"))
         // add an allocated offender who should be moved to the new program service
         val offenderBooking =
           repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
-        repository.save(offenderProgramProfileBuilderFactory.builder(), offenderBooking, existingActivity)
+        repository.save(offenderProgramProfileBuilderFactory.builder(), offenderBooking, courseActivity)
         // add a deallocated offender who should NOT be moved to the new program service
         val deallocatedOffenderBooking =
           repository.save(OffenderBuilder(nomsId = "A1234UU").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
-        repository.save(offenderProgramProfileBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()), deallocatedOffenderBooking, existingActivity)
+        repository.save(offenderProgramProfileBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()), deallocatedOffenderBooking, courseActivity)
 
         callUpdateEndpoint(
-          courseActivityId = existingActivity.courseActivityId,
+          courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
               .replace(""""programCode": "INTTEST",""", """"programCode": "NEW_SERVICE","""),
@@ -1188,7 +1171,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         repository.runInTransaction {
-          val updated = repository.lookupActivity(existingActivity.courseActivityId)
+          val updated = repository.lookupActivity(courseActivity.courseActivityId)
           assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
           assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
           assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST")
@@ -1251,20 +1234,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .body(BodyInserters.fromValue(jsonBody))
         .exchange()
-
-    private fun getSavedActivityId() =
-      repository.activityRepository.findAll().firstOrNull()?.courseActivityId
-        ?: throw BadDataException("No activities in database")
-
-    private fun getSavedActivity() =
-      repository.activityRepository.findAll().firstOrNull()
-        ?: throw BadDataException("No activities in database")
-
-    private fun getSavedRuleId() =
-      repository.runInTransaction {
-        repository.activityRepository.findAll().firstOrNull()?.courseScheduleRules?.firstOrNull()?.id
-          ?: throw BadDataException("Could not find course schedule rule in database")
-      }
   }
 
   @Nested
