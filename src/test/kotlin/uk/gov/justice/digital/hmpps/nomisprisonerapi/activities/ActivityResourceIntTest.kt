@@ -20,8 +20,6 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.IncentiveBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
@@ -52,9 +50,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
 
   @Autowired
   private lateinit var offenderProgramProfileBuilderFactory: OffenderProgramProfileBuilderFactory
@@ -408,6 +403,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivity = courseActivity {
             payRate()
             courseSchedule()
+            courseScheduleRule()
           }
         }
       }
@@ -708,6 +704,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               payRate(iepLevelCode = "STD")
               payRate(iepLevelCode = "BAS")
               courseSchedule()
+              courseScheduleRule()
             }
           }
 // TODO SDIT-902
@@ -748,6 +745,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               payRate(iepLevelCode = "STD")
               payRate(iepLevelCode = "BAS")
               courseSchedule()
+              courseScheduleRule()
             }
           }
         }
@@ -964,6 +962,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               payRate()
               courseSchedule(scheduleDate = today.toString())
               courseSchedule(scheduleDate = tomorrow.toString())
+              courseScheduleRule()
             }
           }
         }
@@ -1013,6 +1012,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               payRate()
               courseSchedule(scheduleDate = yesterday.toString())
               courseSchedule(scheduleDate = today.toString())
+              courseScheduleRule()
             }
           }
         }
@@ -1052,6 +1052,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               payRate()
               courseSchedule(scheduleDate = today.toString())
               courseSchedule(scheduleDate = tomorrow.toString())
+              courseScheduleRule()
             }
           }
         }
@@ -1199,7 +1200,15 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class Response {
       @Test
       fun `should return course schedule details`() {
-        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = listOf(CourseScheduleBuilder(scheduleDate = today.toString()))))
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity {
+              payRate()
+              courseSchedule(scheduleDate = today.toString())
+              courseScheduleRule()
+            }
+          }
+        }
         val request = updateActivityRequestJson(
           schedulesJson =
           """

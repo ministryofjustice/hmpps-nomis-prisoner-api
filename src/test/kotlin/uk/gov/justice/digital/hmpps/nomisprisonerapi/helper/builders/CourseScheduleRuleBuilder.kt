@@ -19,7 +19,7 @@ class CourseScheduleRuleBuilder(
   val friday: Boolean = true,
   val saturday: Boolean = false,
   val sunday: Boolean = false,
-) {
+) : CourseScheduleRuleDsl {
   fun build(courseActivity: CourseActivity): CourseScheduleRule {
     val date = LocalDate.now().withDayOfMonth(1)
     return CourseScheduleRule(

@@ -27,7 +27,7 @@ class CourseActivityBuilderFactory(
     internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(),
     courseSchedules: List<CourseScheduleBuilder> = listOf(),
-    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
+    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(),
     excludeBankHolidays: Boolean = false,
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
@@ -147,6 +147,36 @@ class CourseActivityBuilder(
       endTime,
       slotCategory,
       scheduleStatus,
+    )
+  }
+
+  override fun courseScheduleRule(
+    id: Long,
+    startTimeHours: Int,
+    startTimeMinutes: Int,
+    endTimeHours: Int,
+    endTimeMinutes: Int,
+    monday: Boolean,
+    tuesday: Boolean,
+    wednesday: Boolean,
+    thursday: Boolean,
+    friday: Boolean,
+    saturday: Boolean,
+    sunday: Boolean,
+  ) {
+    courseScheduleRules += CourseScheduleRuleBuilder(
+      id,
+      startTimeHours,
+      startTimeMinutes,
+      endTimeHours,
+      endTimeMinutes,
+      monday,
+      tuesday,
+      wednesday,
+      thursday,
+      friday,
+      saturday,
+      sunday,
     )
   }
 

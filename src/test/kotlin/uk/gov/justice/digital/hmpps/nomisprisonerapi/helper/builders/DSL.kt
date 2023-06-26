@@ -224,7 +224,7 @@ interface ProgramServiceDsl {
     internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(),
     courseSchedules: List<CourseScheduleBuilder> = listOf(),
-    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
+    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(),
     excludeBankHolidays: Boolean = false,
     dsl: CourseActivityDsl.() -> Unit = {},
   ): CourseActivity
@@ -250,6 +250,22 @@ interface CourseActivityDsl {
     slotCategory: SlotCategory = SlotCategory.AM,
     scheduleStatus: String = "SCH",
   )
+
+  @CourseScheduleRuleDslMarker
+  fun courseScheduleRule(
+    id: Long = 0,
+    startTimeHours: Int = 9,
+    startTimeMinutes: Int = 30,
+    endTimeHours: Int = 12,
+    endTimeMinutes: Int = 30,
+    monday: Boolean = true,
+    tuesday: Boolean = true,
+    wednesday: Boolean = true,
+    thursday: Boolean = true,
+    friday: Boolean = true,
+    saturday: Boolean = false,
+    sunday: Boolean = false,
+  )
 }
 
 @TestDataDslMarker
@@ -257,6 +273,9 @@ interface CourseActivityPayRateDsl
 
 @TestDataDslMarker
 interface CourseScheduleDsl
+
+@TestDataDslMarker
+interface CourseScheduleRuleDsl
 
 @DslMarker
 annotation class TestDataDslMarker
@@ -299,3 +318,6 @@ annotation class CourseActivityPayRateDslMarker
 
 @DslMarker
 annotation class CourseScheduleDslMarker
+
+@DslMarker
+annotation class CourseScheduleRuleDslMarker
