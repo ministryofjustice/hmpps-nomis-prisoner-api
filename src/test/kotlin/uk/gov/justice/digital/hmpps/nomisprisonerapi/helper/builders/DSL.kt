@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.forceControllingOfficerRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.reportingOfficerRole
@@ -57,45 +58,15 @@ class TestData(private val repository: Repository) : TestDataDsl {
     dsl: OffenderDsl.() -> Unit,
   ): Offender = repository.save(OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode).apply(dsl))
 
-  @CourseActivityDslMarker
-  override fun courseActivity(
-    courseActivityId: Long,
-    code: String,
+  @ProgramServiceDslMarker
+  override fun programService(
+    programCode: String,
     programId: Long,
-    prisonId: String,
     description: String,
-    capacity: Int,
     active: Boolean,
-    startDate: String,
-    endDate: String?,
-    minimumIncentiveLevelCode: String,
-    internalLocationId: Long?,
-    payRates: List<CourseActivityPayRateBuilder>,
-    courseSchedules: List<CourseScheduleBuilder>,
-    courseScheduleRules: List<CourseScheduleRuleBuilder>,
-    excludeBankHolidays: Boolean,
-    dsl: CourseActivityDsl.() -> Unit,
-  ): CourseActivity =
-    repository.save(
-      CourseActivityBuilder(
-        repository,
-        courseActivityId,
-        code,
-        programId,
-        prisonId,
-        description,
-        capacity,
-        active,
-        startDate,
-        endDate,
-        minimumIncentiveLevelCode,
-        internalLocationId,
-        payRates,
-        courseSchedules,
-        courseScheduleRules,
-        excludeBankHolidays,
-      ).apply(dsl),
-    )
+    dsl: ProgramServiceDsl.() -> Unit,
+  ): ProgramService =
+    repository.save(ProgramServiceBuilder(repository, programCode, programId, description, active).apply(dsl))
 }
 
 @TestDataDslMarker
@@ -126,25 +97,14 @@ interface TestDataDsl {
     dsl: OffenderDsl.() -> Unit = {},
   ): Offender
 
-  @CourseActivityDslMarker
-  fun courseActivity(
-    courseActivityId: Long = 0,
-    code: String = "CA",
+  @ProgramServiceDslMarker
+  fun programService(
+    programCode: String = "INTTEST",
     programId: Long = 20,
-    prisonId: String = "LEI",
-    description: String = "test course activity",
-    capacity: Int = 23,
+    description: String = "test program",
     active: Boolean = true,
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    minimumIncentiveLevelCode: String = "STD",
-    internalLocationId: Long? = -8,
-    payRates: List<CourseActivityPayRateBuilder> = listOf(),
-    courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
-    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
-    excludeBankHolidays: Boolean = false,
-    dsl: CourseActivityDsl.() -> Unit = {},
-  ): CourseActivity
+    dsl: ProgramServiceDsl.() -> Unit = {},
+  ): ProgramService
 }
 
 @TestDataDslMarker
@@ -247,6 +207,29 @@ interface AdjudicationEvidenceDsl
 interface AdjudicationChargeDsl
 
 @TestDataDslMarker
+interface ProgramServiceDsl {
+  @CourseActivityDslMarker
+  fun courseActivity(
+    courseActivityId: Long = 0,
+    code: String = "CA",
+    programId: Long = 20,
+    prisonId: String = "LEI",
+    description: String = "test course activity",
+    capacity: Int = 23,
+    active: Boolean = true,
+    startDate: String = "2022-10-31",
+    endDate: String? = null,
+    minimumIncentiveLevelCode: String = "STD",
+    internalLocationId: Long? = -8,
+    payRates: List<CourseActivityPayRateBuilder> = listOf(),
+    courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
+    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
+    excludeBankHolidays: Boolean = false,
+    dsl: CourseActivityDsl.() -> Unit = {},
+  ): CourseActivity
+}
+
+@TestDataDslMarker
 interface CourseActivityDsl {
   @CourseActivityPayRateDslMarker
   fun payRate(
@@ -290,6 +273,9 @@ annotation class AdjudicationInvestigationDslMarker
 
 @DslMarker
 annotation class AdjudicationEvidenceDslMarker
+
+@DslMarker
+annotation class ProgramServiceDslMarker
 
 @DslMarker
 annotation class CourseActivityDslMarker

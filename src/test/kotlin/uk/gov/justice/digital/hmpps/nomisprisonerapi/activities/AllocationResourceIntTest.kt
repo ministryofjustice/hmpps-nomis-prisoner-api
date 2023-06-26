@@ -53,7 +53,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   fun setup() {
     repository.save(ProgramServiceBuilder())
     testData(repository) {
-      courseActivity = courseActivity { payRate() }
+      programService {
+        courseActivity = courseActivity { payRate() }
+      }
     }
     offender =
       repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))

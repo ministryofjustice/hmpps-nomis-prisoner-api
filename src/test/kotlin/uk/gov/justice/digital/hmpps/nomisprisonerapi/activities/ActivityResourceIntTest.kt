@@ -71,7 +71,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    repository.save(ProgramServiceBuilder())
+    testData(repository) {
+      programService {}
+    }
   }
 
   @AfterEach
@@ -402,7 +404,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       testData(repository) {
-        courseActivity = courseActivity { payRate() }
+        programService {
+          courseActivity = courseActivity { payRate() }
+        }
       }
     }
 
@@ -696,9 +700,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request if pay rate removed which is allocated to an offender`() {
         testData(repository) {
-          courseActivity = courseActivity {
-            payRate(iepLevelCode = "STD")
-            payRate(iepLevelCode = "BAS")
+          programService {
+            courseActivity = courseActivity {
+              payRate(iepLevelCode = "STD")
+              payRate(iepLevelCode = "BAS")
+            }
           }
 // TODO SDIT-902
 //          offender = offender(nomsId = "A1234TT") {
@@ -733,9 +739,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if unused pay rate removed with a pay band used on a different pay rate`() {
         testData(repository) {
-          courseActivity = courseActivity {
-            payRate(iepLevelCode = "STD")
-            payRate(iepLevelCode = "BAS")
+          programService {
+            courseActivity = courseActivity {
+              payRate(iepLevelCode = "STD")
+              payRate(iepLevelCode = "BAS")
+            }
           }
         }
         val offenderBooking = OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))
