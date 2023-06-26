@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.IncentiveBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
@@ -31,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderPro
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfilePayBandBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -55,9 +55,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
-
-  @Autowired
-  private lateinit var payRateBuilderFactory: CourseActivityPayRateBuilderFactory
 
   @Autowired
   private lateinit var offenderProgramProfileBuilderFactory: OffenderProgramProfileBuilderFactory
@@ -404,7 +401,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      courseActivity = repository.save(courseActivityBuilderFactory.builder())
+      testData(repository) {
+        courseActivity = courseActivity { payRate() }
+      }
     }
 
     private fun detailsJson(): String = """
@@ -696,9 +695,19 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if pay rate removed which is allocated to an offender`() {
-        val stdPayRate = payRateBuilderFactory.builder(iepLevelCode = "STD")
-        val basPayRate = payRateBuilderFactory.builder(iepLevelCode = "BAS")
-        courseActivity = repository.save(courseActivityBuilderFactory.builder(payRates = listOf(stdPayRate, basPayRate)))
+        testData(repository) {
+          courseActivity = courseActivity {
+            payRate(iepLevelCode = "STD")
+            payRate(iepLevelCode = "BAS")
+          }
+// TODO SDIT-902
+//          offender = offender(nomsId = "A1234TT") {
+//            offenderBooking = booking(agencyLocationId = PRISON_ID) {
+//              incentive()
+//            }
+//          }
+//          allocation(offenderBooking = offenderBooking, courseActivity = courseActivity)
+        }
         val offenderBooking = OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))
         val offender = repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(offenderBooking))
         repository.save(offenderProgramProfileBuilderFactory.builder(), offender.latestBooking(), courseActivity)
@@ -723,9 +732,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // This might seem an odd test but it replicates a bug found here https://dsdmoj.atlassian.net/browse/SDIT-846
       @Test
       fun `should return OK if unused pay rate removed with a pay band used on a different pay rate`() {
-        val stdPayRate = payRateBuilderFactory.builder(iepLevelCode = "STD")
-        val basPayRate = payRateBuilderFactory.builder(iepLevelCode = "BAS")
-        courseActivity = repository.save(courseActivityBuilderFactory.builder(payRates = listOf(stdPayRate, basPayRate)))
+        testData(repository) {
+          courseActivity = courseActivity {
+            payRate(iepLevelCode = "STD")
+            payRate(iepLevelCode = "BAS")
+          }
+        }
         val offenderBooking = OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))
         val offender = repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(offenderBooking))
         repository.save(offenderProgramProfileBuilderFactory.builder(), offender.latestBooking(), courseActivity)

@@ -156,7 +156,10 @@ class PayRateServiceTest {
   @Nested
   inner class BuildNewPayRates {
     // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2
-    private var courseActivity = activityFactory().builder(courseActivityId = 1).create()
+    private var courseActivity = activityFactory().builder(
+      courseActivityId = 1,
+      payRates = listOf(CourseActivityPayRateBuilderFactory().builder()),
+    ).create()
 
     @BeforeEach
     fun `set up validation mocks`() {

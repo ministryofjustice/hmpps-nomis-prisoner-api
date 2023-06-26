@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.S
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.VICTIM
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
@@ -48,69 +49,76 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisonerWithAdjudication() {
-      staff = repository.staff(firstName = "SIMON", lastName = "BROWN")
-      staffInvestigator = repository.staff(firstName = "ISLA", lastName = "INVESTIGATOR")
-      staffWitness = repository.staff(firstName = "KOFI", lastName = "WITNESS")
-      staffVictim = repository.staff(firstName = "KWEKU", lastName = "VICTIM")
-      staffInvolvedWithForce = repository.staff(firstName = "JANE", lastName = "MUSCLES")
-      staffIncidentReportingOfficer = repository.staff(firstName = "EAGLE", lastName = "EYES")
-      prisonerVictim = repository.offender(firstName = "CHARLIE", lastName = "VICTIM") { booking {} }
-      prisonerWitness = repository.offender(firstName = "CLIVE", lastName = "SNITCH") { booking {} }
-      anotherSuspect = repository.offender(firstName = "KILLER", lastName = "BROWN") { booking {} }
-      incident = repository.adjudicationIncident(
-        reportingStaff = staff,
-        prisonId = "MDI",
-        agencyInternalLocationId = -41,
-        reportedDateTime = LocalDateTime.parse("2023-01-02T15:00"),
-        reportedDate = LocalDate.parse("2023-01-02"),
-        incidentDateTime = LocalDateTime.parse("2023-01-01T18:00"),
-        incidentDate = LocalDate.parse("2023-01-01"),
-        incidentDetails = "There was a fight in the toilets",
-      ) {
-        repair(repairType = "PLUM", comment = "Fixed the bog", repairCost = BigDecimal("10.30"))
-        repair(repairType = "CLEA")
-        party(role = WITNESS, staff = staffWitness)
-        party(role = VICTIM, staff = staffVictim)
-        party(role = STAFF_CONTROL, staff = staffInvolvedWithForce)
-        party(role = STAFF_REPORTING_OFFICER, staff = staffIncidentReportingOfficer)
-        party(role = VICTIM, offenderBooking = prisonerVictim.latestBooking())
-        party(role = WITNESS, offenderBooking = prisonerWitness.latestBooking())
-        party(role = SUSPECT, offenderBooking = anotherSuspect.latestBooking(), adjudicationNumber = 987654, actionDecision = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE)
-      }
-      prisoner = repository.offender(nomsId = "A1234TT") {
-        booking {
-          adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
-            charge(
-              offenceCode = "51:1N",
-              guiltyEvidence = "HOOCH",
-              reportDetail = "1234/123",
-            )
-            charge(
-              offenceCode = "51:3",
-              guiltyEvidence = "DEAD SWAN",
-              reportDetail = null,
-            )
-            investigation(
-              investigator = staffInvestigator,
-              comment = "Isla comment for investigation",
-              assignedDate = LocalDate.parse("2023-01-02"),
-            ) {
-              evidence(
-                date = LocalDate.parse("2023-01-03"),
-                detail = "smashed light bulb",
-                type = "PHOTO",
+      testData(repository) {
+        staff = staff(firstName = "SIMON", lastName = "BROWN")
+        staffInvestigator = staff(firstName = "ISLA", lastName = "INVESTIGATOR")
+        staffWitness = staff(firstName = "KOFI", lastName = "WITNESS")
+        staffVictim = staff(firstName = "KWEKU", lastName = "VICTIM")
+        staffInvolvedWithForce = staff(firstName = "JANE", lastName = "MUSCLES")
+        staffIncidentReportingOfficer = staff(firstName = "EAGLE", lastName = "EYES")
+        prisonerVictim = offender(firstName = "CHARLIE", lastName = "VICTIM") { booking {} }
+        prisonerWitness = offender(firstName = "CLIVE", lastName = "SNITCH") { booking {} }
+        anotherSuspect = offender(firstName = "KILLER", lastName = "BROWN") { booking {} }
+        incident = adjudicationIncident(
+          reportingStaff = staff,
+          prisonId = "MDI",
+          agencyInternalLocationId = -41,
+          reportedDateTime = LocalDateTime.parse("2023-01-02T15:00"),
+          reportedDate = LocalDate.parse("2023-01-02"),
+          incidentDateTime = LocalDateTime.parse("2023-01-01T18:00"),
+          incidentDate = LocalDate.parse("2023-01-01"),
+          incidentDetails = "There was a fight in the toilets",
+        ) {
+          repair(repairType = "PLUM", comment = "Fixed the bog", repairCost = BigDecimal("10.30"))
+          repair(repairType = "CLEA")
+          party(role = WITNESS, staff = staffWitness)
+          party(role = VICTIM, staff = staffVictim)
+          party(role = STAFF_CONTROL, staff = staffInvolvedWithForce)
+          party(role = STAFF_REPORTING_OFFICER, staff = staffIncidentReportingOfficer)
+          party(role = VICTIM, offenderBooking = prisonerVictim.latestBooking())
+          party(role = WITNESS, offenderBooking = prisonerWitness.latestBooking())
+          party(
+            role = SUSPECT,
+            offenderBooking = anotherSuspect.latestBooking(),
+            adjudicationNumber = 987654,
+            actionDecision = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE,
+          )
+        }
+        prisoner = offender(nomsId = "A1234TT") {
+          booking {
+            adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
+              charge(
+                offenceCode = "51:1N",
+                guiltyEvidence = "HOOCH",
+                reportDetail = "1234/123",
               )
-              evidence(
-                date = LocalDate.parse("2023-01-04"),
-                detail = "syringe",
-                type = "DRUGTEST",
+              charge(
+                offenceCode = "51:3",
+                guiltyEvidence = "DEAD SWAN",
+                reportDetail = null,
               )
+              investigation(
+                investigator = staffInvestigator,
+                comment = "Isla comment for investigation",
+                assignedDate = LocalDate.parse("2023-01-02"),
+              ) {
+                evidence(
+                  date = LocalDate.parse("2023-01-03"),
+                  detail = "smashed light bulb",
+                  type = "PHOTO",
+                )
+                evidence(
+                  date = LocalDate.parse("2023-01-04"),
+                  detail = "syringe",
+                  type = "DRUGTEST",
+                )
+              }
             }
           }
         }
-      }
 
-      offenderBookingId = prisoner.latestBooking().bookingId
+        offenderBookingId = prisoner.latestBooking().bookingId
+      }
     }
 
     @AfterEach
