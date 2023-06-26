@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBui
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -51,7 +52,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   fun setup() {
     repository.save(ProgramServiceBuilder())
-    courseActivity = repository.save(courseActivityBuilderFactory.builder())
+    testData(repository) {
+      courseActivity = courseActivity { payRate() }
+    }
     offender =
       repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
     bookingId = offender.latestBooking().bookingId

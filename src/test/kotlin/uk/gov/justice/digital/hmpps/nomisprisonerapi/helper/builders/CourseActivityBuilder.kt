@@ -10,7 +10,6 @@ import java.time.LocalDate
 
 @Component
 class CourseActivityBuilderFactory(
-  private val courseActivityPayRateBuilderFactory: CourseActivityPayRateBuilderFactory = CourseActivityPayRateBuilderFactory(),
   private val repository: Repository? = null,
 ) {
   fun builder(
@@ -25,7 +24,7 @@ class CourseActivityBuilderFactory(
     endDate: String? = null,
     minimumIncentiveLevelCode: String = "STD",
     internalLocationId: Long? = -8,
-    payRates: List<CourseActivityPayRateBuilder> = listOf(courseActivityPayRateBuilderFactory.builder()),
+    payRates: List<CourseActivityPayRateBuilder> = listOf(),
     courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
     courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
     excludeBankHolidays: Boolean = false,
@@ -68,7 +67,7 @@ class CourseActivityBuilder(
   var courseSchedules: List<CourseScheduleBuilder>,
   var courseScheduleRules: List<CourseScheduleRuleBuilder>,
   var excludeBankHolidays: Boolean,
-) {
+) : CourseActivityDsl {
   fun build(): CourseActivity =
     repository?.let {
       CourseActivity(
@@ -114,6 +113,23 @@ class CourseActivityBuilder(
       courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
       courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this) })
     }
+
+  override fun payRate(
+    iepLevelCode: String,
+    payBandCode: String,
+    startDate: String,
+    endDate: String?,
+    halfDayRate: Double,
+  ) {
+    payRates += CourseActivityPayRateBuilderFactory(repository)
+      .builder(
+        iepLevelCode,
+        payBandCode,
+        startDate,
+        endDate,
+        halfDayRate,
+      )
+  }
 
   private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()
 

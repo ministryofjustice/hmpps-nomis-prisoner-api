@@ -35,7 +35,7 @@ class CourseActivityPayRateBuilder(
   var startDate: String,
   var endDate: String?,
   var halfDayRate: Double,
-) {
+) : CourseActivityPayRateDsl {
   fun build(courseActivity: CourseActivity) =
     repository?.let {
       CourseActivityPayRate(

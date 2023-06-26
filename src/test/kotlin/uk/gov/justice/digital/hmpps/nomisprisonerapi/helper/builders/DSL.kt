@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -15,8 +16,90 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@ScopeDslMarker
-interface DataDsl {
+fun testData(repository: Repository, dsl: TestData.() -> Unit) = TestData(repository).apply(dsl)
+
+class TestData(private val repository: Repository) : TestDataDsl {
+  @StaffDslMarker
+  override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
+    repository.save(StaffBuilder(firstName, lastName).apply(dsl))
+
+  @AdjudicationIncidentDslMarker
+  override fun adjudicationIncident(
+    incidentDetails: String,
+    reportedDateTime: LocalDateTime,
+    reportedDate: LocalDate,
+    incidentDateTime: LocalDateTime,
+    incidentDate: LocalDate,
+    prisonId: String,
+    agencyInternalLocationId: Long,
+    reportingStaff: Staff,
+    dsl: AdjudicationIncidentDsl.() -> Unit,
+  ): AdjudicationIncident = repository.save(
+    AdjudicationIncidentBuilder(
+      incidentDetails = incidentDetails,
+      reportedDateTime = reportedDateTime,
+      reportedDate = reportedDate,
+      incidentDateTime = incidentDateTime,
+      incidentDate = incidentDate,
+      prisonId = prisonId,
+      agencyInternalLocationId = agencyInternalLocationId,
+      reportingStaff = reportingStaff,
+    ).apply(dsl),
+  )
+
+  @OffenderDslMarker
+  override fun offender(
+    nomsId: String,
+    lastName: String,
+    firstName: String,
+    birthDate: LocalDate,
+    genderCode: String,
+    dsl: OffenderDsl.() -> Unit,
+  ): Offender = repository.save(OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode).apply(dsl))
+
+  @CourseActivityDslMarker
+  override fun courseActivity(
+    courseActivityId: Long,
+    code: String,
+    programId: Long,
+    prisonId: String,
+    description: String,
+    capacity: Int,
+    active: Boolean,
+    startDate: String,
+    endDate: String?,
+    minimumIncentiveLevelCode: String,
+    internalLocationId: Long?,
+    payRates: List<CourseActivityPayRateBuilder>,
+    courseSchedules: List<CourseScheduleBuilder>,
+    courseScheduleRules: List<CourseScheduleRuleBuilder>,
+    excludeBankHolidays: Boolean,
+    dsl: CourseActivityDsl.() -> Unit,
+  ): CourseActivity =
+    repository.save(
+      CourseActivityBuilder(
+        repository,
+        courseActivityId,
+        code,
+        programId,
+        prisonId,
+        description,
+        capacity,
+        active,
+        startDate,
+        endDate,
+        minimumIncentiveLevelCode,
+        internalLocationId,
+        payRates,
+        courseSchedules,
+        courseScheduleRules,
+        excludeBankHolidays,
+      ).apply(dsl),
+    )
+}
+
+@TestDataDslMarker
+interface TestDataDsl {
   @StaffDslMarker
   fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit = {}): Staff
 
@@ -42,12 +125,32 @@ interface DataDsl {
     genderCode: String = "M",
     dsl: OffenderDsl.() -> Unit = {},
   ): Offender
+
+  @CourseActivityDslMarker
+  fun courseActivity(
+    courseActivityId: Long = 0,
+    code: String = "CA",
+    programId: Long = 20,
+    prisonId: String = "LEI",
+    description: String = "test course activity",
+    capacity: Int = 23,
+    active: Boolean = true,
+    startDate: String = "2022-10-31",
+    endDate: String? = null,
+    minimumIncentiveLevelCode: String = "STD",
+    internalLocationId: Long? = -8,
+    payRates: List<CourseActivityPayRateBuilder> = listOf(),
+    courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
+    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
+    excludeBankHolidays: Boolean = false,
+    dsl: CourseActivityDsl.() -> Unit = {},
+  ): CourseActivity
 }
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface StaffDsl
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface OffenderDsl {
   @BookingDslMarker
   fun booking(
@@ -61,7 +164,7 @@ interface OffenderDsl {
   )
 }
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface BookingDsl {
   @AdjudicationPartyDslMarker
   fun adjudicationParty(
@@ -73,7 +176,7 @@ interface BookingDsl {
   )
 }
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface AdjudicationIncidentDsl {
   @AdjudicationRepairDslMarker
   fun repair(
@@ -104,7 +207,7 @@ enum class PartyRole(val code: String) {
   STAFF_REPORTING_OFFICER(reportingOfficerRole),
 }
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface AdjudicationPartyDsl {
   @AdjudicationInvestigationDslMarker
   fun investigation(
@@ -123,10 +226,10 @@ interface AdjudicationPartyDsl {
   )
 }
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface AdjudicationRepairDsl
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface AdjudicationInvestigationDsl {
   @AdjudicationEvidenceDslMarker
   fun evidence(
@@ -137,14 +240,29 @@ interface AdjudicationInvestigationDsl {
   )
 }
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface AdjudicationEvidenceDsl
 
-@ScopeDslMarker
+@TestDataDslMarker
 interface AdjudicationChargeDsl
 
+@TestDataDslMarker
+interface CourseActivityDsl {
+  @CourseActivityPayRateDslMarker
+  fun payRate(
+    iepLevelCode: String = "STD",
+    payBandCode: String = "5",
+    startDate: String = "2022-10-31",
+    endDate: String? = null,
+    halfDayRate: Double = 3.2,
+  )
+}
+
+@TestDataDslMarker
+interface CourseActivityPayRateDsl
+
 @DslMarker
-annotation class ScopeDslMarker
+annotation class TestDataDslMarker
 
 @DslMarker
 annotation class StaffDslMarker
@@ -172,3 +290,9 @@ annotation class AdjudicationInvestigationDslMarker
 
 @DslMarker
 annotation class AdjudicationEvidenceDslMarker
+
+@DslMarker
+annotation class CourseActivityDslMarker
+
+@DslMarker
+annotation class CourseActivityPayRateDslMarker
