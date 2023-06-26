@@ -327,8 +327,8 @@ class Repository(
   fun save(programServiceBuilder: ProgramServiceBuilder): ProgramService =
     programServiceRepository.save(programServiceBuilder.build())
 
-  fun save(courseActivityBuilder: CourseActivityBuilder): CourseActivity =
-    courseActivityBuilder.build()
+  fun save(courseActivityBuilder: CourseActivityBuilder, programService: ProgramService): CourseActivity =
+    courseActivityBuilder.build(programService)
       .let { activityRepository.saveAndFlush(it) }
 
   fun save(
