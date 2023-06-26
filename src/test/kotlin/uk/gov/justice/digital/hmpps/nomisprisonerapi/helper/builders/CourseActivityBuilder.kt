@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
 
@@ -69,11 +70,11 @@ class CourseActivityBuilder(
   var courseScheduleRules: List<CourseScheduleRuleBuilder>,
   var excludeBankHolidays: Boolean,
 ) : CourseActivityDsl {
-  fun build(): CourseActivity =
+  fun build(programService: ProgramService): CourseActivity =
     repository?.let {
       CourseActivity(
         code = code,
-        program = repository.lookupProgramService(programId),
+        program = programService,
         caseloadId = prisonId,
         prison = repository.lookupAgency(prisonId),
         description = description,

@@ -13,12 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -33,12 +30,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   private lateinit var repository: Repository
 
   @Autowired
-  private lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
-
-  @Autowired
-  private lateinit var payRateBuilderFactory: CourseActivityPayRateBuilderFactory
-
-  @Autowired
   private lateinit var allocationBuilderFactory: OffenderProgramProfileBuilderFactory
 
   private lateinit var courseActivity: CourseActivity
@@ -51,7 +42,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    repository.save(ProgramServiceBuilder())
     testData(repository) {
       programService {
         courseActivity = courseActivity { payRate() }
@@ -404,13 +394,17 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      val payRates = listOf(
-        payRateBuilderFactory.builder(),
-        payRateBuilderFactory.builder(payBandCode = "6"),
-        payRateBuilderFactory.builder(payBandCode = "7"),
-      )
-      courseActivity = repository.save(courseActivityBuilderFactory.builder(payRates = payRates))
-
+      testData(repository) {
+        programService {
+          courseActivity = courseActivity {
+            payRate(payBandCode = "5")
+            payRate(payBandCode = "6")
+            payRate(payBandCode = "7")
+            courseSchedule()
+            courseScheduleRule()
+          }
+        }
+      }
       // create an allocation to update
       upsertAllocationIsOk()
     }

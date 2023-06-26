@@ -55,6 +55,7 @@ class ProgramServiceBuilder(
         courseScheduleRules,
         excludeBankHolidays,
       ).apply(dsl),
+      repository.save(this),
     )
       ?: throw IllegalStateException("No repository - is this a unit test? Try create() instead.")
 }
