@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
 
 @Component
@@ -25,7 +26,7 @@ class CourseActivityBuilderFactory(
     minimumIncentiveLevelCode: String = "STD",
     internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(),
-    courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
+    courseSchedules: List<CourseScheduleBuilder> = listOf(),
     courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
     excludeBankHolidays: Boolean = false,
   ): CourseActivityBuilder {
@@ -129,6 +130,24 @@ class CourseActivityBuilder(
         endDate,
         halfDayRate,
       )
+  }
+
+  override fun courseSchedule(
+    courseScheduleId: Long,
+    scheduleDate: String,
+    startTime: String,
+    endTime: String,
+    slotCategory: SlotCategory,
+    scheduleStatus: String,
+  ) {
+    courseSchedules += CourseScheduleBuilder(
+      courseScheduleId,
+      scheduleDate,
+      startTime,
+      endTime,
+      slotCategory,
+      scheduleStatus,
+    )
   }
 
   private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()

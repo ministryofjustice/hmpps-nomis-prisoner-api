@@ -13,7 +13,7 @@ class CourseScheduleBuilder(
   val endTime: String = "11:00",
   val slotCategory: SlotCategory = SlotCategory.AM,
   val scheduleStatus: String = "SCH",
-) {
+) : CourseScheduleDsl {
   fun build(courseActivity: CourseActivity) =
     LocalDate.parse(scheduleDate).let { date ->
       CourseSchedule(

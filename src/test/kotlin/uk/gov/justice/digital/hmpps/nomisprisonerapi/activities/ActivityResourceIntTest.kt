@@ -405,7 +405,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     fun setUp() {
       testData(repository) {
         programService {
-          courseActivity = courseActivity { payRate() }
+          courseActivity = courseActivity {
+            payRate()
+            courseSchedule()
+          }
         }
       }
     }
@@ -704,6 +707,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
               payRate(iepLevelCode = "BAS")
+              courseSchedule()
             }
           }
 // TODO SDIT-902
@@ -743,6 +747,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
               payRate(iepLevelCode = "BAS")
+              courseSchedule()
             }
           }
         }
@@ -953,11 +958,16 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `updates should be saved to the database`() {
-        val schedules = listOf(
-          CourseScheduleBuilder(scheduleDate = today.toString()),
-          CourseScheduleBuilder(scheduleDate = tomorrow.toString()),
-        )
-        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = schedules))
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity {
+              payRate()
+              courseSchedule(scheduleDate = today.toString())
+              courseSchedule(scheduleDate = tomorrow.toString())
+            }
+          }
+        }
+
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
@@ -997,11 +1007,16 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `do not delete any old schedules`() {
-        val schedules = listOf(
-          CourseScheduleBuilder(scheduleDate = yesterday.toString()),
-          CourseScheduleBuilder(scheduleDate = today.toString()),
-        )
-        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = schedules))
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity {
+              payRate()
+              courseSchedule(scheduleDate = yesterday.toString())
+              courseSchedule(scheduleDate = today.toString())
+            }
+          }
+        }
+
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
@@ -1031,11 +1046,16 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `cancellations should be saved to the database`() {
-        val schedules = listOf(
-          CourseScheduleBuilder(scheduleDate = today.toString()),
-          CourseScheduleBuilder(scheduleDate = tomorrow.toString()),
-        )
-        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = schedules))
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity {
+              payRate()
+              courseSchedule(scheduleDate = today.toString())
+              courseSchedule(scheduleDate = tomorrow.toString())
+            }
+          }
+        }
+
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(

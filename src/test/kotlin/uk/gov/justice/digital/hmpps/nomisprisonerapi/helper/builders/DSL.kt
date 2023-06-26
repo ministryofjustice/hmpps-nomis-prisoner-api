@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.forceControllingOfficerRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.reportingOfficerRole
@@ -222,7 +223,7 @@ interface ProgramServiceDsl {
     minimumIncentiveLevelCode: String = "STD",
     internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(),
-    courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
+    courseSchedules: List<CourseScheduleBuilder> = listOf(),
     courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
     excludeBankHolidays: Boolean = false,
     dsl: CourseActivityDsl.() -> Unit = {},
@@ -239,10 +240,23 @@ interface CourseActivityDsl {
     endDate: String? = null,
     halfDayRate: Double = 3.2,
   )
+
+  @CourseScheduleDslMarker
+  fun courseSchedule(
+    courseScheduleId: Long = 0,
+    scheduleDate: String = "2022-11-01",
+    startTime: String = "08:00",
+    endTime: String = "11:00",
+    slotCategory: SlotCategory = SlotCategory.AM,
+    scheduleStatus: String = "SCH",
+  )
 }
 
 @TestDataDslMarker
 interface CourseActivityPayRateDsl
+
+@TestDataDslMarker
+interface CourseScheduleDsl
 
 @DslMarker
 annotation class TestDataDslMarker
@@ -282,3 +296,6 @@ annotation class CourseActivityDslMarker
 
 @DslMarker
 annotation class CourseActivityPayRateDslMarker
+
+@DslMarker
+annotation class CourseScheduleDslMarker
