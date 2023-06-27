@@ -397,7 +397,7 @@ class VisitService(
     val agencyVisitTime =
       getOrCreateVisitTime(startDateTime = startDateTime, endDateTime = endDateTime, location = location)
     val vsipVisitRoom =
-      getOrCreateVsipVisitRoom(location = location, roomDescription = roomDescription, isClosedVisit = isClosedVisit)
+      getOrCreateVsipVisitRoom(location = location, isClosedVisit = isClosedVisit)
     return visitSlotRepository.findByAgencyInternalLocation_DescriptionAndAgencyVisitTime_StartTimeAndWeekDay(
       roomDescription = vsipVisitRoom.description,
       startTime = agencyVisitTime.startTime,
@@ -442,23 +442,26 @@ class VisitService(
 
   private fun getOrCreateVsipVisitRoom(
     location: AgencyLocation,
-    roomDescription: String,
     isClosedVisit: Boolean,
   ): AgencyInternalLocation {
-    // description and agencyId is unique (code is not unique)
+    // currently this will return nothing for Isle of Wight and Fosse Way until data is manually fixed
+    val visitsTopLevelLocation = internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(location.id)
+
+    val locationCode = "VSIP-${if (isClosedVisit) "CLO" else "SOC"}"
     val internalLocationDescription =
-      roomDescription.toNomisBaseDescription().toInternalLocationDescription(location.id, isClosedVisit)
+      visitsTopLevelLocation?.toInternalLocationDescription(isClosedVisit) ?: "${location.id}-VISITS-$locationCode"
     return internalLocationRepository.findByDescriptionAndAgencyId(internalLocationDescription, location.id)
       ?: createVsipVisitRoom(
         location = location,
+        parentLocation = visitsTopLevelLocation,
         roomDescription = internalLocationDescription,
-        roomCode = internalLocationDescription.toInternalLocationCode(location.id),
-        userDescription = "VISITS - $roomDescription".take(40),
+        roomCode = locationCode,
+        userDescription = "VISITS - ${if (isClosedVisit) "CLOSED" else "SOCIAL"}",
       )
   }
 
-  private fun String.toInternalLocationDescription(locationId: String, isClosedVisit: Boolean) =
-    "$locationId-VSIP-$this-${if (isClosedVisit) "CLO" else "SOC"}"
+  private fun AgencyInternalLocation.toInternalLocationDescription(isClosedVisit: Boolean) =
+    "$description-VSIP-${if (isClosedVisit) "CLO" else "SOC"}"
 
   private fun String.toNomisBaseDescription() =
     this.replace("room", "", ignoreCase = true)
@@ -534,6 +537,7 @@ class VisitService(
 
   private fun createVsipVisitRoom(
     location: AgencyLocation,
+    parentLocation: AgencyInternalLocation?,
     roomDescription: String,
     roomCode: String,
     userDescription: String,
@@ -542,11 +546,17 @@ class VisitService(
     return internalLocationRepository.save(
       AgencyInternalLocation(
         agencyId = location.id,
+        parentLocation = parentLocation,
         description = roomDescription,
         locationType = "VISIT",
         locationCode = roomCode,
         active = true,
         userDescription = userDescription.uppercase(),
+        capacity = 99,
+        listSequence = 99,
+        trackingFlag = true,
+        currentOccupancy = 0,
+        certifiedFlag = false,
       ),
     )
   }
