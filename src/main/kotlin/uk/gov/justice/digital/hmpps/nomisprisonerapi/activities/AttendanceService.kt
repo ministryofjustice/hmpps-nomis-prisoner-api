@@ -75,9 +75,6 @@ class AttendanceService(
         offenderProgramProfile,
         status,
       ).also {
-        if (offenderBooking.location?.id != courseSchedule.courseActivity.prison.id) {
-          throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseSchedule.courseActivity.prison.id}")
-        }
         if (offenderProgramProfile.programStatus.code == "END") {
           throw BadDataException("Cannot create an attendance for allocation ${offenderProgramProfile.offenderProgramReferenceId} because it has ended")
         }
