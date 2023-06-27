@@ -234,7 +234,7 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.location.id).isEqualTo(prisonId)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-SOC")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_SOC")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
           assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - SOCIAL")
           assertThat(visit.agencyInternalLocation?.parentLocation?.locationCode).isEqualTo("VISITS")
@@ -255,7 +255,7 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.location.id).isEqualTo(prisonId)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-CLO")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_CLO")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
           assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - CLOSED")
           assertThat(visit.agencyInternalLocation?.parentLocation?.locationCode).isEqualTo("VISITS")
@@ -269,7 +269,7 @@ internal class VisitServiceTest {
       assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISITS-VSIP-SOC")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISITS-VSIP_SOC")
           assertThat(visit.agencyInternalLocation?.parentLocation).isNotNull()
         },
       )
@@ -280,7 +280,7 @@ internal class VisitServiceTest {
       assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(prisonId = "WWI"))).isEqualTo(CreateVisitResponse(visitId))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("WWI-VISITS-VSIP-SOC")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("WWI-VISITS-VSIP_SOC")
           assertThat(visit.agencyInternalLocation?.parentLocation).isNull()
         },
       )
@@ -301,8 +301,8 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "OPEN"))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP-SOC")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-SOC")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP_SOC")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_SOC")
         },
       )
     }
@@ -312,8 +312,8 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP-CLO")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-CLO")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP_CLO")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_CLO")
         },
       )
     }

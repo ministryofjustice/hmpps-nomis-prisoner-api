@@ -329,8 +329,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visit = repository.lookupVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VISIT-VSIP-SOC")
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VISIT-VSIP_SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP_SOC")
       assertThat(visit.agencyVisitSlot!!.timeSlotSequence).isEqualTo(1)
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.endTime).isEqualTo(LocalTime.parse("13:04"))
@@ -374,8 +374,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visit = repository.lookupVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("MDI-VISITS-VSIP-SOC")
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("MDI-VISITS-VSIP_SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP_SOC")
       assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.parentLocation).isNull()
     }
 
@@ -411,8 +411,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visit = repository.lookupVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("BXI-VISIT-VSIP-SOC")
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("BXI-VISIT-VSIP_SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP_SOC")
       assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.parentLocation?.description).isEqualTo("BXI-VISIT")
     }
 
@@ -471,7 +471,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
 
-        assertThat(visit.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP-SOC")
+        assertThat(visit.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP_SOC")
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visit.agencyVisitSlot!!.id }
 
@@ -483,7 +483,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "CLOSED",
           ),
         )
-        assertThat(visitInDifferentRestrictionRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP-CLO")
+        assertThat(visitInDifferentRestrictionRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP_CLO")
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitInDifferentRestrictionRoom.agencyVisitSlot!!.id }
 
@@ -495,7 +495,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "CLOSED",
           ),
         )
-        assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP-CLO")
+        assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP_CLO")
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitInDifferentPhysicalRoom.agencyVisitSlot!!.id }
       }
@@ -962,7 +962,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(VisitResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISIT-VSIP-SOC")
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISIT-VSIP_SOC")
 
         val visits = jdbcTemplate.query(
           """SELECT * FROM V_OFFENDER_VISITS 
@@ -973,7 +973,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
 
         assertThat(visits).hasSize(1)
-        assertThat(visits.first()["DESCRIPTION"]).isEqualTo("$prisonId-VISIT-VSIP-SOC")
+        assertThat(visits.first()["DESCRIPTION"]).isEqualTo("$prisonId-VISIT-VSIP_SOC")
       }
 
       @Test
@@ -993,7 +993,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(VisitResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISIT-VSIP-CLO")
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISIT-VSIP_CLO")
       }
 
       @Test
