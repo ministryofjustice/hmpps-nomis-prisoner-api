@@ -184,17 +184,14 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return bad request if creating attendance for offender in wrong prison`() {
+      fun `should return OK if creating attendance for offender in wrong prison`() {
         offender =
           repository.save(OffenderBuilder(nomsId = "A1234TU").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
         offenderBooking = offender.latestBooking()
         repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
 
-        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
-          }
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, validJsonRequest.withEventOutcomeCode("SUS"))
+          .expectStatus().isOk
       }
 
       @Test
