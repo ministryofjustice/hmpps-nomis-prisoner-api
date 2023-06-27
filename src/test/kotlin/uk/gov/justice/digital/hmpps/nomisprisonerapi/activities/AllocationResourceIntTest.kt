@@ -15,22 +15,20 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import java.time.LocalDate
 
 class AllocationResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var allocationBuilderFactory: OffenderProgramProfileBuilderFactory
 
   private lateinit var courseActivity: CourseActivity
   private lateinit var offender: Offender
@@ -46,10 +44,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       programService {
         courseActivity = courseActivity { payRate() }
       }
+      offender = offender(nomsId = "A1234XX") {
+        booking(agencyLocationId = "LEI")
+      }
+      bookingId = offender.latestBooking().bookingId
     }
-    offender =
-      repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
-    bookingId = offender.latestBooking().bookingId
   }
 
   @AfterEach
@@ -341,18 +340,15 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
-      repository.save(
-        allocationBuilderFactory.builder(
-          endDate = "2022-11-01",
-          programStatusCode = "END",
-        ),
-        offender.latestBooking(),
-        courseActivity,
-      )
-
+      testData(repository) {
+        courseAllocation(offender.latestBooking(), courseActivity, endDate = "2022-11-01", programStatusCode = "END") {
+          payBand()
+        }
+      }
       val request = upsertRequest()
         .withAdditionalJson(""""startDate": "2022-12-01"""")
         .withProgramStatusCode("ALLOC")
+
       val response = upsertAllocationIsOk(request)!!
 
       val saved = repository.lookupOffenderProgramProfile(courseActivity, offender.latestBooking())
@@ -559,22 +555,27 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow updates if offender in wrong prison`() {
-      val offenderInWrongPrison =
-        repository.save(OffenderBuilder(nomsId = "A1234YY").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
-      bookingId = offenderInWrongPrison.latestBooking().bookingId
-      repository.save(allocationBuilderFactory.builder(), offenderInWrongPrison.latestBooking(), courseActivity)
-      val request = upsertRequest().withBookingId(offenderInWrongPrison.latestBooking().bookingId.toString())
+      lateinit var bookingInWrongPrison: OffenderBooking
+      testData(repository) {
+        bookingInWrongPrison = offender(nomsId = "A1234YY") {
+          booking(agencyLocationId = "MDI")
+        }.latestBooking()
+        courseAllocation(bookingInWrongPrison, courseActivity) { payBand() }
+      }
+      val request = upsertRequest().withBookingId(bookingInWrongPrison.bookingId.toString())
 
       upsertAllocationIsOk(request)
     }
 
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
-      // Create an allocation for a prisoner who is out (need to do this directly on the database to avoid validation)
-      offender =
-        repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "OUT")))
-      bookingId = offender.latestBooking().bookingId
-      repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+      testData(repository) {
+        offender = offender(nomsId = "A1234XX") {
+          booking(agencyLocationId = "OUT")
+        }
+        bookingId = offender.latestBooking().bookingId
+        courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
+      }
 
       // De-allocation is allowed
       val request = upsertRequest()
@@ -594,11 +595,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow suspension when not in the activity prison`() {
-      // Create an allocation for a prisoner who is out (need to do this directly on the database to avoid validation)
-      offender =
-        repository.save(OffenderBuilder(nomsId = "A1234XX").withBooking(OffenderBookingBuilder(agencyLocationId = "OUT")))
-      bookingId = offender.latestBooking().bookingId
-      repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+      testData(repository) {
+        offender = offender(nomsId = "A1234XX") {
+          booking(agencyLocationId = "OUT")
+        }
+        bookingId = offender.latestBooking().bookingId
+        courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
+      }
 
       // Suspending is allowed
       val request = upsertRequest().withAdditionalJson(
@@ -614,8 +617,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   inner class DuplicateAllocation {
     @Test
     fun `duplicate allocations can be worked around by deleting one of them`() {
-      repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
-      val duplicate = repository.save(allocationBuilderFactory.builder(), offender.latestBooking(), courseActivity)
+      lateinit var duplicate: OffenderProgramProfile
+      testData(repository) {
+        courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
+        duplicate = courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
+      }
 
       // unable to update the allocation because of a duplicate
       val request = upsertRequest().withAdditionalJson(""""endDate": "$today"""")

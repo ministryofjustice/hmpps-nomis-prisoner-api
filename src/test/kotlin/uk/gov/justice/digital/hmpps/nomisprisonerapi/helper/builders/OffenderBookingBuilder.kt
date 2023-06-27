@@ -79,4 +79,15 @@ class OffenderBookingBuilder(
       ).apply(dsl),
     )
   }
+
+  override fun incentive(
+    iepLevelCode: String,
+    userId: String?,
+    sequence: Long,
+    commentText: String,
+    auditModuleName: String?,
+    iepDateTime: LocalDateTime,
+  ) {
+    this.incentives += IncentiveBuilder(iepLevelCode, userId, sequence, commentText, auditModuleName, iepDateTime)
+  }
 }

@@ -19,29 +19,22 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.IncentiveBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfilePayBandBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityArea
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
-
-private const val PRISON_ID = "LEI"
-private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
-private const val PROGRAM_CODE = "INTTEST"
-private const val IEP_LEVEL = "STD"
 
 class ActivityResourceIntTest : IntegrationTestBase() {
 
@@ -49,12 +42,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var offenderProgramProfileBuilderFactory: OffenderProgramProfileBuilderFactory
-
-  @Autowired
-  private lateinit var offenderProgramProfilePayBandBuilderFactory: OffenderProgramProfilePayBandBuilderFactory
 
   @Autowired
   private lateinit var offenderCourseAttendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
@@ -113,7 +100,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid prison should return bad request`() {
-        val invalidPrison = validJsonRequest().replace(""""prisonId" : "$PRISON_ID",""", """"prisonId" : "ZZX",""")
+        val invalidPrison = validJsonRequest().replace(""""prisonId" : "LEI",""", """"prisonId" : "ZZX",""")
 
         createActivityExpectingBadRequest(invalidPrison)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -243,7 +230,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         assertThat(courseActivity.courseActivityId).isEqualTo(id)
         assertThat(courseActivity.capacity).isEqualTo(23)
-        assertThat(courseActivity.prison.id).isEqualTo(PRISON_ID)
+        assertThat(courseActivity.prison.id).isEqualTo("LEI")
         assertThat(courseActivity.payRates.first().halfDayRate).isCloseTo(
           BigDecimal(0.4),
           within(BigDecimal("0.001")),
@@ -277,7 +264,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           check<MutableMap<String, String>> { actual ->
             mapOf(
               "nomisCourseActivityId" to id.toString(),
-              "prisonId" to PRISON_ID,
+              "prisonId" to "LEI",
               "nomisCourseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
               "nomisCourseActivityPayRateIds" to "[BAS-5-2022-10-31]",
               "nomisCourseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
@@ -358,15 +345,15 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               } ],
       """.trimIndent(),
     ) = """{
-            "prisonId" : "$PRISON_ID",
+            "prisonId" : "LEI",
             "code" : "CA",
-            "programCode" : "$PROGRAM_CODE",
+            "programCode" : "INTTEST",
             "description" : "test description",
             "capacity" : 23,
             "startDate" : "2022-10-31",
             "endDate" : "2022-11-30",
-            "minimumIncentiveLevelCode" : "$IEP_LEVEL",
-            "internalLocationId" : "$ROOM_ID",
+            "minimumIncentiveLevelCode" : "STD",
+            "internalLocationId" : -8,
             "payRates" : [ {
                 "incentiveLevel" : "BAS",
                 "payBand" : "5",
@@ -394,6 +381,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   inner class UpdateActivity {
 
     private lateinit var courseActivity: CourseActivity
+    private lateinit var offender: Offender
+    private lateinit var offenderBooking: OffenderBooking
 
     @BeforeEach
     fun setUp() {
@@ -505,7 +494,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
-        assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
+        assertThat(updated.payRates[0].endDate).isEqualTo(today)
         assertThat(updated.payRates[1].endDate).isNull()
         assertThat(updated.payRates[1].halfDayRate)
           .isCloseTo(BigDecimal(0.8), within(BigDecimal(0.001)))
@@ -683,12 +672,18 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.lookupActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
+        assertThat(updated.payRates[0].endDate).isEqualTo(today)
       }
 
       @Test
       fun `should return bad request if pay rate removed which is allocated to an offender`() {
         testData(repository) {
+          offender = offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "LEI") {
+              incentive(iepLevelCode = "STD")
+            }
+          }
+          offenderBooking = offender.latestBooking()
           programService {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
@@ -697,17 +692,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-// TODO SDIT-902
-//          offender = offender(nomsId = "A1234TT") {
-//            offenderBooking = booking(agencyLocationId = PRISON_ID) {
-//              incentive()
-//            }
-//          }
-//          allocation(offenderBooking = offenderBooking, courseActivity = courseActivity)
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
         }
-        val offenderBooking = OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))
-        val offender = repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(offenderBooking))
-        repository.save(offenderProgramProfileBuilderFactory.builder(), offender.latestBooking(), courseActivity)
 
         val payRatesJson = """
           "payRates" : [ {
@@ -730,6 +716,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if unused pay rate removed with a pay band used on a different pay rate`() {
         testData(repository) {
+          offender = offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "LEI") {
+              incentive(iepLevelCode = "STD")
+            }
+          }
           programService {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
@@ -738,10 +729,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
+          offenderBooking = offender.latestBooking()
+          courseAllocation(offenderBooking = offenderBooking, courseActivity = courseActivity) {
+            payBand()
+          }
         }
-        val offenderBooking = OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))
-        val offender = repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(offenderBooking))
-        repository.save(offenderProgramProfileBuilderFactory.builder(), offender.latestBooking(), courseActivity)
 
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
@@ -752,15 +744,17 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
-        val offender =
-          repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID, incentives = listOf(IncentiveBuilder(iepLevel = "STD")))))
-        repository.save(
-          offenderProgramProfileBuilderFactory.builder(
-            payBands = listOf(offenderProgramProfilePayBandBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString())),
-          ),
-          offender.latestBooking(),
-          courseActivity,
-        )
+        testData(repository) {
+          offender = offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "LEI") {
+              incentive(iepLevelCode = "STD")
+            }
+          }
+          offenderBooking = offender.latestBooking()
+          courseAllocation(offenderBooking, courseActivity) {
+            payBand(endDate = yesterday.toString())
+          }
+        }
 
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
@@ -769,7 +763,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.lookupActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(LocalDate.now())
+        assertThat(updated.payRates[0].endDate).isEqualTo(today)
       }
     }
 
@@ -1150,16 +1144,20 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should update program for activity and active allocations`() {
-        // create another program to move the activity to
-        repository.save(ProgramServiceBuilder(programId = 30, programCode = "NEW_SERVICE"))
-        // add an allocated offender who should be moved to the new program service
-        val offenderBooking =
-          repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
-        repository.save(offenderProgramProfileBuilderFactory.builder(), offenderBooking, courseActivity)
-        // add a deallocated offender who should NOT be moved to the new program service
-        val deallocatedOffenderBooking =
-          repository.save(OffenderBuilder(nomsId = "A1234UU").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID))).latestBooking()
-        repository.save(offenderProgramProfileBuilderFactory.builder(endDate = LocalDate.now().minusDays(1).toString()), deallocatedOffenderBooking, courseActivity)
+        lateinit var deallocatedOffenderBooking: OffenderBooking
+        testData(repository) {
+          programService(programId = 30, programCode = "NEW_SERVICE")
+          offender = offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "LEI")
+          }
+          offenderBooking = offender.latestBooking()
+          courseAllocation(offenderBooking, courseActivity)
+
+          deallocatedOffenderBooking = offender(nomsId = "A1234UU") {
+            booking(agencyLocationId = "LEI")
+          }.latestBooking()
+          courseAllocation(deallocatedOffenderBooking, courseActivity, endDate = yesterday.toString())
+        }
 
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
@@ -1174,7 +1172,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           val updated = repository.lookupActivity(courseActivity.courseActivityId)
           assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
           assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
-          assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST")
+          assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST") // The deallocated booking is not moved to the new program
         }
       }
     }
@@ -1192,6 +1190,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             }
           }
         }
+
         val request = updateActivityRequestJson(
           schedulesJson =
           """
@@ -1243,14 +1242,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private lateinit var courseActivityAreaRepository: CourseActivityAreaRepository
 
     private fun createRequestJson() = """{
-            "prisonId" : "$PRISON_ID",
+            "prisonId" : "LEI",
             "code" : "CA",
-            "programCode" : "$PROGRAM_CODE",
+            "programCode" : "INTTEST",
             "description" : "test description",
             "capacity" : 23,
             "startDate" : "2022-10-31",
-            "minimumIncentiveLevelCode" : "$IEP_LEVEL",
-            "internalLocationId" : "$ROOM_ID",
+            "minimumIncentiveLevelCode" : "STD",
+            "internalLocationId" : -8,
             "payRates" : [
               {
                 "incentiveLevel" : "BAS",
@@ -1313,7 +1312,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     """.trimIndent()
 
     fun updateRequestJson() = """
-      "internalLocationId" : ${ROOM_ID + 1},
+      "internalLocationId" : ${-8 + 1},
       "payRates" : [
         {
           "incentiveLevel" : "BAS",
@@ -1374,7 +1373,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
+        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -1413,7 +1412,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)))
+        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)

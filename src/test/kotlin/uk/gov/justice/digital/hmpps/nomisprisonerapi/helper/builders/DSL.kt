@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -68,6 +69,31 @@ class TestData(private val repository: Repository) : TestDataDsl {
     dsl: ProgramServiceDsl.() -> Unit,
   ): ProgramService =
     repository.save(ProgramServiceBuilder(repository, programCode, programId, description, active).apply(dsl))
+
+  @CourseAllocationDslMarker
+  override fun courseAllocation(
+    offenderBooking: OffenderBooking,
+    courseActivity: CourseActivity,
+    startDate: String?,
+    programStatusCode: String,
+    endDate: String?,
+    payBands: MutableList<OffenderProgramProfilePayBandBuilder>,
+    endReasonCode: String?,
+    endComment: String?,
+    dsl: CourseAllocationDsl.() -> Unit,
+  ): OffenderProgramProfile = repository.save(
+    OffenderProgramProfileBuilder(
+      repository,
+      startDate,
+      programStatusCode,
+      endDate,
+      payBands,
+      endReasonCode,
+      endComment,
+    ).apply(dsl),
+    offenderBooking,
+    courseActivity,
+  )
 }
 
 @TestDataDslMarker
@@ -106,6 +132,19 @@ interface TestDataDsl {
     active: Boolean = true,
     dsl: ProgramServiceDsl.() -> Unit = {},
   ): ProgramService
+
+  @CourseAllocationDslMarker
+  fun courseAllocation(
+    offenderBooking: OffenderBooking,
+    courseActivity: CourseActivity,
+    startDate: String? = "2022-10-31",
+    programStatusCode: String = "ALLOC",
+    endDate: String? = null,
+    payBands: MutableList<OffenderProgramProfilePayBandBuilder> = mutableListOf(),
+    endReasonCode: String? = null,
+    endComment: String? = null,
+    dsl: CourseAllocationDsl.() -> Unit = {},
+  ): OffenderProgramProfile
 }
 
 @TestDataDslMarker
@@ -135,7 +174,20 @@ interface BookingDsl {
     partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
     dsl: AdjudicationPartyDsl.() -> Unit = {},
   )
+
+  @IncentiveDslMarker
+  fun incentive(
+    iepLevelCode: String = "ENT",
+    userId: String? = null,
+    sequence: Long = 1,
+    commentText: String = "comment",
+    auditModuleName: String? = null,
+    iepDateTime: LocalDateTime = LocalDateTime.now(),
+  )
 }
+
+@TestDataDslMarker
+interface IncentiveDsl
 
 @TestDataDslMarker
 interface AdjudicationIncidentDsl {
@@ -277,6 +329,19 @@ interface CourseScheduleDsl
 @TestDataDslMarker
 interface CourseScheduleRuleDsl
 
+@TestDataDslMarker
+interface CourseAllocationDsl {
+  @CourseAllocationPayBandDslMarker
+  fun payBand(
+    startDate: String = "2022-10-31",
+    endDate: String? = null,
+    payBandCode: String = "5",
+  )
+}
+
+@TestDataDslMarker
+interface CourseAllocationPayBandDsl
+
 @DslMarker
 annotation class TestDataDslMarker
 
@@ -288,6 +353,9 @@ annotation class OffenderDslMarker
 
 @DslMarker
 annotation class BookingDslMarker
+
+@DslMarker
+annotation class IncentiveDslMarker
 
 @DslMarker
 annotation class AdjudicationIncidentDslMarker
@@ -321,3 +389,9 @@ annotation class CourseScheduleDslMarker
 
 @DslMarker
 annotation class CourseScheduleRuleDslMarker
+
+@DslMarker
+annotation class CourseAllocationDslMarker
+
+@DslMarker
+annotation class CourseAllocationPayBandDslMarker
