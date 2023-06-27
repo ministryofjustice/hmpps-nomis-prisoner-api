@@ -31,6 +31,10 @@ data class AgencyInternalLocation(
   @Convert(converter = YesNoConverter::class)
   val certifiedFlag: Boolean = false,
 
+  @Column(name = "TRACKING_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  val trackingFlag: Boolean = false,
+
   @Column(name = "INTERNAL_LOCATION_TYPE")
   val locationType: String,
 
@@ -58,38 +62,10 @@ data class AgencyInternalLocation(
 
   @Column(name = "CAPACITY")
   val capacity: Int? = null,
+
+  @Column(name = "LIST_SEQ")
+  val listSequence: Int? = null,
 ) {
-  val isCell: Boolean
-    get() = locationType == "CELL"
-  val isCellSwap: Boolean
-    get() = !certifiedFlag &&
-      active && parentLocation == null && locationCode == "CSWAP"
-  val isActiveCell: Boolean
-    get() = active && isCell
-
-  fun hasSpace(treatZeroOperationalCapacityAsNull: Boolean): Boolean {
-    val capacity = getActualCapacity(treatZeroOperationalCapacityAsNull)
-    return capacity != null && currentOccupancy != null && currentOccupancy!! < capacity
-  }
-
-  fun decrementCurrentOccupancy(): Int {
-    currentOccupancy = if (currentOccupancy != null && currentOccupancy!! > 0) {
-      currentOccupancy!! - 1
-    } else {
-      0
-    }
-    return currentOccupancy!!
-  }
-
-  fun isActiveCellWithSpace(treatZeroOperationalCapacityAsNull: Boolean): Boolean {
-    return isActiveCell && hasSpace(treatZeroOperationalCapacityAsNull)
-  }
-
-  fun getActualCapacity(treatZeroOperationalCapacityAsNull: Boolean): Int? {
-    val useOperationalCapacity =
-      operationalCapacity != null && !(treatZeroOperationalCapacityAsNull && operationalCapacity == 0)
-    return if (useOperationalCapacity) operationalCapacity else capacity
-  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

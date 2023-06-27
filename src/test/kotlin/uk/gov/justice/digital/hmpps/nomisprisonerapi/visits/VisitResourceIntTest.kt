@@ -329,8 +329,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visit = repository.lookupVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VSIP-MAIN-SOC")
-      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VPMAINSOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VISIT-VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP-SOC")
       assertThat(visit.agencyVisitSlot!!.timeSlotSequence).isEqualTo(1)
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.endTime).isEqualTo(LocalTime.parse("13:04"))
@@ -340,6 +340,80 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.timeSlotSequence).isEqualTo(1)
       assertThat(visit.agencyVisitSlot!!.maxAdults).isEqualTo(0)
       assertThat(visit.agencyVisitSlot!!.maxGroups).isEqualTo(0)
+    }
+
+    @Test
+    internal fun `room description defaults to VISITS when no visit parent area exists`() {
+      val personIds: String = threePeople.map { it.id }.joinToString(",")
+      val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-04T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "MDI",
+            "visitorPersonIds"  : [$personIds],
+            "issueDate"         : "2021-11-02",
+            "visitComment"      : "VSIP Ref: asd-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
+            "room"              : "Main visit room",
+            "openClosedStatus"  : "OPEN"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.visitId).isGreaterThan(0)
+
+      // Spot check that the database has been populated.
+      val visit = repository.lookupVisit(response?.visitId)
+
+      assertThat(visit.agencyVisitSlot).isNotNull
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("MDI-VISITS-VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.parentLocation).isNull()
+    }
+
+    @Test
+    internal fun `room description depends on root visits internal location when it exists - BXI it is VISIT`() {
+      val personIds: String = threePeople.map { it.id }.joinToString(",")
+      val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-04T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "BXI",
+            "visitorPersonIds"  : [$personIds],
+            "issueDate"         : "2021-11-02",
+            "visitComment"      : "VSIP Ref: asd-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
+            "room"              : "Main visit room",
+            "openClosedStatus"  : "OPEN"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.visitId).isGreaterThan(0)
+
+      // Spot check that the database has been populated.
+      val visit = repository.lookupVisit(response?.visitId)
+
+      assertThat(visit.agencyVisitSlot).isNotNull
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("BXI-VISIT-VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP-SOC")
+      assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.parentLocation?.description).isEqualTo("BXI-VISIT")
     }
 
     @Nested
@@ -385,7 +459,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      internal fun `visits in different rooms are in different slots`() {
+      internal fun `visits in different rooms are in different slots only when closed v open`() {
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).isEmpty()
 
         val visit = repository.lookupVisit(
@@ -397,7 +471,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
 
-        assertThat(visit.agencyInternalLocation!!.description).isEqualTo("$prisonId-VSIP-MAIN-SOC")
+        assertThat(visit.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP-SOC")
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visit.agencyVisitSlot!!.id }
 
@@ -409,7 +483,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "CLOSED",
           ),
         )
-        assertThat(visitInDifferentRestrictionRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VSIP-MAIN-CLO")
+        assertThat(visitInDifferentRestrictionRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP-CLO")
         assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitInDifferentRestrictionRoom.agencyVisitSlot!!.id }
 
@@ -421,8 +495,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "CLOSED",
           ),
         )
-        assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VSIP-BIG-BLUE-CLO")
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(3)
+        assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP-CLO")
+        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitInDifferentPhysicalRoom.agencyVisitSlot!!.id }
       }
 
@@ -872,7 +946,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      internal fun `can change the room the visit is in`() {
+      internal fun `can not change the room the visit is in if restriction does not change`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .body(
@@ -888,7 +962,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(VisitResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-ANOTHER-SOC")
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISIT-VSIP-SOC")
 
         val visits = jdbcTemplate.query(
           """SELECT * FROM V_OFFENDER_VISITS 
@@ -899,7 +973,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
 
         assertThat(visits).hasSize(1)
-        assertThat(visits.first()["DESCRIPTION"]).isEqualTo("$prisonId-VSIP-ANOTHER-SOC")
+        assertThat(visits.first()["DESCRIPTION"]).isEqualTo("$prisonId-VISIT-VSIP-SOC")
       }
 
       @Test
@@ -919,7 +993,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectBody(VisitResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VSIP-MAIN-CLO")
+        assertThat(updatedVisit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISIT-VSIP-CLO")
       }
 
       @Test

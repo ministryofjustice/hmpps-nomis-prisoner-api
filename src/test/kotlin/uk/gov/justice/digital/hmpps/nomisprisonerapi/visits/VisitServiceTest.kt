@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -174,7 +175,9 @@ internal class VisitServiceTest {
     whenever(eventOutcomeRepository.findById(any())).thenAnswer {
       return@thenAnswer Optional.of(EventOutcome((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
-    whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.of(AgencyLocation(prisonId, "desc")))
+    whenever(agencyLocationRepository.findById(any())).thenAnswer {
+      return@thenAnswer Optional.of(AgencyLocation(it.arguments[0] as String, "desc"))
+    }
 
     whenever(visitVisitorRepository.getEventId()).thenReturn(eventId)
     whenever(visitOrderRepository.getVisitOrderNumber()).thenReturn(visitOrder)
@@ -184,6 +187,9 @@ internal class VisitServiceTest {
     whenever(visitSlotRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitSlot }
     whenever(internalLocationRepository.save(any())).thenAnswer { it.arguments[0] as AgencyInternalLocation }
     whenever(visitRepository.save(any())).thenAnswer { (it.arguments[0] as Visit).copy(id = visitId) }
+    whenever(internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(eq(prisonId), any(), any())).thenAnswer {
+      return@thenAnswer AgencyInternalLocation(locationId = 99, active = true, locationType = "AREA", agencyId = it.arguments[0] as String, description = "${it.arguments[0]}-VISITS", locationCode = "VISITS", userDescription = "VISITS")
+    }
   }
 
   @DisplayName("create")
@@ -217,7 +223,7 @@ internal class VisitServiceTest {
     }
 
     @Test
-    fun `visit data room details are mapped correctly`() {
+    fun `visit data room details are mapped correctly for social visits`() {
       assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
 
       verify(visitDayRepository).save(any())
@@ -228,30 +234,75 @@ internal class VisitServiceTest {
         check { visit ->
           assertThat(visit.location.id).isEqualTo(prisonId)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-SOC")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
-          assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - MAIN VISIT ROOM")
+          assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - SOCIAL")
+          assertThat(visit.agencyInternalLocation?.parentLocation?.locationCode).isEqualTo("VISITS")
           assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
         },
       )
     }
 
     @Test
-    fun `visit data room details are truncated to 40 chars for the user description`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(room = "This is a really really extremely long name"))).isEqualTo(CreateVisitResponse(visitId))
+    fun `visit data room details are mapped correctly for closed visits`() {
+      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(openClosedStatus = "CLOSED"))).isEqualTo(CreateVisitResponse(visitId))
+
+      verify(visitDayRepository).save(any())
+      verify(visitTimeRepository).save(any())
+      verify(visitSlotRepository).save(any())
+      verify(internalLocationRepository).save(any())
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - THIS IS A REALLY REALLY EXTREME")
+          assertThat(visit.location.id).isEqualTo(prisonId)
+          assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-CLO")
+          assertThat(visit.agencyInternalLocation?.active).isTrue()
+          assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - CLOSED")
+          assertThat(visit.agencyInternalLocation?.parentLocation?.locationCode).isEqualTo("VISITS")
+          assertThat(visit.agencyVisitSlot!!.agencyVisitTime.startTime).isEqualTo(LocalTime.parse("12:05"))
         },
       )
     }
 
     @Test
-    internal fun `room description is used for NOMIS room description`() {
+    fun `visit room will have a parent location when present`() {
+      assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISITS-VSIP-SOC")
+          assertThat(visit.agencyInternalLocation?.parentLocation).isNotNull()
+        },
+      )
+    }
+
+    @Test
+    fun `visit room will not have a parent location when present`() {
+      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(prisonId = "WWI"))).isEqualTo(CreateVisitResponse(visitId))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("WWI-VISITS-VSIP-SOC")
+          assertThat(visit.agencyInternalLocation?.parentLocation).isNull()
+        },
+      )
+    }
+
+    @Test
+    fun `visit data room details are always the same regardless of VSIP room`() {
+      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(room = "This is a really really extremely long name"))).isEqualTo(CreateVisitResponse(visitId))
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - SOCIAL")
+        },
+      )
+    }
+
+    @Test
+    internal fun `room description is not used for NOMIS room description`() {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "OPEN"))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-SOC")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINSOC")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP-SOC")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-SOC")
         },
       )
     }
@@ -261,41 +312,8 @@ internal class VisitServiceTest {
       visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-MAIN-CLO")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPMAINCLO")
-        },
-      )
-    }
-
-    @Test
-    internal fun `room description for open visit is based on room description without 'visit(s)' and 'room'`() {
-      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Big visits room annex", openClosedStatus = "OPEN"))
-      verify(visitRepository).save(
-        check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-BIG-ANNEX-SOC")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPBIGANNEXSO")
-        },
-      )
-    }
-
-    @Test
-    internal fun `room description for closed visit is based on room description without 'visit(s)' and 'room'`() {
-      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "HUGE visits room annex", openClosedStatus = "CLOSED"))
-      verify(visitRepository).save(
-        check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-HUGE-ANNEX-CLO")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPHUGEANNEXC")
-        },
-      )
-    }
-
-    @Test
-    internal fun `very long descriptions will be limited which means codes can be duplicated`() {
-      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "The Whale is an 1851 novel by American writer Herman Melville. The book is the sailor Ishmael's narrative of the obsessive quest of Ahab, captain of the whaling ship Pequod, for revenge against Moby Dick, the giant white sperm whale that on the ship's previous voyage bit off Ahab's leg at the knee.", openClosedStatus = "CLOSED"))
-      verify(visitRepository).save(
-        check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VSIP-THE-WHALE-IS-AN-1851-NOVEL-BY-AMERICAN-WRITER-HERMAN-MELVILLE-THE-BOOK-IS-THE-SAILOR-ISHMAELS-NARRATIVE-OF-THE-OBSESSIVE-QUEST-OF-AHAB-CAPTAIN-OF-THE-WHALING-SHIP-PEQUOD-FOR-REVENGE-AGAINST-MOBY-DICK-THE-GIANT-WHITE-SPERM-WHALE-CLO")
-          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VPTHEWHALEIS")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP-CLO")
+          assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP-CLO")
         },
       )
     }
