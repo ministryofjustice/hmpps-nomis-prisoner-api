@@ -6,6 +6,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
 
 @Component
@@ -25,8 +27,8 @@ class CourseActivityBuilderFactory(
     minimumIncentiveLevelCode: String = "STD",
     internalLocationId: Long? = -8,
     payRates: List<CourseActivityPayRateBuilder> = listOf(),
-    courseSchedules: List<CourseScheduleBuilder> = listOf(CourseScheduleBuilder()),
-    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(CourseScheduleRuleBuilder()),
+    courseSchedules: List<CourseScheduleBuilder> = listOf(),
+    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(),
     excludeBankHolidays: Boolean = false,
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
@@ -68,11 +70,11 @@ class CourseActivityBuilder(
   var courseScheduleRules: List<CourseScheduleRuleBuilder>,
   var excludeBankHolidays: Boolean,
 ) : CourseActivityDsl {
-  fun build(): CourseActivity =
+  fun build(programService: ProgramService): CourseActivity =
     repository?.let {
       CourseActivity(
         code = code,
-        program = repository.lookupProgramService(programId),
+        program = programService,
         caseloadId = prisonId,
         prison = repository.lookupAgency(prisonId),
         description = description,
@@ -129,6 +131,54 @@ class CourseActivityBuilder(
         endDate,
         halfDayRate,
       )
+  }
+
+  override fun courseSchedule(
+    courseScheduleId: Long,
+    scheduleDate: String,
+    startTime: String,
+    endTime: String,
+    slotCategory: SlotCategory,
+    scheduleStatus: String,
+  ) {
+    courseSchedules += CourseScheduleBuilder(
+      courseScheduleId,
+      scheduleDate,
+      startTime,
+      endTime,
+      slotCategory,
+      scheduleStatus,
+    )
+  }
+
+  override fun courseScheduleRule(
+    id: Long,
+    startTimeHours: Int,
+    startTimeMinutes: Int,
+    endTimeHours: Int,
+    endTimeMinutes: Int,
+    monday: Boolean,
+    tuesday: Boolean,
+    wednesday: Boolean,
+    thursday: Boolean,
+    friday: Boolean,
+    saturday: Boolean,
+    sunday: Boolean,
+  ) {
+    courseScheduleRules += CourseScheduleRuleBuilder(
+      id,
+      startTimeHours,
+      startTimeMinutes,
+      endTimeHours,
+      endTimeMinutes,
+      monday,
+      tuesday,
+      wednesday,
+      thursday,
+      friday,
+      saturday,
+      sunday,
+    )
   }
 
   private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()

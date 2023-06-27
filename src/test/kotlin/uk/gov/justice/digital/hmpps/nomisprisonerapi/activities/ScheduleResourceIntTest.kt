@@ -12,10 +12,8 @@ import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
@@ -25,9 +23,6 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
 
   @Nested
   inner class UpdateCourseSchedule {
@@ -51,8 +46,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      repository.save(ProgramServiceBuilder())
-      courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = listOf(CourseScheduleBuilder(scheduleDate = today.toString()))))
+      testData(repository) {
+        programService {
+          courseActivity = courseActivity {
+            payRate()
+            courseSchedule(scheduleDate = today.toString())
+            courseScheduleRule()
+          }
+        }
+      }
       courseSchedule = courseActivity.courseSchedules.first()
     }
 
@@ -217,16 +219,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updated to not cancelled`() {
-        courseActivity = repository.save(
-          courseActivityBuilderFactory.builder(
-            courseSchedules = listOf(
-              CourseScheduleBuilder(
-                scheduleDate = "$today",
-                scheduleStatus = "CANC",
-              ),
-            ),
-          ),
-        )
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity {
+              payRate()
+              courseSchedule(scheduleDate = today.toString(), scheduleStatus = "CANC")
+              courseScheduleRule()
+            }
+          }
+        }
         courseSchedule = courseActivity.courseSchedules.first()
 
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
@@ -251,16 +252,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if already at cancelled status`() {
-        courseActivity = repository.save(
-          courseActivityBuilderFactory.builder(
-            courseSchedules = listOf(
-              CourseScheduleBuilder(
-                scheduleDate = "$today",
-                scheduleStatus = "CANC",
-              ),
-            ),
-          ),
-        )
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity {
+              payRate()
+              courseSchedule(scheduleDate = today.toString(), scheduleStatus = "CANC")
+              courseScheduleRule()
+            }
+          }
+        }
         courseSchedule = courseActivity.courseSchedules.first()
 
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
@@ -284,7 +284,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if updating old schedule`() {
-        courseActivity = repository.save(courseActivityBuilderFactory.builder(courseSchedules = listOf(CourseScheduleBuilder(scheduleDate = yesterday.toString()))))
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity {
+              payRate()
+              courseSchedule(scheduleDate = yesterday.toString())
+              courseScheduleRule()
+            }
+          }
+        }
         courseSchedule = courseActivity.courseSchedules.first()
 
         val request = """

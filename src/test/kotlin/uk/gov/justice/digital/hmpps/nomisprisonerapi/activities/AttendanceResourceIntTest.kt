@@ -14,13 +14,12 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -35,9 +34,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var courseActivityBuilderFactory: CourseActivityBuilderFactory
 
   @Autowired
   private lateinit var allocationBuilderFactory: OffenderProgramProfileBuilderFactory
@@ -94,8 +90,15 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      repository.save(ProgramServiceBuilder())
-      courseActivity = repository.save(courseActivityBuilderFactory.builder())
+      testData(repository) {
+        programService {
+          courseActivity = courseActivity {
+            payRate()
+            courseSchedule()
+            courseScheduleRule()
+          }
+        }
+      }
       courseSchedule = courseActivity.courseSchedules.first()
       offender =
         repository.save(OffenderBuilder(nomsId = "A1234AR").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
@@ -181,17 +184,14 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return bad request if creating attendance for offender in wrong prison`() {
+      fun `should return OK if creating attendance for offender in wrong prison`() {
         offender =
           repository.save(OffenderBuilder(nomsId = "A1234TU").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
         offenderBooking = offender.latestBooking()
         repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
 
-        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
-          }
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, validJsonRequest.withEventOutcomeCode("SUS"))
+          .expectStatus().isOk
       }
 
       @Test
