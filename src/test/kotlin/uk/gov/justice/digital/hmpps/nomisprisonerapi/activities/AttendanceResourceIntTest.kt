@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttend
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderProgramProfileBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -36,9 +35,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
   private lateinit var repository: Repository
 
   @Autowired
-  private lateinit var allocationBuilderFactory: OffenderProgramProfileBuilderFactory
-
-  @Autowired
   private lateinit var attendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
 
   @Nested
@@ -48,6 +44,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     private lateinit var courseSchedule: CourseSchedule
     private lateinit var offender: Offender
     private lateinit var offenderBooking: OffenderBooking
+    private lateinit var allocation: OffenderProgramProfile
 
     private val validJsonRequest = """
         {
@@ -185,10 +182,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if creating attendance for offender in wrong prison`() {
-        offender =
-          repository.save(OffenderBuilder(nomsId = "A1234TU").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
-        offenderBooking = offender.latestBooking()
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          offender = offender(nomsId = "A1234TU") {
+            booking(agencyLocationId = "MDI")
+          }
+          offenderBooking = offender.latestBooking()
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isBadRequest
@@ -208,7 +208,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if attendance already paid`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val attendance = saveAttendance("COMP", courseSchedule, allocation, paidTransactionId = 123456)
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
@@ -220,7 +222,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if creating an attendance and allocation has ended`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(programStatusCode = "END"), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity, programStatusCode = "END")
+        }
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isBadRequest
@@ -231,7 +235,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if schedule date not passed`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withScheduleDate(null)
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -243,7 +249,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if invalid schedule date`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withScheduleDate("2022-11-50")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -255,7 +263,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if start time not passed`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withStartTime(null)
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -267,7 +277,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if invalid start time`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withStartTime("08:70")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -279,7 +291,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if end time not passed`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withEndTime(null)
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -291,7 +305,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if invalid end time`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withEndTime("25:00")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -303,7 +319,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if event status code invalid`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withEventStatusCode("INVALID")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -315,7 +333,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if attendance outcome code invalid`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withEventOutcomeCode("INVALID")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -327,7 +347,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if paid flag invalid`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withPaidFlag("INVALID")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -339,7 +361,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if bonus pay invalid`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val jsonRequest = validJsonRequest.withBonusPay("INVALID")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -351,7 +375,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if trying to update a paid attendance`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val attendance = saveAttendance("COMP", courseSchedule, allocation, paidTransactionId = 123456)
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
@@ -367,7 +393,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if created new attendance`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
 
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
@@ -397,8 +425,10 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if the prisoner has multiple allocations to the course`() {
-        repository.save(allocationBuilderFactory.builder(programStatusCode = "END", endDate = "2022-10-31"), offenderBooking, courseActivity)
-        repository.save(allocationBuilderFactory.builder(startDate = "2022-11-01"), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity, programStatusCode = "END", endDate = "2022-10-31") { payBand() }
+          courseAllocation(offenderBooking, courseActivity, startDate = "2022-11-01") { payBand() }
+        }
 
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
@@ -419,7 +449,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updated existing attendance`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val attendance = saveAttendance("SCH", courseSchedule, allocation)
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
@@ -435,7 +467,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if changing dates and times`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val attendance = saveAttendance("SCH", courseSchedule, allocation)
         val request = validJsonRequest.withScheduleDate("2022-11-02")
           .withStartTime("13:00")
@@ -457,10 +491,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updating attendance for offender in wrong prison`() {
-        offender =
-          repository.save(OffenderBuilder(nomsId = "A1234TU").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
-        offenderBooking = offender.latestBooking()
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          offender = offender(nomsId = "A1234TU") {
+            booking(agencyLocationId = "MDI")
+          }
+          offenderBooking = offender.latestBooking()
+          allocation = courseAllocation(offenderBooking, courseActivity) { payBand() }
+        }
         val attendance = saveAttendance("SCH", courseSchedule, allocation)
         val request = validJsonRequest.withEventStatusCode("CANC")
 
@@ -473,7 +510,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updating attendance and offender has been deallocated`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(programStatusCode = "END"), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity, programStatusCode = "END")
+        }
         val attendance = saveAttendance("SCH", courseSchedule, allocation)
         val request = validJsonRequest.withEventStatusCode("EXP")
 
@@ -486,7 +525,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should publish telemetry when creating`() {
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity)
+        }
 
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
@@ -508,7 +549,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should publish telemetry when updating`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity)
+        }
         val attendance = saveAttendance("SCH", courseSchedule, allocation)
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
@@ -530,6 +573,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should populate data from request when creating`() {
+        testData(repository) {
+          courseAllocation(offenderBooking, courseActivity)
+        }
         val jsonRequest = """
           {
             "scheduleDate": "2022-11-01",
@@ -544,7 +590,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             "bonusPay": "1.50"
           }
         """.trimIndent()
-        repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
 
         val response =
           webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
@@ -567,7 +612,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should populate data from request when updating`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity)
+        }
         saveAttendance("SCH", courseSchedule, allocation)
         val jsonRequest = """
           {
@@ -608,7 +655,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     inner class DuplicateAttendance {
       @Test
       fun `duplicate attendance can be worked around by deleting one of them`() {
-        val allocation = repository.save(allocationBuilderFactory.builder(), offenderBooking, courseActivity)
+        testData(repository) {
+          allocation = courseAllocation(offenderBooking, courseActivity)
+        }
         saveAttendance("SCH", courseSchedule, allocation)
         val duplicate = saveAttendance("SCH", courseSchedule, allocation)
 

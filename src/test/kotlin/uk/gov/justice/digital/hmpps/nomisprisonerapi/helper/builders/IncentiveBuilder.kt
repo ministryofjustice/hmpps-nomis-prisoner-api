@@ -13,7 +13,7 @@ class IncentiveBuilder(
   var commentText: String = "comment",
   var auditModuleName: String? = null,
   var iepDateTime: LocalDateTime = LocalDateTime.now(),
-) {
+) : IncentiveDsl {
   fun build(
     offenderBooking: OffenderBooking,
     level: IEPLevel,

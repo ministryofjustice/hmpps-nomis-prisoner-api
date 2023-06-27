@@ -1,32 +1,16 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
-import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBandId
 import java.time.LocalDate
-
-@Component
-class OffenderProgramProfilePayBandBuilderFactory(private val repository: Repository) {
-  fun builder(
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    payBandCode: String = "5",
-  ): OffenderProgramProfilePayBandBuilder =
-    OffenderProgramProfilePayBandBuilder(
-      repository,
-      startDate,
-      endDate,
-      payBandCode,
-    )
-}
 
 class OffenderProgramProfilePayBandBuilder(
   val repository: Repository,
   val startDate: String,
   val endDate: String?,
   val payBandCode: String,
-) {
+) : CourseAllocationPayBandDsl {
   fun build(offenderProgramProfile: OffenderProgramProfile) =
     OffenderProgramProfilePayBand(
       id = OffenderProgramProfilePayBandId(
