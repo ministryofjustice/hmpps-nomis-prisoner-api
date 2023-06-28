@@ -12,6 +12,7 @@ class OffenderBuilder(
   var birthDate: LocalDate = LocalDate.of(1965, 7, 19),
   var genderCode: String = "M",
   var bookingBuilders: List<OffenderBookingBuilder> = mutableListOf(),
+  val repository: Repository? = null,
 ) : OffenderDsl {
   fun build(gender: Gender): Offender =
     Offender(
@@ -44,6 +45,7 @@ class OffenderBuilder(
       youthAdultCode = youthAdultCode,
       visitBalanceBuilder = visitBalanceBuilder,
       agencyLocationId = agencyLocationId,
+      repository = repository,
     ).apply(dsl)
   }
 }

@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.time.LocalDate
@@ -29,6 +30,7 @@ class CourseActivityBuilderFactory(
     payRates: List<CourseActivityPayRateBuilder> = listOf(),
     courseSchedules: List<CourseScheduleBuilder> = listOf(),
     courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(),
+    courseAllocations: List<OffenderProgramProfileBuilder> = listOf(),
     excludeBankHolidays: Boolean = false,
   ): CourseActivityBuilder {
     return CourseActivityBuilder(
@@ -47,6 +49,7 @@ class CourseActivityBuilderFactory(
       payRates,
       courseSchedules,
       courseScheduleRules,
+      courseAllocations,
       excludeBankHolidays,
     )
   }
@@ -68,6 +71,7 @@ class CourseActivityBuilder(
   var payRates: List<CourseActivityPayRateBuilder>,
   var courseSchedules: List<CourseScheduleBuilder>,
   var courseScheduleRules: List<CourseScheduleRuleBuilder>,
+  var courseAllocations: List<OffenderProgramProfileBuilder>,
   var excludeBankHolidays: Boolean,
 ) : CourseActivityDsl {
   fun build(programService: ProgramService): CourseActivity =
@@ -89,6 +93,7 @@ class CourseActivityBuilder(
         payRates.addAll(this@CourseActivityBuilder.payRates.map { it.build(this) })
         courseSchedules.addAll(this@CourseActivityBuilder.courseSchedules.map { it.build(this) })
         courseScheduleRules.addAll(this@CourseActivityBuilder.courseScheduleRules.map { it.build(this) })
+        offenderProgramProfiles.addAll(this@CourseActivityBuilder.courseAllocations.map { it.build(this) })
       }
     }
       ?: throw IllegalStateException("No repository - is this a unit test? Try create() instead.")
@@ -179,6 +184,28 @@ class CourseActivityBuilder(
       saturday,
       sunday,
     )
+  }
+
+  override fun courseAllocation(
+    offenderBooking: OffenderBooking,
+    startDate: String?,
+    programStatusCode: String,
+    endDate: String?,
+    payBands: MutableList<OffenderProgramProfilePayBandBuilder>,
+    endReasonCode: String?,
+    endComment: String?,
+    dsl: CourseAllocationDsl.() -> Unit,
+  ) {
+    courseAllocations += OffenderProgramProfileBuilder(
+      repository!!,
+      startDate,
+      programStatusCode,
+      endDate,
+      payBands,
+      endReasonCode,
+      endComment,
+      offenderBooking,
+    ).apply(dsl)
   }
 
   private fun programService(code: String) = ProgramServiceBuilder(programCode = code).build()

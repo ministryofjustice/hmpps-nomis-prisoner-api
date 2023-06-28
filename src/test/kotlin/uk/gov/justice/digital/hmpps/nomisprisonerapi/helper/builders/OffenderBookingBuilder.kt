@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
@@ -20,6 +21,8 @@ class OffenderBookingBuilder(
   var sentences: List<SentenceBuilder> = emptyList(),
   var adjudications: List<Pair<AdjudicationIncident, AdjudicationPartyBuilder>> = emptyList(),
   var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
+  var offenderProgramProfiles: List<OffenderProgramProfileBuilder> = emptyList(),
+  val repository: Repository? = null,
 ) : BookingDsl {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
@@ -89,5 +92,27 @@ class OffenderBookingBuilder(
     iepDateTime: LocalDateTime,
   ) {
     this.incentives += IncentiveBuilder(iepLevelCode, userId, sequence, commentText, auditModuleName, iepDateTime)
+  }
+
+  override fun courseAllocation(
+    courseActivity: CourseActivity,
+    startDate: String?,
+    programStatusCode: String,
+    endDate: String?,
+    payBands: MutableList<OffenderProgramProfilePayBandBuilder>,
+    endReasonCode: String?,
+    endComment: String?,
+    dsl: CourseAllocationDsl.() -> Unit,
+  ) {
+    this.offenderProgramProfiles += OffenderProgramProfileBuilder(
+      repository = repository!!,
+      startDate = startDate,
+      programStatusCode = programStatusCode,
+      endDate = endDate,
+      payBands = payBands,
+      endReasonCode = endReasonCode,
+      endComment = endComment,
+      courseActivity = courseActivity,
+    ).apply(dsl)
   }
 }

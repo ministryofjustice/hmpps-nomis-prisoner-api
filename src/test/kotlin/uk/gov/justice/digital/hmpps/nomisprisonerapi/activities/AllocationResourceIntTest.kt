@@ -341,9 +341,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
       testData(repository) {
-        courseAllocation(offender.latestBooking(), courseActivity, endDate = "2022-11-01", programStatusCode = "END") {
-          payBand()
+        offender = offender(nomsId = "A1234XX") {
+          booking(agencyLocationId = "LEI") {
+            courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END") { payBand() }
+          }
         }
+        bookingId = offender.latestBooking().bookingId
       }
       val request = upsertRequest()
         .withAdditionalJson(""""startDate": "2022-12-01"""")
@@ -558,9 +561,10 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       lateinit var bookingInWrongPrison: OffenderBooking
       testData(repository) {
         bookingInWrongPrison = offender(nomsId = "A1234YY") {
-          booking(agencyLocationId = "MDI")
+          booking(agencyLocationId = "MDI") {
+            courseAllocation(courseActivity) { payBand() }
+          }
         }.latestBooking()
-        courseAllocation(bookingInWrongPrison, courseActivity) { payBand() }
       }
       val request = upsertRequest().withBookingId(bookingInWrongPrison.bookingId.toString())
 
@@ -571,10 +575,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should allow de-allocation when not in the activity prison`() {
       testData(repository) {
         offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "OUT")
+          booking(agencyLocationId = "OUT") {
+            courseAllocation(courseActivity) { payBand() }
+          }
         }
         bookingId = offender.latestBooking().bookingId
-        courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
       }
 
       // De-allocation is allowed
@@ -597,10 +602,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should allow suspension when not in the activity prison`() {
       testData(repository) {
         offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "OUT")
+          booking(agencyLocationId = "OUT") {
+            courseAllocation(courseActivity) { payBand() }
+          }
         }
         bookingId = offender.latestBooking().bookingId
-        courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
       }
 
       // Suspending is allowed
@@ -619,8 +625,14 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `duplicate allocations can be worked around by deleting one of them`() {
       lateinit var duplicate: OffenderProgramProfile
       testData(repository) {
-        courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
-        duplicate = courseAllocation(offender.latestBooking(), courseActivity) { payBand() }
+        offender = offender(nomsId = "A1234XX") {
+          booking(agencyLocationId = "LEI") {
+            courseAllocation(courseActivity) { payBand() }
+            courseAllocation(courseActivity) { payBand() }
+          }
+        }
+        bookingId = offender.latestBooking().bookingId
+        duplicate = offender.latestBooking().offenderProgramProfiles.last()
       }
 
       // unable to update the allocation because of a duplicate

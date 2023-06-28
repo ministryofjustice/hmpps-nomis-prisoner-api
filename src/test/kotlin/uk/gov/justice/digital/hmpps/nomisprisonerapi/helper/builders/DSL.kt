@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -58,7 +57,9 @@ class TestData(private val repository: Repository) : TestDataDsl {
     birthDate: LocalDate,
     genderCode: String,
     dsl: OffenderDsl.() -> Unit,
-  ): Offender = repository.save(OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode).apply(dsl))
+  ): Offender = repository.save(
+    OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode, repository = repository).apply(dsl),
+  )
 
   @ProgramServiceDslMarker
   override fun programService(
@@ -69,31 +70,6 @@ class TestData(private val repository: Repository) : TestDataDsl {
     dsl: ProgramServiceDsl.() -> Unit,
   ): ProgramService =
     repository.save(ProgramServiceBuilder(repository, programCode, programId, description, active).apply(dsl))
-
-  @CourseAllocationDslMarker
-  override fun courseAllocation(
-    offenderBooking: OffenderBooking,
-    courseActivity: CourseActivity,
-    startDate: String?,
-    programStatusCode: String,
-    endDate: String?,
-    payBands: MutableList<OffenderProgramProfilePayBandBuilder>,
-    endReasonCode: String?,
-    endComment: String?,
-    dsl: CourseAllocationDsl.() -> Unit,
-  ): OffenderProgramProfile = repository.save(
-    OffenderProgramProfileBuilder(
-      repository,
-      startDate,
-      programStatusCode,
-      endDate,
-      payBands,
-      endReasonCode,
-      endComment,
-    ).apply(dsl),
-    offenderBooking,
-    courseActivity,
-  )
 }
 
 @TestDataDslMarker
@@ -132,19 +108,6 @@ interface TestDataDsl {
     active: Boolean = true,
     dsl: ProgramServiceDsl.() -> Unit = {},
   ): ProgramService
-
-  @CourseAllocationDslMarker
-  fun courseAllocation(
-    offenderBooking: OffenderBooking,
-    courseActivity: CourseActivity,
-    startDate: String? = "2022-10-31",
-    programStatusCode: String = "ALLOC",
-    endDate: String? = null,
-    payBands: MutableList<OffenderProgramProfilePayBandBuilder> = mutableListOf(),
-    endReasonCode: String? = null,
-    endComment: String? = null,
-    dsl: CourseAllocationDsl.() -> Unit = {},
-  ): OffenderProgramProfile
 }
 
 @TestDataDslMarker
@@ -183,6 +146,18 @@ interface BookingDsl {
     commentText: String = "comment",
     auditModuleName: String? = null,
     iepDateTime: LocalDateTime = LocalDateTime.now(),
+  )
+
+  @CourseAllocationDslMarker
+  fun courseAllocation(
+    courseActivity: CourseActivity,
+    startDate: String? = "2022-10-31",
+    programStatusCode: String = "ALLOC",
+    endDate: String? = null,
+    payBands: MutableList<OffenderProgramProfilePayBandBuilder> = mutableListOf(),
+    endReasonCode: String? = null,
+    endComment: String? = null,
+    dsl: CourseAllocationDsl.() -> Unit = {},
   )
 }
 
@@ -277,6 +252,7 @@ interface ProgramServiceDsl {
     payRates: List<CourseActivityPayRateBuilder> = listOf(),
     courseSchedules: List<CourseScheduleBuilder> = listOf(),
     courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(),
+    courseAllocations: List<OffenderProgramProfileBuilder> = listOf(),
     excludeBankHolidays: Boolean = false,
     dsl: CourseActivityDsl.() -> Unit = {},
   ): CourseActivity
@@ -317,6 +293,18 @@ interface CourseActivityDsl {
     friday: Boolean = true,
     saturday: Boolean = false,
     sunday: Boolean = false,
+  )
+
+  @CourseAllocationDslMarker
+  fun courseAllocation(
+    offenderBooking: OffenderBooking,
+    startDate: String? = "2022-10-31",
+    programStatusCode: String = "ALLOC",
+    endDate: String? = null,
+    payBands: MutableList<OffenderProgramProfilePayBandBuilder> = mutableListOf(),
+    endReasonCode: String? = null,
+    endComment: String? = null,
+    dsl: CourseAllocationDsl.() -> Unit = {},
   )
 }
 

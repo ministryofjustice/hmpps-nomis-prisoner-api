@@ -216,6 +216,9 @@ class Repository(
           party
         },
       )
+      booking.offenderProgramProfiles.addAll(
+        offenderBuilder.bookingBuilders[bookingIndex].offenderProgramProfiles.map { it.build(booking) },
+      )
     }
     return offender
   }

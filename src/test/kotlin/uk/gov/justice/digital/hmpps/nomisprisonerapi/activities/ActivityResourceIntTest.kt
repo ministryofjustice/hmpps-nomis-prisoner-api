@@ -678,12 +678,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request if pay rate removed which is allocated to an offender`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
-              incentive(iepLevelCode = "STD")
-            }
-          }
-          offenderBooking = offender.latestBooking()
           programService {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
@@ -692,7 +686,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          courseAllocation(offenderBooking, courseActivity) { payBand() }
+          offender = offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "LEI") {
+              incentive(iepLevelCode = "STD")
+              courseAllocation(courseActivity) { payBand() }
+            }
+          }
+          offenderBooking = offender.latestBooking()
         }
 
         val payRatesJson = """
@@ -716,11 +716,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if unused pay rate removed with a pay band used on a different pay rate`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
-              incentive(iepLevelCode = "STD")
-            }
-          }
           programService {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
@@ -729,10 +724,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          offenderBooking = offender.latestBooking()
-          courseAllocation(offenderBooking = offenderBooking, courseActivity = courseActivity) {
-            payBand()
+          offender = offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "LEI") {
+              incentive(iepLevelCode = "STD")
+              courseAllocation(courseActivity) { payBand() }
+            }
           }
+          offenderBooking = offender.latestBooking()
         }
 
         callUpdateEndpoint(
@@ -748,12 +746,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           offender = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
+              courseAllocation(courseActivity) { payBand(endDate = yesterday.toString()) }
             }
           }
           offenderBooking = offender.latestBooking()
-          courseAllocation(offenderBooking, courseActivity) {
-            payBand(endDate = yesterday.toString())
-          }
         }
 
         callUpdateEndpoint(
@@ -1148,15 +1144,17 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         testData(repository) {
           programService(programId = 30, programCode = "NEW_SERVICE")
           offender = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI")
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity)
+            }
           }
           offenderBooking = offender.latestBooking()
-          courseAllocation(offenderBooking, courseActivity)
 
           deallocatedOffenderBooking = offender(nomsId = "A1234UU") {
-            booking(agencyLocationId = "LEI")
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity, endDate = yesterday.toString())
+            }
           }.latestBooking()
-          courseAllocation(deallocatedOffenderBooking, courseActivity, endDate = yesterday.toString())
         }
 
         callUpdateEndpoint(
