@@ -3,11 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -45,6 +41,9 @@ data class AdjudicationResponse(
 
   @Schema(description = "Investigator that gathers evidence. Used in NOMIS in a small percentage of cases")
   val investigations: List<Investigation>,
+
+  @Schema(description = "hearings associated with this adjudication")
+  val hearings: List<Hearing>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -173,21 +172,29 @@ data class Evidence(
   val detail: String,
 )
 
-fun Staff.toStaff() = Staff(staffId = id, firstName = firstName, lastName = lastName)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Hearing(
+  val type: CodeDescription?,
+  val scheduleDate: LocalDate?,
+  val scheduleTime: LocalTime?,
+  val hearingDate: LocalDate?,
+  val hearingTime: LocalTime?,
+  val comment: String?,
+  val representativeText: String?,
+  val hearingStaff: uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff?,
+  val internalLocation: InternalLocation?,
+  val eventStatus: CodeDescription?,
+  val hearingResults: List<HearingResult>,
+  val eventId: Long?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class HearingResult(
+  val pleaFindingType: CodeDescription?, // may not have a matching description if dodgy data
+  val findingType: CodeDescription?,
+  val charge: AdjudicationCharge,
+  val offence: AdjudicationOffence,
+)
+
 fun OffenderBooking.toPrisoner() =
   Prisoner(offenderNo = offender.nomsId, firstName = offender.firstName, lastName = offender.lastName)
-
-fun AgencyInternalLocation.toInternalLocation() =
-  InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
-
-fun AdjudicationIncidentCharge.toCharge(): AdjudicationCharge = AdjudicationCharge(
-  offence = AdjudicationOffence(
-    code = this.offence.code,
-    description = this.offence.description,
-    type = this.offence.type?.toCodeDescription(),
-  ),
-  evidence = this.guiltyEvidence,
-  reportDetail = this.reportDetails,
-  offenceId = this.offenceId,
-  chargeSequence = this.id.chargeSequence,
-)

@@ -31,8 +31,8 @@ class AdjudicationHearing(
   @Column(name = "OIC_HEARING_ID")
   val id: Long = 0,
 
-  @Column
-  val incidentDate: LocalDate = LocalDate.now(),
+  @Column(name = "OIC_INCIDENT_ID")
+  val adjudicationNumber: Long,
 
   @Column(name = "HEARING_TIME")
   val hearingDateTime: LocalDateTime? = LocalDateTime.now(),
@@ -46,11 +46,13 @@ class AdjudicationHearing(
   @Column(name = "SCHEDULE_DATE")
   val scheduleDate: LocalDate? = LocalDate.now(),
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(
     name = "OIC_INCIDENT_ID",
     referencedColumnName = "OIC_INCIDENT_ID",
     nullable = false,
+    insertable = false,
+    updatable = false,
   )
   val hearingParty: AdjudicationIncidentParty,
 
