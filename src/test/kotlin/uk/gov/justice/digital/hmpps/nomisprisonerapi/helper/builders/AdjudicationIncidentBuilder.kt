@@ -278,7 +278,7 @@ class AdjudicationHearingBuilder(
     hearingStaff: Staff?,
     eventStatus: EventStatus?,
     eventId: Long? = 1,
-    results: MutableList<AdjudicationHearingResult> = mutableListOf()
+    results: MutableList<AdjudicationHearingResult> = mutableListOf(),
   ): AdjudicationHearing =
     AdjudicationHearing(
       hearingParty = incidentParty,
@@ -298,9 +298,10 @@ class AdjudicationHearingBuilder(
     )
 
   override fun result(chargeSequence: Int, pleaFindingCode: String, findingCode: String, dsl: AdjudicationHearingResultDsl.() -> Unit) {
-    this.results += AdjudicationHearingResultBuilder(pleaFindingCode,
+    this.results += AdjudicationHearingResultBuilder(
+      pleaFindingCode,
       findingCode = findingCode,
-      chargeSequence = chargeSequence
+      chargeSequence = chargeSequence,
     ).apply(dsl)
   }
 }

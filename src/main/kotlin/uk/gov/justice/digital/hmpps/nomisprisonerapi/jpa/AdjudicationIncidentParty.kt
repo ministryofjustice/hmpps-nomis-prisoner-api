@@ -44,7 +44,6 @@ class AdjudicationIncidentParty(
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking? = null,
 
-
   // @MapsId("agencyIncidentId")
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGENCY_INCIDENT_ID", insertable = false, updatable = false)
@@ -81,7 +80,6 @@ class AdjudicationIncidentParty(
 
   @OneToMany(mappedBy = "incidentParty", cascade = [CascadeType.ALL], orphanRemoval = true)
   val investigations: MutableList<AdjudicationInvestigation> = mutableListOf(),
-
 
   @Column(unique = true, name = "OIC_INCIDENT_ID")
   val adjudicationNumber: Long? = null,

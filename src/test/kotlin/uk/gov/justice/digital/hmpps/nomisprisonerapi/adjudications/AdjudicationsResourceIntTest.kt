@@ -99,13 +99,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
               )
               hearing(
                 internalLocationId = -41,
-                scheduleDate = LocalDate.of(2023,1,2),
-                scheduleTime = LocalDateTime.of(2023,1,2,14,0),
-                hearingDate = LocalDate.of(2023,1,3),
-                hearingTime = LocalDateTime.of(2023,1,3,15,0),
+                scheduleDate = LocalDate.of(2023, 1, 2),
+                scheduleTime = LocalDateTime.of(2023, 1, 2, 14, 0),
+                hearingDate = LocalDate.of(2023, 1, 3),
+                hearingTime = LocalDateTime.of(2023, 1, 3, 15, 0),
                 hearingStaffId = staff.id,
               ) {
-                result( chargeSequence = 1)
+                result(chargeSequence = 1)
               }
               investigation(
                 investigator = staffInvestigator,
@@ -276,7 +276,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
           .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")
           .jsonPath("hearings[0].eventId").isEqualTo(1)
-
       }
     }
   }
