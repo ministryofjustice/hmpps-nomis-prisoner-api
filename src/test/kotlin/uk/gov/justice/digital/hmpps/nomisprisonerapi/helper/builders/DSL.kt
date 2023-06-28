@@ -214,6 +214,17 @@ interface AdjudicationPartyDsl {
     reportDetail: String? = null,
     dsl: AdjudicationChargeDsl.() -> Unit = {},
   )
+
+  @AdjudicationHearingDslMarker
+  fun hearing(
+    internalLocationId: Long? = null,
+    scheduleDate: LocalDate? = null,
+    scheduleTime: LocalDateTime? = null,
+    hearingDate: LocalDate? = null,
+    hearingTime: LocalDateTime? = null,
+    hearingStaffId: Long? = null,
+    dsl: AdjudicationHearingDsl.() -> Unit = {},
+  )
 }
 
 @TestDataDslMarker
@@ -235,6 +246,17 @@ interface AdjudicationEvidenceDsl
 
 @TestDataDslMarker
 interface AdjudicationChargeDsl
+
+@TestDataDslMarker
+interface AdjudicationHearingDsl {
+  @AdjudicationHearingResultDslMarker
+  fun result(
+    chargeSequence: Int,
+    pleaFindingCode: String = "NOT_GUILTY",
+    findingCode: String = "PROVED",
+    dsl: AdjudicationHearingResultDsl.() -> Unit = {},
+  )
+}
 
 @TestDataDslMarker
 interface ProgramServiceDsl {
@@ -259,6 +281,9 @@ interface ProgramServiceDsl {
     dsl: CourseActivityDsl.() -> Unit = {},
   ): CourseActivity
 }
+
+@TestDataDslMarker
+interface AdjudicationHearingResultDsl
 
 @TestDataDslMarker
 interface CourseActivityDsl {
@@ -365,6 +390,12 @@ annotation class AdjudicationInvestigationDslMarker
 
 @DslMarker
 annotation class AdjudicationEvidenceDslMarker
+
+@DslMarker
+annotation class AdjudicationHearingDslMarker
+
+@DslMarker
+annotation class AdjudicationHearingResultDslMarker
 
 @DslMarker
 annotation class ProgramServiceDslMarker

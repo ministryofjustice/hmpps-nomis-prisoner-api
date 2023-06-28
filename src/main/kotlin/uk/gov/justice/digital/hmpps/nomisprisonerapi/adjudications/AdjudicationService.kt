@@ -2,12 +2,18 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForOtherReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isReportingOfficer
@@ -16,20 +22,22 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isVictim
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isWitness
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 
 @Service
 @Transactional
-class AdjudicationService(private val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository) {
+class AdjudicationService(private val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository, private val adjudicationHearingRepository: AdjudicationHearingRepository) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {
-      return mapAdjudication(it)
+      val hearings = adjudicationHearingRepository.findByAdjudicationNumber(adjudicationNumber)
+      return mapAdjudication(it, hearings)
     }
       ?: throw NotFoundException("Adjudication not found")
 
-  private fun mapAdjudication(adjudication: AdjudicationIncidentParty): AdjudicationResponse {
+  private fun mapAdjudication(adjudication: AdjudicationIncidentParty, hearings: List<AdjudicationHearing>): AdjudicationResponse {
     return AdjudicationResponse(
       adjudicationNumber = adjudication.adjudicationNumber,
       adjudicationSequence = adjudication.id.partySequence,
@@ -59,9 +67,35 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
       ),
       charges = adjudication.charges.map { it.toCharge() },
       investigations = adjudication.investigations.map { it.toInvestigation() },
+      hearings = hearings.map { it.toHearing() },
     )
   }
 }
+
+private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
+  pleaFindingType = this.pleaFindingType?.toCodeDescription() ?: CodeDescription(
+    pleaFindingCode,
+    "Unknown Plea Finding Code",
+  ),
+  findingType = this.findingType.toCodeDescription(),
+  charge = this.incidentCharge.toCharge(),
+  offence = this.offence.toOffence(),
+)
+
+private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
+  type = this.hearingType?.toCodeDescription(),
+  comment = this.comment,
+  hearingDate = this.hearingDate,
+  hearingTime = this.hearingDateTime?.toLocalTime(),
+  scheduleDate = this.scheduleDate,
+  scheduleTime = this.scheduleDateTime?.toLocalTime(),
+  internalLocation = this.agencyInternalLocation?.toInternalLocation(),
+  representativeText = this.representativeText,
+  hearingStaff = this.hearingStaff?.toStaff(),
+  eventStatus = this.eventStatus?.toCodeDescription(),
+  eventId = this.eventId,
+  hearingResults = this.hearingResults.map { it.toHearingResult() },
+)
 
 private fun AdjudicationInvestigation.toInvestigation(): Investigation = Investigation(
   investigator = this.investigator.toStaff(),
@@ -90,3 +124,23 @@ private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (Adjudica
 
 private fun AdjudicationIncidentRepair.toRepair(): Repair =
   Repair(type = this.type.toCodeDescription(), comment = this.comment, cost = this.repairCost)
+
+fun AdjudicationIncidentCharge.toCharge(): AdjudicationCharge = AdjudicationCharge(
+  offence = this.offence.toOffence(),
+  evidence = this.guiltyEvidence,
+  reportDetail = this.reportDetails,
+  offenceId = this.offenceId,
+  chargeSequence = this.id.chargeSequence,
+)
+
+fun AdjudicationIncidentOffence.toOffence(): AdjudicationOffence = AdjudicationOffence(
+  code = this.code,
+  description = this.description,
+  type = this.type?.toCodeDescription(),
+)
+
+fun AgencyInternalLocation.toInternalLocation() =
+  InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
+
+fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
+  Staff(staffId = id, firstName = firstName, lastName = lastName)

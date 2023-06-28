@@ -97,6 +97,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                 guiltyEvidence = "DEAD SWAN",
                 reportDetail = null,
               )
+              hearing(
+                internalLocationId = -41,
+                scheduleDate = LocalDate.of(2023, 1, 2),
+                scheduleTime = LocalDateTime.of(2023, 1, 2, 14, 0),
+                hearingDate = LocalDate.of(2023, 1, 3),
+                hearingTime = LocalDateTime.of(2023, 1, 3, 15, 0),
+                hearingStaffId = staff.id,
+              ) {
+                result(chargeSequence = 1)
+              }
               investigation(
                 investigator = staffInvestigator,
                 comment = "Isla comment for investigation",
@@ -123,6 +133,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
+      repository.deleteHearingByAdjudicationNumber(adjudicationNumber)
       repository.delete(incident)
       repository.delete(prisoner)
       repository.delete(prisonerVictim)
@@ -252,6 +263,19 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("investigations[0].evidence[1].type.code").isEqualTo("DRUGTEST")
           .jsonPath("investigations[0].evidence[1].type.description").isEqualTo("Drug Test Report")
           .jsonPath("investigations[0].evidence[1].date").isEqualTo("2023-01-04")
+          .jsonPath("hearings[0].type.code").isEqualTo("GOV")
+          .jsonPath("hearings[0].type.description").isEqualTo("Governor's Hearing")
+          .jsonPath("hearings[0].scheduleDate").isEqualTo("2023-01-02")
+          .jsonPath("hearings[0].scheduleTime").isEqualTo("14:00:00")
+          .jsonPath("hearings[0].hearingDate").isEqualTo("2023-01-03")
+          .jsonPath("hearings[0].hearingTime").isEqualTo("15:00:00")
+          .jsonPath("hearings[0].comment").isEqualTo("Hearing comment")
+          .jsonPath("hearings[0].representativeText").isEqualTo("rep text")
+          .jsonPath("hearings[0].hearingStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("hearings[0].representativeText").isEqualTo("rep text")
+          .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
+          .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")
+          .jsonPath("hearings[0].eventId").isEqualTo(1)
       }
     }
   }

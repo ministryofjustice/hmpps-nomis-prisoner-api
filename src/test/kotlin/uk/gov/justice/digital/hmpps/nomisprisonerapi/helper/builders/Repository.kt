@@ -6,9 +6,12 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationFindingType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -44,6 +47,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -102,6 +106,10 @@ class Repository(
   val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
   val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
   val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
+  val adjudicationHearingRepository: AdjudicationHearingRepository,
+  val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
+  val pleaFindingTypeRepository: ReferenceCodeRepository<AdjudicationPleaFindingType>,
+  val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -220,6 +228,40 @@ class Repository(
         offenderBuilder.bookingBuilders[bookingIndex].offenderProgramProfiles.map { it.build(booking) },
       )
     }
+
+    offenderRepository.flush()
+
+    // children that require a flushed party
+    offender.bookings.forEachIndexed { bookingIndex, booking ->
+      offenderBuilder.bookingBuilders[bookingIndex].adjudications.mapIndexed { adjudicationIndex, adjudicationPartyPair ->
+        offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings.mapIndexed { hearingIndex, builder ->
+          val party = booking.adjudicationParties[adjudicationIndex]
+
+          adjudicationHearingRepository.save(
+            builder.build(
+              agencyInternalLocation = lookupAgencyInternalLocation(builder.agencyInternalLocationId!!),
+              eventStatus = lookupEventStatusCode(builder.eventStatusCode),
+              incidentParty = party,
+              hearingType = lookupHearingType(builder.hearingTypeCode),
+              hearingStaff = lookupStaff(builder.hearingStaffId!!),
+            ),
+          ).also { hearing ->
+            hearing.hearingResults.addAll(
+              offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results.mapIndexed { resultIndex, resultBuilder ->
+                resultBuilder.build(
+                  hearing = hearing,
+                  index = resultIndex,
+                  charge = party.charges.find { it.id.chargeSequence == resultBuilder.chargeSequence }!!,
+                  pleaFindingType = lookupHearingResultPleaType(resultBuilder.pleaFindingCode),
+                  findingType = lookupHearingResultFindingType(resultBuilder.findingCode),
+                )
+              },
+            )
+          }
+        }
+      }
+    }
+
     return offender
   }
 
@@ -355,6 +397,15 @@ class Repository(
   fun lookupProgramEndReason(code: String): ProgramServiceEndReason =
     programEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(code))!!
 
+  fun lookupHearingType(code: String): AdjudicationHearingType =
+    hearingTypeRepository.findByIdOrNull(AdjudicationHearingType.pk(code))!!
+
+  fun lookupHearingResultPleaType(code: String): AdjudicationPleaFindingType =
+    pleaFindingTypeRepository.findByIdOrNull(AdjudicationPleaFindingType.pk(code))!!
+
+  fun lookupHearingResultFindingType(code: String): AdjudicationFindingType =
+    findingTypeRepository.findByIdOrNull(AdjudicationFindingType.pk(code))!!
+
   fun lookupStaff(id: Long): Staff =
     staffRepository.findByIdOrNull(id)!!
 
@@ -403,4 +454,6 @@ class Repository(
     }
 
   fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
+  fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) =
+    adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
 }

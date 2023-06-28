@@ -63,6 +63,9 @@ class AdjudicationHearingResult(
   @Column(name = "CHARGE_SEQ", nullable = false)
   val chargeSequence: Int, // having to set this outside the incidentCharge mapping as that has to be insertable = false
 
+  @Column(name = "AGENCY_INCIDENT_ID", nullable = false)
+  val incidentId: Long,
+
   /* Having to make optional as contains values from OIC_FINDING domain in older records.
      Mapping code directly in separate property */
   @ManyToOne(fetch = FetchType.LAZY)
@@ -86,7 +89,7 @@ class AdjudicationHearingResult(
   )
   val pleaFindingType: AdjudicationPleaFindingType?,
 
-  @Column(name = "OIC_PLEA", updatable = false, insertable = false)
+  @Column(name = "PLEA_FINDING_CODE", updatable = false, insertable = false)
   val pleaFindingCode: String,
 
   @ManyToOne(fetch = FetchType.LAZY)

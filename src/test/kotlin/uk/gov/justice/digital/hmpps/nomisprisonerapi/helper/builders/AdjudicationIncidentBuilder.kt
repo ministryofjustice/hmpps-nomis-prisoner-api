@@ -2,6 +2,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationFindingType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentChargeId
@@ -12,9 +17,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepairId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -94,6 +101,7 @@ class AdjudicationPartyBuilder(
   var actionDecision: String = IncidentDecisionAction.NO_FURTHER_ACTION_CODE,
   private var partyAddedDate: LocalDate,
   var charges: List<AdjudicationChargeBuilder> = listOf(),
+  var hearings: List<AdjudicationHearingBuilder> = listOf(),
   var investigations: List<AdjudicationInvestigationBuilder> = listOf(),
 ) : AdjudicationPartyDsl {
 
@@ -113,6 +121,7 @@ class AdjudicationPartyBuilder(
       partyAddedDate = partyAddedDate,
       comment = comment,
     )
+
   fun build(
     incident: AdjudicationIncident,
     actionDecision: IncidentDecisionAction,
@@ -150,6 +159,25 @@ class AdjudicationPartyBuilder(
     dsl: AdjudicationChargeDsl.() -> Unit,
   ) {
     this.charges += AdjudicationChargeBuilder(offenceCode, guiltyEvidence, reportDetail).apply(dsl)
+  }
+
+  override fun hearing(
+    internalLocationId: Long?,
+    scheduleDate: LocalDate?,
+    scheduleTime: LocalDateTime?,
+    hearingDate: LocalDate?,
+    hearingTime: LocalDateTime?,
+    hearingStaffId: Long?,
+    dsl: AdjudicationHearingDsl.() -> Unit,
+  ) {
+    this.hearings += AdjudicationHearingBuilder(
+      agencyInternalLocationId = internalLocationId,
+      scheduledDate = scheduleDate,
+      scheduledDateTime = scheduleTime,
+      hearingDate = hearingDate,
+      hearingDateTime = hearingTime,
+      hearingStaffId = hearingStaffId,
+    ).apply(dsl)
   }
 }
 
@@ -226,5 +254,79 @@ class AdjudicationEvidenceBuilder(
       statementDetail = detail,
       statementType = type,
       investigation = investigation,
+    )
+}
+
+class AdjudicationHearingBuilder(
+  private var hearingDate: LocalDate? = LocalDate.now(),
+  private var hearingDateTime: LocalDateTime? = LocalDateTime.now(),
+  private var scheduledDate: LocalDate? = LocalDate.now(),
+  private var scheduledDateTime: LocalDateTime? = LocalDateTime.now(),
+  var hearingStaffId: Long? = null,
+  var eventStatusCode: String = "SCH",
+  var hearingTypeCode: String = AdjudicationHearingType.GOVERNORS_HEARING,
+  private var comment: String = "Hearing comment",
+  private var representativeText: String = "rep text",
+  var agencyInternalLocationId: Long?,
+  var results: List<AdjudicationHearingResultBuilder> = listOf(),
+) : AdjudicationHearingDsl {
+
+  fun build(
+    incidentParty: AdjudicationIncidentParty,
+    agencyInternalLocation: AgencyInternalLocation?,
+    hearingType: AdjudicationHearingType?,
+    hearingStaff: Staff?,
+    eventStatus: EventStatus?,
+    eventId: Long? = 1,
+    results: MutableList<AdjudicationHearingResult> = mutableListOf(),
+  ): AdjudicationHearing =
+    AdjudicationHearing(
+      hearingParty = incidentParty,
+      adjudicationNumber = incidentParty.adjudicationNumber!!,
+      hearingDate = hearingDate,
+      hearingDateTime = hearingDateTime,
+      scheduleDate = scheduledDate,
+      scheduleDateTime = scheduledDateTime,
+      hearingStaff = hearingStaff,
+      hearingType = hearingType,
+      agencyInternalLocation = agencyInternalLocation,
+      eventStatus = eventStatus,
+      eventId = eventId,
+      comment = comment,
+      representativeText = representativeText,
+      hearingResults = results,
+    )
+
+  override fun result(chargeSequence: Int, pleaFindingCode: String, findingCode: String, dsl: AdjudicationHearingResultDsl.() -> Unit) {
+    this.results += AdjudicationHearingResultBuilder(
+      pleaFindingCode,
+      findingCode = findingCode,
+      chargeSequence = chargeSequence,
+    ).apply(dsl)
+  }
+}
+
+class AdjudicationHearingResultBuilder(
+  var pleaFindingCode: String,
+  var findingCode: String,
+  var chargeSequence: Int,
+) : AdjudicationHearingResultDsl {
+  fun build(
+    hearing: AdjudicationHearing,
+    index: Int,
+    charge: AdjudicationIncidentCharge,
+    pleaFindingType: AdjudicationPleaFindingType?,
+    findingType: AdjudicationFindingType,
+  ): AdjudicationHearingResult =
+    AdjudicationHearingResult(
+      id = AdjudicationHearingResultId(hearing.id, index),
+      chargeSequence = chargeSequence,
+      incidentId = charge.incident.id,
+      hearing = hearing,
+      offence = charge.offence,
+      incidentCharge = charge,
+      pleaFindingType = pleaFindingType,
+      findingType = findingType,
+      pleaFindingCode = pleaFindingCode,
     )
 }
