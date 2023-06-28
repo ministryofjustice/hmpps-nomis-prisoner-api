@@ -33,6 +33,7 @@ class ProgramServiceBuilder(
     payRates: List<CourseActivityPayRateBuilder>,
     courseSchedules: List<CourseScheduleBuilder>,
     courseScheduleRules: List<CourseScheduleRuleBuilder>,
+    courseAllocations: List<OffenderProgramProfileBuilder>,
     excludeBankHolidays: Boolean,
     dsl: CourseActivityDsl.() -> Unit,
   ): CourseActivity =
@@ -53,6 +54,7 @@ class ProgramServiceBuilder(
         payRates,
         courseSchedules,
         courseScheduleRules,
+        courseAllocations,
         excludeBankHolidays,
       ).apply(dsl),
       repository.save(this),
