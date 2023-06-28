@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -157,6 +158,7 @@ interface BookingDsl {
     payBands: MutableList<OffenderProgramProfilePayBandBuilder> = mutableListOf(),
     endReasonCode: String? = null,
     endComment: String? = null,
+    attendances: MutableList<OffenderCourseAttendanceBuilder> = mutableListOf(),
     dsl: CourseAllocationDsl.() -> Unit = {},
   )
 }
@@ -319,18 +321,6 @@ interface CourseActivityDsl {
     saturday: Boolean = false,
     sunday: Boolean = false,
   )
-
-  @CourseAllocationDslMarker
-  fun courseAllocation(
-    offenderBooking: OffenderBooking,
-    startDate: String? = "2022-10-31",
-    programStatusCode: String = "ALLOC",
-    endDate: String? = null,
-    payBands: MutableList<OffenderProgramProfilePayBandBuilder> = mutableListOf(),
-    endReasonCode: String? = null,
-    endComment: String? = null,
-    dsl: CourseAllocationDsl.() -> Unit = {},
-  )
 }
 
 @TestDataDslMarker
@@ -350,10 +340,23 @@ interface CourseAllocationDsl {
     endDate: String? = null,
     payBandCode: String = "5",
   )
+
+  @CourseAttendanceDslMarker
+  fun courseAttendance(
+    courseSchedule: CourseSchedule,
+    eventId: Long = 0,
+    eventStatusCode: String = "SCH",
+    toInternalLocationId: Long? = -8,
+    outcomeReasonCode: String? = null,
+    paidTransactionId: Long? = null,
+  )
 }
 
 @TestDataDslMarker
 interface CourseAllocationPayBandDsl
+
+@TestDataDslMarker
+interface CourseAttendanceDsl
 
 @DslMarker
 annotation class TestDataDslMarker
@@ -414,3 +417,6 @@ annotation class CourseAllocationDslMarker
 
 @DslMarker
 annotation class CourseAllocationPayBandDslMarker
+
+@DslMarker
+annotation class CourseAttendanceDslMarker

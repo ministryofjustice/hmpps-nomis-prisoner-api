@@ -4,8 +4,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Component
 class OffenderCourseAttendanceBuilderFactory(
@@ -13,9 +11,7 @@ class OffenderCourseAttendanceBuilderFactory(
 ) {
   fun builder(
     eventId: Long = 0,
-    eventDate: LocalDate = LocalDate.now(),
-    startTime: LocalDateTime = eventDate.atTime(9, 0),
-    endTime: LocalDateTime = eventDate.atTime(11, 0),
+    courseSchedule: CourseSchedule,
     eventStatusCode: String = "SCH",
     toInternalLocationId: Long? = -8,
     outcomeReasonCode: String? = null,
@@ -24,9 +20,7 @@ class OffenderCourseAttendanceBuilderFactory(
     return OffenderCourseAttendanceBuilder(
       repository,
       eventId,
-      eventDate,
-      startTime,
-      endTime,
+      courseSchedule,
       eventStatusCode,
       toInternalLocationId,
       outcomeReasonCode,
@@ -38,31 +32,28 @@ class OffenderCourseAttendanceBuilderFactory(
 class OffenderCourseAttendanceBuilder(
   val repository: Repository,
   val eventId: Long,
-  val eventDate: LocalDate,
-  val startTime: LocalDateTime,
-  val endTime: LocalDateTime,
+  val courseSchedule: CourseSchedule,
   val eventStatusCode: String,
   val toInternalLocationId: Long?,
   val outcomeReasonCode: String?,
   val paidTransactionId: Long?,
-) {
+) : CourseAttendanceDsl {
   fun build(
-    courseSchedule: CourseSchedule,
     offenderProgramProfile: OffenderProgramProfile,
   ): OffenderCourseAttendance =
     OffenderCourseAttendance(
       eventId = eventId,
       offenderBooking = offenderProgramProfile.offenderBooking,
-      eventDate = eventDate,
-      startTime = startTime,
-      endTime = endTime,
+      eventDate = courseSchedule.scheduleDate,
+      startTime = courseSchedule.startTime,
+      endTime = courseSchedule.endTime,
       eventStatus = repository.lookupEventStatusCode(eventStatusCode),
       toInternalLocation = toInternalLocationId?.let { repository.lookupAgencyInternalLocation(toInternalLocationId) },
       courseSchedule = courseSchedule,
       attendanceOutcome = outcomeReasonCode?.let { repository.lookupAttendanceOutcomeCode(outcomeReasonCode) },
       offenderProgramProfile = offenderProgramProfile,
-      inTime = startTime,
-      outTime = endTime,
+      inTime = courseSchedule.startTime,
+      outTime = courseSchedule.endTime,
       courseActivity = courseSchedule.courseActivity,
       prison = courseSchedule.courseActivity.prison,
       program = courseSchedule.courseActivity.program,

@@ -14,7 +14,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -23,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -31,9 +31,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var attendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
 
   @Nested
   inner class UpsertAttendance {
@@ -99,9 +96,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             courseAllocation(courseActivity)
           }
         }
-        offenderBooking = offender.latestBooking()
-        allocation = offenderBooking.offenderProgramProfiles.first()
       }
+      offenderBooking = offender.latestBooking()
+      allocation = offenderBooking.offenderProgramProfiles.first()
     }
 
     @AfterEach
@@ -224,7 +221,18 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if attendance already paid`() {
-        val attendance = saveAttendance("COMP", courseSchedule, allocation, paidTransactionId = 123456)
+        testData(repository) {
+          offender = offender(nomsId = "A1234AT") {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity) {
+                courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
+              }
+            }
+          }
+        }
+        offenderBooking = offender.latestBooking()
+        allocation = offenderBooking.offenderProgramProfiles.first()
+        val attendance = allocation.offenderCourseAttendances.first()
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isBadRequest
@@ -370,21 +378,10 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("INVALID")
           }
       }
-
-      @Test
-      fun `should return bad request if trying to update a paid attendance`() {
-        val attendance = saveAttendance("COMP", courseSchedule, allocation, paidTransactionId = 123456)
-
-        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Attendance ${attendance.eventId} cannot be changed after it has already been paid")
-          }
-      }
     }
 
     @Nested
-    inner class SaveAttendance {
+    inner class CreateAttendance {
 
       @Test
       fun `should return OK if created new attendance`() {
@@ -444,9 +441,48 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return OK if updated existing attendance`() {
-        val attendance = saveAttendance("SCH", courseSchedule, allocation)
+      fun `should publish telemetry when creating`() {
+        val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
+          .expectStatus().isOk
+          .expectBody(UpsertAttendanceResponse::class.java)
+          .returnResult().responseBody!!
 
+        verify(telemetryClient).trackEvent(
+          eq("activity-attendance-created"),
+          check<MutableMap<String, String>> {
+            assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
+            assertThat(it["nomisCourseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
+            assertThat(it["bookingId"]).isEqualTo(offenderBooking.bookingId.toString())
+            assertThat(it["offenderNo"]).isEqualTo(offenderBooking.offender.nomsId)
+            assertThat(it["nomisAttendanceEventId"]).isEqualTo(response.eventId.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class UpdateAttendance {
+      lateinit var attendance: OffenderCourseAttendance
+
+      @BeforeEach
+      fun setUp() {
+        testData(repository) {
+          offenderBooking = offender(nomsId = "A1234AR") {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity) {
+                payBand()
+                courseAttendance(courseSchedule)
+              }
+            }
+          }.latestBooking()
+        }
+        allocation = offenderBooking.offenderProgramProfiles.first()
+        attendance = allocation.offenderCourseAttendances.first()
+      }
+
+      @Test
+      fun `should return OK if updated existing attendance`() {
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
           .expectBody()
@@ -460,7 +496,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if changing dates and times`() {
-        val attendance = saveAttendance("SCH", courseSchedule, allocation)
         val request = validJsonRequest.withScheduleDate("2022-11-02")
           .withStartTime("13:00")
           .withEndTime("14:00")
@@ -484,13 +519,17 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         testData(repository) {
           offender = offender(nomsId = "A1234TU") {
             booking(agencyLocationId = "MDI") {
-              courseAllocation(courseActivity) { payBand() }
+              courseAllocation(courseActivity) {
+                payBand()
+                courseAttendance(courseSchedule)
+              }
             }
           }
-          offenderBooking = offender.latestBooking()
-          allocation = offenderBooking.offenderProgramProfiles.first()
         }
-        val attendance = saveAttendance("SCH", courseSchedule, allocation)
+        offenderBooking = offender.latestBooking()
+        allocation = offenderBooking.offenderProgramProfiles.first()
+        attendance = allocation.offenderCourseAttendances.first()
+
         val request = validJsonRequest.withEventStatusCode("CANC")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, request)
@@ -504,14 +543,18 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should return OK if updating attendance and offender has been deallocated`() {
         testData(repository) {
           offender = offender(nomsId = "A1234VV") {
-            booking(agencyLocationId = "MDI") {
-              courseAllocation(courseActivity, programStatusCode = "END") { payBand() }
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity, programStatusCode = "END") {
+                payBand()
+                courseAttendance(courseSchedule)
+              }
             }
           }
-          offenderBooking = offender.latestBooking()
-          allocation = offenderBooking.offenderProgramProfiles.first()
         }
-        val attendance = saveAttendance("SCH", courseSchedule, allocation)
+        offenderBooking = offender.latestBooking()
+        allocation = offenderBooking.offenderProgramProfiles.first()
+        attendance = allocation.offenderCourseAttendances.first()
+
         val request = validJsonRequest.withEventStatusCode("EXP")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, request)
@@ -522,29 +565,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should publish telemetry when creating`() {
-        val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
-          .expectStatus().isOk
-          .expectBody(UpsertAttendanceResponse::class.java)
-          .returnResult().responseBody!!
-
-        verify(telemetryClient).trackEvent(
-          eq("activity-attendance-created"),
-          check<MutableMap<String, String>> {
-            assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
-            assertThat(it["nomisCourseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
-            assertThat(it["bookingId"]).isEqualTo(offenderBooking.bookingId.toString())
-            assertThat(it["offenderNo"]).isEqualTo(offenderBooking.offender.nomsId)
-            assertThat(it["nomisAttendanceEventId"]).isEqualTo(response.eventId.toString())
-          },
-          isNull(),
-        )
-      }
-
-      @Test
       fun `should publish telemetry when updating`() {
-        val attendance = saveAttendance("SCH", courseSchedule, allocation)
-
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
           .expectBody()
@@ -600,7 +621,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should populate data from request when updating`() {
-        saveAttendance("SCH", courseSchedule, allocation)
         val jsonRequest = """
           {
             "scheduleDate": "2022-11-01",
@@ -640,8 +660,19 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     inner class DuplicateAttendance {
       @Test
       fun `duplicate attendance can be worked around by deleting one of them`() {
-        saveAttendance("SCH", courseSchedule, allocation)
-        val duplicate = saveAttendance("SCH", courseSchedule, allocation)
+        testData(repository) {
+          offenderBooking = offender(nomsId = "A1234AR") {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity) {
+                payBand()
+                courseAttendance(courseSchedule)
+                courseAttendance(courseSchedule)
+              }
+            }
+          }.latestBooking()
+        }
+        allocation = offenderBooking.offenderProgramProfiles.first()
+        val duplicate = allocation.offenderCourseAttendances.first()
 
         // unable to update the attendance because of a duplicate
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
@@ -673,19 +704,4 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         .body(BodyInserters.fromValue(jsonRequest))
         .exchange()
   }
-
-  private fun saveAttendance(eventStatus: String, courseSchedule: CourseSchedule, allocation: OffenderProgramProfile, paidTransactionId: Long? = null) =
-    with(courseSchedule) {
-      repository.save(
-        attendanceBuilderFactory.builder(
-          eventStatusCode = eventStatus,
-          eventDate = this.scheduleDate,
-          startTime = this.startTime,
-          endTime = this.endTime,
-          paidTransactionId = paidTransactionId,
-        ),
-        courseSchedule,
-        allocation,
-      )
-    }
 }

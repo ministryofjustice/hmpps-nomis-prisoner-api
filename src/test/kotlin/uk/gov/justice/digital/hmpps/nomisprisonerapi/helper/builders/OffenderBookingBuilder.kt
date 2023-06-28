@@ -102,6 +102,7 @@ class OffenderBookingBuilder(
     payBands: MutableList<OffenderProgramProfilePayBandBuilder>,
     endReasonCode: String?,
     endComment: String?,
+    attendances: MutableList<OffenderCourseAttendanceBuilder>,
     dsl: CourseAllocationDsl.() -> Unit,
   ) {
     this.offenderProgramProfiles += OffenderProgramProfileBuilder(
@@ -112,6 +113,7 @@ class OffenderBookingBuilder(
       payBands = payBands,
       endReasonCode = endReasonCode,
       endComment = endComment,
+      attendances = attendances,
       courseActivity = courseActivity,
     ).apply(dsl)
   }

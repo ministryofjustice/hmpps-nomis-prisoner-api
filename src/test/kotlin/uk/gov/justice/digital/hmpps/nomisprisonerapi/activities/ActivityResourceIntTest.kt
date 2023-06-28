@@ -1419,17 +1419,17 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       val savedActivity = repository.lookupActivity(activityId)
-      val savedSchedule = repository.lookupActivity(activityId).courseSchedules.firstOrNull()
+      val savedSchedule = repository.lookupActivity(activityId).courseSchedules.first()
       assertThat(savedSchedule).isNotNull
       val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking()).last()
       assertThat(savedAllocation).isNotNull
 
       // create an attendance record
       repository.runInTransaction {
-        repository.save(offenderCourseAttendanceBuilderFactory.builder(), savedSchedule!!, savedAllocation)
+        repository.save(offenderCourseAttendanceBuilderFactory.builder(courseSchedule = savedSchedule), savedAllocation)
       }
 
-      val savedAttendances = repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule!!, offenderAtMoorlands.latestBooking())
+      val savedAttendances = repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule, offenderAtMoorlands.latestBooking())
       assertThat(savedAttendances).isNotNull
 
       // delete activity, allocation and attendance

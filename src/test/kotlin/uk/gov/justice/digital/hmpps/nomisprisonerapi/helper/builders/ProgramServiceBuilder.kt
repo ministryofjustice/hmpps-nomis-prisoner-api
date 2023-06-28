@@ -54,7 +54,6 @@ class ProgramServiceBuilder(
         payRates,
         courseSchedules,
         courseScheduleRules,
-        courseAllocations,
         excludeBankHolidays,
       ).apply(dsl),
       repository.save(this),
