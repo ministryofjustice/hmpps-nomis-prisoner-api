@@ -349,13 +349,8 @@ class Repository(
     offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
       it.payBands.size
     }
-
-  fun lookupOffenderProgramProfile(
-    courseActivity: CourseActivity,
-    booking: OffenderBooking,
-  ): List<OffenderProgramProfile> =
-    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking)
-      .onEach { it.payBands.size }
+  fun lookupOffenderProgramProfile(courseActivity: CourseActivity, booking: OffenderBooking): List<OffenderProgramProfile> =
+    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking).onEach { it.payBands.size }
 
   fun lookupActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
     it.payRates.size

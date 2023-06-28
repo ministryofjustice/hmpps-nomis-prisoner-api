@@ -162,7 +162,7 @@ class AdjudicationPartyBuilder(
   }
 
   override fun hearing(
-    agencyInternalLocationId: Long?,
+    internalLocationId: Long?,
     scheduleDate: LocalDate?,
     scheduleTime: LocalDateTime?,
     hearingDate: LocalDate?,
@@ -171,7 +171,7 @@ class AdjudicationPartyBuilder(
     dsl: AdjudicationHearingDsl.() -> Unit,
   ) {
     this.hearings += AdjudicationHearingBuilder(
-      agencyInternalLocationId = agencyInternalLocationId,
+      agencyInternalLocationId = internalLocationId,
       scheduledDate = scheduleDate,
       scheduledDateTime = scheduleTime,
       hearingDate = hearingDate,
