@@ -336,10 +336,9 @@ class Repository(
 
   fun save(
     offenderCourseAttendanceBuilder: OffenderCourseAttendanceBuilder,
-    courseSchedule: CourseSchedule,
     offenderProgramProfile: OffenderProgramProfile,
   ): OffenderCourseAttendance =
-    offenderCourseAttendanceBuilder.build(courseSchedule, offenderProgramProfile)
+    offenderCourseAttendanceBuilder.build(offenderProgramProfile)
       .let { offenderCourseAttendanceRepository.saveAndFlush(it) }
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
@@ -375,14 +374,6 @@ class Repository(
     staffRepository.save(staffBuilder.build())
 
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
-
-  fun save(
-    offenderProgramProfileBuilder: OffenderProgramProfileBuilder,
-    offenderBooking: OffenderBooking,
-    courseActivity: CourseActivity,
-  ): OffenderProgramProfile =
-    offenderProgramProfileBuilder.build(offenderBooking, courseActivity)
-      .let { offenderProgramProfileRepository.save(it) }
 
   fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
     offenderIndividualScheduleRepository.save(offenderIndividualSchedule)

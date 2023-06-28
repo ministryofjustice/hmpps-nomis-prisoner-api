@@ -89,6 +89,9 @@ data class OffenderProgramProfile(
   @Column(name = "SUSPENDED_FLAG")
   @Convert(converter = YesNoConverter::class)
   var suspended: Boolean = false,
+
+  @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val offenderCourseAttendances: MutableList<OffenderCourseAttendance> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
