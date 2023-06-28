@@ -271,7 +271,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].hearingTime").isEqualTo("15:00:00")
           .jsonPath("hearings[0].comment").isEqualTo("Hearing comment")
           .jsonPath("hearings[0].representativeText").isEqualTo("rep text")
-          .jsonPath("hearings[0].hearingStaff.staffId").isEqualTo(19)
+          .jsonPath("hearings[0].hearingStaff.staffId").isEqualTo(staff.id)
           .jsonPath("hearings[0].representativeText").isEqualTo("rep text")
           .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
           .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")

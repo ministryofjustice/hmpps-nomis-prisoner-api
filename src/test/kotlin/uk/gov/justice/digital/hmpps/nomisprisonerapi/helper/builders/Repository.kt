@@ -229,7 +229,7 @@ class Repository(
       )
     }
 
-    offenderRepository.saveAndFlush(offender)
+    offenderRepository.flush()
 
     // children that require a flushed party
     offender.bookings.forEachIndexed { bookingIndex, booking ->
