@@ -44,8 +44,6 @@ class AdjudicationIncidentParty(
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking? = null,
 
-  @Column(name = "OIC_INCIDENT_ID")
-  val adjudicationNumber: Long? = null,
 
   // @MapsId("agencyIncidentId")
   @ManyToOne(fetch = FetchType.LAZY)
@@ -83,6 +81,10 @@ class AdjudicationIncidentParty(
 
   @OneToMany(mappedBy = "incidentParty", cascade = [CascadeType.ALL], orphanRemoval = true)
   val investigations: MutableList<AdjudicationInvestigation> = mutableListOf(),
+
+
+  @Column(unique = true, name = "OIC_INCIDENT_ID")
+  val adjudicationNumber: Long? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
