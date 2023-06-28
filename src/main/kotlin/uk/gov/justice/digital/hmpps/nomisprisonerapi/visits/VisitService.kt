@@ -447,7 +447,7 @@ class VisitService(
     // currently this will return nothing for Isle of Wight and Fosse Way until data is manually fixed
     val visitsTopLevelLocation = internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(location.id)
 
-    val locationCode = "VSIP-${if (isClosedVisit) "CLO" else "SOC"}"
+    val locationCode = "VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
     val internalLocationDescription =
       visitsTopLevelLocation?.toInternalLocationDescription(isClosedVisit) ?: "${location.id}-VISITS-$locationCode"
     return internalLocationRepository.findByDescriptionAndAgencyId(internalLocationDescription, location.id)
@@ -461,7 +461,7 @@ class VisitService(
   }
 
   private fun AgencyInternalLocation.toInternalLocationDescription(isClosedVisit: Boolean) =
-    "$description-VSIP-${if (isClosedVisit) "CLO" else "SOC"}"
+    "$description-VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
 
   private fun String.toNomisBaseDescription() =
     this.replace("room", "", ignoreCase = true)
