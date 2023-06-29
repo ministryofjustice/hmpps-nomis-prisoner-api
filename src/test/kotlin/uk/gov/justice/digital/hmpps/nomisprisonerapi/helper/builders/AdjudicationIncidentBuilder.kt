@@ -167,7 +167,7 @@ class AdjudicationPartyBuilder(
     scheduleTime: LocalDateTime?,
     hearingDate: LocalDate?,
     hearingTime: LocalDateTime?,
-    hearingStaffId: Long?,
+    hearingStaff: Staff?,
     dsl: AdjudicationHearingDsl.() -> Unit,
   ) {
     this.hearings += AdjudicationHearingBuilder(
@@ -176,7 +176,7 @@ class AdjudicationPartyBuilder(
       scheduledDateTime = scheduleTime,
       hearingDate = hearingDate,
       hearingDateTime = hearingTime,
-      hearingStaffId = hearingStaffId,
+      hearingStaff = hearingStaff,
     ).apply(dsl)
   }
 }
@@ -262,7 +262,7 @@ class AdjudicationHearingBuilder(
   private var hearingDateTime: LocalDateTime? = LocalDateTime.now(),
   private var scheduledDate: LocalDate? = LocalDate.now(),
   private var scheduledDateTime: LocalDateTime? = LocalDateTime.now(),
-  var hearingStaffId: Long? = null,
+  var hearingStaff: Staff? = null,
   var eventStatusCode: String = "SCH",
   var hearingTypeCode: String = AdjudicationHearingType.GOVERNORS_HEARING,
   private var comment: String = "Hearing comment",
@@ -321,7 +321,7 @@ class AdjudicationHearingResultBuilder(
     AdjudicationHearingResult(
       id = AdjudicationHearingResultId(hearing.id, index),
       chargeSequence = chargeSequence,
-      incidentId = charge.incident.id,
+      incident = charge.incident,
       hearing = hearing,
       offence = charge.offence,
       incidentCharge = charge,

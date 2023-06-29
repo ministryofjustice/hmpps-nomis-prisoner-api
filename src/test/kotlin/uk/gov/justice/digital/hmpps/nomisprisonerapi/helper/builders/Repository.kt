@@ -243,7 +243,7 @@ class Repository(
               eventStatus = lookupEventStatusCode(builder.eventStatusCode),
               incidentParty = party,
               hearingType = lookupHearingType(builder.hearingTypeCode),
-              hearingStaff = lookupStaff(builder.hearingStaffId!!),
+              hearingStaff = builder.hearingStaff,
             ),
           ).also { hearing ->
             hearing.hearingResults.addAll(
@@ -405,9 +405,6 @@ class Repository(
 
   fun lookupHearingResultFindingType(code: String): AdjudicationFindingType =
     findingTypeRepository.findByIdOrNull(AdjudicationFindingType.pk(code))!!
-
-  fun lookupStaff(id: Long): Staff =
-    staffRepository.findByIdOrNull(id)!!
 
   fun lookupIncidentType(): AdjudicationIncidentType =
     adjudicationIncidentTypeRepository.findByIdOrNull(AdjudicationIncidentType.pk(AdjudicationIncidentType.GOVERNORS_REPORT))!!
