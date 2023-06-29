@@ -403,9 +403,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
+        offender = offender(nomsId = "A1234XX") {
+          booking(agencyLocationId = "LEI") {
+            courseAllocation(courseActivity, startDate = "2022-11-14")
+          }
+        }
       }
-      // create an allocation to update
-      upsertAllocationIsOk()
+      bookingId = offender.latestBooking().bookingId
     }
 
     @Test

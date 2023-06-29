@@ -86,7 +86,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         programService {
           courseActivity = courseActivity()
         }
-        courseSchedule = courseActivity.courseSchedules.first()
         offender = offender(nomsId = "A1234AR") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
