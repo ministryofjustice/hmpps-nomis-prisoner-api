@@ -654,6 +654,38 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(performanceCode).isEqualTo("STANDARD")
         }
       }
+
+      // If an internal movement is confirmed the attendance has status COMP but is not yet attended; - it should never revert from COMP as this would "unconfirm:" the internal movement
+      @Test
+      fun `should not update a completed attendance status back to scheduled`() {
+        testData(repository) {
+          offenderBooking = offender(nomsId = "A1234AR") {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity) {
+                payBand()
+                courseAttendance(courseSchedule, eventStatusCode = "COMP")
+              }
+            }
+          }.latestBooking()
+        }
+        allocation = offenderBooking.offenderProgramProfiles.first()
+        attendance = allocation.offenderCourseAttendances.first()
+
+        // Try to update the status back to SCH
+        val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
+          .expectStatus().isOk
+          .expectBody(UpsertAttendanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
+        assertThat(response.created).isFalse()
+
+        val saved = repository.lookupAttendance(response.eventId)
+        with(saved) {
+          assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
+          assertThat(eventStatus.code).isEqualTo("COMP")
+        }
+      }
     }
 
     @Nested

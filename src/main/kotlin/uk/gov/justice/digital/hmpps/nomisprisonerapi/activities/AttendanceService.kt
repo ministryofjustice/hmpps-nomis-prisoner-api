@@ -66,14 +66,14 @@ class AttendanceService(
 
     val offenderProgramProfile = findOffenderProgramProfileOrThrow(courseSchedule, offenderBooking, bookingId)
 
-    val status = findEventStatusOrThrow(request.eventStatusCode)
+    val requestStatus = findEventStatusOrThrow(request.eventStatusCode)
 
     val attendance = findUpdatableAttendanceOrThrow(courseSchedule, offenderBooking)
       ?: newAttendance(
         courseSchedule,
         offenderBooking,
         offenderProgramProfile,
-        status,
+        requestStatus,
       ).also {
         if (offenderProgramProfile.programStatus.code == "END") {
           throw BadDataException("Cannot create an attendance for allocation ${offenderProgramProfile.offenderProgramReferenceId} because it has ended")
@@ -84,7 +84,7 @@ class AttendanceService(
       eventDate = request.scheduleDate
       startTime = eventDate.atTime(request.startTime)
       endTime = eventDate.atTime(request.endTime)
-      eventStatus = status
+      eventStatus = getEventStatus(requestStatus, this.eventStatus)
       attendanceOutcome = request.eventOutcomeCode?.let { findAttendanceOutcomeOrThrow(it) }
       unexcusedAbsence = request.unexcusedAbsence
       bonusPay = request.bonusPay
@@ -157,6 +157,8 @@ class AttendanceService(
   private fun findCourseScheduleOrThrow(courseScheduleId: Long) =
     scheduleRepository.findByIdOrNull(courseScheduleId)
       ?: throw BadDataException("Course schedule for courseScheduleId=$courseScheduleId not found")
+
+  private fun getEventStatus(requestStatus: EventStatus, oldStatus: EventStatus) = if (oldStatus.code == "COMP") oldStatus else requestStatus
 
   fun deleteAttendance(eventId: Long) = attendanceRepository.deleteById(eventId)
 }
