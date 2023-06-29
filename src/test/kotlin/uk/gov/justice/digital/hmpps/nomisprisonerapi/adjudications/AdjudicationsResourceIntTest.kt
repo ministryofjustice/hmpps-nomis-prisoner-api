@@ -99,13 +99,17 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
               )
               hearing(
                 internalLocationId = -41,
-                scheduleDate = LocalDate.of(2023, 1, 2),
-                scheduleTime = LocalDateTime.of(2023, 1, 2, 14, 0),
-                hearingDate = LocalDate.of(2023, 1, 3),
-                hearingTime = LocalDateTime.of(2023, 1, 3, 15, 0),
-                hearingStaffId = staff.id,
+                scheduleDate = LocalDate.parse("2023-01-02"),
+                scheduleTime = LocalDateTime.parse("2023-01-02T14:00:00"),
+                hearingDate = LocalDate.parse("2023-01-03"),
+                hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
+                hearingStaff = staff,
               ) {
-                result(chargeSequence = 1)
+                result(
+                  chargeSequence = 1,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                )
               }
               investigation(
                 investigator = staffInvestigator,
@@ -241,6 +245,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Commits any assault - assault on non prison officer member of staff")
           .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
           .jsonPath("charges[0].offenceId").isNotEmpty
+          .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].chargeSequence").isEqualTo("1")
           .jsonPath("charges[1].evidence").isEqualTo("DEAD SWAN")
           .jsonPath("charges[1].reportDetail").doesNotExist()
@@ -276,6 +281,10 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
           .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")
           .jsonPath("hearings[0].eventId").isEqualTo(1)
+          .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
+          .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
+          .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
+          .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
       }
     }
   }

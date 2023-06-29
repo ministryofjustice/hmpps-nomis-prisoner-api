@@ -222,7 +222,7 @@ interface AdjudicationPartyDsl {
     scheduleTime: LocalDateTime? = null,
     hearingDate: LocalDate? = null,
     hearingTime: LocalDateTime? = null,
-    hearingStaffId: Long? = null,
+    hearingStaff: Staff? = null,
     dsl: AdjudicationHearingDsl.() -> Unit = {},
   )
 }
