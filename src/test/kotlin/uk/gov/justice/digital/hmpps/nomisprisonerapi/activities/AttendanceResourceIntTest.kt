@@ -84,11 +84,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     fun setUp() {
       testData(repository) {
         programService {
-          courseActivity = courseActivity {
-            payRate()
-            courseSchedule()
-            courseScheduleRule()
-          }
+          courseActivity = courseActivity()
         }
         courseSchedule = courseActivity.courseSchedules.first()
         offender = offender(nomsId = "A1234AR") {
@@ -184,7 +180,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         testData(repository) {
           offender = offender(nomsId = "A1234TU") {
             booking(agencyLocationId = "MDI") {
-              courseAllocation(courseActivity) { payBand() }
+              courseAllocation(courseActivity)
             }
           }
           offenderBooking = offender.latestBooking()
@@ -201,16 +197,12 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           offender = offender(nomsId = "A1234XX") {
             booking(agencyLocationId = "LEI")
           }
-          offenderBooking = offender.latestBooking()
           programService {
-            courseActivity = courseActivity {
-              payRate()
-              courseSchedule()
-              courseScheduleRule()
-            }
-            courseSchedule = courseActivity.courseSchedules.first()
+            courseActivity = courseActivity()
           }
         }
+        offenderBooking = offender.latestBooking()
+        courseSchedule = courseActivity.courseSchedules.first()
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isBadRequest
@@ -246,11 +238,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         // create a new allocation that has ended
         testData(repository) {
           programService {
-            courseActivity = courseActivity {
-              payRate()
-              courseSchedule()
-              courseScheduleRule()
-            }
+            courseActivity = courseActivity()
           }
           courseSchedule = courseActivity.courseSchedules.first()
           offender = offender(nomsId = "A1234AR") {
@@ -416,8 +404,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         testData(repository) {
           offender = offender(nomsId = "A1234RR") {
             booking(agencyLocationId = "LEI") {
-              courseAllocation(courseActivity, programStatusCode = "END", endDate = "2022-10-31") { payBand() }
-              courseAllocation(courseActivity, startDate = "2022-11-01") { payBand() }
+              courseAllocation(courseActivity, programStatusCode = "END", endDate = "2022-10-31")
+              courseAllocation(courseActivity, startDate = "2022-11-01")
             }
           }
           offenderBooking = offender.latestBooking()

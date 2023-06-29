@@ -388,11 +388,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     fun setUp() {
       testData(repository) {
         programService {
-          courseActivity = courseActivity {
-            payRate()
-            courseSchedule()
-            courseScheduleRule()
-          }
+          courseActivity = courseActivity()
         }
       }
     }
@@ -689,7 +685,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           offender = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
-              courseAllocation(courseActivity) { payBand() }
+              courseAllocation(courseActivity)
             }
           }
           offenderBooking = offender.latestBooking()
@@ -727,7 +723,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           offender = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
-              courseAllocation(courseActivity) { payBand() }
+              courseAllocation(courseActivity)
             }
           }
           offenderBooking = offender.latestBooking()
@@ -746,7 +742,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           offender = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
-              courseAllocation(courseActivity) { payBand(endDate = yesterday.toString()) }
+              courseAllocation(courseActivity) {
+                payBand(endDate = yesterday.toString())
+              }
             }
           }
           offenderBooking = offender.latestBooking()
