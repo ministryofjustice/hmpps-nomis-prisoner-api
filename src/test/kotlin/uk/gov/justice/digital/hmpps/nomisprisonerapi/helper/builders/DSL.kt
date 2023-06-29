@@ -159,7 +159,7 @@ interface BookingDsl {
     endReasonCode: String? = null,
     endComment: String? = null,
     attendances: MutableList<OffenderCourseAttendanceBuilder> = mutableListOf(),
-    dsl: CourseAllocationDsl.() -> Unit = {},
+    dsl: CourseAllocationDsl.() -> Unit = { payBand() },
   )
 }
 
@@ -278,7 +278,11 @@ interface ProgramServiceDsl {
     courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(),
     courseAllocations: List<OffenderProgramProfileBuilder> = listOf(),
     excludeBankHolidays: Boolean = false,
-    dsl: CourseActivityDsl.() -> Unit = {},
+    dsl: CourseActivityDsl.() -> Unit = {
+      courseSchedule()
+      courseScheduleRule()
+      payRate()
+    },
   ): CourseActivity
 }
 

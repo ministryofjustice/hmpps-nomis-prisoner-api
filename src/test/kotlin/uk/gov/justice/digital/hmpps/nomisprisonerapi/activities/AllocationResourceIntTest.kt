@@ -42,13 +42,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   fun setup() {
     testData(repository) {
       programService {
-        courseActivity = courseActivity { payRate() }
+        courseActivity = courseActivity()
       }
       offender = offender(nomsId = "A1234XX") {
         booking(agencyLocationId = "LEI")
       }
-      bookingId = offender.latestBooking().bookingId
     }
+    bookingId = offender.latestBooking().bookingId
   }
 
   @AfterEach
@@ -343,7 +343,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       testData(repository) {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
-            courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END") { payBand() }
+            courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
           }
         }
         bookingId = offender.latestBooking().bookingId
@@ -403,9 +403,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
+        offender = offender(nomsId = "A1234XX") {
+          booking(agencyLocationId = "LEI") {
+            courseAllocation(courseActivity, startDate = "2022-11-14")
+          }
+        }
       }
-      // create an allocation to update
-      upsertAllocationIsOk()
+      bookingId = offender.latestBooking().bookingId
     }
 
     @Test
@@ -562,7 +566,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       testData(repository) {
         bookingInWrongPrison = offender(nomsId = "A1234YY") {
           booking(agencyLocationId = "MDI") {
-            courseAllocation(courseActivity) { payBand() }
+            courseAllocation(courseActivity)
           }
         }.latestBooking()
       }
@@ -576,7 +580,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       testData(repository) {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "OUT") {
-            courseAllocation(courseActivity) { payBand() }
+            courseAllocation(courseActivity)
           }
         }
         bookingId = offender.latestBooking().bookingId
@@ -603,7 +607,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       testData(repository) {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "OUT") {
-            courseAllocation(courseActivity) { payBand() }
+            courseAllocation(courseActivity)
           }
         }
         bookingId = offender.latestBooking().bookingId
@@ -627,8 +631,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       testData(repository) {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
-            courseAllocation(courseActivity) { payBand() }
-            courseAllocation(courseActivity) { payBand() }
+            courseAllocation(courseActivity)
+            courseAllocation(courseActivity)
           }
         }
         bookingId = offender.latestBooking().bookingId
