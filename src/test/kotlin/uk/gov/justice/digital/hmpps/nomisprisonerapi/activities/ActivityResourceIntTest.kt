@@ -28,7 +28,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityArea
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
@@ -381,7 +380,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   inner class UpdateActivity {
 
     private lateinit var courseActivity: CourseActivity
-    private lateinit var offender: Offender
     private lateinit var offenderBooking: OffenderBooking
 
     @BeforeEach
@@ -682,13 +680,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          offender = offender(nomsId = "A1234TT") {
+          offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
-          }
-          offenderBooking = offender.latestBooking()
+          }.latestBooking()
         }
 
         val payRatesJson = """
@@ -720,13 +717,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          offender = offender(nomsId = "A1234TT") {
+          offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
-          }
-          offenderBooking = offender.latestBooking()
+          }.latestBooking()
         }
 
         callUpdateEndpoint(
@@ -739,15 +735,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234TT") {
+          offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity) {
                 payBand(endDate = yesterday.toString())
               }
             }
-          }
-          offenderBooking = offender.latestBooking()
+          }.latestBooking()
         }
 
         callUpdateEndpoint(
@@ -1141,12 +1136,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         lateinit var deallocatedOffenderBooking: OffenderBooking
         testData(repository) {
           programService(programId = 30, programCode = "NEW_SERVICE")
-          offender = offender(nomsId = "A1234TT") {
+          offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity)
             }
-          }
-          offenderBooking = offender.latestBooking()
+          }.latestBooking()
 
           deallocatedOffenderBooking = offender(nomsId = "A1234UU") {
             booking(agencyLocationId = "LEI") {

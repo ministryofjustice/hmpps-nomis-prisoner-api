@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
@@ -37,7 +36,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
     private lateinit var courseActivity: CourseActivity
     private lateinit var courseSchedule: CourseSchedule
-    private lateinit var offender: Offender
     private lateinit var offenderBooking: OffenderBooking
     private lateinit var allocation: OffenderProgramProfile
 
@@ -86,13 +84,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         programService {
           courseActivity = courseActivity()
         }
-        offender = offender(nomsId = "A1234AR") {
+        offenderBooking = offender(nomsId = "A1234AR") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
           }
-        }
+        }.latestBooking()
       }
-      offenderBooking = offender.latestBooking()
+      courseSchedule = courseActivity.courseSchedules.first()
       allocation = offenderBooking.offenderProgramProfiles.first()
     }
 
@@ -177,12 +175,11 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if creating attendance for offender in wrong prison`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234TU") {
+          offenderBooking = offender(nomsId = "A1234TU") {
             booking(agencyLocationId = "MDI") {
               courseAllocation(courseActivity)
             }
-          }
-          offenderBooking = offender.latestBooking()
+          }.latestBooking()
         }
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, validJsonRequest.withEventOutcomeCode("SUS"))
@@ -193,14 +190,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should return bad request if allocation not found`() {
         // Create a new course activity without an allocation
         testData(repository) {
-          offender = offender(nomsId = "A1234XX") {
+          offenderBooking = offender(nomsId = "A1234XX") {
             booking(agencyLocationId = "LEI")
-          }
+          }.latestBooking()
           programService {
             courseActivity = courseActivity()
           }
         }
-        offenderBooking = offender.latestBooking()
         courseSchedule = courseActivity.courseSchedules.first()
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
@@ -213,15 +209,14 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return bad request if attendance already paid`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234AT") {
+          offenderBooking = offender(nomsId = "A1234AT") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity) {
                 courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
               }
             }
-          }
+          }.latestBooking()
         }
-        offenderBooking = offender.latestBooking()
         allocation = offenderBooking.offenderProgramProfiles.first()
         val attendance = allocation.offenderCourseAttendances.first()
 
@@ -240,14 +235,13 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             courseActivity = courseActivity()
           }
           courseSchedule = courseActivity.courseSchedules.first()
-          offender = offender(nomsId = "A1234AR") {
+          offenderBooking = offender(nomsId = "A1234AR") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, programStatusCode = "END")
             }
-          }
-          offenderBooking = offender.latestBooking()
-          allocation = offenderBooking.offenderProgramProfiles.first()
+          }.latestBooking()
         }
+        allocation = offenderBooking.offenderProgramProfiles.first()
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isBadRequest
@@ -401,13 +395,12 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if the prisoner has multiple allocations to the course`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234RR") {
+          offenderBooking = offender(nomsId = "A1234RR") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, programStatusCode = "END", endDate = "2022-10-31")
               courseAllocation(courseActivity, startDate = "2022-11-01")
             }
-          }
-          offenderBooking = offender.latestBooking()
+          }.latestBooking()
         }
 
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
@@ -504,16 +497,15 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if updating attendance for offender in wrong prison`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234TU") {
+          offenderBooking = offender(nomsId = "A1234TU") {
             booking(agencyLocationId = "MDI") {
               courseAllocation(courseActivity) {
                 payBand()
                 courseAttendance(courseSchedule)
               }
             }
-          }
+          }.latestBooking()
         }
-        offenderBooking = offender.latestBooking()
         allocation = offenderBooking.offenderProgramProfiles.first()
         attendance = allocation.offenderCourseAttendances.first()
 
@@ -529,16 +521,15 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if updating attendance and offender has been deallocated`() {
         testData(repository) {
-          offender = offender(nomsId = "A1234VV") {
+          offenderBooking = offender(nomsId = "A1234VV") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, programStatusCode = "END") {
                 payBand()
                 courseAttendance(courseSchedule)
               }
             }
-          }
+          }.latestBooking()
         }
-        offenderBooking = offender.latestBooking()
         allocation = offenderBooking.offenderProgramProfiles.first()
         attendance = allocation.offenderCourseAttendances.first()
 
