@@ -21,8 +21,9 @@ class OffenderBookingBuilder(
   var sentences: List<SentenceBuilder> = emptyList(),
   var adjudications: List<Pair<AdjudicationIncident, AdjudicationPartyBuilder>> = emptyList(),
   var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
-  var offenderProgramProfiles: List<OffenderProgramProfileBuilder> = emptyList(),
+  var courseAllocations: List<CourseAllocationBuilder> = emptyList(),
   val repository: Repository? = null,
+  val courseAllocationBuilderFactory: CourseAllocationBuilderFactory? = null,
 ) : BookingDsl {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
@@ -105,16 +106,7 @@ class OffenderBookingBuilder(
     attendances: MutableList<OffenderCourseAttendanceBuilder>,
     dsl: CourseAllocationDsl.() -> Unit,
   ) {
-    this.offenderProgramProfiles += OffenderProgramProfileBuilder(
-      repository = repository!!,
-      startDate = startDate,
-      programStatusCode = programStatusCode,
-      endDate = endDate,
-      payBands = payBands,
-      endReasonCode = endReasonCode,
-      endComment = endComment,
-      attendances = attendances,
-      courseActivity = courseActivity,
-    ).apply(dsl)
+    this.courseAllocations += courseAllocationBuilderFactory?.builder(startDate, programStatusCode, endDate, endReasonCode, endComment, courseActivity)?.apply(dsl)
+      ?: throw IllegalStateException("Cannot create a course allocation inside an offender booking without providing a CourseAllocationBuilderFactory")
   }
 }

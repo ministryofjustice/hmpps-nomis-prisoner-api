@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBoo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.TestDataFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -44,6 +45,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var offenderCourseAttendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
+
+  @Autowired
+  private lateinit var testDataFactory: TestDataFactory
 
   private val today = LocalDate.now()
   private val yesterday = today.minusDays(1)
@@ -680,6 +684,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
+        }
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
@@ -717,6 +723,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
+        }
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
@@ -734,7 +742,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
@@ -1136,6 +1144,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         lateinit var deallocatedOffenderBooking: OffenderBooking
         testData(repository) {
           programService(programId = 30, programCode = "NEW_SERVICE")
+        }
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234TT") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity)

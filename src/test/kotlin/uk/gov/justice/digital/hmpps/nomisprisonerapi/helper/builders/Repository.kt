@@ -225,7 +225,7 @@ class Repository(
         },
       )
       booking.offenderProgramProfiles.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].offenderProgramProfiles.map { it.build(booking) },
+        offenderBuilder.bookingBuilders[bookingIndex].courseAllocations.map { it.build(booking) },
       )
     }
 
