@@ -15,6 +15,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.TestDataFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -30,6 +31,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var testDataFactory: TestDataFactory
 
   @Nested
   inner class UpsertAttendance {
@@ -84,6 +88,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         programService {
           courseActivity = courseActivity()
         }
+      }
+      testDataFactory.build {
         offenderBooking = offender(nomsId = "A1234AR") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
@@ -174,7 +180,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if creating attendance for offender in wrong prison`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234TU") {
             booking(agencyLocationId = "MDI") {
               courseAllocation(courseActivity)
@@ -190,12 +196,14 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should return bad request if allocation not found`() {
         // Create a new course activity without an allocation
         testData(repository) {
-          offenderBooking = offender(nomsId = "A1234XX") {
-            booking(agencyLocationId = "LEI")
-          }.latestBooking()
           programService {
             courseActivity = courseActivity()
           }
+        }
+        testDataFactory.build {
+          offenderBooking = offender(nomsId = "A1234XX") {
+            booking(agencyLocationId = "LEI")
+          }.latestBooking()
         }
         courseSchedule = courseActivity.courseSchedules.first()
 
@@ -208,7 +216,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if attendance already paid`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234AT") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity) {
@@ -235,6 +243,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             courseActivity = courseActivity()
           }
           courseSchedule = courseActivity.courseSchedules.first()
+        }
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234AR") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, programStatusCode = "END")
@@ -394,7 +404,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if the prisoner has multiple allocations to the course`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234RR") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, programStatusCode = "END", endDate = "2022-10-31")
@@ -447,7 +457,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       fun setUp() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234AR") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity) {
@@ -496,7 +506,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updating attendance for offender in wrong prison`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234TU") {
             booking(agencyLocationId = "MDI") {
               courseAllocation(courseActivity) {
@@ -520,7 +530,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updating attendance and offender has been deallocated`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234VV") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, programStatusCode = "END") {
@@ -636,7 +646,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       // If an internal movement is confirmed the attendance has status COMP but is not yet attended; - it should never revert from COMP as this would "unconfirm:" the internal movement
       @Test
       fun `should not update a completed attendance status back to scheduled`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234AR") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity) {
@@ -670,7 +680,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     inner class DuplicateAttendance {
       @Test
       fun `duplicate attendance can be worked around by deleting one of them`() {
-        testData(repository) {
+        testDataFactory.build {
           offenderBooking = offender(nomsId = "A1234AR") {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity) {

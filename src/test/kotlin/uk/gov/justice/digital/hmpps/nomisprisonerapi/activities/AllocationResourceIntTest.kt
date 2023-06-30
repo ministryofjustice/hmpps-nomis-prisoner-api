@@ -13,9 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.TestDataFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -29,6 +28,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var testDataFactory: TestDataFactory
 
   private lateinit var courseActivity: CourseActivity
   private lateinit var offender: Offender
@@ -44,6 +46,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       programService {
         courseActivity = courseActivity()
       }
+    }
+    testDataFactory.build {
       offender = offender(nomsId = "A1234XX") {
         booking(agencyLocationId = "LEI")
       }
@@ -328,8 +332,15 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should return bad request offender in wrong prison`() {
-      val offenderAtWrongPrison =
-        repository.save(OffenderBuilder(nomsId = "A1234YY").withBooking(OffenderBookingBuilder(agencyLocationId = "MDI")))
+      lateinit var offenderAtWrongPrison: Offender
+      testDataFactory.build {
+        offenderAtWrongPrison = offender(nomsId = "A1234YY") {
+          booking(agencyLocationId = "MDI") {
+            courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
+          }
+        }
+        bookingId = offender.latestBooking().bookingId
+      }
       val request = upsertRequest().withBookingId(offenderAtWrongPrison.latestBooking().bookingId.toString())
 
       upsertAllocationIsBadRequest(request)
@@ -340,7 +351,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
-      testData(repository) {
+      testDataFactory.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
@@ -403,6 +414,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
+      }
+      testDataFactory.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, startDate = "2022-11-14")
@@ -563,7 +576,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow updates if offender in wrong prison`() {
       lateinit var bookingInWrongPrison: OffenderBooking
-      testData(repository) {
+      testDataFactory.build {
         bookingInWrongPrison = offender(nomsId = "A1234YY") {
           booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity)
@@ -577,7 +590,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
-      testData(repository) {
+      testDataFactory.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
@@ -604,7 +617,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow suspension when not in the activity prison`() {
-      testData(repository) {
+      testDataFactory.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
@@ -628,7 +641,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `duplicate allocations can be worked around by deleting one of them`() {
       lateinit var duplicate: OffenderProgramProfile
-      testData(repository) {
+      testDataFactory.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)

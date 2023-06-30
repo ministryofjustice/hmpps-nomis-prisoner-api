@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -19,9 +19,15 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@Deprecated("To be replaced by TestDataFactory, coming soon")
 fun testData(repository: Repository, dsl: TestData.() -> Unit) = TestData(repository).apply(dsl)
 
-class TestData(private val repository: Repository) : TestDataDsl {
+@Component
+class TestDataFactory(private val repository: Repository, private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory) {
+  fun build(dsl: TestData.() -> Unit) = TestData(repository, courseAllocationBuilderFactory).apply(dsl)
+}
+
+class TestData(private val repository: Repository, private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory? = null) : TestDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
     repository.save(StaffBuilder(firstName, lastName).apply(dsl))
@@ -59,7 +65,7 @@ class TestData(private val repository: Repository) : TestDataDsl {
     genderCode: String,
     dsl: OffenderDsl.() -> Unit,
   ): Offender = repository.save(
-    OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode, repository = repository).apply(dsl),
+    OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode, repository = repository, courseAllocationBuilderFactory = courseAllocationBuilderFactory).apply(dsl),
   )
 
   @ProgramServiceDslMarker
@@ -336,32 +342,6 @@ interface CourseScheduleDsl
 @TestDataDslMarker
 interface CourseScheduleRuleDsl
 
-@TestDataDslMarker
-interface CourseAllocationDsl {
-  @CourseAllocationPayBandDslMarker
-  fun payBand(
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    payBandCode: String = "5",
-  )
-
-  @CourseAttendanceDslMarker
-  fun courseAttendance(
-    courseSchedule: CourseSchedule,
-    eventId: Long = 0,
-    eventStatusCode: String = "SCH",
-    toInternalLocationId: Long? = -8,
-    outcomeReasonCode: String? = null,
-    paidTransactionId: Long? = null,
-  )
-}
-
-@TestDataDslMarker
-interface CourseAllocationPayBandDsl
-
-@TestDataDslMarker
-interface CourseAttendanceDsl
-
 @DslMarker
 annotation class TestDataDslMarker
 
@@ -415,12 +395,3 @@ annotation class CourseScheduleDslMarker
 
 @DslMarker
 annotation class CourseScheduleRuleDslMarker
-
-@DslMarker
-annotation class CourseAllocationDslMarker
-
-@DslMarker
-annotation class CourseAllocationPayBandDslMarker
-
-@DslMarker
-annotation class CourseAttendanceDslMarker
