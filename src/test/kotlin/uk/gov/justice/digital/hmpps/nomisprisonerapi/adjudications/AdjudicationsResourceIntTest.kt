@@ -109,6 +109,33 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                   chargeSequence = 1,
                   pleaFindingCode = "NOT_GUILTY",
                   findingCode = "PROVED",
+                ) {
+                  award(
+                    statusCode = "SUSPENDED",
+                    sanctionCode = "REMACT",
+                    effectiveDate = LocalDate.parse("2023-01-03"),
+                    statusDate = LocalDate.parse("2023-01-04"),
+                    comment = "award comment",
+                    sanctionMonths = 1,
+                    sanctionDays = 2,
+                    compensationAmount = BigDecimal.valueOf(12.2),
+                  )
+                  award(
+                    statusCode = "SUSPEN_RED",
+                    sanctionCode = "REMACT",
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                    statusDate = LocalDate.parse("2023-01-05"),
+                    comment = "award comment for second award",
+                    sanctionMonths = 3,
+                    sanctionDays = 4,
+                    compensationAmount = BigDecimal.valueOf(14.2),
+                    consecutiveSanctionSeq = 0,
+                  )
+                }
+                result(
+                  chargeSequence = 2,
+                  pleaFindingCode = "UNFIT",
+                  findingCode = "NOT_PROCEED",
                 )
               }
               investigation(
@@ -240,7 +267,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
           .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].reportDetail").isEqualTo("1234/123")
-          .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
           .jsonPath("charges[0].offence.description")
           .isEqualTo("Commits any assault - assault on non prison officer member of staff")
           .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
@@ -285,6 +311,21 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
           .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
           .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
+          .jsonPath("hearings[0].hearingResults[1].pleaFindingType.description").isEqualTo("Unfit to Plea or Attend")
+          .jsonPath("hearings[0].hearingResults[1].findingType.description").isEqualTo("Charge Not Proceeded With")
+          .jsonPath("hearings[0].hearingResults[1].charge.offence.code").isEqualTo("51:3")
+          .jsonPath("hearings[0].hearingResults[1].offence.code").isEqualTo("51:3")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionType.description")
+          .isEqualTo("Removal from Activity")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionStatus.description").isEqualTo("Suspended")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].effectiveDate").isEqualTo("2023-01-03")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].statusDate").isEqualTo("2023-01-04")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].comment").isEqualTo("award comment")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
+          .isEqualTo("Removal from Activity")
       }
     }
   }

@@ -72,7 +72,7 @@ data class AdjudicationIncident(
   val adjudicationIncidentId: Long,
 
   @Schema(description = "Reporting staff member", required = true)
-  val reportingStaff: uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff,
+  val reportingStaff: Staff,
 
   @Schema(description = "Date of the associated incident", required = true)
   val incidentDate: LocalDate,
@@ -108,16 +108,16 @@ data class AdjudicationIncident(
   val otherPrisonersInvolved: List<Prisoner>,
 
   @Schema(description = "The officer who reported the incident who may differ from the reporting officer. Often used in NOMIS")
-  val reportingOfficers: List<uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff>,
+  val reportingOfficers: List<Staff>,
 
   @Schema(description = "Staff that witnessed the incident. Used in NOMIS in a small percentage of cases")
-  val staffWitnesses: List<uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff>,
+  val staffWitnesses: List<Staff>,
 
   @Schema(description = "Staff that was a victim in the incident. Rarely used in NOMIS")
-  val staffVictims: List<uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff>,
+  val staffVictims: List<Staff>,
 
   @Schema(description = "Other staff that was involved in the incident either using force or some other link. Used in NOMIS in a small percentage of cases")
-  val otherStaffInvolved: List<uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff>,
+  val otherStaffInvolved: List<Staff>,
 
   @Schema(description = "The repairs required due to the damage")
   val repairs: List<Repair>,
@@ -159,7 +159,7 @@ data class Repair(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Investigation(
-  val investigator: uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff,
+  val investigator: Staff,
   val comment: String?,
   val dateAssigned: LocalDate,
   val evidence: List<Evidence>,
@@ -181,7 +181,7 @@ data class Hearing(
   val hearingTime: LocalTime?,
   val comment: String?,
   val representativeText: String?,
-  val hearingStaff: uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.Staff?,
+  val hearingStaff: Staff?,
   val internalLocation: InternalLocation?,
   val eventStatus: CodeDescription?,
   val hearingResults: List<HearingResult>,
@@ -194,6 +194,20 @@ data class HearingResult(
   val findingType: CodeDescription?,
   val charge: AdjudicationCharge,
   val offence: AdjudicationOffence,
+  val resultAwards: List<HearingResultAward>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class HearingResultAward(
+  val sanctionType: CodeDescription?, // may not have a matching description if dodgy data
+  val sanctionStatus: CodeDescription?,
+  val comment: String?,
+  val effectiveDate: LocalDate,
+  val statusDate: LocalDate?,
+  val sanctionDays: Int?,
+  val sanctionMonths: Int?,
+  val compensationAmount: BigDecimal?,
+  val consecutiveAward: HearingResultAward?,
 )
 
 fun OffenderBooking.toPrisoner() =
