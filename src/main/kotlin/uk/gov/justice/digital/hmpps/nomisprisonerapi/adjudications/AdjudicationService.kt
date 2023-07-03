@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
@@ -28,7 +29,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 
 @Service
 @Transactional
-class AdjudicationService(private val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository, private val adjudicationHearingRepository: AdjudicationHearingRepository) {
+class AdjudicationService(
+  private val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository,
+  private val adjudicationHearingRepository: AdjudicationHearingRepository,
+) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {
@@ -37,7 +41,10 @@ class AdjudicationService(private val adjudicationIncidentPartyRepository: Adjud
     }
       ?: throw NotFoundException("Adjudication not found")
 
-  private fun mapAdjudication(adjudication: AdjudicationIncidentParty, hearings: List<AdjudicationHearing>): AdjudicationResponse {
+  private fun mapAdjudication(
+    adjudication: AdjudicationIncidentParty,
+    hearings: List<AdjudicationHearing>,
+  ): AdjudicationResponse {
     return AdjudicationResponse(
       adjudicationNumber = adjudication.adjudicationNumber,
       adjudicationSequence = adjudication.id.partySequence,
@@ -80,6 +87,7 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
   findingType = this.findingType.toCodeDescription(),
   charge = this.incidentCharge.toCharge(),
   offence = this.offence.toOffence(),
+  resultAwards = this.resultAwards.map { it.toAward() },
 )
 
 private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
@@ -144,3 +152,18 @@ fun AgencyInternalLocation.toInternalLocation() =
 
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
   Staff(staffId = id, firstName = firstName, lastName = lastName)
+
+fun AdjudicationHearingResultAward.toAward(): HearingResultAward = HearingResultAward(
+  sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
+    sanctionCode,
+    "Unknown Sanction Code",
+  ),
+  sanctionStatus = this.sanctionStatus?.toCodeDescription(),
+  comment = this.comment,
+  effectiveDate = this.effectiveDate,
+  statusDate = this.statusDate,
+  sanctionDays = this.sanctionDays,
+  sanctionMonths = this.sanctionMonths,
+  compensationAmount = this.compensationAmount,
+  consecutiveAward = this.consecutiveHearingResultAward?.toAward(),
+)

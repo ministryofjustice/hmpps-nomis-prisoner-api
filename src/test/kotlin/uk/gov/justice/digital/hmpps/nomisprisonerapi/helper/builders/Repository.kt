@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -110,6 +112,8 @@ class Repository(
   val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
   val pleaFindingTypeRepository: ReferenceCodeRepository<AdjudicationPleaFindingType>,
   val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
+  val sanctionStatusRepository: ReferenceCodeRepository<AdjudicationSanctionStatus>,
+  val sanctionTypeRepository: ReferenceCodeRepository<AdjudicationSanctionType>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -254,7 +258,27 @@ class Repository(
                   charge = party.charges.find { it.id.chargeSequence == resultBuilder.chargeSequence }!!,
                   pleaFindingType = lookupHearingResultPleaType(resultBuilder.pleaFindingCode),
                   findingType = lookupHearingResultFindingType(resultBuilder.findingCode),
-                )
+                ).also { result ->
+                  result.resultAwards.addAll(
+                    offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results[resultIndex].awards.mapIndexed { awardIndex, awardBuilder ->
+                      awardBuilder.build(
+                        sanctionIndex = awardIndex,
+                        result = result,
+                        sanctionType = lookupSanctionType(awardBuilder.sanctionCode),
+                        sanctionStatus = lookupSanctionStatus(awardBuilder.statusCode),
+                        party = party,
+                      )
+                    },
+
+                  ).also {
+                    offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results[resultIndex].awards.mapIndexed { awardIndex, awardBuilder ->
+                      awardBuilder.consecutiveSanctionIndex?.let {
+                        result.resultAwards[awardIndex].consecutiveHearingResultAward =
+                          result.resultAwards[awardBuilder.consecutiveSanctionIndex!!]
+                      }
+                    }
+                  }
+                }
               },
             )
           }
@@ -349,8 +373,13 @@ class Repository(
     offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
       it.payBands.size
     }
-  fun lookupOffenderProgramProfile(courseActivity: CourseActivity, booking: OffenderBooking): List<OffenderProgramProfile> =
-    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking).onEach { it.payBands.size }
+
+  fun lookupOffenderProgramProfile(
+    courseActivity: CourseActivity,
+    booking: OffenderBooking,
+  ): List<OffenderProgramProfile> =
+    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking)
+      .onEach { it.payBands.size }
 
   fun lookupActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
     it.payRates.size
@@ -402,6 +431,12 @@ class Repository(
 
   fun lookupHearingResultPleaType(code: String): AdjudicationPleaFindingType =
     pleaFindingTypeRepository.findByIdOrNull(AdjudicationPleaFindingType.pk(code))!!
+
+  fun lookupSanctionStatus(code: String): AdjudicationSanctionStatus =
+    sanctionStatusRepository.findByIdOrNull(AdjudicationSanctionStatus.pk(code))!!
+
+  fun lookupSanctionType(code: String): AdjudicationSanctionType =
+    sanctionTypeRepository.findByIdOrNull(AdjudicationSanctionType.pk(code))!!
 
   fun lookupHearingResultFindingType(code: String): AdjudicationFindingType =
     findingTypeRepository.findByIdOrNull(AdjudicationFindingType.pk(code))!!

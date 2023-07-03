@@ -5,6 +5,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceTyp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAwardId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
@@ -19,6 +21,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentTyp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -297,7 +301,12 @@ class AdjudicationHearingBuilder(
       hearingResults = results,
     )
 
-  override fun result(chargeSequence: Int, pleaFindingCode: String, findingCode: String, dsl: AdjudicationHearingResultDsl.() -> Unit) {
+  override fun result(
+    chargeSequence: Int,
+    pleaFindingCode: String,
+    findingCode: String,
+    dsl: AdjudicationHearingResultDsl.() -> Unit,
+  ) {
     this.results += AdjudicationHearingResultBuilder(
       pleaFindingCode,
       findingCode = findingCode,
@@ -310,6 +319,7 @@ class AdjudicationHearingResultBuilder(
   var pleaFindingCode: String,
   var findingCode: String,
   var chargeSequence: Int,
+  var awards: List<AdjudicationHearingResultAwardBuilder> = listOf(),
 ) : AdjudicationHearingResultDsl {
   fun build(
     hearing: AdjudicationHearing,
@@ -317,6 +327,7 @@ class AdjudicationHearingResultBuilder(
     charge: AdjudicationIncidentCharge,
     pleaFindingType: AdjudicationPleaFindingType?,
     findingType: AdjudicationFindingType,
+    awards: MutableList<AdjudicationHearingResultAward> = mutableListOf(),
   ): AdjudicationHearingResult =
     AdjudicationHearingResult(
       id = AdjudicationHearingResultId(hearing.id, index),
@@ -328,5 +339,67 @@ class AdjudicationHearingResultBuilder(
       pleaFindingType = pleaFindingType,
       findingType = findingType,
       pleaFindingCode = pleaFindingCode,
+      resultAwards = awards,
+    )
+
+  override fun award(
+    statusCode: String,
+    sanctionDays: Int?,
+    sanctionMonths: Int?,
+    compensationAmount: BigDecimal?,
+    sanctionCode: String,
+    comment: String?,
+    effectiveDate: LocalDate,
+    statusDate: LocalDate?,
+    consecutiveSanctionSeq: Int?,
+    dsl: AdjudicationHearingResultAwardDsl.() -> Unit,
+  ) {
+    this.awards += AdjudicationHearingResultAwardBuilder(
+      statusCode = statusCode,
+      sanctionDays = sanctionDays,
+      sanctionMonths = sanctionMonths,
+      compensationAmount = compensationAmount,
+      sanctionCode = sanctionCode,
+      effectiveDate = effectiveDate,
+      statusDate = statusDate,
+      consecutiveSanctionIndex = consecutiveSanctionSeq,
+      comment = comment,
+    ).apply(dsl)
+  }
+}
+
+class AdjudicationHearingResultAwardBuilder(
+  var sanctionCode: String,
+  var effectiveDate: LocalDate,
+  var statusDate: LocalDate?,
+  var statusCode: String,
+  var comment: String?,
+  var sanctionDays: Int?,
+  var sanctionMonths: Int?,
+  var compensationAmount: BigDecimal?,
+  var consecutiveSanctionIndex: Int?,
+) : AdjudicationHearingResultAwardDsl {
+  fun build(
+    result: AdjudicationHearingResult,
+    party: AdjudicationIncidentParty,
+    sanctionIndex: Int,
+    sanctionStatus: AdjudicationSanctionStatus? = null,
+    sanctionType: AdjudicationSanctionType? = null,
+    consecutiveHearingResultAward: AdjudicationHearingResultAward? = null,
+  ): AdjudicationHearingResultAward =
+    AdjudicationHearingResultAward(
+      id = AdjudicationHearingResultAwardId(party.offenderBooking!!.bookingId, sanctionIndex),
+      hearingResult = result,
+      sanctionStatus = sanctionStatus,
+      sanctionDays = sanctionDays,
+      sanctionMonths = sanctionMonths,
+      compensationAmount = compensationAmount,
+      incidentParty = party,
+      sanctionType = sanctionType,
+      sanctionCode = sanctionCode,
+      consecutiveHearingResultAward = consecutiveHearingResultAward,
+      effectiveDate = effectiveDate,
+      statusDate = statusDate,
+      comment = comment,
     )
 }

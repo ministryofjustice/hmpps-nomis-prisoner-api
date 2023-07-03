@@ -265,6 +265,26 @@ interface AdjudicationHearingDsl {
 }
 
 @TestDataDslMarker
+interface AdjudicationHearingResultDsl {
+  @AdjudicationHearingResultAwardDslMarker
+  fun award(
+    statusCode: String,
+    sanctionDays: Int? = null,
+    sanctionMonths: Int? = null,
+    compensationAmount: BigDecimal? = null,
+    sanctionCode: String,
+    comment: String? = null,
+    effectiveDate: LocalDate,
+    statusDate: LocalDate? = null,
+    consecutiveSanctionSeq: Int? = null,
+    dsl: AdjudicationHearingResultAwardDsl.() -> Unit = {},
+  )
+}
+
+@TestDataDslMarker
+interface AdjudicationHearingResultAwardDsl
+
+@TestDataDslMarker
 interface ProgramServiceDsl {
   @CourseActivityDslMarker
   fun courseActivity(
@@ -291,9 +311,6 @@ interface ProgramServiceDsl {
     },
   ): CourseActivity
 }
-
-@TestDataDslMarker
-interface AdjudicationHearingResultDsl
 
 @TestDataDslMarker
 interface CourseActivityDsl {
@@ -380,6 +397,9 @@ annotation class AdjudicationHearingDslMarker
 
 @DslMarker
 annotation class AdjudicationHearingResultDslMarker
+
+@DslMarker
+annotation class AdjudicationHearingResultAwardDslMarker
 
 @DslMarker
 annotation class ProgramServiceDslMarker
