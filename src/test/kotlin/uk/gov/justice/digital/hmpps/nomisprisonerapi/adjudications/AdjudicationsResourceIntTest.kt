@@ -6,16 +6,19 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.DataRef
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_CONTROL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_REPORTING_OFFICER
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.SUSPECT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.VICTIM
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.dataRef
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -87,10 +90,12 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = "A1234TT") {
           booking {
             adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
+              val hoochCharge: DataRef<AdjudicationIncidentCharge> = dataRef()
               charge(
                 offenceCode = "51:1N",
                 guiltyEvidence = "HOOCH",
                 reportDetail = "1234/123",
+                ref = hoochCharge,
               )
               charge(
                 offenceCode = "51:3",
@@ -106,7 +111,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                 hearingStaff = staff,
               ) {
                 result(
-                  chargeSequence = 1,
+                  chargeRef = hoochCharge,
                   pleaFindingCode = "NOT_GUILTY",
                   findingCode = "PROVED",
                 ) {

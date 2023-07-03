@@ -160,9 +160,10 @@ class AdjudicationPartyBuilder(
     offenceCode: String,
     guiltyEvidence: String?,
     reportDetail: String?,
+    ref: DataRef<AdjudicationIncidentCharge>?,
     dsl: AdjudicationChargeDsl.() -> Unit,
   ) {
-    this.charges += AdjudicationChargeBuilder(offenceCode, guiltyEvidence, reportDetail).apply(dsl)
+    this.charges += AdjudicationChargeBuilder(offenceCode, guiltyEvidence, reportDetail, ref).apply(dsl)
   }
 
   override fun hearing(
@@ -189,6 +190,7 @@ class AdjudicationChargeBuilder(
   var offenceCode: String,
   private var guiltyEvidence: String?,
   private var reportDetail: String?,
+  private var ref: DataRef<AdjudicationIncidentCharge>?,
 ) : AdjudicationChargeDsl {
 
   fun build(
@@ -204,7 +206,7 @@ class AdjudicationChargeBuilder(
       offence = offence,
       guiltyEvidence = guiltyEvidence,
       reportDetails = reportDetail,
-    )
+    ).also { ref?.set(it) }
 }
 
 class AdjudicationRepairBuilder(
@@ -302,7 +304,7 @@ class AdjudicationHearingBuilder(
     )
 
   override fun result(
-    chargeSequence: Int,
+    chargeRef: DataRef<AdjudicationIncidentCharge>,
     pleaFindingCode: String,
     findingCode: String,
     dsl: AdjudicationHearingResultDsl.() -> Unit,
@@ -310,7 +312,7 @@ class AdjudicationHearingBuilder(
     this.results += AdjudicationHearingResultBuilder(
       pleaFindingCode,
       findingCode = findingCode,
-      chargeSequence = chargeSequence,
+      chargeRef = chargeRef,
     ).apply(dsl)
   }
 }
@@ -318,24 +320,23 @@ class AdjudicationHearingBuilder(
 class AdjudicationHearingResultBuilder(
   var pleaFindingCode: String,
   var findingCode: String,
-  var chargeSequence: Int,
+  var chargeRef: DataRef<AdjudicationIncidentCharge>,
   var awards: List<AdjudicationHearingResultAwardBuilder> = listOf(),
 ) : AdjudicationHearingResultDsl {
   fun build(
     hearing: AdjudicationHearing,
     index: Int,
-    charge: AdjudicationIncidentCharge,
     pleaFindingType: AdjudicationPleaFindingType?,
     findingType: AdjudicationFindingType,
     awards: MutableList<AdjudicationHearingResultAward> = mutableListOf(),
   ): AdjudicationHearingResult =
     AdjudicationHearingResult(
       id = AdjudicationHearingResultId(hearing.id, index),
-      chargeSequence = chargeSequence,
-      incident = charge.incident,
+      chargeSequence = chargeRef.value().id.chargeSequence,
+      incident = chargeRef.value().incident,
       hearing = hearing,
-      offence = charge.offence,
-      incidentCharge = charge,
+      offence = chargeRef.value().offence,
+      incidentCharge = chargeRef.value(),
       pleaFindingType = pleaFindingType,
       findingType = findingType,
       pleaFindingCode = pleaFindingCode,

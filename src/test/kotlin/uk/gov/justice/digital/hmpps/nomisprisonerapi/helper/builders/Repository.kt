@@ -255,7 +255,6 @@ class Repository(
                 resultBuilder.build(
                   hearing = hearing,
                   index = resultIndex,
-                  charge = party.charges.find { it.id.chargeSequence == resultBuilder.chargeSequence }!!,
                   pleaFindingType = lookupHearingResultPleaType(resultBuilder.pleaFindingCode),
                   findingType = lookupHearingResultFindingType(resultBuilder.findingCode),
                 ).also { result ->

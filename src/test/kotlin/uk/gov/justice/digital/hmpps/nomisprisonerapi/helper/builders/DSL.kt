@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -218,6 +219,7 @@ interface AdjudicationPartyDsl {
     offenceCode: String = "51:1B",
     guiltyEvidence: String? = null,
     reportDetail: String? = null,
+    ref: DataRef<AdjudicationIncidentCharge>? = null,
     dsl: AdjudicationChargeDsl.() -> Unit = {},
   )
 
@@ -257,7 +259,7 @@ interface AdjudicationChargeDsl
 interface AdjudicationHearingDsl {
   @AdjudicationHearingResultDslMarker
   fun result(
-    chargeSequence: Int,
+    chargeRef: DataRef<AdjudicationIncidentCharge>,
     pleaFindingCode: String = "NOT_GUILTY",
     findingCode: String = "PROVED",
     dsl: AdjudicationHearingResultDsl.() -> Unit = {},
@@ -415,3 +417,12 @@ annotation class CourseScheduleDslMarker
 
 @DslMarker
 annotation class CourseScheduleRuleDslMarker
+
+class DataRef<T>(private var reference: T? = null) {
+  fun set(value: T) {
+    reference = value
+  }
+  fun value(): T = reference ?: throw IllegalStateException("Reference not set")
+}
+
+fun <T> dataRef() = DataRef<T>()
