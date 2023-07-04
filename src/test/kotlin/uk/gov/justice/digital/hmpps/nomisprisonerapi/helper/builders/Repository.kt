@@ -117,10 +117,12 @@ class Repository(
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
+
+  // Entity builders
   fun save(offenderBuilder: OffenderBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
 
-    val offender = save(offenderBuilder.build(gender)).apply {
+    val offender = offenderRepository.saveAndFlush(offenderBuilder.build(gender)).apply {
       rootOffenderId = id
     }
 
@@ -283,24 +285,75 @@ class Repository(
     return offender
   }
 
-  fun save(personBuilder: PersonBuilder): Person = personRepository.save(personBuilder.build())
-  fun save(offender: Offender): Offender = offenderRepository.saveAndFlush(offender)
+  fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
+  fun deleteOffenders() = offenderRepository.deleteAll()
 
+  fun save(personBuilder: PersonBuilder): Person = personRepository.save(personBuilder.build())
+  fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
+
+  fun save(programServiceBuilder: ProgramServiceBuilder): ProgramService =
+    programServiceRepository.save(programServiceBuilder.build())
+
+  fun deleteProgramServices() = programServiceRepository.deleteAll()
+
+  fun save(courseActivityBuilder: CourseActivityBuilder, programService: ProgramService): CourseActivity =
+    courseActivityBuilder.build(programService).let { activityRepository.saveAndFlush(it) }
+
+  fun deleteActivities() = activityRepository.deleteAll()
+
+  fun save(
+    offenderCourseAttendanceBuilder: OffenderCourseAttendanceBuilder,
+    offenderProgramProfile: OffenderProgramProfile,
+  ): OffenderCourseAttendance = offenderCourseAttendanceBuilder.build(offenderProgramProfile)
+    .let { offenderCourseAttendanceRepository.saveAndFlush(it) }
+
+  fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
+
+  fun save(staffBuilder: StaffBuilder): Staff = staffRepository.save(staffBuilder.build())
+
+  fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
+
+  fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
+    offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
+
+  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) =
+    offenderRepository.deleteById(offenderIndividualSchedule.eventId)
+
+  fun save(adjudicationIncidentBuilder: AdjudicationIncidentBuilder): AdjudicationIncident =
+    adjudicationIncidentRepository.save(
+      adjudicationIncidentBuilder.build(
+        repository = this,
+      ),
+    ).also { incident ->
+      incident.repairs.addAll(
+        adjudicationIncidentBuilder.repairs.mapIndexed { index, repair ->
+          repair.build(repository = this, incident, repairSequence = index + 1)
+        },
+      )
+      incident.parties.addAll(
+        adjudicationIncidentBuilder.parties.mapIndexed { index, party ->
+          party.build(repository = this, incident, index + 1)
+        },
+      )
+    }
+
+  fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
+  fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) =
+    adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
+
+  // Builder lookups
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
   fun lookupContactType(code: String): ContactType =
     contactTypeRepository.findByIdOrNull(Pk(ContactType.CONTACTS, code))!!
 
-  fun lookupVisitType(code: String): VisitType =
-    visitTypeRepository.findByIdOrNull(Pk(VisitType.VISIT_TYPE, code))!!
+  fun lookupVisitType(code: String): VisitType = visitTypeRepository.findByIdOrNull(Pk(VisitType.VISIT_TYPE, code))!!
 
-  fun lookupIepLevel(code: String): IEPLevel =
-    iepLevelRepository.findByIdOrNull(Pk(IEPLevel.IEP_LEVEL, code))!!
+  fun lookupIepLevel(code: String): IEPLevel = iepLevelRepository.findByIdOrNull(Pk(IEPLevel.IEP_LEVEL, code))!!
 
   fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
     sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
 
-  fun lookupSentenceAdjustment(code: String): SentenceAdjustment =
-    sentenceAdjustmentRepository.findByIdOrNull(code)!!
+  fun lookupSentenceAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
 
   fun lookupVisitStatus(code: String): VisitStatus =
     visitStatusRepository.findByIdOrNull(Pk(VisitStatus.VISIT_STATUS, code))!!
@@ -315,96 +368,8 @@ class Repository(
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
     agencyInternalLocationRepository.findByIdOrNull(locationId)
 
-  fun lookupAppointment(id: Long): OffenderIndividualSchedule? =
-    offenderIndividualScheduleRepository.findByIdOrNull(id)
-
   fun lookupAdjudicationEvidenceType(code: String): AdjudicationEvidenceType =
     evidenceTypeRepository.findByIdOrNull(Pk(AdjudicationEvidenceType.OIC_STMT_TYP, code))!!
-
-  fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
-  fun deleteOffenders() = offenderRepository.deleteAll()
-  fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
-
-  fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
-  fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()
-  fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
-
-  fun lookupVisit(visitId: Long?): Visit {
-    val visit = visitRepository.findById(visitId!!).orElseThrow()
-    visit.visitors.size // hydrate
-    visit.visitOrder?.visitors?.size
-    return visit
-  }
-
-  fun changeVisitStatus(visitId: Long?) {
-    val visit = visitRepository.findById(visitId!!).orElseThrow()
-    visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
-  }
-
-  @Suppress("SqlWithoutWhere")
-  fun updateCreatedToMatchVisitStart() {
-    val sql = "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
-    jdbcTemplate.execute(sql)
-  }
-
-  fun findAllAgencyVisitSlots(prisonId: String): List<AgencyVisitSlot> =
-    agencyVisitSlotRepository.findByLocation_Id(prisonId)
-
-  fun findAllAgencyVisitTimes(prisonId: String): List<AgencyVisitTime> =
-    agencyVisitTimeRepository.findByAgencyVisitTimesId_Location_Id(prisonId)
-
-  fun findAllAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
-    agencyVisitDayRepository.findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(weekDay, prisonId)
-
-  fun lookupOffender(nomsId: String): Offender? {
-    val offender = offenderRepository.findByNomsId(nomsId).firstOrNull()
-    offender?.bookings?.firstOrNull()?.incentives?.size // hydrate
-    return offender
-  }
-
-  fun lookupProgramService(id: Long): ProgramService = programServiceRepository.findByIdOrNull(id)!!
-  fun lookupOffenderProgramProfile(id: Long): OffenderProgramProfile =
-    offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
-      it.payBands.size
-    }
-
-  fun lookupOffenderProgramProfile(
-    courseActivity: CourseActivity,
-    booking: OffenderBooking,
-  ): List<OffenderProgramProfile> =
-    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking)
-      .onEach { it.payBands.size }
-
-  fun lookupActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
-    it.payRates.size
-    it.courseSchedules.size
-    it.courseScheduleRules.size
-  }
-
-  fun lookupSchedule(id: Long): CourseSchedule = courseScheduleRepository.findByIdOrNull(id)!!
-
-  fun lookupAttendance(eventId: Long): OffenderCourseAttendance =
-    offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
-
-  fun <T> runInTransaction(block: () -> T) = block()
-
-  fun deleteProgramServices() = programServiceRepository.deleteAll()
-  fun deleteActivities() = activityRepository.deleteAll()
-  fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
-
-  fun save(programServiceBuilder: ProgramServiceBuilder): ProgramService =
-    programServiceRepository.save(programServiceBuilder.build())
-
-  fun save(courseActivityBuilder: CourseActivityBuilder, programService: ProgramService): CourseActivity =
-    courseActivityBuilder.build(programService)
-      .let { activityRepository.saveAndFlush(it) }
-
-  fun save(
-    offenderCourseAttendanceBuilder: OffenderCourseAttendanceBuilder,
-    offenderProgramProfile: OffenderProgramProfile,
-  ): OffenderCourseAttendance =
-    offenderCourseAttendanceBuilder.build(offenderProgramProfile)
-      .let { offenderCourseAttendanceRepository.saveAndFlush(it) }
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
@@ -447,36 +412,68 @@ class Repository(
   fun lookupRepairType(code: String): AdjudicationRepairType =
     repairTypeRepository.findByIdOrNull(AdjudicationRepairType.pk(code))!!
 
-  fun save(staffBuilder: StaffBuilder): Staff =
-    staffRepository.save(staffBuilder.build())
+  // Test Helpers
 
-  fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
+  fun getOffender(nomsId: String): Offender? {
+    val offender = offenderRepository.findByNomsId(nomsId).firstOrNull()
+    offender?.bookings?.firstOrNull()?.incentives?.size // hydrate
+    return offender
+  }
 
-  fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
-    offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
+  fun getVisit(visitId: Long?): Visit {
+    val visit = visitRepository.findById(visitId!!).orElseThrow()
+    visit.visitors.size // hydrate
+    visit.visitOrder?.visitors?.size
+    return visit
+  }
 
-  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) =
-    offenderRepository.deleteById(offenderIndividualSchedule.eventId)
+  fun getAttendance(eventId: Long): OffenderCourseAttendance =
+    offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
 
-  fun save(adjudicationIncidentBuilder: AdjudicationIncidentBuilder): AdjudicationIncident =
-    adjudicationIncidentRepository.save(
-      adjudicationIncidentBuilder.build(
-        repository = this,
-      ),
-    ).also { incident ->
-      incident.repairs.addAll(
-        adjudicationIncidentBuilder.repairs.mapIndexed { index, repair ->
-          repair.build(repository = this, incident, repairSequence = index + 1)
-        },
-      )
-      incident.parties.addAll(
-        adjudicationIncidentBuilder.parties.mapIndexed { index, party ->
-          party.build(repository = this, incident, index + 1)
-        },
-      )
+  fun getSchedule(id: Long): CourseSchedule = courseScheduleRepository.findByIdOrNull(id)!!
+
+  fun getActivity(id: Long): CourseActivity = activityRepository.findByIdOrNull(id)!!.also {
+    it.payRates.size
+    it.courseSchedules.size
+    it.courseScheduleRules.size
+  }
+
+  fun getOffenderProgramProfiles(
+    courseActivity: CourseActivity,
+    booking: OffenderBooking,
+  ): List<OffenderProgramProfile> =
+    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking)
+      .onEach { it.payBands.size }
+
+  fun getOffenderProgramProfile(id: Long): OffenderProgramProfile =
+    offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
+      it.payBands.size
     }
 
-  fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
-  fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) =
-    adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
+  fun getAppointment(id: Long): OffenderIndividualSchedule? = offenderIndividualScheduleRepository.findByIdOrNull(id)
+
+  fun updateVisitStatus(visitId: Long?) {
+    val visit = visitRepository.findById(visitId!!).orElseThrow()
+    visit.visitStatus = visitStatusRepository.findById(VisitStatus.NORM).orElseThrow()
+  }
+
+  @Suppress("SqlWithoutWhere")
+  fun updateCreatedToMatchVisitStart() {
+    val sql = "UPDATE offender_visits SET CREATE_DATETIME = START_TIME"
+    jdbcTemplate.execute(sql)
+  }
+
+  fun getAllAgencyVisitSlots(prisonId: String): List<AgencyVisitSlot> =
+    agencyVisitSlotRepository.findByLocation_Id(prisonId)
+
+  fun getAllAgencyVisitTimes(prisonId: String): List<AgencyVisitTime> =
+    agencyVisitTimeRepository.findByAgencyVisitTimesId_Location_Id(prisonId)
+
+  fun getAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
+    agencyVisitDayRepository.findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(weekDay, prisonId)
+
+  fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
+  fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()
+  fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
+  fun <T> runInTransaction(block: () -> T) = block()
 }

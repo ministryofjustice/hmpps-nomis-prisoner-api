@@ -70,6 +70,8 @@ class OffenderBookingBuilder(
     adjudicationNumber: Long,
     comment: String,
     partyAddedDate: LocalDate,
+    incidentRole: String,
+    actionDecision: String,
     dsl: AdjudicationPartyDsl.() -> Unit,
   ) {
     this.adjudications += Pair(
@@ -80,6 +82,8 @@ class OffenderBookingBuilder(
         partyAddedDate = partyAddedDate,
         offenderBooking = null,
         staff = null,
+        incidentRole = incidentRole,
+        actionDecision = actionDecision,
       ).apply(dsl),
     )
   }
