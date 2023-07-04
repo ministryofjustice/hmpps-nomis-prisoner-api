@@ -197,18 +197,18 @@ class Repository(
       booking.adjudicationParties.addAll(
         offenderBuilder.bookingBuilders[bookingIndex].adjudications.mapIndexed { adjudicationIndex, adjudicationPartyPair ->
           val party = adjudicationPartyPair.second.build(
+            repository = this,
             incident = adjudicationPartyPair.first,
             offenderBooking = booking,
-            actionDecision = lookupActionDecision(),
             index = adjudicationPartyPair.first.parties.size + 1,
           )
           party.charges.addAll(
             offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.charges.map {
               chargeSequence += 1
               it.build(
+                repository = this,
                 incidentParty = party,
                 chargeSequence = chargeSequence,
-                offence = lookupAdjudicationOffence(it.offenceCode),
               )
             },
           )
@@ -219,7 +219,7 @@ class Repository(
               ).also { investigation ->
                 investigation.evidence.addAll(
                   builder.evidence.map {
-                    it.build(investigation, lookupAdjudicationEvidenceType(it.type))
+                    it.build(this, investigation)
                   },
                 )
               }
@@ -243,28 +243,23 @@ class Repository(
 
           adjudicationHearingRepository.save(
             builder.build(
-              agencyInternalLocation = lookupAgencyInternalLocation(builder.agencyInternalLocationId!!),
-              eventStatus = lookupEventStatusCode(builder.eventStatusCode),
+              repository = this,
               incidentParty = party,
-              hearingType = lookupHearingType(builder.hearingTypeCode),
-              hearingStaff = builder.hearingStaff,
             ),
           ).also { hearing ->
             hearing.hearingResults.addAll(
               offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results.mapIndexed { resultIndex, resultBuilder ->
                 resultBuilder.build(
+                  repository = this,
                   hearing = hearing,
                   index = resultIndex,
-                  pleaFindingType = lookupHearingResultPleaType(resultBuilder.pleaFindingCode),
-                  findingType = lookupHearingResultFindingType(resultBuilder.findingCode),
                 ).also { result ->
                   result.resultAwards.addAll(
                     offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results[resultIndex].awards.mapIndexed { awardIndex, awardBuilder ->
                       awardBuilder.build(
+                        repository = this,
                         sanctionIndex = awardIndex,
                         result = result,
-                        sanctionType = lookupSanctionType(awardBuilder.sanctionCode),
-                        sanctionStatus = lookupSanctionStatus(awardBuilder.statusCode),
                         party = party,
                       )
                     },
@@ -466,20 +461,17 @@ class Repository(
   fun save(adjudicationIncidentBuilder: AdjudicationIncidentBuilder): AdjudicationIncident =
     adjudicationIncidentRepository.save(
       adjudicationIncidentBuilder.build(
-        reportingStaff = adjudicationIncidentBuilder.reportingStaff,
-        agencyInternalLocation = lookupAgencyInternalLocation(adjudicationIncidentBuilder.agencyInternalLocationId)!!,
-        incidentType = lookupIncidentType(),
-        prison = lookupAgency(adjudicationIncidentBuilder.prisonId),
+        repository = this,
       ),
     ).also { incident ->
       incident.repairs.addAll(
         adjudicationIncidentBuilder.repairs.mapIndexed { index, repair ->
-          repair.build(incident, index + 1, lookupRepairType(repair.repairType))
+          repair.build(repository = this, incident, repairSequence = index + 1)
         },
       )
       incident.parties.addAll(
         adjudicationIncidentBuilder.parties.mapIndexed { index, party ->
-          party.build(incident, lookupActionDecision(party.actionDecision), index + 1)
+          party.build(repository = this, incident, index + 1)
         },
       )
     }
