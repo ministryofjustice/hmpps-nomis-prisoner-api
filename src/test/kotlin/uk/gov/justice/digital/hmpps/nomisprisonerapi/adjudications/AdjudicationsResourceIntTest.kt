@@ -91,6 +91,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           booking {
             adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
               val hoochCharge: DataRef<AdjudicationIncidentCharge> = dataRef()
+              val deadSwanCharge: DataRef<AdjudicationIncidentCharge> = dataRef()
               charge(
                 offenceCode = "51:1N",
                 guiltyEvidence = "HOOCH",
@@ -101,6 +102,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                 offenceCode = "51:3",
                 guiltyEvidence = "DEAD SWAN",
                 reportDetail = null,
+                ref = deadSwanCharge,
               )
               hearing(
                 internalLocationId = -41,
@@ -138,7 +140,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                   )
                 }
                 result(
-                  chargeSequence = 2,
+                  chargeRef = deadSwanCharge,
                   pleaFindingCode = "UNFIT",
                   findingCode = "NOT_PROCEED",
                 )
