@@ -321,7 +321,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       assertThat(response?.created).isTrue()
 
-      val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
+      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(startDate).isEqualTo("2022-11-14")
@@ -365,7 +365,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       val response = upsertAllocationIsOk(request)!!
 
-      val saved = repository.lookupOffenderProgramProfile(courseActivity, offender.latestBooking())
+      val saved = repository.getOffenderProgramProfiles(courseActivity, offender.latestBooking())
       with(saved[0]) {
         assertThat(startDate).isEqualTo("2022-10-31")
         assertThat(endDate).isEqualTo("2022-11-01")
@@ -441,7 +441,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       assertThat(response?.created).isFalse()
 
-      val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
+      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(endDate).isEqualTo("$yesterday")
@@ -464,7 +464,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       assertThat(response?.created).isFalse()
 
-      val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
+      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(suspended).isTrue()
@@ -494,7 +494,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         )
       val response = upsertAllocationIsOk(endRequest)
 
-      val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
+      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(endDate).isEqualTo("$yesterday")
@@ -512,7 +512,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       assertThat(response?.created).isFalse()
 
-      val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
+      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(payBands[0].payBand.code).isEqualTo("5")
         assertThat(payBands[0].endDate).isEqualTo(today)
@@ -530,7 +530,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       val secondPayBandUpdateRequest = upsertRequest().withPayBandCode("7")
       val response = upsertAllocationIsOk(secondPayBandUpdateRequest)
 
-      val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
+      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(payBands[0].payBand.code).isEqualTo("5")
         assertThat(payBands[0].endDate).isEqualTo(today)
@@ -548,7 +548,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       val revertPayBandRequest = upsertRequest().withPayBandCode("5")
       val response = upsertAllocationIsOk(revertPayBandRequest)
 
-      val saved = repository.lookupOffenderProgramProfile(response!!.offenderProgramReferenceId)
+      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(startDate).isEqualTo("2022-11-14")

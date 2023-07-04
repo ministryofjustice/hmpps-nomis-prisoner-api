@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAwardId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentChargeId
@@ -15,10 +14,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepairId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -87,8 +84,8 @@ class AdjudicationPartyBuilder(
   private val comment: String,
   private val offenderBooking: OffenderBooking?,
   private val staff: Staff?,
-  private val incidentRole: String = suspectRole,
-  private val actionDecision: String = IncidentDecisionAction.NO_FURTHER_ACTION_CODE,
+  private val incidentRole: String,
+  private val actionDecision: String,
   private val partyAddedDate: LocalDate,
   var charges: List<AdjudicationChargeBuilder> = listOf(),
   var hearings: List<AdjudicationHearingBuilder> = listOf(),
@@ -159,6 +156,10 @@ class AdjudicationPartyBuilder(
     hearingDate: LocalDate?,
     hearingTime: LocalDateTime?,
     hearingStaff: Staff?,
+    hearingTypeCode: String,
+    eventStatusCode: String,
+    comment: String,
+    representativeText: String,
     dsl: AdjudicationHearingDsl.() -> Unit,
   ) {
     this.hearings += AdjudicationHearingBuilder(
@@ -168,6 +169,10 @@ class AdjudicationPartyBuilder(
       hearingDate = hearingDate,
       hearingDateTime = hearingTime,
       hearingStaff = hearingStaff,
+      comment = comment,
+      representativeText = representativeText,
+      eventStatusCode = eventStatusCode,
+      hearingTypeCode = hearingTypeCode,
     ).apply(dsl)
   }
 }
@@ -236,9 +241,9 @@ class AdjudicationInvestigationBuilder(
 }
 
 class AdjudicationEvidenceBuilder(
-  private val detail: String = "Knife found",
-  private val type: String = "WEAP",
-  private val date: LocalDate = LocalDate.now(),
+  private val detail: String,
+  private val type: String,
+  private val date: LocalDate,
 ) : AdjudicationEvidenceDsl {
   fun build(repository: Repository, investigation: AdjudicationInvestigation): AdjudicationEvidence =
     AdjudicationEvidence(
@@ -250,16 +255,16 @@ class AdjudicationEvidenceBuilder(
 }
 
 class AdjudicationHearingBuilder(
-  private val hearingDate: LocalDate? = LocalDate.now(),
-  private val hearingDateTime: LocalDateTime? = LocalDateTime.now(),
-  private val scheduledDate: LocalDate? = LocalDate.now(),
-  private val scheduledDateTime: LocalDateTime? = LocalDateTime.now(),
+  private val hearingDate: LocalDate?,
+  private val hearingDateTime: LocalDateTime?,
+  private val scheduledDate: LocalDate?,
+  private val scheduledDateTime: LocalDateTime?,
   private val hearingStaff: Staff? = null,
-  private val eventStatusCode: String = "SCH",
-  private val hearingTypeCode: String = AdjudicationHearingType.GOVERNORS_HEARING,
-  private val comment: String = "Hearing comment",
-  private val representativeText: String = "rep text",
+  private val comment: String,
+  private val representativeText: String,
   private val agencyInternalLocationId: Long?,
+  private val hearingTypeCode: String,
+  private val eventStatusCode: String,
   var results: List<AdjudicationHearingResultBuilder> = listOf(),
 ) : AdjudicationHearingDsl {
 

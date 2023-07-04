@@ -201,7 +201,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectBody(CreateVisitResponse::class.java)
         .returnResult().responseBody
 
-      val visit = repository.lookupVisit(response?.visitId)
+      val visit = repository.getVisit(response?.visitId)
 
       assertThat(visit.visitors).extracting("person.id", "eventStatus.code").containsExactly(
         tuple(null, "SCH"),
@@ -247,7 +247,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(response?.visitId).isGreaterThan(0)
 
       // Spot check that the database has been populated.
-      val visit = repository.lookupVisit(response?.visitId)
+      val visit = repository.getVisit(response?.visitId)
 
       assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
       assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
@@ -283,7 +283,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(response?.visitId).isGreaterThan(0)
 
       // Spot check that the database has been populated.
-      val visit = repository.lookupVisit(response?.visitId)
+      val visit = repository.getVisit(response?.visitId)
 
       assertThat(visit.visitOrder).isNotNull
       assertThat(visit.visitOrder?.commentText).isEqualTo("VSIP Order Ref: asd-fff-ddd")
@@ -326,7 +326,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(response?.visitId).isGreaterThan(0)
 
       // Spot check that the database has been populated.
-      val visit = repository.lookupVisit(response?.visitId)
+      val visit = repository.getVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
       assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("$prisonId-VISIT-VSIP_SOC")
@@ -371,7 +371,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(response?.visitId).isGreaterThan(0)
 
       // Spot check that the database has been populated.
-      val visit = repository.lookupVisit(response?.visitId)
+      val visit = repository.getVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
       assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("MDI-VISITS-VSIP_SOC")
@@ -408,7 +408,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(response?.visitId).isGreaterThan(0)
 
       // Spot check that the database has been populated.
-      val visit = repository.lookupVisit(response?.visitId)
+      val visit = repository.getVisit(response?.visitId)
 
       assertThat(visit.agencyVisitSlot).isNotNull
       assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.description).isEqualTo("BXI-VISIT-VSIP_SOC")
@@ -421,9 +421,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
     inner class RoomSlotSideEffects {
       @Test
       internal fun `will create a weekly slot when one does not already exist`() {
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).isEmpty()
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).isEmpty()
 
-        val visit = repository.lookupVisit(
+        val visit = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
@@ -432,10 +432,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
 
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visit.agencyVisitSlot!!.id }
 
-        val visitForFollowingWeek = repository.lookupVisit(
+        val visitForFollowingWeek = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-11T14:00",
             endTime = "16:00",
@@ -443,10 +443,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "OPEN",
           ),
         )
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visitForFollowingWeek.agencyVisitSlot!!.id }
 
-        val visitForNextDay = repository.lookupVisit(
+        val visitForNextDay = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-12T14:00",
             endTime = "16:00",
@@ -454,15 +454,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "OPEN",
           ),
         )
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitForNextDay.agencyVisitSlot!!.id }
       }
 
       @Test
       internal fun `visits in different rooms are in different slots only when closed v open`() {
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).isEmpty()
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).isEmpty()
 
-        val visit = repository.lookupVisit(
+        val visit = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
@@ -472,10 +472,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
 
         assertThat(visit.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP_SOC")
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visit.agencyVisitSlot!!.id }
 
-        val visitInDifferentRestrictionRoom = repository.lookupVisit(
+        val visitInDifferentRestrictionRoom = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
@@ -484,10 +484,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
         assertThat(visitInDifferentRestrictionRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP_CLO")
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitInDifferentRestrictionRoom.agencyVisitSlot!!.id }
 
-        val visitInDifferentPhysicalRoom = repository.lookupVisit(
+        val visitInDifferentPhysicalRoom = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
@@ -496,15 +496,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
         assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description).isEqualTo("$prisonId-VISIT-VSIP_CLO")
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(2)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(2)
           .anyMatch { it.id == visitInDifferentPhysicalRoom.agencyVisitSlot!!.id }
       }
 
       @Test
       internal fun `a different end time does not cause a new slot to be created`() {
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).isEmpty()
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).isEmpty()
 
-        val visit = repository.lookupVisit(
+        val visit = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
@@ -513,10 +513,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
 
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visit.agencyVisitSlot!!.id }
 
-        val visitThatEndAtDifferentTime = repository.lookupVisit(
+        val visitThatEndAtDifferentTime = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "14:30",
@@ -524,15 +524,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "OPEN",
           ),
         )
-        assertThat(repository.findAllAgencyVisitSlots(prisonId)).hasSize(1)
+        assertThat(repository.getAllAgencyVisitSlots(prisonId)).hasSize(1)
           .anyMatch { it.id == visitThatEndAtDifferentTime.agencyVisitSlot!!.id }
       }
 
       @Test
       internal fun `a different end time does not cause a new time of day to be created`() {
-        assertThat(repository.findAllAgencyVisitTimes(prisonId)).isEmpty()
+        assertThat(repository.getAllAgencyVisitTimes(prisonId)).isEmpty()
 
-        val visit = repository.lookupVisit(
+        val visit = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "16:00",
@@ -541,10 +541,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
 
-        assertThat(repository.findAllAgencyVisitTimes(prisonId)).hasSize(1)
+        assertThat(repository.getAllAgencyVisitTimes(prisonId)).hasSize(1)
           .anyMatch { it.agencyVisitTimesId == visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId }
 
-        val visitThatEndAtDifferentTime = repository.lookupVisit(
+        val visitThatEndAtDifferentTime = repository.getVisit(
           createVisit(
             startDateTime = "2021-11-04T14:00",
             endTime = "14:30",
@@ -552,15 +552,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "OPEN",
           ),
         )
-        assertThat(repository.findAllAgencyVisitTimes(prisonId)).hasSize(1)
+        assertThat(repository.getAllAgencyVisitTimes(prisonId)).hasSize(1)
           .anyMatch { it.agencyVisitTimesId == visitThatEndAtDifferentTime.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId }
       }
 
       @Test
       internal fun `a day of the week is created for prison when one does not already exist`() {
-        assertThat(repository.findAllAgencyVisitDays("MONDAY", prisonId)).isNull()
+        assertThat(repository.getAgencyVisitDays("MONDAY", prisonId)).isNull()
 
-        val visit = repository.lookupVisit(
+        val visit = repository.getVisit(
           createVisit(
             startDateTime = "2022-08-01T14:00",
             endTime = "16:00",
@@ -569,12 +569,12 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
 
-        assertThat(repository.findAllAgencyVisitDays("MON", prisonId))
+        assertThat(repository.getAgencyVisitDays("MON", prisonId))
           .isNotNull
           .matches { it!!.agencyVisitDayId.weekDay == visit.agencyVisitSlot!!.weekDay }
           .matches { it!!.agencyVisitDayId.weekDay == "MON" }
 
-        val visitForFollowingWeek = repository.lookupVisit(
+        val visitForFollowingWeek = repository.getVisit(
           createVisit(
             startDateTime = "2022-08-08T14:00",
             endTime = "16:00",
@@ -582,12 +582,12 @@ class VisitResourceIntTest : IntegrationTestBase() {
             openClosedStatus = "OPEN",
           ),
         )
-        assertThat(repository.findAllAgencyVisitDays("MON", prisonId))
+        assertThat(repository.getAgencyVisitDays("MON", prisonId))
           .isNotNull
           .matches { it!!.agencyVisitDayId.weekDay == visitForFollowingWeek.agencyVisitSlot!!.weekDay }
           .matches { it!!.agencyVisitDayId.weekDay == "MON" }
 
-        val visitForNextDay = repository.lookupVisit(
+        val visitForNextDay = repository.getVisit(
           createVisit(
             startDateTime = "2022-08-09T14:00",
             endTime = "16:00",
@@ -596,7 +596,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
         assertThat(
-          repository.findAllAgencyVisitDays(
+          repository.getAgencyVisitDays(
             "TUE",
             prisonId,
           ),
@@ -666,7 +666,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .expectBody().isEmpty
 
       // Spot check that the database has been updated correctly.
-      val visit = repository.lookupVisit(visitId)
+      val visit = repository.getVisit(visitId)
 
       assertThat(visit.visitStatus.code).isEqualTo("CANC")
       assertThat(visit.offenderBooking.bookingId).isEqualTo(offenderBookingId)
@@ -744,7 +744,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody?.userMessage,
       ).isEqualTo("Visit already cancelled, with outcome VISCANC")
 
-      repository.changeVisitStatus(visitId)
+      repository.updateVisitStatus(visitId)
 
       assertThat(
         webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")

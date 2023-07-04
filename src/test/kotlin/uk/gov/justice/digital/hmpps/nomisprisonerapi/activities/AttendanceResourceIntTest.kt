@@ -384,7 +384,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
         assertThat(response.created).isTrue()
 
-        val saved = repository.lookupAttendance(response.eventId)
+        val saved = repository.getAttendance(response.eventId)
         with(saved) {
           assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
           assertThat(eventDate).isEqualTo("2022-11-01")
@@ -421,7 +421,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
         assertThat(response.created).isTrue()
 
-        val saved = repository.lookupAttendance(response.eventId)
+        val saved = repository.getAttendance(response.eventId)
         with(saved) {
           assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
           assertThat(eventDate).isEqualTo("2022-11-01")
@@ -480,7 +480,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
           .jsonPath("created").isEqualTo("false")
 
-        val saved = repository.lookupAttendance(attendance.eventId)
+        val saved = repository.getAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("SCH")
       }
 
@@ -497,7 +497,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
           .jsonPath("created").isEqualTo("false")
 
-        val saved = repository.lookupAttendance(attendance.eventId)
+        val saved = repository.getAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("SCH")
         assertThat(saved.eventDate).isEqualTo("2022-11-02")
         assertThat(saved.startTime).isEqualTo("2022-11-02T13:00")
@@ -524,7 +524,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, request)
           .expectStatus().isOk
 
-        val saved = repository.lookupAttendance(attendance.eventId)
+        val saved = repository.getAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("CANC")
       }
 
@@ -548,7 +548,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, request)
           .expectStatus().isOk
 
-        val saved = repository.lookupAttendance(attendance.eventId)
+        val saved = repository.getAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("EXP")
       }
 
@@ -594,7 +594,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             .expectBody(UpsertAttendanceResponse::class.java)
             .returnResult().responseBody!!
 
-        val saved = repository.lookupAttendance(response.eventId)
+        val saved = repository.getAttendance(response.eventId)
         with(saved) {
           assertThat(eventStatus.code).isEqualTo("COMP")
           assertThat(attendanceOutcome?.code).isEqualTo("CANC")
@@ -630,7 +630,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             .expectBody(UpsertAttendanceResponse::class.java)
             .returnResult().responseBody!!
 
-        val saved = repository.lookupAttendance(response.eventId)
+        val saved = repository.getAttendance(response.eventId)
         with(saved) {
           assertThat(eventStatus.code).isEqualTo("COMP")
           assertThat(attendanceOutcome?.code).isEqualTo("ATT")
@@ -668,7 +668,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
         assertThat(response.created).isFalse()
 
-        val saved = repository.lookupAttendance(response.eventId)
+        val saved = repository.getAttendance(response.eventId)
         with(saved) {
           assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
           assertThat(eventStatus.code).isEqualTo("COMP")
