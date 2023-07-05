@@ -101,14 +101,14 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create incentive with correct details`() {
-      var offender = repository.lookupOffender("A1234TT")
+      var offender = repository.getOffender("A1234TT")
       var booking = offender?.latestBooking()
       var bookingId = booking?.bookingId
 
       callCreateEndpoint(bookingId)
 
       // Spot check that the database has been populated.
-      offender = repository.lookupOffender("A1234TT")
+      offender = repository.getOffender("A1234TT")
       booking = offender?.latestBooking()
       bookingId = booking?.bookingId
 
@@ -121,7 +121,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       // Add another to cover the case of existing incentive
       callCreateEndpoint(bookingId)
 
-      offender = repository.lookupOffender("A1234TT")
+      offender = repository.getOffender("A1234TT")
       booking = offender?.latestBooking()
       bookingId = booking?.bookingId
 

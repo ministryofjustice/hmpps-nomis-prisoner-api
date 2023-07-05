@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -143,6 +145,8 @@ interface BookingDsl {
     adjudicationNumber: Long = 1224,
     comment: String = "party comment",
     partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
+    incidentRole: String = suspectRole,
+    actionDecision: String = PLACED_ON_REPORT_ACTION_CODE,
     dsl: AdjudicationPartyDsl.() -> Unit = {},
   )
 
@@ -228,9 +232,13 @@ interface AdjudicationPartyDsl {
     internalLocationId: Long? = null,
     scheduleDate: LocalDate? = null,
     scheduleTime: LocalDateTime? = null,
-    hearingDate: LocalDate? = null,
-    hearingTime: LocalDateTime? = null,
+    hearingDate: LocalDate? = LocalDate.now(),
+    hearingTime: LocalDateTime? = LocalDateTime.now(),
     hearingStaff: Staff? = null,
+    hearingTypeCode: String = AdjudicationHearingType.GOVERNORS_HEARING,
+    eventStatusCode: String = "SCH",
+    comment: String = "Hearing comment",
+    representativeText: String = "rep text",
     dsl: AdjudicationHearingDsl.() -> Unit = {},
   )
 }

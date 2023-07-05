@@ -246,7 +246,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       val id = callCreateEndpoint()
 
       // Check the database
-      val offenderIndividualSchedule = repository.lookupAppointment(id)!!
+      val offenderIndividualSchedule = repository.getAppointment(id)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
       assertThat(offenderIndividualSchedule.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
@@ -400,7 +400,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       callUpdateEndpoint(eventId)
 
       // Check the database
-      val offenderIndividualSchedule = repository.lookupAppointment(eventId)!!
+      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
       assertThat(offenderIndividualSchedule.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
@@ -475,7 +475,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       callCancelEndpoint(eventId)
 
       // Check the database
-      val offenderIndividualSchedule = repository.lookupAppointment(eventId)!!
+      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
       assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("CANC")
@@ -523,7 +523,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       callUncancelEndpoint(eventId)
 
       // Check the database
-      val offenderIndividualSchedule = repository.lookupAppointment(eventId)!!
+      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
       assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("SCH")
@@ -571,7 +571,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
       // Check the database
 
-      assertThat(repository.lookupAppointment(eventId)).isNull()
+      assertThat(repository.getAppointment(eventId)).isNull()
     }
 
     private fun callDeleteEndpoint(eventId: Long) {
