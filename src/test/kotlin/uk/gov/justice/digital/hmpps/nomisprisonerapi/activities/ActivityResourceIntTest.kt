@@ -29,10 +29,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityArea
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -806,6 +808,81 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(updated.payRates[1].id.startDate).isEqualTo(yesterday)
         assertThat(updated.payRates[1].endDate).isNull()
       }
+
+      @Test
+      fun `should retain the end date if pay rate start date is moved back`() {
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity(startDate = yesterday.toString()) {
+              payRate(startDate = yesterday.toString(), endDate = today.toString(), halfDayRate = 1.8)
+              payRate(startDate = tomorrow.toString(), halfDayRate = 0.8)
+              courseSchedule()
+              courseScheduleRule()
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "${yesterday.minusDays(7)}",""")
+              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+        with(findPayRate(updated.payRates, 1.8)) {
+          assertThat(id.startDate).isEqualTo(yesterday.minusDays(7))
+          assertThat(endDate).isEqualTo(today)
+        }
+        with(findPayRate(updated.payRates, 0.8)) {
+          assertThat(id.startDate).isEqualTo(tomorrow)
+          assertThat(endDate).isNull()
+        }
+      }
+
+      @Test
+      fun `should retain the end date if pay rate start date is moved back at same time as rate is changed`() {
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity(startDate = yesterday.toString()) {
+              payRate(startDate = today.minusDays(2).toString(), endDate = yesterday.toString(), halfDayRate = 2.8)
+              payRate(startDate = today.toString(), halfDayRate = 1.8)
+              courseSchedule()
+              courseScheduleRule()
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "${yesterday.minusDays(7)}",""")
+              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+        with(findPayRate(updated.payRates, 2.8)) {
+          assertThat(id.startDate).isEqualTo(yesterday.minusDays(7))
+          assertThat(endDate).isEqualTo(yesterday)
+        }
+        with(findPayRate(updated.payRates, 1.8)) {
+          assertThat(id.startDate).isEqualTo(today)
+          assertThat(endDate).isEqualTo(today)
+        }
+        with(findPayRate(updated.payRates, 0.8)) {
+          assertThat(id.startDate).isEqualTo(tomorrow)
+          assertThat(endDate).isNull()
+        }
+      }
+
+      private fun findPayRate(rates: List<CourseActivityPayRate>, halfDayRate: Double) =
+        rates.find { it.halfDayRate.setScale(3, RoundingMode.HALF_UP).equals(BigDecimal(halfDayRate).setScale(3, RoundingMode.HALF_UP)) }!!
     }
 
     @Nested
