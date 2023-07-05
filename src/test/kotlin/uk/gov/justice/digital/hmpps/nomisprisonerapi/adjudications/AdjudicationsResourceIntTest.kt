@@ -45,6 +45,44 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
   lateinit var staffInvolvedWithForce: Staff
   lateinit var staffIncidentReportingOfficer: Staff
 
+  @DisplayName("GET /adjudications/ids")
+  @Nested
+  inner class GetAdjudications {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/adjudications/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/adjudications/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/adjudications/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/adjudications/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+  }
+
   @DisplayName("GET /adjudications/adjudication-number/{adjudicationNumber}")
   @Nested
   inner class GetAdjudication {
