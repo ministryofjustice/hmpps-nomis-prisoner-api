@@ -800,7 +800,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.payRates[0].id.startDate).isEqualTo(yesterday)
         assertThat(updated.payRates[0].endDate).isNull()
         assertThat(updated.payRates[1].id.startDate).isEqualTo(yesterday)
