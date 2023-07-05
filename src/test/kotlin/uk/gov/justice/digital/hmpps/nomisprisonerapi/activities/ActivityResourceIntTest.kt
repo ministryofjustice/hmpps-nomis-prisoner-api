@@ -762,6 +762,50 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val updated = repository.lookupActivity(courseActivity.courseActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
       }
+
+      @Test
+      fun `should adjust pay rates start date if activity start date moved back`() {
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity(startDate = tomorrow.toString()) {
+              payRate(iepLevelCode = "STD", startDate = tomorrow.toString())
+              payRate(iepLevelCode = "BAS", startDate = tomorrow.toString())
+              courseSchedule()
+              courseScheduleRule()
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "$yesterday",""")
+              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+            payRatesJson = """
+              "payRates" : [ 
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 0.8
+                },
+                {
+                  "incentiveLevel" : "BAS",
+                  "payBand" : "5",
+                  "rate" : 0.8
+                }
+              ],
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        assertThat(updated.payRates[0].id.startDate).isEqualTo(yesterday)
+        assertThat(updated.payRates[0].endDate).isNull()
+        assertThat(updated.payRates[1].id.startDate).isEqualTo(yesterday)
+        assertThat(updated.payRates[1].endDate).isNull()
+      }
     }
 
     @Nested
