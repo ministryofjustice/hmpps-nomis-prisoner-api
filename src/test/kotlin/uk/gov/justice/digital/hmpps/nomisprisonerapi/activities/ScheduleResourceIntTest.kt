@@ -208,7 +208,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
 
-        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$today")
           assertThat(startTime).isEqualTo("${today}T08:00")
@@ -244,7 +244,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
 
-        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleStatus).isEqualTo("SCH")
         }
@@ -276,7 +276,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
 
-        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleStatus).isEqualTo("CANC")
         }
@@ -315,7 +315,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("Cannot change schedule id=${courseSchedule.courseScheduleId} because it is immutable")
           }
 
-        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$yesterday")
           assertThat(startTime).isEqualTo("${yesterday}T08:00")
@@ -344,7 +344,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("Schedule for date $today has times out of order - 13:00 to 12:59")
           }
 
-        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$today")
           assertThat(startTime).isEqualTo("${today}T08:00")
@@ -371,7 +371,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
 
-        val saved = repository.lookupSchedule(courseSchedule.courseScheduleId)
+        val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$today")
           assertThat(startTime).isEqualTo("${today}T13:00")

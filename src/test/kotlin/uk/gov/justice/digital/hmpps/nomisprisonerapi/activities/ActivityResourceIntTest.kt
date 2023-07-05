@@ -229,7 +229,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val id = callCreateEndpoint()
 
         // Spot check that the database has been populated.
-        val courseActivity = repository.lookupActivity(id)
+        val courseActivity = repository.getActivity(id)
 
         assertThat(courseActivity.courseActivityId).isEqualTo(id)
         assertThat(courseActivity.capacity).isEqualTo(23)
@@ -260,7 +260,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should raise telemetry event`() {
         val id = callCreateEndpoint()
-        val courseActivity = repository.lookupActivity(id)
+        val courseActivity = repository.getActivity(id)
 
         verify(telemetryClient).trackEvent(
           eq("activity-created"),
@@ -490,7 +490,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
         assertThat(updated.payRates[1].endDate).isNull()
@@ -669,7 +669,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
       }
 
@@ -759,8 +759,52 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
+      }
+
+      @Test
+      fun `should adjust pay rates start date if activity start date moved back`() {
+        testData(repository) {
+          programService {
+            courseActivity = courseActivity(startDate = tomorrow.toString()) {
+              payRate(iepLevelCode = "STD", startDate = tomorrow.toString())
+              payRate(iepLevelCode = "BAS", startDate = tomorrow.toString())
+              courseSchedule()
+              courseScheduleRule()
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "$yesterday",""")
+              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+            payRatesJson = """
+              "payRates" : [ 
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 0.8
+                },
+                {
+                  "incentiveLevel" : "BAS",
+                  "payBand" : "5",
+                  "rate" : 0.8
+                }
+              ],
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+        assertThat(updated.payRates[0].id.startDate).isEqualTo(yesterday)
+        assertThat(updated.payRates[0].endDate).isNull()
+        assertThat(updated.payRates[1].id.startDate).isEqualTo(yesterday)
+        assertThat(updated.payRates[1].endDate).isNull()
       }
     }
 
@@ -843,7 +887,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.courseScheduleRules.size).isEqualTo(1)
         with(updated.courseScheduleRules[0]) {
           assertThat(startTime.toLocalTime()).isEqualTo("09:00")
@@ -969,7 +1013,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val saved = repository.lookupActivity(courseActivity.courseActivityId)
+        val saved = repository.getActivity(courseActivity.courseActivityId)
         assertThat(saved.courseSchedules.size).isEqualTo(2)
         with(saved.courseSchedules.first { it.scheduleDate == today }) {
           assertThat(startTime).isEqualTo("${today}T08:00:00")
@@ -1013,7 +1057,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val saved = repository.lookupActivity(courseActivity.courseActivityId)
+        val saved = repository.getActivity(courseActivity.courseActivityId)
         assertThat(saved.courseSchedules.size).isEqualTo(2)
         // The course from yesterday was omitted from the request but is not deleted
         with(saved.courseSchedules.first { it.scheduleDate == yesterday }) {
@@ -1060,7 +1104,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val saved = repository.lookupActivity(courseActivity.courseActivityId)
+        val saved = repository.getActivity(courseActivity.courseActivityId)
         assertThat(saved.courseSchedules.size).isEqualTo(2)
         with(saved.courseSchedules.first { it.scheduleDate == today }) {
           assertThat(startTime).isEqualTo("${today}T08:00:00")
@@ -1111,7 +1155,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.scheduleStartDate).isEqualTo(LocalDate.parse("2022-11-01"))
         assertThat(updated.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
         assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
@@ -1134,7 +1178,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isOk
 
-        val updated = repository.lookupActivity(courseActivity.courseActivityId)
+        val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.scheduleEndDate).isNull()
         assertThat(updated.internalLocation).isNull()
       }
@@ -1169,7 +1213,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         repository.runInTransaction {
-          val updated = repository.lookupActivity(courseActivity.courseActivityId)
+          val updated = repository.getActivity(courseActivity.courseActivityId)
           assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
           assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
           assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST") // The deallocated booking is not moved to the new program
@@ -1366,7 +1410,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
       repository.runInTransaction {
-        val activity = repository.lookupActivity(activityId)
+        val activity = repository.getActivity(activityId)
         activity.area = CourseActivityArea(activityId, activity, "AREA")
         repository.activityRepository.save(activity)
       }
@@ -1381,8 +1425,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      val savedActivity = repository.lookupActivity(activityId)
-      val savedAllocation = repository.lookupOffenderProgramProfile(savedActivity, offenderAtMoorlands.latestBooking())
+      val savedActivity = repository.getActivity(activityId)
+      val savedAllocation = repository.getOffenderProgramProfiles(savedActivity, offenderAtMoorlands.latestBooking())
       assertThat(savedAllocation).isNotEmpty
 
       // delete activity and deallocate
@@ -1420,8 +1464,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      val savedActivity = repository.lookupActivity(activityId)
-      val savedSchedule = repository.lookupActivity(activityId).courseSchedules.first()
+      val savedActivity = repository.getActivity(activityId)
+      val savedSchedule = repository.getActivity(activityId).courseSchedules.first()
       assertThat(savedSchedule).isNotNull
       val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking()).last()
       assertThat(savedAllocation).isNotNull
@@ -1461,7 +1505,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
       repository.runInTransaction {
-        val activity = repository.lookupActivity(activityId)
+        val activity = repository.getActivity(activityId)
         activity.area = CourseActivityArea(activityId, activity, "AREA")
         repository.activityRepository.save(activity)
       }
@@ -1474,7 +1518,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .exchange()
 
       // check the activity still has an activity area
-      val savedActivity = repository.lookupActivity(activityId)
+      val savedActivity = repository.getActivity(activityId)
       assertThat(savedActivity.area!!.areaCode).isEqualTo("AREA")
     }
   }

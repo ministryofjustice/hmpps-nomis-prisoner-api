@@ -63,25 +63,28 @@ class PayRatesService(
   fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity): MutableList<CourseActivityPayRate> {
     val newPayRates = mutableListOf<CourseActivityPayRate>()
     val existingPayRates = existingActivity.payRates
+    val tomorrow = LocalDate.now().plusDays(1)
 
     requestedPayRates.forEach { requestedPayRate ->
       val existingPayRate = existingPayRates.findExistingPayRate(requestedPayRate)
       when {
-        existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
+        existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity, getStartDate(requestedPayRate.incentiveLevel, requestedPayRate.payBand, existingPayRates)))
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
         existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
         existingPayRate.rateIsChanged(requestedPayRate) -> {
           newPayRates.add(existingPayRate.expire())
-          newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity))
+          newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity, tomorrow))
         }
       }
     }
 
     newPayRates.addAll(existingPayRates.getExpiredPayRates() - newPayRates.toSet())
     newPayRates.addAll(existingPayRates.expirePayRatesIfMissingFrom(newPayRates))
+    newPayRates.adjustStartDatesIfChanged(existingActivity)
 
     return newPayRates
   }
+
   private fun MutableList<CourseActivityPayRate>.findExistingPayRate(requested: PayRateRequest) =
     firstOrNull { existing ->
       !existing.hasExpiryDate() &&
@@ -124,22 +127,12 @@ class PayRatesService(
         ?.run { throw BadDataException("Pay band ${activityPayRate.payBand.code} for incentive level ${activityPayRate.iepLevel.code} is allocated to offender(s) $this") }
     }
 
-  private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity): CourseActivityPayRate {
+  private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity, startDate: LocalDate, endDate: LocalDate? = null): CourseActivityPayRate {
     val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
       ?: throw BadDataException("Pay band code $payBand does not exist")
 
     val availableIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(courseActivity.prison, incentiveLevel)
       ?: throw BadDataException("Pay rate IEP type $incentiveLevel does not exist for prison ${courseActivity.prison.id}")
-
-    // calculate start date - usually today unless the old rate expires at the end of today
-    val today = LocalDate.now()
-    val startDate = courseActivity.payRates
-      .filter { it.id.iepLevelCode == incentiveLevel && it.payBand == payBand }
-      .takeIf { it.isNotEmpty() }
-      ?.maxBy { it.id.startDate }
-      ?.endDate
-      ?.let { if (it < today) today else it.plusDays(1) }
-      ?: today
 
     return CourseActivityPayRate(
       id = CourseActivityPayRateId(
@@ -150,9 +143,41 @@ class PayRatesService(
       ),
       payBand = payBand,
       iepLevel = availableIepLevel.iepLevel,
-      endDate = null,
+      endDate = endDate,
       halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate),
     )
+  }
+
+  // If the pay rate already exists the new rate becomes effective tomorrow
+  // If the pay rate is brand new it becomes effective today
+  private fun getStartDate(iepLevelCode: String, payBandCode: String, existingPayRates: List<CourseActivityPayRate>): LocalDate {
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+    return existingPayRates.filter { it.id.iepLevelCode == iepLevelCode && it.payBand.code == payBandCode }
+      .takeIf { it.isNotEmpty() }
+      ?.maxBy { it.id.startDate }
+      ?.endDate
+      ?.let { if (it < today) today else tomorrow }
+      ?: today
+  }
+
+  // Handle an edge case where the activity start date is moved before any of the existing pay rates - as start date is
+  // part of the key we need to delete and recreate pay rates with the new start date
+  private fun MutableList<CourseActivityPayRate>.adjustStartDatesIfChanged(existingActivity: CourseActivity) {
+    groupBy { it.iepLevel to it.payBand }
+      .map { it.value.minBy { payRate -> payRate.id.startDate } }
+      .filter { existingActivity.payRates.containsRate(it) }
+      .filter { it.id.startDate > existingActivity.scheduleStartDate }
+      .forEach {
+        remove(it)
+        add(
+          PayRateRequest(it.id.iepLevelCode, it.id.payBandCode, it.halfDayRate)
+            .toCourseActivityPayRate(
+              courseActivity = existingActivity,
+              startDate = existingActivity.scheduleStartDate,
+            ),
+        )
+      }
   }
 
   fun buildUpdateTelemetry(

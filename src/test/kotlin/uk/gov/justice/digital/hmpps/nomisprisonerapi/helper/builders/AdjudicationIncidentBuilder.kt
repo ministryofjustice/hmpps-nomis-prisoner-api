@@ -1,57 +1,40 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAwardId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentChargeId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepairId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionStatus
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class AdjudicationIncidentBuilder(
-  private var incidentDetails: String,
-  private var reportedDateTime: LocalDateTime,
-  private var reportedDate: LocalDate,
-  private var incidentDateTime: LocalDateTime,
-  private var incidentDate: LocalDate,
+  private val incidentDetails: String,
+  private val reportedDateTime: LocalDateTime,
+  private val reportedDate: LocalDate,
+  private val incidentDateTime: LocalDateTime,
+  private val incidentDate: LocalDate,
+  private val prisonId: String,
+  private val agencyInternalLocationId: Long,
+  private val reportingStaff: Staff,
   var parties: List<AdjudicationPartyBuilder> = listOf(),
   var repairs: List<AdjudicationRepairBuilder> = listOf(),
-  var prisonId: String,
-  val agencyInternalLocationId: Long,
-  val reportingStaff: Staff,
 ) : AdjudicationIncidentDsl {
 
   fun build(
-    agencyInternalLocation: AgencyInternalLocation,
-    incidentType: AdjudicationIncidentType,
-    prison: AgencyLocation,
-    reportingStaff: Staff,
+    repository: Repository,
   ): AdjudicationIncident =
     AdjudicationIncident(
       reportingStaff = reportingStaff,
@@ -59,9 +42,9 @@ class AdjudicationIncidentBuilder(
       reportedDate = reportedDate,
       incidentDateTime = incidentDateTime,
       incidentDate = incidentDate,
-      agencyInternalLocation = agencyInternalLocation,
-      incidentType = incidentType,
-      prison = prison,
+      agencyInternalLocation = repository.lookupAgencyInternalLocation(agencyInternalLocationId)!!,
+      incidentType = repository.lookupIncidentType(),
+      prison = repository.lookupAgency(prisonId),
       incidentDetails = incidentDetails,
     )
 
@@ -97,22 +80,22 @@ class AdjudicationIncidentBuilder(
 }
 
 class AdjudicationPartyBuilder(
-  private var adjudicationNumber: Long? = null,
-  private var comment: String,
-  private var offenderBooking: OffenderBooking?,
-  private var staff: Staff?,
-  private var incidentRole: String = suspectRole,
-  var actionDecision: String = IncidentDecisionAction.NO_FURTHER_ACTION_CODE,
-  private var partyAddedDate: LocalDate,
+  private val adjudicationNumber: Long? = null,
+  private val comment: String,
+  private val offenderBooking: OffenderBooking?,
+  private val staff: Staff?,
+  private val incidentRole: String,
+  private val actionDecision: String,
+  private val partyAddedDate: LocalDate,
   var charges: List<AdjudicationChargeBuilder> = listOf(),
   var hearings: List<AdjudicationHearingBuilder> = listOf(),
   var investigations: List<AdjudicationInvestigationBuilder> = listOf(),
 ) : AdjudicationPartyDsl {
 
   fun build(
+    repository: Repository,
     incident: AdjudicationIncident,
     offenderBooking: OffenderBooking,
-    actionDecision: IncidentDecisionAction,
     index: Int,
   ): AdjudicationIncidentParty =
     AdjudicationIncidentParty(
@@ -121,14 +104,14 @@ class AdjudicationPartyBuilder(
       adjudicationNumber = adjudicationNumber,
       incidentRole = "S",
       incident = incident,
-      actionDecision = actionDecision,
+      actionDecision = repository.lookupActionDecision(actionDecision),
       partyAddedDate = partyAddedDate,
       comment = comment,
     )
 
   fun build(
+    repository: Repository,
     incident: AdjudicationIncident,
-    actionDecision: IncidentDecisionAction,
     index: Int,
   ): AdjudicationIncidentParty =
     AdjudicationIncidentParty(
@@ -138,7 +121,7 @@ class AdjudicationPartyBuilder(
       adjudicationNumber = adjudicationNumber,
       incidentRole = incidentRole,
       incident = incident,
-      actionDecision = actionDecision,
+      actionDecision = repository.lookupActionDecision(actionDecision),
       partyAddedDate = partyAddedDate,
       comment = comment,
     )
@@ -160,9 +143,10 @@ class AdjudicationPartyBuilder(
     offenceCode: String,
     guiltyEvidence: String?,
     reportDetail: String?,
+    ref: DataRef<AdjudicationIncidentCharge>?,
     dsl: AdjudicationChargeDsl.() -> Unit,
   ) {
-    this.charges += AdjudicationChargeBuilder(offenceCode, guiltyEvidence, reportDetail).apply(dsl)
+    this.charges += AdjudicationChargeBuilder(offenceCode, guiltyEvidence, reportDetail, ref).apply(dsl)
   }
 
   override fun hearing(
@@ -172,6 +156,10 @@ class AdjudicationPartyBuilder(
     hearingDate: LocalDate?,
     hearingTime: LocalDateTime?,
     hearingStaff: Staff?,
+    hearingTypeCode: String,
+    eventStatusCode: String,
+    comment: String,
+    representativeText: String,
     dsl: AdjudicationHearingDsl.() -> Unit,
   ) {
     this.hearings += AdjudicationHearingBuilder(
@@ -181,56 +169,61 @@ class AdjudicationPartyBuilder(
       hearingDate = hearingDate,
       hearingDateTime = hearingTime,
       hearingStaff = hearingStaff,
+      comment = comment,
+      representativeText = representativeText,
+      eventStatusCode = eventStatusCode,
+      hearingTypeCode = hearingTypeCode,
     ).apply(dsl)
   }
 }
 
 class AdjudicationChargeBuilder(
-  var offenceCode: String,
-  private var guiltyEvidence: String?,
-  private var reportDetail: String?,
+  private val offenceCode: String,
+  private val guiltyEvidence: String?,
+  private val reportDetail: String?,
+  private val ref: DataRef<AdjudicationIncidentCharge>?,
 ) : AdjudicationChargeDsl {
 
   fun build(
+    repository: Repository,
     incidentParty: AdjudicationIncidentParty,
     chargeSequence: Int,
-    offence: AdjudicationIncidentOffence,
   ): AdjudicationIncidentCharge =
     AdjudicationIncidentCharge(
       id = AdjudicationIncidentChargeId(incidentParty.id.agencyIncidentId, chargeSequence),
       incident = incidentParty.incident,
       partySequence = incidentParty.id.partySequence,
       incidentParty = incidentParty,
-      offence = offence,
+      offence = repository.lookupAdjudicationOffence(offenceCode),
       guiltyEvidence = guiltyEvidence,
       reportDetails = reportDetail,
-    )
+    ).also { ref?.set(it) }
 }
 
 class AdjudicationRepairBuilder(
-  var repairType: String,
-  private var comment: String?,
-  private var repairCost: BigDecimal?,
+  private val repairType: String,
+  private val comment: String?,
+  private val repairCost: BigDecimal?,
 ) : AdjudicationRepairDsl {
 
   fun build(
+    repository: Repository,
     incident: AdjudicationIncident,
     repairSequence: Int,
-    type: AdjudicationRepairType,
   ): AdjudicationIncidentRepair =
     AdjudicationIncidentRepair(
       id = AdjudicationIncidentRepairId(incident.id, repairSequence),
       incident = incident,
       comment = comment,
       repairCost = repairCost,
-      type = type,
+      type = repository.lookupRepairType(repairType),
     )
 }
 
 class AdjudicationInvestigationBuilder(
-  private var investigator: Staff,
-  private var comment: String? = null,
-  private var assignedDate: LocalDate = LocalDate.now(),
+  private val investigator: Staff,
+  private val comment: String? = null,
+  private val assignedDate: LocalDate = LocalDate.now(),
   var evidence: List<AdjudicationEvidenceBuilder> = listOf(),
 ) : AdjudicationInvestigationDsl {
 
@@ -248,39 +241,36 @@ class AdjudicationInvestigationBuilder(
 }
 
 class AdjudicationEvidenceBuilder(
-  private var detail: String = "Knife found",
-  var type: String = "WEAP",
-  private var date: LocalDate = LocalDate.now(),
+  private val detail: String,
+  private val type: String,
+  private val date: LocalDate,
 ) : AdjudicationEvidenceDsl {
-  fun build(investigation: AdjudicationInvestigation, type: AdjudicationEvidenceType): AdjudicationEvidence =
+  fun build(repository: Repository, investigation: AdjudicationInvestigation): AdjudicationEvidence =
     AdjudicationEvidence(
       statementDate = date,
       statementDetail = detail,
-      statementType = type,
+      statementType = repository.lookupAdjudicationEvidenceType(type),
       investigation = investigation,
     )
 }
 
 class AdjudicationHearingBuilder(
-  private var hearingDate: LocalDate? = LocalDate.now(),
-  private var hearingDateTime: LocalDateTime? = LocalDateTime.now(),
-  private var scheduledDate: LocalDate? = LocalDate.now(),
-  private var scheduledDateTime: LocalDateTime? = LocalDateTime.now(),
-  var hearingStaff: Staff? = null,
-  var eventStatusCode: String = "SCH",
-  var hearingTypeCode: String = AdjudicationHearingType.GOVERNORS_HEARING,
-  private var comment: String = "Hearing comment",
-  private var representativeText: String = "rep text",
-  var agencyInternalLocationId: Long?,
+  private val hearingDate: LocalDate?,
+  private val hearingDateTime: LocalDateTime?,
+  private val scheduledDate: LocalDate?,
+  private val scheduledDateTime: LocalDateTime?,
+  private val hearingStaff: Staff? = null,
+  private val comment: String,
+  private val representativeText: String,
+  private val agencyInternalLocationId: Long?,
+  private val hearingTypeCode: String,
+  private val eventStatusCode: String,
   var results: List<AdjudicationHearingResultBuilder> = listOf(),
 ) : AdjudicationHearingDsl {
 
   fun build(
+    repository: Repository,
     incidentParty: AdjudicationIncidentParty,
-    agencyInternalLocation: AgencyInternalLocation?,
-    hearingType: AdjudicationHearingType?,
-    hearingStaff: Staff?,
-    eventStatus: EventStatus?,
     eventId: Long? = 1,
     results: MutableList<AdjudicationHearingResult> = mutableListOf(),
   ): AdjudicationHearing =
@@ -292,9 +282,9 @@ class AdjudicationHearingBuilder(
       scheduleDate = scheduledDate,
       scheduleDateTime = scheduledDateTime,
       hearingStaff = hearingStaff,
-      hearingType = hearingType,
-      agencyInternalLocation = agencyInternalLocation,
-      eventStatus = eventStatus,
+      hearingType = repository.lookupHearingType(hearingTypeCode),
+      agencyInternalLocation = repository.lookupAgencyInternalLocation(agencyInternalLocationId!!),
+      eventStatus = repository.lookupEventStatusCode(eventStatusCode),
       eventId = eventId,
       comment = comment,
       representativeText = representativeText,
@@ -302,7 +292,7 @@ class AdjudicationHearingBuilder(
     )
 
   override fun result(
-    chargeSequence: Int,
+    chargeRef: DataRef<AdjudicationIncidentCharge>,
     pleaFindingCode: String,
     findingCode: String,
     dsl: AdjudicationHearingResultDsl.() -> Unit,
@@ -310,36 +300,33 @@ class AdjudicationHearingBuilder(
     this.results += AdjudicationHearingResultBuilder(
       pleaFindingCode,
       findingCode = findingCode,
-      chargeSequence = chargeSequence,
+      chargeRef = chargeRef,
     ).apply(dsl)
   }
 }
 
 class AdjudicationHearingResultBuilder(
-  var pleaFindingCode: String,
-  var findingCode: String,
-  var chargeSequence: Int,
+  private val pleaFindingCode: String,
+  private val findingCode: String,
+  private val chargeRef: DataRef<AdjudicationIncidentCharge>,
   var awards: List<AdjudicationHearingResultAwardBuilder> = listOf(),
 ) : AdjudicationHearingResultDsl {
   fun build(
+    repository: Repository,
     hearing: AdjudicationHearing,
     index: Int,
-    charge: AdjudicationIncidentCharge,
-    pleaFindingType: AdjudicationPleaFindingType?,
-    findingType: AdjudicationFindingType,
-    awards: MutableList<AdjudicationHearingResultAward> = mutableListOf(),
   ): AdjudicationHearingResult =
     AdjudicationHearingResult(
       id = AdjudicationHearingResultId(hearing.id, index),
-      chargeSequence = chargeSequence,
-      incident = charge.incident,
+      chargeSequence = chargeRef.value().id.chargeSequence,
+      incident = chargeRef.value().incident,
       hearing = hearing,
-      offence = charge.offence,
-      incidentCharge = charge,
-      pleaFindingType = pleaFindingType,
-      findingType = findingType,
+      offence = chargeRef.value().offence,
+      incidentCharge = chargeRef.value(),
+      pleaFindingType = repository.lookupHearingResultPleaType(pleaFindingCode),
+      findingType = repository.lookupHearingResultFindingType(findingCode),
       pleaFindingCode = pleaFindingCode,
-      resultAwards = awards,
+      resultAwards = mutableListOf(),
     )
 
   override fun award(
@@ -369,33 +356,32 @@ class AdjudicationHearingResultBuilder(
 }
 
 class AdjudicationHearingResultAwardBuilder(
-  var sanctionCode: String,
-  var effectiveDate: LocalDate,
-  var statusDate: LocalDate?,
-  var statusCode: String,
-  var comment: String?,
-  var sanctionDays: Int?,
-  var sanctionMonths: Int?,
-  var compensationAmount: BigDecimal?,
-  var consecutiveSanctionIndex: Int?,
+  private val sanctionCode: String,
+  private val effectiveDate: LocalDate,
+  private val statusDate: LocalDate?,
+  private val statusCode: String,
+  private val comment: String?,
+  private val sanctionDays: Int?,
+  private val sanctionMonths: Int?,
+  private val compensationAmount: BigDecimal?,
+  var consecutiveSanctionIndex: Int? = null,
 ) : AdjudicationHearingResultAwardDsl {
   fun build(
+    repository: Repository,
     result: AdjudicationHearingResult,
     party: AdjudicationIncidentParty,
     sanctionIndex: Int,
-    sanctionStatus: AdjudicationSanctionStatus? = null,
-    sanctionType: AdjudicationSanctionType? = null,
     consecutiveHearingResultAward: AdjudicationHearingResultAward? = null,
   ): AdjudicationHearingResultAward =
     AdjudicationHearingResultAward(
       id = AdjudicationHearingResultAwardId(party.offenderBooking!!.bookingId, sanctionIndex),
       hearingResult = result,
-      sanctionStatus = sanctionStatus,
+      sanctionStatus = repository.lookupSanctionStatus(statusCode),
       sanctionDays = sanctionDays,
       sanctionMonths = sanctionMonths,
       compensationAmount = compensationAmount,
       incidentParty = party,
-      sanctionType = sanctionType,
+      sanctionType = repository.lookupSanctionType(sanctionCode),
       sanctionCode = sanctionCode,
       consecutiveHearingResultAward = consecutiveHearingResultAward,
       effectiveDate = effectiveDate,
