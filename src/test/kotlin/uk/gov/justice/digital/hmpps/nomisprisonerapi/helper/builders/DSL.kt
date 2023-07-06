@@ -22,7 +22,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Deprecated("To be replaced by TestDataFactory, coming soon")
 fun testData(repository: Repository, dsl: TestData.() -> Unit) = TestData(repository).apply(dsl)
 
 @Component
@@ -37,6 +36,7 @@ class TestData(private val repository: Repository, private val courseAllocationB
 
   @AdjudicationIncidentDslMarker
   override fun adjudicationIncident(
+    whenCreated: LocalDateTime,
     incidentDetails: String,
     reportedDateTime: LocalDateTime,
     reportedDate: LocalDate,
@@ -48,6 +48,7 @@ class TestData(private val repository: Repository, private val courseAllocationB
     dsl: AdjudicationIncidentDsl.() -> Unit,
   ): AdjudicationIncident = repository.save(
     AdjudicationIncidentBuilder(
+      whenCreated = whenCreated,
       incidentDetails = incidentDetails,
       reportedDateTime = reportedDateTime,
       reportedDate = reportedDate,
@@ -85,10 +86,11 @@ class TestData(private val repository: Repository, private val courseAllocationB
 @TestDataDslMarker
 interface TestDataDsl {
   @StaffDslMarker
-  fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit = {}): Staff
+  fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: StaffDsl.() -> Unit = {}): Staff
 
   @AdjudicationIncidentDslMarker
   fun adjudicationIncident(
+    whenCreated: LocalDateTime = LocalDateTime.now(),
     incidentDetails: String = "Big fight",
     reportedDateTime: LocalDateTime = LocalDateTime.now(),
     reportedDate: LocalDate = LocalDate.now(),

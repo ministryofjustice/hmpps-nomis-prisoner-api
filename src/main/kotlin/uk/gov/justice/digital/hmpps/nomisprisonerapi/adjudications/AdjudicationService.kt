@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 
 @Service
@@ -84,7 +85,8 @@ class AdjudicationService(
     pageRequest: Pageable,
     adjudicationFilter: AdjudicationFilter,
   ): Page<AdjudicationIdResponse> {
-    return Page.empty()
+    return adjudicationIncidentPartyRepository.findAll(AdjudicationSpecification(adjudicationFilter), pageRequest)
+      .map { AdjudicationIdResponse(adjudicationNumber = it.adjudicationNumber!!, offenderNo = it.offenderBooking!!.offender.nomsId) }
   }
 }
 
