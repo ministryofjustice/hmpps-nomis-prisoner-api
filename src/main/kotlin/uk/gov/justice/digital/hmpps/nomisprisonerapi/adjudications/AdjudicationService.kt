@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -76,6 +78,13 @@ class AdjudicationService(
       investigations = adjudication.investigations.map { it.toInvestigation() },
       hearings = hearings.map { it.toHearing() },
     )
+  }
+
+  fun findAdjudicationIdsByFilter(
+    pageRequest: Pageable,
+    adjudicationFilter: AdjudicationFilter,
+  ): Page<AdjudicationIdResponse> {
+    return Page.empty()
   }
 }
 
