@@ -16,6 +16,7 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import java.io.Serializable
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 const val suspectRole = "S"
 const val witnessRole = "W"
@@ -83,6 +84,10 @@ class AdjudicationIncidentParty(
 
   @Column(unique = true, name = "OIC_INCIDENT_ID")
   val adjudicationNumber: Long? = null,
+
+  @Column(name = "CREATE_DATETIME", nullable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now(),
+
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

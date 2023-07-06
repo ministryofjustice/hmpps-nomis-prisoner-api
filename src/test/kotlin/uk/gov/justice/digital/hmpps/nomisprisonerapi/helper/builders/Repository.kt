@@ -332,7 +332,7 @@ class Repository(
       )
       incident.parties.addAll(
         adjudicationIncidentBuilder.parties.mapIndexed { index, party ->
-          party.build(repository = this, incident, index + 1)
+          party.build(repository = this, incident, index + 1, adjudicationIncidentBuilder.whenCreated)
         },
       )
     }

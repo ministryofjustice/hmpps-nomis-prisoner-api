@@ -21,6 +21,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class AdjudicationIncidentBuilder(
+  val whenCreated: LocalDateTime,
   private val incidentDetails: String,
   private val reportedDateTime: LocalDateTime,
   private val reportedDate: LocalDate,
@@ -113,6 +114,7 @@ class AdjudicationPartyBuilder(
     repository: Repository,
     incident: AdjudicationIncident,
     index: Int,
+    createdDateTime: LocalDateTime,
   ): AdjudicationIncidentParty =
     AdjudicationIncidentParty(
       id = AdjudicationIncidentPartyId(incident.id, index),
@@ -124,6 +126,7 @@ class AdjudicationPartyBuilder(
       actionDecision = repository.lookupActionDecision(actionDecision),
       partyAddedDate = partyAddedDate,
       comment = comment,
+      whenCreated = createdDateTime,
     )
 
   override fun investigation(
