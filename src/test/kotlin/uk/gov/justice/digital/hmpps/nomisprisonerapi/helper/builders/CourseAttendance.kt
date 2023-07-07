@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AttendanceOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -31,9 +32,7 @@ class CourseAttendanceBuilderRepository(
 }
 
 @Component
-class CourseAttendanceBuilderFactory(
-  private val repository: CourseAttendanceBuilderRepository,
-) {
+class CourseAttendanceBuilderFactory(private val repository: CourseAttendanceBuilderRepository? = null) {
   fun builder(
     courseSchedule: CourseSchedule,
     eventId: Long,
@@ -45,7 +44,7 @@ class CourseAttendanceBuilderFactory(
 }
 
 class CourseAttendanceBuilder(
-  private val repository: CourseAttendanceBuilderRepository,
+  private val repository: CourseAttendanceBuilderRepository? = null,
   private val courseSchedule: CourseSchedule,
   private val eventId: Long,
   private val eventStatusCode: String,
@@ -63,10 +62,10 @@ class CourseAttendanceBuilder(
       eventDate = courseSchedule.scheduleDate,
       startTime = courseSchedule.startTime,
       endTime = courseSchedule.endTime,
-      eventStatus = repository.eventStatus(eventStatusCode),
-      toInternalLocation = toInternalLocationId?.let { repository.agencyInternalLocation(toInternalLocationId) },
+      eventStatus = eventStatus(eventStatusCode),
+      toInternalLocation = toInternalLocationId?.let { agencyInternalLocation(toInternalLocationId) },
       courseSchedule = courseSchedule,
-      attendanceOutcome = outcomeReasonCode?.let { repository.attendanceOutcome(outcomeReasonCode) },
+      attendanceOutcome = outcomeReasonCode?.let { attendanceOutcome(outcomeReasonCode) },
       offenderProgramProfile = offenderProgramProfile,
       inTime = courseSchedule.startTime,
       outTime = courseSchedule.endTime,
@@ -75,6 +74,23 @@ class CourseAttendanceBuilder(
       program = courseSchedule.courseActivity.program,
       paidTransactionId = paidTransactionId,
     ).let {
-      repository.save(it)
+      save(it)
     }
+
+  fun save(courseAttendance: OffenderCourseAttendance) = repository?.save(courseAttendance) ?: courseAttendance
+
+  fun eventStatus(code: String) = repository?.eventStatus(code)
+    ?: EventStatus(code = code, description = code)
+  fun agencyInternalLocation(id: Long) = repository?.agencyInternalLocation(id)
+    ?: AgencyInternalLocation(
+      locationId = id,
+      active = true,
+      locationType = "CLAS",
+      agencyId = "LEI",
+      description = "Classroom 1",
+      locationCode = id.toString(),
+    )
+
+  fun attendanceOutcome(code: String) = repository?.attendanceOutcome(code)
+    ?: AttendanceOutcome(code = code, description = code)
 }

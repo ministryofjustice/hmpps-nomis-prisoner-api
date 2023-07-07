@@ -12,8 +12,8 @@ import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
@@ -23,6 +23,9 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Nested
   inner class UpdateCourseSchedule {
@@ -46,16 +49,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      testData(repository) {
+      nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity {
             payRate()
-            courseSchedule(scheduleDate = today.toString())
+            courseSchedule = courseSchedule(scheduleDate = today.toString())
             courseScheduleRule()
           }
         }
       }
-      courseSchedule = courseActivity.courseSchedules.first()
     }
 
     @AfterEach
@@ -219,16 +221,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updated to not cancelled`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate()
-              courseSchedule(scheduleDate = today.toString(), scheduleStatus = "CANC")
+              courseSchedule = courseSchedule(scheduleDate = today.toString(), scheduleStatus = "CANC")
               courseScheduleRule()
             }
           }
         }
-        courseSchedule = courseActivity.courseSchedules.first()
 
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
@@ -252,16 +253,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if already at cancelled status`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate()
-              courseSchedule(scheduleDate = today.toString(), scheduleStatus = "CANC")
+              courseSchedule = courseSchedule(scheduleDate = today.toString(), scheduleStatus = "CANC")
               courseScheduleRule()
             }
           }
         }
-        courseSchedule = courseActivity.courseSchedules.first()
 
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
@@ -284,16 +284,15 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if updating old schedule`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate()
-              courseSchedule(scheduleDate = yesterday.toString())
+              courseSchedule = courseSchedule(scheduleDate = yesterday.toString())
               courseScheduleRule()
             }
           }
         }
-        courseSchedule = courseActivity.courseSchedules.first()
 
         val request = """
             {

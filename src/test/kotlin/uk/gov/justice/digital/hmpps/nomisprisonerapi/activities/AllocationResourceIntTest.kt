@@ -13,15 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.TestDataFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import java.time.LocalDate
 
 class AllocationResourceIntTest : IntegrationTestBase() {
@@ -30,7 +28,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   private lateinit var repository: Repository
 
   @Autowired
-  private lateinit var testDataFactory: TestDataFactory
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   private lateinit var courseActivity: CourseActivity
   private lateinit var offender: Offender
@@ -42,12 +40,10 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    testData(repository) {
+    nomisDataBuilder.build {
       programService {
         courseActivity = courseActivity()
       }
-    }
-    testDataFactory.build {
       offender = offender(nomsId = "A1234XX") {
         booking(agencyLocationId = "LEI")
       }
@@ -333,7 +329,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return bad request offender in wrong prison`() {
       lateinit var offenderAtWrongPrison: Offender
-      testDataFactory.build {
+      nomisDataBuilder.build {
         offenderAtWrongPrison = offender(nomsId = "A1234YY") {
           booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
@@ -351,7 +347,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
-      testDataFactory.build {
+      nomisDataBuilder.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
@@ -404,7 +400,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      testData(repository) {
+      nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity {
             payRate(payBandCode = "5")
@@ -414,8 +410,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
-      }
-      testDataFactory.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, startDate = "2022-11-14")
@@ -576,7 +570,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow updates if offender in wrong prison`() {
       lateinit var bookingInWrongPrison: OffenderBooking
-      testDataFactory.build {
+      nomisDataBuilder.build {
         bookingInWrongPrison = offender(nomsId = "A1234YY") {
           booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity)
@@ -590,7 +584,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
-      testDataFactory.build {
+      nomisDataBuilder.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
@@ -617,7 +611,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow suspension when not in the activity prison`() {
-      testDataFactory.build {
+      nomisDataBuilder.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
@@ -640,17 +634,16 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   inner class DuplicateAllocation {
     @Test
     fun `duplicate allocations can be worked around by deleting one of them`() {
-      lateinit var duplicate: OffenderProgramProfile
-      testDataFactory.build {
+      nomisDataBuilder.build {
         offender = offender(nomsId = "A1234XX") {
           booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
             courseAllocation(courseActivity)
           }
         }
-        bookingId = offender.latestBooking().bookingId
-        duplicate = offender.latestBooking().offenderProgramProfiles.last()
       }
+      bookingId = offender.latestBooking().bookingId
+      val duplicate = offender.latestBooking().offenderProgramProfiles.last() // TODO SDIT-902 When Offender Bookings have been converted to the new style DSL dupliate can be assigned from the courseAllocation call
 
       // unable to update the allocation because of a duplicate
       val request = upsertRequest().withAdditionalJson(""""endDate": "$today"""")

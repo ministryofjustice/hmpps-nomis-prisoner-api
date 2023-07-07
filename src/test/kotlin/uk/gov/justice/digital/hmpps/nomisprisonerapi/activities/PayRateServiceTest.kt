@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateReque
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
@@ -30,7 +31,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProg
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 private const val PRISON_ID = "LEI"
 private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
@@ -41,6 +42,8 @@ private const val PAY_BAND_CODE = "5"
 
 class PayRateServiceTest {
 
+  private val nomisDataBuilder = NomisDataBuilder()
+  private lateinit var courseActivity: CourseActivity
   private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
   private val payBandRepository: ReferenceCodeRepository<PayBand> = mock()
@@ -155,14 +158,14 @@ class PayRateServiceTest {
 
   @Nested
   inner class BuildNewPayRates {
-    // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2
-    private var courseActivity = activityFactory().builder(
-      courseActivityId = 1,
-      payRates = listOf(CourseActivityPayRateBuilderFactory().builder()),
-    ).create()
-
     @BeforeEach
     fun `set up validation mocks`() {
+      // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity()
+        }
+      }
       whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
         val prison = (it.arguments[0] as AgencyLocation)
         val code = (it.arguments[1] as String)
@@ -229,8 +232,15 @@ class PayRateServiceTest {
 
     @Test
     fun `re-adding previously expired rate should add new rate effective today`() {
-      val existingPayRate = rateFactory().builder(endDate = threeDaysAgo.toString())
-      courseActivity = activityFactory().builder(payRates = listOf(existingPayRate)).create()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = threeDaysAgo.toString())
+          }
+        }
+      }
 
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
@@ -251,10 +261,16 @@ class PayRateServiceTest {
 
     @Test
     fun `amending new rate starting tomorrow should not cause an expiry (adjusting rate twice in one day)`() {
-      val expiresToday = rateFactory().builder(endDate = today.toString())
-      val startsTomorrow = rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3)
-      courseActivity = activityFactory().builder(payRates = listOf(expiresToday, startsTomorrow)).create()
-
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = today.toString())
+            payRate(startDate = tomorrow.toString(), halfDayRate = 4.3)
+          }
+        }
+      }
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -274,9 +290,16 @@ class PayRateServiceTest {
 
     @Test
     fun `removing new rate starting tomorrow should delete the rate rather than expire`() {
-      val expiresToday = rateFactory().builder(endDate = today.toString())
-      val startsTomorrow = rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3)
-      courseActivity = activityFactory().builder(payRates = listOf(expiresToday, startsTomorrow)).create()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = today.toString())
+            payRate(startDate = tomorrow.toString(), halfDayRate = 4.3)
+          }
+        }
+      }
 
       val newPayRates = payRatesService.buildNewPayRates(listOf(), courseActivity)
 
@@ -312,12 +335,18 @@ class PayRateServiceTest {
 
     @Test
     fun `should be able to add, amend, amend future rate and delete rate at the same time`() {
-      val expired = rateFactory().builder(endDate = yesterday.toString())
-      val startsTomorrow = rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3)
-      val expiresToday = rateFactory().builder(endDate = today.toString(), payBandCode = "6", halfDayRate = 5.3)
-      val activeRate = rateFactory().builder(payBandCode = "7", halfDayRate = 8.7)
-      courseActivity = activityFactory().builder(courseActivityId = 1, payRates = listOf(expired, startsTomorrow, expiresToday, activeRate)).create()
-
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = yesterday.toString())
+            payRate(startDate = tomorrow.toString(), halfDayRate = 4.3)
+            payRate(payBandCode = "6", endDate = today.toString(), halfDayRate = 5.3)
+            payRate(payBandCode = "7", halfDayRate = 8.7)
+          }
+        }
+      }
       val request = listOf(
         PayRateRequest("STD", "5", BigDecimal(4.4)),
         PayRateRequest("STD", "6", BigDecimal(5.4)),
@@ -387,21 +416,40 @@ class PayRateServiceTest {
   @Nested
   inner class BuildUpdateTelemetry {
 
-    private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
+    private lateinit var oldRates: List<CourseActivityPayRate>
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            oldRates = listOf(
+              payRate(endDate = yesterday.toString()),
+              payRate(startDate = tomorrow.toString(), halfDayRate = 4.3),
+              payRate(payBandCode = "7", halfDayRate = 8.7),
+            )
+          }
+        }
+      }
+    }
 
     @Test
     fun `should publish expiry, creation and update of pay rates`() {
-      val oldRates = listOf(
-        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity),
-        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3).create(courseActivity),
-        rateFactory().builder(payBandCode = "7", halfDayRate = 8.7).create(courseActivity),
-      )
-      val newRates = listOf(
-        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity), // unchanged
-        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.4).create(courseActivity), // updated
-        rateFactory().builder(startDate = tomorrow.toString(), payBandCode = "6", halfDayRate = 5.4).create(courseActivity), // created
-        rateFactory().builder(endDate = today.toString(), payBandCode = "7", halfDayRate = 8.7).create(courseActivity), // expired
-      )
+      val newRates = mutableListOf<CourseActivityPayRate>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            newRates.addAll(
+              listOf(
+                payRate(endDate = yesterday.toString()),
+                payRate(startDate = tomorrow.toString(), halfDayRate = 4.4),
+                payRate(startDate = tomorrow.toString(), payBandCode = "6", halfDayRate = 5.4),
+                payRate(endDate = today.toString(), payBandCode = "7", halfDayRate = 8.7),
+              ),
+            )
+          }
+        }
+      }
 
       val telemetry = payRatesService.buildUpdateTelemetry(oldRates, newRates)
 
@@ -412,16 +460,20 @@ class PayRateServiceTest {
 
     @Test
     fun `should not publish telemetry for no change`() {
-      val oldRates = listOf(
-        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity),
-        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3).create(courseActivity),
-        rateFactory().builder(payBandCode = "7", halfDayRate = 8.7).create(courseActivity),
-      )
-      val newRates = listOf(
-        rateFactory().builder(endDate = yesterday.toString()).create(courseActivity),
-        rateFactory().builder(startDate = tomorrow.toString(), halfDayRate = 4.3).create(courseActivity),
-        rateFactory().builder(payBandCode = "7", halfDayRate = 8.7).create(courseActivity),
-      )
+      val newRates = mutableListOf<CourseActivityPayRate>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            newRates.addAll(
+              listOf(
+                payRate(endDate = yesterday.toString()),
+                payRate(startDate = tomorrow.toString(), halfDayRate = 4.3),
+                payRate(payBandCode = "7", halfDayRate = 8.7),
+              ),
+            )
+          }
+        }
+      }
 
       val telemetry = payRatesService.buildUpdateTelemetry(oldRates, newRates)
 
