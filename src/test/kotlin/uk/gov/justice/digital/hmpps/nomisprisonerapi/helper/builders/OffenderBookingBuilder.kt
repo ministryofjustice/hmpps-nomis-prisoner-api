@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
@@ -21,9 +20,7 @@ class OffenderBookingBuilder(
   var sentences: List<SentenceBuilder> = emptyList(),
   var adjudications: List<Pair<AdjudicationIncident, AdjudicationPartyBuilder>> = emptyList(),
   var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
-  var courseAllocations: List<CourseAllocationBuilder> = emptyList(),
   val repository: Repository? = null,
-  val courseAllocationBuilderFactory: CourseAllocationBuilderFactory? = null,
 ) : BookingDsl {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
@@ -97,20 +94,5 @@ class OffenderBookingBuilder(
     iepDateTime: LocalDateTime,
   ) {
     this.incentives += IncentiveBuilder(iepLevelCode, userId, sequence, commentText, auditModuleName, iepDateTime)
-  }
-
-  override fun courseAllocation(
-    courseActivity: CourseActivity,
-    startDate: String?,
-    programStatusCode: String,
-    endDate: String?,
-    payBands: MutableList<CourseAllocationPayBandBuilder>,
-    endReasonCode: String?,
-    endComment: String?,
-    attendances: MutableList<CourseAttendanceBuilder>,
-    dsl: CourseAllocationDsl.() -> Unit,
-  ) {
-    this.courseAllocations += courseAllocationBuilderFactory?.builder(startDate, programStatusCode, endDate, endReasonCode, endComment, courseActivity)?.apply(dsl)
-      ?: throw IllegalStateException("Cannot create a course allocation inside an offender booking without providing a CourseAllocationBuilderFactory")
   }
 }

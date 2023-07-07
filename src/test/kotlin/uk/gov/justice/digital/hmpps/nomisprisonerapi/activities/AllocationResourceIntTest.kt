@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import java.time.LocalDate
 
 class AllocationResourceIntTest : IntegrationTestBase() {
@@ -44,11 +45,10 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       programService {
         courseActivity = courseActivity()
       }
-      offender = offender(nomsId = "A1234XX") {
-        booking(agencyLocationId = "LEI")
+      offender = newOffender(nomsId = "A1234XX") {
+        bookingId = booking(agencyLocationId = "LEI").bookingId
       }
     }
-    bookingId = offender.latestBooking().bookingId
   }
 
   @AfterEach
@@ -330,12 +330,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should return bad request offender in wrong prison`() {
       lateinit var offenderAtWrongPrison: Offender
       nomisDataBuilder.build {
-        offenderAtWrongPrison = offender(nomsId = "A1234YY") {
-          booking(agencyLocationId = "MDI") {
+        offenderAtWrongPrison = newOffender(nomsId = "A1234YY") {
+          bookingId = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
       val request = upsertRequest().withBookingId(offenderAtWrongPrison.latestBooking().bookingId.toString())
 
@@ -348,12 +347,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "LEI") {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
       val request = upsertRequest()
         .withAdditionalJson(""""startDate": "2022-12-01"""")
@@ -410,13 +408,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "LEI") {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, startDate = "2022-11-14")
-          }
+          }.bookingId
         }
       }
-      bookingId = offender.latestBooking().bookingId
     }
 
     @Test
@@ -571,11 +568,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should allow updates if offender in wrong prison`() {
       lateinit var bookingInWrongPrison: OffenderBooking
       nomisDataBuilder.build {
-        bookingInWrongPrison = offender(nomsId = "A1234YY") {
-          booking(agencyLocationId = "MDI") {
+        newOffender(nomsId = "A1234YY") {
+          bookingInWrongPrison = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity)
           }
-        }.latestBooking()
+        }
       }
       val request = upsertRequest().withBookingId(bookingInWrongPrison.bookingId.toString())
 
@@ -585,12 +582,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "OUT") {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
 
       // De-allocation is allowed
@@ -612,12 +608,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow suspension when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "OUT") {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
 
       // Suspending is allowed
@@ -634,16 +629,15 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   inner class DuplicateAllocation {
     @Test
     fun `duplicate allocations can be worked around by deleting one of them`() {
+      lateinit var duplicate: OffenderProgramProfile
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "LEI") {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
-            courseAllocation(courseActivity)
-          }
+            duplicate = courseAllocation(courseActivity)
+          }.bookingId
         }
       }
-      bookingId = offender.latestBooking().bookingId
-      val duplicate = offender.latestBooking().offenderProgramProfiles.last() // TODO SDIT-902 When Offender Bookings have been converted to the new style DSL dupliate can be assigned from the courseAllocation call
 
       // unable to update the allocation because of a duplicate
       val request = upsertRequest().withAdditionalJson(""""endDate": "$today"""")

@@ -681,12 +681,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
-          }.latestBooking()
+          }
         }
 
         val payRatesJson = """
@@ -718,12 +718,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
-          }.latestBooking()
+          }
         }
 
         callUpdateEndpoint(
@@ -736,14 +736,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         nomisDataBuilder.build {
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity) {
                 payBand(endDate = yesterday.toString())
               }
             }
-          }.latestBooking()
+          }
         }
 
         callUpdateEndpoint(
@@ -1256,17 +1256,17 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         lateinit var deallocatedOffenderBooking: OffenderBooking
         nomisDataBuilder.build {
           programService(programId = 30, programCode = "NEW_SERVICE")
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity)
             }
-          }.latestBooking()
+          }
 
-          deallocatedOffenderBooking = offender(nomsId = "A1234UU") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234UU") {
+            deallocatedOffenderBooking = booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, endDate = yesterday.toString())
             }
-          }.latestBooking()
+          }
         }
 
         callUpdateEndpoint(

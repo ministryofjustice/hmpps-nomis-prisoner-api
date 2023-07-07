@@ -5,7 +5,9 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
@@ -15,7 +17,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class CourseAllocationDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseAllocationDsl {
 
   @CourseAllocationPayBandDslMarker
@@ -23,7 +25,7 @@ interface CourseAllocationDsl {
     startDate: String = "2022-10-31",
     endDate: String? = null,
     payBandCode: String = "5",
-  )
+  ): OffenderProgramProfilePayBand
 
   @CourseAttendanceDslMarker
   fun courseAttendance(
@@ -33,7 +35,7 @@ interface CourseAllocationDsl {
     toInternalLocationId: Long? = -8,
     outcomeReasonCode: String? = null,
     paidTransactionId: Long? = null,
-  )
+  ): OffenderCourseAttendance
 }
 
 @Component
@@ -53,34 +55,30 @@ class CourseAllocationBuilderFactory(
   private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory = CourseAllocationPayBandBuilderFactory(),
   private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory = CourseAttendanceBuilderFactory(),
 ) {
-
-  fun builder(
-    startDate: String?,
-    programStatusCode: String,
-    endDate: String?,
-    endReasonCode: String?,
-    endComment: String?,
-    courseActivity: CourseActivity,
-  ) = CourseAllocationBuilder(repository, payBandBuilderFactory, courseAttendanceBuilderFactory, startDate, programStatusCode, endDate, endReasonCode, endComment, courseActivity)
+  fun builder() = CourseAllocationBuilder(
+    repository,
+    payBandBuilderFactory,
+    courseAttendanceBuilderFactory,
+  )
 }
 
 class CourseAllocationBuilder(
   private val repository: CourseAllocationBuilderRepository? = null,
   private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory,
   private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory,
-  private val startDate: String?,
-  private val programStatusCode: String,
-  private val endDate: String?,
-  private val endReasonCode: String?,
-  private val endComment: String?,
-  private val courseActivity: CourseActivity,
 ) : CourseAllocationDsl {
 
-  // TODO SDIT-902 Switch to the same methodology as CourseActivity (build entity first and then children in DSL method call) with Offender Booking and its full entity tree
-  private val payBandBuilders: MutableList<CourseAllocationPayBandBuilder> = mutableListOf()
-  private val attendanceBuilders: MutableList<CourseAttendanceBuilder> = mutableListOf()
+  private lateinit var courseAllocation: OffenderProgramProfile
 
-  fun build(offenderBooking: OffenderBooking) =
+  fun build(
+    offenderBooking: OffenderBooking,
+    startDate: String?,
+    programStatusCode: String,
+    endDate: String?,
+    endReasonCode: String?,
+    endComment: String?,
+    courseActivity: CourseActivity,
+  ) =
     OffenderProgramProfile(
       offenderBooking = offenderBooking,
       program = courseActivity.program,
@@ -93,18 +91,16 @@ class CourseAllocationBuilder(
       endComment = endComment,
     )
       .let { save(it) }
-      .apply {
-        payBands.addAll(payBandBuilders.map { it.build(this) })
-        offenderCourseAttendances.addAll(attendanceBuilders.map { it.build(this) })
-      }
+      .also { courseAllocation = it }
 
   override fun payBand(
     startDate: String,
     endDate: String?,
     payBandCode: String,
-  ) {
-    payBandBuilders += payBandBuilderFactory.builder(startDate, endDate, payBandCode)
-  }
+  ): OffenderProgramProfilePayBand =
+    payBandBuilderFactory.builder()
+      .build(courseAllocation, startDate, endDate, payBandCode)
+      .also { courseAllocation.payBands += it }
 
   override fun courseAttendance(
     courseSchedule: CourseSchedule,
@@ -113,8 +109,9 @@ class CourseAllocationBuilder(
     toInternalLocationId: Long?,
     outcomeReasonCode: String?,
     paidTransactionId: Long?,
-  ) {
-    attendanceBuilders += courseAttendanceBuilderFactory.builder(
+  ) =
+    courseAttendanceBuilderFactory.builder().build(
+      courseAllocation,
       courseSchedule,
       eventId,
       eventStatusCode,
@@ -122,13 +119,13 @@ class CourseAllocationBuilder(
       outcomeReasonCode,
       paidTransactionId,
     )
-  }
+      .also { courseAllocation.offenderCourseAttendances += it }
 
-  fun save(offenderProgramProfile: OffenderProgramProfile) = repository?.save(offenderProgramProfile) ?: offenderProgramProfile
+  private fun save(offenderProgramProfile: OffenderProgramProfile) = repository?.save(offenderProgramProfile) ?: offenderProgramProfile
 
-  fun programStatus(programStatusCode: String) = repository?.programStatus(programStatusCode)
+  private fun programStatus(programStatusCode: String) = repository?.programStatus(programStatusCode)
     ?: OffenderProgramStatus(code = programStatusCode, description = programStatusCode)
 
-  fun programEndReason(endReasonCode: String) = repository?.programEndReason(endReasonCode)
+  private fun programEndReason(endReasonCode: String) = repository?.programEndReason(endReasonCode)
     ?: ProgramServiceEndReason(code = endReasonCode, description = endReasonCode)
 }

@@ -13,7 +13,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class CourseAllocationPayBandDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseAllocationPayBandDsl
 
 @Component
@@ -28,18 +28,20 @@ class CourseAllocationPayBandBuilderRepository(
 @Component
 class CourseAllocationPayBandBuilderFactory(private val repository: CourseAllocationPayBandBuilderRepository? = null) {
 
-  fun builder(startDate: String, endDate: String?, payBandCode: String) =
-    CourseAllocationPayBandBuilder(repository, startDate, endDate, payBandCode)
+  fun builder() =
+    CourseAllocationPayBandBuilder(repository)
 }
 
 class CourseAllocationPayBandBuilder(
   private val repository: CourseAllocationPayBandBuilderRepository? = null,
-  private val startDate: String,
-  private val endDate: String?,
-  private val payBandCode: String,
 ) : CourseAllocationPayBandDsl {
 
-  fun build(courseAllocation: OffenderProgramProfile) =
+  fun build(
+    courseAllocation: OffenderProgramProfile,
+    startDate: String,
+    endDate: String?,
+    payBandCode: String,
+  ) =
     OffenderProgramProfilePayBand(
       id = OffenderProgramProfilePayBandId(
         offenderProgramProfile = courseAllocation,

@@ -22,7 +22,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class CourseActivityDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseActivityDsl {
   @CourseActivityPayRateDslMarker
   fun payRate(

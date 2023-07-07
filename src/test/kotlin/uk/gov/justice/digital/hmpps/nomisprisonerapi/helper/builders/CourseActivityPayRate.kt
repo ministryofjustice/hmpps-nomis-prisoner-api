@@ -17,7 +17,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class CourseActivityPayRateDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseActivityPayRateDsl
 
 @Component

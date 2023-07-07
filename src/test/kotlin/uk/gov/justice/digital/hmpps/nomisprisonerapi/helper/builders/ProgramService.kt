@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServi
 @DslMarker
 annotation class ProgramServiceDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface ProgramServiceDsl {
   @CourseActivityDslMarker
   fun courseActivity(
