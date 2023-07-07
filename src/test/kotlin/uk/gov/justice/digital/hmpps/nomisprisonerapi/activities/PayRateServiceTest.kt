@@ -13,8 +13,6 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -31,7 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProg
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.*
+import java.util.Optional
 
 private const val PRISON_ID = "LEI"
 private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
@@ -441,10 +439,10 @@ class PayRateServiceTest {
           courseActivity {
             newRates.addAll(
               listOf(
-                payRate(endDate = yesterday.toString()),
-                payRate(startDate = tomorrow.toString(), halfDayRate = 4.4),
-                payRate(startDate = tomorrow.toString(), payBandCode = "6", halfDayRate = 5.4),
-                payRate(endDate = today.toString(), payBandCode = "7", halfDayRate = 8.7),
+                payRate(endDate = yesterday.toString()), // unchanged
+                payRate(startDate = tomorrow.toString(), halfDayRate = 4.4), // updated
+                payRate(startDate = tomorrow.toString(), payBandCode = "6", halfDayRate = 5.4), // created
+                payRate(endDate = today.toString(), payBandCode = "7", halfDayRate = 8.7), // expired
               ),
             )
           }
@@ -482,7 +480,4 @@ class PayRateServiceTest {
       assertThat(telemetry["expired-courseActivityPayRateIds"]).isNull()
     }
   }
-
-  private fun rateFactory() = CourseActivityPayRateBuilderFactory()
-  private fun activityFactory() = CourseActivityBuilderFactory()
 }
