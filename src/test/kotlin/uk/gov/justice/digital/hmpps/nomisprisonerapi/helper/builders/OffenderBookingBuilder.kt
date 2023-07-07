@@ -104,10 +104,10 @@ class OffenderBookingBuilder(
     startDate: String?,
     programStatusCode: String,
     endDate: String?,
-    payBands: MutableList<OffenderProgramProfilePayBandBuilder>,
+    payBands: MutableList<CourseAllocationPayBandBuilder>,
     endReasonCode: String?,
     endComment: String?,
-    attendances: MutableList<OffenderCourseAttendanceBuilder>,
+    attendances: MutableList<CourseAttendanceBuilder>,
     dsl: CourseAllocationDsl.() -> Unit,
   ) {
     this.courseAllocations += courseAllocationBuilderFactory?.builder(startDate, programStatusCode, endDate, endReasonCode, endComment, courseActivity)?.apply(dsl)

@@ -2,13 +2,14 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRuleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleRuleBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
@@ -18,10 +19,12 @@ import java.time.LocalTime
 class ScheduleRuleServiceTest {
 
   private val scheduleRuleService = ScheduleRuleService()
+  private val nomisDataBuilder = NomisDataBuilder()
 
   @Nested
   inner class CreateScheduleRules {
 
+    private lateinit var courseActivity: CourseActivity
     private val createActivityRequest = CreateActivityRequest(
       code = "ANY",
       startDate = LocalDate.of(2022, 10, 31),
@@ -36,7 +39,6 @@ class ScheduleRuleServiceTest {
       internalLocationId = null,
       excludeBankHolidays = true,
     )
-    private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
     private val createScheduleRuleRequest = ScheduleRuleRequest(
       startTime = LocalTime.parse("09:00"),
       endTime = LocalTime.parse("12:00"),
@@ -46,6 +48,15 @@ class ScheduleRuleServiceTest {
       sunday = true,
     )
     private val monthStart = LocalDate.now().withDayOfMonth(1).toString()
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "2022-10-31")
+        }
+      }
+    }
 
     @Nested
     inner class Validation {
@@ -128,14 +139,27 @@ class ScheduleRuleServiceTest {
       friday = true,
     )
 
+    private lateinit var existingActivity: CourseActivity
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          existingActivity = courseActivity() {
+            courseSchedule()
+            payRate()
+            courseScheduleRule(id = 1)
+          }
+        }
+      }
+    }
+
     private val monthStart = LocalDate.now().withDayOfMonth(1).toString()
 
     @Nested
     inner class Validation {
-
       @Test
       fun `should throw if start after end time`() {
-        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
         val requestedRules =
           listOf(scheduleRuleRequest.copy(startTime = LocalTime.of(12, 0), endTime = LocalTime.of(11, 59)))
 
@@ -151,7 +175,6 @@ class ScheduleRuleServiceTest {
     inner class Update {
       @Test
       fun `should do nothing if no rules`() {
-        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
         val requestedRules = listOf<ScheduleRuleRequest>()
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
@@ -161,7 +184,14 @@ class ScheduleRuleServiceTest {
 
       @Test
       fun `should add a single rule`() {
-        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
+        nomisDataBuilder.build {
+          programService {
+            existingActivity = courseActivity {
+              courseSchedule()
+              payRate()
+            }
+          }
+        }
         val requestedRules = listOf(scheduleRuleRequest)
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
@@ -178,7 +208,14 @@ class ScheduleRuleServiceTest {
 
       @Test
       fun `should add multiple rules`() {
-        val existingActivity = CourseActivityBuilderFactory().builder(courseScheduleRules = listOf()).create()
+        nomisDataBuilder.build {
+          programService {
+            existingActivity = courseActivity {
+              courseSchedule()
+              payRate()
+            }
+          }
+        }
         val requestedRules = listOf(
           scheduleRuleRequest,
           scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 30), monday = false),
@@ -205,9 +242,6 @@ class ScheduleRuleServiceTest {
 
       @Test
       fun `should do nothing for an unchanged rule`() {
-        val existingActivity =
-          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
-            .create()
         val requestedRules = listOf(scheduleRuleRequest)
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
@@ -224,9 +258,6 @@ class ScheduleRuleServiceTest {
 
       @Test
       fun `should remove a single rule`() {
-        val existingActivity =
-          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
-            .create()
         val requestedRules = listOf<ScheduleRuleRequest>()
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
@@ -236,9 +267,6 @@ class ScheduleRuleServiceTest {
 
       @Test
       fun `should remove and add a changed rule`() {
-        val existingActivity =
-          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
-            .create()
         val requestedRules = listOf(scheduleRuleRequest.copy(monday = false))
 
         val newRules = scheduleRuleService.buildNewRules(requestedRules, existingActivity)
@@ -255,9 +283,6 @@ class ScheduleRuleServiceTest {
 
       @Test
       fun `should add an extra rule`() {
-        val existingActivity =
-          CourseActivityBuilderFactory().builder(courseScheduleRules = listOf(CourseScheduleRuleBuilder(id = 1)))
-            .create()
         val requestedRules = listOf(
           scheduleRuleRequest,
           scheduleRuleRequest.copy(startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 0)),
@@ -284,20 +309,24 @@ class ScheduleRuleServiceTest {
 
       @Test
       fun `should handle add, remove, unchanged and changed rules at the same time`() {
-        val existingActivity = CourseActivityBuilderFactory().builder(
-          courseScheduleRules = listOf(
-            CourseScheduleRuleBuilder(id = 1),
-            CourseScheduleRuleBuilder(id = 2, startTimeHours = 14, endTimeHours = 15, thursday = false, friday = false),
-            CourseScheduleRuleBuilder(
-              id = 3,
-              startTimeHours = 13,
-              endTimeHours = 15,
-              monday = false,
-              tuesday = false,
-              wednesday = false,
-            ),
-          ),
-        ).create()
+        nomisDataBuilder.build {
+          programService {
+            existingActivity = courseActivity {
+              courseSchedule()
+              payRate()
+              courseScheduleRule(id = 1)
+              courseScheduleRule(id = 2, startTimeHours = 14, endTimeMinutes = 15, thursday = false, friday = false)
+              courseScheduleRule(
+                id = 3,
+                startTimeHours = 13,
+                endTimeHours = 15,
+                monday = false,
+                tuesday = false,
+                wednesday = false,
+              )
+            }
+          }
+        }
         val requestedRules = listOf(
           scheduleRuleRequest.copy(
             startTime = LocalTime.of(14, 15),
@@ -354,19 +383,38 @@ class ScheduleRuleServiceTest {
   @Nested
   inner class BuildUpdateTelemetry {
 
-    private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
+    private lateinit var oldRules: List<CourseScheduleRule>
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            oldRules = listOf(
+              courseScheduleRule(id = 1),
+              courseScheduleRule(id = 2, startTimeHours = 10),
+            )
+          }
+        }
+      }
+    }
 
     @Test
     fun `should publish deletions and creation of rules`() {
-      val oldRules = listOf(
-        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
-        CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),
-      )
-      val newRules = listOf(
-        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
-        CourseScheduleRuleBuilder(id = 3, startTimeHours = 11).build(courseActivity),
-        CourseScheduleRuleBuilder(id = 4, saturday = false).build(courseActivity = courseActivity),
-      )
+      val newRules = mutableListOf<CourseScheduleRule>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            newRules.addAll(
+              listOf(
+                courseScheduleRule(id = 1),
+                courseScheduleRule(id = 3, startTimeHours = 11),
+                courseScheduleRule(id = 4, saturday = false),
+              ),
+            )
+          }
+        }
+      }
 
       val telemetry = scheduleRuleService.buildUpdateTelemetry(oldRules, newRules)
 
@@ -376,14 +424,19 @@ class ScheduleRuleServiceTest {
 
     @Test
     fun `should not publish telemetry if no change`() {
-      val oldRules = listOf(
-        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
-        CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),
-      )
-      val newRules = listOf(
-        CourseScheduleRuleBuilder(id = 1).build(courseActivity = courseActivity),
-        CourseScheduleRuleBuilder(id = 2, startTimeHours = 10).build(courseActivity = courseActivity),
-      )
+      val newRules = mutableListOf<CourseScheduleRule>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            newRules.addAll(
+              listOf(
+                courseScheduleRule(id = 1),
+                courseScheduleRule(id = 2, startTimeHours = 10),
+              ),
+            )
+          }
+        }
+      }
 
       val telemetry = scheduleRuleService.buildUpdateTelemetry(oldRules, newRules)
 

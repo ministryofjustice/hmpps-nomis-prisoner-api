@@ -49,9 +49,9 @@ class CourseAllocationBuilderRepository(
 
 @Component
 class CourseAllocationBuilderFactory(
-  private val repository: CourseAllocationBuilderRepository,
-  private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory,
-  private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory,
+  private val repository: CourseAllocationBuilderRepository? = null,
+  private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory = CourseAllocationPayBandBuilderFactory(),
+  private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory = CourseAttendanceBuilderFactory(),
 ) {
 
   fun builder(
@@ -65,7 +65,7 @@ class CourseAllocationBuilderFactory(
 }
 
 class CourseAllocationBuilder(
-  private val repository: CourseAllocationBuilderRepository,
+  private val repository: CourseAllocationBuilderRepository? = null,
   private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory,
   private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory,
   private val startDate: String?,
@@ -76,22 +76,23 @@ class CourseAllocationBuilder(
   private val courseActivity: CourseActivity,
 ) : CourseAllocationDsl {
 
+  // TODO SDIT-902 Switch to the same methodology as CourseActivity (build entity first and then children in DSL method call) with Offender Booking and its full entity tree
   private val payBandBuilders: MutableList<CourseAllocationPayBandBuilder> = mutableListOf()
   private val attendanceBuilders: MutableList<CourseAttendanceBuilder> = mutableListOf()
 
-  fun build(offenderBooking: OffenderBooking): OffenderProgramProfile =
+  fun build(offenderBooking: OffenderBooking) =
     OffenderProgramProfile(
       offenderBooking = offenderBooking,
       program = courseActivity.program,
       startDate = LocalDate.parse(startDate),
-      programStatus = repository.programStatus(programStatusCode),
+      programStatus = programStatus(programStatusCode),
       courseActivity = courseActivity,
       prison = courseActivity.prison,
       endDate = endDate?.let { LocalDate.parse(endDate) },
-      endReason = endReasonCode?.let { repository.programEndReason(endReasonCode) },
+      endReason = endReasonCode?.let { programEndReason(endReasonCode) },
       endComment = endComment,
     )
-      .let { repository.save(it) }
+      .let { save(it) }
       .apply {
         payBands.addAll(payBandBuilders.map { it.build(this) })
         offenderCourseAttendances.addAll(attendanceBuilders.map { it.build(this) })
@@ -122,4 +123,12 @@ class CourseAllocationBuilder(
       paidTransactionId,
     )
   }
+
+  fun save(offenderProgramProfile: OffenderProgramProfile) = repository?.save(offenderProgramProfile) ?: offenderProgramProfile
+
+  fun programStatus(programStatusCode: String) = repository?.programStatus(programStatusCode)
+    ?: OffenderProgramStatus(code = programStatusCode, description = programStatusCode)
+
+  fun programEndReason(endReasonCode: String) = repository?.programEndReason(endReasonCode)
+    ?: ProgramServiceEndReason(code = endReasonCode, description = endReasonCode)
 }
