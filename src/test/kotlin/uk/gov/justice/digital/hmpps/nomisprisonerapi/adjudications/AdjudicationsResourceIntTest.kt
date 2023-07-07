@@ -547,7 +547,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class SimpleAdjudication {
       @Test
-      fun `returns adjudication data`() {
+      fun `returns core incident details`() {
         webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
@@ -556,8 +556,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderNo").isEqualTo("A1234TT")
           .jsonPath("bookingId").isEqualTo(offenderBookingId)
           .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
-          .jsonPath("partyAddedDate").isEqualTo("2023-05-10")
-          .jsonPath("comment").isEqualTo("party comment")
           .jsonPath("incident.adjudicationIncidentId").isEqualTo(incident.id)
           .jsonPath("incident.reportingStaff.firstName").isEqualTo("SIMON")
           .jsonPath("incident.reportingStaff.lastName").isEqualTo("BROWN")
@@ -573,14 +571,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("incident.details").isEqualTo("There was a fight in the toilets")
           .jsonPath("incident.incidentType.code").isEqualTo("GOV")
           .jsonPath("incident.incidentType.description").isEqualTo("Governor's Report")
-          .jsonPath("incident.repairs[0].type.code").isEqualTo("PLUM")
-          .jsonPath("incident.repairs[0].type.description").isEqualTo("Plumbing")
-          .jsonPath("incident.repairs[0].comment").isEqualTo("Fixed the bog")
-          .jsonPath("incident.repairs[0].cost").isEqualTo("10.3")
-          .jsonPath("incident.repairs[1].type.code").isEqualTo("CLEA")
-          .jsonPath("incident.repairs[1].type.description").isEqualTo("Cleaning")
-          .jsonPath("incident.repairs[1].comment").doesNotExist()
-          .jsonPath("incident.repairs[1].cost").doesNotExist()
+      }
+
+      @Test
+      fun `returns details about other parties involved in incident`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("incident.staffWitnesses[0].firstName").isEqualTo("KOFI")
           .jsonPath("incident.staffWitnesses[0].lastName").isEqualTo("WITNESS")
           .jsonPath("incident.staffWitnesses[0].staffId").isEqualTo(staffWitness.id)
@@ -593,6 +593,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("incident.prisonerWitnesses[0].offenderNo").isEqualTo(prisonerWitness.nomsId)
           .jsonPath("incident.otherPrisonersInvolved[0].offenderNo").isEqualTo(anotherSuspect.nomsId)
           .jsonPath("incident.otherPrisonersInvolved[1]").doesNotExist()
+      }
+
+      @Test
+      fun `returns details of the charges and offenses`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
           .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].reportDetail").isEqualTo("1234/123")
@@ -610,6 +620,35 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[1].offence.type.description").isEqualTo("Prison Rule 51")
           .jsonPath("charges[1].chargeSequence").isEqualTo("2")
           .jsonPath("charges[1].offenceId").isNotEmpty
+      }
+
+      @Test
+      fun `returns details of damage done during the incident`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+          .jsonPath("partyAddedDate").isEqualTo("2023-05-10")
+          .jsonPath("incident.repairs[0].type.code").isEqualTo("PLUM")
+          .jsonPath("incident.repairs[0].type.description").isEqualTo("Plumbing")
+          .jsonPath("incident.repairs[0].comment").isEqualTo("Fixed the bog")
+          .jsonPath("incident.repairs[0].cost").isEqualTo("10.3")
+          .jsonPath("incident.repairs[1].type.code").isEqualTo("CLEA")
+          .jsonPath("incident.repairs[1].type.description").isEqualTo("Cleaning")
+          .jsonPath("incident.repairs[1].comment").doesNotExist()
+          .jsonPath("incident.repairs[1].cost").doesNotExist()
+      }
+
+      @Test
+      fun `returns details about evidence obtained about the incident`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("investigations[0].comment").isEqualTo("Isla comment for investigation")
           .jsonPath("investigations[0].dateAssigned").isEqualTo("2023-01-02")
           .jsonPath("investigations[0].investigator.firstName").isEqualTo("ISLA")
@@ -623,6 +662,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("investigations[0].evidence[1].type.code").isEqualTo("DRUGTEST")
           .jsonPath("investigations[0].evidence[1].type.description").isEqualTo("Drug Test Report")
           .jsonPath("investigations[0].evidence[1].date").isEqualTo("2023-01-04")
+      }
+
+      @Test
+      fun `returns details about the hearings for the adjudication`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("hearings[0].type.code").isEqualTo("GOV")
           .jsonPath("hearings[0].type.description").isEqualTo("Governor's Hearing")
           .jsonPath("hearings[0].scheduleDate").isEqualTo("2023-01-02")
@@ -636,6 +685,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
           .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")
           .jsonPath("hearings[0].eventId").isEqualTo(1)
+      }
+
+      @Test
+      fun `returns details of the hearing outcome and punishments (aka awards)`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
           .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
           .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
