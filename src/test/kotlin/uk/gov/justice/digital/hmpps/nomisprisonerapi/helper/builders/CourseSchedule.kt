@@ -48,5 +48,5 @@ class CourseScheduleBuilder(val repository: CourseScheduleBuilderRepository? = n
       }
     }
 
-  fun save(courseSchedule: CourseSchedule) = repository?.save(courseSchedule) ?: courseSchedule
+  private fun save(courseSchedule: CourseSchedule) = repository?.save(courseSchedule) ?: courseSchedule
 }

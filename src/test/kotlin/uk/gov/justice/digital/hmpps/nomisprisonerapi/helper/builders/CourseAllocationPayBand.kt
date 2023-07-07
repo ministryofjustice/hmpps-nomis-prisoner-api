@@ -53,7 +53,7 @@ class CourseAllocationPayBandBuilder(
       save(it)
     }
 
-  fun save(payBand: OffenderProgramProfilePayBand) = repository?.save(payBand) ?: payBand
-  fun payBand(payBandCode: String) = repository?.payBand(payBandCode)
+  private fun save(payBand: OffenderProgramProfilePayBand) = repository?.save(payBand) ?: payBand
+  private fun payBand(payBandCode: String) = repository?.payBand(payBandCode)
     ?: PayBand(code = payBandCode, description = payBandCode)
 }

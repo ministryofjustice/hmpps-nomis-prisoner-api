@@ -202,13 +202,13 @@ class CourseActivityBuilder(
       courseActivity.courseScheduleRules += it
     }
 
-  fun save(courseActivity: CourseActivity) = repository?.save(courseActivity)
+  private fun save(courseActivity: CourseActivity) = repository?.save(courseActivity)
     ?: courseActivity
-  fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
+  private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
-  fun lookupIepLevel(code: String): IEPLevel = repository?.lookupIepLevel(code)
+  private fun lookupIepLevel(code: String): IEPLevel = repository?.lookupIepLevel(code)
     ?: IEPLevel(code = code, description = code)
-  fun lookupAgencyInternalLocation(internalLocationId: Long, prisonId: String) = repository?.lookupAgencyInternalLocation(internalLocationId)
+  private fun lookupAgencyInternalLocation(internalLocationId: Long, prisonId: String) = repository?.lookupAgencyInternalLocation(internalLocationId)
     ?: AgencyInternalLocation(
       locationId = internalLocationId,
       active = true,

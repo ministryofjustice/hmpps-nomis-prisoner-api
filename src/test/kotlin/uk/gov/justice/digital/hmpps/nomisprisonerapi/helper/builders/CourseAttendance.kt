@@ -70,11 +70,11 @@ class CourseAttendanceBuilder(
       save(it)
     }
 
-  fun save(courseAttendance: OffenderCourseAttendance) = repository?.save(courseAttendance) ?: courseAttendance
+  private fun save(courseAttendance: OffenderCourseAttendance) = repository?.save(courseAttendance) ?: courseAttendance
 
-  fun eventStatus(code: String) = repository?.eventStatus(code)
+  private fun eventStatus(code: String) = repository?.eventStatus(code)
     ?: EventStatus(code = code, description = code)
-  fun agencyInternalLocation(id: Long) = repository?.agencyInternalLocation(id)
+  private fun agencyInternalLocation(id: Long) = repository?.agencyInternalLocation(id)
     ?: AgencyInternalLocation(
       locationId = id,
       active = true,
@@ -84,6 +84,6 @@ class CourseAttendanceBuilder(
       locationCode = id.toString(),
     )
 
-  fun attendanceOutcome(code: String) = repository?.attendanceOutcome(code)
+  private fun attendanceOutcome(code: String) = repository?.attendanceOutcome(code)
     ?: AttendanceOutcome(code = code, description = code)
 }

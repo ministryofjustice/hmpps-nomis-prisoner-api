@@ -100,5 +100,5 @@ class ProgramServiceBuilder(
     }
   }
 
-  fun save(programService: ProgramService) = repository?.save(programService) ?: programService
+  private fun save(programService: ProgramService) = repository?.save(programService) ?: programService
 }
