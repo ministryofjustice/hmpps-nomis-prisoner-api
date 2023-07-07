@@ -11,7 +11,7 @@ import java.time.LocalTime
 @DslMarker
 annotation class CourseScheduleDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseScheduleDsl
 
 @Component
@@ -48,5 +48,5 @@ class CourseScheduleBuilder(val repository: CourseScheduleBuilderRepository? = n
       }
     }
 
-  fun save(courseSchedule: CourseSchedule) = repository?.save(courseSchedule) ?: courseSchedule
+  private fun save(courseSchedule: CourseSchedule) = repository?.save(courseSchedule) ?: courseSchedule
 }

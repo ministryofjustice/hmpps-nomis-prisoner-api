@@ -223,9 +223,6 @@ class Repository(
           party
         },
       )
-      booking.offenderProgramProfiles.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].courseAllocations.map { it.build(booking) },
-      )
     }
 
     offenderRepository.flush()

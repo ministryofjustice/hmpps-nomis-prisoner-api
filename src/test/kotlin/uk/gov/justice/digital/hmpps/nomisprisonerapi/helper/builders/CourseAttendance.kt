@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 @DslMarker
 annotation class CourseAttendanceDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseAttendanceDsl
 
 @Component
@@ -33,32 +33,25 @@ class CourseAttendanceBuilderRepository(
 
 @Component
 class CourseAttendanceBuilderFactory(private val repository: CourseAttendanceBuilderRepository? = null) {
-  fun builder(
+  fun builder() = CourseAttendanceBuilder(repository)
+}
+
+class CourseAttendanceBuilder(
+  private val repository: CourseAttendanceBuilderRepository? = null,
+) : CourseAttendanceDsl {
+
+  fun build(
+    courseAllocation: OffenderProgramProfile,
     courseSchedule: CourseSchedule,
     eventId: Long,
     eventStatusCode: String,
     toInternalLocationId: Long?,
     outcomeReasonCode: String?,
     paidTransactionId: Long?,
-  ) = CourseAttendanceBuilder(repository, courseSchedule, eventId, eventStatusCode, toInternalLocationId, outcomeReasonCode, paidTransactionId)
-}
-
-class CourseAttendanceBuilder(
-  private val repository: CourseAttendanceBuilderRepository? = null,
-  private val courseSchedule: CourseSchedule,
-  private val eventId: Long,
-  private val eventStatusCode: String,
-  private val toInternalLocationId: Long?,
-  private val outcomeReasonCode: String?,
-  private val paidTransactionId: Long?,
-) : CourseAttendanceDsl {
-
-  fun build(
-    offenderProgramProfile: OffenderProgramProfile,
   ): OffenderCourseAttendance =
     OffenderCourseAttendance(
       eventId = eventId,
-      offenderBooking = offenderProgramProfile.offenderBooking,
+      offenderBooking = courseAllocation.offenderBooking,
       eventDate = courseSchedule.scheduleDate,
       startTime = courseSchedule.startTime,
       endTime = courseSchedule.endTime,
@@ -66,7 +59,7 @@ class CourseAttendanceBuilder(
       toInternalLocation = toInternalLocationId?.let { agencyInternalLocation(toInternalLocationId) },
       courseSchedule = courseSchedule,
       attendanceOutcome = outcomeReasonCode?.let { attendanceOutcome(outcomeReasonCode) },
-      offenderProgramProfile = offenderProgramProfile,
+      offenderProgramProfile = courseAllocation,
       inTime = courseSchedule.startTime,
       outTime = courseSchedule.endTime,
       courseActivity = courseSchedule.courseActivity,
@@ -77,11 +70,11 @@ class CourseAttendanceBuilder(
       save(it)
     }
 
-  fun save(courseAttendance: OffenderCourseAttendance) = repository?.save(courseAttendance) ?: courseAttendance
+  private fun save(courseAttendance: OffenderCourseAttendance) = repository?.save(courseAttendance) ?: courseAttendance
 
-  fun eventStatus(code: String) = repository?.eventStatus(code)
+  private fun eventStatus(code: String) = repository?.eventStatus(code)
     ?: EventStatus(code = code, description = code)
-  fun agencyInternalLocation(id: Long) = repository?.agencyInternalLocation(id)
+  private fun agencyInternalLocation(id: Long) = repository?.agencyInternalLocation(id)
     ?: AgencyInternalLocation(
       locationId = id,
       active = true,
@@ -91,6 +84,6 @@ class CourseAttendanceBuilder(
       locationCode = id.toString(),
     )
 
-  fun attendanceOutcome(code: String) = repository?.attendanceOutcome(code)
+  private fun attendanceOutcome(code: String) = repository?.attendanceOutcome(code)
     ?: AttendanceOutcome(code = code, description = code)
 }

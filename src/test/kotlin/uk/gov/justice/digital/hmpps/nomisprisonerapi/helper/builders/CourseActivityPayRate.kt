@@ -17,7 +17,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class CourseActivityPayRateDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseActivityPayRateDsl
 
 @Component
@@ -61,11 +61,11 @@ class CourseActivityPayRateBuilder(val repository: CourseActivityPayRateBuilderR
       save(it)
     }
 
-  fun save(payRate: CourseActivityPayRate) = repository?.save(payRate) ?: payRate
+  private fun save(payRate: CourseActivityPayRate) = repository?.save(payRate) ?: payRate
 
-  fun lookupPayBandCode(payBandCode: String) = repository?.lookupPayBandCode(payBandCode)
+  private fun lookupPayBandCode(payBandCode: String) = repository?.lookupPayBandCode(payBandCode)
     ?: PayBand(code = payBandCode, description = payBandCode)
 
-  fun lookupIepLevel(iepLevelCode: String) = repository?.lookupIepLevel(iepLevelCode)
+  private fun lookupIepLevel(iepLevelCode: String) = repository?.lookupIepLevel(iepLevelCode)
     ?: IEPLevel(code = iepLevelCode, description = iepLevelCode)
 }
