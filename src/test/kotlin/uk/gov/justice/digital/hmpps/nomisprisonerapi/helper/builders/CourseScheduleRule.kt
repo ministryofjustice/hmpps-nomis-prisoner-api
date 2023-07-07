@@ -20,7 +20,12 @@ class CourseScheduleRuleBuilderRepository(private val courseScheduleRuleReposito
 
 @Component
 class CourseScheduleRuleBuilderFactory(private val repository: CourseScheduleRuleBuilderRepository? = null) {
-  fun builder(
+  fun builder(): CourseScheduleRuleBuilder = CourseScheduleRuleBuilder(repository)
+}
+
+class CourseScheduleRuleBuilder(val repository: CourseScheduleRuleBuilderRepository? = null) : CourseScheduleRuleDsl {
+  fun build(
+    courseActivity: CourseActivity,
     id: Long,
     startTimeHours: Int,
     startTimeMinutes: Int,
@@ -33,29 +38,7 @@ class CourseScheduleRuleBuilderFactory(private val repository: CourseScheduleRul
     friday: Boolean,
     saturday: Boolean,
     sunday: Boolean,
-  ): CourseScheduleRuleBuilder =
-    CourseScheduleRuleBuilder(
-      repository,
-      id, startTimeHours, startTimeMinutes, endTimeHours, endTimeMinutes, monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-    )
-}
-class CourseScheduleRuleBuilder(
-  val repository: CourseScheduleRuleBuilderRepository? = null,
-  val id: Long,
-  val startTimeHours: Int,
-  val startTimeMinutes: Int,
-  val endTimeHours: Int,
-  val endTimeMinutes: Int,
-
-  val monday: Boolean,
-  val tuesday: Boolean,
-  val wednesday: Boolean,
-  val thursday: Boolean,
-  val friday: Boolean,
-  val saturday: Boolean,
-  val sunday: Boolean,
-) : CourseScheduleRuleDsl {
-  fun build(courseActivity: CourseActivity): CourseScheduleRule {
+  ): CourseScheduleRule {
     val date = LocalDate.now().withDayOfMonth(1)
     return CourseScheduleRule(
       id = id,

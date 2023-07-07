@@ -42,26 +42,22 @@ class ProgramServiceBuilderFactory(
   private val repository: ProgramServiceBuilderRepository? = null,
   private val courseActivityBuilderFactory: CourseActivityBuilderFactory = CourseActivityBuilderFactory(),
 ) {
-  fun builder(
-    programCode: String,
-    programId: Long,
-    description: String,
-    active: Boolean,
-  ) = ProgramServiceBuilder(repository, courseActivityBuilderFactory, programCode, programId, description, active)
+  fun builder() = ProgramServiceBuilder(repository, courseActivityBuilderFactory)
 }
 
 class ProgramServiceBuilder(
   val repository: ProgramServiceBuilderRepository? = null,
   val courseActivityBuilderFactory: CourseActivityBuilderFactory,
-  var programCode: String,
-  var programId: Long,
-  var description: String,
-  var active: Boolean,
 ) : ProgramServiceDsl {
 
   private lateinit var programService: ProgramService
 
-  fun build(): ProgramService = ProgramService(
+  fun build(
+    programCode: String,
+    programId: Long,
+    description: String,
+    active: Boolean,
+  ): ProgramService = ProgramService(
     programCode = programCode,
     programId = programId,
     description = description,
@@ -85,11 +81,11 @@ class ProgramServiceBuilder(
     internalLocationId: Long?,
     excludeBankHolidays: Boolean,
     dsl: CourseActivityDsl.() -> Unit,
-  ): CourseActivity =
-    courseActivityBuilderFactory.builder(
+  ): CourseActivity = courseActivityBuilderFactory.builder().let { builder ->
+    builder.build(
+      programService,
       courseActivityId,
       code,
-      programId,
       prisonId,
       description,
       capacity,
@@ -99,13 +95,10 @@ class ProgramServiceBuilder(
       minimumIncentiveLevelCode,
       internalLocationId,
       excludeBankHolidays,
-    )
-      .let { builder ->
-        builder.build(programService)
-          .also {
-            builder.apply(dsl)
-          }
-      }
+    ).also {
+      builder.apply(dsl)
+    }
+  }
 
   fun save(programService: ProgramService) = repository?.save(programService) ?: programService
 }

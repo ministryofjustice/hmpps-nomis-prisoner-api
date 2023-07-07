@@ -50,7 +50,7 @@ class ActivityRepositoryTest {
 
   @Test
   fun saveActivity() {
-    val seedProgramService = programServiceRepository.save(programServiceBuilderFactory.builder(programId = 10, programCode = "TESTPS", active = true, description = "Test").build())
+    val seedProgramService = programServiceRepository.save(programServiceBuilderFactory.builder().build(programId = 10, programCode = "TESTPS", active = true, description = "Test"))
 
     val seedPrison = builderRepository.lookupAgency("LEI")
 
@@ -122,7 +122,7 @@ class ActivityRepositoryTest {
 
   @Test
   fun saveOffenderProgramProfile() {
-    val seedProgramService = programServiceRepository.save(programServiceBuilderFactory.builder(programId = 10, programCode = "TESTPS", active = true, description = "Test").build())
+    val seedProgramService = programServiceRepository.save(programServiceBuilderFactory.builder().build(programId = 10, programCode = "TESTPS", active = true, description = "Test"))
     val seedPrison = builderRepository.lookupAgency("LEI")
     val seedRoom = builderRepository.lookupAgencyInternalLocationByDescription("LEI-A-1-7")
     val seedIep = builderRepository.lookupIepLevel("STD")

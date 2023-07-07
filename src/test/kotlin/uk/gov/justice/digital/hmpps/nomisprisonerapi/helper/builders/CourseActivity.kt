@@ -82,37 +82,12 @@ class CourseActivityBuilderFactory(
   private val courseScheduleBuilderFactory: CourseScheduleBuilderFactory = CourseScheduleBuilderFactory(),
   private val courseScheduleRuleBuilderFactory: CourseScheduleRuleBuilderFactory = CourseScheduleRuleBuilderFactory(),
 ) {
-  fun builder(
-    courseActivityId: Long,
-    code: String,
-    programId: Long,
-    prisonId: String,
-    description: String,
-    capacity: Int,
-    active: Boolean,
-    startDate: String,
-    endDate: String?,
-    minimumIncentiveLevelCode: String,
-    internalLocationId: Long?,
-    excludeBankHolidays: Boolean,
-  ): CourseActivityBuilder {
+  fun builder(): CourseActivityBuilder {
     return CourseActivityBuilder(
       repository,
       courseActivityPayRateBuilderFactory,
       courseScheduleBuilderFactory,
       courseScheduleRuleBuilderFactory,
-      courseActivityId,
-      code,
-      programId,
-      prisonId,
-      description,
-      capacity,
-      active,
-      startDate,
-      endDate,
-      minimumIncentiveLevelCode,
-      internalLocationId,
-      excludeBankHolidays,
     )
   }
 }
@@ -122,23 +97,24 @@ class CourseActivityBuilder(
   val courseActivityPayRateBuilderFactory: CourseActivityPayRateBuilderFactory,
   val courseScheduleBuilderFactory: CourseScheduleBuilderFactory,
   val courseScheduleRuleBuilderFactory: CourseScheduleRuleBuilderFactory,
-  val courseActivityId: Long,
-  var code: String,
-  var programId: Long,
-  var prisonId: String,
-  var description: String,
-  var capacity: Int,
-  var active: Boolean,
-  var startDate: String,
-  var endDate: String?,
-  var minimumIncentiveLevelCode: String,
-  var internalLocationId: Long?,
-  var excludeBankHolidays: Boolean,
 ) : CourseActivityDsl {
 
   private lateinit var courseActivity: CourseActivity
 
-  fun build(programService: ProgramService): CourseActivity =
+  fun build(
+    programService: ProgramService,
+    courseActivityId: Long,
+    code: String,
+    prisonId: String,
+    description: String,
+    capacity: Int,
+    active: Boolean,
+    startDate: String,
+    endDate: String?,
+    minimumIncentiveLevelCode: String,
+    internalLocationId: Long?,
+    excludeBankHolidays: Boolean,
+  ): CourseActivity =
     CourseActivity(
       courseActivityId = courseActivityId,
       code = code,
@@ -151,7 +127,7 @@ class CourseActivityBuilder(
       scheduleStartDate = LocalDate.parse(startDate),
       scheduleEndDate = endDate?.let { LocalDate.parse(it) },
       iepLevel = lookupIepLevel(minimumIncentiveLevelCode),
-      internalLocation = internalLocationId?.let { lookupAgencyInternalLocation(it) },
+      internalLocation = internalLocationId?.let { lookupAgencyInternalLocation(it, prisonId) },
       excludeBankHolidays = excludeBankHolidays,
     )
       .let { save(it) }
@@ -164,15 +140,14 @@ class CourseActivityBuilder(
     endDate: String?,
     halfDayRate: Double,
   ) =
-    courseActivityPayRateBuilderFactory
-      .builder(
-        iepLevelCode,
-        payBandCode,
-        startDate,
-        endDate,
-        halfDayRate,
-      )
-      .build(courseActivity)
+    courseActivityPayRateBuilderFactory.builder().build(
+      courseActivity,
+      iepLevelCode,
+      payBandCode,
+      startDate,
+      endDate,
+      halfDayRate,
+    )
       .also { courseActivity.payRates += it }
 
   override fun courseSchedule(
@@ -182,19 +157,18 @@ class CourseActivityBuilder(
     endTime: String,
     slotCategory: SlotCategory,
     scheduleStatus: String,
-  ) =
-    courseScheduleBuilderFactory.builder(
-      courseScheduleId,
-      scheduleDate,
-      startTime,
-      endTime,
-      slotCategory,
-      scheduleStatus,
-    )
-      .build(courseActivity)
-      .also {
-        courseActivity.courseSchedules += it
-      }
+  ) = courseScheduleBuilderFactory.builder().build(
+    courseActivity,
+    courseScheduleId,
+    scheduleDate,
+    startTime,
+    endTime,
+    slotCategory,
+    scheduleStatus,
+  )
+    .also {
+      courseActivity.courseSchedules += it
+    }
 
   override fun courseScheduleRule(
     id: Long,
@@ -209,25 +183,24 @@ class CourseActivityBuilder(
     friday: Boolean,
     saturday: Boolean,
     sunday: Boolean,
-  ) =
-    courseScheduleRuleBuilderFactory.builder(
-      id,
-      startTimeHours,
-      startTimeMinutes,
-      endTimeHours,
-      endTimeMinutes,
-      monday,
-      tuesday,
-      wednesday,
-      thursday,
-      friday,
-      saturday,
-      sunday,
-    )
-      .build(courseActivity)
-      .also {
-        courseActivity.courseScheduleRules += it
-      }
+  ) = courseScheduleRuleBuilderFactory.builder().build(
+    courseActivity,
+    id,
+    startTimeHours,
+    startTimeMinutes,
+    endTimeHours,
+    endTimeMinutes,
+    monday,
+    tuesday,
+    wednesday,
+    thursday,
+    friday,
+    saturday,
+    sunday,
+  )
+    .also {
+      courseActivity.courseScheduleRules += it
+    }
 
   fun save(courseActivity: CourseActivity) = repository?.save(courseActivity)
     ?: courseActivity
@@ -235,9 +208,9 @@ class CourseActivityBuilder(
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
   fun lookupIepLevel(code: String): IEPLevel = repository?.lookupIepLevel(code)
     ?: IEPLevel(code = code, description = code)
-  fun lookupAgencyInternalLocation(locationId: Long) = repository?.lookupAgencyInternalLocation(locationId)
+  fun lookupAgencyInternalLocation(internalLocationId: Long, prisonId: String) = repository?.lookupAgencyInternalLocation(internalLocationId)
     ?: AgencyInternalLocation(
-      locationId = internalLocationId!!,
+      locationId = internalLocationId,
       active = true,
       locationType = "CLAS",
       agencyId = prisonId,

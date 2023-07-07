@@ -34,32 +34,18 @@ class CourseActivityPayRateBuilderRepository(
 
 @Component
 class CourseActivityPayRateBuilderFactory(private val repository: CourseActivityPayRateBuilderRepository? = null) {
-  fun builder(
+  fun builder(): CourseActivityPayRateBuilder = CourseActivityPayRateBuilder(repository)
+}
+
+class CourseActivityPayRateBuilder(val repository: CourseActivityPayRateBuilderRepository?) : CourseActivityPayRateDsl {
+  fun build(
+    courseActivity: CourseActivity,
     iepLevelCode: String,
     payBandCode: String,
     startDate: String,
     endDate: String?,
     halfDayRate: Double,
-  ): CourseActivityPayRateBuilder =
-    CourseActivityPayRateBuilder(
-      repository,
-      iepLevelCode,
-      payBandCode,
-      startDate,
-      endDate,
-      halfDayRate,
-    )
-}
-
-class CourseActivityPayRateBuilder(
-  val repository: CourseActivityPayRateBuilderRepository?,
-  var iepLevelCode: String,
-  var payBandCode: String,
-  var startDate: String,
-  var endDate: String?,
-  var halfDayRate: Double,
-) : CourseActivityPayRateDsl {
-  fun build(courseActivity: CourseActivity) =
+  ) =
     CourseActivityPayRate(
       id = CourseActivityPayRateId(
         courseActivity = courseActivity,

@@ -21,26 +21,19 @@ class CourseScheduleBuilderRepository(val courseScheduleRepository: CourseSchedu
 
 @Component
 class CourseScheduleBuilderFactory(val repository: CourseScheduleBuilderRepository? = null) {
-  fun builder(
+  fun builder() = CourseScheduleBuilder(repository)
+}
+
+class CourseScheduleBuilder(val repository: CourseScheduleBuilderRepository? = null) : CourseScheduleDsl {
+  fun build(
+    courseActivity: CourseActivity,
     courseScheduleId: Long,
     scheduleDate: String,
     startTime: String,
     endTime: String,
     slotCategory: SlotCategory,
     scheduleStatus: String,
-  ) = CourseScheduleBuilder(repository, courseScheduleId, scheduleDate, startTime, endTime, slotCategory, scheduleStatus)
-}
-
-class CourseScheduleBuilder(
-  val repository: CourseScheduleBuilderRepository? = null,
-  val courseScheduleId: Long,
-  val scheduleDate: String,
-  val startTime: String,
-  val endTime: String,
-  val slotCategory: SlotCategory,
-  val scheduleStatus: String,
-) : CourseScheduleDsl {
-  fun build(courseActivity: CourseActivity) =
+  ) =
     LocalDate.parse(scheduleDate).let { date ->
       CourseSchedule(
         courseScheduleId = courseScheduleId,
