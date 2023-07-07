@@ -19,12 +19,10 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderCourseAttendanceBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.TestDataFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -46,10 +44,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   private lateinit var repository: Repository
 
   @Autowired
-  private lateinit var offenderCourseAttendanceBuilderFactory: OffenderCourseAttendanceBuilderFactory
-
-  @Autowired
-  private lateinit var testDataFactory: TestDataFactory
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   private val today = LocalDate.now()
   private val yesterday = today.minusDays(1)
@@ -57,7 +52,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    testData(repository) {
+    nomisDataBuilder.build {
       programService {}
     }
   }
@@ -390,7 +385,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      testData(repository) {
+      nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity()
         }
@@ -677,7 +672,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if pay rate removed which is allocated to an offender`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
@@ -686,14 +681,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-        }
-        testDataFactory.build {
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
-          }.latestBooking()
+          }
         }
 
         val payRatesJson = """
@@ -716,7 +709,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       // This might seem an odd test but it replicates a bug found here https://dsdmoj.atlassian.net/browse/SDIT-846
       @Test
       fun `should return OK if unused pay rate removed with a pay band used on a different pay rate`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate(iepLevelCode = "STD")
@@ -725,14 +718,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-        }
-        testDataFactory.build {
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
-          }.latestBooking()
+          }
         }
 
         callUpdateEndpoint(
@@ -744,15 +735,15 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
-        testDataFactory.build {
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+        nomisDataBuilder.build {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity) {
                 payBand(endDate = yesterday.toString())
               }
             }
-          }.latestBooking()
+          }
         }
 
         callUpdateEndpoint(
@@ -767,7 +758,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should adjust pay rates start date if activity start date moved back`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = tomorrow.toString()) {
               payRate(iepLevelCode = "STD", startDate = tomorrow.toString())
@@ -811,7 +802,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should retain the end date if pay rate start date is moved back`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = yesterday.toString()) {
               payRate(startDate = yesterday.toString(), endDate = today.toString(), halfDayRate = 1.8)
@@ -845,7 +836,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should retain the end date if pay rate start date is moved back at same time as rate is changed`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = yesterday.toString()) {
               payRate(startDate = today.minusDays(2).toString(), endDate = yesterday.toString(), halfDayRate = 2.8)
@@ -1056,7 +1047,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `updates should be saved to the database`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate()
@@ -1106,7 +1097,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `do not delete any old schedules`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate()
@@ -1146,7 +1137,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `cancellations should be saved to the database`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate()
@@ -1263,21 +1254,19 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should update program for activity and active allocations`() {
         lateinit var deallocatedOffenderBooking: OffenderBooking
-        testData(repository) {
+        nomisDataBuilder.build {
           programService(programId = 30, programCode = "NEW_SERVICE")
-        }
-        testDataFactory.build {
-          offenderBooking = offender(nomsId = "A1234TT") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234TT") {
+            offenderBooking = booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity)
             }
-          }.latestBooking()
+          }
 
-          deallocatedOffenderBooking = offender(nomsId = "A1234UU") {
-            booking(agencyLocationId = "LEI") {
+          newOffender(nomsId = "A1234UU") {
+            deallocatedOffenderBooking = booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, endDate = yesterday.toString())
             }
-          }.latestBooking()
+          }
         }
 
         callUpdateEndpoint(
@@ -1302,7 +1291,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class Response {
       @Test
       fun `should return course schedule details`() {
-        testData(repository) {
+        nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
               payRate()
@@ -1432,6 +1421,15 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     """.trimIndent()
 
+    fun createAttendanceJson() = """
+      {
+        "scheduleDate": "2022-10-31",
+        "startTime": "09:00",
+        "endTime": "11:00",
+        "eventStatusCode": "SCH"
+      }
+    """.trimIndent()
+
     fun updateRequestJson() = """
       "internalLocationId" : ${-8 + 1},
       "payRates" : [
@@ -1547,10 +1545,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking()).last()
       assertThat(savedAllocation).isNotNull
 
-      // create an attendance record
-      repository.runInTransaction {
-        repository.save(offenderCourseAttendanceBuilderFactory.builder(courseSchedule = savedSchedule), savedAllocation)
-      }
+      webTestClient.put().uri("/schedules/${savedSchedule.courseScheduleId}/booking/${offenderAtMoorlands.latestBooking().bookingId}/attendance")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(createAttendanceJson()))
+        .exchange()
+        .expectStatus().isOk
 
       val savedAttendances = repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule, offenderAtMoorlands.latestBooking())
       assertThat(savedAttendances).isNotNull

@@ -5,13 +5,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.W
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.forceControllingOfficerRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.reportingOfficerRole
@@ -22,21 +20,29 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Deprecated("To be replaced by TestDataFactory, coming soon")
-fun testData(repository: Repository, dsl: TestData.() -> Unit) = TestData(repository).apply(dsl)
+fun testData(repository: Repository, dsl: NomisData.() -> Unit) = NomisData(repository).apply(dsl)
 
 @Component
-class TestDataFactory(private val repository: Repository, private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory) {
-  fun build(dsl: TestData.() -> Unit) = TestData(repository, courseAllocationBuilderFactory).apply(dsl)
+class NomisDataBuilder(
+  private val repository: Repository? = null,
+  private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = ProgramServiceBuilderFactory(),
+  private val offenderBuilderFactory: NewOffenderBuilderFactory? = null, // note this means the offender DSL is not available in unit tests whereas programService is.
+) {
+  fun build(dsl: NomisData.() -> Unit) = NomisData(repository, programServiceBuilderFactory, offenderBuilderFactory).apply(dsl)
 }
 
-class TestData(private val repository: Repository, private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory? = null) : TestDataDsl {
+class NomisData(
+  private val repository: Repository? = null,
+  private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = null,
+  private val offenderBuilderFactory: NewOffenderBuilderFactory? = null,
+) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
-    repository.save(StaffBuilder(firstName, lastName).apply(dsl))
+    repository!!.save(StaffBuilder(firstName, lastName).apply(dsl))
 
   @AdjudicationIncidentDslMarker
   override fun adjudicationIncident(
+    whenCreated: LocalDateTime,
     incidentDetails: String,
     reportedDateTime: LocalDateTime,
     reportedDate: LocalDate,
@@ -46,8 +52,9 @@ class TestData(private val repository: Repository, private val courseAllocationB
     agencyInternalLocationId: Long,
     reportingStaff: Staff,
     dsl: AdjudicationIncidentDsl.() -> Unit,
-  ): AdjudicationIncident = repository.save(
+  ): AdjudicationIncident = repository!!.save(
     AdjudicationIncidentBuilder(
+      whenCreated = whenCreated,
       incidentDetails = incidentDetails,
       reportedDateTime = reportedDateTime,
       reportedDate = reportedDate,
@@ -67,9 +74,27 @@ class TestData(private val repository: Repository, private val courseAllocationB
     birthDate: LocalDate,
     genderCode: String,
     dsl: OffenderDsl.() -> Unit,
-  ): Offender = repository.save(
-    OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode, repository = repository, courseAllocationBuilderFactory = courseAllocationBuilderFactory).apply(dsl),
+  ): Offender = repository!!.save(
+    OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode, repository = repository).apply(dsl),
   )
+
+  // This is here so we can use the new DSL in conjunction with the old one - once everything in the old Offender DSL has been switched to the new one we can get rid of `offender` and rename this
+  @NewOffenderDslMarker
+  override fun newOffender(
+    nomsId: String,
+    lastName: String,
+    firstName: String,
+    birthDate: LocalDate,
+    genderCode: String,
+    dsl: NewOffenderDsl.() -> Unit,
+  ): Offender =
+    offenderBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(nomsId, lastName, firstName, birthDate, genderCode)
+          .also {
+            builder.apply(dsl)
+          }
+      }
 
   @ProgramServiceDslMarker
   override fun programService(
@@ -79,16 +104,23 @@ class TestData(private val repository: Repository, private val courseAllocationB
     active: Boolean,
     dsl: ProgramServiceDsl.() -> Unit,
   ): ProgramService =
-    repository.save(ProgramServiceBuilder(repository, programCode, programId, description, active).apply(dsl))
+    programServiceBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(programCode, programId, description, active)
+          .also {
+            builder.apply(dsl)
+          }
+      }
 }
 
-@TestDataDslMarker
-interface TestDataDsl {
+@NomisDataDslMarker
+interface NomisDataDsl {
   @StaffDslMarker
-  fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit = {}): Staff
+  fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: StaffDsl.() -> Unit = {}): Staff
 
   @AdjudicationIncidentDslMarker
   fun adjudicationIncident(
+    whenCreated: LocalDateTime = LocalDateTime.now(),
     incidentDetails: String = "Big fight",
     reportedDateTime: LocalDateTime = LocalDateTime.now(),
     reportedDate: LocalDate = LocalDate.now(),
@@ -110,6 +142,17 @@ interface TestDataDsl {
     dsl: OffenderDsl.() -> Unit = {},
   ): Offender
 
+  // This allows us to slowly migrate from the old DSL to the new one. Once migration is complete we can delete @OffenderDslMarker then rename @NewOffenderDslMarker
+  @NewOffenderDslMarker
+  fun newOffender(
+    nomsId: String = "A5194DY",
+    lastName: String = "NTHANDA",
+    firstName: String = "LEKAN",
+    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
+    genderCode: String = "M",
+    dsl: NewOffenderDsl.() -> Unit = {},
+  ): Offender
+
   @ProgramServiceDslMarker
   fun programService(
     programCode: String = "INTTEST",
@@ -120,10 +163,10 @@ interface TestDataDsl {
   ): ProgramService
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface StaffDsl
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface OffenderDsl {
   @BookingDslMarker
   fun booking(
@@ -137,7 +180,7 @@ interface OffenderDsl {
   )
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface BookingDsl {
   @AdjudicationPartyDslMarker
   fun adjudicationParty(
@@ -159,25 +202,12 @@ interface BookingDsl {
     auditModuleName: String? = null,
     iepDateTime: LocalDateTime = LocalDateTime.now(),
   )
-
-  @CourseAllocationDslMarker
-  fun courseAllocation(
-    courseActivity: CourseActivity,
-    startDate: String? = "2022-10-31",
-    programStatusCode: String = "ALLOC",
-    endDate: String? = null,
-    payBands: MutableList<OffenderProgramProfilePayBandBuilder> = mutableListOf(),
-    endReasonCode: String? = null,
-    endComment: String? = null,
-    attendances: MutableList<OffenderCourseAttendanceBuilder> = mutableListOf(),
-    dsl: CourseAllocationDsl.() -> Unit = { payBand() },
-  )
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface IncentiveDsl
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationIncidentDsl {
   @AdjudicationRepairDslMarker
   fun repair(
@@ -208,7 +238,7 @@ enum class PartyRole(val code: String) {
   STAFF_REPORTING_OFFICER(reportingOfficerRole),
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationPartyDsl {
   @AdjudicationInvestigationDslMarker
   fun investigation(
@@ -243,10 +273,10 @@ interface AdjudicationPartyDsl {
   )
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationRepairDsl
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationInvestigationDsl {
   @AdjudicationEvidenceDslMarker
   fun evidence(
@@ -257,13 +287,13 @@ interface AdjudicationInvestigationDsl {
   )
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationEvidenceDsl
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationChargeDsl
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationHearingDsl {
   @AdjudicationHearingResultDslMarker
   fun result(
@@ -274,7 +304,7 @@ interface AdjudicationHearingDsl {
   )
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationHearingResultDsl {
   @AdjudicationHearingResultAwardDslMarker
   fun award(
@@ -291,86 +321,11 @@ interface AdjudicationHearingResultDsl {
   )
 }
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface AdjudicationHearingResultAwardDsl
 
-@TestDataDslMarker
-interface ProgramServiceDsl {
-  @CourseActivityDslMarker
-  fun courseActivity(
-    courseActivityId: Long = 0,
-    code: String = "CA",
-    programId: Long = 20,
-    prisonId: String = "LEI",
-    description: String = "test course activity",
-    capacity: Int = 23,
-    active: Boolean = true,
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    minimumIncentiveLevelCode: String = "STD",
-    internalLocationId: Long? = -8,
-    payRates: List<CourseActivityPayRateBuilder> = listOf(),
-    courseSchedules: List<CourseScheduleBuilder> = listOf(),
-    courseScheduleRules: List<CourseScheduleRuleBuilder> = listOf(),
-    courseAllocations: List<OffenderProgramProfileBuilder> = listOf(),
-    excludeBankHolidays: Boolean = false,
-    dsl: CourseActivityDsl.() -> Unit = {
-      courseSchedule()
-      courseScheduleRule()
-      payRate()
-    },
-  ): CourseActivity
-}
-
-@TestDataDslMarker
-interface CourseActivityDsl {
-  @CourseActivityPayRateDslMarker
-  fun payRate(
-    iepLevelCode: String = "STD",
-    payBandCode: String = "5",
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    halfDayRate: Double = 3.2,
-  )
-
-  @CourseScheduleDslMarker
-  fun courseSchedule(
-    courseScheduleId: Long = 0,
-    scheduleDate: String = "2022-11-01",
-    startTime: String = "08:00",
-    endTime: String = "11:00",
-    slotCategory: SlotCategory = SlotCategory.AM,
-    scheduleStatus: String = "SCH",
-  )
-
-  @CourseScheduleRuleDslMarker
-  fun courseScheduleRule(
-    id: Long = 0,
-    startTimeHours: Int = 9,
-    startTimeMinutes: Int = 30,
-    endTimeHours: Int = 12,
-    endTimeMinutes: Int = 30,
-    monday: Boolean = true,
-    tuesday: Boolean = true,
-    wednesday: Boolean = true,
-    thursday: Boolean = true,
-    friday: Boolean = true,
-    saturday: Boolean = false,
-    sunday: Boolean = false,
-  )
-}
-
-@TestDataDslMarker
-interface CourseActivityPayRateDsl
-
-@TestDataDslMarker
-interface CourseScheduleDsl
-
-@TestDataDslMarker
-interface CourseScheduleRuleDsl
-
 @DslMarker
-annotation class TestDataDslMarker
+annotation class NomisDataDslMarker
 
 @DslMarker
 annotation class StaffDslMarker
@@ -410,21 +365,6 @@ annotation class AdjudicationHearingResultDslMarker
 
 @DslMarker
 annotation class AdjudicationHearingResultAwardDslMarker
-
-@DslMarker
-annotation class ProgramServiceDslMarker
-
-@DslMarker
-annotation class CourseActivityDslMarker
-
-@DslMarker
-annotation class CourseActivityPayRateDslMarker
-
-@DslMarker
-annotation class CourseScheduleDslMarker
-
-@DslMarker
-annotation class CourseScheduleRuleDslMarker
 
 class DataRef<T>(private var reference: T? = null) {
   fun set(value: T) {

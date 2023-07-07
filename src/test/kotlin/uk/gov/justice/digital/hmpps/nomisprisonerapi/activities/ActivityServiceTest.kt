@@ -24,12 +24,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateReque
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRuleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityPayRateBuilderFactory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -240,10 +240,15 @@ class ActivityServiceTest {
       excludeBankHolidays = false,
       programCode = "INTTEST",
     )
+    val nomisDataBuilder = NomisDataBuilder()
 
     @BeforeEach
     fun setUp() {
-      courseActivity = CourseActivityBuilderFactory().builder().create()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity()
+        }
+      }
       whenever(activityRepository.findById(anyLong())).thenReturn(Optional.of(courseActivity))
       whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(
         Optional.of(defaultPrison),
@@ -333,9 +338,17 @@ class ActivityServiceTest {
 
     @Test
     fun `should capture telemetry`() {
-      courseActivity = CourseActivityBuilderFactory().builder(courseActivityId = 1).create()
+      lateinit var newPayRate: CourseActivityPayRate
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(courseActivityId = 1, prisonId = "LEI") {
+            courseSchedule()
+            courseScheduleRule()
+            newPayRate = payRate(halfDayRate = 4.3)
+          }
+        }
+      }
       whenever(activityRepository.findById(anyLong())).thenReturn(Optional.of(courseActivity))
-      val newPayRate = CourseActivityPayRateBuilderFactory().builder(halfDayRate = 4.3).create(courseActivity)
       whenever(payRatesService.buildNewPayRates(anyList(), any())).thenReturn(mutableListOf(newPayRate))
 
       activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(internalLocationId = null))

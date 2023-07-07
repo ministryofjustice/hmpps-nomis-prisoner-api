@@ -13,7 +13,6 @@ class OffenderBuilder(
   var genderCode: String = "M",
   var bookingBuilders: List<OffenderBookingBuilder> = mutableListOf(),
   val repository: Repository? = null,
-  val courseAllocationBuilderFactory: CourseAllocationBuilderFactory? = null,
 ) : OffenderDsl {
   fun build(gender: Gender): Offender =
     Offender(
@@ -47,7 +46,6 @@ class OffenderBuilder(
       visitBalanceBuilder = visitBalanceBuilder,
       agencyLocationId = agencyLocationId,
       repository = repository,
-      courseAllocationBuilderFactory = courseAllocationBuilderFactory,
     ).apply(dsl)
   }
 }

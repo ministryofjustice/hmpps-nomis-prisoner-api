@@ -3,14 +3,16 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseActivityBuilderFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CourseScheduleBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.AM
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.ED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory.PM
@@ -21,6 +23,8 @@ import java.time.LocalTime
 
 class ScheduleServiceTest {
 
+  private val nomisDataBuilder = NomisDataBuilder()
+  private lateinit var courseActivity: CourseActivity
   private val scheduleRepository: CourseScheduleRepository = mock()
   private val activityRepository: CourseActivityRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
@@ -29,12 +33,20 @@ class ScheduleServiceTest {
   @Nested
   inner class CreateSchedules {
 
-    private val courseActivity = CourseActivityBuilderFactory().builder(startDate = "2022-10-31").create()
     private val createSchedulesRequest = CourseScheduleRequest(
       date = LocalDate.of(2022, 11, 1),
       startTime = LocalTime.of(9, 0),
       endTime = LocalTime.of(12, 0),
     )
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity()
+        }
+      }
+    }
 
     @Nested
     inner class Validation {
@@ -142,18 +154,25 @@ class ScheduleServiceTest {
     private val threeDaysTime = today.plusDays(3)
     private val fourDaysTime = today.plusDays(4)
 
-    private val courseSchedules = listOf(
-      CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = yesterday.toString()),
-      CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = today.toString()),
-    )
-    private val courseActivity =
-      CourseActivityBuilderFactory().builder(startDate = yesterday.toString(), courseSchedules = courseSchedules)
-        .create()
     private val requestTemplate = CourseScheduleRequest(
       date = today,
       startTime = LocalTime.of(8, 0),
       endTime = LocalTime.of(11, 0),
     )
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseScheduleRule()
+            payRate()
+            courseSchedule(courseScheduleId = 1, scheduleDate = yesterday.toString())
+            courseSchedule(courseScheduleId = 2, scheduleDate = today.toString())
+          }
+        }
+      }
+    }
 
     @Test
     fun `should ignore changing a schedule before today`() {
@@ -317,15 +336,19 @@ class ScheduleServiceTest {
 
     @Test
     fun `should handle multiple past and future schedules with deletes, additions and updates`() {
-      val courseSchedules = listOf(
-        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = yesterday.toString()),
-        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = today.toString()),
-        CourseScheduleBuilder(courseScheduleId = 3, scheduleDate = tomorrow.toString()),
-        CourseScheduleBuilder(courseScheduleId = 4, scheduleDate = twoDaysTime.toString()),
-        CourseScheduleBuilder(courseScheduleId = 5, scheduleDate = threeDaysTime.toString()),
-      )
-      val courseActivity =
-        CourseActivityBuilderFactory().builder(startDate = yesterday.toString(), courseSchedules = courseSchedules).create()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseScheduleRule()
+            payRate()
+            courseSchedule(courseScheduleId = 1, scheduleDate = yesterday.toString())
+            courseSchedule(courseScheduleId = 2, scheduleDate = today.toString())
+            courseSchedule(courseScheduleId = 3, scheduleDate = tomorrow.toString())
+            courseSchedule(courseScheduleId = 4, scheduleDate = twoDaysTime.toString())
+            courseSchedule(courseScheduleId = 5, scheduleDate = threeDaysTime.toString())
+          }
+        }
+      }
       val request = listOf(
         requestTemplate.copy(id = 1, date = yesterday),
         requestTemplate.copy(id = 2, date = today),
@@ -382,22 +405,37 @@ class ScheduleServiceTest {
   inner class BuildUpdateTelemetry {
     private val today = LocalDate.now()
     private val tomorrow = today.plusDays(1)
+    private lateinit var oldSchedules: List<CourseSchedule>
 
-    private val courseActivity =
-      listOf(
-        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()),
-        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = tomorrow.toString()),
-      ).let {
-        CourseActivityBuilderFactory().builder(startDate = today.toString(), courseSchedules = it).create()
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity(startDate = today.toString()) {
+            oldSchedules = listOf(
+              courseSchedule(courseScheduleId = 1, scheduleDate = today.toString()),
+              courseSchedule(courseScheduleId = 2, scheduleDate = tomorrow.toString()),
+            )
+          }
+        }
       }
+    }
 
     @Test
     fun `should publish deletions and creation of schedules`() {
-      val oldSchedules = courseActivity.courseSchedules
-      val newSchedules = listOf(
-        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()).build(courseActivity),
-        CourseScheduleBuilder(courseScheduleId = 3, scheduleDate = tomorrow.toString(), startTime = "09:00").build(courseActivity),
-      )
+      val newSchedules = mutableListOf<CourseSchedule>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            newSchedules.addAll(
+              listOf(
+                courseSchedule(courseScheduleId = 1, scheduleDate = today.toString()),
+                courseSchedule(courseScheduleId = 3, scheduleDate = tomorrow.toString(), startTime = "09:00"),
+              ),
+            )
+          }
+        }
+      }
 
       val telemetry = scheduleService.buildUpdateTelemetry(oldSchedules, newSchedules)
 
@@ -407,11 +445,19 @@ class ScheduleServiceTest {
 
     @Test
     fun `should publish update of schedules`() {
-      val oldSchedules = courseActivity.courseSchedules
-      val newSchedules = listOf(
-        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()).build(courseActivity),
-        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = tomorrow.toString(), startTime = "09:00").build(courseActivity),
-      )
+      val newSchedules = mutableListOf<CourseSchedule>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            newSchedules.addAll(
+              listOf(
+                courseSchedule(courseScheduleId = 1, scheduleDate = today.toString()),
+                courseSchedule(courseScheduleId = 2, scheduleDate = tomorrow.toString(), startTime = "09:00"),
+              ),
+            )
+          }
+        }
+      }
 
       val telemetry = scheduleService.buildUpdateTelemetry(oldSchedules, newSchedules)
 
@@ -420,11 +466,19 @@ class ScheduleServiceTest {
 
     @Test
     fun `should not publish telemetry if nothing changed`() {
-      val oldSchedules = courseActivity.courseSchedules
-      val newSchedules = listOf(
-        CourseScheduleBuilder(courseScheduleId = 1, scheduleDate = today.toString()).build(courseActivity),
-        CourseScheduleBuilder(courseScheduleId = 2, scheduleDate = tomorrow.toString()).build(courseActivity),
-      )
+      val newSchedules = mutableListOf<CourseSchedule>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            newSchedules.addAll(
+              listOf(
+                courseSchedule(courseScheduleId = 1, scheduleDate = today.toString()),
+                courseSchedule(courseScheduleId = 2, scheduleDate = tomorrow.toString()),
+              ),
+            )
+          }
+        }
+      }
 
       val telemetry = scheduleService.buildUpdateTelemetry(oldSchedules, newSchedules)
 

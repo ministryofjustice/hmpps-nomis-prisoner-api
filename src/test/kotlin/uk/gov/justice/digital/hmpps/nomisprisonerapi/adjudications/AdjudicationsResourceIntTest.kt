@@ -19,7 +19,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.math.BigDecimal
@@ -31,19 +32,6 @@ const val adjudicationNumber = 9000123L
 class AdjudicationsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
-
-  lateinit var prisoner: Offender
-  lateinit var prisonerVictim: Offender
-  lateinit var prisonerWitness: Offender
-  lateinit var anotherSuspect: Offender
-
-  lateinit var incident: AdjudicationIncident
-  lateinit var staff: Staff
-  lateinit var staffInvestigator: Staff
-  lateinit var staffWitness: Staff
-  lateinit var staffVictim: Staff
-  lateinit var staffInvolvedWithForce: Staff
-  lateinit var staffIncidentReportingOfficer: Staff
 
   @DisplayName("GET /adjudications/ids")
   @Nested
@@ -81,11 +69,307 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
       }
     }
+
+    @Nested
+    inner class HappyPath {
+      private lateinit var staff: Staff
+      private lateinit var staffVictim: Staff
+      private lateinit var prisonerVictim: Offender
+      private lateinit var prisonerAtMoorlandPreviouslyAtBrixton: Offender
+      private lateinit var prisonerAtMoorland: Offender
+      private lateinit var prisonerAtBrixton: Offender
+      private lateinit var prisonerAtLeeds: Offender
+      private lateinit var incidentAtBrixton: AdjudicationIncident
+      private lateinit var anotherIncidentAtBrixton: AdjudicationIncident
+      private lateinit var incidentAtMoorland: AdjudicationIncident
+      private lateinit var anotherIncidentAtMoorland: AdjudicationIncident
+      private val incidentsAtLeeds: MutableList<AdjudicationIncident> = mutableListOf()
+      private val oldAdjudicationNumberAtBrixton = 9000120L
+      private val newAdjudicationNumberAtBrixton = 9000121L
+      private val oldAdjudicationNumberAtMoorland = 9000122L
+      private val newAdjudicationNumberAtMoorland = 9000123L
+      private val anotherNewAdjudicationNumberAtBrixton = 9000124L
+      private val anotherNewAdjudicationNumberAtMoorland = 9000125L
+      private val leedsAdjudicationNumberRange = 9000200L..9000299L
+
+      @BeforeEach
+      internal fun createPrisonerWithAdjudication() {
+        testData(repository) {
+          staff = staff {}
+          staffVictim = staff {}
+          prisonerVictim = offender { booking {} }
+
+          prisonerAtMoorlandPreviouslyAtBrixton =
+            offender(nomsId = "A1234AA") {
+              booking(agencyLocationId = "MDI", active = true)
+              booking(agencyLocationId = "BXI", active = false)
+            }
+          prisonerAtMoorland =
+            offender(nomsId = "A1234AB") {
+              booking(agencyLocationId = "MDI")
+            }
+          prisonerAtBrixton =
+            offender(nomsId = "A1234AC") {
+              booking(agencyLocationId = "BXI")
+            }
+          prisonerAtLeeds =
+            offender(nomsId = "A1234AD") {
+              booking(agencyLocationId = "LEI")
+            }
+          incidentAtBrixton = adjudicationIncident(
+            reportingStaff = staff,
+            prisonId = "BXI",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          ) {
+            party(
+              role = VICTIM,
+              offenderBooking = prisonerVictim.latestBooking(),
+              actionDecision = NO_FURTHER_ACTION_CODE,
+            )
+            party(
+              role = VICTIM,
+              staff = staffVictim,
+              actionDecision = NO_FURTHER_ACTION_CODE,
+            )
+            party(
+              role = SUSPECT,
+              offenderBooking = prisonerAtBrixton.latestBooking(),
+              adjudicationNumber = oldAdjudicationNumberAtBrixton,
+              actionDecision = PLACED_ON_REPORT_ACTION_CODE,
+            )
+            party(
+              role = SUSPECT,
+              offenderBooking = prisonerAtMoorlandPreviouslyAtBrixton.latestBooking(),
+              adjudicationNumber = anotherNewAdjudicationNumberAtBrixton,
+              actionDecision = PLACED_ON_REPORT_ACTION_CODE,
+            )
+          }
+          anotherIncidentAtBrixton = adjudicationIncident(
+            reportingStaff = staff,
+            prisonId = "BXI",
+            whenCreated = LocalDateTime.parse("2023-07-01T10:00"),
+          ) {
+            party(
+              role = SUSPECT,
+              offenderBooking = prisonerAtBrixton.latestBooking(),
+              adjudicationNumber = newAdjudicationNumberAtBrixton,
+              actionDecision = PLACED_ON_REPORT_ACTION_CODE,
+            )
+          }
+          incidentAtMoorland = adjudicationIncident(
+            reportingStaff = staff,
+            prisonId = "MDI",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          ) {
+            party(
+              role = SUSPECT,
+              offenderBooking = prisonerAtMoorland.latestBooking(),
+              adjudicationNumber = oldAdjudicationNumberAtMoorland,
+              actionDecision = PLACED_ON_REPORT_ACTION_CODE,
+            )
+            party(
+              role = SUSPECT,
+              offenderBooking = prisonerAtMoorlandPreviouslyAtBrixton.latestBooking(),
+              adjudicationNumber = anotherNewAdjudicationNumberAtMoorland,
+              actionDecision = PLACED_ON_REPORT_ACTION_CODE,
+            )
+          }
+          anotherIncidentAtMoorland = adjudicationIncident(
+            reportingStaff = staff,
+            prisonId = "MDI",
+            whenCreated = LocalDateTime.parse("2023-01-01T10:00"),
+          ) {
+            party(
+              role = SUSPECT,
+              offenderBooking = prisonerAtMoorland.latestBooking(),
+              adjudicationNumber = newAdjudicationNumberAtMoorland,
+              actionDecision = PLACED_ON_REPORT_ACTION_CODE,
+            )
+          }
+          leedsAdjudicationNumberRange.forEachIndexed { index, it ->
+            incidentsAtLeeds.add(
+              adjudicationIncident(
+                reportingStaff = staff,
+                prisonId = "LEI",
+                whenCreated = LocalDateTime.parse("2015-01-01T10:00").plusSeconds(index.toLong()),
+              ) {
+                party(
+                  role = SUSPECT,
+                  offenderBooking = prisonerAtLeeds.latestBooking(),
+                  adjudicationNumber = it,
+                  actionDecision = PLACED_ON_REPORT_ACTION_CODE,
+                )
+              },
+            )
+          }
+        }
+      }
+
+      @Test
+      fun `will return total count when size is 1`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(106)
+          .jsonPath("numberOfElements").isEqualTo(1)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(106)
+          .jsonPath("size").isEqualTo(1)
+      }
+
+      @Test
+      fun `by default there will be a page size of 20`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(106)
+          .jsonPath("numberOfElements").isEqualTo(20)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(6)
+          .jsonPath("size").isEqualTo(20)
+      }
+
+      @Test
+      fun `will order by whenCreated ascending`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .queryParam("size", "200")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].adjudicationNumber").isEqualTo(leedsAdjudicationNumberRange.first)
+          .jsonPath("content[0].offenderNo").isEqualTo(prisonerAtLeeds.nomsId)
+          .jsonPath("content[105].adjudicationNumber").isEqualTo(newAdjudicationNumberAtBrixton)
+          .jsonPath("content[105].offenderNo").isEqualTo(prisonerAtBrixton.nomsId)
+      }
+
+      @Test
+      fun `supplying fromDate means only adjudications created on or after that date are returned`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .queryParam("size", "200")
+            .queryParam("fromDate", "2023-07-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(1)
+          .jsonPath("content[0].adjudicationNumber").isEqualTo(newAdjudicationNumberAtBrixton)
+      }
+
+      @Test
+      fun `supplying toDate means only adjudications created on or before that date are returned`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .queryParam("size", "200")
+            .queryParam("toDate", "2015-01-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(100)
+          .jsonPath("content[0].adjudicationNumber").isEqualTo(leedsAdjudicationNumberRange.first)
+      }
+
+      @Test
+      fun `can filter using both from and to dates`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .queryParam("size", "200")
+            .queryParam("fromDate", "2020-01-01")
+            .queryParam("toDate", "2023-01-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(5)
+      }
+
+      @Test
+      fun `can filter by prison where adjudication was created`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .queryParam("size", "200")
+            .queryParam("prisonId", "LEI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(100)
+      }
+
+      @Test
+      fun `can filter by multiple prisons where adjudication was created`() {
+        webTestClient.get().uri {
+          it.path("/adjudications/ids")
+            .queryParam("size", "200")
+            .queryParam("prisonId", "MDI")
+            .queryParam("prisonId", "BXI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(6)
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.delete(incidentAtBrixton)
+        repository.delete(anotherIncidentAtBrixton)
+        repository.delete(incidentAtMoorland)
+        repository.delete(anotherIncidentAtMoorland)
+        incidentsAtLeeds.forEach { repository.delete(it) }
+        repository.delete(prisonerAtMoorlandPreviouslyAtBrixton)
+        repository.delete(prisonerAtMoorland)
+        repository.delete(prisonerAtBrixton)
+        repository.delete(prisonerAtLeeds)
+        repository.delete(prisonerVictim)
+        repository.delete(staff)
+        repository.delete(staffVictim)
+      }
+    }
   }
 
   @DisplayName("GET /adjudications/adjudication-number/{adjudicationNumber}")
   @Nested
   inner class GetAdjudication {
+    private lateinit var prisoner: Offender
+    lateinit var prisonerVictim: Offender
+    lateinit var prisonerWitness: Offender
+    lateinit var anotherSuspect: Offender
+
+    lateinit var incident: AdjudicationIncident
+    lateinit var staff: Staff
+    lateinit var staffInvestigator: Staff
+    lateinit var staffWitness: Staff
+    lateinit var staffVictim: Staff
+    lateinit var staffInvolvedWithForce: Staff
+    lateinit var staffIncidentReportingOfficer: Staff
+
     private var offenderBookingId: Long = 0
 
     @BeforeEach
@@ -122,7 +406,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             role = SUSPECT,
             offenderBooking = anotherSuspect.latestBooking(),
             adjudicationNumber = 987654,
-            actionDecision = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE,
+            actionDecision = PLACED_ON_REPORT_ACTION_CODE,
           )
         }
         prisoner = offender(nomsId = "A1234TT") {
@@ -263,7 +547,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class SimpleAdjudication {
       @Test
-      fun `returns adjudication data`() {
+      fun `returns core incident details`() {
         webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
@@ -272,8 +556,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderNo").isEqualTo("A1234TT")
           .jsonPath("bookingId").isEqualTo(offenderBookingId)
           .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
-          .jsonPath("partyAddedDate").isEqualTo("2023-05-10")
-          .jsonPath("comment").isEqualTo("party comment")
           .jsonPath("incident.adjudicationIncidentId").isEqualTo(incident.id)
           .jsonPath("incident.reportingStaff.firstName").isEqualTo("SIMON")
           .jsonPath("incident.reportingStaff.lastName").isEqualTo("BROWN")
@@ -289,14 +571,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("incident.details").isEqualTo("There was a fight in the toilets")
           .jsonPath("incident.incidentType.code").isEqualTo("GOV")
           .jsonPath("incident.incidentType.description").isEqualTo("Governor's Report")
-          .jsonPath("incident.repairs[0].type.code").isEqualTo("PLUM")
-          .jsonPath("incident.repairs[0].type.description").isEqualTo("Plumbing")
-          .jsonPath("incident.repairs[0].comment").isEqualTo("Fixed the bog")
-          .jsonPath("incident.repairs[0].cost").isEqualTo("10.3")
-          .jsonPath("incident.repairs[1].type.code").isEqualTo("CLEA")
-          .jsonPath("incident.repairs[1].type.description").isEqualTo("Cleaning")
-          .jsonPath("incident.repairs[1].comment").doesNotExist()
-          .jsonPath("incident.repairs[1].cost").doesNotExist()
+      }
+
+      @Test
+      fun `returns details about other parties involved in incident`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("incident.staffWitnesses[0].firstName").isEqualTo("KOFI")
           .jsonPath("incident.staffWitnesses[0].lastName").isEqualTo("WITNESS")
           .jsonPath("incident.staffWitnesses[0].staffId").isEqualTo(staffWitness.id)
@@ -309,6 +593,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("incident.prisonerWitnesses[0].offenderNo").isEqualTo(prisonerWitness.nomsId)
           .jsonPath("incident.otherPrisonersInvolved[0].offenderNo").isEqualTo(anotherSuspect.nomsId)
           .jsonPath("incident.otherPrisonersInvolved[1]").doesNotExist()
+      }
+
+      @Test
+      fun `returns details of the charges and offenses`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
           .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].reportDetail").isEqualTo("1234/123")
@@ -326,6 +620,35 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[1].offence.type.description").isEqualTo("Prison Rule 51")
           .jsonPath("charges[1].chargeSequence").isEqualTo("2")
           .jsonPath("charges[1].offenceId").isNotEmpty
+      }
+
+      @Test
+      fun `returns details of damage done during the incident`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+          .jsonPath("partyAddedDate").isEqualTo("2023-05-10")
+          .jsonPath("incident.repairs[0].type.code").isEqualTo("PLUM")
+          .jsonPath("incident.repairs[0].type.description").isEqualTo("Plumbing")
+          .jsonPath("incident.repairs[0].comment").isEqualTo("Fixed the bog")
+          .jsonPath("incident.repairs[0].cost").isEqualTo("10.3")
+          .jsonPath("incident.repairs[1].type.code").isEqualTo("CLEA")
+          .jsonPath("incident.repairs[1].type.description").isEqualTo("Cleaning")
+          .jsonPath("incident.repairs[1].comment").doesNotExist()
+          .jsonPath("incident.repairs[1].cost").doesNotExist()
+      }
+
+      @Test
+      fun `returns details about evidence obtained about the incident`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("investigations[0].comment").isEqualTo("Isla comment for investigation")
           .jsonPath("investigations[0].dateAssigned").isEqualTo("2023-01-02")
           .jsonPath("investigations[0].investigator.firstName").isEqualTo("ISLA")
@@ -339,6 +662,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("investigations[0].evidence[1].type.code").isEqualTo("DRUGTEST")
           .jsonPath("investigations[0].evidence[1].type.description").isEqualTo("Drug Test Report")
           .jsonPath("investigations[0].evidence[1].date").isEqualTo("2023-01-04")
+      }
+
+      @Test
+      fun `returns details about the hearings for the adjudication`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("hearings[0].type.code").isEqualTo("GOV")
           .jsonPath("hearings[0].type.description").isEqualTo("Governor's Hearing")
           .jsonPath("hearings[0].scheduleDate").isEqualTo("2023-01-02")
@@ -352,6 +685,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
           .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")
           .jsonPath("hearings[0].eventId").isEqualTo(1)
+      }
+
+      @Test
+      fun `returns details of the hearing outcome and punishments (aka awards)`() {
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
           .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
           .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
           .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")

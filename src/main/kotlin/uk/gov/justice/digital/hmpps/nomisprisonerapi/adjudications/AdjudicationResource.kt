@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -60,6 +62,7 @@ class AdjudicationResource(
     ],
   )
   fun getAdjudicationsByFilter(
+    @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC, size = 20)
     pageRequest: Pageable,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -148,5 +151,5 @@ data class AdjudicationIdResponse(
   @Schema(description = "The adjudication number", required = true)
   val adjudicationNumber: Long,
   @Schema(description = "The prisoner number", required = true)
-  val offenderNumber: String,
+  val offenderNo: String,
 )

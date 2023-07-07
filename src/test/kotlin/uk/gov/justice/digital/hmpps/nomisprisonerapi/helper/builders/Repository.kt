@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AttendanceOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
@@ -34,11 +33,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
@@ -93,10 +89,7 @@ class Repository(
   val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
   val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   val payBandRepository: ReferenceCodeRepository<PayBand>,
-  val programStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
-  val programEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
   val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
-  val attendanceOutcomeRepository: ReferenceCodeRepository<AttendanceOutcome>,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
@@ -230,9 +223,6 @@ class Repository(
           party
         },
       )
-      booking.offenderProgramProfiles.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].courseAllocations.map { it.build(booking) },
-      )
     }
 
     offenderRepository.flush()
@@ -291,21 +281,9 @@ class Repository(
   fun save(personBuilder: PersonBuilder): Person = personRepository.save(personBuilder.build())
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
 
-  fun save(programServiceBuilder: ProgramServiceBuilder): ProgramService =
-    programServiceRepository.save(programServiceBuilder.build())
-
   fun deleteProgramServices() = programServiceRepository.deleteAll()
 
-  fun save(courseActivityBuilder: CourseActivityBuilder, programService: ProgramService): CourseActivity =
-    courseActivityBuilder.build(programService).let { activityRepository.saveAndFlush(it) }
-
   fun deleteActivities() = activityRepository.deleteAll()
-
-  fun save(
-    offenderCourseAttendanceBuilder: OffenderCourseAttendanceBuilder,
-    offenderProgramProfile: OffenderProgramProfile,
-  ): OffenderCourseAttendance = offenderCourseAttendanceBuilder.build(offenderProgramProfile)
-    .let { offenderCourseAttendanceRepository.saveAndFlush(it) }
 
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
@@ -332,7 +310,7 @@ class Repository(
       )
       incident.parties.addAll(
         adjudicationIncidentBuilder.parties.mapIndexed { index, party ->
-          party.build(repository = this, incident, index + 1)
+          party.build(repository = this, incident, index + 1, adjudicationIncidentBuilder.whenCreated)
         },
       )
     }
@@ -373,17 +351,8 @@ class Repository(
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
-  fun lookupAttendanceOutcomeCode(code: String): AttendanceOutcome =
-    attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(code))!!
-
   fun lookupEventStatusCode(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
   fun lookupEventSubtype(code: String): EventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(code))!!
-
-  fun lookupProgramStatus(code: String): OffenderProgramStatus =
-    programStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(code))!!
-
-  fun lookupProgramEndReason(code: String): ProgramServiceEndReason =
-    programEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(code))!!
 
   fun lookupHearingType(code: String): AdjudicationHearingType =
     hearingTypeRepository.findByIdOrNull(AdjudicationHearingType.pk(code))!!

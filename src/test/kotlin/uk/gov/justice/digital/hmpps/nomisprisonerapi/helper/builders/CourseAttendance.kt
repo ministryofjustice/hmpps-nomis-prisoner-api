@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AttendanceOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -14,7 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 @DslMarker
 annotation class CourseAttendanceDslMarker
 
-@TestDataDslMarker
+@NomisDataDslMarker
 interface CourseAttendanceDsl
 
 @Component
@@ -31,43 +32,34 @@ class CourseAttendanceBuilderRepository(
 }
 
 @Component
-class CourseAttendanceBuilderFactory(
-  private val repository: CourseAttendanceBuilderRepository,
-) {
-  fun builder(
+class CourseAttendanceBuilderFactory(private val repository: CourseAttendanceBuilderRepository? = null) {
+  fun builder() = CourseAttendanceBuilder(repository)
+}
+
+class CourseAttendanceBuilder(
+  private val repository: CourseAttendanceBuilderRepository? = null,
+) : CourseAttendanceDsl {
+
+  fun build(
+    courseAllocation: OffenderProgramProfile,
     courseSchedule: CourseSchedule,
     eventId: Long,
     eventStatusCode: String,
     toInternalLocationId: Long?,
     outcomeReasonCode: String?,
     paidTransactionId: Long?,
-  ) = CourseAttendanceBuilder(repository, courseSchedule, eventId, eventStatusCode, toInternalLocationId, outcomeReasonCode, paidTransactionId)
-}
-
-class CourseAttendanceBuilder(
-  private val repository: CourseAttendanceBuilderRepository,
-  private val courseSchedule: CourseSchedule,
-  private val eventId: Long,
-  private val eventStatusCode: String,
-  private val toInternalLocationId: Long?,
-  private val outcomeReasonCode: String?,
-  private val paidTransactionId: Long?,
-) : CourseAttendanceDsl {
-
-  fun build(
-    offenderProgramProfile: OffenderProgramProfile,
   ): OffenderCourseAttendance =
     OffenderCourseAttendance(
       eventId = eventId,
-      offenderBooking = offenderProgramProfile.offenderBooking,
+      offenderBooking = courseAllocation.offenderBooking,
       eventDate = courseSchedule.scheduleDate,
       startTime = courseSchedule.startTime,
       endTime = courseSchedule.endTime,
-      eventStatus = repository.eventStatus(eventStatusCode),
-      toInternalLocation = toInternalLocationId?.let { repository.agencyInternalLocation(toInternalLocationId) },
+      eventStatus = eventStatus(eventStatusCode),
+      toInternalLocation = toInternalLocationId?.let { agencyInternalLocation(toInternalLocationId) },
       courseSchedule = courseSchedule,
-      attendanceOutcome = outcomeReasonCode?.let { repository.attendanceOutcome(outcomeReasonCode) },
-      offenderProgramProfile = offenderProgramProfile,
+      attendanceOutcome = outcomeReasonCode?.let { attendanceOutcome(outcomeReasonCode) },
+      offenderProgramProfile = courseAllocation,
       inTime = courseSchedule.startTime,
       outTime = courseSchedule.endTime,
       courseActivity = courseSchedule.courseActivity,
@@ -75,6 +67,23 @@ class CourseAttendanceBuilder(
       program = courseSchedule.courseActivity.program,
       paidTransactionId = paidTransactionId,
     ).let {
-      repository.save(it)
+      save(it)
     }
+
+  private fun save(courseAttendance: OffenderCourseAttendance) = repository?.save(courseAttendance) ?: courseAttendance
+
+  private fun eventStatus(code: String) = repository?.eventStatus(code)
+    ?: EventStatus(code = code, description = code)
+  private fun agencyInternalLocation(id: Long) = repository?.agencyInternalLocation(id)
+    ?: AgencyInternalLocation(
+      locationId = id,
+      active = true,
+      locationType = "CLAS",
+      agencyId = "LEI",
+      description = "Classroom 1",
+      locationCode = id.toString(),
+    )
+
+  private fun attendanceOutcome(code: String) = repository?.attendanceOutcome(code)
+    ?: AttendanceOutcome(code = code, description = code)
 }

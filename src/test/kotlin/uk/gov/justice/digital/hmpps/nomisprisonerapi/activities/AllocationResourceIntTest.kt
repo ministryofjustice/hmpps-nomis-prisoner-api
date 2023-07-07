@@ -13,9 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.TestDataFactory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -30,7 +29,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   private lateinit var repository: Repository
 
   @Autowired
-  private lateinit var testDataFactory: TestDataFactory
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   private lateinit var courseActivity: CourseActivity
   private lateinit var offender: Offender
@@ -42,17 +41,14 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
-    testData(repository) {
+    nomisDataBuilder.build {
       programService {
         courseActivity = courseActivity()
       }
-    }
-    testDataFactory.build {
-      offender = offender(nomsId = "A1234XX") {
-        booking(agencyLocationId = "LEI")
+      offender = newOffender(nomsId = "A1234XX") {
+        bookingId = booking(agencyLocationId = "LEI").bookingId
       }
     }
-    bookingId = offender.latestBooking().bookingId
   }
 
   @AfterEach
@@ -333,13 +329,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return bad request offender in wrong prison`() {
       lateinit var offenderAtWrongPrison: Offender
-      testDataFactory.build {
-        offenderAtWrongPrison = offender(nomsId = "A1234YY") {
-          booking(agencyLocationId = "MDI") {
+      nomisDataBuilder.build {
+        offenderAtWrongPrison = newOffender(nomsId = "A1234YY") {
+          bookingId = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
       val request = upsertRequest().withBookingId(offenderAtWrongPrison.latestBooking().bookingId.toString())
 
@@ -351,13 +346,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
-      testDataFactory.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "LEI") {
+      nomisDataBuilder.build {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
       val request = upsertRequest()
         .withAdditionalJson(""""startDate": "2022-12-01"""")
@@ -404,7 +398,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      testData(repository) {
+      nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity {
             payRate(payBandCode = "5")
@@ -414,15 +408,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
-      }
-      testDataFactory.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "LEI") {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, startDate = "2022-11-14")
-          }
+          }.bookingId
         }
       }
-      bookingId = offender.latestBooking().bookingId
     }
 
     @Test
@@ -576,12 +567,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow updates if offender in wrong prison`() {
       lateinit var bookingInWrongPrison: OffenderBooking
-      testDataFactory.build {
-        bookingInWrongPrison = offender(nomsId = "A1234YY") {
-          booking(agencyLocationId = "MDI") {
+      nomisDataBuilder.build {
+        newOffender(nomsId = "A1234YY") {
+          bookingInWrongPrison = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity)
           }
-        }.latestBooking()
+        }
       }
       val request = upsertRequest().withBookingId(bookingInWrongPrison.bookingId.toString())
 
@@ -590,13 +581,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
-      testDataFactory.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "OUT") {
+      nomisDataBuilder.build {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
 
       // De-allocation is allowed
@@ -617,13 +607,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should allow suspension when not in the activity prison`() {
-      testDataFactory.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "OUT") {
+      nomisDataBuilder.build {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
-          }
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
       }
 
       // Suspending is allowed
@@ -641,15 +630,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `duplicate allocations can be worked around by deleting one of them`() {
       lateinit var duplicate: OffenderProgramProfile
-      testDataFactory.build {
-        offender = offender(nomsId = "A1234XX") {
-          booking(agencyLocationId = "LEI") {
+      nomisDataBuilder.build {
+        offender = newOffender(nomsId = "A1234XX") {
+          bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
-            courseAllocation(courseActivity)
-          }
+            duplicate = courseAllocation(courseActivity)
+          }.bookingId
         }
-        bookingId = offender.latestBooking().bookingId
-        duplicate = offender.latestBooking().offenderProgramProfiles.last()
       }
 
       // unable to update the allocation because of a duplicate
