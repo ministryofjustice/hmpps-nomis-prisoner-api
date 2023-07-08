@@ -4,7 +4,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -15,16 +14,19 @@ import java.time.LocalDateTime
 annotation class NewOffenderDslMarker
 
 @NomisDataDslMarker
-interface NewOffenderDsl {
-  @NewBookingDslMarker
-  fun booking(
-    bookingBeginDate: LocalDateTime = LocalDateTime.now(),
-    active: Boolean = true,
-    inOutStatus: String = "IN",
-    youthAdultCode: String = "N",
-    agencyLocationId: String = "BXI",
-    dsl: NewBookingDsl.() -> Unit = {},
-  ): OffenderBooking
+interface NewOffenderDsl : NewBookingDslApi
+
+interface NewOffenderDslApi {
+  // This allows us to slowly migrate from the old DSL to the new one. Once migration is complete we can delete @OffenderDslMarker then rename @NewOffenderDslMarker
+  @NewOffenderDslMarker
+  fun newOffender(
+    nomsId: String = "A5194DY",
+    lastName: String = "NTHANDA",
+    firstName: String = "LEKAN",
+    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
+    genderCode: String = "M",
+    dsl: NewOffenderDsl.() -> Unit = {},
+  ): Offender
 }
 
 @Component

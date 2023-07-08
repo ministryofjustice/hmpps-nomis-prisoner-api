@@ -4,10 +4,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDateTime
@@ -16,27 +14,18 @@ import java.time.LocalDateTime
 annotation class NewBookingDslMarker
 
 @NomisDataDslMarker
-interface NewBookingDsl {
-  @CourseAllocationDslMarker
-  fun courseAllocation(
-    courseActivity: CourseActivity,
-    startDate: String? = "2022-10-31",
-    programStatusCode: String = "ALLOC",
-    endDate: String? = null,
-    endReasonCode: String? = null,
-    endComment: String? = null,
-    dsl: CourseAllocationDsl.() -> Unit = { payBand() },
-  ): OffenderProgramProfile
+interface NewBookingDsl : CourseAllocationDslApi, NewIncentiveDslApi
 
-  @NewIncentiveDslMarker
-  fun incentive(
-    iepLevelCode: String = "ENT",
-    userId: String? = null,
-    sequence: Long = 1,
-    commentText: String = "comment",
-    auditModuleName: String? = null,
-    iepDateTime: LocalDateTime = LocalDateTime.now(),
-  ): Incentive
+interface NewBookingDslApi {
+  @NewBookingDslMarker
+  fun booking(
+    bookingBeginDate: LocalDateTime = LocalDateTime.now(),
+    active: Boolean = true,
+    inOutStatus: String = "IN",
+    youthAdultCode: String = "N",
+    agencyLocationId: String = "BXI",
+    dsl: NewBookingDsl.() -> Unit = {},
+  ): OffenderBooking
 }
 
 @Component
