@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+          integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+          integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+          crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+          integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+          crossorigin="anonymous"></script>
+  <style>
+    .list-group-item {
+      border: 0
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="container">
+  <div class="panel-group">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <ul class="list-group">
+          <li class="list-group-item"><a data-toggle="collapse" href="#collapse-nomisdatadsl" class="text-success">NomisDataDsl</a></li>
+          <li id="collapse-nomisdatadsl" class="list-group-item panel-collapse collapse">
+            <ul class="list-group">
+              <li class="list-group-item"><a data-toggle="collapse" href="#collapse-offender" class="text-primary">offender</a></li>
+              <li id="collapse-offender" class="list-group-item panel-collapse collapse">
+                <ul class="list-group">
+                  <li class="list-group-item"><span class="text-info">nomsId</span>  <span class="text-secondary">String</span></li>
+                  <li class="list-group-item"><span class="text-info">lastName</span> <span class="text-secondary">String</span></li>
+                  <li class="list-group-item"><span class="text-info">firstName</span> <span class="text-secondary">String</span></li>
+                  <li class="list-group-item"><span class="text-info">birthDate</span> <span class="text-secondary">LocalDate</span></li>
+                  <li class="list-group-item"><span class="text-info">genderCode</span> <span class="text-secondary">String</span></li>
+                  <li class="list-group-item"><a data-toggle="collapse" href="#collapse-offenderdsl" class="text-success">OffenderDsl</a>
+                  </li>
+                  <li id="collapse-offenderdsl" class="list-group-item panel-collapse collapse">
+                    <ul class="list-group">
+                      <li class="list-group-item"><a data-toggle="collapse" href="#collapse-booking" class="text-primary">booking</a></li>
+                      <li id="collapse-booking" class="list-group-item panel-collapse collapse">
+                        <ul class="list-group">
+                          <li class="list-group-item"><span class="text-info">bookingBeginDate</span>  <span class="text-secondary">LocalDateTime</span></li>
+                          <li class="list-group-item">active: Boolean</li>
+                          <li class="list-group-item">inOutStatus: String</li>
+                          <li class="list-group-item">youthAdultCode: String</li>
+                          <li class="list-group-item">agencyLocationId: String</li>
+                        </ul>
+                      </li>
+                      <li class="list-group-item"><a data-toggle="collapse" href="#collapse-incentive" class="text-primary">incentive</a>
+                      </li>
+                      <li id="collapse-incentive" class="list-group-item panel-collapse collapse">
+                        <ul class="list-group">
+                          <li class="list-group-item">iepLevelCode: String</li>
+                          <li class="list-group-item">userId: String?</li>
+                          <li class="list-group-item">sequence: Long</li>
+                          <li class="list-group-item">commentText: String</li>
+                          <li class="list-group-item">auditModuleName: String?</li>
+                          <li class="list-group-item">iepDateTime: LocalDateTime</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

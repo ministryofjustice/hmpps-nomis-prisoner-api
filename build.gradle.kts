@@ -38,6 +38,7 @@ dependencies {
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.16")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
+  testImplementation("com.squareup:kotlinpoet:1.10.2")
 }
 
 java {

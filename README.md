@@ -20,3 +20,17 @@ Various methods to run the application locally are detailed below.
 Once up the application should be available on port 8101 - see the health page at http://localhost:8101/health.
 
 Also try http://localhost:8101/swagger-ui/configUrl=/v3/api-docs to see the API specification.
+
+# Nomis Data DSL
+TODO 
+* working OK now
+* create the markdown from the leaf and remove markdown stuff from main function
+* then can also create html from the leaf
+* then push the html out to a file???
+* then the gradle task
+* and then can we work out the default values by calling the function? https://discuss.kotlinlang.org/t/retrieve-default-parameter-value-via-reflection/7314/5
+* do we even need javapoet?
+* ...or why not use it to read the source files, then we get the default values easier
+
+## datq
+

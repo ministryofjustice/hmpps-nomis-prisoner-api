@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+          integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+          integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+          crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+          integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+          crossorigin="anonymous"></script>
+  <style>
+    .list-group-item {
+      border: 0
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="panel-group">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <ul class="list-group">
+          <li class="list-group-item"><a data-toggle="collapse" href="#collapse-nomisdatadsl" class="text-success">NomisDataDsl</a></li>
+          <li id="collapse-nomisdatadsl" class="list-group-item panel-collapse collapse">
+            <ul class="list-group">
+              <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationIncident" class="text-primary">adjudicationIncident</a></li>
+              <li id="collapse-adjudicationIncident" class="list-group-item panel-collapse collapse">
+                <ul class="list-group">
+                  <li class="list-group-item"><span class="text-info">whenCreated</span>  <span class="text-secondary">LocalDateTime</span></li>
+                  <li class="list-group-item"><span class="text-info">incidentDetails</span>  <span class="text-secondary">String</span></li>
+                  <li class="list-group-item"><span class="text-info">reportedDateTime</span>  <span class="text-secondary">LocalDateTime</span></li>
+                  <li class="list-group-item"><span class="text-info">reportedDate</span>  <span class="text-secondary">LocalDate</span></li>
+                  <li class="list-group-item"><span class="text-info">incidentDateTime</span>  <span class="text-secondary">LocalDateTime</span></li>
+                  <li class="list-group-item"><span class="text-info">incidentDate</span>  <span class="text-secondary">LocalDate</span></li>
+                  <li class="list-group-item"><span class="text-info">prisonId</span>  <span class="text-secondary">String</span></li>
+                  <li class="list-group-item"><span class="text-info">agencyInternalLocationId</span>  <span class="text-secondary">Long</span></li>
+                  <li class="list-group-item"><span class="text-info">reportingStaff</span>  <span class="text-secondary">Staff</span></li>
+                  <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationincidentdsl" class="text-success">AdjudicationIncidentDsl</a></li>
+                  <li id="collapse-adjudicationincidentdsl" class="list-group-item panel-collapse collapse">
+                    <ul class="list-group">
+                      <li class="list-group-item"><a data-toggle="collapse" href="#collapse-party" class="text-primary">party</a></li>
+                      <li id="collapse-party" class="list-group-item panel-collapse collapse">
+                        <ul class="list-group">
+                          <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String</span></li>
+                          <li class="list-group-item"><span class="text-info">role</span>  <span class="text-secondary">PartyRole</span></li>
+                          <li class="list-group-item"><span class="text-info">partyAddedDate</span>  <span class="text-secondary">LocalDate</span></li>
+                          <li class="list-group-item"><span class="text-info">offenderBooking</span>  <span class="text-secondary">OffenderBooking?</span></li>
+                          <li class="list-group-item"><span class="text-info">staff</span>  <span class="text-secondary">Staff?</span></li>
+                          <li class="list-group-item"><span class="text-info">adjudicationNumber</span>  <span class="text-secondary">Long?</span></li>
+                          <li class="list-group-item"><span class="text-info">actionDecision</span>  <span class="text-secondary">String</span></li>
+                          <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationpartydsl" class="text-success">AdjudicationPartyDsl</a></li>
+                          <li id="collapse-adjudicationpartydsl" class="list-group-item panel-collapse collapse">
+                            <ul class="list-group">
+                              <li class="list-group-item"><a data-toggle="collapse" href="#collapse-charge" class="text-primary">charge</a></li>
+                              <li id="collapse-charge" class="list-group-item panel-collapse collapse">
+                                <ul class="list-group">
+                                  <li class="list-group-item"><span class="text-info">offenceCode</span>  <span class="text-secondary">String</span></li>
+                                  <li class="list-group-item"><span class="text-info">guiltyEvidence</span>  <span class="text-secondary">String?</span></li>
+                                  <li class="list-group-item"><span class="text-info">reportDetail</span>  <span class="text-secondary">String?</span></li>
+                                  <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationchargedsl" class="text-success">AdjudicationChargeDsl</a></li>
+                                  <li id="collapse-adjudicationchargedsl" class="list-group-item panel-collapse collapse">
+                                    <ul class="list-group">                      </ul>
+                                  </li>
+                              </li>
+                            </ul>
+                          </li>
+                      </li>
+
+                      <li class="list-group-item"><a data-toggle="collapse" href="#collapse-hearing" class="text-primary">hearing</a></li>
+                      <li id="collapse-hearing" class="list-group-item panel-collapse collapse">
+                        <ul class="list-group">
+                          <li class="list-group-item"><span class="text-info">internalLocationId</span>  <span class="text-secondary">Long?</span></li>
+                          <li class="list-group-item"><span class="text-info">scheduleDate</span>  <span class="text-secondary">LocalDate?</span></li>
+                          <li class="list-group-item"><span class="text-info">scheduleTime</span>  <span class="text-secondary">LocalDateTime?</span></li>
+                          <li class="list-group-item"><span class="text-info">hearingDate</span>  <span class="text-secondary">LocalDate?</span></li>
+                          <li class="list-group-item"><span class="text-info">hearingTime</span>  <span class="text-secondary">LocalDateTime?</span></li>
+                          <li class="list-group-item"><span class="text-info">hearingStaff</span>  <span class="text-secondary">Staff?</span></li>
+                          <li class="list-group-item"><span class="text-info">hearingTypeCode</span>  <span class="text-secondary">String</span></li>
+                          <li class="list-group-item"><span class="text-info">eventStatusCode</span>  <span class="text-secondary">String</span></li>
+                          <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String</span></li>
+                          <li class="list-group-item"><span class="text-info">representativeText</span>  <span class="text-secondary">String</span></li>
+                          <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationhearingdsl" class="text-success">AdjudicationHearingDsl</a></li>
+                          <li id="collapse-adjudicationhearingdsl" class="list-group-item panel-collapse collapse">
+                            <ul class="list-group">
+                              <li class="list-group-item"><a data-toggle="collapse" href="#collapse-result" class="text-primary">result</a></li>
+                              <li id="collapse-result" class="list-group-item panel-collapse collapse">
+                                <ul class="list-group">
+                                  <li class="list-group-item"><span class="text-info">charge</span>  <span class="text-secondary">AdjudicationIncidentCharge</span></li>
+                                  <li class="list-group-item"><span class="text-info">pleaFindingCode</span>  <span class="text-secondary">String</span></li>
+                                  <li class="list-group-item"><span class="text-info">findingCode</span>  <span class="text-secondary">String</span></li>
+                                  <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationhearingresultdsl" class="text-success">AdjudicationHearingResultDsl</a></li>
+                                  <li id="collapse-adjudicationhearingresultdsl" class="list-group-item panel-collapse collapse">
+                                    <ul class="list-group">
+                                      <li class="list-group-item"><a data-toggle="collapse" href="#collapse-award" class="text-primary">award</a></li>
+                                      <li id="collapse-award" class="list-group-item panel-collapse collapse">
+                                        <ul class="list-group">
+                                          <li class="list-group-item"><span class="text-info">statusCode</span>  <span class="text-secondary">String</span></li>
+                                          <li class="list-group-item"><span class="text-info">sanctionDays</span>  <span class="text-secondary">Int?</span></li>
+                                          <li class="list-group-item"><span class="text-info">sanctionMonths</span>  <span class="text-secondary">Int?</span></li>
+                                          <li class="list-group-item"><span class="text-info">compensationAmount</span>  <span class="text-secondary">BigDecimal?</span></li>
+                                          <li class="list-group-item"><span class="text-info">sanctionCode</span>  <span class="text-secondary">String</span></li>
+                                          <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String?</span></li>
+                                          <li class="list-group-item"><span class="text-info">effectiveDate</span>  <span class="text-secondary">LocalDate</span></li>
+                                          <li class="list-group-item"><span class="text-info">statusDate</span>  <span class="text-secondary">LocalDate?</span></li>
+                                          <li class="list-group-item"><span class="text-info">consecutiveHearingResultAward</span>  <span class="text-secondary">AdjudicationHearingResultAward?</span></li>
+                                          <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationhearingresultawarddsl" class="text-success">AdjudicationHearingResultAwardDsl</a></li>
+                                          <li id="collapse-adjudicationhearingresultawarddsl" class="list-group-item panel-collapse collapse">
+                                            <ul class="list-group">                              </ul>
+                                          </li>
+                                      </li>
+                                    </ul>
+                                  </li>
+                              </li>
+                            </ul>
+                          </li>
+                      </li>
+                    </ul>
+                  </li>
+              </li>
+            </ul>
+          </li>
+          </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-investigation" class="text-primary">investigation</a></li>
+        <li id="collapse-investigation" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">investigator</span>  <span class="text-secondary">Staff</span></li>
+            <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">assignedDate</span>  <span class="text-secondary">LocalDate</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationinvestigationdsl" class="text-success">AdjudicationInvestigationDsl</a></li>
+            <li id="collapse-adjudicationinvestigationdsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-evidence" class="text-primary">evidence</a></li>
+                <li id="collapse-evidence" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">detail</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">type</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">date</span>  <span class="text-secondary">LocalDate</span></li>
+                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationevidencedsl" class="text-success">AdjudicationEvidenceDsl</a></li>
+                    <li id="collapse-adjudicationevidencedsl" class="list-group-item panel-collapse collapse">
+                      <ul class="list-group">                          </ul>
+                    </li>
+                </li>
+              </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-repair" class="text-primary">repair</a></li>
+        <li id="collapse-repair" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">repairType</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">repairCost</span>  <span class="text-secondary">BigDecimal?</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationrepairdsl" class="text-success">AdjudicationRepairDsl</a></li>
+            <li id="collapse-adjudicationrepairdsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">                  </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-offender" class="text-primary">offender</a></li>
+        <li id="collapse-offender" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">nomsId</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">lastName</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">firstName</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">birthDate</span>  <span class="text-secondary">LocalDate</span></li>
+            <li class="list-group-item"><span class="text-info">genderCode</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-offenderdsl" class="text-success">OffenderDsl</a></li>
+            <li id="collapse-offenderdsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-booking" class="text-primary">booking</a></li>
+                <li id="collapse-booking" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">bookingBeginDate</span>  <span class="text-secondary">LocalDateTime</span></li>
+                    <li class="list-group-item"><span class="text-info">active</span>  <span class="text-secondary">Boolean</span></li>
+                    <li class="list-group-item"><span class="text-info">inOutStatus</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">youthAdultCode</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">agencyLocationId</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-bookingdsl" class="text-success">BookingDsl</a></li>
+                    <li id="collapse-bookingdsl" class="list-group-item panel-collapse collapse">
+                      <ul class="list-group">
+                        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationParty" class="text-primary">adjudicationParty</a></li>
+                        <li id="collapse-adjudicationParty" class="list-group-item panel-collapse collapse">
+                          <ul class="list-group">
+                            <li class="list-group-item"><span class="text-info">incident</span>  <span class="text-secondary">AdjudicationIncident</span></li>
+                            <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><span class="text-info">role</span>  <span class="text-secondary">PartyRole</span></li>
+                            <li class="list-group-item"><span class="text-info">partyAddedDate</span>  <span class="text-secondary">LocalDate</span></li>
+                            <li class="list-group-item"><span class="text-info">staff</span>  <span class="text-secondary">Staff?</span></li>
+                            <li class="list-group-item"><span class="text-info">adjudicationNumber</span>  <span class="text-secondary">Long?</span></li>
+                            <li class="list-group-item"><span class="text-info">actionDecision</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationpartydsl" class="text-success">AdjudicationPartyDsl</a></li>
+                            <li id="collapse-adjudicationpartydsl" class="list-group-item panel-collapse collapse">
+                              <ul class="list-group">
+                                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-charge" class="text-primary">charge</a></li>
+                                <li id="collapse-charge" class="list-group-item panel-collapse collapse">
+                                  <ul class="list-group">
+                                    <li class="list-group-item"><span class="text-info">offenceCode</span>  <span class="text-secondary">String</span></li>
+                                    <li class="list-group-item"><span class="text-info">guiltyEvidence</span>  <span class="text-secondary">String?</span></li>
+                                    <li class="list-group-item"><span class="text-info">reportDetail</span>  <span class="text-secondary">String?</span></li>
+                                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationchargedsl" class="text-success">AdjudicationChargeDsl</a></li>
+                                    <li id="collapse-adjudicationchargedsl" class="list-group-item panel-collapse collapse">
+                                      <ul class="list-group">                          </ul>
+                                    </li>
+                                </li>
+                              </ul>
+                            </li>
+                        </li>
+
+                        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-hearing" class="text-primary">hearing</a></li>
+                        <li id="collapse-hearing" class="list-group-item panel-collapse collapse">
+                          <ul class="list-group">
+                            <li class="list-group-item"><span class="text-info">internalLocationId</span>  <span class="text-secondary">Long?</span></li>
+                            <li class="list-group-item"><span class="text-info">scheduleDate</span>  <span class="text-secondary">LocalDate?</span></li>
+                            <li class="list-group-item"><span class="text-info">scheduleTime</span>  <span class="text-secondary">LocalDateTime?</span></li>
+                            <li class="list-group-item"><span class="text-info">hearingDate</span>  <span class="text-secondary">LocalDate?</span></li>
+                            <li class="list-group-item"><span class="text-info">hearingTime</span>  <span class="text-secondary">LocalDateTime?</span></li>
+                            <li class="list-group-item"><span class="text-info">hearingStaff</span>  <span class="text-secondary">Staff?</span></li>
+                            <li class="list-group-item"><span class="text-info">hearingTypeCode</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><span class="text-info">eventStatusCode</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><span class="text-info">representativeText</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationhearingdsl" class="text-success">AdjudicationHearingDsl</a></li>
+                            <li id="collapse-adjudicationhearingdsl" class="list-group-item panel-collapse collapse">
+                              <ul class="list-group">
+                                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-result" class="text-primary">result</a></li>
+                                <li id="collapse-result" class="list-group-item panel-collapse collapse">
+                                  <ul class="list-group">
+                                    <li class="list-group-item"><span class="text-info">charge</span>  <span class="text-secondary">AdjudicationIncidentCharge</span></li>
+                                    <li class="list-group-item"><span class="text-info">pleaFindingCode</span>  <span class="text-secondary">String</span></li>
+                                    <li class="list-group-item"><span class="text-info">findingCode</span>  <span class="text-secondary">String</span></li>
+                                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationhearingresultdsl" class="text-success">AdjudicationHearingResultDsl</a></li>
+                                    <li id="collapse-adjudicationhearingresultdsl" class="list-group-item panel-collapse collapse">
+                                      <ul class="list-group">
+                                        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-award" class="text-primary">award</a></li>
+                                        <li id="collapse-award" class="list-group-item panel-collapse collapse">
+                                          <ul class="list-group">
+                                            <li class="list-group-item"><span class="text-info">statusCode</span>  <span class="text-secondary">String</span></li>
+                                            <li class="list-group-item"><span class="text-info">sanctionDays</span>  <span class="text-secondary">Int?</span></li>
+                                            <li class="list-group-item"><span class="text-info">sanctionMonths</span>  <span class="text-secondary">Int?</span></li>
+                                            <li class="list-group-item"><span class="text-info">compensationAmount</span>  <span class="text-secondary">BigDecimal?</span></li>
+                                            <li class="list-group-item"><span class="text-info">sanctionCode</span>  <span class="text-secondary">String</span></li>
+                                            <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String?</span></li>
+                                            <li class="list-group-item"><span class="text-info">effectiveDate</span>  <span class="text-secondary">LocalDate</span></li>
+                                            <li class="list-group-item"><span class="text-info">statusDate</span>  <span class="text-secondary">LocalDate?</span></li>
+                                            <li class="list-group-item"><span class="text-info">consecutiveHearingResultAward</span>  <span class="text-secondary">AdjudicationHearingResultAward?</span></li>
+                                            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationhearingresultawarddsl" class="text-success">AdjudicationHearingResultAwardDsl</a></li>
+                                            <li id="collapse-adjudicationhearingresultawarddsl" class="list-group-item panel-collapse collapse">
+                                              <ul class="list-group">                                  </ul>
+                                            </li>
+                                        </li>
+                                      </ul>
+                                    </li>
+                                </li>
+                              </ul>
+                            </li>
+                        </li>
+                      </ul>
+                    </li>
+                </li>
+              </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-investigation" class="text-primary">investigation</a></li>
+        <li id="collapse-investigation" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">investigator</span>  <span class="text-secondary">Staff</span></li>
+            <li class="list-group-item"><span class="text-info">comment</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">assignedDate</span>  <span class="text-secondary">LocalDate</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationinvestigationdsl" class="text-success">AdjudicationInvestigationDsl</a></li>
+            <li id="collapse-adjudicationinvestigationdsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-evidence" class="text-primary">evidence</a></li>
+                <li id="collapse-evidence" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">detail</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">type</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">date</span>  <span class="text-secondary">LocalDate</span></li>
+                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjudicationevidencedsl" class="text-success">AdjudicationEvidenceDsl</a></li>
+                    <li id="collapse-adjudicationevidencedsl" class="list-group-item panel-collapse collapse">
+                      <ul class="list-group">                              </ul>
+                    </li>
+                </li>
+              </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjustment" class="text-primary">adjustment</a></li>
+        <li id="collapse-adjustment" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">adjustmentTypeCode</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">adjustmentDate</span>  <span class="text-secondary">LocalDate</span></li>
+            <li class="list-group-item"><span class="text-info">createdDate</span>  <span class="text-secondary">LocalDateTime</span></li>
+            <li class="list-group-item"><span class="text-info">adjustmentNumberOfDays</span>  <span class="text-secondary">Long</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-offenderkeydateadjustmentdsl" class="text-success">OffenderKeyDateAdjustmentDsl</a></li>
+            <li id="collapse-offenderkeydateadjustmentdsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">                      </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-courseAllocation" class="text-primary">courseAllocation</a></li>
+        <li id="collapse-courseAllocation" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">courseActivity</span>  <span class="text-secondary">CourseActivity</span></li>
+            <li class="list-group-item"><span class="text-info">startDate</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">programStatusCode</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">endDate</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">endReasonCode</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">endComment</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-courseallocationdsl" class="text-success">CourseAllocationDsl</a></li>
+            <li id="collapse-courseallocationdsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-courseAttendance" class="text-primary">courseAttendance</a></li>
+                <li id="collapse-courseAttendance" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">courseSchedule</span>  <span class="text-secondary">CourseSchedule</span></li>
+                    <li class="list-group-item"><span class="text-info">eventId</span>  <span class="text-secondary">Long</span></li>
+                    <li class="list-group-item"><span class="text-info">eventStatusCode</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">toInternalLocationId</span>  <span class="text-secondary">Long?</span></li>
+                    <li class="list-group-item"><span class="text-info">outcomeReasonCode</span>  <span class="text-secondary">String?</span></li>
+                    <li class="list-group-item"><span class="text-info">paidTransactionId</span>  <span class="text-secondary">Long?</span></li>                        </ul>
+                </li>
+            </li>
+
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-payBand" class="text-primary">payBand</a></li>
+            <li id="collapse-payBand" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><span class="text-info">startDate</span>  <span class="text-secondary">String</span></li>
+                <li class="list-group-item"><span class="text-info">endDate</span>  <span class="text-secondary">String?</span></li>
+                <li class="list-group-item"><span class="text-info">payBandCode</span>  <span class="text-secondary">String</span></li>                        </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-incentive" class="text-primary">incentive</a></li>
+        <li id="collapse-incentive" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">iepLevelCode</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">userId</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">sequence</span>  <span class="text-secondary">Long</span></li>
+            <li class="list-group-item"><span class="text-info">commentText</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">auditModuleName</span>  <span class="text-secondary">String?</span></li>
+            <li class="list-group-item"><span class="text-info">iepDateTime</span>  <span class="text-secondary">LocalDateTime</span></li>                    </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-sentence" class="text-primary">sentence</a></li>
+        <li id="collapse-sentence" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">calculationType</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">category</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">startDate</span>  <span class="text-secondary">LocalDate</span></li>
+            <li class="list-group-item"><span class="text-info">status</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-offendersentencedsl" class="text-success">OffenderSentenceDsl</a></li>
+            <li id="collapse-offendersentencedsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-adjustment" class="text-primary">adjustment</a></li>
+                <li id="collapse-adjustment" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">adjustmentTypeCode</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">adjustmentDate</span>  <span class="text-secondary">LocalDate</span></li>
+                    <li class="list-group-item"><span class="text-info">createdDate</span>  <span class="text-secondary">LocalDateTime</span></li>
+                    <li class="list-group-item"><span class="text-info">adjustmentNumberOfDays</span>  <span class="text-secondary">Long</span></li>
+                    <li class="list-group-item"><span class="text-info">keyDateAdjustmentId</span>  <span class="text-secondary">Long?</span></li>
+                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-offendersentenceadjustmentdsl" class="text-success">OffenderSentenceAdjustmentDsl</a></li>
+                    <li id="collapse-offendersentenceadjustmentdsl" class="list-group-item panel-collapse collapse">
+                      <ul class="list-group">                          </ul>
+                    </li>
+                </li>
+              </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-programService" class="text-primary">programService</a></li>
+        <li id="collapse-programService" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">programCode</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">programId</span>  <span class="text-secondary">Long</span></li>
+            <li class="list-group-item"><span class="text-info">description</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">active</span>  <span class="text-secondary">Boolean</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-programservicedsl" class="text-success">ProgramServiceDsl</a></li>
+            <li id="collapse-programservicedsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-courseActivity" class="text-primary">courseActivity</a></li>
+                <li id="collapse-courseActivity" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">courseActivityId</span>  <span class="text-secondary">Long</span></li>
+                    <li class="list-group-item"><span class="text-info">code</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">prisonId</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">description</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">capacity</span>  <span class="text-secondary">Int</span></li>
+                    <li class="list-group-item"><span class="text-info">active</span>  <span class="text-secondary">Boolean</span></li>
+                    <li class="list-group-item"><span class="text-info">startDate</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">endDate</span>  <span class="text-secondary">String?</span></li>
+                    <li class="list-group-item"><span class="text-info">minimumIncentiveLevelCode</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">internalLocationId</span>  <span class="text-secondary">Long?</span></li>
+                    <li class="list-group-item"><span class="text-info">excludeBankHolidays</span>  <span class="text-secondary">Boolean</span></li>
+                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-courseactivitydsl" class="text-success">CourseActivityDsl</a></li>
+                    <li id="collapse-courseactivitydsl" class="list-group-item panel-collapse collapse">
+                      <ul class="list-group">
+                        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-courseSchedule" class="text-primary">courseSchedule</a></li>
+                        <li id="collapse-courseSchedule" class="list-group-item panel-collapse collapse">
+                          <ul class="list-group">
+                            <li class="list-group-item"><span class="text-info">courseScheduleId</span>  <span class="text-secondary">Long</span></li>
+                            <li class="list-group-item"><span class="text-info">scheduleDate</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><span class="text-info">startTime</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><span class="text-info">endTime</span>  <span class="text-secondary">String</span></li>
+                            <li class="list-group-item"><span class="text-info">slotCategory</span>  <span class="text-secondary">SlotCategory</span></li>
+                            <li class="list-group-item"><span class="text-info">scheduleStatus</span>  <span class="text-secondary">String</span></li>                    </ul>
+                        </li>
+                    </li>
+
+                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-courseScheduleRule" class="text-primary">courseScheduleRule</a></li>
+                    <li id="collapse-courseScheduleRule" class="list-group-item panel-collapse collapse">
+                      <ul class="list-group">
+                        <li class="list-group-item"><span class="text-info">id</span>  <span class="text-secondary">Long</span></li>
+                        <li class="list-group-item"><span class="text-info">startTimeHours</span>  <span class="text-secondary">Int</span></li>
+                        <li class="list-group-item"><span class="text-info">startTimeMinutes</span>  <span class="text-secondary">Int</span></li>
+                        <li class="list-group-item"><span class="text-info">endTimeHours</span>  <span class="text-secondary">Int</span></li>
+                        <li class="list-group-item"><span class="text-info">endTimeMinutes</span>  <span class="text-secondary">Int</span></li>
+                        <li class="list-group-item"><span class="text-info">monday</span>  <span class="text-secondary">Boolean</span></li>
+                        <li class="list-group-item"><span class="text-info">tuesday</span>  <span class="text-secondary">Boolean</span></li>
+                        <li class="list-group-item"><span class="text-info">wednesday</span>  <span class="text-secondary">Boolean</span></li>
+                        <li class="list-group-item"><span class="text-info">thursday</span>  <span class="text-secondary">Boolean</span></li>
+                        <li class="list-group-item"><span class="text-info">friday</span>  <span class="text-secondary">Boolean</span></li>
+                        <li class="list-group-item"><span class="text-info">saturday</span>  <span class="text-secondary">Boolean</span></li>
+                        <li class="list-group-item"><span class="text-info">sunday</span>  <span class="text-secondary">Boolean</span></li>                    </ul>
+                    </li>
+                </li>
+
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-payRate" class="text-primary">payRate</a></li>
+                <li id="collapse-payRate" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">iepLevelCode</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">payBandCode</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">startDate</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">endDate</span>  <span class="text-secondary">String?</span></li>
+                    <li class="list-group-item"><span class="text-info">halfDayRate</span>  <span class="text-secondary">Double</span></li>                    </ul>
+                </li>
+            </li>
+          </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+
+        <li class="list-group-item"><a data-toggle="collapse" href="#collapse-staff" class="text-primary">staff</a></li>
+        <li id="collapse-staff" class="list-group-item panel-collapse collapse">
+          <ul class="list-group">
+            <li class="list-group-item"><span class="text-info">firstName</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><span class="text-info">lastName</span>  <span class="text-secondary">String</span></li>
+            <li class="list-group-item"><a data-toggle="collapse" href="#collapse-staffdsl" class="text-success">StaffDsl</a></li>
+            <li id="collapse-staffdsl" class="list-group-item panel-collapse collapse">
+              <ul class="list-group">
+                <li class="list-group-item"><a data-toggle="collapse" href="#collapse-account" class="text-primary">account</a></li>
+                <li id="collapse-account" class="list-group-item panel-collapse collapse">
+                  <ul class="list-group">
+                    <li class="list-group-item"><span class="text-info">username</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><span class="text-info">type</span>  <span class="text-secondary">String</span></li>
+                    <li class="list-group-item"><a data-toggle="collapse" href="#collapse-staffuseraccountdsl" class="text-success">StaffUserAccountDsl</a></li>
+                    <li id="collapse-staffuseraccountdsl" class="list-group-item panel-collapse collapse">
+                      <ul class="list-group">                  </ul>
+                    </li>
+                </li>
+              </ul>
+            </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+        </li>
+        </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
