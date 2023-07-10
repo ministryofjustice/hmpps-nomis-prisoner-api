@@ -17,6 +17,18 @@ annotation class NewIncentiveDslMarker
 @NomisDataDslMarker
 interface NewIncentiveDsl
 
+interface NewIncentiveDslApi {
+  @NewIncentiveDslMarker
+  fun incentive(
+    iepLevelCode: String = "ENT",
+    userId: String? = null,
+    sequence: Long = 1,
+    commentText: String = "comment",
+    auditModuleName: String? = null,
+    iepDateTime: LocalDateTime = LocalDateTime.now(),
+  ): Incentive
+}
+
 @Component
 class NewIncentiveBuilderRepository(
   private val incentiveRepository: IncentiveRepository,

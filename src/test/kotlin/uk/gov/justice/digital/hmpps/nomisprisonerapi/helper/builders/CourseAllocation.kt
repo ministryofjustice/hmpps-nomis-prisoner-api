@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
@@ -18,24 +17,19 @@ import java.time.LocalDate
 annotation class CourseAllocationDslMarker
 
 @NomisDataDslMarker
-interface CourseAllocationDsl {
+interface CourseAllocationDsl : CourseAttendanceDslApi, CourseAllocationPayBandDslApi
 
-  @CourseAllocationPayBandDslMarker
-  fun payBand(
-    startDate: String = "2022-10-31",
+interface CourseAllocationDslApi {
+  @CourseAllocationDslMarker
+  fun courseAllocation(
+    courseActivity: CourseActivity,
+    startDate: String? = "2022-10-31",
+    programStatusCode: String = "ALLOC",
     endDate: String? = null,
-    payBandCode: String = "5",
-  ): OffenderProgramProfilePayBand
-
-  @CourseAttendanceDslMarker
-  fun courseAttendance(
-    courseSchedule: CourseSchedule,
-    eventId: Long = 0,
-    eventStatusCode: String = "SCH",
-    toInternalLocationId: Long? = -8,
-    outcomeReasonCode: String? = null,
-    paidTransactionId: Long? = null,
-  ): OffenderCourseAttendance
+    endReasonCode: String? = null,
+    endComment: String? = null,
+    dsl: CourseAllocationDsl.() -> Unit = { payBand() },
+  ): OffenderProgramProfile
 }
 
 @Component

@@ -114,7 +114,7 @@ class NomisData(
 }
 
 @NomisDataDslMarker
-interface NomisDataDsl {
+interface NomisDataDsl : ProgramServiceDslApi, NewOffenderDslApi {
   @StaffDslMarker
   fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: StaffDsl.() -> Unit = {}): Staff
 
@@ -141,26 +141,6 @@ interface NomisDataDsl {
     genderCode: String = "M",
     dsl: OffenderDsl.() -> Unit = {},
   ): Offender
-
-  // This allows us to slowly migrate from the old DSL to the new one. Once migration is complete we can delete @OffenderDslMarker then rename @NewOffenderDslMarker
-  @NewOffenderDslMarker
-  fun newOffender(
-    nomsId: String = "A5194DY",
-    lastName: String = "NTHANDA",
-    firstName: String = "LEKAN",
-    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
-    genderCode: String = "M",
-    dsl: NewOffenderDsl.() -> Unit = {},
-  ): Offender
-
-  @ProgramServiceDslMarker
-  fun programService(
-    programCode: String = "INTTEST",
-    programId: Long = 20,
-    description: String = "test program",
-    active: Boolean = true,
-    dsl: ProgramServiceDsl.() -> Unit = {},
-  ): ProgramService
 }
 
 @NomisDataDslMarker
