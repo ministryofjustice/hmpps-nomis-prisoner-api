@@ -22,7 +22,7 @@ data class OffenderProgramProfilePayBandId(
   val offenderProgramProfile: OffenderProgramProfile,
 
   @Column(nullable = false)
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 ) : Serializable
 
 @Entity

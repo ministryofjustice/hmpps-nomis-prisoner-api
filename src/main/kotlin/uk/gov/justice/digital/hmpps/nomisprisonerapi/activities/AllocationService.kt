@@ -72,11 +72,12 @@ class AllocationService(
       ?: newAllocation(request, offenderBooking, courseActivity, requestedPayBand)
 
     return allocation.apply {
+      startDate = if (allocation.startDate > LocalDate.now()) request.startDate else allocation.startDate
       endDate = request.endDate
       endReason = requestedEndReason
       suspended = request.suspended ?: false
       endComment = updateEndComment(request)
-      updatePayBands(requestedPayBand)
+      updatePayBands(requestedPayBand, request)
       programStatus = findProgramStatus(request.programStatusCode)
     }
   }
@@ -119,35 +120,48 @@ class AllocationService(
     payBandRepository.findByIdOrNull(PayBand.pk(payBandCode))
       ?: throw BadDataException("Pay band code $payBandCode does not exist")
 
-  private fun OffenderProgramProfile.updatePayBands(requestedPayBand: PayBand) {
-    val activePayBand = payBands.first { it.endDate == null }
-    // if we have requested a change to the pay band
-    if (activePayBand.payBand.code != requestedPayBand.code) {
-      val payBandEndingToday = payBands.find { it.endDate == LocalDate.now() }
-      // reinstate the pay band that is ending today
-      if (requestedPayBand.code == payBandEndingToday?.payBand?.code) {
-        payBands.remove(activePayBand)
-        payBandEndingToday.endDate = null
+  private fun OffenderProgramProfile.updatePayBands(requestedPayBand: PayBand, request: UpsertAllocationRequest) {
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+    val expiredPayBand = payBands.filter { it.endDate != null }.filter { it.endDate!! < today }.maxByOrNull { it.id.startDate }
+    val activePayBand = payBands.firstOrNull { it.id.startDate <= today && (it.endDate == null || it.endDate!! >= today) }
+    val futurePayBand = payBands.firstOrNull { it.id.startDate > today }
+    when {
+      // if no active pay band then add a new pay band from today
+      activePayBand == null && futurePayBand == null -> {
+        payBands.add(payBand(requestedPayBand, today, request.endDate))
       }
-      // update the active pay band that hasn't started yet
-      else if (activePayBand.id.startDate > LocalDate.now()) {
-        activePayBand.payBand = requestedPayBand
+      // if an active pay band is changed then it is end dated to today and the new pay band becomes effective tomorrow
+      activePayBand != null && futurePayBand == null && requestedPayBand.code != activePayBand.payBand.code -> {
+        activePayBand.endDate = today
+        payBands.add(payBand(requestedPayBand, tomorrow, request.endDate))
       }
-      // end the active pay band and add a new pay band starting tomorrow
-      else {
-        activePayBand.endDate = LocalDate.now()
-        payBands.add(
-          OffenderProgramProfilePayBand(
-            id = OffenderProgramProfilePayBandId(
-              offenderProgramProfile = this,
-              startDate = LocalDate.now().plusDays(1),
-            ),
-            payBand = requestedPayBand,
-          ),
-        )
+      // if the active pay band is not changed then the only thing that can be updated is the end date
+      activePayBand != null && futurePayBand == null -> {
+        activePayBand.endDate = request.endDate
+      }
+      // pay bands not yet active should be replaced with the new request
+      expiredPayBand == null && activePayBand == null && futurePayBand != null -> {
+        payBands.remove(futurePayBand)
+        payBands.add(payBand(requestedPayBand, request.startDate, request.endDate))
+      }
+      // pay bands not yet active with an existing expired/active pay band can update everything apart from their start date
+      futurePayBand != null -> {
+        futurePayBand.payBand = requestedPayBand
+        futurePayBand.endDate = request.endDate
       }
     }
   }
+
+  private fun OffenderProgramProfile.payBand(payBand: PayBand, startDate: LocalDate, endDate: LocalDate?) =
+    OffenderProgramProfilePayBand(
+      id = OffenderProgramProfilePayBandId(
+        offenderProgramProfile = this,
+        startDate = startDate,
+      ),
+      payBand = payBand,
+      endDate = endDate,
+    )
 
   private fun updateEndComment(request: UpsertAllocationRequest) =
     if (request.endDate != null) {
