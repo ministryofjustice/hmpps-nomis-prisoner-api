@@ -90,7 +90,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             payRate()
           }
         }
-        newOffender(nomsId = "A1234AR") {
+        offender(nomsId = "A1234AR") {
           offenderBooking = booking(agencyLocationId = "LEI") {
             allocation = courseAllocation(courseActivity)
           }
@@ -179,7 +179,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if creating attendance for offender in wrong prison`() {
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234TU") {
+          offender(nomsId = "A1234TU") {
             offenderBooking = booking(agencyLocationId = "MDI") {
               courseAllocation(courseActivity)
             }
@@ -201,7 +201,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
               payRate()
             }
           }
-          newOffender(nomsId = "A1234XX") {
+          offender(nomsId = "A1234XX") {
             offenderBooking = booking(agencyLocationId = "LEI")
           }
         }
@@ -217,7 +217,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should return bad request if attendance already paid`() {
         lateinit var attendance: OffenderCourseAttendance
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234AT") {
+          offender(nomsId = "A1234AT") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               allocation = courseAllocation(courseActivity) {
                 attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
@@ -244,7 +244,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
               payRate()
             }
           }
-          newOffender(nomsId = "A1234AR") {
+          offender(nomsId = "A1234AR") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               allocation = courseAllocation(courseActivity, programStatusCode = "END")
             }
@@ -403,7 +403,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if the prisoner has multiple allocations to the course`() {
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234RR") {
+          offender(nomsId = "A1234RR") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, programStatusCode = "END", endDate = "2022-10-31")
               courseAllocation(courseActivity, startDate = "2022-11-01")
@@ -456,7 +456,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234AR") {
+          offender(nomsId = "A1234AR") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               allocation = courseAllocation(courseActivity) {
                 payBand()
@@ -503,7 +503,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if updating attendance for offender in wrong prison`() {
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234TU") {
+          offender(nomsId = "A1234TU") {
             offenderBooking = booking(agencyLocationId = "MDI") {
               allocation = courseAllocation(courseActivity) {
                 payBand()
@@ -525,7 +525,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if updating attendance and offender has been deallocated`() {
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234VV") {
+          offender(nomsId = "A1234VV") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               allocation = courseAllocation(courseActivity, programStatusCode = "END") {
                 payBand()
@@ -639,7 +639,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should not update a completed attendance status back to scheduled`() {
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234AR") {
+          offender(nomsId = "A1234AR") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               allocation = courseAllocation(courseActivity) {
                 payBand()
@@ -672,7 +672,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `duplicate attendance can be worked around by deleting one of them`() {
         lateinit var duplicate: OffenderCourseAttendance
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234AR") {
+          offender(nomsId = "A1234AR") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               allocation = courseAllocation(courseActivity) {
                 payBand()

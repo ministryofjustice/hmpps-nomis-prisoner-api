@@ -15,8 +15,8 @@ import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.KeyDateAdjustmentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceAdjustmentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceBuilder
@@ -38,7 +38,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createPrisoner() {
     prisoner = repository.save(
-      OffenderBuilder(nomsId = "A1234TT")
+      LegacyOffenderBuilder(nomsId = "A1234TT")
         .withBooking(
           OffenderBookingBuilder()
             .withSentences(SentenceBuilder()),
@@ -61,7 +61,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisoner() {
       anotherPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1234TX")
+        LegacyOffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
               .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
@@ -399,7 +399,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisoner() {
       anotherPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1239TX")
+        LegacyOffenderBuilder(nomsId = "A1239TX")
           .withBooking(
             OffenderBookingBuilder()
               .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
@@ -698,7 +698,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisoner() {
       anotherPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1239TX")
+        LegacyOffenderBuilder(nomsId = "A1239TX")
           .withBooking(
             OffenderBookingBuilder()
               .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
@@ -832,7 +832,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisoner() {
       dummyPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1238TX")
+        LegacyOffenderBuilder(nomsId = "A1238TX")
           .withBooking(
             OffenderBookingBuilder()
               .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
@@ -842,7 +842,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       val keyDateAdjustmentId = dummyPrisoner.bookings.first().keyDateAdjustments.first().id
 
       anotherPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1234TX")
+        LegacyOffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
               .withSentences(
@@ -1191,7 +1191,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       internal fun createPrisoner() {
         anotherPrisoner = repository.save(
-          OffenderBuilder(nomsId = "A1234TT")
+          LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
                 .withSentences(SentenceBuilder(), SentenceBuilder().withAdjustment()),
@@ -1304,7 +1304,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisoner() {
       anotherPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1239TX")
+        LegacyOffenderBuilder(nomsId = "A1239TX")
           .withBooking(
             OffenderBookingBuilder()
               .withSentences(SentenceBuilder().withAdjustment()),
@@ -1583,7 +1583,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisoner() {
       anotherPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1234TX")
+        LegacyOffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
               .withSentences(SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(adjustmentTypeCode = "UR"))),
@@ -1702,7 +1702,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisoner() {
       anotherPrisoner = repository.save(
-        OffenderBuilder(nomsId = "A1234TX")
+        LegacyOffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
               .withSentences(

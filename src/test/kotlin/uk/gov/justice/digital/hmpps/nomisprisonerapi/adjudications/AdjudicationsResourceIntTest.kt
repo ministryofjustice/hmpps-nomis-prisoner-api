@@ -6,19 +6,16 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.DataRef
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_CONTROL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_REPORTING_OFFICER
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.SUSPECT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.VICTIM
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.dataRef
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.testData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -32,6 +29,9 @@ const val adjudicationNumber = 9000123L
 class AdjudicationsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @DisplayName("GET /adjudications/ids")
   @Nested
@@ -94,7 +94,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithAdjudication() {
-        testData(repository) {
+        nomisDataBuilder.build {
           staff = staff {}
           staffVictim = staff {}
           prisonerVictim = offender { booking {} }
@@ -374,7 +374,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisonerWithAdjudication() {
-      testData(repository) {
+      nomisDataBuilder.build {
         staff = staff(firstName = "SIMON", lastName = "BROWN")
         staffInvestigator = staff(firstName = "ISLA", lastName = "INVESTIGATOR")
         staffWitness = staff(firstName = "KOFI", lastName = "WITNESS")
@@ -412,19 +412,15 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = "A1234TT") {
           booking {
             adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
-              val hoochCharge: DataRef<AdjudicationIncidentCharge> = dataRef()
-              val deadSwanCharge: DataRef<AdjudicationIncidentCharge> = dataRef()
-              charge(
+              val hoochCharge = charge(
                 offenceCode = "51:1N",
                 guiltyEvidence = "HOOCH",
                 reportDetail = "1234/123",
-                ref = hoochCharge,
               )
-              charge(
+              val deadSwanCharge = charge(
                 offenceCode = "51:3",
                 guiltyEvidence = "DEAD SWAN",
                 reportDetail = null,
-                ref = deadSwanCharge,
               )
               hearing(
                 internalLocationId = -41,
@@ -435,11 +431,11 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                 hearingStaff = staff,
               ) {
                 result(
-                  chargeRef = hoochCharge,
+                  charge = hoochCharge,
                   pleaFindingCode = "NOT_GUILTY",
                   findingCode = "PROVED",
                 ) {
-                  award(
+                  val firstAward = award(
                     statusCode = "SUSPENDED",
                     sanctionCode = "REMACT",
                     effectiveDate = LocalDate.parse("2023-01-03"),
@@ -458,11 +454,11 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                     sanctionMonths = 3,
                     sanctionDays = 4,
                     compensationAmount = BigDecimal.valueOf(14.2),
-                    consecutiveSanctionSeq = 0,
+                    consecutiveHearingResultAward = firstAward,
                   )
                 }
                 result(
-                  chargeRef = deadSwanCharge,
+                  charge = deadSwanCharge,
                   pleaFindingCode = "UNFIT",
                   findingCode = "NOT_PROCEED",
                 )
@@ -672,6 +668,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+          .jsonPath("hearings[0]").exists()
           .jsonPath("hearings[0].type.code").isEqualTo("GOV")
           .jsonPath("hearings[0].type.description").isEqualTo("Governor's Hearing")
           .jsonPath("hearings[0].scheduleDate").isEqualTo("2023-01-02")

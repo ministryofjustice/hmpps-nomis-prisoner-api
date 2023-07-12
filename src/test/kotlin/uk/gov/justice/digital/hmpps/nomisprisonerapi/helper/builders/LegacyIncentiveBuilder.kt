@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDateTime
 
-class IncentiveBuilder(
+class LegacyIncentiveBuilder(
   var iepLevel: String = "ENT",
   var userId: String? = null,
   var sequence: Long = 1,

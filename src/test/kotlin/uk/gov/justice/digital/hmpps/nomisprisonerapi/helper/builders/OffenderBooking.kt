@@ -2,34 +2,37 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class NewBookingDslMarker
+annotation class BookingDslMarker
 
 @NomisDataDslMarker
-interface NewBookingDsl : CourseAllocationDslApi, NewIncentiveDslApi
+interface BookingDsl : CourseAllocationDslApi, IncentiveDslApi, AdjudicationIncidentPartyDslApi
 
-interface NewBookingDslApi {
-  @NewBookingDslMarker
+interface BookingDslApi {
+  @BookingDslMarker
   fun booking(
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
     active: Boolean = true,
     inOutStatus: String = "IN",
     youthAdultCode: String = "N",
     agencyLocationId: String = "BXI",
-    dsl: NewBookingDsl.() -> Unit = {},
+    dsl: BookingDsl.() -> Unit = {},
   ): OffenderBooking
 }
 
 @Component
-class NewBookingBuilderRepository(
+class BookingBuilderRepository(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
@@ -38,19 +41,26 @@ class NewBookingBuilderRepository(
 }
 
 @Component
-class NewBookingBuilderFactory(
-  private val repository: NewBookingBuilderRepository,
+class BookingBuilderFactory(
+  private val repository: BookingBuilderRepository,
   private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory,
-  private val incentiveBuilderFactory: NewIncentiveBuilderFactory,
+  private val incentiveBuilderFactory: IncentiveBuilderFactory,
+  private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
 ) {
-  fun builder() = NewBookingBuilder(repository, courseAllocationBuilderFactory, incentiveBuilderFactory)
+  fun builder() = BookingBuilder(
+    repository,
+    courseAllocationBuilderFactory,
+    incentiveBuilderFactory,
+    adjudicationPartyBuilderFactory,
+  )
 }
 
-class NewBookingBuilder(
-  private val repository: NewBookingBuilderRepository,
+class BookingBuilder(
+  private val repository: BookingBuilderRepository,
   private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory,
-  private val incentiveBuilderFactory: NewIncentiveBuilderFactory,
-) : NewBookingDsl {
+  private val incentiveBuilderFactory: IncentiveBuilderFactory,
+  private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
+) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
 
@@ -114,4 +124,31 @@ class NewBookingBuilder(
         iepDateTime,
       )
       .also { offenderBooking.incentives += it }
+
+  override fun adjudicationParty(
+    incident: AdjudicationIncident,
+    comment: String,
+    role: PartyRole,
+    partyAddedDate: LocalDate,
+    staff: Staff?,
+    adjudicationNumber: Long?,
+    actionDecision: String,
+    dsl: AdjudicationPartyDsl.() -> Unit,
+  ) =
+    adjudicationPartyBuilderFactory.builder().let { builder ->
+      builder.build(
+        adjudicationNumber = adjudicationNumber,
+        comment = comment,
+        staff = staff,
+        incidentRole = role.code,
+        actionDecision = actionDecision,
+        partyAddedDate = partyAddedDate,
+        incident = incident,
+        offenderBooking = offenderBooking,
+        whenCreated = LocalDateTime.now(),
+        index = incident.parties.size + 1,
+      )
+        .also { incident.parties += it }
+        .also { builder.apply(dsl) }
+    }
 }
