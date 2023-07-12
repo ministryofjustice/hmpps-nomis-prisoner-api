@@ -12,6 +12,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import java.math.BigDecimal
 import java.time.LocalDate
 
+@DslMarker
+annotation class AdjudicationHearingResultAwardDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationHearingResultAwardDsl
+
 @Component
 class AdjudicationHearingResultAwardBuilderFactory(
   private val repository: AdjudicationHearingResultAwardBuilderRepository,

@@ -4,6 +4,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -14,18 +15,16 @@ import java.time.LocalDateTime
 annotation class OffenderDslMarker
 
 @NomisDataDslMarker
-interface OffenderDsl : BookingDslApi
-
-interface OffenderDslApi {
-  @OffenderDslMarker
-  fun offender(
-    nomsId: String = "A5194DY",
-    lastName: String = "NTHANDA",
-    firstName: String = "LEKAN",
-    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
-    genderCode: String = "M",
-    dsl: OffenderDsl.() -> Unit = {},
-  ): Offender
+interface OffenderDsl {
+  @BookingDslMarker
+  fun booking(
+    bookingBeginDate: LocalDateTime = LocalDateTime.now(),
+    active: Boolean = true,
+    inOutStatus: String = "IN",
+    youthAdultCode: String = "N",
+    agencyLocationId: String = "BXI",
+    dsl: BookingDsl.() -> Unit = {},
+  ): OffenderBooking
 }
 
 @Component

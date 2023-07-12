@@ -2,11 +2,16 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -17,18 +22,39 @@ import java.time.LocalDateTime
 annotation class BookingDslMarker
 
 @NomisDataDslMarker
-interface BookingDsl : CourseAllocationDslApi, IncentiveDslApi, AdjudicationIncidentPartyDslApi
+interface BookingDsl {
+  @AdjudicationPartyDslMarker
+  fun adjudicationParty(
+    incident: AdjudicationIncident,
+    comment: String = "They witnessed everything",
+    role: PartyRole = WITNESS,
+    partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
+    staff: Staff? = null,
+    adjudicationNumber: Long? = null,
+    actionDecision: String = IncidentDecisionAction.NO_FURTHER_ACTION_CODE,
+    dsl: AdjudicationPartyDsl.() -> Unit = {},
+  ): AdjudicationIncidentParty
 
-interface BookingDslApi {
-  @BookingDslMarker
-  fun booking(
-    bookingBeginDate: LocalDateTime = LocalDateTime.now(),
-    active: Boolean = true,
-    inOutStatus: String = "IN",
-    youthAdultCode: String = "N",
-    agencyLocationId: String = "BXI",
-    dsl: BookingDsl.() -> Unit = {},
-  ): OffenderBooking
+  @IncentiveDslMarker
+  fun incentive(
+    iepLevelCode: String = "ENT",
+    userId: String? = null,
+    sequence: Long = 1,
+    commentText: String = "comment",
+    auditModuleName: String? = null,
+    iepDateTime: LocalDateTime = LocalDateTime.now(),
+  ): Incentive
+
+  @CourseAllocationDslMarker
+  fun courseAllocation(
+    courseActivity: CourseActivity,
+    startDate: String? = "2022-10-31",
+    programStatusCode: String = "ALLOC",
+    endDate: String? = null,
+    endReasonCode: String? = null,
+    endComment: String? = null,
+    dsl: CourseAllocationDsl.() -> Unit = { payBand() },
+  ): OffenderProgramProfile
 }
 
 @Component
@@ -36,7 +62,7 @@ class BookingBuilderRepository(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
-  fun save(offenderBooking: OffenderBooking) = offenderBookingRepository.save(offenderBooking)
+  fun save(offenderBooking: OffenderBooking): OffenderBooking = offenderBookingRepository.save(offenderBooking)
   fun lookupAgencyLocation(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 }
 

@@ -2,10 +2,14 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
@@ -15,6 +19,32 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+@DslMarker
+annotation class AdjudicationIncidentDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationIncidentDsl {
+  @AdjudicationRepairDslMarker
+  fun repair(
+    repairType: String = "CLEA",
+    comment: String? = null,
+    repairCost: BigDecimal? = null,
+    dsl: AdjudicationRepairDsl.() -> Unit = {},
+  ): AdjudicationIncidentRepair
+
+  @AdjudicationPartyDslMarker
+  fun party(
+    comment: String = "They witnessed everything",
+    role: PartyRole = WITNESS,
+    partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
+    offenderBooking: OffenderBooking? = null,
+    staff: Staff? = null,
+    adjudicationNumber: Long? = null,
+    actionDecision: String = IncidentDecisionAction.NO_FURTHER_ACTION_CODE,
+    dsl: AdjudicationPartyDsl.() -> Unit = {},
+  ): AdjudicationIncidentParty
+}
 
 @Component
 class AdjudicationIncidentBuilderFactory(

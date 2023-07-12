@@ -9,6 +9,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 
+@DslMarker
+annotation class AdjudicationRepairDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationRepairDsl
+
 @Component
 class AdjudicationRepairBuilderFactory(
   private val repository: AdjudicationRepairBuilderRepository,

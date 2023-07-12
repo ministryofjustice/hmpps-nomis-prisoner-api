@@ -11,17 +11,6 @@ annotation class ProgramServiceDslMarker
 @NomisDataDslMarker
 interface ProgramServiceDsl : CourseActivityDslApi
 
-interface ProgramServiceDslApi {
-  @ProgramServiceDslMarker
-  fun programService(
-    programCode: String = "INTTEST",
-    programId: Long = 20,
-    description: String = "test program",
-    active: Boolean = true,
-    dsl: ProgramServiceDsl.() -> Unit = {},
-  ): ProgramService
-}
-
 @Component
 class ProgramServiceBuilderRepository(private val programServiceRepository: ProgramServiceRepository) {
   fun save(programService: ProgramService) = programServiceRepository.save(programService)
