@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -72,11 +72,11 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createPrisoner() {
     offenderAtMoorlands = repository.save(
-      OffenderBuilder(nomsId = "A1234TT")
+      LegacyOffenderBuilder(nomsId = "A1234TT")
         .withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)),
     )
     offenderAtOtherPrison = repository.save(
-      OffenderBuilder(nomsId = "A1234TU")
+      LegacyOffenderBuilder(nomsId = "A1234TU")
         .withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")),
     )
   }

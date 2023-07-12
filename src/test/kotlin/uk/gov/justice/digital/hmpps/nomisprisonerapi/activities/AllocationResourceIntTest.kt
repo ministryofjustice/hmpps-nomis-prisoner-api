@@ -49,7 +49,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       programService {
         courseActivity = courseActivity()
       }
-      offender = newOffender(nomsId = "A1234XX") {
+      offender = offender(nomsId = "A1234XX") {
         bookingId = booking(agencyLocationId = "LEI").bookingId
       }
     }
@@ -337,7 +337,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should return bad request offender in wrong prison`() {
       lateinit var offenderAtWrongPrison: Offender
       nomisDataBuilder.build {
-        offenderAtWrongPrison = newOffender(nomsId = "A1234YY") {
+        offenderAtWrongPrison = offender(nomsId = "A1234YY") {
           bookingId = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
           }.bookingId
@@ -354,7 +354,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
           }.bookingId
@@ -415,7 +415,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, startDate = "2022-11-14")
           }.bookingId
@@ -522,7 +522,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should allow updates if offender in wrong prison`() {
       lateinit var bookingInWrongPrison: OffenderBooking
       nomisDataBuilder.build {
-        newOffender(nomsId = "A1234YY") {
+        offender(nomsId = "A1234YY") {
           bookingInWrongPrison = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity)
           }
@@ -536,7 +536,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
           }.bookingId
@@ -562,7 +562,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow suspension when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
           }.bookingId
@@ -594,7 +594,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         lateinit var allocation: OffenderProgramProfile
         val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf()
         nomisDataBuilder.build {
-          offender = newOffender(nomsId = "A1234AG") {
+          offender = offender(nomsId = "A1234AG") {
             bookingId = booking(agencyLocationId = "LEI") {
               allocation = courseAllocation(courseActivity, startDate = initialPayBands[0].startDate.toString(), endDate = initialPayBands[0].endDate?.toString()) {
                 initialPayBands.forEach {
@@ -816,7 +816,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `duplicate allocations can be worked around by deleting one of them`() {
       lateinit var duplicate: OffenderProgramProfile
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
             duplicate = courseAllocation(courseActivity)

@@ -1,12 +1,19 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -20,25 +27,32 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-fun testData(repository: Repository, dsl: NomisData.() -> Unit) = NomisData(repository).apply(dsl)
-
 @Component
+@Transactional
 class NomisDataBuilder(
-  private val repository: Repository? = null,
   private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = ProgramServiceBuilderFactory(),
-  private val offenderBuilderFactory: NewOffenderBuilderFactory? = null, // note this means the offender DSL is not available in unit tests whereas programService is.
+  private val offenderBuilderFactory: OffenderBuilderFactory? = null, // note this means the offender DSL is not available in unit tests whereas programService is.
+  private val staffBuilderFactory: StaffBuilderFactory? = null,
+  private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
 ) {
-  fun build(dsl: NomisData.() -> Unit) = NomisData(repository, programServiceBuilderFactory, offenderBuilderFactory).apply(dsl)
+  fun build(dsl: NomisData.() -> Unit) = NomisData(programServiceBuilderFactory, offenderBuilderFactory, staffBuilderFactory, adjudicationIncidentBuilderFactory).apply(dsl)
 }
 
 class NomisData(
-  private val repository: Repository? = null,
   private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = null,
-  private val offenderBuilderFactory: NewOffenderBuilderFactory? = null,
+  private val offenderBuilderFactory: OffenderBuilderFactory? = null,
+  private val staffBuilderFactory: StaffBuilderFactory? = null,
+  private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
-    repository!!.save(StaffBuilder(firstName, lastName).apply(dsl))
+    staffBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(lastName, firstName)
+          .also {
+            builder.apply(dsl)
+          }
+      }
 
   @AdjudicationIncidentDslMarker
   override fun adjudicationIncident(
@@ -52,19 +66,23 @@ class NomisData(
     agencyInternalLocationId: Long,
     reportingStaff: Staff,
     dsl: AdjudicationIncidentDsl.() -> Unit,
-  ): AdjudicationIncident = repository!!.save(
-    AdjudicationIncidentBuilder(
-      whenCreated = whenCreated,
-      incidentDetails = incidentDetails,
-      reportedDateTime = reportedDateTime,
-      reportedDate = reportedDate,
-      incidentDateTime = incidentDateTime,
-      incidentDate = incidentDate,
-      prisonId = prisonId,
-      agencyInternalLocationId = agencyInternalLocationId,
-      reportingStaff = reportingStaff,
-    ).apply(dsl),
-  )
+  ): AdjudicationIncident = adjudicationIncidentBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        whenCreated = whenCreated,
+        incidentDetails = incidentDetails,
+        reportedDateTime = reportedDateTime,
+        reportedDate = reportedDate,
+        incidentDateTime = incidentDateTime,
+        incidentDate = incidentDate,
+        prisonId = prisonId,
+        agencyInternalLocationId = agencyInternalLocationId,
+        reportingStaff = reportingStaff,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   @OffenderDslMarker
   override fun offender(
@@ -74,19 +92,6 @@ class NomisData(
     birthDate: LocalDate,
     genderCode: String,
     dsl: OffenderDsl.() -> Unit,
-  ): Offender = repository!!.save(
-    OffenderBuilder(nomsId, lastName, firstName, birthDate, genderCode, repository = repository).apply(dsl),
-  )
-
-  // This is here so we can use the new DSL in conjunction with the old one - once everything in the old Offender DSL has been switched to the new one we can get rid of `offender` and rename this
-  @NewOffenderDslMarker
-  override fun newOffender(
-    nomsId: String,
-    lastName: String,
-    firstName: String,
-    birthDate: LocalDate,
-    genderCode: String,
-    dsl: NewOffenderDsl.() -> Unit,
   ): Offender =
     offenderBuilderFactory!!.builder()
       .let { builder ->
@@ -114,7 +119,7 @@ class NomisData(
 }
 
 @NomisDataDslMarker
-interface NomisDataDsl : ProgramServiceDslApi, NewOffenderDslApi {
+interface NomisDataDsl : ProgramServiceDslApi, OffenderDslApi {
   @StaffDslMarker
   fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: StaffDsl.() -> Unit = {}): Staff
 
@@ -131,61 +136,25 @@ interface NomisDataDsl : ProgramServiceDslApi, NewOffenderDslApi {
     reportingStaff: Staff,
     dsl: AdjudicationIncidentDsl.() -> Unit = {},
   ): AdjudicationIncident
-
-  @OffenderDslMarker
-  fun offender(
-    nomsId: String = "A5194DY",
-    lastName: String = "NTHANDA",
-    firstName: String = "LEKAN",
-    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
-    genderCode: String = "M",
-    dsl: OffenderDsl.() -> Unit = {},
-  ): Offender
 }
 
 @NomisDataDslMarker
 interface StaffDsl
 
 @NomisDataDslMarker
-interface OffenderDsl {
-  @BookingDslMarker
-  fun booking(
-    bookingBeginDate: LocalDateTime = LocalDateTime.now(),
-    active: Boolean = true,
-    inOutStatus: String = "IN",
-    youthAdultCode: String = "N",
-    visitBalanceBuilder: VisitBalanceBuilder? = null,
-    agencyLocationId: String = "BXI",
-    dsl: BookingDsl.() -> Unit = {},
-  )
-}
-
-@NomisDataDslMarker
-interface BookingDsl {
+interface AdjudicationIncidentPartyDslApi {
   @AdjudicationPartyDslMarker
   fun adjudicationParty(
     incident: AdjudicationIncident,
-    adjudicationNumber: Long = 1224,
-    comment: String = "party comment",
+    comment: String = "They witnessed everything",
+    role: PartyRole = WITNESS,
     partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
-    incidentRole: String = suspectRole,
-    actionDecision: String = PLACED_ON_REPORT_ACTION_CODE,
+    staff: Staff? = null,
+    adjudicationNumber: Long? = null,
+    actionDecision: String = NO_FURTHER_ACTION_CODE,
     dsl: AdjudicationPartyDsl.() -> Unit = {},
-  )
-
-  @IncentiveDslMarker
-  fun incentive(
-    iepLevelCode: String = "ENT",
-    userId: String? = null,
-    sequence: Long = 1,
-    commentText: String = "comment",
-    auditModuleName: String? = null,
-    iepDateTime: LocalDateTime = LocalDateTime.now(),
-  )
+  ): AdjudicationIncidentParty
 }
-
-@NomisDataDslMarker
-interface IncentiveDsl
 
 @NomisDataDslMarker
 interface AdjudicationIncidentDsl {
@@ -195,7 +164,7 @@ interface AdjudicationIncidentDsl {
     comment: String? = null,
     repairCost: BigDecimal? = null,
     dsl: AdjudicationRepairDsl.() -> Unit = {},
-  )
+  ): AdjudicationIncidentRepair
 
   @AdjudicationPartyDslMarker
   fun party(
@@ -207,7 +176,7 @@ interface AdjudicationIncidentDsl {
     adjudicationNumber: Long? = null,
     actionDecision: String = NO_FURTHER_ACTION_CODE,
     dsl: AdjudicationPartyDsl.() -> Unit = {},
-  )
+  ): AdjudicationIncidentParty
 }
 enum class PartyRole(val code: String) {
 
@@ -226,16 +195,15 @@ interface AdjudicationPartyDsl {
     comment: String? = null,
     assignedDate: LocalDate = LocalDate.now(),
     dsl: AdjudicationInvestigationDsl.() -> Unit = {},
-  )
+  ): AdjudicationInvestigation
 
   @AdjudicationChargeDslMarker
   fun charge(
     offenceCode: String = "51:1B",
     guiltyEvidence: String? = null,
     reportDetail: String? = null,
-    ref: DataRef<AdjudicationIncidentCharge>? = null,
     dsl: AdjudicationChargeDsl.() -> Unit = {},
-  )
+  ): AdjudicationIncidentCharge
 
   @AdjudicationHearingDslMarker
   fun hearing(
@@ -250,7 +218,7 @@ interface AdjudicationPartyDsl {
     comment: String = "Hearing comment",
     representativeText: String = "rep text",
     dsl: AdjudicationHearingDsl.() -> Unit = {},
-  )
+  ): AdjudicationHearing
 }
 
 @NomisDataDslMarker
@@ -264,7 +232,7 @@ interface AdjudicationInvestigationDsl {
     type: String = "WEAP",
     date: LocalDate = LocalDate.now(),
     dsl: AdjudicationEvidenceDsl.() -> Unit = {},
-  )
+  ): AdjudicationEvidence
 }
 
 @NomisDataDslMarker
@@ -277,11 +245,11 @@ interface AdjudicationChargeDsl
 interface AdjudicationHearingDsl {
   @AdjudicationHearingResultDslMarker
   fun result(
-    chargeRef: DataRef<AdjudicationIncidentCharge>,
+    charge: AdjudicationIncidentCharge,
     pleaFindingCode: String = "NOT_GUILTY",
     findingCode: String = "PROVED",
     dsl: AdjudicationHearingResultDsl.() -> Unit = {},
-  )
+  ): AdjudicationHearingResult
 }
 
 @NomisDataDslMarker
@@ -296,9 +264,9 @@ interface AdjudicationHearingResultDsl {
     comment: String? = null,
     effectiveDate: LocalDate,
     statusDate: LocalDate? = null,
-    consecutiveSanctionSeq: Int? = null,
+    consecutiveHearingResultAward: AdjudicationHearingResultAward? = null,
     dsl: AdjudicationHearingResultAwardDsl.() -> Unit = {},
-  )
+  ): AdjudicationHearingResultAward
 }
 
 @NomisDataDslMarker
@@ -309,15 +277,6 @@ annotation class NomisDataDslMarker
 
 @DslMarker
 annotation class StaffDslMarker
-
-@DslMarker
-annotation class OffenderDslMarker
-
-@DslMarker
-annotation class BookingDslMarker
-
-@DslMarker
-annotation class IncentiveDslMarker
 
 @DslMarker
 annotation class AdjudicationIncidentDslMarker
@@ -345,12 +304,3 @@ annotation class AdjudicationHearingResultDslMarker
 
 @DslMarker
 annotation class AdjudicationHearingResultAwardDslMarker
-
-class DataRef<T>(private var reference: T? = null) {
-  fun set(value: T) {
-    reference = value
-  }
-  fun value(): T = reference ?: throw IllegalStateException("Reference not set")
-}
-
-fun <T> dataRef() = DataRef<T>()

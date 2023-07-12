@@ -14,8 +14,8 @@ import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.KeyDateAdjustmentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceAdjustmentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceBuilder
@@ -44,7 +44,7 @@ class AdjustmentRepositoryTest {
   @BeforeEach
   fun setup() {
     builderRepository.save(
-      OffenderBuilder()
+      LegacyOffenderBuilder()
         .withBooking(
           OffenderBookingBuilder().withKeyDateAdjustments(KeyDateAdjustmentBuilder(createdDate = dateTimeJan1))
             .withSentences(

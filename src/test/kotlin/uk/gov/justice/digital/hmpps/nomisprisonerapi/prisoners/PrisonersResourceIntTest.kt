@@ -6,8 +6,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -55,15 +55,15 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         deletePrisoners()
 
         activePrisoner1 = repository.save(
-          OffenderBuilder(nomsId = "A1234TT")
+          LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(OffenderBookingBuilder()),
         )
         activePrisoner2 = repository.save(
-          OffenderBuilder(nomsId = "A1234SS")
+          LegacyOffenderBuilder(nomsId = "A1234SS")
             .withBooking(OffenderBookingBuilder()),
         )
         inactivePrisoner1 = repository.save(
-          OffenderBuilder(nomsId = "A1234WW")
+          LegacyOffenderBuilder(nomsId = "A1234WW")
             .withBooking(OffenderBookingBuilder(active = false)),
         )
       }
