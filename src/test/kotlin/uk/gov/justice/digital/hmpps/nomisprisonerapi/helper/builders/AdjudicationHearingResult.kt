@@ -13,6 +13,26 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import java.math.BigDecimal
 import java.time.LocalDate
 
+@DslMarker
+annotation class AdjudicationHearingResultDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationHearingResultDsl {
+  @AdjudicationHearingResultAwardDslMarker
+  fun award(
+    statusCode: String,
+    sanctionDays: Int? = null,
+    sanctionMonths: Int? = null,
+    compensationAmount: BigDecimal? = null,
+    sanctionCode: String,
+    comment: String? = null,
+    effectiveDate: LocalDate,
+    statusDate: LocalDate? = null,
+    consecutiveHearingResultAward: AdjudicationHearingResultAward? = null,
+    dsl: AdjudicationHearingResultAwardDsl.() -> Unit = {},
+  ): AdjudicationHearingResultAward
+}
+
 @Component
 class AdjudicationHearingResultBuilderFactory(
   private val adjudicationHearingResultAwardBuilderFactory: AdjudicationHearingResultAwardBuilderFactory,

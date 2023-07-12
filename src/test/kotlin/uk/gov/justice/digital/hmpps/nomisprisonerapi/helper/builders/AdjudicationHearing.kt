@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
@@ -14,6 +15,20 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+@DslMarker
+annotation class AdjudicationHearingDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationHearingDsl {
+  @AdjudicationHearingResultDslMarker
+  fun result(
+    charge: AdjudicationIncidentCharge,
+    pleaFindingCode: String = "NOT_GUILTY",
+    findingCode: String = "PROVED",
+    dsl: AdjudicationHearingResultDsl.() -> Unit = {},
+  ): AdjudicationHearingResult
+}
 
 @Component
 class AdjudicationHearingBuilderFactory(

@@ -7,6 +7,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 
+@DslMarker
+annotation class AdjudicationChargeDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationChargeDsl
+
 @Component
 class AdjudicationChargeBuilderFactory(
   private val repository: AdjudicationChargeBuilderRepository,

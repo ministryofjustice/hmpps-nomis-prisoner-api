@@ -9,6 +9,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
+@DslMarker
+annotation class AdjudicationEvidenceDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationEvidenceDsl
+
 @Component
 class AdjudicationEvidenceBuilderFactory(
   private val repository: AdjudicationEvidenceBuilderRepository,

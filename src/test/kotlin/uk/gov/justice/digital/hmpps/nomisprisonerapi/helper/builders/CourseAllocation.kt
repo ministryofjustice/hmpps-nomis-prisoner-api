@@ -19,19 +19,6 @@ annotation class CourseAllocationDslMarker
 @NomisDataDslMarker
 interface CourseAllocationDsl : CourseAttendanceDslApi, CourseAllocationPayBandDslApi
 
-interface CourseAllocationDslApi {
-  @CourseAllocationDslMarker
-  fun courseAllocation(
-    courseActivity: CourseActivity,
-    startDate: String? = "2022-10-31",
-    programStatusCode: String = "ALLOC",
-    endDate: String? = null,
-    endReasonCode: String? = null,
-    endComment: String? = null,
-    dsl: CourseAllocationDsl.() -> Unit = { payBand() },
-  ): OffenderProgramProfile
-}
-
 @Component
 class CourseAllocationBuilderRepository(
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,

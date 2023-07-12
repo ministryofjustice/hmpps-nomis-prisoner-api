@@ -2,15 +2,61 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPartyId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.forceControllingOfficerRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.reportingOfficerRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.time.LocalDate
 import java.time.LocalDateTime
+
+@DslMarker
+annotation class AdjudicationPartyDslMarker
+
+@NomisDataDslMarker
+interface AdjudicationPartyDsl {
+  @AdjudicationInvestigationDslMarker
+  fun investigation(
+    investigator: Staff,
+    comment: String? = null,
+    assignedDate: LocalDate = LocalDate.now(),
+    dsl: AdjudicationInvestigationDsl.() -> Unit = {},
+  ): AdjudicationInvestigation
+
+  @AdjudicationChargeDslMarker
+  fun charge(
+    offenceCode: String = "51:1B",
+    guiltyEvidence: String? = null,
+    reportDetail: String? = null,
+    dsl: AdjudicationChargeDsl.() -> Unit = {},
+  ): AdjudicationIncidentCharge
+
+  @AdjudicationHearingDslMarker
+  fun hearing(
+    internalLocationId: Long? = null,
+    scheduleDate: LocalDate? = null,
+    scheduleTime: LocalDateTime? = null,
+    hearingDate: LocalDate? = LocalDate.now(),
+    hearingTime: LocalDateTime? = LocalDateTime.now(),
+    hearingStaff: Staff? = null,
+    hearingTypeCode: String = AdjudicationHearingType.GOVERNORS_HEARING,
+    eventStatusCode: String = "SCH",
+    comment: String = "Hearing comment",
+    representativeText: String = "rep text",
+    dsl: AdjudicationHearingDsl.() -> Unit = {},
+  ): AdjudicationHearing
+}
 
 @Component
 class AdjudicationPartyBuilderFactory(
@@ -134,4 +180,12 @@ class AdjudicationPartyBuilder(
       )
         .also { builder.apply(dsl) }
     }
+}
+
+enum class PartyRole(val code: String) {
+  WITNESS(witnessRole),
+  VICTIM(victimRole),
+  SUSPECT(suspectRole),
+  STAFF_CONTROL(forceControllingOfficerRole),
+  STAFF_REPORTING_OFFICER(reportingOfficerRole),
 }

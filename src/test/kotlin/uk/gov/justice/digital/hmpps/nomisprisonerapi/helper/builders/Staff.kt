@@ -4,6 +4,12 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 
+@DslMarker
+annotation class StaffDslMarker
+
+@NomisDataDslMarker
+interface StaffDsl
+
 @Component
 class StaffBuilderFactory(
   private val repository: StaffBuilderRepository,
