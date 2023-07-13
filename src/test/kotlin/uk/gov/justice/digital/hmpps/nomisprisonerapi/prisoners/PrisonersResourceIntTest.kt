@@ -6,8 +6,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -15,6 +14,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 class PrisonersResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Nested
   @DisplayName("GET /prisoners/ids")
@@ -45,7 +47,8 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    @Nested inner class HappyPath {
+    @Nested
+    inner class HappyPath {
       lateinit var activePrisoner1: Offender
       lateinit var activePrisoner2: Offender
       lateinit var inactivePrisoner1: Offender
@@ -54,18 +57,19 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       internal fun createPrisoners() {
         deletePrisoners()
 
-        activePrisoner1 = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234TT")
-            .withBooking(OffenderBookingBuilder()),
-        )
-        activePrisoner2 = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234SS")
-            .withBooking(OffenderBookingBuilder()),
-        )
-        inactivePrisoner1 = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234WW")
-            .withBooking(OffenderBookingBuilder(active = false)),
-        )
+        nomisDataBuilder.build {
+          activePrisoner1 =
+            offender(nomsId = "A1234TT") {
+              booking {}
+            }
+          activePrisoner2 = offender(nomsId = "A1234SS") {
+            booking {}
+          }
+
+          inactivePrisoner1 = offender(nomsId = "A1234WW") {
+            booking(active = false)
+          }
+        }
       }
 
       @AfterEach

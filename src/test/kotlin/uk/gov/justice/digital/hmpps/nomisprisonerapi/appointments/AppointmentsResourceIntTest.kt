@@ -8,8 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -28,6 +27,9 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
@@ -71,14 +73,16 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   internal fun createPrisoner() {
-    offenderAtMoorlands = repository.save(
-      LegacyOffenderBuilder(nomsId = "A1234TT")
-        .withBooking(OffenderBookingBuilder(agencyLocationId = PRISON_ID)),
-    )
-    offenderAtOtherPrison = repository.save(
-      LegacyOffenderBuilder(nomsId = "A1234TU")
-        .withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")),
-    )
+    nomisDataBuilder.build {
+      offenderAtMoorlands =
+        offender(nomsId = "A1234TT") {
+          booking(agencyLocationId = PRISON_ID)
+        }
+      offenderAtOtherPrison =
+        offender(nomsId = "A1234TU") {
+          booking(agencyLocationId = "LEI")
+        }
+    }
   }
 
   @AfterEach

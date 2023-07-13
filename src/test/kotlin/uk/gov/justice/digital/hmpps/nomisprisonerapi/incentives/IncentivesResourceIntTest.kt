@@ -17,9 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyIncentiveBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -44,6 +42,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
 
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
+
   @DisplayName("Create")
   @Nested
   inner class CreateIncentive {
@@ -51,12 +52,12 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
-      offenderAtMoorlands = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "WAI"),
-          ),
-      )
+      nomisDataBuilder.build {
+        offenderAtMoorlands =
+          offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "WAI")
+          }
+      }
     }
 
     @AfterEach
@@ -165,36 +166,29 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisonerWithIEPs() {
-      offenderAtMoorlands = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI")
-              .withIncentives(
-                LegacyIncentiveBuilder(iepLevel = "STD", sequence = 1, iepDateTime = LocalDateTime.parse("2022-01-01T12:00")),
-                LegacyIncentiveBuilder(iepLevel = "ENH", sequence = 2, iepDateTime = LocalDateTime.parse("2022-01-02T12:00")),
-              ),
-          ),
-      )
-      offenderAtLeeds = repository.save(
-        LegacyOffenderBuilder(nomsId = "A4567TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "LEI")
-              .withIncentives(
-                LegacyIncentiveBuilder(iepLevel = "STD", sequence = 1),
-                LegacyIncentiveBuilder(iepLevel = "ENH", sequence = 2),
-              ),
-          ),
-      )
-      offenderAtBrixton = repository.save(
-        LegacyOffenderBuilder(nomsId = "A7897TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "BXI")
-              .withIncentives(
-                LegacyIncentiveBuilder(iepLevel = "STD", sequence = 1),
-                LegacyIncentiveBuilder(iepLevel = "ENH", sequence = 2),
-              ),
-          ),
-      )
+      nomisDataBuilder.build {
+        offenderAtMoorlands =
+          offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "MDI") {
+              incentive(iepLevelCode = "STD", sequence = 1, iepDateTime = LocalDateTime.parse("2021-01-01T12:00"))
+              incentive(iepLevelCode = "ENH", sequence = 2, iepDateTime = LocalDateTime.parse("2021-01-02T12:00"))
+            }
+          }
+        offenderAtLeeds =
+          offender(nomsId = "A4567TT") {
+            booking(agencyLocationId = "LEI") {
+              incentive(iepLevelCode = "STD", sequence = 1)
+              incentive(iepLevelCode = "ENH", sequence = 2)
+            }
+          }
+
+        offenderAtBrixton = offender(nomsId = "A7897TT") {
+          booking(agencyLocationId = "BXI") {
+            incentive(iepLevelCode = "STD", sequence = 1)
+            incentive(iepLevelCode = "ENH", sequence = 2)
+          }
+        }
+      }
     }
 
     @AfterEach
@@ -305,33 +299,27 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisonerWithIEPs() {
-      offenderAtMoorlands = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI")
-              .withIncentives(
-                LegacyIncentiveBuilder(
-                  iepLevel = "STD",
-                  sequence = 1,
-                  iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
-                  userId = "JOHN_GEN",
-                  auditModuleName = "OIDITRAN",
-                ),
-                LegacyIncentiveBuilder(
-                  iepLevel = "ENH",
-                  sequence = 2,
-                  iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"),
-                  auditModuleName = "OCUWARNG",
-                ),
-                // earlier date but highest sequence - date takes precedence over sequence for current IEP
-                LegacyIncentiveBuilder(
-                  iepLevel = "BAS",
-                  sequence = 3,
-                  iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"),
-                ),
-              ),
-          ),
-      )
+      nomisDataBuilder.build {
+        offenderAtMoorlands =
+          offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "MDI") {
+              incentive(
+                iepLevelCode = "STD",
+                sequence = 1,
+                iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
+                userId = "JOHN_GEN",
+                auditModuleName = "OIDITRAN",
+              )
+              incentive(
+                iepLevelCode = "ENH",
+                sequence = 2,
+                iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"),
+                auditModuleName = "OCUWARNG",
+              )
+              incentive(iepLevelCode = "BAS", sequence = 3, iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"))
+            }
+          }
+      }
     }
 
     @AfterEach
@@ -430,37 +418,24 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisonerWithIEPs() {
-      offenderAtMoorlands = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI")
-              .withIncentives(
-                LegacyIncentiveBuilder(
-                  iepLevel = "STD",
-                  sequence = 1,
-                  iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
-                  userId = "JOHN_GEN",
-                ),
-                LegacyIncentiveBuilder(
-                  iepLevel = "ENH",
-                  sequence = 2,
-                  iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"),
-                ),
-                // earlier date but highest sequence - date takes precedence over sequence for current IEP
-                LegacyIncentiveBuilder(
-                  iepLevel = "BAS",
-                  sequence = 3,
-                  iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"),
-                ),
-              ),
-          ),
-      )
-      offenderAtMoorlandsWithoutIncentives = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI"),
-          ),
-      )
+      nomisDataBuilder.build {
+        offenderAtMoorlands = offender(nomsId = "A1234TT") {
+          booking(agencyLocationId = "MDI") {
+            incentive(
+              iepLevelCode = "STD",
+              sequence = 1,
+              iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
+              userId = "JOHN_GEN",
+            )
+            incentive(iepLevelCode = "ENH", sequence = 2, iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"))
+            incentive(iepLevelCode = "BAS", sequence = 3, iepDateTime = LocalDateTime.parse("2020-01-02T10:00:00"))
+          }
+        }
+
+        offenderAtMoorlandsWithoutIncentives = offender(nomsId = "A1234TT") {
+          booking(agencyLocationId = "MDI")
+        }
+      }
     }
 
     @AfterEach
@@ -534,45 +509,24 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisonerWithIEPs() {
-      offender = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI")
-              .withIncentives(
-                LegacyIncentiveBuilder(
-                  iepLevel = "STD",
-                  sequence = 1,
-                  iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
-                  userId = "JOHN_GEN",
-                ),
-                LegacyIncentiveBuilder(
-                  iepLevel = "ENH",
-                  sequence = 2,
-                  iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"),
-                ),
-                LegacyIncentiveBuilder(
-                  iepLevel = "BAS",
-                  sequence = 3,
-                  iepDateTime = LocalDateTime.parse("2020-01-02T09:00:00"),
-                ),
-                LegacyIncentiveBuilder(
-                  iepLevel = "ENH",
-                  sequence = 4,
-                  iepDateTime = LocalDateTime.parse("2023-05-31T15:18:28"),
-                ),
-                LegacyIncentiveBuilder(
-                  iepLevel = "STD",
-                  sequence = 5,
-                  iepDateTime = LocalDateTime.parse("2023-05-31T15:25:09"),
-                ),
-                LegacyIncentiveBuilder(
-                  iepLevel = "BAS",
-                  sequence = 6,
-                  iepDateTime = LocalDateTime.parse("2023-05-31T10:25:09"),
-                ),
-              ),
-          ),
-      )
+      nomisDataBuilder.build {
+        offender = offender(nomsId = "A1234TT") {
+          booking(agencyLocationId = "MDI") {
+            incentive(
+              iepLevelCode = "STD",
+              sequence = 1,
+              iepDateTime = LocalDateTime.parse("2022-01-01T10:00:00"),
+              userId = "JOHN_GEN",
+            )
+            incentive(iepLevelCode = "ENH", sequence = 2, iepDateTime = LocalDateTime.parse("2022-01-02T10:00:00"))
+            incentive(iepLevelCode = "BAS", sequence = 3, iepDateTime = LocalDateTime.parse("2020-01-02T09:00:00"))
+            incentive(iepLevelCode = "ENH", sequence = 4, iepDateTime = LocalDateTime.parse("2023-05-31T15:18:28"))
+            incentive(iepLevelCode = "STD", sequence = 5, iepDateTime = LocalDateTime.parse("2023-05-31T15:25:09"))
+            incentive(iepLevelCode = "BAS", sequence = 6, iepDateTime = LocalDateTime.parse("2023-05-31T10:25:09"))
+          }
+        }
+      }
+
       bookingId = offender.latestBooking().bookingId
     }
 
