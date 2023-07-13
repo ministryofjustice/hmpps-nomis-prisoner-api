@@ -12,44 +12,44 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class NewOffenderDslMarker
+annotation class OffenderDslMarker
 
 @NomisDataDslMarker
-interface NewOffenderDsl {
-  @NewBookingDslMarker
+interface OffenderDsl {
+  @BookingDslMarker
   fun booking(
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
     active: Boolean = true,
     inOutStatus: String = "IN",
     youthAdultCode: String = "N",
     agencyLocationId: String = "BXI",
-    dsl: NewBookingDsl.() -> Unit = {},
+    dsl: BookingDsl.() -> Unit = {},
   ): OffenderBooking
 }
 
 @Component
-class NewOffenderBuilderRepository(
+class OffenderBuilderRepository(
   private val offenderRepository: OffenderRepository,
   private val genderRepository: ReferenceCodeRepository<Gender>,
 ) {
-  fun save(offender: Offender) = offenderRepository.save(offender)
+  fun save(offender: Offender): Offender = offenderRepository.save(offender)
   fun gender(genderCode: String) = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
 }
 
 @Component
-class NewOffenderBuilderFactory(
-  private val repository: NewOffenderBuilderRepository,
-  private val bookingBuilderFactory: NewBookingBuilderFactory,
+class OffenderBuilderFactory(
+  private val repository: OffenderBuilderRepository,
+  private val bookingBuilderFactory: BookingBuilderFactory,
 ) {
-  fun builder(): NewOffenderBuilder {
-    return NewOffenderBuilder(repository, bookingBuilderFactory)
+  fun builder(): OffenderBuilder {
+    return OffenderBuilder(repository, bookingBuilderFactory)
   }
 }
 
-class NewOffenderBuilder(
-  private val repository: NewOffenderBuilderRepository,
-  private val bookingBuilderFactory: NewBookingBuilderFactory,
-) : NewOffenderDsl {
+class OffenderBuilder(
+  private val repository: OffenderBuilderRepository,
+  private val bookingBuilderFactory: BookingBuilderFactory,
+) : OffenderDsl {
   private lateinit var offender: Offender
 
   fun build(
@@ -75,7 +75,7 @@ class NewOffenderBuilder(
     inOutStatus: String,
     youthAdultCode: String,
     agencyLocationId: String,
-    dsl: NewBookingDsl.() -> Unit,
+    dsl: BookingDsl.() -> Unit,
   ) = bookingBuilderFactory.builder()
     .let { builder ->
       builder.build(

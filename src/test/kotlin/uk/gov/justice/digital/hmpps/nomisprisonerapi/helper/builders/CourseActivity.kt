@@ -6,9 +6,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
@@ -23,41 +20,29 @@ import java.time.LocalDate
 annotation class CourseActivityDslMarker
 
 @NomisDataDslMarker
-interface CourseActivityDsl {
-  @CourseActivityPayRateDslMarker
-  fun payRate(
-    iepLevelCode: String = "STD",
-    payBandCode: String = "5",
+interface CourseActivityDsl : CourseScheduleDslApi, CourseActivityPayRateDslApi, CourseScheduleRuleDslApi
+
+interface CourseActivityDslApi {
+  @CourseActivityDslMarker
+  fun courseActivity(
+    courseActivityId: Long = 0,
+    code: String = "CA",
+    programId: Long = 20,
+    prisonId: String = "LEI",
+    description: String = "test course activity",
+    capacity: Int = 23,
+    active: Boolean = true,
     startDate: String = "2022-10-31",
     endDate: String? = null,
-    halfDayRate: Double = 3.2,
-  ): CourseActivityPayRate
-
-  @CourseScheduleDslMarker
-  fun courseSchedule(
-    courseScheduleId: Long = 0,
-    scheduleDate: String = "2022-11-01",
-    startTime: String = "08:00",
-    endTime: String = "11:00",
-    slotCategory: SlotCategory = SlotCategory.AM,
-    scheduleStatus: String = "SCH",
-  ): CourseSchedule
-
-  @CourseScheduleRuleDslMarker
-  fun courseScheduleRule(
-    id: Long = 0,
-    startTimeHours: Int = 9,
-    startTimeMinutes: Int = 30,
-    endTimeHours: Int = 12,
-    endTimeMinutes: Int = 30,
-    monday: Boolean = true,
-    tuesday: Boolean = true,
-    wednesday: Boolean = true,
-    thursday: Boolean = true,
-    friday: Boolean = true,
-    saturday: Boolean = false,
-    sunday: Boolean = false,
-  ): CourseScheduleRule
+    minimumIncentiveLevelCode: String = "STD",
+    internalLocationId: Long? = -8,
+    excludeBankHolidays: Boolean = false,
+    dsl: CourseActivityDsl.() -> Unit = {
+      courseSchedule()
+      courseScheduleRule()
+      payRate()
+    },
+  ): CourseActivity
 }
 
 @Component

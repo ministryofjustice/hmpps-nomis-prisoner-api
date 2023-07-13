@@ -18,6 +18,18 @@ annotation class CourseAttendanceDslMarker
 @NomisDataDslMarker
 interface CourseAttendanceDsl
 
+interface CourseAttendanceDslApi {
+  @CourseAttendanceDslMarker
+  fun courseAttendance(
+    courseSchedule: CourseSchedule,
+    eventId: Long = 0,
+    eventStatusCode: String = "SCH",
+    toInternalLocationId: Long? = -8,
+    outcomeReasonCode: String? = null,
+    paidTransactionId: Long? = null,
+  ): OffenderCourseAttendance
+}
+
 @Component
 class CourseAttendanceBuilderRepository(
   private val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,

@@ -2,21 +2,49 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class NewBookingDslMarker
+annotation class BookingDslMarker
 
 @NomisDataDslMarker
-interface NewBookingDsl {
+interface BookingDsl {
+  @AdjudicationPartyDslMarker
+  fun adjudicationParty(
+    incident: AdjudicationIncident,
+    comment: String = "They witnessed everything",
+    role: PartyRole = WITNESS,
+    partyAddedDate: LocalDate = LocalDate.of(2023, 5, 10),
+    staff: Staff? = null,
+    adjudicationNumber: Long? = null,
+    actionDecision: String = IncidentDecisionAction.NO_FURTHER_ACTION_CODE,
+    dsl: AdjudicationPartyDsl.() -> Unit = {},
+  ): AdjudicationIncidentParty
+
+  @IncentiveDslMarker
+  fun incentive(
+    iepLevelCode: String = "ENT",
+    userId: String? = null,
+    sequence: Long = 1,
+    commentText: String = "comment",
+    auditModuleName: String? = null,
+    iepDateTime: LocalDateTime = LocalDateTime.now(),
+  ): Incentive
+
   @CourseAllocationDslMarker
   fun courseAllocation(
     courseActivity: CourseActivity,
@@ -27,41 +55,38 @@ interface NewBookingDsl {
     endComment: String? = null,
     dsl: CourseAllocationDsl.() -> Unit = { payBand() },
   ): OffenderProgramProfile
-
-  @NewIncentiveDslMarker
-  fun incentive(
-    iepLevelCode: String = "ENT",
-    userId: String? = null,
-    sequence: Long = 1,
-    commentText: String = "comment",
-    auditModuleName: String? = null,
-    iepDateTime: LocalDateTime = LocalDateTime.now(),
-  ): Incentive
 }
 
 @Component
-class NewBookingBuilderRepository(
+class BookingBuilderRepository(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
-  fun save(offenderBooking: OffenderBooking) = offenderBookingRepository.save(offenderBooking)
+  fun save(offenderBooking: OffenderBooking): OffenderBooking = offenderBookingRepository.save(offenderBooking)
   fun lookupAgencyLocation(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 }
 
 @Component
-class NewBookingBuilderFactory(
-  private val repository: NewBookingBuilderRepository,
+class BookingBuilderFactory(
+  private val repository: BookingBuilderRepository,
   private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory,
-  private val incentiveBuilderFactory: NewIncentiveBuilderFactory,
+  private val incentiveBuilderFactory: IncentiveBuilderFactory,
+  private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
 ) {
-  fun builder() = NewBookingBuilder(repository, courseAllocationBuilderFactory, incentiveBuilderFactory)
+  fun builder() = BookingBuilder(
+    repository,
+    courseAllocationBuilderFactory,
+    incentiveBuilderFactory,
+    adjudicationPartyBuilderFactory,
+  )
 }
 
-class NewBookingBuilder(
-  private val repository: NewBookingBuilderRepository,
+class BookingBuilder(
+  private val repository: BookingBuilderRepository,
   private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory,
-  private val incentiveBuilderFactory: NewIncentiveBuilderFactory,
-) : NewBookingDsl {
+  private val incentiveBuilderFactory: IncentiveBuilderFactory,
+  private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
+) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
 
@@ -125,4 +150,31 @@ class NewBookingBuilder(
         iepDateTime,
       )
       .also { offenderBooking.incentives += it }
+
+  override fun adjudicationParty(
+    incident: AdjudicationIncident,
+    comment: String,
+    role: PartyRole,
+    partyAddedDate: LocalDate,
+    staff: Staff?,
+    adjudicationNumber: Long?,
+    actionDecision: String,
+    dsl: AdjudicationPartyDsl.() -> Unit,
+  ) =
+    adjudicationPartyBuilderFactory.builder().let { builder ->
+      builder.build(
+        adjudicationNumber = adjudicationNumber,
+        comment = comment,
+        staff = staff,
+        incidentRole = role.code,
+        actionDecision = actionDecision,
+        partyAddedDate = partyAddedDate,
+        incident = incident,
+        offenderBooking = offenderBooking,
+        whenCreated = LocalDateTime.now(),
+        index = incident.parties.size + 1,
+      )
+        .also { incident.parties += it }
+        .also { builder.apply(dsl) }
+    }
 }

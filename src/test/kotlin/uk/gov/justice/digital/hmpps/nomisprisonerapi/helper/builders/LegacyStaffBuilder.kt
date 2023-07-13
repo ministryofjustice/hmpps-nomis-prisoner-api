@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
-class StaffBuilder(
+class LegacyStaffBuilder(
   private var firstName: String = "ANDREW",
   private var lastName: String = "BENNETT",
 ) : StaffDsl {

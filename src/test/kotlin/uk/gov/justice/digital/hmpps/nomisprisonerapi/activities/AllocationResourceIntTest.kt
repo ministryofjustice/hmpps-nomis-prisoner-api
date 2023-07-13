@@ -5,6 +5,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
@@ -21,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import java.time.LocalDate
 
 class AllocationResourceIntTest : IntegrationTestBase() {
@@ -37,7 +42,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   private var today = LocalDate.now()
   private var yesterday = today.minusDays(1)
-  private var tomorrow = today.plusDays(1)
 
   @BeforeEach
   fun setup() {
@@ -45,7 +49,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       programService {
         courseActivity = courseActivity()
       }
-      offender = newOffender(nomsId = "A1234XX") {
+      offender = offender(nomsId = "A1234XX") {
         bookingId = booking(agencyLocationId = "LEI").bookingId
       }
     }
@@ -77,6 +81,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   private fun String.withProgramStatusCode(programStatusCode: String?) =
     replace(""""programStatusCode": "ALLOC"""", programStatusCode?.let { """"programStatusCode": "$programStatusCode"""" } ?: """"ignored": "ignored"""") // hack so we don't have to worry about trailing comma on previous line
+
+  private fun String.withEndDate(newEndDate: String?) =
+    replace("}", newEndDate?.let { """, "endDate": "$newEndDate" }""" } ?: "}")
 
   private fun String.withAdditionalJson(additionalJson: String) =
     replace("}", """, $additionalJson }""")
@@ -279,7 +286,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `should return bad request if end date in bad format`() {
-      val request = upsertRequest().withAdditionalJson(""""endDate": "2023-12-35"""")
+      val request = upsertRequest().withEndDate("2023-12-35")
 
       upsertAllocationIsBadRequest(request)
         .expectBody().jsonPath("userMessage").value<String> {
@@ -330,7 +337,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should return bad request offender in wrong prison`() {
       lateinit var offenderAtWrongPrison: Offender
       nomisDataBuilder.build {
-        offenderAtWrongPrison = newOffender(nomsId = "A1234YY") {
+        offenderAtWrongPrison = offender(nomsId = "A1234YY") {
           bookingId = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
           }.bookingId
@@ -347,7 +354,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
           }.bookingId
@@ -408,7 +415,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity, startDate = "2022-11-14")
           }.bookingId
@@ -420,9 +427,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should update when allocation ended`() {
       val request = upsertRequest()
         .withProgramStatusCode("END")
+        .withEndDate("$yesterday")
         .withAdditionalJson(
           """
-            "endDate": "$yesterday",
             "endReason": "WDRAWN",
             "endComment": "Withdrawn due to illness"
           """.trimMargin(),
@@ -476,9 +483,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       val endRequest = upsertRequest()
         .withProgramStatusCode("END")
+        .withEndDate("$yesterday")
         .withAdditionalJson(
           """
-            "endDate": "$yesterday",
             "endReason": "WDRAWN",
             "endComment": "Withdrawn due to illness"
           """.trimMargin(),
@@ -492,59 +499,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         assertThat(endReason?.code).isEqualTo("WDRAWN")
         assertThat(endComment).isEqualTo("Withdrawn due to illness")
         assertThat(programStatus.code).isEqualTo("END")
-      }
-    }
-
-    @Test
-    fun `should update allocation pay band`() {
-      val request = upsertRequest().withPayBandCode("6")
-      val response = upsertAllocationIsOk(request)
-
-      assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
-      assertThat(response?.created).isFalse()
-
-      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
-      with(saved) {
-        assertThat(payBands[0].payBand.code).isEqualTo("5")
-        assertThat(payBands[0].endDate).isEqualTo(today)
-        assertThat(payBands[1].payBand.code).isEqualTo("6")
-        assertThat(payBands[1].id.startDate).isEqualTo(tomorrow)
-        assertThat(payBands[1].endDate).isNull()
-      }
-    }
-
-    @Test
-    fun `should update allocation pay band twice on the same day`() {
-      val firstPayBandUpdateRequest = upsertRequest().withPayBandCode("6")
-      upsertAllocationIsOk(firstPayBandUpdateRequest)
-
-      val secondPayBandUpdateRequest = upsertRequest().withPayBandCode("7")
-      val response = upsertAllocationIsOk(secondPayBandUpdateRequest)
-
-      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
-      with(saved) {
-        assertThat(payBands[0].payBand.code).isEqualTo("5")
-        assertThat(payBands[0].endDate).isEqualTo(today)
-        assertThat(payBands[1].payBand.code).isEqualTo("7")
-        assertThat(payBands[1].id.startDate).isEqualTo(tomorrow)
-        assertThat(payBands[1].endDate).isNull()
-      }
-    }
-
-    @Test
-    fun `should revert allocation pay band update`() {
-      val updatePayBandRequest = upsertRequest().withPayBandCode("6")
-      upsertAllocationIsOk(updatePayBandRequest)
-
-      val revertPayBandRequest = upsertRequest().withPayBandCode("5")
-      val response = upsertAllocationIsOk(revertPayBandRequest)
-
-      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
-      with(saved) {
-        assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
-        assertThat(startDate).isEqualTo("2022-11-14")
-        assertThat(payBands[0].payBand.code).isEqualTo("5")
-        assertThat(payBands[0].endDate).isNull()
       }
     }
 
@@ -568,7 +522,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should allow updates if offender in wrong prison`() {
       lateinit var bookingInWrongPrison: OffenderBooking
       nomisDataBuilder.build {
-        newOffender(nomsId = "A1234YY") {
+        offender(nomsId = "A1234YY") {
           bookingInWrongPrison = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity)
           }
@@ -582,7 +536,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
           }.bookingId
@@ -592,9 +546,9 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       // De-allocation is allowed
       val request = upsertRequest()
         .withProgramStatusCode("END")
+        .withEndDate("$today")
         .withAdditionalJson(
           """
-            "endDate": "$today",
             "endReason": "WDRAWN",
             "endComment": "Withdrawn due to illness"
           """.trimMargin(),
@@ -608,7 +562,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow suspension when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
           }.bookingId
@@ -623,6 +577,237 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       )
       upsertAllocationIsOk(request)
     }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class PayBands {
+
+      @ParameterizedTest(name = "{0}")
+      @MethodSource("payBandTests")
+      fun `pay band updates`(
+        testDescription: String,
+        initialPayBands: List<PayBandTestParameter>,
+        requestedPayBand: PayBandTestParameter,
+        newFirstPayBand: PayBandTestParameter,
+        newSecondPayBand: PayBandTestParameter?,
+      ) {
+        lateinit var allocation: OffenderProgramProfile
+        val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf()
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A1234AG") {
+            bookingId = booking(agencyLocationId = "LEI") {
+              allocation = courseAllocation(courseActivity, startDate = initialPayBands[0].startDate.toString(), endDate = initialPayBands[0].endDate?.toString()) {
+                initialPayBands.forEach {
+                  payBands += payBand(payBandCode = it.payBandCode, startDate = it.startDate.toString(), endDate = it.endDate?.toString())
+                }
+              }
+            }.bookingId
+          }
+        }
+        assertThat(allocation.startDate).isEqualTo(initialPayBands[0].startDate)
+        assertThat(allocation.endDate).isEqualTo(initialPayBands[0].endDate)
+        assertThat(payBands[0].id.startDate).isEqualTo(initialPayBands[0].startDate)
+        val expectedAllocationStartDate = listOf(newFirstPayBand.startDate, newSecondPayBand?.startDate).mapNotNull { it }.min()
+
+        val request = upsertRequest()
+          .withPayBandCode(requestedPayBand.payBandCode)
+          .withStartDate(requestedPayBand.startDate.toString())
+          .withEndDate(requestedPayBand.endDate?.toString())
+        upsertAllocationIsOk(request)
+
+        val updated = repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)
+        assertThat(updated.startDate).isEqualTo(expectedAllocationStartDate)
+        assertThat(updated.payBands[0].id.startDate).isEqualTo(newFirstPayBand.startDate)
+        assertThat(updated.payBands[0].endDate).isEqualTo(newFirstPayBand.endDate)
+        assertThat(updated.payBands[0].payBand.code).isEqualTo(newFirstPayBand.payBandCode)
+        if (newSecondPayBand != null) {
+          assertThat(updated.payBands[1].id.startDate).isEqualTo(newSecondPayBand.startDate)
+          assertThat(updated.payBands[1].endDate).isEqualTo(newSecondPayBand.endDate)
+          assertThat(updated.payBands[1].payBand.code).isEqualTo(newSecondPayBand.payBandCode)
+        } else {
+          assertThat(updated.payBands.size).isEqualTo(1)
+        }
+      }
+
+      inner class PayBandTestParameter(
+        val payBandCode: String,
+        val startDate: LocalDate,
+        val endDate: LocalDate?,
+      )
+
+      fun payBandTests(): List<Arguments> {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+        val tomorrow = today.plusDays(1)
+        return listOf(
+          // Changing the pay band code for existing pay bands with various start/end dates
+          Arguments.of(
+            "A new pay band is active from today",
+            listOf(PayBandTestParameter("5", yesterday, null)),
+            PayBandTestParameter("6", yesterday, null),
+            PayBandTestParameter("5", yesterday, today),
+            PayBandTestParameter("6", tomorrow, null),
+          ),
+          Arguments.of(
+            "A new pay band's end date is set",
+            listOf(PayBandTestParameter("5", yesterday, null)),
+            PayBandTestParameter("6", yesterday, tomorrow),
+            PayBandTestParameter("5", yesterday, today),
+            PayBandTestParameter("6", tomorrow, tomorrow),
+          ),
+          Arguments.of(
+            "A new pay band's changed end date overrides the existing end date",
+            listOf(PayBandTestParameter("5", yesterday, today)),
+            PayBandTestParameter("6", yesterday, tomorrow),
+            PayBandTestParameter("5", yesterday, today),
+            PayBandTestParameter("6", tomorrow, tomorrow),
+          ),
+          Arguments.of(
+            "A new pay band becomes effective today if old pay band is expired",
+            listOf(PayBandTestParameter("5", yesterday, yesterday)),
+            PayBandTestParameter("6", yesterday, null),
+            PayBandTestParameter("5", yesterday, yesterday),
+            PayBandTestParameter("6", today, null),
+          ),
+          Arguments.of(
+            "A new pay band effective today has its end date applied",
+            listOf(PayBandTestParameter("5", yesterday, yesterday)),
+            PayBandTestParameter("6", yesterday, tomorrow),
+            PayBandTestParameter("5", yesterday, yesterday),
+            PayBandTestParameter("6", today, tomorrow),
+          ),
+          Arguments.of(
+            "A new pay band with no end date overrides the existing end date",
+            listOf(PayBandTestParameter("5", yesterday, today)),
+            PayBandTestParameter("6", yesterday, null),
+            PayBandTestParameter("5", yesterday, today),
+            PayBandTestParameter("6", tomorrow, null),
+          ),
+          // Changing the pay band code for future pay bands with various start/end dates
+          Arguments.of(
+            "A new future pay band is simply updated",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            PayBandTestParameter("6", tomorrow, null),
+            PayBandTestParameter("6", tomorrow, null),
+            null,
+          ),
+          Arguments.of(
+            "A new future pay band's end date is added",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            PayBandTestParameter("6", tomorrow, tomorrow),
+            PayBandTestParameter("6", tomorrow, tomorrow),
+            null,
+          ),
+          Arguments.of(
+            "A new future pay band's end date is removed",
+            listOf(PayBandTestParameter("5", tomorrow, tomorrow)),
+            PayBandTestParameter("6", tomorrow, null),
+            PayBandTestParameter("6", tomorrow, null),
+            null,
+          ),
+          Arguments.of(
+            "A new future pay band can move the start date forwards",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            PayBandTestParameter("6", yesterday, tomorrow),
+            PayBandTestParameter("6", yesterday, tomorrow),
+            null,
+          ),
+          // Changing the start/end dates but keeping pay band same
+          Arguments.of(
+            "Pay band is unchanged",
+            listOf(PayBandTestParameter("5", yesterday, null)),
+            PayBandTestParameter("5", yesterday, null),
+            PayBandTestParameter("5", yesterday, null),
+            null,
+          ),
+          Arguments.of(
+            "A pay band's end date can be updated",
+            listOf(PayBandTestParameter("5", yesterday, null)),
+            PayBandTestParameter("5", yesterday, tomorrow),
+            PayBandTestParameter("5", yesterday, tomorrow),
+            null,
+          ),
+          Arguments.of(
+            "Pay band with an end date is unchanged",
+            listOf(PayBandTestParameter("5", yesterday, tomorrow)),
+            PayBandTestParameter("5", yesterday, tomorrow),
+            PayBandTestParameter("5", yesterday, tomorrow),
+            null,
+          ),
+          Arguments.of(
+            "An active pay band's end date can be removed",
+            listOf(PayBandTestParameter("5", yesterday, tomorrow)),
+            PayBandTestParameter("5", yesterday, null),
+            PayBandTestParameter("5", yesterday, null),
+            null,
+          ),
+          Arguments.of(
+            "An active pay band's start date cannot be changed but its end date can",
+            listOf(PayBandTestParameter("5", yesterday, today)),
+            PayBandTestParameter("5", tomorrow, tomorrow),
+            PayBandTestParameter("5", yesterday, tomorrow),
+            null,
+          ),
+          // Changing the start/end date of a future pay band
+          Arguments.of(
+            "A future pay band is unchanged",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            PayBandTestParameter("5", tomorrow, null),
+            PayBandTestParameter("5", tomorrow, null),
+            null,
+          ),
+          Arguments.of(
+            "A future pay band's end date can be added",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            PayBandTestParameter("5", tomorrow, tomorrow),
+            PayBandTestParameter("5", tomorrow, tomorrow),
+            null,
+          ),
+          Arguments.of(
+            "A future pay band's end date can be removed",
+            listOf(PayBandTestParameter("5", tomorrow, tomorrow)),
+            PayBandTestParameter("5", tomorrow, null),
+            PayBandTestParameter("5", tomorrow, null),
+            null,
+          ),
+          Arguments.of(
+            "A future pay band's start date can be moved forward",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            PayBandTestParameter("5", yesterday, null),
+            PayBandTestParameter("5", yesterday, null),
+            null,
+          ),
+          Arguments.of(
+            "A future pay band's start date can be moved forward while an end date is added",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            PayBandTestParameter("5", yesterday, tomorrow),
+            PayBandTestParameter("5", yesterday, tomorrow),
+            null,
+          ),
+          // Existing pay bands with an existing future pay band
+          Arguments.of(
+            "An expired pay band doesn't effect updates to a future pay band",
+            listOf(
+              PayBandTestParameter("5", yesterday, yesterday),
+              PayBandTestParameter("6", tomorrow, tomorrow),
+            ),
+            PayBandTestParameter("7", yesterday, null),
+            PayBandTestParameter("5", yesterday, yesterday),
+            PayBandTestParameter("7", tomorrow, null),
+          ),
+          Arguments.of(
+            "An active pay band doesn't effect updates to a future pay band",
+            listOf(
+              PayBandTestParameter("5", yesterday, today),
+              PayBandTestParameter("6", tomorrow, tomorrow),
+            ),
+            PayBandTestParameter("7", yesterday, null),
+            PayBandTestParameter("5", yesterday, today),
+            PayBandTestParameter("7", tomorrow, null),
+          ),
+        )
+      }
+    }
   }
 
   @Nested
@@ -631,7 +816,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `duplicate allocations can be worked around by deleting one of them`() {
       lateinit var duplicate: OffenderProgramProfile
       nomisDataBuilder.build {
-        offender = newOffender(nomsId = "A1234XX") {
+        offender = offender(nomsId = "A1234XX") {
           bookingId = booking(agencyLocationId = "LEI") {
             courseAllocation(courseActivity)
             duplicate = courseAllocation(courseActivity)
@@ -640,7 +825,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       }
 
       // unable to update the allocation because of a duplicate
-      val request = upsertRequest().withAdditionalJson(""""endDate": "$today"""")
+      val request = upsertRequest().withEndDate("$today")
       webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))

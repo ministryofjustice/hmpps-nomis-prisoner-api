@@ -19,9 +19,9 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -681,7 +681,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          newOffender(nomsId = "A1234TT") {
+          offender(nomsId = "A1234TT") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
@@ -718,7 +718,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          newOffender(nomsId = "A1234TT") {
+          offender(nomsId = "A1234TT") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
@@ -736,7 +736,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         nomisDataBuilder.build {
-          newOffender(nomsId = "A1234TT") {
+          offender(nomsId = "A1234TT") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity) {
@@ -1256,13 +1256,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         lateinit var deallocatedOffenderBooking: OffenderBooking
         nomisDataBuilder.build {
           programService(programId = 30, programCode = "NEW_SERVICE")
-          newOffender(nomsId = "A1234TT") {
+          offender(nomsId = "A1234TT") {
             offenderBooking = booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity)
             }
           }
 
-          newOffender(nomsId = "A1234UU") {
+          offender(nomsId = "A1234UU") {
             deallocatedOffenderBooking = booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity, endDate = yesterday.toString())
             }
@@ -1492,7 +1492,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
+        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -1531,7 +1531,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(OffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
+        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)

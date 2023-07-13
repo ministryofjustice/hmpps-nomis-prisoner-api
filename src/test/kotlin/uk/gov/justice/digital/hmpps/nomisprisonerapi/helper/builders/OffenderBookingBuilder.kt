@@ -1,10 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 class OffenderBookingBuilder(
@@ -16,12 +14,11 @@ class OffenderBookingBuilder(
   var agencyLocationId: String = "BXI",
   var contacts: List<OffenderContactBuilder> = emptyList(),
   var visits: List<VisitBuilder> = emptyList(),
-  var incentives: List<IncentiveBuilder> = emptyList(),
+  var incentives: List<LegacyIncentiveBuilder> = emptyList(),
   var sentences: List<SentenceBuilder> = emptyList(),
-  var adjudications: List<Pair<AdjudicationIncident, AdjudicationPartyBuilder>> = emptyList(),
   var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
   val repository: Repository? = null,
-) : BookingDsl {
+) {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
       offender = offender,
@@ -49,7 +46,7 @@ class OffenderBookingBuilder(
     this.visits = arrayOf(*visitBuilder).asList()
     return this
   }
-  fun withIncentives(vararg incentiveBuilder: IncentiveBuilder): OffenderBookingBuilder {
+  fun withIncentives(vararg incentiveBuilder: LegacyIncentiveBuilder): OffenderBookingBuilder {
     this.incentives = arrayOf(*incentiveBuilder).asList()
     return this
   }
@@ -60,39 +57,5 @@ class OffenderBookingBuilder(
   fun withKeyDateAdjustments(vararg keyDateAdjustmentBuilder: KeyDateAdjustmentBuilder): OffenderBookingBuilder {
     this.keyDateAdjustments = arrayOf(*keyDateAdjustmentBuilder).asList()
     return this
-  }
-
-  override fun adjudicationParty(
-    incident: AdjudicationIncident,
-    adjudicationNumber: Long,
-    comment: String,
-    partyAddedDate: LocalDate,
-    incidentRole: String,
-    actionDecision: String,
-    dsl: AdjudicationPartyDsl.() -> Unit,
-  ) {
-    this.adjudications += Pair(
-      incident,
-      AdjudicationPartyBuilder(
-        adjudicationNumber = adjudicationNumber,
-        comment = comment,
-        partyAddedDate = partyAddedDate,
-        offenderBooking = null,
-        staff = null,
-        incidentRole = incidentRole,
-        actionDecision = actionDecision,
-      ).apply(dsl),
-    )
-  }
-
-  override fun incentive(
-    iepLevelCode: String,
-    userId: String?,
-    sequence: Long,
-    commentText: String,
-    auditModuleName: String?,
-    iepDateTime: LocalDateTime,
-  ) {
-    this.incentives += IncentiveBuilder(iepLevelCode, userId, sequence, commentText, auditModuleName, iepDateTime)
   }
 }

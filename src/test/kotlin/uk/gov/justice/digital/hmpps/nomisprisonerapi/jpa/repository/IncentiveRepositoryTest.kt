@@ -11,8 +11,8 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
@@ -44,7 +44,7 @@ class IncentiveRepositoryTest {
   @Test
   fun saveIncentive() {
     val seedOffenderBooking = builderRepository.save(
-      OffenderBuilder()
+      LegacyOffenderBuilder()
         .withBooking(OffenderBookingBuilder().withVisitBalance()),
     ).bookings.first()
 

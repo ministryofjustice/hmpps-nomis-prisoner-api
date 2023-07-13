@@ -12,26 +12,27 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class NewIncentiveDslMarker
+annotation class IncentiveDslMarker
 
 @NomisDataDslMarker
-interface NewIncentiveDsl
+interface IncentiveDsl
 
 @Component
-class NewIncentiveBuilderRepository(
+class IncentiveBuilderRepository(
   private val incentiveRepository: IncentiveRepository,
   val iepLevelRepository: ReferenceCodeRepository<IEPLevel>,
 ) {
-  fun save(incentive: Incentive) = incentiveRepository.save(incentive)
+  fun save(incentive: Incentive): Incentive = incentiveRepository.save(incentive)
   fun lookupIepLevel(code: String): IEPLevel = iepLevelRepository.findByIdOrNull(ReferenceCode.Pk(IEPLevel.IEP_LEVEL, code))!!
 }
 
 @Component
-class NewIncentiveBuilderFactory(private val repository: NewIncentiveBuilderRepository) {
-  fun builder() = NewIncentiveBuilder(repository)
+class IncentiveBuilderFactory(private val repository: IncentiveBuilderRepository) {
+  fun builder() = IncentiveBuilder(repository)
 }
 
-class NewIncentiveBuilder(private val repository: NewIncentiveBuilderRepository) : NewIncentiveDsl {
+class IncentiveBuilder(private val repository: IncentiveBuilderRepository) :
+  IncentiveDsl {
   fun build(
     offenderBooking: OffenderBooking,
     iepLevel: String,

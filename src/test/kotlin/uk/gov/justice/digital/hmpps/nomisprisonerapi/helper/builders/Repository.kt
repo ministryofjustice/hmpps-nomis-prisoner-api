@@ -5,16 +5,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationFindingType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionStatus
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -27,7 +18,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
@@ -46,7 +36,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -96,23 +85,13 @@ class Repository(
   val courseScheduleRepository: CourseScheduleRepository,
   val adjudicationIncidentRepository: AdjudicationIncidentRepository,
   val staffRepository: StaffRepository,
-  val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
-  val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
-  val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
-  val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
-  val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
-  val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
-  val pleaFindingTypeRepository: ReferenceCodeRepository<AdjudicationPleaFindingType>,
-  val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
-  val sanctionStatusRepository: ReferenceCodeRepository<AdjudicationSanctionStatus>,
-  val sanctionTypeRepository: ReferenceCodeRepository<AdjudicationSanctionType>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
 
   // Entity builders
-  fun save(offenderBuilder: OffenderBuilder): Offender {
+  fun save(offenderBuilder: LegacyOffenderBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
 
     val offender = offenderRepository.saveAndFlush(offenderBuilder.build(gender)).apply {
@@ -188,90 +167,9 @@ class Repository(
           )
         },
       )
-      var chargeSequence = 0
-      booking.adjudicationParties.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].adjudications.mapIndexed { adjudicationIndex, adjudicationPartyPair ->
-          val party = adjudicationPartyPair.second.build(
-            repository = this,
-            incident = adjudicationPartyPair.first,
-            offenderBooking = booking,
-            index = adjudicationPartyPair.first.parties.size + 1,
-          )
-          party.charges.addAll(
-            offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.charges.map {
-              chargeSequence += 1
-              it.build(
-                repository = this,
-                incidentParty = party,
-                chargeSequence = chargeSequence,
-              )
-            },
-          )
-          party.investigations.addAll(
-            offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.investigations.map { builder ->
-              builder.build(
-                incidentParty = party,
-              ).also { investigation ->
-                investigation.evidence.addAll(
-                  builder.evidence.map {
-                    it.build(this, investigation)
-                  },
-                )
-              }
-            },
-          )
-          party
-        },
-      )
     }
 
     offenderRepository.flush()
-
-    // children that require a flushed party
-    offender.bookings.forEachIndexed { bookingIndex, booking ->
-      offenderBuilder.bookingBuilders[bookingIndex].adjudications.mapIndexed { adjudicationIndex, adjudicationPartyPair ->
-        offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings.mapIndexed { hearingIndex, builder ->
-          val party = booking.adjudicationParties[adjudicationIndex]
-
-          adjudicationHearingRepository.save(
-            builder.build(
-              repository = this,
-              incidentParty = party,
-            ),
-          ).also { hearing ->
-            hearing.hearingResults.addAll(
-              offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results.mapIndexed { resultIndex, resultBuilder ->
-                resultBuilder.build(
-                  repository = this,
-                  hearing = hearing,
-                  index = resultIndex,
-                ).also { result ->
-                  result.resultAwards.addAll(
-                    offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results[resultIndex].awards.mapIndexed { awardIndex, awardBuilder ->
-                      awardBuilder.build(
-                        repository = this,
-                        sanctionIndex = awardIndex,
-                        result = result,
-                        party = party,
-                      )
-                    },
-
-                  ).also {
-                    offenderBuilder.bookingBuilders[bookingIndex].adjudications[adjudicationIndex].second.hearings[hearingIndex].results[resultIndex].awards.mapIndexed { awardIndex, awardBuilder ->
-                      awardBuilder.consecutiveSanctionIndex?.let {
-                        result.resultAwards[awardIndex].consecutiveHearingResultAward =
-                          result.resultAwards[awardBuilder.consecutiveSanctionIndex!!]
-                      }
-                    }
-                  }
-                }
-              },
-            )
-          }
-        }
-      }
-    }
-
     return offender
   }
 
@@ -287,7 +185,7 @@ class Repository(
 
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
-  fun save(staffBuilder: StaffBuilder): Staff = staffRepository.save(staffBuilder.build())
+  fun save(staffBuilder: LegacyStaffBuilder): Staff = staffRepository.save(staffBuilder.build())
 
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
 
@@ -296,24 +194,6 @@ class Repository(
 
   fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) =
     offenderRepository.deleteById(offenderIndividualSchedule.eventId)
-
-  fun save(adjudicationIncidentBuilder: AdjudicationIncidentBuilder): AdjudicationIncident =
-    adjudicationIncidentRepository.save(
-      adjudicationIncidentBuilder.build(
-        repository = this,
-      ),
-    ).also { incident ->
-      incident.repairs.addAll(
-        adjudicationIncidentBuilder.repairs.mapIndexed { index, repair ->
-          repair.build(repository = this, incident, repairSequence = index + 1)
-        },
-      )
-      incident.parties.addAll(
-        adjudicationIncidentBuilder.parties.mapIndexed { index, party ->
-          party.build(repository = this, incident, index + 1, adjudicationIncidentBuilder.whenCreated)
-        },
-      )
-    }
 
   fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
   fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) =
@@ -346,40 +226,10 @@ class Repository(
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
     agencyInternalLocationRepository.findByIdOrNull(locationId)
 
-  fun lookupAdjudicationEvidenceType(code: String): AdjudicationEvidenceType =
-    evidenceTypeRepository.findByIdOrNull(Pk(AdjudicationEvidenceType.OIC_STMT_TYP, code))!!
-
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
   fun lookupEventStatusCode(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
   fun lookupEventSubtype(code: String): EventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(code))!!
-
-  fun lookupHearingType(code: String): AdjudicationHearingType =
-    hearingTypeRepository.findByIdOrNull(AdjudicationHearingType.pk(code))!!
-
-  fun lookupHearingResultPleaType(code: String): AdjudicationPleaFindingType =
-    pleaFindingTypeRepository.findByIdOrNull(AdjudicationPleaFindingType.pk(code))!!
-
-  fun lookupSanctionStatus(code: String): AdjudicationSanctionStatus =
-    sanctionStatusRepository.findByIdOrNull(AdjudicationSanctionStatus.pk(code))!!
-
-  fun lookupSanctionType(code: String): AdjudicationSanctionType =
-    sanctionTypeRepository.findByIdOrNull(AdjudicationSanctionType.pk(code))!!
-
-  fun lookupHearingResultFindingType(code: String): AdjudicationFindingType =
-    findingTypeRepository.findByIdOrNull(AdjudicationFindingType.pk(code))!!
-
-  fun lookupIncidentType(): AdjudicationIncidentType =
-    adjudicationIncidentTypeRepository.findByIdOrNull(AdjudicationIncidentType.pk(AdjudicationIncidentType.GOVERNORS_REPORT))!!
-
-  fun lookupActionDecision(code: String = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE): IncidentDecisionAction =
-    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(code))!!
-
-  fun lookupAdjudicationOffence(code: String): AdjudicationIncidentOffence =
-    adjudicationIncidentOffenceRepository.findByCode(code)!!
-
-  fun lookupRepairType(code: String): AdjudicationRepairType =
-    repairTypeRepository.findByIdOrNull(AdjudicationRepairType.pk(code))!!
 
   // Test Helpers
 

@@ -15,8 +15,8 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderContactBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
@@ -87,7 +87,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       },
     )
     offenderAtMoorlands = repository.save(
-      OffenderBuilder()
+      LegacyOffenderBuilder()
         .withBooking(
           OffenderBookingBuilder()
             .withVisitBalance()
@@ -846,7 +846,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       internal fun setUp() {
         anotherOffender = repository.save(
-          OffenderBuilder(nomsId = "A9999AA")
+          LegacyOffenderBuilder(nomsId = "A9999AA")
             .withBooking(
               OffenderBookingBuilder()
                 .withVisitBalance(),
@@ -884,7 +884,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         KashfAbidi = repository.save(PersonBuilder(firstName = "KASHF", lastName = "ABIDI"))
 
         offenderWithVisit = repository.save(
-          OffenderBuilder(nomsId = "A7688JM")
+          LegacyOffenderBuilder(nomsId = "A7688JM")
             .withBooking(
               OffenderBookingBuilder()
                 .withVisitBalance()
@@ -1053,7 +1053,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         val person1 = repository.save(PersonBuilder())
         val person2 = repository.save(PersonBuilder())
         offenderAtMoorlands = repository.save(
-          OffenderBuilder(nomsId = "A1234TT")
+          LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
                 .withVisits(
@@ -1155,7 +1155,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
 
         offenderAtMoorlands = repository.save(
-          OffenderBuilder(nomsId = "A1234TT")
+          LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
                 .withVisits(
@@ -1213,7 +1213,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
 
         offenderAtMoorlands = repository.save(
-          OffenderBuilder(nomsId = "A1234TT")
+          LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
                 .withVisits(
@@ -1268,7 +1268,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
 
         offenderAtMoorlands = repository.save(
-          OffenderBuilder(nomsId = "A1234TT")
+          LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
                 .withVisits(
@@ -1318,7 +1318,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val person1 = repository.save(PersonBuilder())
       val person2 = repository.save(PersonBuilder())
       offenderAtMoorlands = repository.save(
-        OffenderBuilder(nomsId = "A1234TT")
+        LegacyOffenderBuilder(nomsId = "A1234TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "MDI")
               .withVisits(
@@ -1342,7 +1342,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
       )
       offenderAtLeeds = repository.save(
-        OffenderBuilder(nomsId = "A4567TT")
+        LegacyOffenderBuilder(nomsId = "A4567TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "LEI")
               .withVisits(
@@ -1364,7 +1364,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
       )
       offenderAtBrixton = repository.save(
-        OffenderBuilder(nomsId = "A7897TT")
+        LegacyOffenderBuilder(nomsId = "A7897TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "BXI")
               .withVisits(
@@ -1625,7 +1625,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val person1 = repository.save(PersonBuilder())
       val person2 = repository.save(PersonBuilder())
       offenderAtMoorlands = repository.save(
-        OffenderBuilder(nomsId = "A1234TT")
+        LegacyOffenderBuilder(nomsId = "A1234TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "MDI")
               .withVisits(
@@ -1642,7 +1642,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
       )
       offenderAtLeeds = repository.save(
-        OffenderBuilder(nomsId = "A4567TT")
+        LegacyOffenderBuilder(nomsId = "A4567TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "LEI")
               .withVisits(
@@ -1667,7 +1667,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
       )
       offenderAtBrixton = repository.save(
-        OffenderBuilder(nomsId = "A7897TT")
+        LegacyOffenderBuilder(nomsId = "A7897TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "BXI")
               .withVisits(
