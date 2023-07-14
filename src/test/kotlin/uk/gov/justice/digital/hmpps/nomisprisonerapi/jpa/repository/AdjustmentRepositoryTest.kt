@@ -13,12 +13,12 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.KeyDateAdjustmentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyKeyDateAdjustmentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacySentenceAdjustmentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacySentenceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceAdjustmentBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceBuilder
 import java.time.LocalDateTime
 
 @DataJpaTest
@@ -46,9 +46,9 @@ class AdjustmentRepositoryTest {
     builderRepository.save(
       LegacyOffenderBuilder()
         .withBooking(
-          OffenderBookingBuilder().withKeyDateAdjustments(KeyDateAdjustmentBuilder(createdDate = dateTimeJan1))
+          OffenderBookingBuilder().withKeyDateAdjustments(LegacyKeyDateAdjustmentBuilder(createdDate = dateTimeJan1))
             .withSentences(
-              SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(createdDate = dateTimeJan30)),
+              LegacySentenceBuilder().withAdjustment(LegacySentenceAdjustmentBuilder(createdDate = dateTimeJan30)),
             ),
         ),
     )

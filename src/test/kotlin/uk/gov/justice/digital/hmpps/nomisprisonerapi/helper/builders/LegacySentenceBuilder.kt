@@ -9,12 +9,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class SentenceBuilder(
+class LegacySentenceBuilder(
   var calculationType: String = "ADIMP_ORA",
   var category: String = "2003",
   var startDate: LocalDate = LocalDate.now(),
   var status: String = "I",
-  var adjustments: List<SentenceAdjustmentBuilder> = emptyList(),
+  var adjustments: List<LegacySentenceAdjustmentBuilder> = emptyList(),
 ) {
   fun build(
     offenderBooking: OffenderBooking,
@@ -28,18 +28,18 @@ class SentenceBuilder(
       calculationType = calculationType,
     )
 
-  fun withAdjustment(sentenceAdjustmentBuilder: SentenceAdjustmentBuilder = SentenceAdjustmentBuilder()): SentenceBuilder {
+  fun withAdjustment(sentenceAdjustmentBuilder: LegacySentenceAdjustmentBuilder = LegacySentenceAdjustmentBuilder()): LegacySentenceBuilder {
     adjustments = listOf(sentenceAdjustmentBuilder)
     return this
   }
 
-  fun withAdjustments(vararg sentenceAdjustmentBuilders: SentenceAdjustmentBuilder): SentenceBuilder {
+  fun withAdjustments(vararg sentenceAdjustmentBuilders: LegacySentenceAdjustmentBuilder): LegacySentenceBuilder {
     adjustments = arrayOf(*sentenceAdjustmentBuilders).asList()
     return this
   }
 }
 
-class SentenceAdjustmentBuilder(
+class LegacySentenceAdjustmentBuilder(
   var adjustmentTypeCode: String = "UR",
   var adjustmentDate: LocalDate = LocalDate.now(),
   var createdDate: LocalDateTime = LocalDateTime.now(),
