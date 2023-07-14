@@ -11,7 +11,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -55,6 +57,24 @@ interface BookingDsl {
     endComment: String? = null,
     dsl: CourseAllocationDsl.() -> Unit = { payBand() },
   ): OffenderProgramProfile
+
+  @OffenderSentenceDslMarker
+  fun sentence(
+    calculationType: String = "ADIMP_ORA",
+    category: String = "2003",
+    startDate: LocalDate = LocalDate.now(),
+    status: String = "I",
+    dsl: OffenderSentenceDsl.() -> Unit = { },
+  ): OffenderSentence
+
+  @OffenderKeyDateAdjustmentDslMarker
+  fun adjustment(
+    adjustmentTypeCode: String = "ADA",
+    adjustmentDate: LocalDate = LocalDate.now(),
+    createdDate: LocalDateTime = LocalDateTime.now(), // used in migration date filtering
+    adjustmentNumberOfDays: Long = 10,
+    dsl: OffenderKeyDateAdjustmentDsl.() -> Unit = { },
+  ): OffenderKeyDateAdjustment
 }
 
 @Component
@@ -72,12 +92,16 @@ class BookingBuilderFactory(
   private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory,
   private val incentiveBuilderFactory: IncentiveBuilderFactory,
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
+  private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
+  private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
     courseAllocationBuilderFactory,
     incentiveBuilderFactory,
     adjudicationPartyBuilderFactory,
+    offenderSentenceBuilderFactory,
+    offenderKeyDateAdjustmentBuilderFactory,
   )
 }
 
@@ -86,6 +110,8 @@ class BookingBuilder(
   private val courseAllocationBuilderFactory: CourseAllocationBuilderFactory,
   private val incentiveBuilderFactory: IncentiveBuilderFactory,
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
+  private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
+  private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -130,6 +156,45 @@ class BookingBuilder(
           .also { offenderBooking.offenderProgramProfiles += it }
           .also { builder.apply(dsl) }
       }
+
+  override fun sentence(
+    calculationType: String,
+    category: String,
+    startDate: LocalDate,
+    status: String,
+    dsl: OffenderSentenceDsl.() -> Unit,
+  ) =
+    offenderSentenceBuilderFactory.builder()
+      .let { builder ->
+        builder.build(
+          calculationType = calculationType,
+          category = category,
+          startDate = startDate,
+          status = status,
+          offenderBooking = offenderBooking,
+          sequence = offenderBooking.sentences.size.toLong() + 1,
+        )
+          .also { offenderBooking.sentences += it }
+          .also { builder.apply(dsl) }
+      }
+
+  override fun adjustment(
+    adjustmentTypeCode: String,
+    adjustmentDate: LocalDate,
+    createdDate: LocalDateTime,
+    adjustmentNumberOfDays: Long,
+    dsl: OffenderKeyDateAdjustmentDsl.() -> Unit,
+  ): OffenderKeyDateAdjustment = offenderKeyDateAdjustmentBuilderFactory.builder().let { builder ->
+    builder.build(
+      adjustmentTypeCode = adjustmentTypeCode,
+      adjustmentDate = adjustmentDate,
+      createdDate = createdDate,
+      adjustmentNumberOfDays = adjustmentNumberOfDays,
+      offenderBooking = offenderBooking,
+    )
+      .also { offenderBooking.keyDateAdjustments += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun incentive(
     iepLevelCode: String,

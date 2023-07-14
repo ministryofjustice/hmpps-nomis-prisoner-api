@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class KeyDateAdjustmentBuilder(
+class LegacyKeyDateAdjustmentBuilder(
   var adjustmentTypeCode: String = "ADA",
   var adjustmentDate: LocalDate = LocalDate.now(),
   var createdDate: LocalDateTime = LocalDateTime.now(), // used in migration date filtering

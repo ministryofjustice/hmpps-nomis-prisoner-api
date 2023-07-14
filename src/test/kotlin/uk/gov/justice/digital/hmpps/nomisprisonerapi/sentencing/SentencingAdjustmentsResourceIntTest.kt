@@ -14,14 +14,17 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.KeyDateAdjustmentBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyKeyDateAdjustmentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceAdjustmentBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.SentenceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -29,6 +32,10 @@ import java.time.LocalDateTime
 class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
+
   lateinit var prisoner: Offender
   var bookingId: Long = 0
 
@@ -37,14 +44,14 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   internal fun createPrisoner() {
-    prisoner = repository.save(
-      LegacyOffenderBuilder(nomsId = "A1234TT")
-        .withBooking(
-          OffenderBookingBuilder()
-            .withSentences(SentenceBuilder()),
-        ),
-    )
-    bookingId = prisoner.bookings.first().bookingId
+    nomisDataBuilder.build {
+      prisoner = offender(nomsId = "A1234TT") {
+        booking {
+          sentence {}
+        }
+      }
+    }
+    bookingId = prisoner.latestBooking().bookingId
   }
 
   @AfterEach
@@ -60,14 +67,24 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
+      lateinit var adjustment: OffenderKeyDateAdjustment
       anotherPrisoner = repository.save(
         LegacyOffenderBuilder(nomsId = "A1234TX")
           .withBooking(
             OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
+              .withKeyDateAdjustments(LegacyKeyDateAdjustmentBuilder()),
           ),
       )
-      adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking {
+            sentence {}
+            adjustment = adjustment {}
+          }
+        }
+      }
+
+      adjustmentId = adjustment.id
     }
 
     @AfterEach
@@ -398,15 +415,19 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
-      anotherPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1239TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
-          ),
-      )
-      bookingId = anotherPrisoner.bookings.first().bookingId
-      adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
+      lateinit var adjustment: OffenderKeyDateAdjustment
+      lateinit var booking: OffenderBooking
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1239TX") {
+          booking = booking {
+            sentence {}
+            adjustment = adjustment {}
+          }
+        }
+      }
+
+      bookingId = booking.bookingId
+      adjustmentId = adjustment.id
     }
 
     @AfterEach
@@ -697,15 +718,18 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
-      anotherPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1239TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
-          ),
-      )
-      adjustmentId = anotherPrisoner.bookings.first().keyDateAdjustments.first().id
-      bookingId = anotherPrisoner.bookings.first().bookingId
+      lateinit var adjustment: OffenderKeyDateAdjustment
+      lateinit var booking: OffenderBooking
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1239TX") {
+          booking = booking {
+            sentence {}
+            adjustment = adjustment {}
+          }
+        }
+      }
+      adjustmentId = adjustment.id
+      bookingId = booking.bookingId
     }
 
     @AfterEach
@@ -831,28 +855,35 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
-      dummyPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1238TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withKeyDateAdjustments(KeyDateAdjustmentBuilder()),
-          ),
-      )
+      lateinit var adjustment: OffenderKeyDateAdjustment
+      nomisDataBuilder.build {
+        dummyPrisoner = offender(nomsId = "A1238TX") {
+          booking {
+            adjustment = adjustment {}
+          }
+        }
+      }
       // hack to create a key-date adjustment so I have a valid ID for the next adjustment
-      val keyDateAdjustmentId = dummyPrisoner.bookings.first().keyDateAdjustments.first().id
+      val keyDateAdjustmentId = adjustment.id
 
-      anotherPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withSentences(
-                SentenceBuilder().withAdjustment(),
-                SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(keyDateAdjustmentId = keyDateAdjustmentId)),
-              ),
-          ),
-      )
-      adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
-      keydateRelatedAdjustmentId = anotherPrisoner.bookings.first().sentences.last().adjustments.first().id
+      lateinit var firstSentenceAdjustment: OffenderSentenceAdjustment
+      lateinit var lastSentenceAdjustment: OffenderSentenceAdjustment
+
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking {
+            sentence {
+              firstSentenceAdjustment = adjustment {}
+            }
+            sentence {
+              lastSentenceAdjustment = adjustment(keyDateAdjustmentId = keyDateAdjustmentId)
+            }
+          }
+        }
+      }
+
+      adjustmentId = firstSentenceAdjustment.id
+      keydateRelatedAdjustmentId = lastSentenceAdjustment.id
     }
 
     @AfterEach
@@ -1190,14 +1221,19 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisoner() {
-        anotherPrisoner = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234TT")
-            .withBooking(
-              OffenderBookingBuilder()
-                .withSentences(SentenceBuilder(), SentenceBuilder().withAdjustment()),
-            ),
-        )
-        anotherBookingId = anotherPrisoner.bookings.first().bookingId
+        lateinit var booking: OffenderBooking
+        nomisDataBuilder.build {
+          anotherPrisoner = offender(nomsId = "A1234TT") {
+            booking = booking {
+              sentence { }
+              sentence {
+                adjustment {}
+              }
+            }
+          }
+        }
+
+        anotherBookingId = booking.bookingId
       }
 
       @AfterEach
@@ -1303,15 +1339,20 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
-      anotherPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1239TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withSentences(SentenceBuilder().withAdjustment()),
-          ),
-      )
-      bookingId = anotherPrisoner.bookings.first().bookingId
-      sentenceAdjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
+      lateinit var booking: OffenderBooking
+      lateinit var adjustment: OffenderSentenceAdjustment
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1239TX") {
+          booking = booking {
+            sentence {
+              adjustment = adjustment {}
+            }
+          }
+        }
+      }
+
+      bookingId = booking.bookingId
+      sentenceAdjustmentId = adjustment.id
     }
 
     @AfterEach
@@ -1582,15 +1623,20 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
-      anotherPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withSentences(SentenceBuilder().withAdjustment(SentenceAdjustmentBuilder(adjustmentTypeCode = "UR"))),
-          ),
-      )
-      adjustmentId = anotherPrisoner.bookings.first().sentences.first().adjustments.first().id
-      bookingId = anotherPrisoner.bookings.first().bookingId
+      lateinit var booking: OffenderBooking
+      lateinit var adjustment: OffenderSentenceAdjustment
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking = booking {
+            sentence {
+              adjustment = adjustment(adjustmentTypeCode = "UR")
+            }
+          }
+        }
+      }
+
+      bookingId = booking.bookingId
+      adjustmentId = adjustment.id
     }
 
     @AfterEach
@@ -1701,32 +1747,20 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @BeforeEach
     internal fun createPrisoner() {
-      anotherPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withSentences(
-                SentenceBuilder().withAdjustments(
-                  SentenceAdjustmentBuilder(
-                    createdDate = LocalDateTime.of(2023, 1, 1, 13, 30),
-                  ),
-                  SentenceAdjustmentBuilder(
-                    createdDate = LocalDateTime.of(2023, 1, 5, 13, 30),
-                  ),
-                  SentenceAdjustmentBuilder(
-                    createdDate = LocalDateTime.of(2023, 1, 10, 13, 30),
-                  ),
-                ),
-              )
-              .withKeyDateAdjustments(
-                KeyDateAdjustmentBuilder(createdDate = LocalDateTime.of(2023, 1, 2, 13, 30)),
-
-                KeyDateAdjustmentBuilder(createdDate = LocalDateTime.of(2023, 1, 3, 13, 30)),
-
-                KeyDateAdjustmentBuilder(createdDate = LocalDateTime.of(2023, 1, 15, 13, 30)),
-              ),
-          ),
-      )
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking {
+            sentence {
+              adjustment(createdDate = LocalDateTime.of(2023, 1, 1, 13, 30))
+              adjustment(createdDate = LocalDateTime.of(2023, 1, 5, 13, 30))
+              adjustment(createdDate = LocalDateTime.of(2023, 1, 10, 13, 30))
+            }
+            adjustment(createdDate = LocalDateTime.of(2023, 1, 2, 13, 30))
+            adjustment(createdDate = LocalDateTime.of(2023, 1, 3, 13, 30))
+            adjustment(createdDate = LocalDateTime.of(2023, 1, 15, 13, 30))
+          }
+        }
+      }
     }
 
     @AfterEach
