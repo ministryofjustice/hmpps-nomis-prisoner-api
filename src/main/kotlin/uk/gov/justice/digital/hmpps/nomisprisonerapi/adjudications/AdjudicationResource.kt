@@ -78,19 +78,19 @@ class AdjudicationResource(
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-    @RequestParam(value = "prisonId", required = false)
+    @RequestParam(value = "prisonIds", required = false)
     @Parameter(
       description = "Filter results by adjudications that were created in one of the given prisons",
       example = "MDI",
     )
-    prisonId: List<String>?,
+    prisonIds: List<String>?,
   ): Page<AdjudicationIdResponse> =
     adjudicationService.findAdjudicationIdsByFilter(
       pageRequest = pageRequest,
       AdjudicationFilter(
         toDate = toDate,
         fromDate = fromDate,
-        prisonIds = prisonId,
+        prisonIds = prisonIds ?: listOf(),
       ),
     )
 
