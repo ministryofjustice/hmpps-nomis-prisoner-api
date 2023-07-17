@@ -15,8 +15,8 @@ class OffenderBookingBuilder(
   var contacts: List<OffenderContactBuilder> = emptyList(),
   var visits: List<VisitBuilder> = emptyList(),
   var incentives: List<LegacyIncentiveBuilder> = emptyList(),
-  var sentences: List<SentenceBuilder> = emptyList(),
-  var keyDateAdjustments: List<KeyDateAdjustmentBuilder> = emptyList(),
+  var sentences: List<LegacySentenceBuilder> = emptyList(),
+  var keyDateAdjustments: List<LegacyKeyDateAdjustmentBuilder> = emptyList(),
   val repository: Repository? = null,
 ) {
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
@@ -50,11 +50,11 @@ class OffenderBookingBuilder(
     this.incentives = arrayOf(*incentiveBuilder).asList()
     return this
   }
-  fun withSentences(vararg sentenceBuilder: SentenceBuilder): OffenderBookingBuilder {
+  fun withSentences(vararg sentenceBuilder: LegacySentenceBuilder): OffenderBookingBuilder {
     this.sentences = arrayOf(*sentenceBuilder).asList()
     return this
   }
-  fun withKeyDateAdjustments(vararg keyDateAdjustmentBuilder: KeyDateAdjustmentBuilder): OffenderBookingBuilder {
+  fun withKeyDateAdjustments(vararg keyDateAdjustmentBuilder: LegacyKeyDateAdjustmentBuilder): OffenderBookingBuilder {
     this.keyDateAdjustments = arrayOf(*keyDateAdjustmentBuilder).asList()
     return this
   }
