@@ -718,7 +718,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/adjudications")
+  @DisplayName("POST /prisoners/{offenderNo}/adjudications")
   @Nested
   inner class CreateAdjudication {
     private lateinit var prisoner: Offender
@@ -761,13 +761,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
           .expectStatus().isForbidden
-
-//        webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-//          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-//          .contentType(MediaType.APPLICATION_JSON)
-//          .body(BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest()))
-//          .exchange()
-//          .expectStatus().isForbidden
       }
 
       @Test
