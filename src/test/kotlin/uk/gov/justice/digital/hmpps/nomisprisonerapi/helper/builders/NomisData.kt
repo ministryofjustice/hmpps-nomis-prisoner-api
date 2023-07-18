@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -15,15 +16,23 @@ class NomisDataBuilder(
   private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = ProgramServiceBuilderFactory(),
   private val offenderBuilderFactory: OffenderBuilderFactory? = null, // note this means the offender DSL is not available in unit tests whereas programService is.
   private val staffBuilderFactory: StaffBuilderFactory? = null,
+  private val staffUserAccountBuilderFactory: StaffUserAccountBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
 ) {
-  fun build(dsl: NomisData.() -> Unit) = NomisData(programServiceBuilderFactory, offenderBuilderFactory, staffBuilderFactory, adjudicationIncidentBuilderFactory).apply(dsl)
+  fun build(dsl: NomisData.() -> Unit) = NomisData(
+    programServiceBuilderFactory,
+    offenderBuilderFactory,
+    staffBuilderFactory,
+    staffUserAccountBuilderFactory,
+    adjudicationIncidentBuilderFactory,
+  ).apply(dsl)
 }
 
 class NomisData(
   private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = null,
   private val offenderBuilderFactory: OffenderBuilderFactory? = null,
   private val staffBuilderFactory: StaffBuilderFactory? = null,
+  private val staffUserAccountBuilderFactory: StaffUserAccountBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
@@ -31,6 +40,15 @@ class NomisData(
     staffBuilderFactory!!.builder()
       .let { builder ->
         builder.build(lastName, firstName)
+          .also {
+            builder.apply(dsl)
+          }
+      }
+
+  override fun staffAccount(username: String, staff: Staff, dsl: StaffUserAccountDsl.() -> Unit): StaffUserAccount =
+    staffUserAccountBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(username, staff)
           .also {
             builder.apply(dsl)
           }
@@ -123,6 +141,9 @@ interface NomisDataDsl {
 
   @StaffDslMarker
   fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: StaffDsl.() -> Unit = {}): Staff
+
+  @StaffDslMarker
+  fun staffAccount(username: String, staff: Staff, dsl: StaffUserAccountDsl.() -> Unit = {}): StaffUserAccount
 
   @AdjudicationIncidentDslMarker
   fun adjudicationIncident(

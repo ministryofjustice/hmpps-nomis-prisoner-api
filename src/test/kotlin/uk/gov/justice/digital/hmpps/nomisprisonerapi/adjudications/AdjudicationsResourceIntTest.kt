@@ -6,6 +6,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
+import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_CONTROL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_REPORTING_OFFICER
@@ -20,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -713,5 +716,98 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Removal from Activity")
       }
     }
+  }
+
+  @DisplayName("POST /prisoners/{offenderNo}/adjudications")
+  @Nested
+  inner class CreateAdjudication {
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var reportingStaffAccount: StaffUserAccount
+
+    @BeforeEach
+    fun createPrisoner() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1965NM") { booking { } }
+        reportingStaff = staff {}
+        reportingStaffAccount = staffAccount("JANESTAFF", staff = reportingStaff)
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+      repository.delete(reportingStaffAccount)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    private fun aSimpleAdjudication(): String = """
+      {
+        "adjudicationNumber": 12345678,
+        "incident": {
+          "reportingStaffUsername":  "JANESTAFF",
+          "incidentDate": "2023-01-31",
+          "incidentTime": "10:15",
+          "reportedDate": "2023-02-10",
+          "reportedTime": "09:15",
+          "internalLocationId": -41,
+          "details": "A fight that lead to so much blood",
+          "prisonId": "MDI",
+          "prisonerVictimsOffenderNumbers": [],
+          "staffWitnessesUsernames": [],
+          "staffVictimsUsernames": [],
+          "repairs": [],
+          "evidence": []
+        },
+        "charges": [
+          {
+            "offenceCode": "51:1N",
+            "offenceId": "12345678/1"
+          }
+        ]
+      }
+    """.trimIndent()
   }
 }
