@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -16,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -104,7 +107,12 @@ class AdjudicationResource(
       ApiResponse(
         responseCode = "200",
         description = "Adjudication Information Returned",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = AdjudicationResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -144,6 +152,72 @@ class AdjudicationResource(
     adjudicationNumber: Long,
   ): AdjudicationResponse =
     adjudicationService.getAdjudication(adjudicationNumber)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PostMapping("/prisoners/{offenderNo}/adjudications")
+  @Operation(
+    summary = "creates an adjudication on the latest booking of a prisoner",
+    description = "Creates an adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Adjudication Created Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Adjudication already exists",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createAdjudication(
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @PathVariable("offenderNo")
+    offenderNo: String,
+    @RequestBody @Valid
+    request: CreateAdjudicationRequest,
+  ): AdjudicationResponse? = null // for now return a nullable just so we can write some basic tests
 }
 
 @Schema(description = "adjudication id")
