@@ -35,10 +35,11 @@ class StaffUserAccountBuilder(
   fun build(
     username: String,
     staff: Staff,
+    type: String,
   ): StaffUserAccount = StaffUserAccount(
     username = username,
     staff = staff,
-    type = "GENERAL",
+    type = type,
     source = "USER",
   )
     .let { repository.save(it) }

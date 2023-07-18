@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -20,6 +22,10 @@ class Staff(
   val firstName: String,
   @Column
   val lastName: String,
+
+  @OneToMany(mappedBy = "staff", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val accounts: MutableList<StaffUserAccount> = mutableListOf(),
+
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

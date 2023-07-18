@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -723,21 +722,20 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
   inner class CreateAdjudication {
     private lateinit var prisoner: Offender
     private lateinit var reportingStaff: Staff
-    private lateinit var reportingStaffAccount: StaffUserAccount
 
     @BeforeEach
     fun createPrisoner() {
       nomisDataBuilder.build {
         prisoner = offender(nomsId = "A1965NM") { booking { } }
-        reportingStaff = staff {}
-        reportingStaffAccount = staffAccount("JANESTAFF", staff = reportingStaff)
+        reportingStaff = staff {
+          account(username = "JANESTAFF")
+        }
       }
     }
 
     @AfterEach
     fun tearDown() {
       repository.delete(prisoner)
-      repository.delete(reportingStaffAccount)
       repository.delete(reportingStaff)
     }
 
