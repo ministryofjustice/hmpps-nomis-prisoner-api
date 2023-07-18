@@ -188,8 +188,6 @@ class Repository(
 
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
-  fun save(staffBuilder: LegacyStaffBuilder): Staff = staffRepository.save(staffBuilder.build())
-
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
   fun delete(staffUserAccount: StaffUserAccount) = staffUserAccountRepository.delete(staffUserAccount)
 
