@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Pattern
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.OFFENDER_NO_PATTERN
 import java.time.LocalDate
 
 @RestController
@@ -214,10 +216,11 @@ class AdjudicationResource(
   fun createAdjudication(
     @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
     @PathVariable("offenderNo")
+    @Pattern(regexp = OFFENDER_NO_PATTERN)
     offenderNo: String,
     @RequestBody @Valid
     request: CreateAdjudicationRequest,
-  ): AdjudicationResponse? = null // for now return a nullable just so we can write some basic tests
+  ): AdjudicationResponse? = adjudicationService.createAdjudication(offenderNo, request)
 }
 
 @Schema(description = "adjudication id")

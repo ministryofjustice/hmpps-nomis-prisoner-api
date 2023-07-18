@@ -781,11 +781,73 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    private fun aSimpleAdjudication(): String = """
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will return 404 if prisoner not found`() {
+        webTestClient.post().uri("/prisoners/A9999ZZ/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 400 if prisoner number is not valid`() {
+        webTestClient.post().uri("/prisoners/BANANAS/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if person has no bookings yet`() {
+        webTestClient.post().uri("/prisoners/${prisonerWithNoBookings.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if reporting officer is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication(reportingStaffUsername = "BANANAS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if offence code is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication(offenceCode = "BANANAS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    private fun aSimpleAdjudication(reportingStaffUsername: String = "JANESTAFF", offenceCode: String = "51:1N"): String = """
       {
         "adjudicationNumber": 12345678,
         "incident": {
-          "reportingStaffUsername":  "JANESTAFF",
+          "reportingStaffUsername":  "$reportingStaffUsername",
           "incidentDate": "2023-01-31",
           "incidentTime": "10:15",
           "reportedDate": "2023-02-10",
@@ -801,7 +863,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         },
         "charges": [
           {
-            "offenceCode": "51:1N",
+            "offenceCode": "$offenceCode",
             "offenceId": "12345678/1"
           }
         ]

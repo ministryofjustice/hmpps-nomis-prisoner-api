@@ -5,4 +5,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 
 @Repository
-interface StaffUserAccountRepository : JpaRepository<StaffUserAccount, String>
+interface StaffUserAccountRepository : JpaRepository<StaffUserAccount, String> {
+  fun firstByUsername(reportingStaffUsername: String): StaffUserAccount?
+}
