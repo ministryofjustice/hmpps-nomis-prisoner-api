@@ -109,7 +109,7 @@ class AdjudicationService(
       offenderRepository.findFirstByNomsId(offenderNo) ?: throw NotFoundException("Prisoner $offenderNo not found")
     val booking = prisoner.bookings.firstOrNull { it.bookingSequence == 1 }
       ?: throw BadDataException("Prisoner $offenderNo has no bookings")
-    val reportingStaff = staffUserAccountRepository.firstByUsername(request.incident.reportingStaffUsername)?.staff
+    val reportingStaff = staffUserAccountRepository.findByUsername(request.incident.reportingStaffUsername)?.staff
       ?: throw BadDataException("Staff ${request.incident.reportingStaffUsername} not found")
     val charges: List<Pair<String, AdjudicationIncidentOffence>> = request.charges.map {
       it.offenceId to (
