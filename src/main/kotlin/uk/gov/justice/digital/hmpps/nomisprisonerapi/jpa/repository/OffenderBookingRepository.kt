@@ -12,5 +12,4 @@ interface OffenderBookingRepository :
   PagingAndSortingRepository<OffenderBooking, Long>, JpaSpecificationExecutor<OffenderBooking>, CrudRepository<OffenderBooking, Long> {
 
   fun findByOffenderNomsIdAndActive(nomsId: String, active: Boolean): Optional<OffenderBooking>
-  fun findByOffenderNomsIdAndBookingSequence(nomsId: String, bookingSequence: Int): Optional<OffenderBooking>
 }

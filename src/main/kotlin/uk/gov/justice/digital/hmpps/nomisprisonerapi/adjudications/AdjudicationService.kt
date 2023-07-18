@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
@@ -26,7 +27,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isWitness
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 
@@ -35,6 +39,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 class AdjudicationService(
   private val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository,
   private val adjudicationHearingRepository: AdjudicationHearingRepository,
+  private val offenderRepository: OffenderRepository,
+  private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -86,7 +93,31 @@ class AdjudicationService(
     adjudicationFilter: AdjudicationFilter,
   ): Page<AdjudicationIdResponse> {
     return adjudicationIncidentPartyRepository.findAll(AdjudicationSpecification(adjudicationFilter), pageRequest)
-      .map { AdjudicationIdResponse(adjudicationNumber = it.adjudicationNumber!!, offenderNo = it.offenderBooking!!.offender.nomsId) }
+      .map {
+        AdjudicationIdResponse(
+          adjudicationNumber = it.adjudicationNumber!!,
+          offenderNo = it.offenderBooking!!.offender.nomsId,
+        )
+      }
+  }
+
+  fun createAdjudication(
+    offenderNo: String,
+    request: CreateAdjudicationRequest,
+  ): AdjudicationResponse? /* for now return a nullable just so we can write some basic tests */ {
+    val prisoner =
+      offenderRepository.findFirstByNomsId(offenderNo) ?: throw NotFoundException("Prisoner $offenderNo not found")
+    val booking = prisoner.bookings.firstOrNull { it.bookingSequence == 1 }
+      ?: throw BadDataException("Prisoner $offenderNo has no bookings")
+    val reportingStaff = staffUserAccountRepository.findByUsername(request.incident.reportingStaffUsername)?.staff
+      ?: throw BadDataException("Staff ${request.incident.reportingStaffUsername} not found")
+    val charges: List<Pair<String, AdjudicationIncidentOffence>> = request.charges.map {
+      it.offenceId to (
+        adjudicationIncidentOffenceRepository.findByCode(it.offenceCode)
+          ?: throw BadDataException("Offence ${it.offenceCode} not found")
+        )
+    }
+    return null
   }
 }
 
