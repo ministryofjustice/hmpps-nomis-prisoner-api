@@ -313,7 +313,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri {
           it.path("/adjudications/ids")
             .queryParam("size", "200")
-            .queryParam("prisonId", "LEI")
+            .queryParam("prisonIds", "LEI")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -328,8 +328,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri {
           it.path("/adjudications/ids")
             .queryParam("size", "200")
-            .queryParam("prisonId", "MDI")
-            .queryParam("prisonId", "BXI")
+            .queryParam("prisonIds", "MDI")
+            .queryParam("prisonIds", "BXI")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
