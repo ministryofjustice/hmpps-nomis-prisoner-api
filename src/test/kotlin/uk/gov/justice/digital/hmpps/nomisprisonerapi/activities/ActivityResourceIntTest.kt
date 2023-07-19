@@ -53,7 +53,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   fun setup() {
     nomisDataBuilder.build {
-      programService {}
+      programService()
     }
   }
 
@@ -718,7 +718,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          offender(nomsId = "A1234TT") {
+          offender {
             offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
@@ -736,7 +736,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         nomisDataBuilder.build {
-          offender(nomsId = "A1234TT") {
+          offender {
             offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity) {
