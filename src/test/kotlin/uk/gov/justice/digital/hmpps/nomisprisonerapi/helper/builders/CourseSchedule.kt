@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -15,16 +14,11 @@ annotation class CourseScheduleDslMarker
 interface CourseScheduleDsl
 
 @Component
-class CourseScheduleBuilderRepository(val courseScheduleRepository: CourseScheduleRepository) {
-  fun save(courseSchedule: CourseSchedule) = courseScheduleRepository.save(courseSchedule)
+class CourseScheduleBuilderFactory() {
+  fun builder() = CourseScheduleBuilder()
 }
 
-@Component
-class CourseScheduleBuilderFactory(val repository: CourseScheduleBuilderRepository? = null) {
-  fun builder() = CourseScheduleBuilder(repository)
-}
-
-class CourseScheduleBuilder(val repository: CourseScheduleBuilderRepository? = null) : CourseScheduleDsl {
+class CourseScheduleBuilder : CourseScheduleDsl {
   fun build(
     courseActivity: CourseActivity,
     courseScheduleId: Long,
@@ -43,10 +37,6 @@ class CourseScheduleBuilder(val repository: CourseScheduleBuilderRepository? = n
         endTime = date.atTime(LocalTime.parse(endTime)),
         slotCategory = slotCategory,
         scheduleStatus = scheduleStatus,
-      ).let {
-        save(it)
-      }
+      )
     }
-
-  private fun save(courseSchedule: CourseSchedule) = repository?.save(courseSchedule) ?: courseSchedule
 }

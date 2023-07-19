@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -62,12 +61,10 @@ interface CourseActivityDsl {
 
 @Component
 class CourseActivityBuilderRepository(
-  private val courseActivityRepository: CourseActivityRepository? = null,
   private val agencyLocationRepository: AgencyLocationRepository? = null,
   private val iepLevelRepository: ReferenceCodeRepository<IEPLevel>? = null,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository? = null,
 ) {
-  fun save(courseActivity: CourseActivity) = courseActivityRepository?.save(courseActivity)
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository?.findByIdOrNull(id)!!
   fun lookupIepLevel(code: String): IEPLevel =
     iepLevelRepository?.findByIdOrNull(ReferenceCode.Pk(IEPLevel.IEP_LEVEL, code))!!
@@ -130,7 +127,6 @@ class CourseActivityBuilder(
       internalLocation = internalLocationId?.let { lookupAgencyInternalLocation(it, prisonId) },
       excludeBankHolidays = excludeBankHolidays,
     )
-      .let { save(it) }
       .also { courseActivity = it }
 
   override fun payRate(
@@ -202,8 +198,6 @@ class CourseActivityBuilder(
       courseActivity.courseScheduleRules += it
     }
 
-  private fun save(courseActivity: CourseActivity) = repository?.save(courseActivity)
-    ?: courseActivity
   private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
   private fun lookupIepLevel(code: String): IEPLevel = repository?.lookupIepLevel(code)

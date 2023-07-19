@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRuleRepository
 import java.time.LocalDate
 
 @DslMarker
@@ -14,16 +13,11 @@ annotation class CourseScheduleRuleDslMarker
 interface CourseScheduleRuleDsl
 
 @Component
-class CourseScheduleRuleBuilderRepository(private val courseScheduleRuleRepository: CourseScheduleRuleRepository) {
-  fun save(rule: CourseScheduleRule) = courseScheduleRuleRepository.save(rule)
+class CourseScheduleRuleBuilderFactory() {
+  fun builder(): CourseScheduleRuleBuilder = CourseScheduleRuleBuilder()
 }
 
-@Component
-class CourseScheduleRuleBuilderFactory(private val repository: CourseScheduleRuleBuilderRepository? = null) {
-  fun builder(): CourseScheduleRuleBuilder = CourseScheduleRuleBuilder(repository)
-}
-
-class CourseScheduleRuleBuilder(val repository: CourseScheduleRuleBuilderRepository? = null) : CourseScheduleRuleDsl {
+class CourseScheduleRuleBuilder : CourseScheduleRuleDsl {
   fun build(
     courseActivity: CourseActivity,
     id: Long,
@@ -53,10 +47,6 @@ class CourseScheduleRuleBuilder(val repository: CourseScheduleRuleBuilderReposit
       saturday = saturday,
       sunday = sunday,
       slotCategory = SlotCategory.of(date.atTime(startTimeHours, startTimeMinutes).toLocalTime()),
-    ).let {
-      save(it)
-    }
+    )
   }
-
-  private fun save(rule: CourseScheduleRule) = repository?.save(rule) ?: rule
 }

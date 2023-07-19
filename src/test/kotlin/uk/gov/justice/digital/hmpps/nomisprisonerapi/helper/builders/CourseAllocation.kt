@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -39,11 +38,9 @@ interface CourseAllocationDsl {
 
 @Component
 class CourseAllocationBuilderRepository(
-  private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val programStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
   private val programEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
 ) {
-  fun save(courseAllocation: OffenderProgramProfile) = offenderProgramProfileRepository.save(courseAllocation)
   fun programStatus(code: String): OffenderProgramStatus = programStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(code))!!
   fun programEndReason(code: String): ProgramServiceEndReason = programEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(code))!!
 }
@@ -89,7 +86,6 @@ class CourseAllocationBuilder(
       endReason = endReasonCode?.let { programEndReason(endReasonCode) },
       endComment = endComment,
     )
-      .let { save(it) }
       .also { courseAllocation = it }
 
   override fun payBand(
@@ -119,8 +115,6 @@ class CourseAllocationBuilder(
       paidTransactionId,
     )
       .also { courseAllocation.offenderCourseAttendances += it }
-
-  private fun save(offenderProgramProfile: OffenderProgramProfile) = repository?.save(offenderProgramProfile) ?: offenderProgramProfile
 
   private fun programStatus(programStatusCode: String) = repository?.programStatus(programStatusCode)
     ?: OffenderProgramStatus(code = programStatusCode, description = programStatusCode)
