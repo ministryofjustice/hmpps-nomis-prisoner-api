@@ -20,17 +20,6 @@ annotation class CourseActivityPayRateDslMarker
 @NomisDataDslMarker
 interface CourseActivityPayRateDsl
 
-interface CourseActivityPayRateDslApi {
-  @CourseActivityPayRateDslMarker
-  fun payRate(
-    iepLevelCode: String = "STD",
-    payBandCode: String = "5",
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    halfDayRate: Double = 3.2,
-  ): CourseActivityPayRate
-}
-
 @Component
 class CourseActivityPayRateBuilderRepository(
   val courseActivityPayRateRepository: CourseActivityPayRateRepository,

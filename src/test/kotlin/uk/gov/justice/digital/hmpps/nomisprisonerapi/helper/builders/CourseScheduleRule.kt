@@ -13,24 +13,6 @@ annotation class CourseScheduleRuleDslMarker
 @NomisDataDslMarker
 interface CourseScheduleRuleDsl
 
-interface CourseScheduleRuleDslApi {
-  @CourseScheduleRuleDslMarker
-  fun courseScheduleRule(
-    id: Long = 0,
-    startTimeHours: Int = 9,
-    startTimeMinutes: Int = 30,
-    endTimeHours: Int = 12,
-    endTimeMinutes: Int = 30,
-    monday: Boolean = true,
-    tuesday: Boolean = true,
-    wednesday: Boolean = true,
-    thursday: Boolean = true,
-    friday: Boolean = true,
-    saturday: Boolean = false,
-    sunday: Boolean = false,
-  ): CourseScheduleRule
-}
-
 @Component
 class CourseScheduleRuleBuilderRepository(private val courseScheduleRuleRepository: CourseScheduleRuleRepository) {
   fun save(rule: CourseScheduleRule) = courseScheduleRuleRepository.save(rule)

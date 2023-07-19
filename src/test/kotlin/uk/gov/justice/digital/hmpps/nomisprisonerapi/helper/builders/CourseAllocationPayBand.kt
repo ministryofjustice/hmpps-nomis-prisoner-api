@@ -16,15 +16,6 @@ annotation class CourseAllocationPayBandDslMarker
 @NomisDataDslMarker
 interface CourseAllocationPayBandDsl
 
-interface CourseAllocationPayBandDslApi {
-  @CourseAllocationPayBandDslMarker
-  fun payBand(
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    payBandCode: String = "5",
-  ): OffenderProgramProfilePayBand
-}
-
 @Component
 class CourseAllocationPayBandBuilderRepository(
   private val courseAllocationPayBandRepository: OffenderProgramProfilePayBandRepository,
