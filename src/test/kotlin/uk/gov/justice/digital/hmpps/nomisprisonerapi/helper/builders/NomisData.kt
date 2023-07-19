@@ -120,7 +120,7 @@ interface NomisDataDsl {
   @ProgramServiceDslMarker
   fun programService(
     programCode: String = "INTTEST",
-    programId: Long = 20,
+    programId: Long = 0,
     description: String = "test program",
     active: Boolean = true,
     dsl: ProgramServiceDsl.() -> Unit = {},

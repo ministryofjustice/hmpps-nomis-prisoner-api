@@ -100,7 +100,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid prison should return bad request`() {
-        val invalidPrison = validJsonRequest().replace(""""prisonId" : "LEI",""", """"prisonId" : "ZZX",""")
+        val invalidPrison = validJsonRequest().replace(""""prisonId" : "BXI",""", """"prisonId" : "ZZX",""")
 
         createActivityExpectingBadRequest(invalidPrison)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -230,7 +230,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         assertThat(courseActivity.courseActivityId).isEqualTo(id)
         assertThat(courseActivity.capacity).isEqualTo(23)
-        assertThat(courseActivity.prison.id).isEqualTo("LEI")
+        assertThat(courseActivity.prison.id).isEqualTo("BXI")
         assertThat(courseActivity.payRates.first().halfDayRate).isCloseTo(
           BigDecimal(0.4),
           within(BigDecimal("0.001")),
@@ -264,7 +264,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           check<MutableMap<String, String>> { actual ->
             mapOf(
               "nomisCourseActivityId" to id.toString(),
-              "prisonId" to "LEI",
+              "prisonId" to "BXI",
               "nomisCourseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
               "nomisCourseActivityPayRateIds" to "[BAS-5-2022-10-31]",
               "nomisCourseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
@@ -345,7 +345,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               } ],
       """.trimIndent(),
     ) = """{
-            "prisonId" : "LEI",
+            "prisonId" : "BXI",
             "code" : "CA",
             "programCode" : "INTTEST",
             "description" : "test description",
@@ -353,7 +353,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             "startDate" : "2022-10-31",
             "endDate" : "2022-11-30",
             "minimumIncentiveLevelCode" : "STD",
-            "internalLocationId" : -8,
+            "internalLocationId" : -3005,
             "payRates" : [ {
                 "incentiveLevel" : "BAS",
                 "payBand" : "5",
@@ -395,7 +395,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private fun detailsJson(): String = """
       "startDate" : "2022-11-01",
       "endDate" : "2022-11-30",
-      "internalLocationId" : -27,
+      "internalLocationId" : -3006,
       "capacity": 30,
       "description": "updated description", 
       "minimumIncentiveLevelCode": "BAS", 
@@ -488,7 +488,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
+        assertThat(updated.internalLocation?.locationId).isEqualTo(-3006)
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
         assertThat(updated.payRates[1].endDate).isNull()
         assertThat(updated.payRates[1].halfDayRate)
@@ -507,7 +507,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           eq("activity-updated"),
           check<MutableMap<String, String>> {
             assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
-            assertThat(it["prisonId"]).isEqualTo("LEI")
+            assertThat(it["prisonId"]).isEqualTo("BXI")
             assertThat(it["created-courseActivityPayRateIds"]).isEqualTo("[STD-5-$tomorrow]")
             assertThat(it["expired-courseActivityPayRateIds"]).isEqualTo("[STD-5-2022-10-31]")
           },
@@ -519,7 +519,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for unknown data`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId: -99999,""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -3006,""", """"internalLocationId: -99999,""")),
         )
           .expectStatus().isBadRequest
       }
@@ -537,7 +537,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed number`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId": "NOT_A_NUMBER",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -3006,""", """"internalLocationId": "NOT_A_NUMBER",""")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -641,7 +641,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("IEP type EN2 does not exist for prison LEI")
+            assertThat(it).contains("IEP type EN2 does not exist for prison BXI")
           }
       }
 
@@ -682,7 +682,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             }
           }
           offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
@@ -719,7 +719,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             }
           }
           offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
@@ -737,7 +737,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity) {
                 payBand(endDate = yesterday.toString())
@@ -967,7 +967,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           eq("activity-updated"),
           check<MutableMap<String, String>> {
             assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
-            assertThat(it["prisonId"]).isEqualTo("LEI")
+            assertThat(it["prisonId"]).isEqualTo("BXI")
             assertThat(it["removed-courseScheduleRuleIds"]).isEqualTo("[$existingRuleId]")
             assertThat(it["created-courseScheduleRuleIds"]).isEqualTo("[${updated.courseScheduleRules.first().id}]")
           },
@@ -1226,7 +1226,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.scheduleStartDate).isEqualTo(LocalDate.parse("2022-11-01"))
         assertThat(updated.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
-        assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
+        assertThat(updated.internalLocation?.locationId).isEqualTo(-3006)
         assertThat(updated.capacity).isEqualTo(30)
         assertThat(updated.description).isEqualTo("updated description")
         assertThat(updated.iepLevel.code).isEqualTo("BAS")
@@ -1241,7 +1241,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
               .replace(""""endDate" : "2022-11-30",""", "")
-              .replace(""""internalLocationId" : -27,""", ""),
+              .replace(""""internalLocationId" : -3006,""", ""),
           ),
         )
           .expectStatus().isOk
@@ -1255,15 +1255,15 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should update program for activity and active allocations`() {
         lateinit var deallocatedOffenderBooking: OffenderBooking
         nomisDataBuilder.build {
-          programService(programId = 30, programCode = "NEW_SERVICE")
+          programService(programCode = "NEW_SERVICE")
           offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               courseAllocation(courseActivity)
             }
           }
 
           offender(nomsId = "A1234UU") {
-            deallocatedOffenderBooking = booking(agencyLocationId = "LEI") {
+            deallocatedOffenderBooking = booking {
               courseAllocation(courseActivity, endDate = yesterday.toString())
             }
           }
@@ -1352,14 +1352,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private lateinit var courseActivityAreaRepository: CourseActivityAreaRepository
 
     private fun createRequestJson() = """{
-            "prisonId" : "LEI",
+            "prisonId" : "BXI",
             "code" : "CA",
             "programCode" : "INTTEST",
             "description" : "test description",
             "capacity" : 23,
             "startDate" : "2022-10-31",
             "minimumIncentiveLevelCode" : "STD",
-            "internalLocationId" : -8,
+            "internalLocationId" : -3005,
             "payRates" : [
               {
                 "incentiveLevel" : "BAS",
@@ -1431,7 +1431,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     """.trimIndent()
 
     fun updateRequestJson() = """
-      "internalLocationId" : ${-8 + 1},
+      "internalLocationId" : -3006,
       "payRates" : [
         {
           "incentiveLevel" : "BAS",
@@ -1492,7 +1492,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
+        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder()))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -1531,7 +1531,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
+        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder()))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)

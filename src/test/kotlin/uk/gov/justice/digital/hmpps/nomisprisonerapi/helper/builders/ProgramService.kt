@@ -14,15 +14,14 @@ interface ProgramServiceDsl {
   fun courseActivity(
     courseActivityId: Long = 0,
     code: String = "CA",
-    programId: Long = 20,
-    prisonId: String = "LEI",
+    prisonId: String = "BXI",
     description: String = "test course activity",
     capacity: Int = 23,
     active: Boolean = true,
     startDate: String = "2022-10-31",
     endDate: String? = null,
     minimumIncentiveLevelCode: String = "STD",
-    internalLocationId: Long? = -8,
+    internalLocationId: Long? = -3005,
     excludeBankHolidays: Boolean = false,
     dsl: CourseActivityDsl.() -> Unit = {
       courseSchedule()
@@ -34,7 +33,9 @@ interface ProgramServiceDsl {
 
 @Component
 class ProgramServiceBuilderRepository(private val programServiceRepository: ProgramServiceRepository) {
-  fun save(programService: ProgramService) = programServiceRepository.save(programService)
+  fun save(programService: ProgramService) =
+    programServiceRepository.findByProgramCode(programService.programCode)
+      ?: programServiceRepository.save(programService)
 }
 
 @Component
@@ -70,7 +71,6 @@ class ProgramServiceBuilder(
   override fun courseActivity(
     courseActivityId: Long,
     code: String,
-    programId: Long,
     prisonId: String,
     description: String,
     capacity: Int,

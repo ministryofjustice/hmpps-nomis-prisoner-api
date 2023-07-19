@@ -24,7 +24,7 @@ interface CourseAllocationDsl {
     courseSchedule: CourseSchedule,
     eventId: Long = 0,
     eventStatusCode: String = "SCH",
-    toInternalLocationId: Long? = -8,
+    toInternalLocationId: Long? = -3005,
     outcomeReasonCode: String? = null,
     paidTransactionId: Long? = null,
   ): OffenderCourseAttendance

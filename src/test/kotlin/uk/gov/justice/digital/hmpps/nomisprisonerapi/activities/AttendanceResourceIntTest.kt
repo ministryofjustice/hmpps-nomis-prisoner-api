@@ -91,7 +91,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           }
         }
         offender(nomsId = "A1234AR") {
-          offenderBooking = booking(agencyLocationId = "LEI") {
+          offenderBooking = booking {
             allocation = courseAllocation(courseActivity)
           }
         }
@@ -202,7 +202,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             }
           }
           offender(nomsId = "A1234XX") {
-            offenderBooking = booking(agencyLocationId = "LEI")
+            offenderBooking = booking()
           }
         }
 
@@ -218,7 +218,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         lateinit var attendance: OffenderCourseAttendance
         nomisDataBuilder.build {
           offender(nomsId = "A1234AT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity) {
                 attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
               }
@@ -245,7 +245,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             }
           }
           offender(nomsId = "A1234AR") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity, programStatusCode = "END")
             }
           }
@@ -392,10 +392,10 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(outTime).isEqualTo("2022-11-01T11:00")
           assertThat(eventStatus.code).isEqualTo("SCH")
           assertThat(courseSchedule.courseScheduleId).isEqualTo(this@UpsertAttendance.courseSchedule.courseScheduleId)
-          assertThat(toInternalLocation?.locationId).isEqualTo(-8)
+          assertThat(toInternalLocation?.locationId).isEqualTo(-3005)
           assertThat(courseActivity.courseActivityId).isEqualTo(this@UpsertAttendance.courseActivity.courseActivityId)
-          assertThat(prison?.id).isEqualTo("LEI")
-          assertThat(program?.programId).isEqualTo(20)
+          assertThat(prison?.id).isEqualTo("BXI")
+          assertThat(program?.programId).isGreaterThan(0)
           assertThat(referenceId).isEqualTo(this@UpsertAttendance.courseSchedule.courseScheduleId)
         }
       }
