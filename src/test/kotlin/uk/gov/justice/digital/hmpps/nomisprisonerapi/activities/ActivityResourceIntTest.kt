@@ -100,7 +100,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid prison should return bad request`() {
-        val invalidPrison = validJsonRequest().replace(""""prisonId" : "BXI",""", """"prisonId" : "ZZX",""")
+        val invalidPrison = validJsonRequest().withPrison("ZZX")
 
         createActivityExpectingBadRequest(invalidPrison)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -110,7 +110,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid activity code should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""code" : "CA",""", """"code" : "1234567890123",""")
+        val invalidSchedule = validJsonRequest().withCode("1234567890123")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -120,7 +120,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid capacity should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""capacity" : 23,""", """"capacity" : 1000,""")
+        val invalidSchedule = validJsonRequest().withCapacity(1000)
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -130,7 +130,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid description should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""description" : "test description",""", """"description" : "12345678901234567890123456789012345678901",""")
+        val invalidSchedule = validJsonRequest().withDescription("12345678901234567890123456789012345678901")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -143,7 +143,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class Schedules {
       @Test
       fun `invalid schedule start time should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:65",""")
+        val invalidSchedule = validJsonRequest().withStartTime("11:65")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -153,7 +153,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid schedule end time should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""endTime": "12:35"""", """"endTime": "12:65"""")
+        val invalidSchedule = validJsonRequest().withEndTime("12:65")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -163,7 +163,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid schedule date should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""date": "2022-10-31",""", """"date": "2022-13-31",""")
+        val invalidSchedule = validJsonRequest().withDate("2022-13-31")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -176,7 +176,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class ScheduleRules {
       @Test
       fun `invalid schedule rule time should return bad request`() {
-        val invalidScheduleRule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:61"""")
+        val invalidScheduleRule = validJsonRequest().withStartTime("11:61")
 
         createActivityExpectingBadRequest(invalidScheduleRule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -186,7 +186,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid schedule rule day of week should return bad request`() {
-        val invalidScheduleRule = validJsonRequest().replace(""""monday": false,""", """"monday": "INVALID",""")
+        val invalidScheduleRule = validJsonRequest().withMonday("INVALID")
 
         createActivityExpectingBadRequest(invalidScheduleRule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -199,7 +199,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class PayRates {
       @Test
       fun `error from pay rate service should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""payBand" : "5",""", """"payBand" : "INVALID",""")
+        val invalidSchedule = validJsonRequest().withPayBand("INVALID")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -209,7 +209,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid pay per session should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""payPerSession": "F",""", """"payPerSession": "f",""")
+        val invalidSchedule = validJsonRequest().withPayPerSession("f")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -377,6 +377,26 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     """.trimIndent()
   }
 
+  private fun String.withPrison(prison: String) = replace(""""prisonId" : "BXI",""", """"prisonId" : "$prison",""")
+
+  private fun String.withCode(code: String) = replace(""""code" : "CA",""", """"code" : "$code",""")
+
+  private fun String.withCapacity(capacity: Int) = replace(""""capacity" : 23,""", """"capacity" : $capacity,""")
+
+  private fun String.withDescription(description: String) = replace(""""description" : "test description",""", """"description" : "$description",""")
+
+  private fun String.withStartTime(startTime: String) = replace(""""startTime": "11:45"""", """"startTime": "$startTime",""")
+
+  private fun String.withEndTime(endTime: String) = replace(""""endTime": "12:35"""", """"endTime": "$endTime"""")
+
+  private fun String.withDate(date: String) = replace(""""date": "2022-10-31",""", """"date": "$date",""")
+
+  private fun String.withMonday(active: String) = replace(""""monday": false,""", """"monday": "$active",""")
+
+  private fun String.withPayBand(payBand: String) = replace(""""payBand" : "5",""", """"payBand" : "$payBand",""")
+
+  private fun String.withPayPerSession(payPerSession: String) = replace(""""payPerSession": "F",""", """"payPerSession": "$payPerSession",""")
+
   @Nested
   inner class UpdateActivity {
 
@@ -435,6 +455,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         }]
     """.trimIndent()
 
+    private fun String.withInternalLocation(location: String?) = replace(""""internalLocationId" : -3006,""", location?.let { """"internalLocationId": ${location.toIntOrNull() ?: ('"' + location + '"')},""" } ?: "")
+
+    private fun String.withStartDate(startDate: String) = replace(""""startDate" : "2022-11-01",""", """"startDate": "$startDate",""")
+
+    private fun String.withEndDate(endDate: String?) = replace(""""endDate" : "2022-11-30",""", endDate?.let { """"endDate": "$endDate",""" } ?: "")
+
+    private fun String.withProgramCode(programCode: String) = replace(""""programCode": "INTTEST",""", """"programCode": "$programCode",""")
     private fun updateActivityRequestJson(
       detailsJson: String = detailsJson(),
       payRatesJson: String? = payRatesJson(),
@@ -519,7 +546,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for unknown data`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -3006,""", """"internalLocationId: -99999,""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withInternalLocation("-99999")),
         )
           .expectStatus().isBadRequest
       }
@@ -537,7 +564,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed number`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -3006,""", """"internalLocationId": "NOT_A_NUMBER",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withInternalLocation("NOT_A_NUMBER")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -549,7 +576,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed start date`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""startDate" : "2022-11-01",""", """"startDate": "2021-13-01",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withStartDate("2021-13-01")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -561,7 +588,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed end date`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-11-35",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withEndDate("2022-11-35")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -573,7 +600,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for dates out of order`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-10-31",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withEndDate("2022-10-31")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -773,8 +800,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "$yesterday",""")
-              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+              .withStartDate(yesterday.toString())
+              .withEndDate(null),
             payRatesJson = """
               "payRates" : [ 
                 {
@@ -817,8 +844,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "${yesterday.minusDays(7)}",""")
-              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+              .withStartDate(yesterday.minusDays(7).toString())
+              .withEndDate(null),
           ),
         )
           .expectStatus().isOk
@@ -851,8 +878,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "${yesterday.minusDays(7)}",""")
-              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+              .withStartDate(yesterday.minusDays(7).toString())
+              .withEndDate(null),
           ),
         )
           .expectStatus().isOk
@@ -1240,8 +1267,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""endDate" : "2022-11-30",""", "")
-              .replace(""""internalLocationId" : -3006,""", ""),
+              .withEndDate(null)
+              .withInternalLocation(null),
           ),
         )
           .expectStatus().isOk
@@ -1272,8 +1299,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
-            detailsJson = detailsJson()
-              .replace(""""programCode": "INTTEST",""", """"programCode": "NEW_SERVICE","""),
+            detailsJson = detailsJson().withProgramCode("NEW_SERVICE"),
           ),
         )
           .expectStatus().isOk

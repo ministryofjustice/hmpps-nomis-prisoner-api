@@ -47,6 +47,16 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
         }
     """.trimIndent()
 
+    private fun String.withId(id: Long) = replace(""""id": ${courseSchedule.courseScheduleId},""", """"id": $id,""")
+
+    private fun String.withDate(date: String) = replace(""""date": "$today",""", """"date": "$date",""")
+
+    private fun String.withStartTime(startTime: String) = replace(""""startTime": "08:00",""", """"startTime": "$startTime",""")
+
+    private fun String.withEndTime(endTime: String) = replace(""""endTime": "11:00",""", """"endTime": "$endTime",""")
+
+    private fun String.withCancelled(cancelled: String) = replace(""""cancelled": true""", """"cancelled": ${cancelled.toBooleanStrictOrNull() ?: ('"' + cancelled + '"')}""")
+
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
@@ -104,7 +114,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""date": "$today",""", """"date": "2022-11-61","""),
+              validJsonRequest().withDate("2022-11-61"),
             ),
           )
           .exchange()
@@ -121,7 +131,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""startTime": "08:00",""", """"startTime": "29:00","""),
+              validJsonRequest().withStartTime("29:00"),
             ),
           )
           .exchange()
@@ -138,7 +148,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""endTime": "11:00",""", """"endTime": "11:70","""),
+              validJsonRequest().withEndTime("11:70"),
             ),
           )
           .exchange()
@@ -155,7 +165,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""cancelled": true""", """"cancelled": "INVALID""""),
+              validJsonRequest().withCancelled("INVALID"),
             ),
           )
           .exchange()
@@ -185,7 +195,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""id": ${courseSchedule.courseScheduleId},""", """"id": 99999,"""),
+              validJsonRequest().withId(99999),
             ),
           )
           .exchange()
@@ -236,8 +246,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest()
-                .replace(""""cancelled": true""", """"cancelled": false"""),
+              validJsonRequest().withCancelled("false"),
             ),
           )
           .exchange()
@@ -268,7 +277,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .body(
             BodyInserters.fromValue(
-              validJsonRequest().replace(""""date": "$today",""", """"date": "$tomorrow","""),
+              validJsonRequest().withDate(tomorrow.toString()),
             ),
           )
           .exchange()
@@ -294,19 +303,14 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        val request = """
-            {
-              "id": ${courseSchedule.courseScheduleId},
-              "date": "$yesterday",
-              "startTime": "13:00",
-              "endTime": "15:00"
-            }
-        """.trimIndent()
-
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(request))
+          .body(
+            BodyInserters.fromValue(
+              validJsonRequest().withDate(yesterday.toString()),
+            ),
+          )
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -324,18 +328,14 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if dates out of order`() {
-        val request = """
-            {
-              "id": ${courseSchedule.courseScheduleId},
-              "date": "$today",
-              "startTime": "13:00",
-              "endTime": "12:59"
-            }
-        """.trimIndent()
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(request))
+          .body(
+            BodyInserters.fromValue(
+              validJsonRequest().withStartTime("13:00").withEndTime("12:59"),
+            ),
+          )
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -353,18 +353,14 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updating dates and times`() {
-        val request = """
-            {
-              "id": ${courseSchedule.courseScheduleId},
-              "date": "$today",
-              "startTime": "13:00",
-              "endTime": "15:00"
-            }
-        """.trimIndent()
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .body(BodyInserters.fromValue(request))
+          .body(
+            BodyInserters.fromValue(
+              validJsonRequest().withStartTime("13:00").withEndTime("15:00"),
+            ),
+          )
           .exchange()
           .expectStatus().isOk
           .expectBody()
