@@ -19,15 +19,12 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
@@ -1314,6 +1311,22 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
+    inner class ActivityArea {
+
+      @Test
+      fun `should retain activity area after an update`() {
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(),
+        )
+          .expectStatus().isOk
+
+        // check the activity still has an activity area
+        assertThat(repository.getActivity(courseActivity.courseActivityId).area!!.areaCode).isEqualTo("AREA")
+      }
+    }
+
+    @Nested
     inner class Response {
       @Test
       fun `should return course schedule details`() {
@@ -1361,7 +1374,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     private fun CourseActivity.getProgramCode(bookingId: Long): String =
-      offenderProgramProfiles.first { it.offenderBooking.bookingId == bookingId }.program.programCode!!
+      offenderProgramProfiles.first { it.offenderBooking.bookingId == bookingId }.program.programCode
 
     private fun callUpdateEndpoint(courseActivityId: Long, jsonBody: String) =
       webTestClient.put().uri("/activities/$courseActivityId")
@@ -1377,252 +1390,73 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     @Autowired
     private lateinit var courseActivityAreaRepository: CourseActivityAreaRepository
 
-    private fun createRequestJson() = """{
-            "prisonId" : "BXI",
-            "code" : "CA",
-            "programCode" : "INTTEST",
-            "description" : "test description",
-            "capacity" : 23,
-            "startDate" : "2022-10-31",
-            "minimumIncentiveLevelCode" : "STD",
-            "internalLocationId" : -3005,
-            "payRates" : [
-              {
-                "incentiveLevel" : "BAS",
-                "payBand" : "4",
-                "rate" : 0.4
-              },
-              {
-                "incentiveLevel" : "BAS",
-                "payBand" : "5",
-                "rate" : 0.5
-              }
-            ],
-            "payPerSession": "F",
-            "schedules" : [ 
-              {
-                "date": "2022-10-31",
-                "startTime" : "09:00",
-                "endTime" : "11:00"
-              },
-              {
-                "date": "2022-11-30",
-                "startTime" : "14:00",
-                "endTime" : "15:00"
-              }
-            ],
-            "scheduleRules": [
-              {
-                "startTime": "09:00",
-                "endTime": "11:00",
-                "monday": false,
-                "tuesday": true,
-                "wednesday": false,
-                "thursday": true,
-                "friday": true,
-                "saturday": false,
-                "sunday": false
-              },
-              {
-                "startTime": "14:00",
-                "endTime": "15:00",
-                "monday": true,
-                "tuesday": true,
-                "wednesday": true,
-                "thursday": false,
-                "friday": false,
-                "saturday": false,
-                "sunday": false
-              }
-            ]
-          }
-    """.trimIndent()
-
-    fun allocateOffenderJson(bookingId: Long) = """
-      {
-        "bookingId": $bookingId,
-        "startDate": "2022-12-01",
-        "payBandCode": "4",
-        "programStatusCode": "ALLOC"
-      }
-    """.trimIndent()
-
-    fun createAttendanceJson() = """
-      {
-        "scheduleDate": "2022-10-31",
-        "startTime": "09:00",
-        "endTime": "11:00",
-        "eventStatusCode": "SCH"
-      }
-    """.trimIndent()
-
-    fun updateRequestJson() = """
-      "internalLocationId" : -3006,
-      "payRates" : [
-        {
-          "incentiveLevel" : "BAS",
-          "payBand" : "4",
-          "rate" : 0.4
-        },
-        {
-          "incentiveLevel" : "BAS",
-          "payBand" : "5",
-          "rate" : 0.5
-        }
-      ],
-      "scheduleRules": [
-        {
-          "startTime": "09:00",
-          "endTime": "11:00",
-          "monday": false,
-          "tuesday": true,
-          "wednesday": false,
-          "thursday": true,
-          "friday": true,
-          "saturday": false,
-          "sunday": false
-        },
-        {
-          "startTime": "14:00",
-          "endTime": "15:00",
-          "monday": true,
-          "tuesday": true,
-          "wednesday": true,
-          "thursday": false,
-          "friday": false,
-          "saturday": false,
-          "sunday": false
-        }
-      ]
-    """.trimIndent()
-
     @Test
     fun `should delete activity and activity area`() {
-      // create activity
-      val activityId = webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createRequestJson()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(ActivityResponse::class.java)
-        .returnResult().responseBody
-        ?.courseActivityId!!
-
-      // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
-      repository.runInTransaction {
-        val activity = repository.getActivity(activityId)
-        activity.area = CourseActivityArea(activityId, activity, "AREA")
-        repository.activityRepository.save(activity)
+      lateinit var courseActivity: CourseActivity
+      lateinit var offenderBooking: OffenderBooking
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity()
+        }
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity)
+          }
+        }
       }
 
-      // allocate offender
-      val offenderAtMoorlands =
-        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder()))
-      webTestClient.put().uri("/activities/$activityId/allocation")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
-        .exchange()
-        .expectStatus().isOk
-
-      val savedActivity = repository.getActivity(activityId)
-      val savedAllocation = repository.getOffenderProgramProfiles(savedActivity, offenderAtMoorlands.latestBooking())
-      assertThat(savedAllocation).isNotEmpty
+      assertThat(repository.activityRepository.findByIdOrNull(courseActivity.courseActivityId)).isNotNull
+      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, offenderBooking)).isNotEmpty
+      assertThat(courseActivityAreaRepository.findByIdOrNull(courseActivity.courseActivityId)).isNotNull
 
       // delete activity and deallocate
-      webTestClient.delete().uri("/activities/$activityId")
+      webTestClient.delete().uri("/activities/${courseActivity.courseActivityId}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isNoContent
 
       // check everything is deleted
-      assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
-      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isEmpty()
-      assertThat(courseActivityAreaRepository.findByIdOrNull(activityId)).isNull()
+      assertThat(repository.activityRepository.findByIdOrNull(courseActivity.courseActivityId)).isNull()
+      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, offenderBooking)).isEmpty()
+      assertThat(courseActivityAreaRepository.findByIdOrNull(courseActivity.courseActivityId)).isNull()
     }
 
     @Test
     fun `should delete activity and attendance`() {
-      // create activity
-      val activityId = webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createRequestJson()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(ActivityResponse::class.java)
-        .returnResult().responseBody
-        ?.courseActivityId!!
+      lateinit var courseActivity: CourseActivity
+      lateinit var offenderBooking: OffenderBooking
+      lateinit var schedule: CourseSchedule
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            schedule = courseSchedule()
+            courseScheduleRule()
+            payRate()
+          }
+        }
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity) {
+              courseAttendance(schedule)
+            }
+          }
+        }
+      }
 
-      // allocate offender
-      val offenderAtMoorlands =
-        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder()))
-      webTestClient.put().uri("/activities/$activityId/allocation")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(allocateOffenderJson(offenderAtMoorlands.latestBooking().bookingId)))
-        .exchange()
-        .expectStatus().isOk
-
-      val savedActivity = repository.getActivity(activityId)
-      val savedSchedule = repository.getActivity(activityId).courseSchedules.first()
-      assertThat(savedSchedule).isNotNull
-      val savedAllocation = repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking()).last()
-      assertThat(savedAllocation).isNotNull
-
-      webTestClient.put().uri("/schedules/${savedSchedule.courseScheduleId}/booking/${offenderAtMoorlands.latestBooking().bookingId}/attendance")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createAttendanceJson()))
-        .exchange()
-        .expectStatus().isOk
-
-      val savedAttendances = repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule, offenderAtMoorlands.latestBooking())
-      assertThat(savedAttendances).isNotNull
+      assertThat(repository.activityRepository.findByIdOrNull(courseActivity.courseActivityId)).isNotNull
+      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, offenderBooking)).isNotEmpty
+      assertThat(repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(schedule, offenderBooking)).isNotNull
 
       // delete activity, allocation and attendance
-      webTestClient.delete().uri("/activities/$activityId")
+      webTestClient.delete().uri("/activities/${courseActivity.courseActivityId}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isNoContent
 
       // check everything is deleted
-      assertThat(repository.activityRepository.findByIdOrNull(activityId)).isNull()
-      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(savedActivity, offenderAtMoorlands.latestBooking())).isEmpty()
-      assertThat(repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(savedSchedule, offenderAtMoorlands.latestBooking())).isNull()
-    }
-
-    @Test
-    fun `should retain activity area after an update`() {
-      // create activity
-      val activityId = webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createRequestJson()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(ActivityResponse::class.java)
-        .returnResult().responseBody
-        ?.courseActivityId!!
-
-      // Emulate the Nomis trigger COURSE_ACTIVITIES_T2.trg
-      repository.runInTransaction {
-        val activity = repository.getActivity(activityId)
-        activity.area = CourseActivityArea(activityId, activity, "AREA")
-        repository.activityRepository.save(activity)
-      }
-
-      // update the activity
-      webTestClient.put().uri("/activities/$activityId")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(updateRequestJson()))
-        .exchange()
-
-      // check the activity still has an activity area
-      val savedActivity = repository.getActivity(activityId)
-      assertThat(savedActivity.area!!.areaCode).isEqualTo("AREA")
+      assertThat(repository.activityRepository.findByIdOrNull(courseActivity.courseActivityId)).isNull()
+      assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, offenderBooking)).isEmpty()
+      assertThat(repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(schedule, offenderBooking)).isNull()
     }
   }
 }
