@@ -31,11 +31,11 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Optional
 
-private const val PRISON_ID = "LEI"
-private const val ROOM_ID: Long = -8 // random location from R__3_2__AGENCY_INTERNAL_LOCATIONS.sql
+private const val PRISON_ID = "BXI"
+private const val ROOM_ID: Long = -3005
 private const val PROGRAM_CODE = "TEST"
 private const val IEP_LEVEL = "STD"
-private const val PRISON_DESCRIPTION = "Leeds"
+private const val PRISON_DESCRIPTION = "Brixton"
 private const val PAY_BAND_CODE = "5"
 
 class PayRateServiceTest {

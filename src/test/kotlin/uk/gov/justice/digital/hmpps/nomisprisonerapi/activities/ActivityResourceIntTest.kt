@@ -53,7 +53,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   fun setup() {
     nomisDataBuilder.build {
-      programService {}
+      programService()
     }
   }
 
@@ -100,7 +100,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid prison should return bad request`() {
-        val invalidPrison = validJsonRequest().replace(""""prisonId" : "LEI",""", """"prisonId" : "ZZX",""")
+        val invalidPrison = validJsonRequest().withPrison("ZZX")
 
         createActivityExpectingBadRequest(invalidPrison)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -110,7 +110,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid activity code should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""code" : "CA",""", """"code" : "1234567890123",""")
+        val invalidSchedule = validJsonRequest().withCode("1234567890123")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -120,7 +120,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid capacity should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""capacity" : 23,""", """"capacity" : 1000,""")
+        val invalidSchedule = validJsonRequest().withCapacity(1000)
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -130,7 +130,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid description should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""description" : "test description",""", """"description" : "12345678901234567890123456789012345678901",""")
+        val invalidSchedule = validJsonRequest().withDescription("12345678901234567890123456789012345678901")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -143,7 +143,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class Schedules {
       @Test
       fun `invalid schedule start time should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:65",""")
+        val invalidSchedule = validJsonRequest().withStartTime("11:65")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -153,7 +153,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid schedule end time should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""endTime": "12:35"""", """"endTime": "12:65"""")
+        val invalidSchedule = validJsonRequest().withEndTime("12:65")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -163,7 +163,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid schedule date should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""date": "2022-10-31",""", """"date": "2022-13-31",""")
+        val invalidSchedule = validJsonRequest().withDate("2022-13-31")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -176,7 +176,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class ScheduleRules {
       @Test
       fun `invalid schedule rule time should return bad request`() {
-        val invalidScheduleRule = validJsonRequest().replace(""""startTime": "11:45"""", """"startTime": "11:61"""")
+        val invalidScheduleRule = validJsonRequest().withStartTime("11:61")
 
         createActivityExpectingBadRequest(invalidScheduleRule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -186,7 +186,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid schedule rule day of week should return bad request`() {
-        val invalidScheduleRule = validJsonRequest().replace(""""monday": false,""", """"monday": "INVALID",""")
+        val invalidScheduleRule = validJsonRequest().withMonday("INVALID")
 
         createActivityExpectingBadRequest(invalidScheduleRule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -199,7 +199,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     inner class PayRates {
       @Test
       fun `error from pay rate service should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""payBand" : "5",""", """"payBand" : "INVALID",""")
+        val invalidSchedule = validJsonRequest().withPayBand("INVALID")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -209,7 +209,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `Invalid pay per session should return bad request`() {
-        val invalidSchedule = validJsonRequest().replace(""""payPerSession": "F",""", """"payPerSession": "f",""")
+        val invalidSchedule = validJsonRequest().withPayPerSession("f")
 
         createActivityExpectingBadRequest(invalidSchedule)
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -230,7 +230,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         assertThat(courseActivity.courseActivityId).isEqualTo(id)
         assertThat(courseActivity.capacity).isEqualTo(23)
-        assertThat(courseActivity.prison.id).isEqualTo("LEI")
+        assertThat(courseActivity.prison.id).isEqualTo("BXI")
         assertThat(courseActivity.payRates.first().halfDayRate).isCloseTo(
           BigDecimal(0.4),
           within(BigDecimal("0.001")),
@@ -264,7 +264,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           check<MutableMap<String, String>> { actual ->
             mapOf(
               "nomisCourseActivityId" to id.toString(),
-              "prisonId" to "LEI",
+              "prisonId" to "BXI",
               "nomisCourseScheduleIds" to "[${courseActivity.courseSchedules[0].courseScheduleId}]",
               "nomisCourseActivityPayRateIds" to "[BAS-5-2022-10-31]",
               "nomisCourseScheduleRuleIds" to "[${courseActivity.courseScheduleRules[0].id}]",
@@ -345,7 +345,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               } ],
       """.trimIndent(),
     ) = """{
-            "prisonId" : "LEI",
+            "prisonId" : "BXI",
             "code" : "CA",
             "programCode" : "INTTEST",
             "description" : "test description",
@@ -353,7 +353,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             "startDate" : "2022-10-31",
             "endDate" : "2022-11-30",
             "minimumIncentiveLevelCode" : "STD",
-            "internalLocationId" : -8,
+            "internalLocationId" : -3005,
             "payRates" : [ {
                 "incentiveLevel" : "BAS",
                 "payBand" : "5",
@@ -377,6 +377,26 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     """.trimIndent()
   }
 
+  private fun String.withPrison(prison: String) = replace(""""prisonId" : "BXI",""", """"prisonId" : "$prison",""")
+
+  private fun String.withCode(code: String) = replace(""""code" : "CA",""", """"code" : "$code",""")
+
+  private fun String.withCapacity(capacity: Int) = replace(""""capacity" : 23,""", """"capacity" : $capacity,""")
+
+  private fun String.withDescription(description: String) = replace(""""description" : "test description",""", """"description" : "$description",""")
+
+  private fun String.withStartTime(startTime: String) = replace(""""startTime": "11:45"""", """"startTime": "$startTime",""")
+
+  private fun String.withEndTime(endTime: String) = replace(""""endTime": "12:35"""", """"endTime": "$endTime"""")
+
+  private fun String.withDate(date: String) = replace(""""date": "2022-10-31",""", """"date": "$date",""")
+
+  private fun String.withMonday(active: String) = replace(""""monday": false,""", """"monday": "$active",""")
+
+  private fun String.withPayBand(payBand: String) = replace(""""payBand" : "5",""", """"payBand" : "$payBand",""")
+
+  private fun String.withPayPerSession(payPerSession: String) = replace(""""payPerSession": "F",""", """"payPerSession": "$payPerSession",""")
+
   @Nested
   inner class UpdateActivity {
 
@@ -395,7 +415,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private fun detailsJson(): String = """
       "startDate" : "2022-11-01",
       "endDate" : "2022-11-30",
-      "internalLocationId" : -27,
+      "internalLocationId" : -3006,
       "capacity": 30,
       "description": "updated description", 
       "minimumIncentiveLevelCode": "BAS", 
@@ -435,6 +455,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         }]
     """.trimIndent()
 
+    private fun String.withInternalLocation(location: String?) = replace(""""internalLocationId" : -3006,""", location?.let { """"internalLocationId": ${location.toIntOrNull() ?: ('"' + location + '"')},""" } ?: "")
+
+    private fun String.withStartDate(startDate: String) = replace(""""startDate" : "2022-11-01",""", """"startDate": "$startDate",""")
+
+    private fun String.withEndDate(endDate: String?) = replace(""""endDate" : "2022-11-30",""", endDate?.let { """"endDate": "$endDate",""" } ?: "")
+
+    private fun String.withProgramCode(programCode: String) = replace(""""programCode": "INTTEST",""", """"programCode": "$programCode",""")
     private fun updateActivityRequestJson(
       detailsJson: String = detailsJson(),
       payRatesJson: String? = payRatesJson(),
@@ -488,7 +515,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
+        assertThat(updated.internalLocation?.locationId).isEqualTo(-3006)
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
         assertThat(updated.payRates[1].endDate).isNull()
         assertThat(updated.payRates[1].halfDayRate)
@@ -507,7 +534,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           eq("activity-updated"),
           check<MutableMap<String, String>> {
             assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
-            assertThat(it["prisonId"]).isEqualTo("LEI")
+            assertThat(it["prisonId"]).isEqualTo("BXI")
             assertThat(it["created-courseActivityPayRateIds"]).isEqualTo("[STD-5-$tomorrow]")
             assertThat(it["expired-courseActivityPayRateIds"]).isEqualTo("[STD-5-2022-10-31]")
           },
@@ -519,7 +546,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for unknown data`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId: -99999,""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withInternalLocation("-99999")),
         )
           .expectStatus().isBadRequest
       }
@@ -537,7 +564,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed number`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""internalLocationId" : -27,""", """"internalLocationId": "NOT_A_NUMBER",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withInternalLocation("NOT_A_NUMBER")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -549,7 +576,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed start date`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""startDate" : "2022-11-01",""", """"startDate": "2021-13-01",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withStartDate("2021-13-01")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -561,7 +588,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for malformed end date`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-11-35",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withEndDate("2022-11-35")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -573,7 +600,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for dates out of order`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().replace(""""endDate" : "2022-11-30",""", """"endDate": "2022-10-31",""")),
+          jsonBody = updateActivityRequestJson(detailsJson = detailsJson().withEndDate("2022-10-31")),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -641,7 +668,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("IEP type EN2 does not exist for prison LEI")
+            assertThat(it).contains("IEP type EN2 does not exist for prison BXI")
           }
       }
 
@@ -682,7 +709,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             }
           }
           offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
@@ -718,8 +745,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               courseScheduleRule()
             }
           }
-          offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity)
             }
@@ -736,8 +763,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if pay rate removed which is NO LONGER allocated to an offender`() {
         nomisDataBuilder.build {
-          offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               incentive(iepLevelCode = "STD")
               courseAllocation(courseActivity) {
                 payBand(endDate = yesterday.toString())
@@ -773,8 +800,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "$yesterday",""")
-              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+              .withStartDate(yesterday.toString())
+              .withEndDate(null),
             payRatesJson = """
               "payRates" : [ 
                 {
@@ -817,8 +844,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "${yesterday.minusDays(7)}",""")
-              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+              .withStartDate(yesterday.minusDays(7).toString())
+              .withEndDate(null),
           ),
         )
           .expectStatus().isOk
@@ -851,8 +878,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""startDate" : "2022-11-01",""", """"startDate" : "${yesterday.minusDays(7)}",""")
-              .replace(""""endDate" : "2022-11-30",""", """"endDate" : null,"""),
+              .withStartDate(yesterday.minusDays(7).toString())
+              .withEndDate(null),
           ),
         )
           .expectStatus().isOk
@@ -967,7 +994,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           eq("activity-updated"),
           check<MutableMap<String, String>> {
             assertThat(it["nomisCourseActivityId"]).isEqualTo(courseActivity.courseActivityId.toString())
-            assertThat(it["prisonId"]).isEqualTo("LEI")
+            assertThat(it["prisonId"]).isEqualTo("BXI")
             assertThat(it["removed-courseScheduleRuleIds"]).isEqualTo("[$existingRuleId]")
             assertThat(it["created-courseScheduleRuleIds"]).isEqualTo("[${updated.courseScheduleRules.first().id}]")
           },
@@ -1226,7 +1253,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.scheduleStartDate).isEqualTo(LocalDate.parse("2022-11-01"))
         assertThat(updated.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
-        assertThat(updated.internalLocation?.locationId).isEqualTo(-27)
+        assertThat(updated.internalLocation?.locationId).isEqualTo(-3006)
         assertThat(updated.capacity).isEqualTo(30)
         assertThat(updated.description).isEqualTo("updated description")
         assertThat(updated.iepLevel.code).isEqualTo("BAS")
@@ -1240,8 +1267,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .replace(""""endDate" : "2022-11-30",""", "")
-              .replace(""""internalLocationId" : -27,""", ""),
+              .withEndDate(null)
+              .withInternalLocation(null),
           ),
         )
           .expectStatus().isOk
@@ -1255,15 +1282,15 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should update program for activity and active allocations`() {
         lateinit var deallocatedOffenderBooking: OffenderBooking
         nomisDataBuilder.build {
-          programService(programId = 30, programCode = "NEW_SERVICE")
+          programService(programCode = "NEW_SERVICE")
           offender(nomsId = "A1234TT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+            offenderBooking = booking {
               courseAllocation(courseActivity)
             }
           }
 
           offender(nomsId = "A1234UU") {
-            deallocatedOffenderBooking = booking(agencyLocationId = "LEI") {
+            deallocatedOffenderBooking = booking {
               courseAllocation(courseActivity, endDate = yesterday.toString())
             }
           }
@@ -1272,8 +1299,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
-            detailsJson = detailsJson()
-              .replace(""""programCode": "INTTEST",""", """"programCode": "NEW_SERVICE","""),
+            detailsJson = detailsJson().withProgramCode("NEW_SERVICE"),
           ),
         )
           .expectStatus().isOk
@@ -1352,14 +1378,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     private lateinit var courseActivityAreaRepository: CourseActivityAreaRepository
 
     private fun createRequestJson() = """{
-            "prisonId" : "LEI",
+            "prisonId" : "BXI",
             "code" : "CA",
             "programCode" : "INTTEST",
             "description" : "test description",
             "capacity" : 23,
             "startDate" : "2022-10-31",
             "minimumIncentiveLevelCode" : "STD",
-            "internalLocationId" : -8,
+            "internalLocationId" : -3005,
             "payRates" : [
               {
                 "incentiveLevel" : "BAS",
@@ -1431,7 +1457,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     """.trimIndent()
 
     fun updateRequestJson() = """
-      "internalLocationId" : ${-8 + 1},
+      "internalLocationId" : -3006,
       "payRates" : [
         {
           "incentiveLevel" : "BAS",
@@ -1492,7 +1518,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
+        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder()))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -1531,7 +1557,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // allocate offender
       val offenderAtMoorlands =
-        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder(agencyLocationId = "LEI")))
+        repository.save(LegacyOffenderBuilder(nomsId = "A1234TT").withBooking(OffenderBookingBuilder()))
       webTestClient.put().uri("/activities/$activityId/allocation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .contentType(MediaType.APPLICATION_JSON)

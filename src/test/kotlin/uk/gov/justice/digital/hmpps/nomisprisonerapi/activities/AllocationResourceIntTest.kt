@@ -49,8 +49,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       programService {
         courseActivity = courseActivity()
       }
-      offender = offender(nomsId = "A1234XX") {
-        bookingId = booking(agencyLocationId = "LEI").bookingId
+      offender = offender {
+        bookingId = booking().bookingId
       }
     }
   }
@@ -347,15 +347,15 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       upsertAllocationIsBadRequest(request)
         .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Prisoner is at prison=MDI, not the Course activity prison=LEI")
+          assertThat(it).contains("Prisoner is at prison=MDI, not the Course activity prison=BXI")
         }
     }
 
     @Test
     fun `should create new allocation if previously ended allocation exists`() {
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
-          bookingId = booking(agencyLocationId = "LEI") {
+        offender = offender {
+          bookingId = booking {
             courseAllocation(courseActivity, endDate = "2022-11-01", programStatusCode = "END")
           }.bookingId
         }
@@ -415,8 +415,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             courseScheduleRule()
           }
         }
-        offender = offender(nomsId = "A1234XX") {
-          bookingId = booking(agencyLocationId = "LEI") {
+        offender = offender {
+          bookingId = booking {
             courseAllocation(courseActivity, startDate = "2022-11-14")
           }.bookingId
         }
@@ -536,7 +536,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow de-allocation when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
+        offender = offender {
           bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
           }.bookingId
@@ -562,7 +562,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should allow suspension when not in the activity prison`() {
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
+        offender = offender {
           bookingId = booking(agencyLocationId = "OUT") {
             courseAllocation(courseActivity)
           }.bookingId
@@ -594,8 +594,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         lateinit var allocation: OffenderProgramProfile
         val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf()
         nomisDataBuilder.build {
-          offender = offender(nomsId = "A1234AG") {
-            bookingId = booking(agencyLocationId = "LEI") {
+          offender = offender {
+            bookingId = booking {
               allocation = courseAllocation(courseActivity, startDate = initialPayBands[0].startDate.toString(), endDate = initialPayBands[0].endDate?.toString()) {
                 initialPayBands.forEach {
                   payBands += payBand(payBandCode = it.payBandCode, startDate = it.startDate.toString(), endDate = it.endDate?.toString())
@@ -816,8 +816,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `duplicate allocations can be worked around by deleting one of them`() {
       lateinit var duplicate: OffenderProgramProfile
       nomisDataBuilder.build {
-        offender = offender(nomsId = "A1234XX") {
-          bookingId = booking(agencyLocationId = "LEI") {
+        offender = offender {
+          bookingId = booking {
             courseAllocation(courseActivity)
             duplicate = courseAllocation(courseActivity)
           }.bookingId

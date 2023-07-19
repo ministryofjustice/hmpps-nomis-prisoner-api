@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
@@ -12,11 +14,13 @@ import org.hibernate.type.YesNoConverter
 @Table(name = "PROGRAM_SERVICES")
 data class ProgramService(
   @Id
+  @SequenceGenerator(name = "PROGRAM_ID", sequenceName = "PROGRAM_ID", allocationSize = 1)
+  @GeneratedValue(generator = "PROGRAM_ID")
   @Column(nullable = false)
   val programId: Long = 0,
 
   @Column
-  val programCode: String? = null,
+  val programCode: String,
 
   @Column(nullable = false)
   val description: String,

@@ -9,11 +9,33 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServi
 annotation class ProgramServiceDslMarker
 
 @NomisDataDslMarker
-interface ProgramServiceDsl : CourseActivityDslApi
+interface ProgramServiceDsl {
+  @CourseActivityDslMarker
+  fun courseActivity(
+    courseActivityId: Long = 0,
+    code: String = "CA",
+    prisonId: String = "BXI",
+    description: String = "test course activity",
+    capacity: Int = 23,
+    active: Boolean = true,
+    startDate: String = "2022-10-31",
+    endDate: String? = null,
+    minimumIncentiveLevelCode: String = "STD",
+    internalLocationId: Long? = -3005,
+    excludeBankHolidays: Boolean = false,
+    dsl: CourseActivityDsl.() -> Unit = {
+      courseSchedule()
+      courseScheduleRule()
+      payRate()
+    },
+  ): CourseActivity
+}
 
 @Component
 class ProgramServiceBuilderRepository(private val programServiceRepository: ProgramServiceRepository) {
-  fun save(programService: ProgramService) = programServiceRepository.save(programService)
+  fun save(programService: ProgramService) =
+    programServiceRepository.findByProgramCode(programService.programCode)
+      ?: programServiceRepository.save(programService)
 }
 
 @Component
@@ -49,7 +71,6 @@ class ProgramServiceBuilder(
   override fun courseActivity(
     courseActivityId: Long,
     code: String,
-    programId: Long,
     prisonId: String,
     description: String,
     capacity: Int,

@@ -14,18 +14,6 @@ annotation class CourseScheduleDslMarker
 @NomisDataDslMarker
 interface CourseScheduleDsl
 
-interface CourseScheduleDslApi {
-  @CourseScheduleDslMarker
-  fun courseSchedule(
-    courseScheduleId: Long = 0,
-    scheduleDate: String = "2022-11-01",
-    startTime: String = "08:00",
-    endTime: String = "11:00",
-    slotCategory: SlotCategory = SlotCategory.AM,
-    scheduleStatus: String = "SCH",
-  ): CourseSchedule
-}
-
 @Component
 class CourseScheduleBuilderRepository(val courseScheduleRepository: CourseScheduleRepository) {
   fun save(courseSchedule: CourseSchedule) = courseScheduleRepository.save(courseSchedule)
