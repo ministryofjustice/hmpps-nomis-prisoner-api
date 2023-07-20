@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBandId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfilePayBandRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -18,10 +17,8 @@ interface CourseAllocationPayBandDsl
 
 @Component
 class CourseAllocationPayBandBuilderRepository(
-  private val courseAllocationPayBandRepository: OffenderProgramProfilePayBandRepository,
   private val payBandRepository: ReferenceCodeRepository<PayBand>,
 ) {
-  fun save(payBand: OffenderProgramProfilePayBand) = courseAllocationPayBandRepository.save(payBand)
   fun payBand(payBandCode: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(payBandCode))!!
 }
 
@@ -49,11 +46,8 @@ class CourseAllocationPayBandBuilder(
       ),
       endDate = endDate?.let { LocalDate.parse(endDate) },
       payBand = payBand(payBandCode),
-    ).let {
-      save(it)
-    }
+    )
 
-  private fun save(payBand: OffenderProgramProfilePayBand) = repository?.save(payBand) ?: payBand
   private fun payBand(payBandCode: String) = repository?.payBand(payBandCode)
     ?: PayBand(code = payBandCode, description = payBandCode)
 }

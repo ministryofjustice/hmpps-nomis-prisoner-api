@@ -95,9 +95,9 @@ class ProgramServiceBuilder(
       minimumIncentiveLevelCode,
       internalLocationId,
       excludeBankHolidays,
-    ).also {
-      builder.apply(dsl)
-    }
+    )
+      .also { programService.courseActivities += it }
+      .also { builder.apply(dsl) }
   }
 
   private fun save(programService: ProgramService) = repository?.save(programService) ?: programService

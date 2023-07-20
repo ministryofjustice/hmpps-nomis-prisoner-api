@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @DslMarker
@@ -20,12 +19,10 @@ interface CourseAttendanceDsl
 
 @Component
 class CourseAttendanceBuilderRepository(
-  private val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val attendanceOutcomeRepository: ReferenceCodeRepository<AttendanceOutcome>,
 ) {
-  fun save(courseAttendance: OffenderCourseAttendance) = offenderCourseAttendanceRepository.save(courseAttendance)
   fun agencyInternalLocation(locationId: Long) = agencyInternalLocationRepository.findByIdOrNull(locationId)
   fun eventStatus(code: String) = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
   fun attendanceOutcome(code: String) = attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(code))!!
@@ -66,11 +63,7 @@ class CourseAttendanceBuilder(
       prison = courseSchedule.courseActivity.prison,
       program = courseSchedule.courseActivity.program,
       paidTransactionId = paidTransactionId,
-    ).let {
-      save(it)
-    }
-
-  private fun save(courseAttendance: OffenderCourseAttendance) = repository?.save(courseAttendance) ?: courseAttendance
+    )
 
   private fun eventStatus(code: String) = repository?.eventStatus(code)
     ?: EventStatus(code = code, description = code)
