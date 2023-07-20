@@ -841,9 +841,34 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
       }
+
+      @Test
+      fun `will return 400 if internal location of incident code is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication(internalLocationId = 9999999)))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if prison where adjudication is created code is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication(prisonId = "BANANAS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
     }
 
-    private fun aSimpleAdjudication(reportingStaffUsername: String = "JANESTAFF", offenceCode: String = "51:1N"): String = """
+    private fun aSimpleAdjudication(
+      reportingStaffUsername: String = "JANESTAFF",
+      offenceCode: String = "51:1N",
+      internalLocationId: Long = -41,
+      prisonId: String = "MDI",
+    ): String = """
       {
         "adjudicationNumber": 12345678,
         "incident": {
@@ -852,9 +877,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           "incidentTime": "10:15",
           "reportedDate": "2023-02-10",
           "reportedTime": "09:15",
-          "internalLocationId": -41,
+          "internalLocationId": $internalLocationId,
           "details": "A fight that lead to so much blood",
-          "prisonId": "MDI",
+          "prisonId": "$prisonId",
           "prisonerVictimsOffenderNumbers": [],
           "staffWitnessesUsernames": [],
           "staffVictimsUsernames": [],
