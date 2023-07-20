@@ -5,11 +5,11 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -17,15 +17,30 @@ import java.time.LocalDate
 annotation class CourseAllocationDslMarker
 
 @NomisDataDslMarker
-interface CourseAllocationDsl : CourseAttendanceDslApi, CourseAllocationPayBandDslApi
+interface CourseAllocationDsl {
+  @CourseAttendanceDslMarker
+  fun courseAttendance(
+    courseSchedule: CourseSchedule,
+    eventId: Long = 0,
+    eventStatusCode: String = "SCH",
+    toInternalLocationId: Long? = -3005,
+    outcomeReasonCode: String? = null,
+    paidTransactionId: Long? = null,
+  ): OffenderCourseAttendance
+
+  @CourseAllocationPayBandDslMarker
+  fun payBand(
+    startDate: String = "2022-10-31",
+    endDate: String? = null,
+    payBandCode: String = "5",
+  ): OffenderProgramProfilePayBand
+}
 
 @Component
 class CourseAllocationBuilderRepository(
-  private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val programStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
   private val programEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
 ) {
-  fun save(courseAllocation: OffenderProgramProfile) = offenderProgramProfileRepository.save(courseAllocation)
   fun programStatus(code: String): OffenderProgramStatus = programStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(code))!!
   fun programEndReason(code: String): ProgramServiceEndReason = programEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(code))!!
 }
@@ -71,7 +86,6 @@ class CourseAllocationBuilder(
       endReason = endReasonCode?.let { programEndReason(endReasonCode) },
       endComment = endComment,
     )
-      .let { save(it) }
       .also { courseAllocation = it }
 
   override fun payBand(
@@ -101,8 +115,6 @@ class CourseAllocationBuilder(
       paidTransactionId,
     )
       .also { courseAllocation.offenderCourseAttendances += it }
-
-  private fun save(offenderProgramProfile: OffenderProgramProfile) = repository?.save(offenderProgramProfile) ?: offenderProgramProfile
 
   private fun programStatus(programStatusCode: String) = repository?.programStatus(programStatusCode)
     ?: OffenderProgramStatus(code = programStatusCode, description = programStatusCode)

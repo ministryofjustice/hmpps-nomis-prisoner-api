@@ -90,8 +90,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             payRate()
           }
         }
-        offender(nomsId = "A1234AR") {
-          offenderBooking = booking(agencyLocationId = "LEI") {
+        offender {
+          offenderBooking = booking {
             allocation = courseAllocation(courseActivity)
           }
         }
@@ -201,8 +201,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
               payRate()
             }
           }
-          offender(nomsId = "A1234XX") {
-            offenderBooking = booking(agencyLocationId = "LEI")
+          offender {
+            offenderBooking = booking()
           }
         }
 
@@ -217,8 +217,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should return bad request if attendance already paid`() {
         lateinit var attendance: OffenderCourseAttendance
         nomisDataBuilder.build {
-          offender(nomsId = "A1234AT") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity) {
                 attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
               }
@@ -244,8 +244,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
               payRate()
             }
           }
-          offender(nomsId = "A1234AR") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity, programStatusCode = "END")
             }
           }
@@ -392,10 +392,10 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(outTime).isEqualTo("2022-11-01T11:00")
           assertThat(eventStatus.code).isEqualTo("SCH")
           assertThat(courseSchedule.courseScheduleId).isEqualTo(this@UpsertAttendance.courseSchedule.courseScheduleId)
-          assertThat(toInternalLocation?.locationId).isEqualTo(-8)
+          assertThat(toInternalLocation?.locationId).isEqualTo(-3005)
           assertThat(courseActivity.courseActivityId).isEqualTo(this@UpsertAttendance.courseActivity.courseActivityId)
-          assertThat(prison?.id).isEqualTo("LEI")
-          assertThat(program?.programId).isEqualTo(20)
+          assertThat(prison?.id).isEqualTo("BXI")
+          assertThat(program?.programId).isGreaterThan(0)
           assertThat(referenceId).isEqualTo(this@UpsertAttendance.courseSchedule.courseScheduleId)
         }
       }
@@ -403,8 +403,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if the prisoner has multiple allocations to the course`() {
         nomisDataBuilder.build {
-          offender(nomsId = "A1234RR") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               courseAllocation(courseActivity, programStatusCode = "END", endDate = "2022-10-31")
               courseAllocation(courseActivity, startDate = "2022-11-01")
             }
@@ -456,8 +456,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          offender(nomsId = "A1234AR") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity) {
                 payBand()
                 attendance = courseAttendance(courseSchedule)
@@ -502,17 +502,6 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if updating attendance for offender in wrong prison`() {
-        nomisDataBuilder.build {
-          offender(nomsId = "A1234TU") {
-            offenderBooking = booking(agencyLocationId = "MDI") {
-              allocation = courseAllocation(courseActivity) {
-                payBand()
-                attendance = courseAttendance(courseSchedule)
-              }
-            }
-          }
-        }
-
         val request = validJsonRequest.withEventStatusCode("CANC")
 
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, request)
@@ -525,8 +514,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should return OK if updating attendance and offender has been deallocated`() {
         nomisDataBuilder.build {
-          offender(nomsId = "A1234VV") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity, programStatusCode = "END") {
                 payBand()
                 attendance = courseAttendance(courseSchedule)
@@ -639,8 +628,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `should not update a completed attendance status back to scheduled`() {
         nomisDataBuilder.build {
-          offender(nomsId = "A1234AR") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity) {
                 payBand()
                 attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP")
@@ -672,8 +661,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `duplicate attendance can be worked around by deleting one of them`() {
         lateinit var duplicate: OffenderCourseAttendance
         nomisDataBuilder.build {
-          offender(nomsId = "A1234AR") {
-            offenderBooking = booking(agencyLocationId = "LEI") {
+          offender {
+            offenderBooking = booking {
               allocation = courseAllocation(courseActivity) {
                 payBand()
                 courseAttendance(courseSchedule)

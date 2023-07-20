@@ -6,6 +6,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
+import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_CONTROL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_REPORTING_OFFICER
@@ -310,7 +312,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri {
           it.path("/adjudications/ids")
             .queryParam("size", "200")
-            .queryParam("prisonId", "LEI")
+            .queryParam("prisonIds", "LEI")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -325,8 +327,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri {
           it.path("/adjudications/ids")
             .queryParam("size", "200")
-            .queryParam("prisonId", "MDI")
-            .queryParam("prisonId", "BXI")
+            .queryParam("prisonIds", "MDI")
+            .queryParam("prisonIds", "BXI")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -713,5 +715,159 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Removal from Activity")
       }
     }
+  }
+
+  @DisplayName("POST /prisoners/{offenderNo}/adjudications")
+  @Nested
+  inner class CreateAdjudication {
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+
+    @BeforeEach
+    fun createPrisoner() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1965NM") { booking { } }
+        reportingStaff = staff {
+          account(username = "JANESTAFF")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will return 404 if prisoner not found`() {
+        webTestClient.post().uri("/prisoners/A9999ZZ/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 400 if prisoner number is not valid`() {
+        webTestClient.post().uri("/prisoners/BANANAS/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if person has no bookings yet`() {
+        webTestClient.post().uri("/prisoners/${prisonerWithNoBookings.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication()))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if reporting officer is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication(reportingStaffUsername = "BANANAS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if offence code is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aSimpleAdjudication(offenceCode = "BANANAS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    private fun aSimpleAdjudication(reportingStaffUsername: String = "JANESTAFF", offenceCode: String = "51:1N"): String = """
+      {
+        "adjudicationNumber": 12345678,
+        "incident": {
+          "reportingStaffUsername":  "$reportingStaffUsername",
+          "incidentDate": "2023-01-31",
+          "incidentTime": "10:15",
+          "reportedDate": "2023-02-10",
+          "reportedTime": "09:15",
+          "internalLocationId": -41,
+          "details": "A fight that lead to so much blood",
+          "prisonId": "MDI",
+          "prisonerVictimsOffenderNumbers": [],
+          "staffWitnessesUsernames": [],
+          "staffVictimsUsernames": [],
+          "repairs": [],
+          "evidence": []
+        },
+        "charges": [
+          {
+            "offenceCode": "$offenceCode",
+            "offenceId": "12345678/1"
+          }
+        ]
+      }
+    """.trimIndent()
   }
 }

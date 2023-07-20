@@ -17,7 +17,12 @@ class NomisDataBuilder(
   private val staffBuilderFactory: StaffBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
 ) {
-  fun build(dsl: NomisData.() -> Unit) = NomisData(programServiceBuilderFactory, offenderBuilderFactory, staffBuilderFactory, adjudicationIncidentBuilderFactory).apply(dsl)
+  fun build(dsl: NomisData.() -> Unit) = NomisData(
+    programServiceBuilderFactory,
+    offenderBuilderFactory,
+    staffBuilderFactory,
+    adjudicationIncidentBuilderFactory,
+  ).apply(dsl)
 }
 
 class NomisData(
@@ -115,7 +120,7 @@ interface NomisDataDsl {
   @ProgramServiceDslMarker
   fun programService(
     programCode: String = "INTTEST",
-    programId: Long = 20,
+    programId: Long = 0,
     description: String = "test program",
     active: Boolean = true,
     dsl: ProgramServiceDsl.() -> Unit = {},

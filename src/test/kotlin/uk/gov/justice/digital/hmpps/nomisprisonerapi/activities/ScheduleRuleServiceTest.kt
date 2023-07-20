@@ -53,7 +53,7 @@ class ScheduleRuleServiceTest {
     fun setUp() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity(startDate = "2022-10-31")
+          courseActivity = courseActivity()
         }
       }
     }
@@ -145,7 +145,7 @@ class ScheduleRuleServiceTest {
     fun setUp() {
       nomisDataBuilder.build {
         programService {
-          existingActivity = courseActivity() {
+          existingActivity = courseActivity {
             courseSchedule()
             payRate()
             courseScheduleRule(id = 1)

@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
@@ -53,6 +54,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 
 @Repository
@@ -85,6 +87,7 @@ class Repository(
   val courseScheduleRepository: CourseScheduleRepository,
   val adjudicationIncidentRepository: AdjudicationIncidentRepository,
   val staffRepository: StaffRepository,
+  val staffUserAccountRepository: StaffUserAccountRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
 ) {
   @Autowired
@@ -185,9 +188,8 @@ class Repository(
 
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
-  fun save(staffBuilder: LegacyStaffBuilder): Staff = staffRepository.save(staffBuilder.build())
-
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
+  fun delete(staffUserAccount: StaffUserAccount) = staffUserAccountRepository.delete(staffUserAccount)
 
   fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
     offenderIndividualScheduleRepository.save(offenderIndividualSchedule)

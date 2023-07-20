@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityPayRateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -20,24 +19,11 @@ annotation class CourseActivityPayRateDslMarker
 @NomisDataDslMarker
 interface CourseActivityPayRateDsl
 
-interface CourseActivityPayRateDslApi {
-  @CourseActivityPayRateDslMarker
-  fun payRate(
-    iepLevelCode: String = "STD",
-    payBandCode: String = "5",
-    startDate: String = "2022-10-31",
-    endDate: String? = null,
-    halfDayRate: Double = 3.2,
-  ): CourseActivityPayRate
-}
-
 @Component
 class CourseActivityPayRateBuilderRepository(
-  val courseActivityPayRateRepository: CourseActivityPayRateRepository,
   val payBandRepository: ReferenceCodeRepository<PayBand>,
   val iepLevelRepository: ReferenceCodeRepository<IEPLevel>,
 ) {
-  fun save(payRate: CourseActivityPayRate) = courseActivityPayRateRepository.save(payRate)
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
   fun lookupIepLevel(code: String): IEPLevel =
     iepLevelRepository.findByIdOrNull(ReferenceCode.Pk(IEPLevel.IEP_LEVEL, code))!!
@@ -68,11 +54,7 @@ class CourseActivityPayRateBuilder(val repository: CourseActivityPayRateBuilderR
       iepLevel = lookupIepLevel(iepLevelCode),
       endDate = endDate?.let { LocalDate.parse(endDate) },
       halfDayRate = BigDecimal(halfDayRate).setScale(3, RoundingMode.HALF_UP),
-    ).let {
-      save(it)
-    }
-
-  private fun save(payRate: CourseActivityPayRate) = repository?.save(payRate) ?: payRate
+    )
 
   private fun lookupPayBandCode(payBandCode: String) = repository?.lookupPayBandCode(payBandCode)
     ?: PayBand(code = payBandCode, description = payBandCode)
