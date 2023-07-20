@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -18,6 +19,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForOtherReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isReportingOfficer
@@ -29,6 +33,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationSpecification
@@ -42,6 +48,8 @@ class AdjudicationService(
   private val offenderRepository: OffenderRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
+  private val agencyLocationRepository: AgencyLocationRepository,
+  private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -105,19 +113,46 @@ class AdjudicationService(
     offenderNo: String,
     request: CreateAdjudicationRequest,
   ): AdjudicationResponse? /* for now return a nullable just so we can write some basic tests */ {
-    val prisoner =
-      offenderRepository.findFirstByNomsId(offenderNo) ?: throw NotFoundException("Prisoner $offenderNo not found")
-    val booking = prisoner.bookings.firstOrNull { it.bookingSequence == 1 }
-      ?: throw BadDataException("Prisoner $offenderNo has no bookings")
-    val reportingStaff = staffUserAccountRepository.findByUsername(request.incident.reportingStaffUsername)?.staff
-      ?: throw BadDataException("Staff ${request.incident.reportingStaffUsername} not found")
-    val charges: List<Pair<String, AdjudicationIncidentOffence>> = request.charges.map {
+    val prisoner = findPrisoner(offenderNo)
+    val booking = findBooking(prisoner)
+    val reportingStaff = findReportingStaff(request.incident.reportingStaffUsername)
+    val charges = findCharges(request.charges)
+    val prison = findPrison(request.incident.prisonId)
+    val internalLocation = findInternalLocation(request.incident.internalLocationId)
+    return null
+  }
+
+  private fun findPrisoner(offenderNo: String): Offender {
+    return offenderRepository.findFirstByNomsId(offenderNo)
+      ?: throw NotFoundException("Prisoner $offenderNo not found")
+  }
+  private fun findPrison(prisonId: String): AgencyLocation {
+    return agencyLocationRepository.findByIdOrNull(prisonId)
+      ?: throw BadDataException("Prison $prisonId not found")
+  }
+
+  private fun findInternalLocation(internalLocationId: Long): AgencyInternalLocation {
+    return agencyInternalLocationRepository.findByIdOrNull(internalLocationId)
+      ?: throw BadDataException("Prison internal location $internalLocationId not found")
+  }
+
+  private fun findBooking(prisoner: Offender): OffenderBooking {
+    return prisoner.bookings.firstOrNull { it.bookingSequence == 1 }
+      ?: throw BadDataException("Prisoner ${prisoner.nomsId} has no bookings")
+  }
+
+  private fun findReportingStaff(reportingStaffUsername: String): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff {
+    return staffUserAccountRepository.findByUsername(reportingStaffUsername)?.staff
+      ?: throw BadDataException("Staff $reportingStaffUsername not found")
+  }
+
+  private fun findCharges(charges: List<ChargeToCreate>): List<Pair<String, AdjudicationIncidentOffence>> {
+    return charges.map {
       it.offenceId to (
         adjudicationIncidentOffenceRepository.findByCode(it.offenceCode)
           ?: throw BadDataException("Offence ${it.offenceCode} not found")
         )
     }
-    return null
   }
 }
 
