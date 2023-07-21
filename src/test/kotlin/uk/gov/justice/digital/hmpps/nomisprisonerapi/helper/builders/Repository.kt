@@ -6,7 +6,6 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -299,8 +298,8 @@ class Repository(
   fun getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncident? =
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.incident
 
-  fun getAdjudicationIncidentPartyByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncidentParty? =
-    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+  fun getInternalLocationByDescription(locationDescription: String, prisonId: String): AgencyInternalLocation =
+    agencyInternalLocationRepository.findByDescriptionAndAgencyId(locationDescription, prisonId)!!
 
   fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
   fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()

@@ -34,9 +34,15 @@ const val adjudicationNumber = 9000123L
 class AdjudicationsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
+  private var aLocationInMoorland = 0L
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
+
+  @BeforeEach
+  fun setUp() {
+    aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI").locationId
+  }
 
   @DisplayName("GET /adjudications/ids")
   @Nested
@@ -392,7 +398,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         incident = adjudicationIncident(
           reportingStaff = staff,
           prisonId = "MDI",
-          agencyInternalLocationId = -41,
+          agencyInternalLocationId = aLocationInMoorland,
           reportedDateTime = LocalDateTime.parse("2023-01-02T15:00"),
           reportedDate = LocalDate.parse("2023-01-02"),
           incidentDateTime = LocalDateTime.parse("2023-01-01T18:00"),
@@ -428,7 +434,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                 reportDetail = null,
               )
               hearing(
-                internalLocationId = -41,
+                internalLocationId = aLocationInMoorland,
                 scheduleDate = LocalDate.parse("2023-01-02"),
                 scheduleTime = LocalDateTime.parse("2023-01-02T14:00:00"),
                 hearingDate = LocalDate.parse("2023-01-03"),
@@ -577,7 +583,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("incident.reportedTime").isEqualTo("15:00:00")
           .jsonPath("incident.internalLocation.description").isEqualTo("MDI-1-1-001")
           .jsonPath("incident.internalLocation.code").isEqualTo("1")
-          .jsonPath("incident.internalLocation.locationId").isEqualTo("-41")
+          .jsonPath("incident.internalLocation.locationId").isEqualTo("$aLocationInMoorland")
           .jsonPath("incident.prison.code").isEqualTo("MDI")
           .jsonPath("incident.prison.description").isEqualTo("MOORLAND")
           .jsonPath("incident.details").isEqualTo("There was a fight in the toilets")
@@ -621,7 +627,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[0].offence.description")
           .isEqualTo("Commits any assault - assault on non prison officer member of staff")
           .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
-          .jsonPath("charges[0].offenceId").isNotEmpty
+          .jsonPath("charges[0].offenceId").isEqualTo("$adjudicationNumber/1")
           .jsonPath("charges[0].evidence").isEqualTo("HOOCH")
           .jsonPath("charges[0].chargeSequence").isEqualTo("1")
           .jsonPath("charges[1].evidence").isEqualTo("DEAD SWAN")
@@ -631,7 +637,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Denies access to any part of the prison to any officer or any person (other than a prisoner) who is at the prison for the purpose of working there")
           .jsonPath("charges[1].offence.type.description").isEqualTo("Prison Rule 51")
           .jsonPath("charges[1].chargeSequence").isEqualTo("2")
-          .jsonPath("charges[1].offenceId").isNotEmpty
+          .jsonPath("charges[1].offenceId").isEqualTo("$adjudicationNumber/2")
       }
 
       @Test
@@ -732,7 +738,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
           .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
           .isEqualTo("Stoppage of Earnings (amount)")
-          .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward").doesNotExist() // we only map one level deep as consecutive awards can be recursive
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
+          .doesNotExist() // we only map one level deep as consecutive awards can be recursive
       }
     }
   }
@@ -748,7 +755,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     fun createPrisoner() {
       nomisDataBuilder.build {
         prisoner = offender(nomsId = offenderNo) { booking { } }
-        reportingStaff = staff {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
           account(username = "JANESTAFF")
         }
       }
@@ -909,13 +916,116 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           assertThat(incident!!.findAdjudication(adjudicationNumber).prisonerParty().nomsId).isEqualTo(offenderNo)
         }
       }
+
+      @Test
+      fun `core data create in an adjudication is returned and in the NOMIS database and can be queried by API`() {
+        assertThat(repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)).isNull()
+
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aSimpleAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                reportingStaffUsername = "JANESTAFF",
+                internalLocationId = aLocationInMoorland,
+                prisonId = "MDI",
+                incidentDate = "2023-01-01",
+                incidentTime = "10:15",
+                reportedDate = "2023-02-10",
+                reportedTime = "09:15",
+                incidentDetails = "There was a fight in the toilets",
+                offenceCode = "51:1N",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("bookingId").isEqualTo(prisoner.latestBooking().bookingId)
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+          .jsonPath("incident.adjudicationIncidentId").isNumber
+          .jsonPath("incident.reportingStaff.firstName").isEqualTo("JANE")
+          .jsonPath("incident.reportingStaff.lastName").isEqualTo("STAFF")
+          .jsonPath("incident.incidentDate").isEqualTo("2023-01-01")
+          .jsonPath("incident.incidentTime").isEqualTo("10:15:00")
+          .jsonPath("incident.reportedDate").isEqualTo("2023-02-10")
+          .jsonPath("incident.reportedTime").isEqualTo("09:15:00")
+          .jsonPath("incident.internalLocation.description").isEqualTo("MDI-1-1-001")
+          .jsonPath("incident.internalLocation.code").isEqualTo("1")
+          .jsonPath("incident.internalLocation.locationId").isEqualTo("$aLocationInMoorland")
+          .jsonPath("incident.prison.code").isEqualTo("MDI")
+          .jsonPath("incident.prison.description").isEqualTo("MOORLAND")
+          .jsonPath("incident.details").isEqualTo("There was a fight in the toilets")
+          .jsonPath("incident.incidentType.code").isEqualTo("GOV")
+          .jsonPath("incident.incidentType.description").isEqualTo("Governor's Report")
+          .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
+          .jsonPath("charges[0].offence.description")
+          .isEqualTo("Commits any assault - assault on non prison officer member of staff")
+          .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
+          .jsonPath("charges[0].offenceId").isEqualTo("$adjudicationNumber/1")
+          .jsonPath("charges[0].chargeSequence").isEqualTo("1")
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          assertThat(incident!!.reportingStaff.accounts[0].username).isEqualTo("JANESTAFF")
+          assertThat(incident!!.agencyInternalLocation.locationId).isEqualTo(aLocationInMoorland)
+          assertThat(incident!!.prison.id).isEqualTo("MDI")
+          assertThat(incident!!.incidentDate).isEqualTo(LocalDate.parse("2023-01-01"))
+          assertThat(incident!!.incidentDateTime).isEqualTo(LocalDateTime.parse("2023-01-01T10:15"))
+          assertThat(incident!!.reportedDate).isEqualTo(LocalDate.parse("2023-02-10"))
+          assertThat(incident!!.reportedDateTime).isEqualTo(LocalDateTime.parse("2023-02-10T09:15"))
+          assertThat(incident!!.incidentDetails).isEqualTo("There was a fight in the toilets")
+          assertThat(incident!!.findAdjudication(adjudicationNumber).prisonerParty().nomsId).isEqualTo(offenderNo)
+          assertThat(incident!!.findAdjudication(adjudicationNumber).charges).hasSize(1)
+            .allMatch {
+              it.offence.code == "51:1N" &&
+                it.offenceId == "$adjudicationNumber/1" &&
+                it.lidsChargeNumber != null
+            }
+        }
+
+        webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("bookingId").isEqualTo(prisoner.latestBooking().bookingId)
+          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+          .jsonPath("incident.adjudicationIncidentId").isNumber
+          .jsonPath("incident.reportingStaff.firstName").isEqualTo("JANE")
+          .jsonPath("incident.reportingStaff.lastName").isEqualTo("STAFF")
+          .jsonPath("incident.incidentDate").isEqualTo("2023-01-01")
+          .jsonPath("incident.incidentTime").isEqualTo("10:15:00")
+          .jsonPath("incident.reportedDate").isEqualTo("2023-02-10")
+          .jsonPath("incident.reportedTime").isEqualTo("09:15:00")
+          .jsonPath("incident.internalLocation.description").isEqualTo("MDI-1-1-001")
+          .jsonPath("incident.internalLocation.code").isEqualTo("1")
+          .jsonPath("incident.internalLocation.locationId").isEqualTo("$aLocationInMoorland")
+          .jsonPath("incident.prison.code").isEqualTo("MDI")
+          .jsonPath("incident.prison.description").isEqualTo("MOORLAND")
+          .jsonPath("incident.details").isEqualTo("There was a fight in the toilets")
+          .jsonPath("incident.incidentType.code").isEqualTo("GOV")
+          .jsonPath("incident.incidentType.description").isEqualTo("Governor's Report")
+          .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
+          .jsonPath("charges[0].offence.description")
+          .isEqualTo("Commits any assault - assault on non prison officer member of staff")
+          .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
+          .jsonPath("charges[0].offenceId").isEqualTo("$adjudicationNumber/1")
+          .jsonPath("charges[0].chargeSequence").isEqualTo("1")
+      }
     }
 
     private fun aSimpleAdjudication(
       reportingStaffUsername: String = "JANESTAFF",
       offenceCode: String = "51:1N",
       adjudicationNumber: String = "12345678",
-      internalLocationId: Long = -41,
+      internalLocationId: Long = aLocationInMoorland,
       prisonId: String = "MDI",
       incidentDate: String = "2023-01-01",
       incidentTime: String = "10:15",
