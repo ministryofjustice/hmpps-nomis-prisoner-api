@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -22,6 +23,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.findAdjudication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -737,13 +740,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
   @DisplayName("POST /prisoners/{offenderNo}/adjudications")
   @Nested
   inner class CreateAdjudication {
+    private val offenderNo = "A1965NM"
     private lateinit var prisoner: Offender
     private lateinit var reportingStaff: Staff
 
     @BeforeEach
     fun createPrisoner() {
       nomisDataBuilder.build {
-        prisoner = offender(nomsId = "A1965NM") { booking { } }
+        prisoner = offender(nomsId = offenderNo) { booking { } }
         reportingStaff = staff {
           account(username = "JANESTAFF")
         }
@@ -785,16 +789,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
           .expectStatus().isUnauthorized
-      }
-
-      @Test
-      fun `access allowed with correct role`() {
-        webTestClient.post().uri("/prisoners/A1965NM/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(aSimpleAdjudication()))
-          .exchange()
-          .expectStatus().isOk
       }
     }
 
@@ -880,22 +874,65 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Nested
+    inner class HappyPath {
+      private var incident: AdjudicationIncident? = null
+
+      @AfterEach
+      fun tearDown() {
+        incident?.run { repository.delete(this) }
+      }
+
+      @Test
+      fun `create an adjudication with minimal data`() {
+        assertThat(repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)).isNull()
+
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aSimpleAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                reportingStaffUsername = "JANESTAFF",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          assertThat(incident!!.reportingStaff.accounts[0].username).isEqualTo("JANESTAFF")
+          assertThat(incident!!.findAdjudication(adjudicationNumber).prisonerParty().nomsId).isEqualTo(offenderNo)
+        }
+      }
+    }
+
     private fun aSimpleAdjudication(
       reportingStaffUsername: String = "JANESTAFF",
       offenceCode: String = "51:1N",
+      adjudicationNumber: String = "12345678",
       internalLocationId: Long = -41,
       prisonId: String = "MDI",
+      incidentDate: String = "2023-01-01",
+      incidentTime: String = "10:15",
+      reportedDate: String = "2023-02-10",
+      reportedTime: String = "09:15",
+      incidentDetails: String = "A fight that lead to so much blood",
     ): String = """
       {
-        "adjudicationNumber": 12345678,
+        "adjudicationNumber": $adjudicationNumber,
         "incident": {
           "reportingStaffUsername":  "$reportingStaffUsername",
-          "incidentDate": "2023-01-31",
-          "incidentTime": "10:15",
-          "reportedDate": "2023-02-10",
-          "reportedTime": "09:15",
+          "incidentDate": "$incidentDate",
+          "incidentTime": "$incidentTime",
+          "reportedDate": "$reportedDate",
+          "reportedTime": "$reportedTime",
           "internalLocationId": $internalLocationId,
-          "details": "A fight that lead to so much blood",
+          "details": "$incidentDetails",
           "prisonId": "$prisonId",
           "prisonerVictimsOffenderNumbers": [],
           "staffWitnessesUsernames": [],
@@ -906,7 +943,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         "charges": [
           {
             "offenceCode": "$offenceCode",
-            "offenceId": "12345678/1"
+            "offenceId": "$adjudicationNumber/1"
           }
         ]
       }
