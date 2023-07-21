@@ -450,9 +450,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                     sanctionDays = 2,
                     compensationAmount = BigDecimal.valueOf(12.2),
                   )
-                  award(
+                  val secondAward = award(
                     statusCode = "SUSPEN_RED",
-                    sanctionCode = "REMACT",
+                    sanctionCode = "STOP_EARN",
                     effectiveDate = LocalDate.parse("2023-01-04"),
                     statusDate = LocalDate.parse("2023-01-05"),
                     comment = "award comment for second award",
@@ -460,6 +460,17 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                     sanctionDays = 4,
                     compensationAmount = BigDecimal.valueOf(14.2),
                     consecutiveHearingResultAward = firstAward,
+                  )
+                  award(
+                    statusCode = "SUSPENDED",
+                    sanctionCode = "TOBA",
+                    effectiveDate = LocalDate.parse("2023-01-08"),
+                    statusDate = LocalDate.parse("2023-01-09"),
+                    comment = "award comment for third award",
+                    sanctionMonths = 3,
+                    sanctionDays = 4,
+                    compensationAmount = BigDecimal.valueOf(14.2),
+                    consecutiveHearingResultAward = secondAward,
                   )
                 }
                 result(
@@ -714,8 +725,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
           .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
           .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
+          .isEqualTo("Stoppage of Earnings (amount)")
           .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
           .isEqualTo("Removal from Activity")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
+          .isEqualTo("Stoppage of Earnings (amount)")
+          .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward").doesNotExist() // we only map one level deep as consecutive awards can be recursive
       }
     }
   }
