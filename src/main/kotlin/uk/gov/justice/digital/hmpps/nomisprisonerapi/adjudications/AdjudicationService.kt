@@ -126,6 +126,7 @@ class AdjudicationService(
     return offenderRepository.findFirstByNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found")
   }
+
   private fun findPrison(prisonId: String): AgencyLocation {
     return agencyLocationRepository.findByIdOrNull(prisonId)
       ?: throw BadDataException("Prison $prisonId not found")
@@ -230,17 +231,22 @@ fun AgencyInternalLocation.toInternalLocation() =
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
   Staff(staffId = id, firstName = firstName, lastName = lastName)
 
-fun AdjudicationHearingResultAward.toAward(): HearingResultAward = HearingResultAward(
-  sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
-    sanctionCode,
-    "Unknown Sanction Code",
-  ),
-  sanctionStatus = this.sanctionStatus?.toCodeDescription(),
-  comment = this.comment,
-  effectiveDate = this.effectiveDate,
-  statusDate = this.statusDate,
-  sanctionDays = this.sanctionDays,
-  sanctionMonths = this.sanctionMonths,
-  compensationAmount = this.compensationAmount,
-  consecutiveAward = this.consecutiveHearingResultAward?.toAward(),
-)
+fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward =
+  HearingResultAward(
+    sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
+      sanctionCode,
+      "Unknown Sanction Code",
+    ),
+    sanctionStatus = this.sanctionStatus?.toCodeDescription(),
+    comment = this.comment,
+    effectiveDate = this.effectiveDate,
+    statusDate = this.statusDate,
+    sanctionDays = this.sanctionDays,
+    sanctionMonths = this.sanctionMonths,
+    compensationAmount = this.compensationAmount,
+    consecutiveAward = if (!isConsecutiveAward) {
+      this.consecutiveHearingResultAward?.toAward(true)
+    } else {
+      null
+    },
+  )
