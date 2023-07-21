@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -37,6 +38,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -86,6 +88,7 @@ class Repository(
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
   val courseScheduleRepository: CourseScheduleRepository,
   val adjudicationIncidentRepository: AdjudicationIncidentRepository,
+  val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository,
   val staffRepository: StaffRepository,
   val staffUserAccountRepository: StaffUserAccountRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
@@ -292,6 +295,12 @@ class Repository(
 
   fun getAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
     agencyVisitDayRepository.findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(weekDay, prisonId)
+
+  fun getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncident? =
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.incident
+
+  fun getAdjudicationIncidentPartyByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncidentParty? =
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
 
   fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
   fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()

@@ -107,4 +107,7 @@ fun AdjudicationIncidentParty.isVictim(): Boolean = incidentRole == victimRole
 fun AdjudicationIncidentParty.isReportingOfficer(): Boolean = incidentRole == reportingOfficerRole
 fun AdjudicationIncidentParty.isInvolvedForForce(): Boolean = incidentRole == forceControllingOfficerRole
 fun AdjudicationIncidentParty.isInvolvedForOtherReason(): Boolean = incidentRole == otherRole
-fun AdjudicationIncidentParty.prisonerParty(): OffenderBooking = offenderBooking!!
+fun AdjudicationIncidentParty.prisonerParty(): Offender = offenderBooking!!.offender
+
+fun List<AdjudicationIncidentParty>.findAdjudication(adjudicationNumber: Long): AdjudicationIncidentParty =
+  this.find { it.adjudicationNumber == adjudicationNumber }!!
