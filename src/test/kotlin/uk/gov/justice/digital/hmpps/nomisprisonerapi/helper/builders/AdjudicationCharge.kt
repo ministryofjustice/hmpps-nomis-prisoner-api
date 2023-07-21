@@ -49,6 +49,7 @@ class AdjudicationChargeBuilder(
     offence = repository.lookupAdjudicationOffence(offenceCode),
     guiltyEvidence = guiltyEvidence,
     reportDetails = reportDetail,
+    offenceId = "${incidentParty.adjudicationNumber}/$chargeSequence",
   )
     .also { adjudicationCharge = it }
 }
