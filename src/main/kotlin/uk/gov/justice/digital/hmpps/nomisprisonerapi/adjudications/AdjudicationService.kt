@@ -21,8 +21,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepairId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
@@ -65,6 +67,7 @@ class AdjudicationService(
   private val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
   private val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
   private val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
+  private val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -146,9 +149,31 @@ class AdjudicationService(
       agencyInternalLocation = internalLocation,
       reportingStaff = reportingStaff,
     ).let { adjudicationIncidentRepository.save(it) }
-      .apply { this.parties += createPrisonerAdjudicationParty(this, offenderBooking, request) }
+      .apply {
+        parties += createPrisonerAdjudicationParty(this, offenderBooking, request)
+      }
+      .apply {
+        repairs += request.incident.repairs.mapIndexed { index, repair ->
+          createRepairForAdjudicationIncident(incident = this, index, repair)
+        }
+      }
       .let { mapAdjudication(it.parties.findAdjudication(adjudicationNumber)) }
   }
+
+  private fun createRepairForAdjudicationIncident(
+    incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
+    index: Int,
+    repair: RepairToCreate,
+  ) = AdjudicationIncidentRepair(
+    id = AdjudicationIncidentRepairId(
+      incident.id,
+      index + 1,
+    ),
+    type = lookupRepairType(repair.typeCode),
+    comment = repair.comment,
+    repairCost = repair.cost,
+    incident = incident,
+  )
 
   private fun findGovernorsReportIncidentType(): AdjudicationIncidentType {
     val governorsReportTypeId = AdjudicationIncidentType.pk(AdjudicationIncidentType.GOVERNORS_REPORT)
@@ -262,6 +287,10 @@ class AdjudicationService(
   private fun lookupEvidenceType(code: String): AdjudicationEvidenceType = evidenceTypeRepository.findByIdOrNull(
     AdjudicationEvidenceType.pk(code),
   ) ?: throw BadDataException("Evidence type $code not found")
+
+  private fun lookupRepairType(code: String): AdjudicationRepairType = repairTypeRepository.findByIdOrNull(
+    AdjudicationRepairType.pk(code),
+  ) ?: throw BadDataException("Repair type $code not found")
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
