@@ -88,5 +88,5 @@ class AdjudicationIncident(
   override fun hashCode(): Int = javaClass.hashCode()
 }
 
-fun AdjudicationIncident.findAdjudication(adjudicationNumber: Long): AdjudicationIncidentParty =
-  this.parties.findAdjudication(adjudicationNumber)
+fun AdjudicationIncident?.findAdjudication(adjudicationNumber: Long): AdjudicationIncidentParty =
+  this!!.parties.findAdjudication(adjudicationNumber)
