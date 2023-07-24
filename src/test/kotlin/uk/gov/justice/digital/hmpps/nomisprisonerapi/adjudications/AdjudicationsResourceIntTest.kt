@@ -901,6 +901,24 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will return 400 if repair type code is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aMultiRepairAdjudication(
+                repair1 = RepairToCreate(typeCode = "BANANAS", null, null),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Repair type BANANAS not found")
+      }
+
+      @Test
       fun `will return 400 if internal location of incident code is not found`() {
         webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -1164,6 +1182,43 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           }
         }
       }
+
+      @Test
+      fun `can create adjudication with damages (aka repairs)`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aMultiRepairAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                repair1 = RepairToCreate("PLUM", "Toilets need replacing", null),
+                repair2 = RepairToCreate("ELEC", null, BigDecimal.valueOf(12.2)),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          assertThat(incident!!.repairs).hasSize(2)
+          with(incident!!.repairs[0]) {
+            assertThat(comment).isEqualTo("Toilets need replacing")
+            assertThat(repairCost).isNull()
+            assertThat(type.code).isEqualTo("PLUM")
+            assertThat(type.description).isEqualTo("Plumbing")
+          }
+          with(incident!!.repairs[1]) {
+            assertThat(comment).isNull()
+            assertThat(repairCost).isEqualTo(BigDecimal.valueOf(12.2))
+            assertThat(type.code).isEqualTo("ELEC")
+            assertThat(type.description).isEqualTo("Electrical")
+          }
+        }
+      }
     }
 
     private fun aSimpleAdjudication(
@@ -1293,6 +1348,56 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             "detail": "${evidence2.detail}"
           }
         ]
+      }
+    """.trimIndent()
+    private fun aMultiRepairAdjudication(
+      repair1: RepairToCreate = RepairToCreate("PLUM", "Showers broken", null),
+      repair2: RepairToCreate = RepairToCreate("ELEC", "Lights need replacing", BigDecimal.valueOf(12.2)),
+      reportingStaffUsername: String = "JANESTAFF",
+      offenceCode: String = "51:1N",
+      adjudicationNumber: String = "12345678",
+      internalLocationId: Long = aLocationInMoorland,
+      prisonId: String = "MDI",
+      incidentDate: String = "2023-01-01",
+      incidentTime: String = "10:15",
+      reportedDate: String = "2023-02-10",
+      reportedTime: String = "09:15",
+      incidentDetails: String = "A fight that lead to so much blood",
+    ): String = """
+      {
+        "adjudicationNumber": $adjudicationNumber,
+        "incident": {
+          "reportingStaffUsername":  "$reportingStaffUsername",
+          "incidentDate": "$incidentDate",
+          "incidentTime": "$incidentTime",
+          "reportedDate": "$reportedDate",
+          "reportedTime": "$reportedTime",
+          "internalLocationId": $internalLocationId,
+          "details": "$incidentDetails",
+          "prisonId": "$prisonId",
+          "prisonerVictimsOffenderNumbers": [],
+          "staffWitnessesUsernames": [],
+          "staffVictimsUsernames": [],
+          "repairs": [
+            {
+              ${repair1.cost?.let { """ "cost": $it,""" } ?: ""}
+              ${repair1.comment?.let { """ "comment": "$it", """ } ?: ""} 
+              "typeCode": "${repair1.typeCode}"
+            },
+            {
+              ${repair2.cost?.let { """ "cost": $it,""" } ?: ""}
+              ${repair2.comment?.let { """ "comment": "$it", """ } ?: ""} 
+              "typeCode": "${repair2.typeCode}"
+            }
+          ]
+        },
+        "charges": [
+          {
+            "offenceCode": "$offenceCode",
+            "offenceId": "$adjudicationNumber/1"
+          }
+        ],
+        "evidence": []
       }
     """.trimIndent()
   }
