@@ -10,7 +10,7 @@ import java.time.LocalTime
 @Schema(description = "Core Adjudication to be created")
 data class CreateAdjudicationRequest(
 
-  @Schema(description = "The adjudication number (business key)")
+  @Schema(description = "The adjudication number (business key)", example = "10128828")
   val adjudicationNumber: Long,
 
   @Schema(description = "Associated incident details")
@@ -33,22 +33,25 @@ data class ChargeToCreate(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IncidentToCreate(
-  @Schema(description = "Reporting staff member username", required = true, example = "JANE.BROOKES")
+  @Schema(description = "Reporting staff member username", example = "JANE.BROOKES")
   val reportingStaffUsername: String,
 
-  @Schema(description = "Date of the associated incident", required = true)
+  @Schema(description = "Date of the associated incident")
   val incidentDate: LocalDate,
 
-  @Schema(description = "Date and time of the associated incident", required = true, example = "12:00:00")
+  @Schema(description = "Date and time of the associated incident", example = "12:00:00")
   val incidentTime: LocalTime,
 
-  @Schema(description = "Date when the associated incident was reported", required = true)
+  @Schema(description = "Date when the associated incident was reported")
   val reportedDate: LocalDate,
 
-  @Schema(description = "Date and time when the associated incident was reported", required = true, example = "12:00:00")
+  @Schema(
+    description = "Date and time when the associated incident was reported",
+    example = "12:00:00",
+  )
   val reportedTime: LocalTime,
 
-  @Schema(description = "location id where incident took place", required = true)
+  @Schema(description = "location id where incident took place", example = "123456")
   val internalLocationId: Long,
 
   @Schema(description = "Incident details", example = "The details of the incident are as follows")
@@ -57,13 +60,13 @@ data class IncidentToCreate(
   @Schema(description = "Prison code where the incident took place", example = "MDI")
   val prisonId: String,
 
-  @Schema(description = "Prisoners numbers that were victims in the incident")
+  @Schema(description = "Prisoners numbers that witnessed the incident", example = "[\"A1234AA\",\"A1234AB\"]")
   val prisonerVictimsOffenderNumbers: List<String>,
 
-  @Schema(description = "Staff usernames that witnessed the incident")
+  @Schema(description = "Staff usernames that witnessed the incident", example = "[\"A.BARNES\",\"M.ABDULLAH\"]")
   val staffWitnessesUsernames: List<String>,
 
-  @Schema(description = "Staff usernames that were victims in the incident")
+  @Schema(description = "Staff usernames that were victims in the incident", example = "[\"A.BARNES\",\"M.ABDULLAH\"]")
   val staffVictimsUsernames: List<String>,
 
   @Schema(description = "The repairs required due to the damage")
