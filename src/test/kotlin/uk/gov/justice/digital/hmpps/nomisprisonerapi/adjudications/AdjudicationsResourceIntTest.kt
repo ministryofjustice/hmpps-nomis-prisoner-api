@@ -24,8 +24,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.findAdjudication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -967,10 +969,30 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       private var incident: AdjudicationIncident? = null
+      private lateinit var staffWitnessAdaeze: StaffUserAccount
+      private lateinit var staffWitnessAbiodun: StaffUserAccount
+      private lateinit var staffVictimAarav: StaffUserAccount
+      private lateinit var staffVictimShivav: StaffUserAccount
+      private lateinit var prisonerVictimG1234VV: Offender
+      private lateinit var prisonerVictimA1234CT: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff { staffWitnessAdaeze = account(username = "ADAEZE") }
+          staff { staffWitnessAbiodun = account(username = "ABIODUN") }
+          staff { staffVictimAarav = account(username = "AARAV") }
+          staff { staffVictimShivav = account(username = "SHIVAV") }
+          prisonerVictimG1234VV = offender(nomsId = "G1234VV") { booking { } }
+          prisonerVictimA1234CT = offender(nomsId = "A1234CT") { booking { } }
+        }
+      }
 
       @AfterEach
       fun tearDown() {
         incident?.run { repository.delete(this) }
+        repository.deleteStaffByAccount(staffWitnessAdaeze, staffWitnessAbiodun, staffVictimAarav, staffVictimShivav)
+        repository.delete(prisonerVictimG1234VV, prisonerVictimA1234CT)
       }
 
       @Test
@@ -1219,6 +1241,33 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           }
         }
       }
+
+      @Test
+      fun `can create adjudication with witnesses`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aSimpleAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                staffWitnessesUsernames = listOf(staffWitnessAdaeze.username, staffWitnessAbiodun.username),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          val witnesses = incident!!.parties.filter { it.incidentRole == witnessRole }
+          assertThat(witnesses).hasSize(2)
+          assertThat(witnesses).anyMatch { it.staff?.id == staffWitnessAdaeze.staff.id }
+          assertThat(witnesses).anyMatch { it.staff?.id == staffWitnessAbiodun.staff.id }
+        }
+      }
     }
 
     private fun aSimpleAdjudication(
@@ -1232,6 +1281,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       reportedDate: String = "2023-02-10",
       reportedTime: String = "09:15",
       incidentDetails: String = "A fight that lead to so much blood",
+      prisonerVictimsOffenderNumbers: List<String> = emptyList(),
+      staffWitnessesUsernames: List<String> = emptyList(),
+      staffVictimsUsernames: List<String> = emptyList(),
     ): String = """
       {
         "adjudicationNumber": $adjudicationNumber,
@@ -1244,9 +1296,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           "internalLocationId": $internalLocationId,
           "details": "$incidentDetails",
           "prisonId": "$prisonId",
-          "prisonerVictimsOffenderNumbers": [],
-          "staffWitnessesUsernames": [],
-          "staffVictimsUsernames": [],
+          "prisonerVictimsOffenderNumbers": [${prisonerVictimsOffenderNumbers.joinToString(",") { "\"$it\"" }}],
+          "staffWitnessesUsernames": [${staffWitnessesUsernames.joinToString(",") { "\"$it\"" }}],
+          "staffVictimsUsernames": [${staffVictimsUsernames.joinToString(",") { "\"$it\"" }}],
           "repairs": []
         },
         "charges": [

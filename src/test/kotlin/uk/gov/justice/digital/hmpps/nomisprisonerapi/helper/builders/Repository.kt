@@ -179,6 +179,7 @@ class Repository(
   }
 
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
+  fun delete(vararg offender: Offender) = offender.forEach { offenderRepository.deleteById(it.id) }
   fun deleteOffenders() = offenderRepository.deleteAll()
 
   fun save(personBuilder: PersonBuilder): Person = personRepository.save(personBuilder.build())
@@ -191,7 +192,8 @@ class Repository(
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
-  fun delete(staffUserAccount: StaffUserAccount) = staffUserAccountRepository.delete(staffUserAccount)
+  fun deleteStaffByAccount(vararg staffUserAccount: StaffUserAccount) =
+    staffUserAccount.map { it.staff }.forEach { staffRepository.delete(it) }
 
   fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
     offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
