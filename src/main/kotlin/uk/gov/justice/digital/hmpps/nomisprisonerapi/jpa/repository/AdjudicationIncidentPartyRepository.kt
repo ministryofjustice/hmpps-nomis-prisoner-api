@@ -11,4 +11,5 @@ interface AdjudicationIncidentPartyRepository :
   JpaRepository<AdjudicationIncidentParty, AdjudicationIncidentPartyId>,
   JpaSpecificationExecutor<AdjudicationIncidentParty> {
   fun findByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncidentParty?
+  fun existsByAdjudicationNumber(adjudicationNumber: Long): Boolean
 }

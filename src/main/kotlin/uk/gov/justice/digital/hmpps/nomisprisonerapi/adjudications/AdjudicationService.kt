@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
@@ -49,8 +51,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.Adjudicat
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 
-typealias ChargeIdToOffence = Pair<String, AdjudicationIncidentOffence>
-
 @Service
 @Transactional
 class AdjudicationService(
@@ -64,7 +64,7 @@ class AdjudicationService(
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
   private val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
-
+  private val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -128,11 +128,10 @@ class AdjudicationService(
     offenderNo: String,
     request: CreateAdjudicationRequest,
   ): AdjudicationResponse {
-    val adjudicationNumber = request.adjudicationNumber
+    val adjudicationNumber = checkAdjudicationDoesNotExist(request.adjudicationNumber)
     val prisoner = findPrisoner(offenderNo)
     val offenderBooking = findBooking(prisoner)
     val reportingStaff = findReportingStaff(request.incident.reportingStaffUsername)
-    val charges = findCharges(request.charges)
     val prison = findPrison(request.incident.prisonId)
     val internalLocation = findInternalLocation(request.incident.internalLocationId)
 
@@ -147,7 +146,7 @@ class AdjudicationService(
       agencyInternalLocation = internalLocation,
       reportingStaff = reportingStaff,
     ).let { adjudicationIncidentRepository.save(it) }
-      .apply { this.parties += createPrisonerAdjudicationParty(this, adjudicationNumber, offenderBooking, charges) }
+      .apply { this.parties += createPrisonerAdjudicationParty(this, offenderBooking, request) }
       .let { mapAdjudication(it.parties.findAdjudication(adjudicationNumber)) }
   }
 
@@ -158,19 +157,25 @@ class AdjudicationService(
 
   private fun createPrisonerAdjudicationParty(
     incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
-    adjudicationNumber: Long,
     offenderBooking: OffenderBooking,
-    charges: List<ChargeIdToOffence>,
+    request: CreateAdjudicationRequest,
   ): AdjudicationIncidentParty = AdjudicationIncidentParty(
     id = AdjudicationIncidentPartyId(agencyIncidentId = incident.id, partySequence = incident.parties.size + 1),
-    adjudicationNumber = adjudicationNumber,
+    adjudicationNumber = request.adjudicationNumber,
     offenderBooking = offenderBooking,
     incident = incident,
     incidentRole = suspectRole,
     actionDecision = getPlacedOnReportActionCode(),
   ).apply {
-    this.charges += charges.mapIndexed { index, charge ->
+    this.charges += request.charges.mapIndexed { index, charge ->
       createIncidentCharge(incident, this, index, charge)
+    }
+    request.evidence.takeIf { it.isNotEmpty() }?.let {
+      this.investigations += createInvestigation(
+        incident = incident,
+        party = this,
+        evidenceList = it,
+      )
     }
   }
 
@@ -183,7 +188,7 @@ class AdjudicationService(
     incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
     incidentParty: AdjudicationIncidentParty,
     chargeIndex: Int,
-    charge: ChargeIdToOffence,
+    charge: ChargeToCreate,
   ): AdjudicationIncidentCharge {
     return AdjudicationIncidentCharge(
       id = AdjudicationIncidentChargeId(
@@ -193,9 +198,36 @@ class AdjudicationService(
       incident = incident,
       partySequence = incidentParty.id.partySequence,
       incidentParty = incidentParty,
-      offence = charge.second,
-      offenceId = charge.first,
+      offence = lookupOffence(charge.offenceCode),
+      offenceId = charge.offenceId,
     )
+  }
+
+  private fun createInvestigation(
+    incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
+    party: AdjudicationIncidentParty,
+    evidenceList: List<EvidenceToCreate>,
+  ): AdjudicationInvestigation = AdjudicationInvestigation(
+    incidentParty = party,
+    investigator = incident.reportingStaff,
+    comment = "Supplied by DPS",
+    assignedDate = incident.reportedDate,
+  ).apply {
+    evidence += evidenceList.map {
+      AdjudicationEvidence(
+        statementDetail = it.detail,
+        statementDate = incident.reportedDate,
+        statementType = lookupEvidenceType(it.typeCode),
+        investigation = this,
+      )
+    }
+  }
+
+  private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
+    if (adjudicationIncidentPartyRepository.existsByAdjudicationNumber(adjudicationNumber)) {
+      throw ConflictException("Adjudication $adjudicationNumber already exists")
+    }
+    return adjudicationNumber
   }
 
   private fun findPrisoner(offenderNo: String): Offender {
@@ -223,14 +255,13 @@ class AdjudicationService(
       ?: throw BadDataException("Staff $reportingStaffUsername not found")
   }
 
-  private fun findCharges(charges: List<ChargeToCreate>): List<ChargeIdToOffence> {
-    return charges.map {
-      it.offenceId to (
-        adjudicationIncidentOffenceRepository.findByCode(it.offenceCode)
-          ?: throw BadDataException("Offence ${it.offenceCode} not found")
-        )
-    }
-  }
+  private fun lookupOffence(offenceCode: String): AdjudicationIncidentOffence =
+    adjudicationIncidentOffenceRepository.findByCode(offenceCode)
+      ?: throw BadDataException("Offence $offenceCode not found")
+
+  private fun lookupEvidenceType(code: String): AdjudicationEvidenceType = evidenceTypeRepository.findByIdOrNull(
+    AdjudicationEvidenceType.pk(code),
+  ) ?: throw BadDataException("Evidence type $code not found")
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(

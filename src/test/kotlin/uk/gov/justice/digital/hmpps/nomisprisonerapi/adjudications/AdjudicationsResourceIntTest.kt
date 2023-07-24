@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
@@ -750,19 +751,27 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     private val offenderNo = "A1965NM"
     private lateinit var prisoner: Offender
     private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private val existingAdjudicationNumber = 123456L
 
     @BeforeEach
     fun createPrisoner() {
       nomisDataBuilder.build {
-        prisoner = offender(nomsId = offenderNo) { booking { } }
         reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
           account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {}
+          }
         }
       }
     }
 
     @AfterEach
     fun tearDown() {
+      repository.delete(existingIncident)
       repository.delete(prisoner)
       repository.delete(reportingStaff)
     }
@@ -818,6 +827,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
           .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner A9999ZZ not found")
       }
 
       @Test
@@ -828,6 +839,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("""createAdjudication.offenderNo: must match "[A-Z]\d{4}[A-Z]{2}"""")
       }
 
       @Test
@@ -838,6 +851,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner ${prisonerWithNoBookings.nomsId} has no bookings")
       }
 
       @Test
@@ -848,6 +863,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication(reportingStaffUsername = "BANANAS")))
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Staff BANANAS not found")
       }
 
       @Test
@@ -858,6 +875,29 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication(offenceCode = "BANANAS")))
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offence BANANAS not found")
+      }
+
+      @Test
+      fun `will return 400 if evidence type code is not found`() {
+        webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aMultiEvidenceAdjudication(
+                evidence1 = EvidenceToCreate(
+                  typeCode = "BANANAS",
+                  detail = "A bunch of bananas",
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Evidence type BANANAS not found")
       }
 
       @Test
@@ -868,6 +908,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication(internalLocationId = 9999999)))
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prison internal location 9999999 not found")
       }
 
       @Test
@@ -878,6 +920,29 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .body(BodyInserters.fromValue(aSimpleAdjudication(prisonId = "BANANAS")))
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prison BANANAS not found")
+      }
+
+      @Test
+      fun `will return 409 if adjudication already exists`() {
+        assertThat(repository.getAdjudicationIncidentByAdjudicationNumber(existingAdjudicationNumber)).isNotNull()
+
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aSimpleAdjudication(
+                adjudicationNumber = existingAdjudicationNumber.toString(),
+                reportingStaffUsername = "JANESTAFF",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Adjudication $existingAdjudicationNumber already exists")
       }
     }
 
@@ -914,6 +979,41 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           assertThat(incident).isNotNull
           assertThat(incident!!.reportingStaff.accounts[0].username).isEqualTo("JANESTAFF")
           assertThat(incident!!.findAdjudication(adjudicationNumber).prisonerParty().nomsId).isEqualTo(offenderNo)
+        }
+      }
+
+      @Test
+      fun `can create adjudication with multiple charges even though this is not expected to happen`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aMultiChargeAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                offenceCode1 = "51:1N",
+                offenceCode2 = "51:19A",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          assertThat(incident.findAdjudication(adjudicationNumber).charges).hasSize(2)
+          with(incident.findAdjudication(adjudicationNumber).charges[0]) {
+            assertThat(offence.code).isEqualTo("51:1N")
+            assertThat(offenceId).isEqualTo("$adjudicationNumber/1")
+            assertThat(id.chargeSequence).isEqualTo(1)
+          }
+          with(incident.findAdjudication(adjudicationNumber).charges[1]) {
+            assertThat(offence.code).isEqualTo("51:19A")
+            assertThat(offenceId).isEqualTo("$adjudicationNumber/2")
+            assertThat(id.chargeSequence).isEqualTo(2)
+          }
         }
       }
 
@@ -1019,6 +1119,51 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("charges[0].offenceId").isEqualTo("$adjudicationNumber/1")
           .jsonPath("charges[0].chargeSequence").isEqualTo("1")
       }
+
+      @Test
+      fun `can create adjudication with evidence`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aMultiEvidenceAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                reportingStaffUsername = "JANESTAFF",
+                evidence1 = EvidenceToCreate("PHOTO", "Picture on injuries"),
+                evidence2 = EvidenceToCreate("EVI_BAG", "The knife used in the attack"),
+                reportedDate = "2023-02-10",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          assertThat(incident.findAdjudication(adjudicationNumber).investigations).hasSize(1)
+          with(incident.findAdjudication(adjudicationNumber).investigations[0]) {
+            assertThat(evidence).hasSize(2)
+            assertThat(assignedDate).isEqualTo(LocalDate.parse("2023-02-10"))
+            assertThat(comment).isEqualTo("Supplied by DPS")
+            assertThat(investigator.id).isEqualTo(reportingStaff.id)
+          }
+          with(incident.findAdjudication(adjudicationNumber).investigations[0].evidence[0]) {
+            assertThat(statementType.code).isEqualTo("PHOTO")
+            assertThat(statementType.description).isEqualTo("Photographic Evidence")
+            assertThat(statementDate).isEqualTo(LocalDate.parse("2023-02-10"))
+            assertThat(statementDetail).isEqualTo("Picture on injuries")
+          }
+          with(incident.findAdjudication(adjudicationNumber).investigations[0].evidence[1]) {
+            assertThat(statementType.code).isEqualTo("EVI_BAG")
+            assertThat(statementType.description).isEqualTo("Evidence Bag")
+            assertThat(statementDate).isEqualTo(LocalDate.parse("2023-02-10"))
+            assertThat(statementDetail).isEqualTo("The knife used in the attack")
+          }
+        }
+      }
     }
 
     private fun aSimpleAdjudication(
@@ -1047,13 +1192,105 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           "prisonerVictimsOffenderNumbers": [],
           "staffWitnessesUsernames": [],
           "staffVictimsUsernames": [],
-          "repairs": [],
-          "evidence": []
+          "repairs": []
         },
         "charges": [
           {
             "offenceCode": "$offenceCode",
             "offenceId": "$adjudicationNumber/1"
+          }
+        ],
+        "evidence": []
+      }
+    """.trimIndent()
+
+    private fun aMultiChargeAdjudication(
+      reportingStaffUsername: String = "JANESTAFF",
+      offenceCode1: String = "51:1N",
+      offenceCode2: String = "51:19A",
+      adjudicationNumber: String = "12345678",
+      internalLocationId: Long = aLocationInMoorland,
+      prisonId: String = "MDI",
+      incidentDate: String = "2023-01-01",
+      incidentTime: String = "10:15",
+      reportedDate: String = "2023-02-10",
+      reportedTime: String = "09:15",
+      incidentDetails: String = "A fight that lead to so much blood",
+    ): String = """
+      {
+        "adjudicationNumber": $adjudicationNumber,
+        "incident": {
+          "reportingStaffUsername":  "$reportingStaffUsername",
+          "incidentDate": "$incidentDate",
+          "incidentTime": "$incidentTime",
+          "reportedDate": "$reportedDate",
+          "reportedTime": "$reportedTime",
+          "internalLocationId": $internalLocationId,
+          "details": "$incidentDetails",
+          "prisonId": "$prisonId",
+          "prisonerVictimsOffenderNumbers": [],
+          "staffWitnessesUsernames": [],
+          "staffVictimsUsernames": [],
+          "repairs": []
+        },
+        "charges": [
+          {
+            "offenceCode": "$offenceCode1",
+            "offenceId": "$adjudicationNumber/1"
+          },
+          {
+            "offenceCode": "$offenceCode2",
+            "offenceId": "$adjudicationNumber/2"
+          }
+        ],
+        "evidence": []
+      }
+    """.trimIndent()
+
+    private fun aMultiEvidenceAdjudication(
+      evidence1: EvidenceToCreate = EvidenceToCreate("PHOTO", "Picture on injuries"),
+      evidence2: EvidenceToCreate = EvidenceToCreate("EVI_BAG", "The knife used in the attack"),
+      reportingStaffUsername: String = "JANESTAFF",
+      offenceCode: String = "51:1N",
+      adjudicationNumber: String = "12345678",
+      internalLocationId: Long = aLocationInMoorland,
+      prisonId: String = "MDI",
+      incidentDate: String = "2023-01-01",
+      incidentTime: String = "10:15",
+      reportedDate: String = "2023-02-10",
+      reportedTime: String = "09:15",
+      incidentDetails: String = "A fight that lead to so much blood",
+    ): String = """
+      {
+        "adjudicationNumber": $adjudicationNumber,
+        "incident": {
+          "reportingStaffUsername":  "$reportingStaffUsername",
+          "incidentDate": "$incidentDate",
+          "incidentTime": "$incidentTime",
+          "reportedDate": "$reportedDate",
+          "reportedTime": "$reportedTime",
+          "internalLocationId": $internalLocationId,
+          "details": "$incidentDetails",
+          "prisonId": "$prisonId",
+          "prisonerVictimsOffenderNumbers": [],
+          "staffWitnessesUsernames": [],
+          "staffVictimsUsernames": [],
+          "repairs": []
+        },
+        "charges": [
+          {
+            "offenceCode": "$offenceCode",
+            "offenceId": "$adjudicationNumber/1"
+          }
+        ],
+        "evidence": [
+          {
+            "typeCode": "${evidence1.typeCode}",
+            "detail": "${evidence1.detail}"
+          },
+          {
+            "typeCode": "${evidence2.typeCode}",
+            "detail": "${evidence2.detail}"
           }
         ]
       }
