@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.findAdjudication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -1268,6 +1269,203 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           assertThat(witnesses).anyMatch { it.staff?.id == staffWitnessAbiodun.staff.id }
         }
       }
+
+      @Test
+      fun `can create adjudication with staff victims`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aSimpleAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                staffVictimsUsernames = listOf(staffVictimAarav.username, staffVictimShivav.username),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          val victims = incident!!.parties.filter { it.incidentRole == victimRole && it.staff != null }
+          assertThat(victims).hasSize(2)
+          assertThat(victims).anyMatch { it.staff?.id == staffVictimAarav.staff.id }
+          assertThat(victims).anyMatch { it.staff?.id == staffVictimShivav.staff.id }
+        }
+      }
+
+      @Test
+      fun `can create adjudication with prisoner victims`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aSimpleAdjudication(
+                adjudicationNumber = adjudicationNumber.toString(),
+                prisonerVictimsOffenderNumbers = listOf(prisonerVictimG1234VV.nomsId, prisonerVictimA1234CT.nomsId),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          val victims = incident!!.parties.filter { it.incidentRole == victimRole && it.offenderBooking != null }
+          assertThat(victims).hasSize(2)
+          assertThat(victims).anyMatch { it.offenderBooking?.offender?.nomsId == prisonerVictimG1234VV.nomsId }
+          assertThat(victims).anyMatch { it.offenderBooking?.offender?.nomsId == prisonerVictimA1234CT.nomsId }
+          assertThat(victims).allMatch { it.actionDecision?.description == "No Further Action" }
+        }
+      }
+
+      @Test
+      fun `can create a complex adjudication with many people involved`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+                  {
+                    "adjudicationNumber": $adjudicationNumber,
+                    "incident": {
+                      "reportingStaffUsername": "JANESTAFF",
+                      "incidentDate": "2023-01-01",
+                      "incidentTime": "10:15",
+                      "reportedDate": "2023-02-10",
+                      "reportedTime": "09:15",
+                      "internalLocationId": $aLocationInMoorland,
+                      "details": "There was a fight in the toilets",
+                      "prisonId": "MDI",
+                      "prisonerVictimsOffenderNumbers": [
+                        "G1234VV",
+                        "A1234CT"
+                      ],
+                      "staffWitnessesUsernames": [
+                        "ADAEZE",
+                        "ABIODUN"
+                      ],
+                      "staffVictimsUsernames": [
+                        "AARAV",
+                        "SHIVAV"
+                      ],
+                      "repairs": [
+                        {
+                          "comment": "Toilets need replacing",
+                          "typeCode": "PLUM"
+                        },
+                        {
+                          "cost": 12.2,
+                          "typeCode": "ELEC"
+                        }
+                      ]
+                    },
+                    "charges": [
+                      {
+                        "offenceCode": "51:1N",
+                        "offenceId": "$adjudicationNumber/1"
+                      },
+                      {
+                        "offenceCode": "51:19A",
+                        "offenceId": "$adjudicationNumber/2"
+                      }
+                    ],
+                    "evidence": [
+                      {
+                        "typeCode": "PHOTO",
+                        "detail": "Picture on injuries"
+                      },
+                      {
+                        "typeCode": "EVI_BAG",
+                        "detail": "The knife used in the attack"
+                      }
+                    ]
+                  }
+                
+            """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
+
+          assertThat(incident).isNotNull
+          assertThat(incident!!.reportingStaff.accounts[0].username).isEqualTo("JANESTAFF")
+          assertThat(incident!!.agencyInternalLocation.locationId).isEqualTo(aLocationInMoorland)
+          assertThat(incident!!.prison.id).isEqualTo("MDI")
+          assertThat(incident!!.incidentDate).isEqualTo(LocalDate.parse("2023-01-01"))
+          assertThat(incident!!.incidentDateTime).isEqualTo(LocalDateTime.parse("2023-01-01T10:15"))
+          assertThat(incident!!.reportedDate).isEqualTo(LocalDate.parse("2023-02-10"))
+          assertThat(incident!!.reportedDateTime).isEqualTo(LocalDateTime.parse("2023-02-10T09:15"))
+          assertThat(incident!!.incidentDetails).isEqualTo("There was a fight in the toilets")
+          assertThat(incident!!.findAdjudication(adjudicationNumber).prisonerParty().nomsId).isEqualTo(offenderNo)
+          with(incident.findAdjudication(adjudicationNumber).charges[0]) {
+            assertThat(offence.code).isEqualTo("51:1N")
+            assertThat(offenceId).isEqualTo("$adjudicationNumber/1")
+            assertThat(id.chargeSequence).isEqualTo(1)
+          }
+          with(incident.findAdjudication(adjudicationNumber).charges[1]) {
+            assertThat(offence.code).isEqualTo("51:19A")
+            assertThat(offenceId).isEqualTo("$adjudicationNumber/2")
+            assertThat(id.chargeSequence).isEqualTo(2)
+          }
+          assertThat(incident.findAdjudication(adjudicationNumber).investigations).hasSize(1)
+          with(incident.findAdjudication(adjudicationNumber).investigations[0]) {
+            assertThat(evidence).hasSize(2)
+            assertThat(assignedDate).isEqualTo(LocalDate.parse("2023-02-10"))
+            assertThat(comment).isEqualTo("Supplied by DPS")
+            assertThat(investigator.id).isEqualTo(reportingStaff.id)
+          }
+          with(incident.findAdjudication(adjudicationNumber).investigations[0].evidence[0]) {
+            assertThat(statementType.code).isEqualTo("PHOTO")
+            assertThat(statementType.description).isEqualTo("Photographic Evidence")
+            assertThat(statementDate).isEqualTo(LocalDate.parse("2023-02-10"))
+            assertThat(statementDetail).isEqualTo("Picture on injuries")
+          }
+          with(incident.findAdjudication(adjudicationNumber).investigations[0].evidence[1]) {
+            assertThat(statementType.code).isEqualTo("EVI_BAG")
+            assertThat(statementType.description).isEqualTo("Evidence Bag")
+            assertThat(statementDate).isEqualTo(LocalDate.parse("2023-02-10"))
+            assertThat(statementDetail).isEqualTo("The knife used in the attack")
+          }
+          assertThat(incident!!.repairs).hasSize(2)
+          with(incident!!.repairs[0]) {
+            assertThat(comment).isEqualTo("Toilets need replacing")
+            assertThat(repairCost).isNull()
+            assertThat(type.code).isEqualTo("PLUM")
+            assertThat(type.description).isEqualTo("Plumbing")
+          }
+          with(incident!!.repairs[1]) {
+            assertThat(comment).isNull()
+            assertThat(repairCost).isEqualTo(BigDecimal.valueOf(12.2))
+            assertThat(type.code).isEqualTo("ELEC")
+            assertThat(type.description).isEqualTo("Electrical")
+          }
+          val prisonerVictims =
+            incident!!.parties.filter { it.incidentRole == victimRole && it.offenderBooking != null }
+          assertThat(prisonerVictims).hasSize(2)
+          assertThat(prisonerVictims).anyMatch { it.offenderBooking?.offender?.nomsId == prisonerVictimG1234VV.nomsId }
+          assertThat(prisonerVictims).anyMatch { it.offenderBooking?.offender?.nomsId == prisonerVictimA1234CT.nomsId }
+          assertThat(prisonerVictims).allMatch { it.actionDecision?.description == "No Further Action" }
+          val staffVictims = incident!!.parties.filter { it.incidentRole == victimRole && it.staff != null }
+          assertThat(staffVictims).hasSize(2)
+          assertThat(staffVictims).anyMatch { it.staff?.id == staffVictimAarav.staff.id }
+          assertThat(staffVictims).anyMatch { it.staff?.id == staffVictimShivav.staff.id }
+          val witnesses = incident!!.parties.filter { it.incidentRole == witnessRole }
+          assertThat(witnesses).hasSize(2)
+          assertThat(witnesses).anyMatch { it.staff?.id == staffWitnessAdaeze.staff.id }
+          assertThat(witnesses).anyMatch { it.staff?.id == staffWitnessAbiodun.staff.id }
+        }
+      }
     }
 
     private fun aSimpleAdjudication(
@@ -1402,6 +1600,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         ]
       }
     """.trimIndent()
+
     private fun aMultiRepairAdjudication(
       repair1: RepairToCreate = RepairToCreate("PLUM", "Showers broken", null),
       repair2: RepairToCreate = RepairToCreate("ELEC", "Lights need replacing", BigDecimal.valueOf(12.2)),

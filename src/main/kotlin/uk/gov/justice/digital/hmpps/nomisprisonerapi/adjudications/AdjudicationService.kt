@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -52,6 +53,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAcc
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 
 @Service
@@ -159,6 +161,20 @@ class AdjudicationService(
             username = username,
           )
         }
+        parties += request.incident.staffVictimsUsernames.mapIndexed { index, username ->
+          createStaffVictim(
+            incident = this,
+            partySequence = parties.size + index + 1,
+            username = username,
+          )
+        }
+        parties += request.incident.prisonerVictimsOffenderNumbers.mapIndexed { index, offenderNo ->
+          createPrisonerVictim(
+            incident = this,
+            partySequence = parties.size + index + 1,
+            offenderNo = offenderNo,
+          )
+        }
         repairs += request.incident.repairs.mapIndexed { index, repair ->
           createRepairForAdjudicationIncident(incident = this, index + 1, repair)
         }
@@ -196,7 +212,7 @@ class AdjudicationService(
     offenderBooking = offenderBooking,
     incident = incident,
     incidentRole = suspectRole,
-    actionDecision = getPlacedOnReportActionCode(),
+    actionDecision = lookupPlacedOnReportIncidentAction(),
   ).apply {
     this.charges += request.charges.mapIndexed { index, charge ->
       createIncidentCharge(incident, this, index + 1, charge)
@@ -220,11 +236,32 @@ class AdjudicationService(
     incident = incident,
     incidentRole = witnessRole,
   )
+  private fun createStaffVictim(
+    incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
+    partySequence: Int,
+    username: String,
+  ): AdjudicationIncidentParty = AdjudicationIncidentParty(
+    id = AdjudicationIncidentPartyId(agencyIncidentId = incident.id, partySequence = partySequence),
+    staff = findStaffByUsername(username),
+    incident = incident,
+    incidentRole = victimRole,
+  )
+  private fun createPrisonerVictim(
+    incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
+    partySequence: Int,
+    offenderNo: String,
+  ): AdjudicationIncidentParty = AdjudicationIncidentParty(
+    id = AdjudicationIncidentPartyId(agencyIncidentId = incident.id, partySequence = partySequence),
+    offenderBooking = findPrisoner(offenderNo).findLatestBooking(),
+    actionDecision = lookupNoFurtherActionIncidentAction(),
+    incident = incident,
+    incidentRole = victimRole,
+  )
 
-  private fun getPlacedOnReportActionCode(): IncidentDecisionAction {
-    val placedOnReportActionCodeId = IncidentDecisionAction.pk(PLACED_ON_REPORT_ACTION_CODE)
-    return incidentDecisionActionRepository.findByIdOrNull(placedOnReportActionCodeId)!!
-  }
+  private fun lookupPlacedOnReportIncidentAction(): IncidentDecisionAction =
+    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(PLACED_ON_REPORT_ACTION_CODE))!!
+  private fun lookupNoFurtherActionIncidentAction(): IncidentDecisionAction =
+    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(NO_FURTHER_ACTION_CODE))!!
 
   private fun createIncidentCharge(
     incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
@@ -290,6 +327,10 @@ class AdjudicationService(
   private fun findBooking(prisoner: Offender): OffenderBooking {
     return prisoner.bookings.firstOrNull { it.bookingSequence == 1 }
       ?: throw BadDataException("Prisoner ${prisoner.nomsId} has no bookings")
+  }
+  private fun Offender.findLatestBooking(): OffenderBooking {
+    return this.bookings.firstOrNull { it.bookingSequence == 1 }
+      ?: throw BadDataException("Prisoner ${this.nomsId} has no bookings")
   }
 
   private fun findStaffByUsername(reportingStaffUsername: String): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff {
