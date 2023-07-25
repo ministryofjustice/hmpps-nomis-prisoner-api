@@ -42,6 +42,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isWitness
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
@@ -50,7 +51,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationSpecification
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationChargeSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
@@ -60,6 +61,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 @Transactional
 class AdjudicationService(
   private val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository,
+  private val adjudicationIncidentChargeRepository: AdjudicationIncidentChargeRepository,
   private val adjudicationIncidentRepository: AdjudicationIncidentRepository,
   private val adjudicationHearingRepository: AdjudicationHearingRepository,
   private val offenderRepository: OffenderRepository,
@@ -117,15 +119,16 @@ class AdjudicationService(
     )
   }
 
-  fun findAdjudicationIdsByFilter(
+  fun findAdjudicationChargeIdsByFilter(
     pageRequest: Pageable,
     adjudicationFilter: AdjudicationFilter,
-  ): Page<AdjudicationIdResponse> {
-    return adjudicationIncidentPartyRepository.findAll(AdjudicationSpecification(adjudicationFilter), pageRequest)
+  ): Page<AdjudicationChargeIdResponse> {
+    return adjudicationIncidentChargeRepository.findAll(AdjudicationChargeSpecification(adjudicationFilter), pageRequest)
       .map {
-        AdjudicationIdResponse(
-          adjudicationNumber = it.adjudicationNumber!!,
-          offenderNo = it.offenderBooking!!.offender.nomsId,
+        AdjudicationChargeIdResponse(
+          adjudicationNumber = it.incidentParty.adjudicationNumber!!,
+          offenderNo = it.incidentParty.offenderBooking!!.offender.nomsId,
+          chargeSequence = it.id.chargeSequence,
         )
       }
   }

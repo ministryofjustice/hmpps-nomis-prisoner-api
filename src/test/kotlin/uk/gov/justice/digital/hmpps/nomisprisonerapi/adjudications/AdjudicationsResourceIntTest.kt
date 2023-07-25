@@ -48,14 +48,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI").locationId
   }
 
-  @DisplayName("GET /adjudications/ids")
+  @DisplayName("GET /adjudications/charges/ids")
   @Nested
   inner class GetAdjudications {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/adjudications/ids")
+        webTestClient.get().uri("/adjudications/charges/ids")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -63,7 +63,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/adjudications/ids")
+        webTestClient.get().uri("/adjudications/charges/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -71,14 +71,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/adjudications/ids")
+        webTestClient.get().uri("/adjudications/charges/ids")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access allowed with correct role`() {
-        webTestClient.get().uri("/adjudications/ids")
+        webTestClient.get().uri("/adjudications/charges/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -157,7 +157,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
               offenderBooking = prisonerAtMoorlandPreviouslyAtBrixton.latestBooking(),
               adjudicationNumber = anotherNewAdjudicationNumberAtBrixton,
               actionDecision = PLACED_ON_REPORT_ACTION_CODE,
-            )
+            ) {
+              charge(
+                offenceCode = "51:1N",
+                guiltyEvidence = "HOOCH",
+                reportDetail = "1234/123",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+            }
           }
           anotherIncidentAtBrixton = adjudicationIncident(
             reportingStaff = staff,
@@ -169,7 +176,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
               offenderBooking = prisonerAtBrixton.latestBooking(),
               adjudicationNumber = newAdjudicationNumberAtBrixton,
               actionDecision = PLACED_ON_REPORT_ACTION_CODE,
-            )
+            ) {
+              charge(
+                offenceCode = "51:1N",
+                guiltyEvidence = "HOOCH",
+                reportDetail = "1234/123",
+                whenCreated = LocalDateTime.parse("2023-07-01T10:00"),
+              )
+            }
           }
           incidentAtMoorland = adjudicationIncident(
             reportingStaff = staff,
@@ -181,13 +195,33 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
               offenderBooking = prisonerAtMoorland.latestBooking(),
               adjudicationNumber = oldAdjudicationNumberAtMoorland,
               actionDecision = PLACED_ON_REPORT_ACTION_CODE,
-            )
+            ) {
+              charge(
+                offenceCode = "51:1N",
+                guiltyEvidence = "HOOCH",
+                reportDetail = "1234/123",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+              charge(
+                offenceCode = "51:1N",
+                guiltyEvidence = "HOOCH",
+                reportDetail = "4321/123",
+                whenCreated = LocalDateTime.parse("2020-01-01T11:00"),
+              )
+            }
             party(
               role = SUSPECT,
               offenderBooking = prisonerAtMoorlandPreviouslyAtBrixton.latestBooking(),
               adjudicationNumber = anotherNewAdjudicationNumberAtMoorland,
               actionDecision = PLACED_ON_REPORT_ACTION_CODE,
-            )
+            ) {
+              charge(
+                offenceCode = "51:1N",
+                guiltyEvidence = "HOOCH",
+                reportDetail = "1234/123",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+            }
           }
           anotherIncidentAtMoorland = adjudicationIncident(
             reportingStaff = staff,
@@ -199,7 +233,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
               offenderBooking = prisonerAtMoorland.latestBooking(),
               adjudicationNumber = newAdjudicationNumberAtMoorland,
               actionDecision = PLACED_ON_REPORT_ACTION_CODE,
-            )
+            ) {
+              charge(
+                offenceCode = "51:1N",
+                guiltyEvidence = "HOOCH",
+                reportDetail = "1234/123",
+                whenCreated = LocalDateTime.parse("2023-01-01T10:00"),
+              )
+            }
           }
           leedsAdjudicationNumberRange.forEachIndexed { index, it ->
             incidentsAtLeeds.add(
@@ -213,7 +254,20 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                   offenderBooking = prisonerAtLeeds.latestBooking(),
                   adjudicationNumber = it,
                   actionDecision = PLACED_ON_REPORT_ACTION_CODE,
-                )
+                ) {
+                  charge(
+                    offenceCode = "51:1N",
+                    guiltyEvidence = "HOOCH",
+                    reportDetail = "1234/123",
+                    whenCreated = LocalDateTime.parse("2015-01-01T10:00"),
+                  )
+                  charge(
+                    offenceCode = "51:1N",
+                    guiltyEvidence = "HOOCH",
+                    reportDetail = "1234/123",
+                    whenCreated = LocalDateTime.parse("2015-01-01T11:00"),
+                  )
+                }
               },
             )
           }
@@ -223,7 +277,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return total count when size is 1`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
+          it.path("/adjudications/charges/ids")
             .queryParam("size", "1")
             .build()
         }
@@ -231,35 +285,35 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(106)
+          .jsonPath("totalElements").isEqualTo(206)
           .jsonPath("numberOfElements").isEqualTo(1)
           .jsonPath("number").isEqualTo(0)
-          .jsonPath("totalPages").isEqualTo(106)
+          .jsonPath("totalPages").isEqualTo(206)
           .jsonPath("size").isEqualTo(1)
       }
 
       @Test
       fun `by default there will be a page size of 20`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
+          it.path("/adjudications/charges/ids")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(106)
+          .jsonPath("totalElements").isEqualTo(206)
           .jsonPath("numberOfElements").isEqualTo(20)
           .jsonPath("number").isEqualTo(0)
-          .jsonPath("totalPages").isEqualTo(6)
+          .jsonPath("totalPages").isEqualTo(11)
           .jsonPath("size").isEqualTo(20)
       }
 
       @Test
       fun `will order by whenCreated ascending`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
-            .queryParam("size", "200")
+          it.path("/adjudications/charges/ids")
+            .queryParam("size", "300")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -268,14 +322,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content[0].adjudicationNumber").isEqualTo(leedsAdjudicationNumberRange.first)
           .jsonPath("content[0].offenderNo").isEqualTo(prisonerAtLeeds.nomsId)
-          .jsonPath("content[105].adjudicationNumber").isEqualTo(newAdjudicationNumberAtBrixton)
-          .jsonPath("content[105].offenderNo").isEqualTo(prisonerAtBrixton.nomsId)
+          .jsonPath("content[205].adjudicationNumber").isEqualTo(newAdjudicationNumberAtBrixton)
+          .jsonPath("content[205].offenderNo").isEqualTo(prisonerAtBrixton.nomsId)
       }
 
       @Test
       fun `supplying fromDate means only adjudications created on or after that date are returned`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
+          it.path("/adjudications/charges/ids")
             .queryParam("size", "200")
             .queryParam("fromDate", "2023-07-01")
             .build()
@@ -291,7 +345,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `supplying toDate means only adjudications created on or before that date are returned`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
+          it.path("/adjudications/charges/ids")
             .queryParam("size", "200")
             .queryParam("toDate", "2015-01-01")
             .build()
@@ -300,14 +354,14 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(100)
+          .jsonPath("totalElements").isEqualTo(200)
           .jsonPath("content[0].adjudicationNumber").isEqualTo(leedsAdjudicationNumberRange.first)
       }
 
       @Test
       fun `can filter using both from and to dates`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
+          it.path("/adjudications/charges/ids")
             .queryParam("size", "200")
             .queryParam("fromDate", "2020-01-01")
             .queryParam("toDate", "2023-01-01")
@@ -323,7 +377,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can filter by prison where adjudication was created`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
+          it.path("/adjudications/charges/ids")
             .queryParam("size", "200")
             .queryParam("prisonIds", "LEI")
             .build()
@@ -332,13 +386,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(100)
+          .jsonPath("totalElements").isEqualTo(200)
       }
 
       @Test
       fun `can filter by multiple prisons where adjudication was created`() {
         webTestClient.get().uri {
-          it.path("/adjudications/ids")
+          it.path("/adjudications/charges/ids")
             .queryParam("size", "200")
             .queryParam("prisonIds", "MDI")
             .queryParam("prisonIds", "BXI")

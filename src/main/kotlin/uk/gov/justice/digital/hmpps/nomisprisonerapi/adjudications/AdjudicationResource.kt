@@ -35,10 +35,10 @@ class AdjudicationResource(
   private val adjudicationService: AdjudicationService,
 ) {
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
-  @GetMapping("/adjudications/ids")
+  @GetMapping("/adjudications/charges/ids")
   @Operation(
-    summary = "get adjudication IDs by filter",
-    description = "Retrieves a paged list of adjudication ids by filter. Requires ROLE_NOMIS_ADJUDICATIONS.",
+    summary = "get adjudication charge IDs by filter",
+    description = "Retrieves a paged list of adjudication charge ids by filter. Requires ROLE_NOMIS_ADJUDICATIONS.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -66,31 +66,31 @@ class AdjudicationResource(
       ),
     ],
   )
-  fun getAdjudicationsByFilter(
+  fun getAdjudicationChargeIdsByFilter(
     @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC, size = 20)
     pageRequest: Pageable,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
-      description = "Filter results by adjudications that were created on or after the given date",
+      description = "Filter results by adjudication charges that were created on or after the given date",
       example = "2021-11-03",
     )
     fromDate: LocalDate?,
     @RequestParam(value = "toDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
-      description = "Filter results by adjudications that were created on or before the given date",
+      description = "Filter results by adjudication charges that were created on or before the given date",
       example = "2021-11-03",
     )
     toDate: LocalDate?,
     @RequestParam(value = "prisonIds", required = false)
     @Parameter(
-      description = "Filter results by adjudications that were created in one of the given prisons",
+      description = "Filter results by adjudication charges that were created in one of the given prisons",
       example = "MDI",
     )
     prisonIds: List<String>?,
-  ): Page<AdjudicationIdResponse> =
-    adjudicationService.findAdjudicationIdsByFilter(
+  ): Page<AdjudicationChargeIdResponse> =
+    adjudicationService.findAdjudicationChargeIdsByFilter(
       pageRequest = pageRequest,
       AdjudicationFilter(
         toDate = toDate,
@@ -152,6 +152,65 @@ class AdjudicationResource(
     @Schema(description = "Adjudication number", example = "12345", required = true)
     @PathVariable
     adjudicationNumber: Long,
+  ): AdjudicationResponse =
+    adjudicationService.getAdjudication(adjudicationNumber)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @GetMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge-sequence/{chargeSequence}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "get adjudication by adjudication number",
+    description = "Retrieves an adjudication by the adjudication number. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Adjudication Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAdjudicationCharge(
+    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Charge sequence", example = "1", required = true)
+    @PathVariable
+    chargeSequence: Int,
   ): AdjudicationResponse =
     adjudicationService.getAdjudication(adjudicationNumber)
 
@@ -224,9 +283,11 @@ class AdjudicationResource(
 }
 
 @Schema(description = "adjudication id")
-data class AdjudicationIdResponse(
+data class AdjudicationChargeIdResponse(
   @Schema(description = "The adjudication number", required = true)
   val adjudicationNumber: Long,
+  @Schema(description = "The adjudication charge sequence", required = true)
+  val chargeSequence: Int,
   @Schema(description = "The prisoner number", required = true)
   val offenderNo: String,
 )
