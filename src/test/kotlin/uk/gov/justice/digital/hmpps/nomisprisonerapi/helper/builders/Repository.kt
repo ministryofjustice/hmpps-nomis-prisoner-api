@@ -37,6 +37,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -86,6 +87,7 @@ class Repository(
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
   val courseScheduleRepository: CourseScheduleRepository,
   val adjudicationIncidentRepository: AdjudicationIncidentRepository,
+  val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository,
   val staffRepository: StaffRepository,
   val staffUserAccountRepository: StaffUserAccountRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
@@ -177,6 +179,7 @@ class Repository(
   }
 
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
+  fun delete(vararg offender: Offender) = offender.forEach { offenderRepository.deleteById(it.id) }
   fun deleteOffenders() = offenderRepository.deleteAll()
 
   fun save(personBuilder: PersonBuilder): Person = personRepository.save(personBuilder.build())
@@ -189,7 +192,8 @@ class Repository(
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
-  fun delete(staffUserAccount: StaffUserAccount) = staffUserAccountRepository.delete(staffUserAccount)
+  fun deleteStaffByAccount(vararg staffUserAccount: StaffUserAccount) =
+    staffUserAccount.map { it.staff }.forEach { staffRepository.delete(it) }
 
   fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
     offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
@@ -292,6 +296,12 @@ class Repository(
 
   fun getAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
     agencyVisitDayRepository.findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(weekDay, prisonId)
+
+  fun getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncident? =
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.incident
+
+  fun getInternalLocationByDescription(locationDescription: String, prisonId: String): AgencyInternalLocation =
+    agencyInternalLocationRepository.findByDescriptionAndAgencyId(locationDescription, prisonId)!!
 
   fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
   fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()

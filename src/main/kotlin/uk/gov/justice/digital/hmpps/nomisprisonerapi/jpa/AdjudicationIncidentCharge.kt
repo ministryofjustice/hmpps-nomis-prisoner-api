@@ -69,7 +69,7 @@ class AdjudicationIncidentCharge(
   @Column(name = "LIDS_CHARGE_NUMBER", updatable = false, insertable = false)
   val lidsChargeNumber: Long? = 0,
 
-  // adjudication number / charge index at party level eg 4577667/1
+  // adjudication number / charge index at incident level eg 4577667/1
   @Column(name = "OIC_CHARGE_ID")
   val offenceId: String? = null,
 ) {

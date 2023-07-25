@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -210,5 +210,5 @@ data class HearingResultAward(
   val consecutiveAward: HearingResultAward?,
 )
 
-fun OffenderBooking.toPrisoner() =
-  Prisoner(offenderNo = offender.nomsId, firstName = offender.firstName, lastName = offender.lastName)
+fun Offender.toPrisoner() =
+  Prisoner(offenderNo = nomsId, firstName = firstName, lastName = lastName)
