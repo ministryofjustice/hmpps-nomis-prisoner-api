@@ -68,7 +68,7 @@ class PayRatesService(
     requestedPayRates.forEach { requestedPayRate ->
       val existingPayRate = existingPayRates.findExistingPayRate(requestedPayRate)
       when {
-        existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity, getStartDate(requestedPayRate.incentiveLevel, requestedPayRate.payBand, existingPayRates)))
+        existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity, getStartDate(requestedPayRate.incentiveLevel, requestedPayRate.payBand, existingPayRates, existingActivity.scheduleStartDate)))
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
         existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
         existingPayRate.rateIsChanged(requestedPayRate) -> {
@@ -156,7 +156,13 @@ class PayRatesService(
 
   // If the pay rate already exists the new rate becomes effective tomorrow
   // If the pay rate is brand new it becomes effective today
-  private fun getStartDate(iepLevelCode: String, payBandCode: String, existingPayRates: List<CourseActivityPayRate>): LocalDate {
+  // A pay rate cannot start before the activity
+  private fun getStartDate(
+    iepLevelCode: String,
+    payBandCode: String,
+    existingPayRates: List<CourseActivityPayRate>,
+    activityStartDate: LocalDate,
+  ): LocalDate {
     val today = LocalDate.now()
     val tomorrow = today.plusDays(1)
     return existingPayRates.filter { it.id.iepLevelCode == iepLevelCode && it.payBand.code == payBandCode }
@@ -164,7 +170,7 @@ class PayRatesService(
       ?.maxBy { it.id.startDate }
       ?.endDate
       ?.let { if (it < today) today else tomorrow }
-      ?: today
+      ?: listOf(today, activityStartDate).max()
   }
 
   // Handle an edge case where the activity start date is moved before any of the existing pay rates - as start date is

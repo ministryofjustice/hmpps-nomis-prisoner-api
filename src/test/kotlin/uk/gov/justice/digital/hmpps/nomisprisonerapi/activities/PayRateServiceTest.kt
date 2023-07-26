@@ -210,6 +210,32 @@ class PayRateServiceTest {
     }
 
     @Test
+    fun `adding new pay rate to an activity not started yet should have same start date`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = tomorrow.toString()) {
+            courseScheduleRule()
+            courseSchedule(scheduleDate = tomorrow.toString())
+            payRate(startDate = tomorrow.toString(), payBandCode = "5")
+          }
+        }
+      }
+      val request = listOf(
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
+      )
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+
+      assertThat(newPayRates.size).isEqualTo(2)
+      // new rate added
+      with(newPayRates.findRate("STD", "6")) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.4), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(tomorrow)
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
     fun `amending should expire existing and create new pay rate effective tomorrow`() {
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
