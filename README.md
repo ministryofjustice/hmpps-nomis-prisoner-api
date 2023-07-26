@@ -1,4 +1,4 @@
-# HMPPS NOMIS Syncronisation Prisoner API
+# HMPPS NOMIS Synchronisation Prisoner API
 
 [![CircleCI](https://circleci.com/gh/ministryofjustice/hmpps-nomis-prisoner-api/tree/main.svg?style=svg)](https://circleci.com/gh/ministryofjustice/hmpps-nomis-prisoner-api)
 [![API docs](https://img.shields.io/badge/API_docs_-view-85EA2D.svg?logo=swagger)](https://nomis-prsner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk/swagger-ui/index.html?configUrl=/v3/api-docs)

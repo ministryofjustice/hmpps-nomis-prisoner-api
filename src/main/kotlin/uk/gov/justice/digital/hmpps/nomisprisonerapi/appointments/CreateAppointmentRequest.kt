@@ -20,7 +20,7 @@ data class CreateAppointmentRequest(
   val startTime: LocalTime,
 
   @Schema(description = "Activity end time", required = true, example = "15:20")
-  val endTime: LocalTime,
+  val endTime: LocalTime?,
 
   @Schema(description = "Room where the appointment is to occur (in cell if null)", example = "112233")
   val internalLocationId: Long? = null,

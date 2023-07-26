@@ -34,11 +34,11 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
 
-  private fun callCreateEndpoint(): Long {
+  private fun callCreateEndpoint(hasEndTime: Boolean): Long {
     val response = webTestClient.post().uri("/appointments")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
       .contentType(MediaType.APPLICATION_JSON)
-      .body(BodyInserters.fromValue(validCreateJsonRequest()))
+      .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime)))
       .exchange()
       .expectStatus().isCreated
       .expectBody(CreateAppointmentResponse::class.java)
@@ -47,11 +47,11 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
     return response!!.eventId
   }
 
-  private fun validCreateJsonRequest() = """{
+  private fun validCreateJsonRequest(hasEndTime: Boolean) = """{
             "bookingId"          : ${offenderAtMoorlands.latestBooking().bookingId},
             "eventDate"          : "2023-02-27",
             "startTime"          : "10:40",
-            "endTime"            : "12:10",
+${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
             "internalLocationId" : $MDI_ROOM_ID,
             "eventSubType"       : "ACTI"
           }
@@ -205,7 +205,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid start time should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest().replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
+      val invalidSchedule = validCreateJsonRequest(false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -219,7 +219,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid end time should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest().replace(""""endTime"            : "12:10"""", """"endTime": "12:65"""")
+      val invalidSchedule = validCreateJsonRequest(true).replace(""""endTime"   : "12:10"""", """"endTime": "12:65"""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -233,7 +233,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest().replace(""""eventDate"          : "2023-02-27"""", """"eventDate": "2022-13-31",""")
+      val invalidSchedule = validCreateJsonRequest(false).replace(""""eventDate"          : "2023-02-27"""", """"eventDate": "2022-13-31",""")
       webTestClient.post().uri("/appointments")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -247,7 +247,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create appointment with correct details`() {
-      val id = callCreateEndpoint()
+      val id = callCreateEndpoint(true)
 
       // Check the database
       val offenderIndividualSchedule = repository.getAppointment(id)!!
@@ -263,6 +263,18 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("SCH")
       assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
       assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID)
+    }
+
+    @Test
+    fun `will create appointment with correct details - no end time`() {
+      val id = callCreateEndpoint(false)
+
+      // Check the database
+      val offenderIndividualSchedule = repository.getAppointment(id)!!
+
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
+      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
+      assertThat(offenderIndividualSchedule.endTime).isNull()
     }
   }
 
@@ -316,7 +328,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access with room not found`() {
-      val eventId = callCreateEndpoint()
+      val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(internalLocationId = 999998)))
@@ -329,7 +341,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `EventSubType does not exist`() {
-      val eventId = callCreateEndpoint()
+      val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(eventSubType = "INVALID")))
@@ -342,7 +354,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `end time before start`() {
-      val eventId = callCreateEndpoint()
+      val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(endTime = LocalTime.of(7, 0))))
@@ -355,8 +367,8 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid start time should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest().replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
-      val eventId = callCreateEndpoint()
+      val invalidSchedule = validUpdateJsonRequest(false).replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
+      val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -370,8 +382,8 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid end time should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest().replace(""""endTime"            : "12:20"""", """"endTime": "12:65"""")
-      val eventId = callCreateEndpoint()
+      val invalidSchedule = validUpdateJsonRequest(true).replace(""""endTime"   : "12:20"""", """"endTime": "12:65"""")
+      val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -385,8 +397,8 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest().replace(""""eventDate"          : "2023-02-28"""", """"eventDate": "2022-13-31",""")
-      val eventId = callCreateEndpoint()
+      val invalidSchedule = validUpdateJsonRequest(false).replace(""""eventDate"          : "2023-02-28"""", """"eventDate": "2022-13-31",""")
+      val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -400,8 +412,8 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will update appointment with correct details`() {
-      val eventId = callCreateEndpoint()
-      callUpdateEndpoint(eventId)
+      val eventId = callCreateEndpoint(true)
+      callUpdateEndpoint(eventId, true)
 
       // Check the database
       val offenderIndividualSchedule = repository.getAppointment(eventId)!!
@@ -419,19 +431,33 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
       assertThat(offenderIndividualSchedule.modifiedBy).isNotBlank()
     }
 
-    private fun callUpdateEndpoint(eventId: Long) {
+    @Test
+    fun `will update appointment with correct details - no end time`() {
+      val eventId = callCreateEndpoint(true)
+      callUpdateEndpoint(eventId, false)
+
+      // Check the database
+      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
+
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
+      assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
+      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
+      assertThat(offenderIndividualSchedule.endTime).isNull()
+    }
+
+    private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean) {
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validUpdateJsonRequest()))
+        .body(BodyInserters.fromValue(validUpdateJsonRequest(hasEndTime)))
         .exchange()
         .expectStatus().isOk
     }
 
-    private fun validUpdateJsonRequest() = """{
+    private fun validUpdateJsonRequest(hasEndTime: Boolean) = """{
             "eventDate"          : "2023-02-28",
             "startTime"          : "10:50",
-            "endTime"            : "12:20",
+${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
             "internalLocationId" : $MDI_ROOM_ID_2,
             "comment"            : "Some comment",
             "eventSubType"       : "CABA"
@@ -475,7 +501,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will cancel appointment correctly`() {
-      val eventId = callCreateEndpoint()
+      val eventId = callCreateEndpoint(false)
       callCancelEndpoint(eventId)
 
       // Check the database
@@ -522,7 +548,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will uncancel appointment correctly`() {
-      val eventId = callCreateEndpoint()
+      val eventId = callCreateEndpoint(false)
       callCancelEndpoint(eventId)
       callUncancelEndpoint(eventId)
 
@@ -570,7 +596,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will delete appointment correctly`() {
-      val eventId = callCreateEndpoint()
+      val eventId = callCreateEndpoint(false)
       callDeleteEndpoint(eventId)
 
       // Check the database
