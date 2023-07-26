@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCha
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class AdjudicationChargeDslMarker
@@ -41,6 +42,7 @@ class AdjudicationChargeBuilder(
     reportDetail: String?,
     incidentParty: AdjudicationIncidentParty,
     chargeSequence: Int,
+    whenCreated: LocalDateTime,
   ): AdjudicationIncidentCharge = AdjudicationIncidentCharge(
     id = AdjudicationIncidentChargeId(incidentParty.id.agencyIncidentId, chargeSequence),
     incident = incidentParty.incident,
@@ -50,6 +52,7 @@ class AdjudicationChargeBuilder(
     guiltyEvidence = guiltyEvidence,
     reportDetails = reportDetail,
     offenceId = "${incidentParty.adjudicationNumber}/$chargeSequence",
+    whenCreated = whenCreated,
   )
     .also { adjudicationCharge = it }
 }

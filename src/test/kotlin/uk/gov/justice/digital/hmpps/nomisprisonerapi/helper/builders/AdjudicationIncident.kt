@@ -137,17 +137,20 @@ class AdjudicationIncidentBuilder(
     actionDecision: String,
     dsl: AdjudicationPartyDsl.() -> Unit,
   ) =
-    adjudicationPartyBuilderFactory.builder().build(
-      adjudicationNumber = adjudicationNumber,
-      comment = comment,
-      staff = staff,
-      incidentRole = role.code,
-      actionDecision = actionDecision,
-      partyAddedDate = partyAddedDate,
-      incident = adjudicationIncident,
-      offenderBooking = offenderBooking,
-      whenCreated = whenCreated,
-      index = adjudicationIncident.parties.size + 1,
-    )
-      .also { adjudicationIncident.parties += it }
+    adjudicationPartyBuilderFactory.builder().let { builder ->
+      builder.build(
+        adjudicationNumber = adjudicationNumber,
+        comment = comment,
+        staff = staff,
+        incidentRole = role.code,
+        actionDecision = actionDecision,
+        partyAddedDate = partyAddedDate,
+        incident = adjudicationIncident,
+        offenderBooking = offenderBooking,
+        whenCreated = whenCreated,
+        index = adjudicationIncident.parties.size + 1,
+      )
+        .also { adjudicationIncident.parties += it }
+        .also { builder.apply(dsl) }
+    }
 }

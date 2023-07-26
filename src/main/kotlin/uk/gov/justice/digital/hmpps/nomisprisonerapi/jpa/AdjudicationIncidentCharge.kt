@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import java.io.Serializable
+import java.time.LocalDateTime
 
 @Embeddable
 class AdjudicationIncidentChargeId(
@@ -72,6 +73,9 @@ class AdjudicationIncidentCharge(
   // adjudication number / charge index at incident level eg 4577667/1
   @Column(name = "OIC_CHARGE_ID")
   val offenceId: String? = null,
+
+  @Column(name = "CREATE_DATETIME", nullable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

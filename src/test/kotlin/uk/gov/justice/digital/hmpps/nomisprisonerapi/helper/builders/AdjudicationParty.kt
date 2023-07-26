@@ -40,6 +40,7 @@ interface AdjudicationPartyDsl {
     guiltyEvidence: String? = null,
     reportDetail: String? = null,
     dsl: AdjudicationChargeDsl.() -> Unit = {},
+    whenCreated: LocalDateTime = LocalDateTime.now(),
   ): AdjudicationIncidentCharge
 
   @AdjudicationHearingDslMarker
@@ -138,6 +139,7 @@ class AdjudicationPartyBuilder(
     guiltyEvidence: String?,
     reportDetail: String?,
     dsl: AdjudicationChargeDsl.() -> Unit,
+    whenCreated: LocalDateTime,
   ) =
     adjudicationChargeBuilderFactory.builder().let { builder ->
       builder.build(
@@ -146,6 +148,7 @@ class AdjudicationPartyBuilder(
         reportDetail = reportDetail,
         incidentParty = adjudicationParty,
         chargeSequence = adjudicationParty.incident.parties.sumOf { it.charges.size } + 1,
+        whenCreated = whenCreated,
       )
         .also { adjudicationParty.charges += it }
         .also { builder.apply(dsl) }
