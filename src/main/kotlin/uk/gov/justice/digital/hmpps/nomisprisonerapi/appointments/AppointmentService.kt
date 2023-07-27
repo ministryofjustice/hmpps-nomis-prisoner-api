@@ -52,13 +52,13 @@ class AppointmentService(
         val subType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
           ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
 
-        if (dto.endTime < dto.startTime) {
+        if (dto.endTime != null && dto.endTime < dto.startTime) {
           throw BadDataException("End time must be after start time")
         }
 
         internalLocation = location
         startTime = LocalDateTime.of(dto.eventDate, dto.startTime)
-        endTime = LocalDateTime.of(dto.eventDate, dto.endTime)
+        endTime = dto.endTime?.let { LocalDateTime.of(dto.eventDate, it) }
         eventDate = dto.eventDate
         eventSubType = subType
         comment = dto.comment
@@ -140,7 +140,7 @@ class AppointmentService(
       throw BadDataException("Room with id=${dto.internalLocationId} is in ${location.agencyId}, not in the offender's prison: ${offenderBooking.location?.id}")
     }
 
-    if (dto.endTime < dto.startTime) {
+    if (dto.endTime != null && dto.endTime < dto.startTime) {
       throw BadDataException("End time must be after start time")
     }
 
@@ -151,7 +151,7 @@ class AppointmentService(
       offenderBooking = offenderBooking,
       eventDate = dto.eventDate,
       startTime = LocalDateTime.of(dto.eventDate, dto.startTime),
-      endTime = LocalDateTime.of(dto.eventDate, dto.endTime),
+      endTime = dto.endTime?.let { LocalDateTime.of(dto.eventDate, it) },
       prison = offenderBooking.location,
       eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow(),
       internalLocation = location,
