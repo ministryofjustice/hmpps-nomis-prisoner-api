@@ -174,6 +174,7 @@ data class Evidence(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Hearing(
+  val hearingId: Long,
   val type: CodeDescription?,
   val scheduleDate: LocalDate?,
   val scheduleTime: LocalTime?,
