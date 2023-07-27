@@ -82,7 +82,7 @@ class AdjudicationService(
     }
       ?: throw NotFoundException("Adjudication not found")
 
-  fun getAdjudicationCharge(adjudicationNumber: Long, chargeSequence: Int): AdjudicationChargeResponse {
+  fun getAdjudicationByCharge(adjudicationNumber: Long, chargeSequence: Int): AdjudicationChargeResponse {
     getAdjudication(adjudicationNumber).let { adjudication ->
       adjudication.charges.find { it.chargeSequence == chargeSequence }?.let {
         return AdjudicationChargeResponse(

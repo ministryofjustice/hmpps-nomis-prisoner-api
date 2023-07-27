@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Adjudication Information")
+@Schema(description = "The requested adjudication charge and associated adjudication details. Note: the adjudication may have other charges associated with it")
 data class AdjudicationChargeResponse(
 
   @Schema(
@@ -32,7 +32,7 @@ data class AdjudicationChargeResponse(
   @Schema(description = "Associated incident details")
   val incident: AdjudicationIncident,
 
-  @Schema(description = "Charges associated with this adjudication")
+  @Schema(description = "requested charge details.  Note that this adjudication may have other charges associated with it")
   val charge: AdjudicationCharge,
 
   @Schema(description = "Investigator that gathers evidence. Used in NOMIS in a small percentage of cases")
