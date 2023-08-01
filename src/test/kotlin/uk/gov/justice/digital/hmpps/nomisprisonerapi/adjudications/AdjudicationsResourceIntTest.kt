@@ -1325,6 +1325,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
           assertThat(incident).isNotNull
           assertThat(incident!!.reportingStaff.accounts[0].username).isEqualTo("JANESTAFF")
+          assertThat(incident!!.createUser.accounts[0].username).isEqualTo("JANESTAFF")
           assertThat(incident!!.agencyInternalLocation.locationId).isEqualTo(aLocationInMoorland)
           assertThat(incident!!.prison.id).isEqualTo("MDI")
           assertThat(incident!!.incidentDate).isEqualTo(LocalDate.parse("2023-01-01"))

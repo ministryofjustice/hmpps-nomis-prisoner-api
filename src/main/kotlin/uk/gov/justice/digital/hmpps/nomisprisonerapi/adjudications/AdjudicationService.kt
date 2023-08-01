@@ -51,6 +51,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationChargeSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
@@ -176,6 +177,7 @@ class AdjudicationService(
       incidentDetails = request.incident.details,
       agencyInternalLocation = internalLocation,
       reportingStaff = reportingStaff,
+      createUser = reportingStaff,
     ).let { adjudicationIncidentRepository.save(it) }
       .apply {
         parties += createPrisonerAdjudicationParty(this, offenderBooking, request)
@@ -338,7 +340,7 @@ class AdjudicationService(
   }
 
   private fun findPrisoner(offenderNo: String): Offender {
-    return offenderRepository.findFirstByNomsId(offenderNo)
+    return offenderRepository.findRootByNomisId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found")
   }
 
