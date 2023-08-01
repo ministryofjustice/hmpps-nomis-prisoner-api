@@ -13,10 +13,21 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
   @Query(
     value = """
     select ca.courseActivityId from CourseActivity ca 
-    where ca.prison.id = :prisonId and ca.courseActivityId in 
+    where ca.prison.id = :prisonId
+    and ca.active = true
+    and ca.scheduleStartDate <= current_date 
+    and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
+    and ca.courseActivityId in
       (
-       select distinct(opp.courseActivity.courseActivityId) from OffenderProgramProfile opp
-       where opp.prison.id = :prisonId and opp.programStatus.code = 'ALLOC'
+       select distinct(opp.courseActivity.courseActivityId) 
+       from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
+       where opp.prison.id = :prisonId 
+       and opp.programStatus.code = 'ALLOC'
+       and opp.startDate <= current_date 
+       and (opp.endDate is null or opp.endDate > current_date)
+       and ob.active = true
+       and ob.location.id = :prisonId
       )   
   """,
   )
