@@ -110,7 +110,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       internal fun createPrisonerWithAdjudication() {
         nomisDataBuilder.build {
-          staff = staff {}
+          staff = staff {
+            account {}
+          }
           staffVictim = staff {}
           prisonerVictim = offender { booking {} }
 
@@ -1325,7 +1327,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
           assertThat(incident).isNotNull
           assertThat(incident!!.reportingStaff.accounts[0].username).isEqualTo("JANESTAFF")
-          assertThat(incident!!.createUser.accounts[0].username).isEqualTo("JANESTAFF")
+          assertThat(incident!!.createUsername).isEqualTo("JANESTAFF")
           assertThat(incident!!.agencyInternalLocation.locationId).isEqualTo(aLocationInMoorland)
           assertThat(incident!!.prison.id).isEqualTo("MDI")
           assertThat(incident!!.incidentDate).isEqualTo(LocalDate.parse("2023-01-01"))
