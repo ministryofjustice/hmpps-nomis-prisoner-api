@@ -177,7 +177,7 @@ class AdjudicationService(
       incidentDetails = request.incident.details,
       agencyInternalLocation = internalLocation,
       reportingStaff = reportingStaff,
-      createUser = reportingStaff,
+      createUsername = request.incident.reportingStaffUsername,
     ).let { adjudicationIncidentRepository.save(it) }
       .apply {
         parties += createPrisonerAdjudicationParty(this, offenderBooking, request)
