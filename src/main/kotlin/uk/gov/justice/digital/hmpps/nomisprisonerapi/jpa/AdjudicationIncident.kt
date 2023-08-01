@@ -77,9 +77,8 @@ class AdjudicationIncident(
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val prison: AgencyLocation,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "CREATE_USER_ID")
-  val createUser: Staff,
+  @Column(name = "CREATE_USER_ID")
+  val createUsername: String,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
