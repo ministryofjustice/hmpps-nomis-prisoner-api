@@ -4,6 +4,10 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -26,7 +30,7 @@ class MigrationResource(
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Attendance updated",
+        description = "OK",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = FindMigrationActivitiesResponse::class)),
         ],
@@ -62,7 +66,9 @@ class MigrationResource(
     ],
   )
   fun findMigrationActivities(
+    @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC)
+    pageRequest: Pageable,
     @Schema(description = "Prison id", required = true) @PathVariable prisonId: String,
-  ) =
-    migrationService.findMigrationActivities(prisonId)
+  ): Page<FindMigrationActivitiesResponse> =
+    migrationService.findMigrationActivities(pageRequest, prisonId)
 }
