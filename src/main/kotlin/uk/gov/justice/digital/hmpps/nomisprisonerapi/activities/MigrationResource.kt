@@ -26,7 +26,7 @@ class MigrationResource(
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Attendance updated",
+        description = "OK",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = FindMigrationActivitiesResponse::class)),
         ],

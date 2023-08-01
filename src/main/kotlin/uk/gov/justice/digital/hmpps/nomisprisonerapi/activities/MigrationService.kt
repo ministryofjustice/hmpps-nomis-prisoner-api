@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 class MigrationService(
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
@@ -24,6 +24,6 @@ class MigrationService(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Find migration activities request")
 data class FindMigrationActivitiesResponse(
-  @Schema(description = "The prison whose activities will be migrated", example = "RSI")
+  @Schema(description = "The activities to be migrated", example = "[1, 2]")
   val activityIds: List<Long>,
 )
