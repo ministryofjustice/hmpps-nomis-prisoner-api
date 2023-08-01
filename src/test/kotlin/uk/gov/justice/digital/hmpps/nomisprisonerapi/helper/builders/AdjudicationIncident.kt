@@ -104,6 +104,7 @@ class AdjudicationIncidentBuilder(
     incidentType = repository.lookupIncidentType(),
     prison = repository.lookupAgency(prisonId),
     incidentDetails = incidentDetails,
+    createUser = reportingStaff,
   )
     .let { repository.save(it) }
     .also { adjudicationIncident = it }
