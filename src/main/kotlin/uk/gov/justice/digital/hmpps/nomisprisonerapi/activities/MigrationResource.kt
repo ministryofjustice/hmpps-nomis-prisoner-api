@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
 @RestController
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+@Tag(name = "activities-resource")
 class MigrationResource(
   private val migrationService: MigrationService,
 ) {
@@ -71,4 +73,52 @@ class MigrationResource(
     @Schema(description = "Prison id", required = true) @PathVariable prisonId: String,
   ): Page<FindMigrationActivitiesResponse> =
     migrationService.findMigrationActivities(pageRequest, prisonId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/activities/{courseActivityId}/migrate")
+  @Operation(
+    summary = "Get activity details to migrate",
+    description = "Gets all details required to migrate an Activity to DPS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = GetActivityMigrationResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getActivitiesMigration(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+  ) =
+    migrationService.getActivityMigration(courseActivityId)
 }
