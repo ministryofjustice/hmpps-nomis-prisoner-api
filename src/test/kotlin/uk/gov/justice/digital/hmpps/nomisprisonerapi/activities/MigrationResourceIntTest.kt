@@ -371,20 +371,63 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
     }
+
+    fun WebTestClient.getMigrationActivities(
+      pageSize: Int = 10,
+      page: Int = 0,
+      prison: String = "BXI",
+    ): WebTestClient.ResponseSpec =
+      get().uri {
+        it.path("/activities/migrate/$prison")
+          .queryParam("size", pageSize)
+          .queryParam("page", page)
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
   }
 
-  fun WebTestClient.getMigrationActivities(
-    pageSize: Int = 10,
-    page: Int = 0,
-    prison: String = "BXI",
-  ): WebTestClient.ResponseSpec =
-    webTestClient.get().uri {
-      it.path("/activities/migrate/$prison")
-        .queryParam("size", pageSize)
-        .queryParam("page", page)
-        .build()
+  @Nested
+  @DisplayName("GET /activities/{courseActivityId}/migrate")
+  inner class GetActivityMigration {
+
+    @Nested
+    inner class Api {
+      @Test
+      fun `access forbidden when no authority`() {
+        webTestClient.get().uri("/activities/1/migrate")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/activities/1/migrate")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/activities/1/migrate")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `unknown course activity should return not found`() {
+        webTestClient.get().uri("/activities/9999/migrate")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Course Activity with id=9999 does not exist")
+          }
+      }
     }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-      .exchange()
-      .expectStatus().isOk
+  }
 }

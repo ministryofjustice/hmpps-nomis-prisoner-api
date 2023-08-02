@@ -73,4 +73,52 @@ class MigrationResource(
     @Schema(description = "Prison id", required = true) @PathVariable prisonId: String,
   ): Page<FindMigrationActivitiesResponse> =
     migrationService.findMigrationActivities(pageRequest, prisonId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/activities/{courseActivityId}/migrate")
+  @Operation(
+    summary = "Get activity details to migrate",
+    description = "Gets all details required to migrate an Activity to DPS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = GetActivityMigrationResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getActivitiesMigration(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+  ) =
+    migrationService.getActivityMigration(courseActivityId)
 }
