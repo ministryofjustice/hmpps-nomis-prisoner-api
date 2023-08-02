@@ -25,6 +25,8 @@ class MigrationResourceIntTest : IntegrationTestBase() {
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
   private val today = LocalDate.now()
+  private val yesterday = today.minusDays(1)
+  private val tomorrow = today.plusDays(1)
 
   @BeforeEach
   fun setup() {
@@ -172,6 +174,196 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivities[3].courseActivityId)
           .jsonPath("content[1].courseActivityId").doesNotExist()
+      }
+    }
+
+    @Nested
+    inner class ActivitySelection {
+
+      private lateinit var courseActivity: CourseActivity
+
+      @Test
+      fun `should not include future course activities`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = tomorrow.toString())
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should not include ended course activities`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = yesterday.toString(), endDate = yesterday.toString())
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should not include activities with no prisoners`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = today.toString())
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should not include if prisoner not allocated`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = today.toString())
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = today.toString(), programStatusCode = "END")
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should not include if prisoner allocation ended`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = today.toString())
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = yesterday.toString(), endDate = yesterday.toString())
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should not include if prisoner allocation in future`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = today.toString())
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = tomorrow.toString())
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should not include if prisoner active in different prison`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = today.toString())
+          }
+          offender {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should not include if prisoners who are inactive`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = today.toString())
+          }
+          offender {
+            booking(active = false) {
+              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should include if prisoner is ACTIVE OUT`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = today.toString())
+          }
+          offender {
+            booking(active = true, inOutStatus = "OUT") {
+              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/migrate/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
     }
   }
