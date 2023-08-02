@@ -168,7 +168,7 @@ class AdjudicationResource(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AdjudicationResponse::class),
+            schema = Schema(implementation = AdjudicationChargeResponse::class),
           ),
         ],
       ),
