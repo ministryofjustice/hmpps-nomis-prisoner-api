@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -103,10 +104,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
@@ -130,12 +128,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri {
-          it.path("/activities/migrate/BXI").queryParam("size", pageSize).build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities(pageSize = pageSize, page = 0)
           .expectBody()
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivities[0].courseActivityId)
           .jsonPath("content[1].courseActivityId").isEqualTo(courseActivities[1].courseActivityId)
@@ -162,18 +155,57 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri {
-          it.path("/activities/migrate/BXI")
-            .queryParam("size", pageSize)
-            .queryParam("page", 1)
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities(pageSize = pageSize, page = 1)
           .expectBody()
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivities[3].courseActivityId)
           .jsonPath("content[1].courseActivityId").doesNotExist()
+      }
+
+      @Test
+      fun `should return correct paging details for all pages`() {
+        val courseActivities = mutableListOf<CourseActivity>()
+        nomisDataBuilder.build {
+          programService {
+            repeat(50) {
+              courseActivities += courseActivity(startDate = today.toString())
+            }
+          }
+          courseActivities.forEachIndexed { index, activity ->
+            offender {
+              booking {
+                // give half of the activities active allocations
+                if (index % 2 == 0) {
+                  courseAllocation(courseActivity = activity, startDate = today.toString())
+                }
+                // and half of the activities inactive allocations
+                else {
+                  courseAllocation(courseActivity = activity, startDate = yesterday.toString(), endDate = yesterday.toString())
+                }
+              }
+            }
+          }
+        }
+
+        webTestClient.getMigrationActivities(page = 0)
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(25)
+          .jsonPath("numberOfElements").isEqualTo(10)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(3)
+          .jsonPath("size").isEqualTo(10)
+          .jsonPath("content.length()").isEqualTo(10)
+
+        webTestClient.getMigrationActivities(page = 1)
+          .expectBody()
+          .jsonPath("numberOfElements").isEqualTo(10)
+          .jsonPath("number").isEqualTo(1)
+          .jsonPath("content.length()").isEqualTo(10)
+
+        webTestClient.getMigrationActivities(page = 2)
+          .expectBody()
+          .jsonPath("numberOfElements").isEqualTo(5)
+          .jsonPath("number").isEqualTo(2)
+          .jsonPath("content.length()").isEqualTo(5)
       }
     }
 
@@ -195,10 +227,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
@@ -216,10 +245,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
@@ -232,16 +258,13 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
 
       @Test
-      fun `should not include if prisoner not allocated`() {
+      fun `should not include if prisoner allocation has ended status`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = today.toString())
@@ -253,16 +276,13 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
 
       @Test
-      fun `should not include if prisoner allocation ended`() {
+      fun `should not include if prisoner allocation past end date`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = today.toString())
@@ -274,10 +294,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
@@ -295,10 +312,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
@@ -316,16 +330,13 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
 
       @Test
-      fun `should not include if prisoners who are inactive`() {
+      fun `should not include if prisoner is inactive`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = today.toString())
@@ -337,10 +348,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").doesNotExist()
       }
@@ -358,13 +366,25 @@ class MigrationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/migrate/BXI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getMigrationActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
     }
   }
+
+  fun WebTestClient.getMigrationActivities(
+    pageSize: Int = 10,
+    page: Int = 0,
+    prison: String = "BXI",
+  ): WebTestClient.ResponseSpec =
+    webTestClient.get().uri {
+      it.path("/activities/migrate/$prison")
+        .queryParam("size", pageSize)
+        .queryParam("page", page)
+        .build()
+    }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
 }
