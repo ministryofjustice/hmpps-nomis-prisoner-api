@@ -118,7 +118,25 @@ class ActivityService(
 
   fun getActivity(courseActivityId: Long): GetActivityResponse? =
     findCourseActivityOrThrow(courseActivityId)
-      .let { null }
+      .let {
+        GetActivityResponse(
+          courseActivityId = it.courseActivityId,
+          programCode = it.program.programCode,
+          prisonId = it.prison.id,
+          startDate = it.scheduleStartDate,
+          endDate = it.scheduleEndDate,
+          internalLocationId = it.internalLocation?.locationId,
+          internalLocationCode = it.internalLocation?.locationCode,
+          internalLocationDescription = it.internalLocation?.description,
+          capacity = it.capacity ?: 0,
+          description = it.description ?: "",
+          minimumIncentiveLevel = it.iepLevel.code,
+          excludeBankHolidays = it.excludeBankHolidays,
+          scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
+          payRates = listOf(),
+          allocations = listOf(),
+        )
+      }
 
   private fun mapActivityModel(existingActivity: CourseActivity, request: UpdateActivityRequest): CourseActivity {
     val location = findLocationInPrisonOrThrow(request.internalLocationId, existingActivity.prison.id)

@@ -430,5 +430,148 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
       }
     }
+
+    @Nested
+    inner class ActivityDetails {
+
+      private lateinit var courseActivity: CourseActivity
+
+      @Test
+      fun `should return all Activity details`() {
+        nomisDataBuilder.build {
+          programService(programCode = "SOME_PROGRAM") {
+            courseActivity = courseActivity(
+              prisonId = "BXI",
+              startDate = "$yesterday",
+              endDate = "$tomorrow",
+              internalLocationId = -3005,
+              capacity = 10,
+              description = "Kitchen work",
+              minimumIncentiveLevelCode = "BAS",
+              excludeBankHolidays = true,
+            )
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("programCode").isEqualTo("SOME_PROGRAM")
+          .jsonPath("prisonId").isEqualTo("BXI")
+          .jsonPath("startDate").isEqualTo("$yesterday")
+          .jsonPath("endDate").isEqualTo("$tomorrow")
+          .jsonPath("internalLocationId").isEqualTo(-3005)
+          .jsonPath("internalLocationCode").isEqualTo("CLASS1")
+          .jsonPath("internalLocationDescription").isEqualTo("BXI-CLASS1")
+          .jsonPath("capacity").isEqualTo(10)
+          .jsonPath("description").isEqualTo("Kitchen work")
+          .jsonPath("minimumIncentiveLevel").isEqualTo("BAS")
+          .jsonPath("excludeBankHolidays").isEqualTo(true)
+      }
+
+      @Test
+      fun `should handle nullable Activity details`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(
+              endDate = null,
+              internalLocationId = null,
+            )
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("endDate").doesNotExist()
+          .jsonPath("internalLocationId").doesNotExist()
+          .jsonPath("internalLocationCode").doesNotExist()
+          .jsonPath("internalLocationDescription").doesNotExist()
+      }
+
+      @Test
+      fun `should include schedule rules`() {
+        nomisDataBuilder.build {
+          programService(programCode = "SOME_PROGRAM") {
+            courseActivity = courseActivity(
+              endDate = null,
+              internalLocationId = null,
+            ) {
+              courseScheduleRule(
+                startTimeHours = 9,
+                startTimeMinutes = 30,
+                endTimeHours = 12,
+                endTimeMinutes = 15,
+                monday = true,
+                tuesday = false,
+                wednesday = true,
+                thursday = false,
+                friday = true,
+                saturday = false,
+                sunday = false,
+              )
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
+          .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
+          .jsonPath("scheduleRules[0].monday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].tuesday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].wednesday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].thursday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].friday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].saturday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].sunday").isEqualTo(false)
+      }
+
+      @Test
+      fun `should handle multiple schedule rules`() {
+        nomisDataBuilder.build {
+          programService(programCode = "SOME_PROGRAM") {
+            courseActivity = courseActivity(
+              endDate = null,
+              internalLocationId = null,
+            ) {
+              courseScheduleRule(
+                startTimeHours = 9,
+                startTimeMinutes = 30,
+                endTimeHours = 12,
+                endTimeMinutes = 15,
+              )
+              courseScheduleRule(
+                startTimeHours = 13,
+                startTimeMinutes = 0,
+                endTimeHours = 16,
+                endTimeMinutes = 30,
+              )
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
+          .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
+          .jsonPath("scheduleRules[1].startTime").isEqualTo("13:00")
+          .jsonPath("scheduleRules[1].endTime").isEqualTo("16:30")
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigDecimal
@@ -13,7 +14,7 @@ data class GetActivityResponse(
   val courseActivityId: Long,
 
   @Schema(description = "Program service code", example = "INDUCTION")
-  val programCode: Long,
+  val programCode: String,
 
   @Schema(description = "Prison code", example = "RSI")
   val prisonId: String,
@@ -49,7 +50,7 @@ data class GetActivityResponse(
   val scheduleRules: List<ScheduleRulesResponse>,
 
   @Schema(description = "Pay rates available")
-  val payRate: List<PayRatesResponse>,
+  val payRates: List<PayRatesResponse>,
 
   @Schema(description = "Prisoners allocated to the course")
   val allocations: List<AllocationsResponse>,
@@ -60,9 +61,11 @@ data class GetActivityResponse(
 data class ScheduleRulesResponse(
 
   @Schema(description = "Course start time", example = "09:00")
+  @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
   @Schema(description = "Course end time", example = "11:00")
+  @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
 
   @Schema(description = "Runs on Mondays", example = "true")
