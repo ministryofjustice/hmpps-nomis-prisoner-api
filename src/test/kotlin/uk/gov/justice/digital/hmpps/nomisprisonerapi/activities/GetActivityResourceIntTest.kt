@@ -95,11 +95,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `finds an active migration with an allocation`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             offenderBooking = booking {
-              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
@@ -116,13 +116,13 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(pageSize + 1) {
-              courseActivities += courseActivity(startDate = today.toString())
+              courseActivities += courseActivity(startDate = "$today")
             }
           }
           offender {
             offenderBooking = booking {
               courseActivities.forEach {
-                courseAllocation(courseActivity = it, startDate = today.toString())
+                courseAllocation(courseActivity = it, startDate = "$today")
               }
             }
           }
@@ -143,13 +143,13 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(pageSize + 1) {
-              courseActivities += courseActivity(startDate = today.toString())
+              courseActivities += courseActivity(startDate = "$today")
             }
           }
           offender {
             offenderBooking = booking {
               courseActivities.forEach {
-                courseAllocation(courseActivity = it, startDate = today.toString())
+                courseAllocation(courseActivity = it, startDate = "$today")
               }
             }
           }
@@ -167,7 +167,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(50) {
-              courseActivities += courseActivity(startDate = today.toString())
+              courseActivities += courseActivity(startDate = "$today")
             }
           }
           courseActivities.forEachIndexed { index, activity ->
@@ -175,11 +175,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
               booking {
                 // give half of the activities active allocations
                 if (index % 2 == 0) {
-                  courseAllocation(courseActivity = activity, startDate = today.toString())
+                  courseAllocation(courseActivity = activity, startDate = "$today")
                 }
                 // and half of the activities inactive allocations
                 else {
-                  courseAllocation(courseActivity = activity, startDate = yesterday.toString(), endDate = yesterday.toString())
+                  courseAllocation(courseActivity = activity, startDate = "$yesterday", endDate = "$yesterday")
                 }
               }
             }
@@ -218,11 +218,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include future course activities`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = tomorrow.toString())
+            courseActivity = courseActivity(startDate = "$tomorrow")
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
@@ -236,11 +236,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include ended course activities`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = yesterday.toString(), endDate = yesterday.toString())
+            courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday")
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
@@ -254,7 +254,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include activities with no prisoners`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
         }
 
@@ -267,11 +267,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner allocation has ended status`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = today.toString(), programStatusCode = "END")
+              courseAllocation(courseActivity = courseActivity, startDate = "$today", programStatusCode = "END")
             }
           }
         }
@@ -285,11 +285,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner allocation past end date`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = yesterday.toString(), endDate = yesterday.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$yesterday", endDate = "$yesterday")
             }
           }
         }
@@ -303,11 +303,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner allocation in future`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = tomorrow.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow")
             }
           }
         }
@@ -321,11 +321,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner active in different prison`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking(agencyLocationId = "LEI") {
-              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
@@ -339,11 +339,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner is inactive`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking(active = false) {
-              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
@@ -357,11 +357,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should include if prisoner is ACTIVE OUT`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = today.toString())
+            courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking(active = true, inOutStatus = "OUT") {
-              courseAllocation(courseActivity = courseActivity, startDate = today.toString())
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
@@ -428,6 +428,149 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .jsonPath("userMessage").value<String> {
             assertThat(it).contains("Course Activity with id=9999 does not exist")
           }
+      }
+    }
+
+    @Nested
+    inner class ActivityDetails {
+
+      private lateinit var courseActivity: CourseActivity
+
+      @Test
+      fun `should return all Activity details`() {
+        nomisDataBuilder.build {
+          programService(programCode = "SOME_PROGRAM") {
+            courseActivity = courseActivity(
+              prisonId = "BXI",
+              startDate = "$yesterday",
+              endDate = "$tomorrow",
+              internalLocationId = -3005,
+              capacity = 10,
+              description = "Kitchen work",
+              minimumIncentiveLevelCode = "BAS",
+              excludeBankHolidays = true,
+            )
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("programCode").isEqualTo("SOME_PROGRAM")
+          .jsonPath("prisonId").isEqualTo("BXI")
+          .jsonPath("startDate").isEqualTo("$yesterday")
+          .jsonPath("endDate").isEqualTo("$tomorrow")
+          .jsonPath("internalLocationId").isEqualTo(-3005)
+          .jsonPath("internalLocationCode").isEqualTo("CLASS1")
+          .jsonPath("internalLocationDescription").isEqualTo("BXI-CLASS1")
+          .jsonPath("capacity").isEqualTo(10)
+          .jsonPath("description").isEqualTo("Kitchen work")
+          .jsonPath("minimumIncentiveLevel").isEqualTo("BAS")
+          .jsonPath("excludeBankHolidays").isEqualTo(true)
+      }
+
+      @Test
+      fun `should handle nullable Activity details`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(
+              endDate = null,
+              internalLocationId = null,
+            )
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("endDate").doesNotExist()
+          .jsonPath("internalLocationId").doesNotExist()
+          .jsonPath("internalLocationCode").doesNotExist()
+          .jsonPath("internalLocationDescription").doesNotExist()
+      }
+
+      @Test
+      fun `should include schedule rules`() {
+        nomisDataBuilder.build {
+          programService(programCode = "SOME_PROGRAM") {
+            courseActivity = courseActivity(
+              endDate = null,
+              internalLocationId = null,
+            ) {
+              courseScheduleRule(
+                startTimeHours = 9,
+                startTimeMinutes = 30,
+                endTimeHours = 12,
+                endTimeMinutes = 15,
+                monday = true,
+                tuesday = false,
+                wednesday = true,
+                thursday = false,
+                friday = true,
+                saturday = false,
+                sunday = false,
+              )
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
+          .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
+          .jsonPath("scheduleRules[0].monday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].tuesday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].wednesday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].thursday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].friday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].saturday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].sunday").isEqualTo(false)
+      }
+
+      @Test
+      fun `should handle multiple schedule rules`() {
+        nomisDataBuilder.build {
+          programService(programCode = "SOME_PROGRAM") {
+            courseActivity = courseActivity(
+              endDate = null,
+              internalLocationId = null,
+            ) {
+              courseScheduleRule(
+                startTimeHours = 9,
+                startTimeMinutes = 30,
+                endTimeHours = 12,
+                endTimeMinutes = 15,
+              )
+              courseScheduleRule(
+                startTimeHours = 13,
+                startTimeMinutes = 0,
+                endTimeHours = 16,
+                endTimeMinutes = 30,
+              )
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
+          .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
+          .jsonPath("scheduleRules[1].startTime").isEqualTo("13:00")
+          .jsonPath("scheduleRules[1].endTime").isEqualTo("16:30")
       }
     }
   }

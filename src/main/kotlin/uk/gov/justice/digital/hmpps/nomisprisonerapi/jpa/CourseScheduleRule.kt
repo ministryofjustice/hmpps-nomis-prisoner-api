@@ -64,8 +64,8 @@ data class CourseScheduleRule(
   @Column(nullable = false)
   val startTime: LocalDateTime,
 
-  @Column
-  val endTime: LocalDateTime? = null,
+  @Column(nullable = false)
+  val endTime: LocalDateTime,
 
   @Column(name = "SLOT_CATEGORY_CODE")
   @Enumerated(EnumType.STRING)

@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRuleRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRulesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
@@ -33,6 +34,21 @@ class ScheduleRuleService {
       )
     }
   }
+
+  fun mapRules(scheduleRules: List<CourseScheduleRule>): List<ScheduleRulesResponse> =
+    scheduleRules.map {
+      ScheduleRulesResponse(
+        startTime = it.startTime.toLocalTime(),
+        endTime = it.endTime.toLocalTime(),
+        monday = it.monday,
+        tuesday = it.tuesday,
+        wednesday = it.wednesday,
+        thursday = it.thursday,
+        friday = it.friday,
+        saturday = it.saturday,
+        sunday = it.sunday,
+      )
+    }
 
   private fun validateRequest(request: ScheduleRuleRequest) {
     if (request.endTime < request.startTime) {
@@ -67,7 +83,7 @@ class ScheduleRuleService {
   private fun findExistingRule(requestedRule: ScheduleRuleRequest, existingRules: List<CourseScheduleRule>): CourseScheduleRule? =
     existingRules.find {
       it.startTime.toLocalTime() == requestedRule.startTime &&
-        it.endTime?.toLocalTime() == requestedRule.endTime &&
+        it.endTime.toLocalTime() == requestedRule.endTime &&
         it.monday == requestedRule.monday &&
         it.tuesday == requestedRule.tuesday &&
         it.wednesday == requestedRule.wednesday &&
