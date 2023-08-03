@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -319,7 +319,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun callCreateEndpoint(): Long {
       val response = callCreateEndpointAndExpect()
-        .expectBody(ActivityResponse::class.java)
+        .expectBody(CreateActivityResponse::class.java)
         .returnResult().responseBody
       assertThat(response?.courseActivityId).isGreaterThan(0)
       return response!!.courseActivityId

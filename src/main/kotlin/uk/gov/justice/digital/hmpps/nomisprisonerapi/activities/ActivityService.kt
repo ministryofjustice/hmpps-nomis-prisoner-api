@@ -1,11 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -16,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import java.time.LocalDate
 
@@ -30,9 +35,10 @@ class ActivityService(
   private val payRatesService: PayRatesService,
   private val scheduleService: ScheduleService,
   private val scheduleRuleService: ScheduleRuleService,
+  private val courseActivityRepository: CourseActivityRepository,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createActivity(request: CreateActivityRequest): ActivityResponse =
+  fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
     mapActivityModel(request)
       .apply { payRates.addAll(payRatesService.mapRates(request, this)) }
       .apply { courseSchedules.addAll(scheduleService.mapSchedules(request.schedules, this)) }
@@ -51,7 +57,7 @@ class ActivityService(
           null,
         )
       }
-      .let { ActivityResponse(it) }
+      .let { CreateActivityResponse(it) }
 
   private fun mapActivityModel(request: CreateActivityRequest): CourseActivity {
     val prison = findPrisonOrThrow(request.prisonId)
@@ -79,7 +85,7 @@ class ActivityService(
     )
   }
 
-  fun updateActivity(courseActivityId: Long, request: UpdateActivityRequest): ActivityResponse {
+  fun updateActivity(courseActivityId: Long, request: UpdateActivityRequest): CreateActivityResponse {
     val existingActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id $courseActivityId not found")
 
@@ -102,8 +108,17 @@ class ActivityService(
           null,
         )
       }
-      .let { ActivityResponse(it) }
+      .let { CreateActivityResponse(it) }
   }
+
+  fun findActiveActivityIds(pageRequest: Pageable, prisonId: String): Page<FindActiveActivityIdsResponse> =
+    findPrisonOrThrow(prisonId)
+      .let { courseActivityRepository.findActivitiesToMigrate(prisonId, pageRequest) }
+      .map { FindActiveActivityIdsResponse(it) }
+
+  fun getActivity(courseActivityId: Long): GetActivityResponse? =
+    findCourseActivityOrThrow(courseActivityId)
+      .let { null }
 
   private fun mapActivityModel(existingActivity: CourseActivity, request: UpdateActivityRequest): CourseActivity {
     val location = findLocationInPrisonOrThrow(request.internalLocationId, existingActivity.prison.id)
@@ -176,10 +191,12 @@ class ActivityService(
   }
 
   private fun findPrisonOrThrow(prisonId: String) =
-    (
-      agencyLocationRepository.findByIdOrNull(prisonId)
-        ?: throw BadDataException("Prison with id=$prisonId does not exist")
-      )
+    agencyLocationRepository.findByIdOrNull(prisonId)
+      ?: throw BadDataException("Prison with id=$prisonId does not exist")
+
+  private fun findCourseActivityOrThrow(courseActivityId: Long) =
+    courseActivityRepository.findByIdOrNull(courseActivityId)
+      ?: throw NotFoundException("Course Activity with id=$courseActivityId does not exist")
 
   fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
 }

@@ -10,23 +10,23 @@ import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Activity creation response")
-data class ActivityResponse(
+data class CreateActivityResponse(
   @Schema(description = "The created course activity id", required = true)
   @NotNull
   val courseActivityId: Long,
 
   @Schema(description = "The created course schedules", required = true)
   @NotNull
-  val courseSchedules: MutableList<ScheduledInstanceResponse> = mutableListOf(),
+  val courseSchedules: MutableList<CreateScheduledInstanceResponse> = mutableListOf(),
 ) {
   constructor(courseActivity: CourseActivity) : this(courseActivity.courseActivityId) {
     courseActivity.courseSchedules
-      .map { ScheduledInstanceResponse(it) }
+      .map { CreateScheduledInstanceResponse(it) }
       .also { this.courseSchedules.addAll(it) }
   }
 }
 
-data class ScheduledInstanceResponse(
+data class CreateScheduledInstanceResponse(
   @Schema(description = "The created scheduled instance id", required = true)
   @NotNull
   val courseScheduleId: Long,
