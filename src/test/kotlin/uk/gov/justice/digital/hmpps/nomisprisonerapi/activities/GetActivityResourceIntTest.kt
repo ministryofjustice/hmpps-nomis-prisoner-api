@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
 
-class MigrationResourceIntTest : IntegrationTestBase() {
+class GetActivityResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
@@ -44,21 +44,21 @@ class MigrationResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /activities/migrate")
+  @DisplayName("GET /activities/ids")
   inner class FindMigrationActivities {
 
     @Nested
     inner class Api {
       @Test
       fun `access forbidden when no authority`() {
-        webTestClient.get().uri("/activities/migrate/BXI")
+        webTestClient.get().uri("/activities/ids?prisonId=BXI")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/activities/migrate/BXI")
+        webTestClient.get().uri("/activities/ids?prisonId=BXI")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -66,7 +66,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/activities/migrate/BXI")
+        webTestClient.get().uri("/activities/ids?prisonId=BXI")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -74,10 +74,10 @@ class MigrationResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid prison should return not found`() {
-        webTestClient.get().uri("/activities/migrate/XXX")
+        webTestClient.get().uri("/activities/ids?prisonId=XXX")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .exchange()
-          .expectStatus().isNotFound
+          .expectStatus().isBadRequest
           .expectBody()
           .jsonPath("userMessage").value<String> {
             assertThat(it).contains("Prison with id=XXX does not exist")
@@ -378,7 +378,8 @@ class MigrationResourceIntTest : IntegrationTestBase() {
       prison: String = "BXI",
     ): WebTestClient.ResponseSpec =
       get().uri {
-        it.path("/activities/migrate/$prison")
+        it.path("/activities/ids")
+          .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
           .build()
@@ -389,21 +390,21 @@ class MigrationResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /activities/{courseActivityId}/migrate")
+  @DisplayName("GET /activities/{courseActivityId}")
   inner class GetActivityMigration {
 
     @Nested
     inner class Api {
       @Test
       fun `access forbidden when no authority`() {
-        webTestClient.get().uri("/activities/1/migrate")
+        webTestClient.get().uri("/activities/1")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/activities/1/migrate")
+        webTestClient.get().uri("/activities/1")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -411,7 +412,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/activities/1/migrate")
+        webTestClient.get().uri("/activities/1")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -419,7 +420,7 @@ class MigrationResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `unknown course activity should return not found`() {
-        webTestClient.get().uri("/activities/9999/migrate")
+        webTestClient.get().uri("/activities/9999")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .exchange()
           .expectStatus().isNotFound
