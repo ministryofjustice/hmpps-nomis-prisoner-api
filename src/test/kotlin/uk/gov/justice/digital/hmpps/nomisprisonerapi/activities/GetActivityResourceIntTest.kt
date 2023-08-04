@@ -717,6 +717,43 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should include all allocation details`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity()
+          }
+          offender {
+            booking(livingUnitId = -3009) {
+              courseAllocation(
+                courseActivity = courseActivity,
+                startDate = "$yesterday",
+                endDate = "$tomorrow",
+                endReasonCode = "WDRAWN",
+                endComment = "Withdrawn",
+                suspended = true,
+              ) {
+                payBand(payBandCode = "1")
+              }
+            }
+          }
+        }
+
+        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("allocations[0].startDate").isEqualTo("$yesterday")
+          .jsonPath("allocations[0].endDate").isEqualTo("$tomorrow")
+          .jsonPath("allocations[0].endReasonCode").isEqualTo("WDRAWN")
+          .jsonPath("allocations[0].endComment").isEqualTo("Withdrawn")
+          .jsonPath("allocations[0].suspended").isEqualTo(true)
+          .jsonPath("allocations[0].payBand").isEqualTo("1")
+          .jsonPath("allocations[0].livingUnitDescription").isEqualTo("BXI-A-1-016")
+      }
+
+      @Test
       fun `should not include allocations in the wrong status`() {
         nomisDataBuilder.build {
           programService {

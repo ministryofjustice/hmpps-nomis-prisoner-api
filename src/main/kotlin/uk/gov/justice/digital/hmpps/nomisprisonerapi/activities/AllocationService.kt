@@ -64,8 +64,11 @@ class AllocationService(
           bookingId = it.offenderBooking.bookingId,
           startDate = it.startDate,
           endDate = it.endDate,
+          endComment = it.endComment,
+          endReasonCode = it.endReason?.code,
           suspended = it.suspended,
           payBand = it.payBands.firstOrNull(OffenderProgramProfilePayBand::isActive)?.payBand?.code,
+          livingUnitDescription = it.offenderBooking.assignedLivingUnit?.description,
         )
       }
 

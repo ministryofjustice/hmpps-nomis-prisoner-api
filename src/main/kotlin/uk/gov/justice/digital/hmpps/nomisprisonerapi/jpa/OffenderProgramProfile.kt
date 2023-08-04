@@ -102,21 +102,6 @@ data class OffenderProgramProfile(
 
   override fun hashCode(): Int = javaClass.hashCode()
 
-  fun isCurrentActivity(): Boolean {
-    val currentDate = LocalDate.now()
-    val isCurrentProgramProfile = programStatus.code == "ALLOC" &&
-      startAndEndDatesSpanDay(startDate, endDate, currentDate)
-    val isCurrentCourseActivity = courseActivity != null &&
-      startAndEndDatesSpanDay(courseActivity.scheduleStartDate, courseActivity.scheduleEndDate, currentDate)
-    return isCurrentProgramProfile && isCurrentCourseActivity
-  }
-
-  fun startAndEndDatesSpanDay(startDate: LocalDate?, endDate: LocalDate?, dateToCheck: LocalDate): Boolean =
-    isDateBefore(startDate, dateToCheck.plusDays(1)) && isDateAfter(endDate, dateToCheck)
-
-  fun isDateBefore(date: LocalDate?, comparedDate: LocalDate) = date?.isBefore(comparedDate) ?: false
-  fun isDateAfter(date: LocalDate?, comparedDate: LocalDate) = date?.isAfter(comparedDate) ?: false
-
   fun isPayRateApplicable(payBandCode: String, iepLevelCode: String): Boolean {
     val iepLevel = this.offenderBooking.incentives.maxBy { it.id.sequence }
     if (iepLevel.iepLevel.code != iepLevelCode) return false
