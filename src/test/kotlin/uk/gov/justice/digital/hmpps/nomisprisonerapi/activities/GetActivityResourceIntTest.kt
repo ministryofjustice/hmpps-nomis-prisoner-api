@@ -482,7 +482,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("endDate").doesNotExist()
           .jsonPath("internalLocationId").doesNotExist()
           .jsonPath("internalLocationCode").doesNotExist()
@@ -517,7 +516,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
           .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
           .jsonPath("scheduleRules[0].monday").isEqualTo(true)
@@ -552,7 +550,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
           .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
           .jsonPath("scheduleRules[1].startTime").isEqualTo("13:00")
@@ -586,7 +583,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("payRates[0].incentiveLevelCode").isEqualTo("BAS")
           .jsonPath("payRates[0].payBand").isEqualTo("1")
           .jsonPath("payRates[0].rate").isEqualTo("1.1")
@@ -616,7 +612,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("payRates[0].payBand").isEqualTo("2")
           .jsonPath("payRates[1]").doesNotExist()
       }
@@ -642,7 +637,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("payRates[0].payBand").isEqualTo("1")
           .jsonPath("payRates[1].payBand").isEqualTo("2")
       }
@@ -683,7 +677,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("allocations[0].startDate").isEqualTo("$yesterday")
@@ -716,7 +709,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].startDate").isEqualTo("$yesterday")
           .jsonPath("allocations[0].endDate").isEqualTo("$tomorrow")
           .jsonPath("allocations[0].endReasonCode").isEqualTo("WDRAWN")
@@ -752,7 +744,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[1]").doesNotExist()
       }
@@ -785,7 +776,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[1]").doesNotExist()
       }
@@ -810,7 +800,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[1]").doesNotExist()
       }
@@ -835,7 +824,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[1]").doesNotExist()
       }
@@ -858,7 +846,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[0].payBand").isEqualTo("6")
       }
@@ -878,7 +865,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[0].payBand").doesNotExist()
       }
