@@ -124,4 +124,8 @@ data class OffenderProgramProfile(
       .filter { profilePayBands -> profilePayBands.endDate == null }
       .any { profilePayBands -> profilePayBands.payBand.code == payBandCode }
   }
+
+  fun isActive() = programStatus.code == "ALLOC" &&
+    startDate <= LocalDate.now() &&
+    (endDate == null || endDate!! >= LocalDate.now())
 }

@@ -36,6 +36,7 @@ class ActivityService(
   private val scheduleService: ScheduleService,
   private val scheduleRuleService: ScheduleRuleService,
   private val courseActivityRepository: CourseActivityRepository,
+  private val allocationService: AllocationService,
   private val telemetryClient: TelemetryClient,
 ) {
   fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
@@ -133,8 +134,8 @@ class ActivityService(
           minimumIncentiveLevel = it.iepLevel.code,
           excludeBankHolidays = it.excludeBankHolidays,
           scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
-          payRates = listOf(),
-          allocations = listOf(),
+          payRates = payRatesService.mapRates(it.payRates),
+          allocations = allocationService.mapAllocations(it.offenderProgramProfiles),
         )
       }
 

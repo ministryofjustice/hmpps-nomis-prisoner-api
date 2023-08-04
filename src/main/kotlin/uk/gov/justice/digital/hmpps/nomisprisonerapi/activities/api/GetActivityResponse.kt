@@ -118,14 +118,17 @@ data class AllocationsResponse(
   val startDate: LocalDate,
 
   @Schema(description = "Date deallocated from the course", example = "2023-05-26")
-  val endDate: LocalDate?,
+  val endDate: LocalDate? = null,
 
   @Schema(description = "Deallocation comment", example = "Removed due to schedule clash")
-  val endComment: String?,
+  val endComment: String? = null,
 
   @Schema(description = "Whether the prisoner is currently suspended from the course", example = "false")
   val suspended: Boolean,
 
   @Schema(description = "Suspension comments", example = "Suspended for bad behaviour")
-  val suspendedComment: String?,
+  val suspendedComment: String? = null,
+
+  @Schema(description = "Pay band", example = "1")
+  val payBand: String? = null,
 )

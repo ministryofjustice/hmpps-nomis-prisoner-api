@@ -4,6 +4,7 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AllocationsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -51,6 +52,22 @@ class AllocationService(
         )
       }
   }
+
+  fun mapAllocations(allocations: List<OffenderProgramProfile>): List<AllocationsResponse> =
+    allocations
+      .filter { it.isActive() }
+      .filter { it.offenderBooking.active }
+      .filter { it.offenderBooking.location == it.prison }
+      .map {
+        AllocationsResponse(
+          nomisId = it.offenderBooking.offender.nomsId,
+          bookingId = it.offenderBooking.bookingId,
+          startDate = it.startDate,
+          endDate = it.endDate,
+          suspended = it.suspended,
+          payBand = it.payBands.firstOrNull(OffenderProgramProfilePayBand::isActive)?.payBand?.code,
+        )
+      }
 
   private fun toOffenderProgramProfile(courseActivityId: Long, request: UpsertAllocationRequest): OffenderProgramProfile {
     val existingAllocation =

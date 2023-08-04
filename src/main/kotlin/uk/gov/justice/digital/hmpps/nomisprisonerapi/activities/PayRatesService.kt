@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRatesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
@@ -49,6 +50,17 @@ class PayRatesService(
       )
     }.toMutableList()
   }
+
+  fun mapRates(payRates: List<CourseActivityPayRate>): List<PayRatesResponse> =
+    payRates
+      .filter(CourseActivityPayRate::isActive)
+      .map {
+        PayRatesResponse(
+          incentiveLevelCode = it.iepLevel.code,
+          payBand = it.payBand.code,
+          rate = it.halfDayRate,
+        )
+      }
 
   /*
    * Rebuild the list of pay rates to replace the existing list - taking into account we never delete old rates, just expire them
