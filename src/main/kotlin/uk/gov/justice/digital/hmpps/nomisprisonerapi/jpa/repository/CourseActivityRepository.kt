@@ -31,5 +31,5 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       )   
   """,
   )
-  fun findActivitiesToMigrate(prisonId: String, pageRequest: Pageable): Page<Long>
+  fun findActiveActivities(prisonId: String, pageRequest: Pageable): Page<Long>
 }

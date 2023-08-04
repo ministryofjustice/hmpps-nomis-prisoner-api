@@ -36,7 +36,6 @@ class ActivityService(
   private val scheduleService: ScheduleService,
   private val scheduleRuleService: ScheduleRuleService,
   private val courseActivityRepository: CourseActivityRepository,
-  private val allocationService: AllocationService,
   private val telemetryClient: TelemetryClient,
 ) {
   fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
@@ -114,7 +113,7 @@ class ActivityService(
 
   fun findActiveActivityIds(pageRequest: Pageable, prisonId: String): Page<FindActiveActivityIdsResponse> =
     findPrisonOrThrow(prisonId)
-      .let { courseActivityRepository.findActivitiesToMigrate(prisonId, pageRequest) }
+      .let { courseActivityRepository.findActiveActivities(prisonId, pageRequest) }
       .map { FindActiveActivityIdsResponse(it) }
 
   fun getActivity(courseActivityId: Long): GetActivityResponse? =
@@ -135,7 +134,6 @@ class ActivityService(
           excludeBankHolidays = it.excludeBankHolidays,
           scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
           payRates = payRatesService.mapRates(it.payRates),
-          allocations = allocationService.mapAllocations(it.offenderProgramProfiles),
         )
       }
 
