@@ -130,10 +130,10 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities(pageSize = pageSize, page = 0)
           .expectBody()
+          .jsonPath("content.size()").isEqualTo(3)
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivities[0].courseActivityId)
           .jsonPath("content[1].courseActivityId").isEqualTo(courseActivities[1].courseActivityId)
           .jsonPath("content[2].courseActivityId").isEqualTo(courseActivities[2].courseActivityId)
-          .jsonPath("content[3].courseActivityId").doesNotExist()
       }
 
       @Test
@@ -157,8 +157,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities(pageSize = pageSize, page = 1)
           .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivities[3].courseActivityId)
-          .jsonPath("content[1].courseActivityId").doesNotExist()
       }
 
       @Test
@@ -229,7 +229,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -247,7 +247,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -260,7 +260,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -278,7 +278,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -296,7 +296,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -314,7 +314,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -332,7 +332,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -350,7 +350,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getMigrationActivities()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").doesNotExist()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -612,8 +612,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
+          .jsonPath("payRates.size()").isEqualTo(1)
           .jsonPath("payRates[0].payBand").isEqualTo("2")
-          .jsonPath("payRates[1]").doesNotExist()
       }
 
       @Test
@@ -744,8 +744,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
+          .jsonPath("allocations.size()").isEqualTo(1)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
-          .jsonPath("allocations[1]").doesNotExist()
       }
 
       @Test
@@ -776,12 +776,12 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
+          .jsonPath("allocations.size()").isEqualTo(1)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
-          .jsonPath("allocations[1]").doesNotExist()
       }
 
       @Test
-      fun `should not include prisoners who are OUT`() {
+      fun `should not include prisoners who are inactive`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity()
@@ -800,8 +800,26 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
+          .jsonPath("allocations.size()").isEqualTo(1)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
-          .jsonPath("allocations[1]").doesNotExist()
+      }
+
+      @Test
+      fun `should include prisoners who are active OUT`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity()
+          }
+          offender(nomsId = "A1111AA") {
+            booking(active = true, inOutStatus = "OUT") {
+              courseAllocation(courseActivity = courseActivity)
+            }
+          }
+        }
+
+        webTestClient.getActivityDetails()
+          .expectBody()
+          .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
       }
 
       @Test
@@ -824,8 +842,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
+          .jsonPath("allocations.size()").isEqualTo(1)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
-          .jsonPath("allocations[1]").doesNotExist()
       }
 
       @Test
@@ -846,6 +864,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActivityDetails()
           .expectBody()
+          .jsonPath("allocations.size()").isEqualTo(1)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[0].payBand").isEqualTo("6")
       }
