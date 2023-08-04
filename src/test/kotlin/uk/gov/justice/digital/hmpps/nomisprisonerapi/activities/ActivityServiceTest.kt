@@ -63,7 +63,6 @@ class ActivityServiceTest {
   private val scheduleService: ScheduleService = mock()
   private val scheduleRuleService: ScheduleRuleService = mock()
   private val courseActivityRepository: CourseActivityRepository = mock()
-  private val allocationService: AllocationService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val activityService = ActivityService(
@@ -76,7 +75,6 @@ class ActivityServiceTest {
     scheduleService,
     scheduleRuleService,
     courseActivityRepository,
-    allocationService,
     telemetryClient,
   )
 

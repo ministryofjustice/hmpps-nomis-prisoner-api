@@ -15,9 +15,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import java.time.LocalDate
 
-class GetActivityResourceIntTest : IntegrationTestBase() {
+class GetAllocationResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
@@ -44,21 +45,21 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /activities/ids")
-  inner class FindActiveActivities {
+  @DisplayName("GET /allocations/ids")
+  inner class FindActiveAllocations {
 
     @Nested
     inner class Api {
       @Test
       fun `access forbidden when no authority`() {
-        webTestClient.get().uri("/activities/ids?prisonId=BXI")
+        webTestClient.get().uri("/allocations/ids?prisonId=BXI")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/activities/ids?prisonId=BXI")
+        webTestClient.get().uri("/allocations/ids?prisonId=BXI")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -66,7 +67,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/activities/ids?prisonId=BXI")
+        webTestClient.get().uri("/allocations/ids?prisonId=BXI")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -74,7 +75,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `invalid prison should return not found`() {
-        webTestClient.get().uri("/activities/ids?prisonId=XXX")
+        webTestClient.get().uri("/allocations/ids?prisonId=XXX")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .exchange()
           .expectStatus().isBadRequest
@@ -89,29 +90,30 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     inner class Paging {
 
       private lateinit var courseActivity: CourseActivity
-      private lateinit var offenderBooking: OffenderBooking
+      private lateinit var courseAllocation: OffenderProgramProfile
 
       @Test
-      fun `finds an active activity with an allocation`() {
+      fun `finds an active allocation`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
           }
           offender {
-            offenderBooking = booking {
-              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            booking {
+              courseAllocation = courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("content[0].allocationId").isEqualTo(courseAllocation.offenderProgramReferenceId)
       }
 
       @Test
-      fun `finds a full page of activities`() {
+      fun `finds a full page of allocations`() {
         val courseActivities = mutableListOf<CourseActivity>()
+        val courseAllocations = mutableListOf<OffenderProgramProfile>()
         val pageSize = 3
         nomisDataBuilder.build {
           programService {
@@ -120,25 +122,26 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
             }
           }
           offender {
-            offenderBooking = booking {
+            booking {
               courseActivities.forEach {
-                courseAllocation(courseActivity = it, startDate = "$today")
+                courseAllocations += courseAllocation(courseActivity = it, startDate = "$today")
               }
             }
           }
         }
 
-        webTestClient.getActiveActivities(pageSize = pageSize, page = 0)
+        webTestClient.getActiveAllocations(pageSize = pageSize, page = 0)
           .expectBody()
           .jsonPath("content.size()").isEqualTo(3)
-          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivities[0].courseActivityId)
-          .jsonPath("content[1].courseActivityId").isEqualTo(courseActivities[1].courseActivityId)
-          .jsonPath("content[2].courseActivityId").isEqualTo(courseActivities[2].courseActivityId)
+          .jsonPath("content[0].allocationId").isEqualTo(courseAllocations[0].offenderProgramReferenceId)
+          .jsonPath("content[1].allocationId").isEqualTo(courseAllocations[1].offenderProgramReferenceId)
+          .jsonPath("content[2].allocationId").isEqualTo(courseAllocations[2].offenderProgramReferenceId)
       }
 
       @Test
-      fun `finds the second page of activities`() {
+      fun `finds the second page of allocations`() {
         val courseActivities = mutableListOf<CourseActivity>()
+        val courseAllocations = mutableListOf<OffenderProgramProfile>()
         val pageSize = 3
         nomisDataBuilder.build {
           programService {
@@ -147,18 +150,18 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
             }
           }
           offender {
-            offenderBooking = booking {
+            booking {
               courseActivities.forEach {
-                courseAllocation(courseActivity = it, startDate = "$today")
+                courseAllocations += courseAllocation(courseActivity = it, startDate = "$today")
               }
             }
           }
         }
 
-        webTestClient.getActiveActivities(pageSize = pageSize, page = 1)
+        webTestClient.getActiveAllocations(pageSize = pageSize, page = 1)
           .expectBody()
           .jsonPath("content.size()").isEqualTo(1)
-          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivities[3].courseActivityId)
+          .jsonPath("content[0].allocationId").isEqualTo(courseAllocations[3].offenderProgramReferenceId)
       }
 
       @Test
@@ -186,7 +189,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities(page = 0)
+        webTestClient.getActiveAllocations(page = 0)
           .expectBody()
           .jsonPath("totalElements").isEqualTo(25)
           .jsonPath("numberOfElements").isEqualTo(10)
@@ -195,13 +198,13 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .jsonPath("size").isEqualTo(10)
           .jsonPath("content.length()").isEqualTo(10)
 
-        webTestClient.getActiveActivities(page = 1)
+        webTestClient.getActiveAllocations(page = 1)
           .expectBody()
           .jsonPath("numberOfElements").isEqualTo(10)
           .jsonPath("number").isEqualTo(1)
           .jsonPath("content.length()").isEqualTo(10)
 
-        webTestClient.getActiveActivities(page = 2)
+        webTestClient.getActiveAllocations(page = 2)
           .expectBody()
           .jsonPath("numberOfElements").isEqualTo(5)
           .jsonPath("number").isEqualTo(2)
@@ -210,7 +213,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class ActivitySelection {
+    inner class AllocationSelection {
 
       private lateinit var courseActivity: CourseActivity
 
@@ -227,7 +230,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -245,7 +248,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -258,7 +261,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -276,7 +279,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -294,7 +297,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -312,7 +315,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -321,7 +324,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner active in different prison`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(prisonId = "BXI", startDate = "$today")
           }
           offender {
             booking(agencyLocationId = "LEI") {
@@ -330,7 +333,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -348,37 +351,38 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
       fun `should include if prisoner is ACTIVE OUT`() {
+        lateinit var courseAllocation: OffenderProgramProfile
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking(active = true, inOutStatus = "OUT") {
-              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocation = courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
 
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveAllocations()
           .expectBody()
-          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("content[0].allocationId").isEqualTo(courseAllocation.offenderProgramReferenceId)
       }
     }
 
-    fun WebTestClient.getActiveActivities(
+    fun WebTestClient.getActiveAllocations(
       pageSize: Int = 10,
       page: Int = 0,
       prison: String = "BXI",
     ): WebTestClient.ResponseSpec =
       get().uri {
-        it.path("/activities/ids")
+        it.path("/allocations/ids")
           .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
@@ -390,23 +394,24 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /activities/{courseActivityId}")
-  inner class GetActivity {
+  @DisplayName("GET /allocations/{allocationId}")
+  inner class GetActivityMigration {
 
     private lateinit var courseActivity: CourseActivity
+    private lateinit var courseAllocation: OffenderProgramProfile
 
     @Nested
     inner class Api {
       @Test
       fun `access forbidden when no authority`() {
-        webTestClient.get().uri("/activities/1")
+        webTestClient.get().uri("/allocations/1")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/activities/1")
+        webTestClient.get().uri("/allocations/1")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -414,236 +419,109 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/activities/1")
+        webTestClient.get().uri("/allocations/1")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
       }
 
       @Test
-      fun `unknown course activity should return not found`() {
-        webTestClient.get().uri("/activities/9999")
+      fun `unknown course allocation should return not found`() {
+        webTestClient.get().uri("/allocations/9999")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Course Activity with id=9999 does not exist")
+            assertThat(it).contains("Offender program profile with id=9999 does not exist")
           }
       }
     }
 
     @Nested
-    inner class ActivityDetails {
+    inner class AllocationDetails {
+
+      private lateinit var offenderBooking: OffenderBooking
 
       @Test
-      fun `should return all Activity details`() {
+      fun `should return all allocation details`() {
         nomisDataBuilder.build {
-          programService(programCode = "SOME_PROGRAM") {
-            courseActivity = courseActivity(
-              prisonId = "BXI",
-              startDate = "$yesterday",
-              endDate = "$tomorrow",
-              internalLocationId = -3005,
-              capacity = 10,
-              description = "Kitchen work",
-              minimumIncentiveLevelCode = "BAS",
-              excludeBankHolidays = true,
-            )
+          programService {
+            courseActivity = courseActivity()
+          }
+          offender(nomsId = "A1234AA") {
+            offenderBooking = booking(livingUnitId = -3009) {
+              courseAllocation = courseAllocation(
+                courseActivity = courseActivity,
+                startDate = "$yesterday",
+                programStatusCode = "ALLOC",
+                endDate = "$tomorrow",
+                endReasonCode = "WDRAWN",
+                endComment = "Withdrawn",
+                suspended = false,
+              ) {
+                payBand(payBandCode = "1")
+              }
+            }
           }
         }
 
-        webTestClient.getActivityDetails()
+        webTestClient.getAllocationDetails()
           .expectBody()
-          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
-          .jsonPath("programCode").isEqualTo("SOME_PROGRAM")
-          .jsonPath("prisonId").isEqualTo("BXI")
+          .jsonPath("nomisId").isEqualTo("A1234AA")
+          .jsonPath("bookingId").isEqualTo(offenderBooking.bookingId)
           .jsonPath("startDate").isEqualTo("$yesterday")
           .jsonPath("endDate").isEqualTo("$tomorrow")
-          .jsonPath("internalLocationId").isEqualTo(-3005)
-          .jsonPath("internalLocationCode").isEqualTo("CLASS1")
-          .jsonPath("internalLocationDescription").isEqualTo("BXI-CLASS1")
-          .jsonPath("capacity").isEqualTo(10)
-          .jsonPath("description").isEqualTo("Kitchen work")
-          .jsonPath("minimumIncentiveLevel").isEqualTo("BAS")
-          .jsonPath("excludeBankHolidays").isEqualTo(true)
+          .jsonPath("endReasonCode").isEqualTo("WDRAWN")
+          .jsonPath("endComment").isEqualTo("Withdrawn")
+          .jsonPath("suspended").isEqualTo(false)
+          .jsonPath("payBand").isEqualTo("1")
+          .jsonPath("livingUnitDescription").isEqualTo("BXI-A-1-016")
       }
 
       @Test
-      fun `should handle nullable Activity details`() {
+      fun `should only include active allocation pay bands`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(
-              endDate = null,
-              internalLocationId = null,
-            )
+            courseActivity = courseActivity()
+          }
+          offender {
+            booking {
+              courseAllocation = courseAllocation(courseActivity = courseActivity) {
+                payBand(startDate = "$yesterday", endDate = "$yesterday", payBandCode = "5")
+                payBand(startDate = "$today", endDate = null, payBandCode = "6")
+              }
+            }
           }
         }
 
-        webTestClient.getActivityDetails()
+        webTestClient.getAllocationDetails()
           .expectBody()
-          .jsonPath("endDate").doesNotExist()
-          .jsonPath("internalLocationId").doesNotExist()
-          .jsonPath("internalLocationCode").doesNotExist()
-          .jsonPath("internalLocationDescription").doesNotExist()
+          .jsonPath("payBand").isEqualTo("6")
+      }
+
+      @Test
+      fun `should allow missing pay bands`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity()
+          }
+          offender(nomsId = "A1111AA") {
+            booking {
+              courseAllocation = courseAllocation(courseActivity = courseActivity) {} // no pay bands
+            }
+          }
+        }
+
+        webTestClient.getAllocationDetails()
+          .expectBody()
+          .jsonPath("nomisId").isEqualTo("A1111AA")
+          .jsonPath("payBand").doesNotExist()
       }
     }
 
-    @Nested
-    inner class ScheduleRules {
-
-      @Test
-      fun `should include schedule rules`() {
-        nomisDataBuilder.build {
-          programService(programCode = "SOME_PROGRAM") {
-            courseActivity = courseActivity {
-              courseScheduleRule(
-                startTimeHours = 9,
-                startTimeMinutes = 30,
-                endTimeHours = 12,
-                endTimeMinutes = 15,
-                monday = true,
-                tuesday = false,
-                wednesday = true,
-                thursday = false,
-                friday = true,
-                saturday = false,
-                sunday = false,
-              )
-            }
-          }
-        }
-
-        webTestClient.getActivityDetails()
-          .expectBody()
-          .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
-          .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
-          .jsonPath("scheduleRules[0].monday").isEqualTo(true)
-          .jsonPath("scheduleRules[0].tuesday").isEqualTo(false)
-          .jsonPath("scheduleRules[0].wednesday").isEqualTo(true)
-          .jsonPath("scheduleRules[0].thursday").isEqualTo(false)
-          .jsonPath("scheduleRules[0].friday").isEqualTo(true)
-          .jsonPath("scheduleRules[0].saturday").isEqualTo(false)
-          .jsonPath("scheduleRules[0].sunday").isEqualTo(false)
-      }
-
-      @Test
-      fun `should handle multiple schedule rules`() {
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity {
-              courseScheduleRule(
-                startTimeHours = 9,
-                startTimeMinutes = 30,
-                endTimeHours = 12,
-                endTimeMinutes = 15,
-              )
-              courseScheduleRule(
-                startTimeHours = 13,
-                startTimeMinutes = 0,
-                endTimeHours = 16,
-                endTimeMinutes = 30,
-              )
-            }
-          }
-        }
-
-        webTestClient.getActivityDetails()
-          .expectBody()
-          .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
-          .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
-          .jsonPath("scheduleRules[1].startTime").isEqualTo("13:00")
-          .jsonPath("scheduleRules[1].endTime").isEqualTo("16:30")
-      }
-    }
-
-    @Nested
-    inner class PayRates {
-
-      @Test
-      fun `should return pay rates`() {
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity {
-              payRate(
-                iepLevelCode = "BAS",
-                payBandCode = "1",
-                startDate = "$today",
-                halfDayRate = 1.1,
-              )
-              payRate(
-                iepLevelCode = "BAS",
-                payBandCode = "2",
-                startDate = "$today",
-                halfDayRate = 2.2,
-              )
-            }
-          }
-        }
-
-        webTestClient.getActivityDetails()
-          .expectBody()
-          .jsonPath("payRates[0].incentiveLevelCode").isEqualTo("BAS")
-          .jsonPath("payRates[0].payBand").isEqualTo("1")
-          .jsonPath("payRates[0].rate").isEqualTo("1.1")
-          .jsonPath("payRates[1].incentiveLevelCode").isEqualTo("BAS")
-          .jsonPath("payRates[1].payBand").isEqualTo("2")
-          .jsonPath("payRates[1].rate").isEqualTo("2.2")
-      }
-
-      @Test
-      fun `should not return inactive pay rates`() {
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity {
-              payRate(
-                payBandCode = "1",
-                startDate = "$yesterday",
-                endDate = "$yesterday",
-              )
-              payRate(
-                payBandCode = "2",
-                startDate = "$today",
-                endDate = null,
-              )
-            }
-          }
-        }
-
-        webTestClient.getActivityDetails()
-          .expectBody()
-          .jsonPath("payRates.size()").isEqualTo(1)
-          .jsonPath("payRates[0].payBand").isEqualTo("2")
-      }
-
-      @Test
-      fun `should include pay rates expiring today`() {
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity {
-              payRate(
-                payBandCode = "1",
-                startDate = "$yesterday",
-                endDate = "$today",
-              )
-              payRate(
-                payBandCode = "2",
-                startDate = "$today",
-                endDate = null,
-              )
-            }
-          }
-        }
-
-        webTestClient.getActivityDetails()
-          .expectBody()
-          .jsonPath("payRates[0].payBand").isEqualTo("1")
-          .jsonPath("payRates[1].payBand").isEqualTo("2")
-      }
-    }
-
-    private fun WebTestClient.getActivityDetails(): WebTestClient.ResponseSpec =
-      get().uri("/activities/${courseActivity.courseActivityId}")
+    private fun WebTestClient.getAllocationDetails(): WebTestClient.ResponseSpec =
+      get().uri("/allocations/${courseAllocation.offenderProgramReferenceId}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isOk
