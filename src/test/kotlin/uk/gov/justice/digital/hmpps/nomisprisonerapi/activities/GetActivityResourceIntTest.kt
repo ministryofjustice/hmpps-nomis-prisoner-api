@@ -453,10 +453,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("programCode").isEqualTo("SOME_PROGRAM")
@@ -483,10 +480,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("endDate").doesNotExist()
@@ -521,10 +515,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
@@ -559,10 +550,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
@@ -596,10 +584,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("payRates[0].incentiveLevelCode").isEqualTo("BAS")
@@ -629,10 +614,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("payRates[0].payBand").isEqualTo("2")
@@ -658,10 +640,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("payRates[0].payBand").isEqualTo("1")
@@ -702,10 +681,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
@@ -738,10 +714,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].startDate").isEqualTo("$yesterday")
@@ -777,10 +750,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
@@ -813,10 +783,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
@@ -841,10 +808,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
@@ -869,10 +833,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
@@ -895,10 +856,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
@@ -918,15 +876,18 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.get().uri("/activities/${courseActivity.courseActivityId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-          .exchange()
-          .expectStatus().isOk
+        webTestClient.getActivityDetails()
           .expectBody()
           .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
           .jsonPath("allocations[0].nomisId").isEqualTo("A1111AA")
           .jsonPath("allocations[0].payBand").doesNotExist()
       }
     }
+
+    private fun WebTestClient.getActivityDetails(): WebTestClient.ResponseSpec =
+      get().uri("/activities/${courseActivity.courseActivityId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
   }
 }
