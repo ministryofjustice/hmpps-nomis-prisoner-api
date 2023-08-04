@@ -95,6 +95,7 @@ data class CourseActivityPayRate(
   fun hasExpiryDate(): Boolean = endDate != null
   fun expire(): CourseActivityPayRate = this.apply { endDate = LocalDate.now() }
   fun hasFutureStartDate(): Boolean = id.startDate > LocalDate.now()
+  fun isActive(): Boolean = id.startDate <= LocalDate.now() && (endDate == null || endDate!! >= LocalDate.now())
 
   companion object {
     fun preciseHalfDayRate(halfDayRate: BigDecimal): BigDecimal = halfDayRate.setScale(3, RoundingMode.HALF_UP)

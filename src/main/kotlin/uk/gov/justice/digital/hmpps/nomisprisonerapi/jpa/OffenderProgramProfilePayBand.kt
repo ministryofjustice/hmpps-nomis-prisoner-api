@@ -47,6 +47,9 @@ data class OffenderProgramProfilePayBand(
   )
   var payBand: PayBand,
 ) {
+
+  fun isActive() = id.startDate <= LocalDate.now() && (endDate == null || endDate!! >= LocalDate.now())
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
