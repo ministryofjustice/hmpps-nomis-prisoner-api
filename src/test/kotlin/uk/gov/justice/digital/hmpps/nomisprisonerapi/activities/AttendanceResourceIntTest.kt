@@ -262,18 +262,18 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return OK if creating an attendance on the day an allocation ends`() {
-        val today = LocalDate.now()
+        val yesterday = LocalDate.now().minusDays(1)
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
-              courseSchedule = courseSchedule(scheduleDate = "$today")
+              courseSchedule = courseSchedule(scheduleDate = "$yesterday")
               courseScheduleRule()
               payRate()
             }
           }
           offender(nomsId = "A1111AA") {
             offenderBooking = booking {
-              allocation = courseAllocation(courseActivity, programStatusCode = "END", endDate = "$today")
+              allocation = courseAllocation(courseActivity, programStatusCode = "END", endDate = "$yesterday")
             }
           }
         }
