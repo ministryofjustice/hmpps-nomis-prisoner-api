@@ -212,6 +212,12 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    /*
+     * Note that each test in this class also checks the endpoint `/activities/ids` as well as the allocation endpoint.
+     * This is to test that the same rules are being applied to both the activities and allocations selection and
+     * effectively tests that the custom queries in CourseActivityRepository.findActiveActivities and
+     * OffenderProgramProfilesRepository.findActiveAllocations are aligned.
+     */
     @Nested
     inner class AllocationSelection {
 
@@ -233,6 +239,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -251,6 +261,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -262,6 +276,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.getActiveAllocations()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -282,6 +300,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -298,6 +320,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.getActiveAllocations()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -318,6 +344,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -336,6 +366,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
       }
 
       @Test
@@ -352,6 +386,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.getActiveAllocations()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -373,6 +411,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content[0].allocationId").isEqualTo(courseAllocation.offenderProgramReferenceId)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
     }
 
@@ -383,6 +425,22 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/allocations/ids")
+          .queryParam("prisonId", prison)
+          .queryParam("size", pageSize)
+          .queryParam("page", page)
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+
+    fun WebTestClient.getActiveActivities(
+      pageSize: Int = 10,
+      page: Int = 0,
+      prison: String = "BXI",
+    ): WebTestClient.ResponseSpec =
+      get().uri {
+        it.path("/activities/ids")
           .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
