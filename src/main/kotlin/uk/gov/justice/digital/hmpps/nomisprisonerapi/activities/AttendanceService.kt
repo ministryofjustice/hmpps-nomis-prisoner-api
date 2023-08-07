@@ -75,8 +75,10 @@ class AttendanceService(
         offenderProgramProfile,
         requestStatus,
       ).also {
-        if (offenderProgramProfile.programStatus.code == "END") {
-          throw BadDataException("Cannot create an attendance for allocation ${offenderProgramProfile.offenderProgramReferenceId} because it has ended")
+        offenderProgramProfile.endDate?.run {
+          if (this.isBefore(courseSchedule.scheduleDate)) {
+            throw BadDataException("Cannot create an attendance for allocation ${offenderProgramProfile.offenderProgramReferenceId} after its end date of $this")
+          }
         }
       }
 

@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendanc
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.LocalDate
 
 class AttendanceResourceIntTest : IntegrationTestBase() {
 
@@ -234,19 +235,20 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return bad request if creating an attendance and allocation has ended`() {
-        // create a new allocation that has ended
+      fun `should return bad request if creating an attendance after an allocation has ended`() {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity {
-              courseSchedule = courseSchedule()
+              courseSchedule = courseSchedule(scheduleDate = "$today")
               courseScheduleRule()
               payRate()
             }
           }
-          offender {
+          offender(nomsId = "A1111AA") {
             offenderBooking = booking {
-              allocation = courseAllocation(courseActivity, programStatusCode = "END")
+              allocation = courseAllocation(courseActivity, programStatusCode = "END", endDate = "$yesterday")
             }
           }
         }
@@ -254,8 +256,30 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Cannot create an attendance for allocation ${allocation.offenderProgramReferenceId} because it has ended")
+            assertThat(it).contains("Cannot create an attendance for allocation ${allocation.offenderProgramReferenceId} after its end date of $yesterday")
           }
+      }
+
+      @Test
+      fun `should return OK if creating an attendance on the day an allocation ends`() {
+        val yesterday = LocalDate.now().minusDays(1)
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity {
+              courseSchedule = courseSchedule(scheduleDate = "$yesterday")
+              courseScheduleRule()
+              payRate()
+            }
+          }
+          offender(nomsId = "A1111AA") {
+            offenderBooking = booking {
+              allocation = courseAllocation(courseActivity, programStatusCode = "END", endDate = "$yesterday")
+            }
+          }
+        }
+
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
+          .expectStatus().isOk
       }
 
       @Test
