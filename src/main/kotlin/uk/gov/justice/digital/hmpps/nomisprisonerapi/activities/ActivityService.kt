@@ -132,6 +132,7 @@ class ActivityService(
           description = it.description ?: "",
           minimumIncentiveLevel = it.iepLevel.code,
           excludeBankHolidays = it.excludeBankHolidays,
+          payPerSession = it.payPerSession.name,
           scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
           payRates = payRatesService.mapRates(it.payRates),
         )

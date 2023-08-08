@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 
@@ -23,6 +24,7 @@ interface ProgramServiceDsl {
     minimumIncentiveLevelCode: String = "STD",
     internalLocationId: Long? = -3005,
     excludeBankHolidays: Boolean = false,
+    payPerSession: String = "H",
     dsl: CourseActivityDsl.() -> Unit = {
       courseSchedule()
       courseScheduleRule()
@@ -80,6 +82,7 @@ class ProgramServiceBuilder(
     minimumIncentiveLevelCode: String,
     internalLocationId: Long?,
     excludeBankHolidays: Boolean,
+    payPerSession: String,
     dsl: CourseActivityDsl.() -> Unit,
   ): CourseActivity = courseActivityBuilderFactory.builder().let { builder ->
     builder.build(
@@ -95,6 +98,7 @@ class ProgramServiceBuilder(
       minimumIncentiveLevelCode,
       internalLocationId,
       excludeBankHolidays,
+      PayPerSession.valueOf(payPerSession),
     )
       .also { programService.courseActivities += it }
       .also { builder.apply(dsl) }

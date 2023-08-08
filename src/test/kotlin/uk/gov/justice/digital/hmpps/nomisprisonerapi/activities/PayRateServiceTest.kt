@@ -84,6 +84,7 @@ class PayRateServiceTest {
       scheduleStartDate = LocalDate.parse("2022-10-31"),
       iepLevel = defaultIepLevel("BAS"),
       internalLocation = defaultRoom,
+      payPerSession = PayPerSession.H,
     )
 
     private val createRequest = CreateActivityRequest(

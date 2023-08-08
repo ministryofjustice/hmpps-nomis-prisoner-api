@@ -104,7 +104,7 @@ data class CourseActivity(
 
   @Column
   @Enumerated(STRING)
-  var payPerSession: PayPerSession? = null,
+  var payPerSession: PayPerSession,
 
   @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderProgramProfiles: MutableList<OffenderProgramProfile> = mutableListOf(),
