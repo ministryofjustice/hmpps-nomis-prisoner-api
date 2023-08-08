@@ -344,11 +344,13 @@ class ActivitiesResource(
     ],
   )
   fun findActiveActivities(
-    @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC)
-    pageRequest: Pageable,
+    @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id", required = true) @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
+    @RequestParam(name = "excludeProgramCode")
+    excludeProgramCodes: List<String>?,
   ): Page<FindActiveActivityIdsResponse> =
-    activityService.findActiveActivityIds(pageRequest, prisonId)
+    activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/{courseActivityId}")
@@ -442,11 +444,13 @@ class ActivitiesResource(
     ],
   )
   fun findActiveAllocations(
-    @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC)
-    pageRequest: Pageable,
+    @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id", required = true) @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
+    @RequestParam(name = "excludeProgramCode")
+    excludeProgramCodes: List<String>?,
   ): Page<FindActiveAllocationIdsResponse> =
-    allocationService.findActiveAllocations(pageRequest, prisonId)
+    allocationService.findActiveAllocations(pageRequest, prisonId, excludeProgramCodes)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/{allocationId}")

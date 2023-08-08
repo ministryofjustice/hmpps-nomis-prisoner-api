@@ -58,10 +58,12 @@ class AllocationService(
       }
   }
 
-  fun findActiveAllocations(pageRequest: Pageable, prisonId: String): Page<FindActiveAllocationIdsResponse> =
-    findPrisonOrThrow(prisonId)
-      .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, pageRequest) }
+  fun findActiveAllocations(pageRequest: Pageable, prisonId: String, excludeProgramCodes: List<String>?): Page<FindActiveAllocationIdsResponse> {
+    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
+    return findPrisonOrThrow(prisonId)
+      .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, excludePrograms, pageRequest) }
       .map { FindActiveAllocationIdsResponse(it) }
+  }
 
   fun getAllocation(allocationId: Long): GetAllocationResponse =
     offenderProgramProfileRepository.findByIdOrNull(allocationId)

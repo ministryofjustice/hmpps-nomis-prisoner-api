@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.util.LinkedMultiValueMap
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -365,10 +366,32 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
             }
           }
         }
+      }
 
-        webTestClient.getActiveActivities()
+      @Test
+      fun `should not include if course activity not in program`() {
+        nomisDataBuilder.build {
+          programService(programCode = "INTTEST") {
+            courseActivity = courseActivity(startDate = "$today")
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+          programService(programCode = "ANOTHER_PROGRAM") {
+            courseActivity = courseActivity(startDate = "$today")
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
           .expectBody()
-          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("content.size()").isEqualTo(0)
       }
     }
 
@@ -376,12 +399,14 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       pageSize: Int = 10,
       page: Int = 0,
       prison: String = "BXI",
+      excludeProgramCodes: List<String> = listOf(),
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/activities/ids")
           .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
+          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .build()
       }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))

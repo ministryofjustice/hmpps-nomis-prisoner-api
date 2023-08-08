@@ -40,7 +40,8 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ca.active = true
        and ca.scheduleStartDate <= current_date
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
+       and ca.program.programCode not in :excludeProgramCodes
   """,
   )
-  fun findActiveAllocations(prisonId: String, pageable: Pageable): Page<Long>
+  fun findActiveAllocations(prisonId: String, excludeProgramCodes: List<String>, pageable: Pageable): Page<Long>
 }
