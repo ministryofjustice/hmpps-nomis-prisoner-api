@@ -46,6 +46,9 @@ data class GetActivityResponse(
   @Schema(description = "Whether the course runs on bank holidays", example = "false")
   val excludeBankHolidays: Boolean,
 
+  @Schema(description = "Half or Full day (H or F)", required = true, example = "H")
+  val payPerSession: String,
+
   @Schema(description = "Rules for creating schedules - days and times")
   val scheduleRules: List<ScheduleRulesResponse>,
 

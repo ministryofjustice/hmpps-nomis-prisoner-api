@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
@@ -111,6 +112,7 @@ class CourseActivityBuilder(
     minimumIncentiveLevelCode: String,
     internalLocationId: Long?,
     excludeBankHolidays: Boolean,
+    payPerSession: PayPerSession,
   ): CourseActivity =
     CourseActivity(
       courseActivityId = courseActivityId,
@@ -126,6 +128,7 @@ class CourseActivityBuilder(
       iepLevel = lookupIepLevel(minimumIncentiveLevelCode),
       internalLocation = internalLocationId?.let { lookupAgencyInternalLocation(it, prisonId) },
       excludeBankHolidays = excludeBankHolidays,
+      payPerSession = payPerSession,
     )
       .also { courseActivity = it }
 
