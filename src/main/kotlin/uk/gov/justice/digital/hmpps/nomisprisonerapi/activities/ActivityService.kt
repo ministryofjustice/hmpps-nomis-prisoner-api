@@ -111,10 +111,12 @@ class ActivityService(
       .let { CreateActivityResponse(it) }
   }
 
-  fun findActiveActivityIds(pageRequest: Pageable, prisonId: String): Page<FindActiveActivityIdsResponse> =
-    findPrisonOrThrow(prisonId)
-      .let { courseActivityRepository.findActiveActivities(prisonId, pageRequest) }
+  fun findActiveActivityIds(pageRequest: Pageable, prisonId: String, excludeProgramCodes: List<String>?): Page<FindActiveActivityIdsResponse> {
+    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
+    return findPrisonOrThrow(prisonId)
+      .let { courseActivityRepository.findActiveActivities(prisonId, excludePrograms, pageRequest) }
       .map { FindActiveActivityIdsResponse(it) }
+  }
 
   fun getActivity(courseActivityId: Long): GetActivityResponse? =
     findCourseActivityOrThrow(courseActivityId)
