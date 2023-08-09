@@ -39,8 +39,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   }
 
   private fun validCreateJsonRequest() = """{
-            "offenderNo"    : ${offenderAtMoorlands.nomsId},
-            "nsOffenderNo"  : ${offenderAtOtherPrison.nomsId},
+            "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+            "nsOffenderNo"  : "${offenderAtOtherPrison.nomsId}",
             "reason"        : "RIV",
             "recipReason"   : "PER",
             "type"          : "WING",
@@ -188,7 +188,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Effective date must be in the pastafter start time")
+          assertThat(it).contains("Effective date must not be in the future")
         }
     }
 
@@ -217,7 +217,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("2023-13-27 xxx")
+          assertThat(it).contains("Invalid value for MonthOfYear (valid values 1 - 12): 13")
         }
     }
 
@@ -227,7 +227,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
       // Check the database
       repository.getNonAssociation(offenderAtMoorlands, offenderAtOtherPrison).apply {
-
         assertThat(id.offender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
         assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtOtherPrison.nomsId)
         assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
@@ -244,12 +243,11 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         assertThat(nd.recipNonAssociationReason?.code).isNull()
         assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2023-02-27"))
         assertThat(nd.nonAssociationType.code).isEqualTo("WING")
-        assertThat(nd.authorisedBy).isEqualTo("Me!")
+        assertThat(nd.authorisedBy).isEqualTo("me!")
         assertThat(nd.comment).isEqualTo("this is a test!")
         assertThat(nd.nonAssociation).isEqualTo(this)
       }
       repository.getNonAssociation(offenderAtOtherPrison, offenderAtMoorlands).apply {
-
         assertThat(id.offender.nomsId).isEqualTo(offenderAtOtherPrison.nomsId)
         assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
         assertThat(offenderBooking.bookingId).isEqualTo(offenderAtOtherPrison.latestBooking().bookingId)
@@ -266,7 +264,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         assertThat(nd.recipNonAssociationReason?.code).isNull()
         assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2023-02-27"))
         assertThat(nd.nonAssociationType.code).isEqualTo("WING")
-        assertThat(nd.authorisedBy).isEqualTo("Me!")
+        assertThat(nd.authorisedBy).isEqualTo("me!")
         assertThat(nd.comment).isEqualTo("this is a test!")
         assertThat(nd.nonAssociation).isEqualTo(this)
       }

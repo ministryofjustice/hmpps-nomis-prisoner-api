@@ -314,6 +314,9 @@ class Repository(
 
   fun getNonAssociation(first: Offender, second: Offender): OffenderNonAssociation =
     offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
+      .also {
+        it.offenderNonAssociationDetails.size
+      }
 
   fun deleteNonAssociation(first: Offender, second: Offender) {
     offenderNonAssociationRepository.deleteById(OffenderNonAssociationId(first, second))

@@ -42,7 +42,7 @@ class NonAssociationService(
       ?: throw BadDataException("Reciprocal reason with code=${dto.recipReason} does not exist")
 
     if (dto.effectiveDate.isAfter(LocalDate.now())) {
-      throw BadDataException("Effective date cannot be in the future")
+      throw BadDataException("Effective date must not be in the future")
     }
 
     val existing = offenderNonAssociationRepository.findByIdOrNull(
@@ -61,6 +61,8 @@ class NonAssociationService(
       if (otherExisting.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.nsOffenderNo} and nsOffender=${dto.offenderNo}")
       }
+      existing.nonAssociationReason = recipReason
+      existing.recipNonAssociationReason = recipReason
       existing.offenderNonAssociationDetails.add(
         mapDetails(
           recipReason,
@@ -69,6 +71,8 @@ class NonAssociationService(
           existing.nextAvailableSequence(),
         ),
       )
+      otherExisting.nonAssociationReason = recipReason
+      otherExisting.recipNonAssociationReason = reason
       otherExisting.offenderNonAssociationDetails.add(
         mapDetails(
           reason,
@@ -82,12 +86,12 @@ class NonAssociationService(
         id = OffenderNonAssociationId(offender, nsOffender),
         offenderBooking = offender.bookings.first(),
         nsOffenderBooking = nsOffender.bookings.first(),
-        nonAssociationReason = reason,
-        recipNonAssociationReason = reason,
+        nonAssociationReason = recipReason,
+        recipNonAssociationReason = recipReason,
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(reason, this, dto))
           }
         }
 
@@ -95,12 +99,12 @@ class NonAssociationService(
         id = OffenderNonAssociationId(nsOffender, offender),
         offenderBooking = nsOffender.bookings.first(),
         nsOffenderBooking = offender.bookings.first(),
-        nonAssociationReason = reason,
-        recipNonAssociationReason = recipReason,
+        nonAssociationReason = recipReason,
+        recipNonAssociationReason = reason,
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(reason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto))
           }
         }
     }
