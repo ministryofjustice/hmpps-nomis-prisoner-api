@@ -41,6 +41,10 @@ class NonAssociationService(
     val recipReason = reasonRepository.findByIdOrNull(NonAssociationReason.pk(dto.recipReason))
       ?: throw BadDataException("Reciprocal reason with code=${dto.recipReason} does not exist")
 
+    if (dto.effectiveDate.isAfter(LocalDate.now())) {
+      throw BadDataException("Effective date cannot be in the future")
+    }
+
     val existing = offenderNonAssociationRepository.findByIdOrNull(
       OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
     )
@@ -201,7 +205,6 @@ class NonAssociationService(
       offenderBooking = existing.offenderBooking,
       nsOffenderBooking = existing.nsOffenderBooking,
       nonAssociationReason = reason,
-      // recipNonAssociationReason = existing.recipNonAssociationReason,
       nonAssociation = existing,
       effectiveDate = dto.effectiveDate,
       comment = dto.comment,

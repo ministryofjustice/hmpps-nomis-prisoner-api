@@ -48,10 +48,7 @@ data class OffenderNonAssociationDetail(
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + NonAssociationReason.DOMAIN + "'",
-          referencedColumnName = "domain",
-        ),
+        formula = JoinFormula(value = "'" + NonAssociationReason.DOMAIN + "'", referencedColumnName = "domain"),
       ),
       JoinColumnOrFormula(column = JoinColumn(name = "NS_REASON_CODE", referencedColumnName = "code")),
     ],
@@ -62,10 +59,7 @@ data class OffenderNonAssociationDetail(
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + NonAssociationReason.DOMAIN + "'",
-          referencedColumnName = "domain",
-        ),
+        formula = JoinFormula(value = "'" + NonAssociationReason.DOMAIN + "'", referencedColumnName = "domain"),
       ),
       JoinColumnOrFormula(column = JoinColumn(name = "RECIP_NS_REASON_CODE", referencedColumnName = "code")),
     ],
@@ -76,10 +70,7 @@ data class OffenderNonAssociationDetail(
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + NonAssociationType.DOMAIN + "'",
-          referencedColumnName = "domain",
-        ),
+        formula = JoinFormula(value = "'" + NonAssociationType.DOMAIN + "'", referencedColumnName = "domain"),
       ),
       JoinColumnOrFormula(column = JoinColumn(name = "NS_TYPE", referencedColumnName = "code")),
     ],

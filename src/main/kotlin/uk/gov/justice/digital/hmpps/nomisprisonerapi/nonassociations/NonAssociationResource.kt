@@ -88,7 +88,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Offender does not exist",
+        description = "Non-association does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -134,7 +134,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Event id does not exist",
+        description = "Non-association does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -149,7 +149,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
     ],
   )
-  fun cancelNonAssociation(
+  fun closeNonAssociation(
     @Schema(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
@@ -166,14 +166,14 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "NonAssociation information with created id",
+        description = "Non-association information with created id",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = CreateNonAssociationRequest::class)),
         ],
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Booking, location and timestamp combination does not exist",
+        description = "Non-association does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
