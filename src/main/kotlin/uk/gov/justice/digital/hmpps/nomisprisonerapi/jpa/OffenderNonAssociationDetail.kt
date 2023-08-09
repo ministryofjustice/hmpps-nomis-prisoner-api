@@ -1,0 +1,118 @@
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
+
+import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.Table
+import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
+import java.io.Serializable
+import java.time.LocalDate
+
+@Embeddable
+data class OffenderNonAssociationDetailId(
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "OFFENDER_ID", nullable = false)
+  val offender: Offender,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "NS_OFFENDER_ID", nullable = false, referencedColumnName = "OFFENDER_ID")
+  val nsOffender: Offender,
+
+  @Column(name = "TYPE_SEQ", nullable = false)
+  val typeSequence: Int,
+) : Serializable
+
+@Entity
+@Table(name = "OFFENDER_NA_DETAILS")
+data class OffenderNonAssociationDetail(
+
+  @EmbeddedId
+  val id: OffenderNonAssociationDetailId,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
+  val offenderBooking: OffenderBooking,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "NS_OFFENDER_BOOK_ID", nullable = false)
+  val nsOffenderBooking: OffenderBooking,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = ("'" + NonAssociationReason.DOMAIN).toString() + "'",
+          referencedColumnName = "domain",
+        ),
+      ),
+      JoinColumnOrFormula(column = JoinColumn(name = "NS_REASON_CODE", referencedColumnName = "code")),
+    ],
+  )
+  var nonAssociationReason: NonAssociationReason,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = ("'" + NonAssociationReason.DOMAIN).toString() + "'",
+          referencedColumnName = "domain",
+        ),
+      ),
+      JoinColumnOrFormula(column = JoinColumn(name = "RECIP_NS_REASON_CODE", referencedColumnName = "code")),
+    ],
+  )
+  var recipNonAssociationReason: NonAssociationReason? = null,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = ("'" + NonAssociationType.DOMAIN).toString() + "'",
+          referencedColumnName = "domain",
+        ),
+      ),
+      JoinColumnOrFormula(column = JoinColumn(name = "NS_TYPE", referencedColumnName = "code")),
+    ],
+  )
+  var nonAssociationType: NonAssociationType,
+
+  @Column(name = "NS_EFFECTIVE_DATE", nullable = false)
+  var effectiveDate: LocalDate,
+
+  @Column(name = "NS_EXPIRY_DATE")
+  var expiryDate: LocalDate? = null,
+
+  @Column(name = "AUTHORIZED_STAFF")
+  val authorisedBy: String? = null,
+
+  @Column(name = "COMMENT_TEXT")
+  var comment: String? = null,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_ID", referencedColumnName = "OFFENDER_ID")),
+      JoinColumnOrFormula(column = JoinColumn(name = "NS_OFFENDER_ID", referencedColumnName = "NS_OFFENDER_ID")),
+    ],
+  )
+  var nonAssociation: OffenderNonAssociation,
+) {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as OffenderNonAssociationDetail
+    return id == other.id
+  }
+
+  override fun hashCode(): Int = javaClass.hashCode()
+}

@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import org.hibernate.validator.constraints.Length
 import java.time.LocalDateTime
 
-@Schema(description = "Incentive information")
+@Schema(description = "Appointment information")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AppointmentResponse(
   @Schema(description = "The booking id", required = true)
