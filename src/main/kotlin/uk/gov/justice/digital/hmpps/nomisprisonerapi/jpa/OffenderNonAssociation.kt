@@ -76,6 +76,10 @@ data class OffenderNonAssociation(
   fun getOpenNonAssociationDetail(): OffenderNonAssociationDetail? =
     offenderNonAssociationDetails.firstOrNull { it.expiryDate == null }
 
+  fun nextAvailableSequence(): Int = offenderNonAssociationDetails.maxByOrNull {
+    it.id.typeSequence
+  }?.id?.typeSequence?.plus(1) ?: 1
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

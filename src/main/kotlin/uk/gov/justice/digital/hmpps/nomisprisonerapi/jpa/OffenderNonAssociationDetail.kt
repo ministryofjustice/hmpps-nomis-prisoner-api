@@ -18,11 +18,11 @@ import java.time.LocalDate
 @Embeddable
 data class OffenderNonAssociationDetailId(
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_ID", nullable = false)
+  @JoinColumn(name = "OFFENDER_ID", nullable = false, referencedColumnName = "OFFENDER_ID", insertable = false, updatable = false)
   val offender: Offender,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "NS_OFFENDER_ID", nullable = false, referencedColumnName = "OFFENDER_ID")
+  @JoinColumn(name = "NS_OFFENDER_ID", nullable = false, referencedColumnName = "OFFENDER_ID", insertable = false, updatable = false)
   val nsOffender: Offender,
 
   @Column(name = "TYPE_SEQ", nullable = false)
@@ -49,7 +49,7 @@ data class OffenderNonAssociationDetail(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = ("'" + NonAssociationReason.DOMAIN).toString() + "'",
+          value = "'" + NonAssociationReason.DOMAIN + "'",
           referencedColumnName = "domain",
         ),
       ),
@@ -63,7 +63,7 @@ data class OffenderNonAssociationDetail(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = ("'" + NonAssociationReason.DOMAIN).toString() + "'",
+          value = "'" + NonAssociationReason.DOMAIN + "'",
           referencedColumnName = "domain",
         ),
       ),
@@ -77,7 +77,7 @@ data class OffenderNonAssociationDetail(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = ("'" + NonAssociationType.DOMAIN).toString() + "'",
+          value = "'" + NonAssociationType.DOMAIN + "'",
           referencedColumnName = "domain",
         ),
       ),
@@ -101,8 +101,8 @@ data class OffenderNonAssociationDetail(
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
     value = [
-      JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_ID", referencedColumnName = "OFFENDER_ID")),
-      JoinColumnOrFormula(column = JoinColumn(name = "NS_OFFENDER_ID", referencedColumnName = "NS_OFFENDER_ID")),
+      JoinColumnOrFormula(column = JoinColumn(name = "OFFENDER_ID", referencedColumnName = "OFFENDER_ID", insertable = false, updatable = false)),
+      JoinColumnOrFormula(column = JoinColumn(name = "NS_OFFENDER_ID", referencedColumnName = "NS_OFFENDER_ID", insertable = false, updatable = false)),
     ],
   )
   var nonAssociation: OffenderNonAssociation,

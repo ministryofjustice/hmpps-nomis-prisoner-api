@@ -11,12 +11,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetailId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -28,7 +26,6 @@ import java.time.LocalDate
 @Transactional
 class NonAssociationService(
   private val offenderRepository: OffenderRepository,
-  private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderNonAssociationRepository: OffenderNonAssociationRepository,
   private val reasonRepository: ReferenceCodeRepository<NonAssociationReason>,
   private val typeRepository: ReferenceCodeRepository<NonAssociationType>,
@@ -51,7 +48,6 @@ class NonAssociationService(
       if (existing.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.offenderNo} and nsOffender=${dto.nsOffenderNo}")
       }
-      existing.offenderNonAssociationDetails.add(mapDetails(existing, dto))
 
       val otherExisting = offenderNonAssociationRepository.findByIdOrNull(
         OffenderNonAssociationId(offender = nsOffender, nsOffender = offender),
@@ -61,19 +57,46 @@ class NonAssociationService(
       if (otherExisting.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.nsOffenderNo} and nsOffender=${dto.offenderNo}")
       }
-      otherExisting.offenderNonAssociationDetails.add(mapDetails(otherExisting, dto))
+      existing.offenderNonAssociationDetails.add(
+        mapDetails(
+          recipReason,
+          existing,
+          dto,
+          existing.nextAvailableSequence(),
+        ),
+      )
+      otherExisting.offenderNonAssociationDetails.add(
+        mapDetails(
+          reason,
+          otherExisting,
+          dto,
+          otherExisting.nextAvailableSequence(),
+        ),
+      )
     } else {
-      mapModel(offender, nsOffender, reason, recipReason)
+      OffenderNonAssociation(
+        id = OffenderNonAssociationId(offender, nsOffender),
+        offenderBooking = offender.bookings.first(),
+        nsOffenderBooking = nsOffender.bookings.first(),
+        nonAssociationReason = reason,
+        recipNonAssociationReason = reason,
+      )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(this, dto))
+            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto))
           }
         }
 
-      mapModel(nsOffender, offender, recipReason, reason)
+      OffenderNonAssociation(
+        id = OffenderNonAssociationId(nsOffender, offender),
+        offenderBooking = nsOffender.bookings.first(),
+        nsOffenderBooking = offender.bookings.first(),
+        nonAssociationReason = reason,
+        recipNonAssociationReason = recipReason,
+      )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(this, dto))
+            offenderNonAssociationDetails.add(mapDetails(reason, this, dto))
           }
         }
     }
@@ -98,7 +121,7 @@ class NonAssociationService(
       ?: throw BadDataException("Reason with code=${dto.reason} does not exist")
     val recipReason = reasonRepository.findByIdOrNull(NonAssociationReason.pk(dto.recipReason))
       ?: throw BadDataException("Reciprocal reason with code=${dto.recipReason} does not exist")
-    var nonAssociationType = typeRepository.findByIdOrNull(NonAssociationType.pk(dto.type))
+    val type = typeRepository.findByIdOrNull(NonAssociationType.pk(dto.type))
       ?: throw BadDataException("Type with code=${dto.type} does not exist")
 
     existing.nonAssociationReason = reason
@@ -109,7 +132,6 @@ class NonAssociationService(
       recipNonAssociationReason = existing.recipNonAssociationReason
       effectiveDate = dto.effectiveDate
       comment = dto.comment
-      nonAssociationType = nonAssociationType
     }
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
 
@@ -129,7 +151,7 @@ class NonAssociationService(
       recipNonAssociationReason = otherExisting.recipNonAssociationReason
       effectiveDate = dto.effectiveDate
       comment = dto.comment
-      nonAssociationType = nonAssociationType
+      nonAssociationType = type
     }
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
 
@@ -164,36 +186,28 @@ class NonAssociationService(
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
   }
 
-  private fun mapModel(
-    offender: Offender,
-    nsOffender: Offender,
+  private fun mapDetails(
     reason: NonAssociationReason,
-    recipReason: NonAssociationReason?,
-  ): OffenderNonAssociation = OffenderNonAssociation(
-    id = OffenderNonAssociationId(offender, nsOffender),
-    offenderBooking = offender.bookings.first(),
-    nsOffenderBooking = nsOffender.bookings.first(),
-    nonAssociationReason = reason,
-    recipNonAssociationReason = recipReason,
-  )
-
-  private fun mapDetails(existing: OffenderNonAssociation, dto: CreateNonAssociationRequest) =
+    existing: OffenderNonAssociation,
+    dto: CreateNonAssociationRequest,
+    typeSequence: Int = 1,
+  ) =
     OffenderNonAssociationDetail(
       id = OffenderNonAssociationDetailId(
         offender = existing.id.offender,
         nsOffender = existing.id.nsOffender,
-        typeSequence = 1,
+        typeSequence = typeSequence,
       ),
       offenderBooking = existing.offenderBooking,
       nsOffenderBooking = existing.nsOffenderBooking,
-      // TODO - this is a bit of a guess, it's not clear what the correct behaviour should be yet
-      nonAssociationReason = existing.nonAssociationReason!!,
-      recipNonAssociationReason = existing.recipNonAssociationReason,
+      nonAssociationReason = reason,
+      // recipNonAssociationReason = existing.recipNonAssociationReason,
       nonAssociation = existing,
       effectiveDate = dto.effectiveDate,
       comment = dto.comment,
       nonAssociationType = typeRepository.findByIdOrNull(NonAssociationType.pk(dto.type))
         ?: throw BadDataException("Type with code=${dto.type} does not exist"),
+      authorisedBy = dto.authorisedBy,
     )
 
   fun getNonAssociation(offenderNo: String, nsOffenderNo: String): NonAssociationResponse {
