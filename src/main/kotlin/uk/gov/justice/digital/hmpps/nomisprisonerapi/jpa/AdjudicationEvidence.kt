@@ -56,6 +56,9 @@ class AdjudicationEvidence(
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_INC_INVESTIGATION_ID")
   val investigation: AdjudicationInvestigation,
+
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  val createUsername: String = "",
 ) {
 
   override fun equals(other: Any?): Boolean {
