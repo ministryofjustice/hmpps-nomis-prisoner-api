@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -25,7 +26,13 @@ data class AdjudicationResponse(
   val bookingId: Long,
 
   @Schema(description = "The adjudication number (business key)")
-  val adjudicationNumber: Long? = null,
+  val adjudicationNumber: Long,
+
+  @Schema(description = "Gender recorded in NOMIS")
+  val gender: CodeDescription,
+
+  @Schema(description = "Current prison or null if OUT")
+  val currentPrison: CodeDescription?,
 
   @Schema(description = "Date Prisoner was added to the adjudication ????", required = true)
   val partyAddedDate: LocalDate,
@@ -86,6 +93,12 @@ data class AdjudicationIncident(
   @Schema(description = "Date and time when the associated incident was reported", required = true)
   val reportedTime: LocalTime,
 
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+
+  @Schema(description = "Date time when the record was created in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+
   @Schema(description = "location where incident took place", required = true)
   val internalLocation: InternalLocation,
 
@@ -125,6 +138,8 @@ data class AdjudicationIncident(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Staff(
+  @Schema(description = "Username of first account related to staff")
+  val username: String,
   @Schema(description = "NOMIS staff id")
   val staffId: Long,
   @Schema(description = "First name of staff member")
@@ -145,8 +160,11 @@ data class Prisoner(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InternalLocation(
+  @Schema(description = "NOMIS location id")
   val locationId: Long,
+  @Schema(description = "NOMIS location code")
   val code: String,
+  @Schema(description = "NOMIS location description")
   val description: String,
 )
 
@@ -155,6 +173,8 @@ data class Repair(
   val type: CodeDescription,
   val comment: String?,
   val cost: BigDecimal?,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -170,6 +190,8 @@ data class Evidence(
   val type: CodeDescription,
   val date: LocalDate,
   val detail: String,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -212,4 +234,8 @@ data class HearingResultAward(
 )
 
 fun Offender.toPrisoner() =
-  Prisoner(offenderNo = nomsId, firstName = firstName, lastName = lastName)
+  Prisoner(
+    offenderNo = nomsId,
+    firstName = firstName,
+    lastName = lastName,
+  )

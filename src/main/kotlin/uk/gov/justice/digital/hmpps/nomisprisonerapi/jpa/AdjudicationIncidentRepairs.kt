@@ -54,6 +54,8 @@ class AdjudicationIncidentRepair(
   )
   val type: AdjudicationRepairType,
 
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  val createUsername: String = "",
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

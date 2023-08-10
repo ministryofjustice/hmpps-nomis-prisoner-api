@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.findAdjudication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForOtherReason
@@ -90,6 +91,8 @@ class AdjudicationService(
           adjudicationSequence = adjudication.adjudicationSequence,
           offenderNo = adjudication.offenderNo,
           bookingId = adjudication.bookingId,
+          gender = adjudication.gender,
+          currentPrison = adjudication.currentPrison,
           adjudicationNumber = adjudicationNumber,
           partyAddedDate = adjudication.partyAddedDate,
           comment = adjudication.comment,
@@ -98,7 +101,8 @@ class AdjudicationService(
           investigations = adjudication.investigations,
           hearings = adjudication.hearings,
         )
-      } ?: throw NotFoundException("Adjudication charge not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence")
+      }
+        ?: throw NotFoundException("Adjudication charge not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence")
     }
   }
 
@@ -107,10 +111,12 @@ class AdjudicationService(
     hearings: List<AdjudicationHearing> = emptyList(),
   ): AdjudicationResponse {
     return AdjudicationResponse(
-      adjudicationNumber = adjudication.adjudicationNumber,
+      adjudicationNumber = adjudication.adjudicationNumber!!, // must be non-null in this context
       adjudicationSequence = adjudication.id.partySequence,
       offenderNo = adjudication.prisonerOnReport().offender.nomsId,
       bookingId = adjudication.prisonerOnReport().bookingId,
+      gender = adjudication.prisonerOnReport().offender.gender.toCodeDescription(),
+      currentPrison = adjudication.prisonerOnReport().takeIf { it.active }?.location?.toCodeDescription(),
       partyAddedDate = adjudication.partyAddedDate,
       comment = adjudication.comment,
       incident = AdjudicationIncident(
@@ -120,6 +126,8 @@ class AdjudicationService(
         incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
         reportedDate = adjudication.incident.reportedDate,
         reportedTime = adjudication.incident.reportedDateTime.toLocalTime(),
+        createdByUsername = adjudication.incident.createUsername,
+        createdDateTime = adjudication.incident.createDatetime,
         internalLocation = adjudication.incident.agencyInternalLocation.toInternalLocation(),
         incidentType = adjudication.incident.incidentType.toCodeDescription(),
         prison = adjudication.incident.prison.toCodeDescription(),
@@ -420,6 +428,7 @@ private fun AdjudicationEvidence.toEvidence(): Evidence = Evidence(
   type = this.statementType.toCodeDescription(),
   date = this.statementDate,
   detail = this.statementDetail,
+  createdByUsername = this.createUsername,
 )
 
 private fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> =
@@ -435,7 +444,12 @@ private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (Adjudica
   this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner() }
 
 private fun AdjudicationIncidentRepair.toRepair(): Repair =
-  Repair(type = this.type.toCodeDescription(), comment = this.comment, cost = this.repairCost)
+  Repair(
+    type = this.type.toCodeDescription(),
+    comment = this.comment,
+    cost = this.repairCost,
+    createdByUsername = this.createUsername,
+  )
 
 fun AdjudicationIncidentCharge.toCharge(): AdjudicationCharge = AdjudicationCharge(
   offence = this.offence.toOffence(),
@@ -455,7 +469,15 @@ fun AgencyInternalLocation.toInternalLocation() =
   InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
 
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
-  Staff(staffId = id, firstName = firstName, lastName = lastName)
+  Staff(
+    staffId = id,
+    firstName = firstName,
+    lastName = lastName,
+    username = accounts.usernamePreferringGeneralAccount(),
+  )
+
+private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
+  this.maxByOrNull { it.type }?.username ?: "unknown"
 
 fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward =
   HearingResultAward(
