@@ -18,11 +18,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
@@ -58,7 +61,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 
 @Repository
@@ -92,9 +94,10 @@ class Repository(
   val adjudicationIncidentRepository: AdjudicationIncidentRepository,
   val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository,
   val staffRepository: StaffRepository,
-  val staffUserAccountRepository: StaffUserAccountRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
   val offenderNonAssociationRepository: OffenderNonAssociationRepository,
+  val nonAssociationReasonRepository: ReferenceCodeRepository<NonAssociationReason>,
+  val nonAssociationTypeRepository: ReferenceCodeRepository<NonAssociationType>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -312,13 +315,22 @@ class Repository(
   fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
   fun <T> runInTransaction(block: () -> T) = block()
 
+  fun save(offenderNonAssociation: OffenderNonAssociation, offenderNonAssociationDetail: OffenderNonAssociationDetail): OffenderNonAssociation =
+    offenderNonAssociationRepository.save(offenderNonAssociation).apply {
+      offenderNonAssociationDetail.nonAssociation = this
+      offenderNonAssociationDetails.add(offenderNonAssociationDetail)
+    }
   fun getNonAssociation(first: Offender, second: Offender): OffenderNonAssociation =
     offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
       .also {
         it.offenderNonAssociationDetails.size
       }
-
   fun deleteNonAssociation(first: Offender, second: Offender) {
     offenderNonAssociationRepository.deleteById(OffenderNonAssociationId(first, second))
   }
+  fun lookupNonAssociationReason(code: String): NonAssociationReason =
+    nonAssociationReasonRepository.findByIdOrNull(Pk(NonAssociationReason.DOMAIN, code))!!
+  fun lookupNonAssociationType(code: String): NonAssociationType =
+    nonAssociationTypeRepository.findByIdOrNull(Pk(NonAssociationType.DOMAIN, code))!!
+  fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
 }

@@ -132,12 +132,16 @@ class NonAssociationService(
     val type = typeRepository.findByIdOrNull(NonAssociationType.pk(dto.type))
       ?: throw BadDataException("Type with code=${dto.type} does not exist")
 
-    existing.nonAssociationReason = reason
+    if (dto.effectiveDate.isAfter(LocalDate.now())) {
+      throw BadDataException("Effective date must not be in the future")
+    }
+
+    existing.nonAssociationReason = recipReason
     existing.recipNonAssociationReason = recipReason
 
     existing.getOpenNonAssociationDetail()?.apply {
-      nonAssociationReason = existing.nonAssociationReason!!
-      recipNonAssociationReason = existing.recipNonAssociationReason
+      nonAssociationReason = reason
+      nonAssociationType = type
       effectiveDate = dto.effectiveDate
       comment = dto.comment
     }
@@ -148,18 +152,15 @@ class NonAssociationService(
     )
       ?: throw BadDataException("Opposite non-association not found where offender=$nsOffenderNo and nsOffender=$offenderNo")
 
-    if (otherExisting.getOpenNonAssociationDetail() != null) {
-      throw BadDataException("Non-association already exists for offender=$nsOffenderNo and nsOffender=$offenderNo")
-    }
     otherExisting.nonAssociationReason = recipReason
     otherExisting.recipNonAssociationReason = reason
 
     otherExisting.getOpenNonAssociationDetail()?.apply {
       nonAssociationReason = otherExisting.nonAssociationReason!!
       recipNonAssociationReason = otherExisting.recipNonAssociationReason
+      nonAssociationType = type
       effectiveDate = dto.effectiveDate
       comment = dto.comment
-      nonAssociationType = type
     }
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
 

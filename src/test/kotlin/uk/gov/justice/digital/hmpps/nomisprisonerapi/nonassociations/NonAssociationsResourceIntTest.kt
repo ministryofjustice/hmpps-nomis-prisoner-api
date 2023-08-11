@@ -13,9 +13,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
+import java.time.Duration
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
@@ -26,7 +26,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
   lateinit var offenderAtMoorlands: Offender
-  lateinit var offenderAtOtherPrison: Offender
+  lateinit var offenderAtLeeds: Offender
+  lateinit var offenderAtShrewsbury: Offender
 
   private fun callCreateEndpoint() {
     webTestClient.post().uri("/non-associations")
@@ -40,7 +41,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
   private fun validCreateJsonRequest() = """{
             "offenderNo"    : "${offenderAtMoorlands.nomsId}",
-            "nsOffenderNo"  : "${offenderAtOtherPrison.nomsId}",
+            "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
             "reason"        : "RIV",
             "recipReason"   : "PER",
             "type"          : "WING",
@@ -50,8 +51,9 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           }
   """.trimIndent()
 
-  private fun callCloseEndpoint(eventId: Long) {
-    webTestClient.put().uri("/non-associations/$eventId/close")
+  private fun callCloseEndpoint(offenderNo: String, nsOffenderNo: String) {
+    webTestClient.put()
+      .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", offenderNo, nsOffenderNo)
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
       .exchange()
       .expectStatus().isOk
@@ -64,18 +66,24 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offender(nomsId = "A1234TT") {
           booking(agencyLocationId = "MDI")
         }
-      offenderAtOtherPrison =
+      offenderAtLeeds =
         offender(nomsId = "A1234TU") {
           booking(agencyLocationId = "LEI")
+        }
+      offenderAtShrewsbury =
+        offender(nomsId = "A1234TV") {
+          booking(agencyLocationId = "SYI")
         }
     }
   }
 
   @AfterEach
   internal fun deleteData() {
-    repository.deleteNonAssociation(offenderAtMoorlands, offenderAtOtherPrison)
+    repository.deleteAllNonAssociations()
+
+    // repository.deleteNonAssociation(offenderAtMoorlands, offenderAtOtherPrison)
     repository.delete(offenderAtMoorlands)
-    repository.delete(offenderAtOtherPrison)
+    repository.delete(offenderAtLeeds)
   }
 
   @Nested
@@ -84,7 +92,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     private val createNonAssociationRequest: () -> CreateNonAssociationRequest = {
       CreateNonAssociationRequest(
         offenderNo = offenderAtMoorlands.nomsId,
-        nsOffenderNo = offenderAtOtherPrison.nomsId,
+        nsOffenderNo = offenderAtLeeds.nomsId,
         reason = "RIV",
         recipReason = "PER",
         type = "WING",
@@ -222,23 +230,23 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will create appointment with correct details`() {
+    fun `will create non-association with correct details`() {
       callCreateEndpoint()
 
       // Check the database
-      repository.getNonAssociation(offenderAtMoorlands, offenderAtOtherPrison).apply {
+      repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds).apply {
         assertThat(id.offender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
-        assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtOtherPrison.nomsId)
+        assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
         assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
-        assertThat(nsOffenderBooking.bookingId).isEqualTo(offenderAtOtherPrison.latestBooking().bookingId)
+        assertThat(nsOffenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
         assertThat(nonAssociationReason?.code).isEqualTo("PER")
         assertThat(recipNonAssociationReason?.code).isEqualTo("PER")
         val nd = offenderNonAssociationDetails.first()
         assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
-        assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtOtherPrison.nomsId)
+        assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
         assertThat(nd.id.typeSequence).isEqualTo(1)
         assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
-        assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtOtherPrison.latestBooking().bookingId)
+        assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
         assertThat(nd.nonAssociationReason.code).isEqualTo("RIV")
         assertThat(nd.recipNonAssociationReason?.code).isNull()
         assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2023-02-27"))
@@ -247,18 +255,18 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         assertThat(nd.comment).isEqualTo("this is a test!")
         assertThat(nd.nonAssociation).isEqualTo(this)
       }
-      repository.getNonAssociation(offenderAtOtherPrison, offenderAtMoorlands).apply {
-        assertThat(id.offender.nomsId).isEqualTo(offenderAtOtherPrison.nomsId)
+      repository.getNonAssociation(offenderAtLeeds, offenderAtMoorlands).apply {
+        assertThat(id.offender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
         assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
-        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtOtherPrison.latestBooking().bookingId)
+        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
         assertThat(nsOffenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
         assertThat(nonAssociationReason?.code).isEqualTo("PER")
         assertThat(recipNonAssociationReason?.code).isEqualTo("RIV")
         val nd = offenderNonAssociationDetails.first()
-        assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtOtherPrison.nomsId)
+        assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
         assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
         assertThat(nd.id.typeSequence).isEqualTo(1)
-        assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtOtherPrison.latestBooking().bookingId)
+        assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
         assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
         assertThat(nd.nonAssociationReason.code).isEqualTo("PER")
         assertThat(nd.recipNonAssociationReason?.code).isNull()
@@ -287,7 +295,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.put().uri("/non-associations/1")
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
         .expectStatus().isUnauthorized
@@ -295,7 +304,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.put().uri("/non-associations/1")
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -304,7 +314,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden with wrong role`() {
-      webTestClient.put().uri("/non-associations/1")
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -312,8 +323,9 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `appointment does not exist`() {
-      webTestClient.put().uri("/non-associations/1")
+    fun `non-association does not exist`() {
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -323,7 +335,11 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid reason`() {
       callCreateEndpoint()
-      webTestClient.put().uri("/non-associations/xxxx")
+      webTestClient.put().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtMoorlands.nomsId,
+        offenderAtLeeds.nomsId,
+      )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(reason = "invalid")))
         .exchange()
@@ -336,7 +352,11 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid reciprocal reason`() {
       callCreateEndpoint()
-      webTestClient.put().uri("/non-associations/xxx")
+      webTestClient.put().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtMoorlands.nomsId,
+        offenderAtLeeds.nomsId,
+      )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(recipReason = "invalid")))
         .exchange()
@@ -349,7 +369,11 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid type`() {
       callCreateEndpoint()
-      webTestClient.put().uri("/non-associations/xxx")
+      webTestClient.put().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtMoorlands.nomsId,
+        offenderAtLeeds.nomsId,
+      )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(type = "INVALID")))
         .exchange()
@@ -362,21 +386,29 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `effectiveDate in the future`() {
       callCreateEndpoint()
-      webTestClient.put().uri("/non-associations/xxx")
+      webTestClient.put().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtMoorlands.nomsId,
+        offenderAtLeeds.nomsId,
+      )
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(effectiveDate = LocalDate.now().plusDays(1))))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("11:65")
+          assertThat(it).contains("Effective date must not be in the future")
         }
     }
 
     @Test
     fun `comment too long`() {
       callCreateEndpoint()
-      webTestClient.put().uri("/non-associations/xxx")
+      webTestClient.put().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtMoorlands.nomsId,
+        offenderAtLeeds.nomsId,
+      )
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(comment = "x".repeat(241))))
@@ -389,73 +421,93 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest(false).replace(
-        """"effectiveDate" : "2023-02-27"""",
+      val invalidSchedule = validUpdateJsonRequest().replace(
+        """"effectiveDate" : "2023-02-28"""",
         """"effectiveDate" : "2023-13-27"""",
       )
-      val eventId = callCreateEndpoint()
-      webTestClient.put().uri("/non-associations/$eventId")
+      callCreateEndpoint()
+      webTestClient.put().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtMoorlands.nomsId,
+        offenderAtLeeds.nomsId,
+      )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("??")
+          assertThat(it).contains("Invalid value for MonthOfYear (valid values 1 - 12): 13")
         }
     }
 
-//    @Test
-//    fun `will update appointment with correct details`() {
-//      val eventId = callCreateEndpoint()
-//      callUpdateEndpoint(eventId, true)
-//
-//      // Check the database
-//      val offenderIndividualSchedule = repository.getNonAssociation(eventId)!!
-//
-//      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-//      assertThat(offenderIndividualSchedule.offenderBooking.bookingId)
-//        .isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
-//      assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
-//      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
-//      assertThat(offenderIndividualSchedule.endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
-//      assertThat(offenderIndividualSchedule.eventSubType.code).isEqualTo("CABA")
-//      assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
-//      assertThat(offenderIndividualSchedule.comment).isEqualTo("Some comment")
-//      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
-//      assertThat(offenderIndividualSchedule.modifiedBy).isEqualTo("SA")
-//      assertThat(offenderIndividualSchedule.modifiedBy).isNotBlank()
-//    }
-//
-//    @Test
-//    fun `will update appointment with correct details - no end time`() {
-//      val eventId = callCreateEndpoint()
-//      callUpdateEndpoint(eventId, false)
-//
-//      // Check the database
-//      val offenderIndividualSchedule = repository.getNonAssociation(eventId)!!
-//
-//      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-//      assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
-//      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
-//      assertThat(offenderIndividualSchedule.endTime).isNull()
-//    }
+    @Test
+    fun `will update non-association with correct details`() {
+      callCreateEndpoint()
+      callUpdateEndpoint(offenderAtMoorlands.nomsId, offenderAtLeeds.nomsId)
 
-    private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean) {
-      webTestClient.put().uri("/non-associations/$eventId")
+      // Check the database
+      repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds).apply {
+        assertThat(id.offender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nsOffenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nonAssociationReason?.code).isEqualTo("VIC")
+        assertThat(recipNonAssociationReason?.code).isEqualTo("VIC")
+        val nd = offenderNonAssociationDetails.first()
+        assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(nd.id.typeSequence).isEqualTo(1)
+        assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nd.nonAssociationReason.code).isEqualTo("BUL")
+        assertThat(nd.recipNonAssociationReason?.code).isNull()
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2023-02-28"))
+        assertThat(nd.nonAssociationType.code).isEqualTo("LAND")
+        assertThat(nd.authorisedBy).isEqualTo("Joe Bloggs")
+        assertThat(nd.comment).isEqualTo("this is a modified test!")
+        assertThat(nd.nonAssociation).isEqualTo(this)
+      }
+      repository.getNonAssociation(offenderAtLeeds, offenderAtMoorlands).apply {
+        assertThat(id.offender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nsOffenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nonAssociationReason?.code).isEqualTo("VIC")
+        assertThat(recipNonAssociationReason?.code).isEqualTo("BUL")
+        val nd = offenderNonAssociationDetails.first()
+        assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(nd.id.typeSequence).isEqualTo(1)
+        assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nd.nonAssociationReason.code).isEqualTo("VIC")
+        assertThat(nd.recipNonAssociationReason?.code).isNull()
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2023-02-28"))
+        assertThat(nd.nonAssociationType.code).isEqualTo("LAND")
+        assertThat(nd.authorisedBy).isEqualTo("Joe Bloggs")
+        assertThat(nd.comment).isEqualTo("this is a modified test!")
+        assertThat(nd.nonAssociation).isEqualTo(this)
+      }
+    }
+
+    private fun callUpdateEndpoint(offenderNo: String, nsOffenderNo: String) {
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", offenderNo, nsOffenderNo)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validUpdateJsonRequest(hasEndTime)))
+        .body(BodyInserters.fromValue(validUpdateJsonRequest()))
         .exchange()
         .expectStatus().isOk
     }
 
-    private fun validUpdateJsonRequest(hasEndTime: Boolean) = """{
-            "eventDate"          : "2023-02-28",
-            "startTime"          : "10:50",
-${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
-            "comment"            : "Some comment",
-            "eventSubType"       : "CABA"
+    private fun validUpdateJsonRequest() = """{
+            "reason"        : "BUL",
+            "recipReason"   : "VIC",
+            "type"          : "LAND",
+            "authorisedBy"  : "Joe Bloggs",
+            "effectiveDate" : "2023-02-28",
+            "comment"       : "this is a modified test!"
           }
     """.trimIndent()
   }
@@ -465,14 +517,16 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.put().uri("/non-associations/1/close")
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
         .exchange()
         .expectStatus().isUnauthorized
     }
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.put().uri("/non-associations/1/close")
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
         .headers(setAuthorisation(roles = listOf()))
         .exchange()
         .expectStatus().isForbidden
@@ -480,100 +534,106 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
 
     @Test
     fun `access forbidden with wrong role`() {
-      webTestClient.put().uri("/non-associations/1/close")
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .exchange()
         .expectStatus().isForbidden
     }
 
     @Test
-    fun `appointment does not exist`() {
-      webTestClient.put().uri("/non-associations/1/close")
+    fun `non-association does not exist`() {
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
         .expectStatus().isNotFound
     }
 
-//    @Test
-//    fun `will close appointment correctly`() {
-//      val eventId = callCreateEndpoint()
-//      callCloseEndpoint(eventId)
-//
-//      // Check the database
-//      val offenderIndividualSchedule = repository.getNonAssociation(offenderAtMoorlands, offenderAtOtherPrison)!!
-//
-//      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-//      assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("CANC")
-//    }
+    @Test
+    fun `will close non-association correctly`() {
+      callCreateEndpoint()
+      callCloseEndpoint(offenderAtMoorlands.nomsId, offenderAtLeeds.nomsId)
+
+      // Check the database
+      val na = repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds)
+
+      assertThat(na.offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.now())
+    }
   }
 
   @Nested
   inner class GetNonAssociationById {
 
-    private lateinit var appointment1: OffenderIndividualSchedule
+    private lateinit var na1: OffenderNonAssociation
 
     @BeforeEach
     internal fun createNonAssociations() {
-      appointment1 = repository.save(
-        OffenderIndividualSchedule(
-          offenderBooking = offenderAtMoorlands.latestBooking(),
-          eventDate = LocalDate.parse("2023-01-01"),
-          startTime = LocalDateTime.parse("2020-01-01T10:00"),
-          endTime = LocalDateTime.parse("2020-01-01T11:00"),
-          eventSubType = repository.lookupEventSubtype("MEDE"),
-          eventStatus = repository.lookupEventStatusCode("SCH"),
-          prison = repository.lookupAgency("MDI"),
-          internalLocation = repository.lookupAgencyInternalLocation(-1L),
-          comment = "hit the gym",
-        ),
-      )
-    }
-
-    @AfterEach
-    internal fun deleteNonAssociations() {
-      repository.delete(appointment1)
+      nomisDataBuilder.build {
+        na1 = nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+          nonAssociationDetail(
+            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
+            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
+            effectiveDate = LocalDate.parse("2021-02-28"),
+            expiryDate = LocalDate.parse("2022-02-28"),
+            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+            authorisedBy = "Staff Member",
+            comment = "this is a GET test!",
+          )
+        }
+      }
     }
 
     @Test
     fun `get by id`() {
-      webTestClient.get().uri("/non-associations/${appointment1.eventId}")
+      webTestClient
+        // .mutate().responseTimeout(Duration.ofSeconds(10000)).build()
+        .get().uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+        )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookingId").isEqualTo(appointment1.offenderBooking.bookingId)
-        .jsonPath("$.offenderNo").isEqualTo(appointment1.offenderBooking.offender.nomsId)
-        .jsonPath("$.prisonId").isEqualTo("MDI")
-        .jsonPath("$.internalLocation").isEqualTo(appointment1.internalLocation?.locationId.toString())
-        .jsonPath("$.startDateTime").isEqualTo("2023-01-01T10:00:00")
-        .jsonPath("$.endDateTime").isEqualTo("2023-01-01T11:00:00")
-        .jsonPath("$.comment").isEqualTo("hit the gym")
-        .jsonPath("$.subtype").isEqualTo("MEDE")
-        .jsonPath("$.status").isEqualTo("SCH")
-        .jsonPath("$.createdDate").isNotEmpty()
-        .jsonPath("$.createdBy").isEqualTo("SA")
+        .jsonPath("$.offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$.offenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.reason").isEqualTo("BUL")
+        .jsonPath("$.recipReason").isEqualTo("VIC")
+        .jsonPath("$.type").isEqualTo("LAND")
+        .jsonPath("$.authorisedBy").isEqualTo("Staff Member")
+        .jsonPath("$.effectiveDate").isEqualTo("2021-02-28")
+        .jsonPath("$.expiryDate").isEqualTo("2022-02-28")
+        .jsonPath("$.comment").isEqualTo("this is a GET test!")
     }
 
     @Test
-    fun `appointments not found`() {
-      webTestClient.get().uri("/non-associations/99999")
+    fun `offender not found`() {
+      webTestClient.get().uri("/non-associations/offender/A0000AA/ns-offender/A0000BB")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
         .expectStatus().isNotFound
     }
 
     @Test
-    fun `malformed id returns bad request`() {
-      webTestClient.get().uri("/non-associations/stuff")
+    fun `non-associations not found`() {
+      repository.deleteAllNonAssociations()
+      webTestClient.get().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtLeeds.nomsId,
+        offenderAtMoorlands.nomsId,
+      )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isNotFound
     }
 
     @Test
-    fun `get appointments prevents access without appropriate role`() {
+    fun `get non-associations prevents access without appropriate role`() {
       assertThat(
-        webTestClient.get().uri("/non-associations/1")
+        webTestClient.get()
+          .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
           .expectStatus().isForbidden,
@@ -581,9 +641,10 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     }
 
     @Test
-    fun `get appointments prevents access without authorization`() {
+    fun `get non-associations prevents access without authorization`() {
       assertThat(
-        webTestClient.get().uri("/non-associations/1")
+        webTestClient.get()
+          .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
           .exchange()
           .expectStatus().isUnauthorized,
       )
@@ -593,56 +654,39 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
   @Nested
   inner class GetNonAssociationIdsByFilterRequest {
 
-    private lateinit var appointment1: OffenderIndividualSchedule
-    private lateinit var appointment2: OffenderIndividualSchedule
-    private lateinit var appointment3: OffenderIndividualSchedule
-    private lateinit var appointment4: OffenderIndividualSchedule
+    private lateinit var na1: OffenderNonAssociation
+    private lateinit var na2: OffenderNonAssociation
+    private lateinit var na3: OffenderNonAssociation
+    private lateinit var na4: OffenderNonAssociation
 
     @BeforeEach
     internal fun createNonAssociations() {
-      appointment1 = repository.save(
-        OffenderIndividualSchedule(
-          offenderBooking = offenderAtMoorlands.latestBooking(),
-          eventDate = LocalDate.parse("2023-01-01"),
-          eventSubType = repository.lookupEventSubtype("MEDE"),
-          eventStatus = repository.lookupEventStatusCode("SCH"),
-          prison = repository.lookupAgency("MDI"),
-        ),
-      )
-      appointment2 = repository.save(
-        OffenderIndividualSchedule(
-          offenderBooking = offenderAtOtherPrison.latestBooking(),
-          eventDate = LocalDate.parse("2023-01-02"),
-          eventSubType = repository.lookupEventSubtype("MEDO"),
-          eventStatus = repository.lookupEventStatusCode("SCH"),
-          prison = repository.lookupAgency("BXI"),
-        ),
-      )
-      appointment3 = repository.save(
-        OffenderIndividualSchedule(
-          offenderBooking = offenderAtMoorlands.latestBooking(),
-          eventDate = LocalDate.parse("2023-01-03"),
-          eventSubType = repository.lookupEventSubtype("MEOP"),
-          eventStatus = repository.lookupEventStatusCode("SCH"),
-          prison = repository.lookupAgency("MDI"),
-        ),
-      )
-      appointment4 = repository.save(
-        OffenderIndividualSchedule(
-          offenderBooking = offenderAtMoorlands.latestBooking(),
-          eventSubType = repository.lookupEventSubtype("MEOP"),
-          eventStatus = repository.lookupEventStatusCode("SCH"),
-          eventType = "OTHER", // should never find this
-        ),
-      )
-    }
-
-    @AfterEach
-    internal fun deleteNonAssociations() {
-      repository.delete(appointment1)
-      repository.delete(appointment2)
-      repository.delete(appointment3)
-      repository.delete(appointment4)
+      nomisDataBuilder.build {
+        na1 = nonAssociation(offenderAtLeeds, offenderAtMoorlands) {
+          nonAssociationDetail(
+            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
+            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+          )
+        }
+        na2 = nonAssociation(offenderAtMoorlands, offenderAtShrewsbury) {
+          nonAssociationDetail(
+            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
+            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
+            effectiveDate = LocalDate.parse("2023-01-03"),
+            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+          )
+        }
+        na3 = nonAssociation(offenderAtShrewsbury, offenderAtLeeds) {
+          nonAssociationDetail(
+            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
+            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
+            effectiveDate = LocalDate.parse("2023-01-02"),
+            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+          )
+        }
+      }
     }
 
     @Test
@@ -656,7 +700,7 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     }
 
     @Test
-    fun `get appointments issued within a given date range 1`() {
+    fun `get non-associations issued within a given date range 1`() {
       webTestClient.get().uri {
         it.path("/non-associations/ids")
           .queryParam("fromDate", "2000-01-01")
@@ -668,11 +712,11 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(1)
-        .jsonPath("$.content[0].eventId").isEqualTo(appointment1.eventId)
+        .jsonPath("$.content[0].offenderNo").isEqualTo(offenderAtLeeds.nomsId)
     }
 
     @Test
-    fun `get appointments issued within a given date range 2`() {
+    fun `get non-associations issued within a given date range 2`() {
       webTestClient.get().uri {
         it.path("/non-associations/ids")
           .queryParam("fromDate", "2023-01-03")
@@ -684,23 +728,7 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(1)
-        .jsonPath("$.content[0].eventId").isEqualTo(appointment3.eventId)
-    }
-
-    @Test
-    fun `get appointments issued within a given prison`() {
-      webTestClient.get().uri {
-        it.path("/non-associations/ids")
-          .queryParam("prisonIds", "MDI", "SWI")
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("$.content[0].eventId").isEqualTo(appointment1.eventId)
-        .jsonPath("$.content[1].eventId").isEqualTo(appointment3.eventId)
-        .jsonPath("$.numberOfElements").isEqualTo(2)
+        .jsonPath("$.content[0].offenderNo").isEqualTo(offenderAtShrewsbury.nomsId)
     }
 
     @Test
@@ -753,7 +781,7 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     }
 
     @Test
-    fun `get appointments prevents access without appropriate role`() {
+    fun `get non-associations prevents access without appropriate role`() {
       assertThat(
         webTestClient.get().uri("/non-associations/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
@@ -763,7 +791,7 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     }
 
     @Test
-    fun `get appointments prevents access without authorization`() {
+    fun `get non-associations prevents access without authorization`() {
       assertThat(
         webTestClient.get().uri("/non-associations/ids")
           .exchange()

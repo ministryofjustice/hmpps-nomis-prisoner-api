@@ -18,6 +18,7 @@ data class UpdateNonAssociationRequest(
   @Schema(description = "Type code, domain NON_ASSO_TYP", required = true, example = "WING")
   val type: String,
 
+  @Schema(description = "Free text name of staff member", example = "Joe Bloggs")
   val authorisedBy: String? = null,
 
   @Schema(description = "Effective date", required = true, example = "2022-08-12")
