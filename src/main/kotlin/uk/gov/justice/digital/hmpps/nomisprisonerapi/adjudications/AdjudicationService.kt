@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
-import jakarta.persistence.EntityManager
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -75,7 +74,6 @@ class AdjudicationService(
   private val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
   private val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
   private val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
-  private val entityManager: EntityManager,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -215,10 +213,6 @@ class AdjudicationService(
         repairs += request.incident.repairs.mapIndexed { index, repair ->
           createRepairForAdjudicationIncident(incident = this, index + 1, repair)
         }
-      }
-      .let {
-        // created user needs refreshing from database - hence the flush and clear
-        adjudicationIncidentRepository.flush().also { entityManager.clear() }
       }
       .let { getAdjudication(adjudicationNumber) }
   }
