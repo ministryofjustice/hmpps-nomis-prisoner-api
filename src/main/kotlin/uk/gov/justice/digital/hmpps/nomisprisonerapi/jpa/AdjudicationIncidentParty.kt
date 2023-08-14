@@ -89,6 +89,9 @@ class AdjudicationIncidentParty(
   var whenCreated: LocalDateTime = LocalDateTime.now(),
 
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  lateinit var createUsername: String
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

@@ -146,6 +146,8 @@ data class Staff(
   val firstName: String,
   @Schema(description = "Last name of staff member")
   val lastName: String,
+  @Schema(description = "Username of person who created the record in NOMIS where this staff is used", required = true)
+  val createdByUsername: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -156,6 +158,8 @@ data class Prisoner(
   val firstName: String?,
   @Schema(description = "Last name of prisoner")
   val lastName: String,
+  @Schema(description = "Username of person who created the record in NOMIS where this prisoner is used", required = true)
+  val createdByUsername: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -198,9 +202,13 @@ data class Evidence(
 data class Hearing(
   val hearingId: Long,
   val type: CodeDescription?,
+  @Schema(description = "Hearing scheduled date as set by DPS but not used by NOMIS or set in NOMIS")
   val scheduleDate: LocalDate?,
+  @Schema(description = "Hearing scheduled time as set by DPS but not used by NOMIS or set in NOMIS")
   val scheduleTime: LocalTime?,
+  @Schema(description = "Hearing date")
   val hearingDate: LocalDate?,
+  @Schema(description = "Hearing time")
   val hearingTime: LocalTime?,
   val comment: String?,
   val representativeText: String?,
@@ -209,6 +217,10 @@ data class Hearing(
   val eventStatus: CodeDescription?,
   val hearingResults: List<HearingResult>,
   val eventId: Long?,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -218,10 +230,16 @@ data class HearingResult(
   val charge: AdjudicationCharge,
   val offence: AdjudicationOffence,
   val resultAwards: List<HearingResultAward>,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class HearingResultAward(
+  @Schema(description = "Sequence of this sanction for this prisoner's booking", required = true)
+  val sequence: Int,
   val sanctionType: CodeDescription?, // may not have a matching description if dodgy data
   val sanctionStatus: CodeDescription?,
   val comment: String?,
@@ -233,9 +251,10 @@ data class HearingResultAward(
   val consecutiveAward: HearingResultAward?,
 )
 
-fun Offender.toPrisoner() =
+fun Offender.toPrisoner(createUsername: String) =
   Prisoner(
     offenderNo = nomsId,
     firstName = firstName,
     lastName = lastName,
+    createdByUsername = createUsername,
   )
