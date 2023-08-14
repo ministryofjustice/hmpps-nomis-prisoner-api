@@ -10,6 +10,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -57,9 +58,10 @@ class AdjudicationEvidence(
   @JoinColumn(name = "AGY_INC_INVESTIGATION_ID")
   val investigation: AdjudicationInvestigation,
 
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  val createUsername: String = "",
 ) {
+  @Generated
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  lateinit var createUsername: String
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
