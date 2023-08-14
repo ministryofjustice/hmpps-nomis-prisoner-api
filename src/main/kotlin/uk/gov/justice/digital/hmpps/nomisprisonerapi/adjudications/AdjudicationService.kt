@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
+import jakarta.persistence.EntityManager
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -33,7 +34,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.findAdjudication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForOtherReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isReportingOfficer
@@ -75,6 +75,7 @@ class AdjudicationService(
   private val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
   private val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
   private val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
+  private val entityManager: EntityManager,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -99,7 +100,8 @@ class AdjudicationService(
           incident = adjudication.incident,
           charge = it,
           investigations = adjudication.investigations,
-          hearings = adjudication.hearings,
+          // only use results for this charge
+          hearings = adjudication.hearings.map { hearing -> hearing.copy(hearingResults = hearing.hearingResults.filter { results -> results.charge.chargeSequence == chargeSequence }) },
         )
       }
         ?: throw NotFoundException("Adjudication charge not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence")
@@ -121,7 +123,7 @@ class AdjudicationService(
       comment = adjudication.comment,
       incident = AdjudicationIncident(
         adjudicationIncidentId = adjudication.id.agencyIncidentId,
-        reportingStaff = adjudication.incident.reportingStaff.toStaff(),
+        reportingStaff = adjudication.incident.reportingStaff.toStaff(adjudication.incident.createUsername),
         incidentDate = adjudication.incident.incidentDate,
         incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
         reportedDate = adjudication.incident.reportedDate,
@@ -214,7 +216,11 @@ class AdjudicationService(
           createRepairForAdjudicationIncident(incident = this, index + 1, repair)
         }
       }
-      .let { mapAdjudication(it.parties.findAdjudication(adjudicationNumber)) }
+      .let {
+        // created user needs refreshing from database - hence the flush and clear
+        adjudicationIncidentRepository.flush().also { entityManager.clear() }
+      }
+      .let { getAdjudication(adjudicationNumber) }
   }
 
   private fun createRepairForAdjudicationIncident(
@@ -399,6 +405,8 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
   charge = this.incidentCharge.toCharge(),
   offence = this.offence.toOffence(),
   resultAwards = this.resultAwards.map { it.toAward() },
+  createdDateTime = this.whenCreated,
+  createdByUsername = this.createUsername,
 )
 
 private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
@@ -411,14 +419,16 @@ private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
   scheduleTime = this.scheduleDateTime?.toLocalTime(),
   internalLocation = this.agencyInternalLocation?.toInternalLocation(),
   representativeText = this.representativeText,
-  hearingStaff = this.hearingStaff?.toStaff(),
+  hearingStaff = this.hearingStaff?.toStaff(this.createUsername),
   eventStatus = this.eventStatus?.toCodeDescription(),
   eventId = this.eventId,
   hearingResults = this.hearingResults.map { it.toHearingResult() },
+  createdDateTime = this.whenCreated,
+  createdByUsername = this.createUsername,
 )
 
 private fun AdjudicationInvestigation.toInvestigation(): Investigation = Investigation(
-  investigator = this.investigator.toStaff(),
+  investigator = this.investigator.toStaff(createUsername),
   comment = this.comment,
   dateAssigned = this.assignedDate,
   evidence = this.evidence.map { it.toEvidence() },
@@ -438,10 +448,10 @@ private fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncide
   this.incident.parties.filter { it.offenderBooking != null }
 
 private fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> =
-  this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff() }
+  this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff(it.createUsername) }
 
 private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> =
-  this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner() }
+  this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner(it.createUsername) }
 
 private fun AdjudicationIncidentRepair.toRepair(): Repair =
   Repair(
@@ -468,12 +478,13 @@ fun AdjudicationIncidentOffence.toOffence(): AdjudicationOffence = AdjudicationO
 fun AgencyInternalLocation.toInternalLocation() =
   InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
 
-fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
+fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff(createUsername: String) =
   Staff(
     staffId = id,
     firstName = firstName,
     lastName = lastName,
     username = accounts.usernamePreferringGeneralAccount(),
+    createdByUsername = createUsername,
   )
 
 private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
@@ -481,6 +492,7 @@ private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
 
 fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward =
   HearingResultAward(
+    sequence = this.id.sanctionSequence,
     sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
       sanctionCode,
       "Unknown Sanction Code",

@@ -103,7 +103,12 @@ class AdjudicationHearing(
 
   @OneToMany(mappedBy = "hearing", cascade = [CascadeType.ALL], orphanRemoval = true)
   val hearingResults: MutableList<AdjudicationHearingResult> = mutableListOf(),
+
+  @Column(name = "CREATE_DATETIME", nullable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now(),
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  lateinit var createUsername: String
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

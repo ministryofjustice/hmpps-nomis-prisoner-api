@@ -56,6 +56,8 @@ class AdjudicationInvestigation(
   @OneToMany(mappedBy = "investigation", cascade = [CascadeType.ALL], orphanRemoval = true)
   val evidence: MutableList<AdjudicationEvidence> = mutableListOf(),
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  lateinit var createUsername: String
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

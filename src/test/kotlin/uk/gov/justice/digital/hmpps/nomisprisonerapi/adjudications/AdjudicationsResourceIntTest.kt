@@ -684,8 +684,44 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `returns details of the hearing outcome and punishments (aka awards)`() {
-          webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
-          getAdjudicationHearingOutcomeAndPunishmentTest("/adjudications/adjudication-number/$adjudicationNumber")
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$adjudicationNumber")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+            .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
+            .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
+            .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].createdByUsername").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[0].createdDateTime").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[1].pleaFindingType.description").isEqualTo("Unfit to Plea or Attend")
+            .jsonPath("hearings[0].hearingResults[1].findingType.description").isEqualTo("Charge Not Proceeded With")
+            .jsonPath("hearings[0].hearingResults[1].charge.offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[1].offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionStatus.description").isEqualTo("Suspended")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].effectiveDate").isEqualTo("2023-01-03")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].statusDate").isEqualTo("2023-01-04")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].comment").isEqualTo("award comment")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
+            .doesNotExist()
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(3)
         }
       }
     }
@@ -810,8 +846,55 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         }
 
         @Test
-        fun `returns details of the hearing outcome and punishments (aka awards)`() {
-          getAdjudicationHearingOutcomeAndPunishmentTest("/adjudications/adjudication-number/$adjudicationNumber/charge-sequence/$hoochChargeSequence")
+        fun `returns details of the hearing outcome and punishments (aka awards) only for this charge`() {
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$adjudicationNumber/charge-sequence/$hoochChargeSequence")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+            .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
+            .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
+            .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].createdByUsername").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[0].createdDateTime").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[1]").doesNotExist()
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionStatus.description").isEqualTo("Suspended")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].effectiveDate").isEqualTo("2023-01-03")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].statusDate").isEqualTo("2023-01-04")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].comment").isEqualTo("award comment")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
+            .doesNotExist()
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(3)
+
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$adjudicationNumber/charge-sequence/$deadSwanChargeSequence")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+            .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Unfit to Plea or Attend")
+            .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Not Proceeded With")
+            .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0]").doesNotExist()
         }
       }
     }
@@ -917,42 +1000,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
         .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")
         .jsonPath("hearings[0].eventId").isEqualTo(1)
-    }
-
-    private fun getAdjudicationHearingOutcomeAndPunishmentTest(url: String) {
-      webTestClient.get()
-        .uri(url)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
-        .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
-        .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
-        .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
-        .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
-        .jsonPath("hearings[0].hearingResults[1].pleaFindingType.description").isEqualTo("Unfit to Plea or Attend")
-        .jsonPath("hearings[0].hearingResults[1].findingType.description").isEqualTo("Charge Not Proceeded With")
-        .jsonPath("hearings[0].hearingResults[1].charge.offence.code").isEqualTo("51:3")
-        .jsonPath("hearings[0].hearingResults[1].offence.code").isEqualTo("51:3")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionType.description")
-        .isEqualTo("Removal from Activity")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionStatus.description").isEqualTo("Suspended")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].effectiveDate").isEqualTo("2023-01-03")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].statusDate").isEqualTo("2023-01-04")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].comment").isEqualTo("award comment")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
-        .isEqualTo("Stoppage of Earnings (amount)")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
-        .isEqualTo("Removal from Activity")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
-        .isEqualTo("Stoppage of Earnings (amount)")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
-        .doesNotExist()
+        .jsonPath("hearings[0].createdByUsername").isNotEmpty
+        .jsonPath("hearings[0].createdDateTime").isNotEmpty
     }
 
     private fun getAdjudicationOtherPartiesTest(url: String) {
