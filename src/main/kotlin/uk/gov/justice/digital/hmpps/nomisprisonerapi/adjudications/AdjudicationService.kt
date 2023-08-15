@@ -487,6 +487,7 @@ private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
 fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward =
   HearingResultAward(
     sequence = this.id.sanctionSequence,
+    chargeSequence = this.hearingResult?.chargeSequence!!, // we must have result for there to be an award
     sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
       sanctionCode,
       "Unknown Sanction Code",
