@@ -2,8 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -17,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -31,6 +36,7 @@ class AllocationService(
   private val payBandRepository: ReferenceCodeRepository<PayBand>,
   private val offenderProgramStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
   private val programServiceEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
+  private val agencyLocationRepository: AgencyLocationRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   fun upsertAllocation(courseActivityId: Long, request: UpsertAllocationRequest): UpsertAllocationResponse {
@@ -51,6 +57,30 @@ class AllocationService(
         )
       }
   }
+
+  fun findActiveAllocations(pageRequest: Pageable, prisonId: String, excludeProgramCodes: List<String>?): Page<FindActiveAllocationIdsResponse> {
+    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
+    return findPrisonOrThrow(prisonId)
+      .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, excludePrograms, pageRequest) }
+      .map { FindActiveAllocationIdsResponse(it) }
+  }
+
+  fun getAllocation(allocationId: Long): GetAllocationResponse =
+    offenderProgramProfileRepository.findByIdOrNull(allocationId)
+      ?.let {
+        GetAllocationResponse(
+          nomisId = it.offenderBooking.offender.nomsId,
+          bookingId = it.offenderBooking.bookingId,
+          startDate = it.startDate,
+          endDate = it.endDate,
+          endComment = it.endComment,
+          endReasonCode = it.endReason?.code,
+          suspended = it.suspended,
+          payBand = it.payBands.firstOrNull(OffenderProgramProfilePayBand::isActive)?.payBand?.code,
+          livingUnitDescription = it.offenderBooking.assignedLivingUnit?.description,
+        )
+      }
+      ?: throw NotFoundException("Offender program profile with id=$allocationId does not exist")
 
   private fun toOffenderProgramProfile(courseActivityId: Long, request: UpsertAllocationRequest): OffenderProgramProfile {
     val existingAllocation =
@@ -199,4 +229,8 @@ class AllocationService(
       }
 
   fun deleteAllocation(referenceId: Long) = offenderProgramProfileRepository.deleteById(referenceId)
+
+  private fun findPrisonOrThrow(prisonId: String) =
+    agencyLocationRepository.findByIdOrNull(prisonId)
+      ?: throw BadDataException("Prison with id=$prisonId does not exist")
 }

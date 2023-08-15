@@ -159,16 +159,16 @@ class AdjudicationResource(
   @GetMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge-sequence/{chargeSequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "get adjudication by adjudication number",
-    description = "Retrieves an adjudication by the adjudication number. Requires ROLE_NOMIS_ADJUDICATIONS",
+    summary = "get adjudication by adjudication number and charge sequence",
+    description = "Retrieves an adjudication by the adjudication number and charge sequence. Will only return the specified charge. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Adjudication Information Returned",
+        description = "Adjudication with charge information returned",
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AdjudicationResponse::class),
+            schema = Schema(implementation = AdjudicationChargeResponse::class),
           ),
         ],
       ),
@@ -194,7 +194,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Adjudication does not exist",
+        description = "Adjudication or adjudication charge does not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -204,15 +204,15 @@ class AdjudicationResource(
       ),
     ],
   )
-  fun getAdjudicationCharge(
+  fun getAdjudicationByCharge(
     @Schema(description = "Adjudication number", example = "12345", required = true)
     @PathVariable
     adjudicationNumber: Long,
     @Schema(description = "Charge sequence", example = "1", required = true)
     @PathVariable
     chargeSequence: Int,
-  ): AdjudicationResponse =
-    adjudicationService.getAdjudication(adjudicationNumber)
+  ): AdjudicationChargeResponse =
+    adjudicationService.getAdjudicationByCharge(adjudicationNumber, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/prisoners/{offenderNo}/adjudications")

@@ -77,6 +77,11 @@ class AdjudicationIncident(
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val prison: AgencyLocation,
 
+  @Column(name = "CREATE_USER_ID")
+  val createUsername: String,
+
+  @Column(name = "CREATE_DATETIME")
+  val createDatetime: LocalDateTime = LocalDateTime.now(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

@@ -5,21 +5,31 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CourseScheduleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetActivityResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
@@ -52,7 +62,7 @@ class ActivitiesResource(
         responseCode = "201",
         description = "Activity information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ActivityResponse::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class)),
         ],
       ),
       ApiResponse(
@@ -81,7 +91,7 @@ class ActivitiesResource(
   fun createActivity(
     @RequestBody @Valid
     createActivityRequest: CreateActivityRequest,
-  ): ActivityResponse =
+  ): CreateActivityResponse =
     activityService.createActivity(createActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
@@ -133,7 +143,7 @@ class ActivitiesResource(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     updateActivityRequest: UpdateActivityRequest,
-  ): ActivityResponse = activityService.updateActivity(courseActivityId, updateActivityRequest)
+  ): CreateActivityResponse = activityService.updateActivity(courseActivityId, updateActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/allocation")
@@ -289,6 +299,206 @@ class ActivitiesResource(
     upsertAttendanceRequest: UpsertAttendanceRequest,
   ) =
     attendanceService.upsertAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/activities/ids")
+  @Operation(
+    summary = "Find paged active activities",
+    description = "Searches for active course activities with allocated prisoners. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = FindActiveActivityIdsResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun findActiveActivities(
+    @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
+    @Schema(description = "Prison id", required = true) @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
+    @RequestParam(name = "excludeProgramCode")
+    excludeProgramCodes: List<String>?,
+  ): Page<FindActiveActivityIdsResponse> =
+    activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/activities/{courseActivityId}")
+  @Operation(
+    summary = "Get activity details",
+    description = "Gets activity details including schedule rules and pay rates. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = GetActivityResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getActivity(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+  ) =
+    activityService.getActivity(courseActivityId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/allocations/ids")
+  @Operation(
+    summary = "Find paged active allocations",
+    description = "Searches for active course allocations. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = FindActiveAllocationIdsResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun findActiveAllocations(
+    @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
+    @Schema(description = "Prison id", required = true) @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
+    @RequestParam(name = "excludeProgramCode")
+    excludeProgramCodes: List<String>?,
+  ): Page<FindActiveAllocationIdsResponse> =
+    allocationService.findActiveAllocations(pageRequest, prisonId, excludeProgramCodes)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/allocations/{allocationId}")
+  @Operation(
+    summary = "Get allocation details",
+    description = "Gets allocation details. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = GetAllocationResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getAllocation(
+    @Schema(description = "Allocation id", required = true) @PathVariable allocationId: Long,
+  ) =
+    allocationService.getAllocation(allocationId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @DeleteMapping("/activities/{courseActivityId}")

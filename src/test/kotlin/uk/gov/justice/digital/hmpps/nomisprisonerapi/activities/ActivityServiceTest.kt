@@ -18,8 +18,8 @@ import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.PayRateRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.ScheduleRuleRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
@@ -37,6 +37,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -61,6 +62,7 @@ class ActivityServiceTest {
   private val payRatesService: PayRatesService = mock()
   private val scheduleService: ScheduleService = mock()
   private val scheduleRuleService: ScheduleRuleService = mock()
+  private val courseActivityRepository: CourseActivityRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val activityService = ActivityService(
@@ -72,6 +74,7 @@ class ActivityServiceTest {
     payRatesService,
     scheduleService,
     scheduleRuleService,
+    courseActivityRepository,
     telemetryClient,
   )
 
@@ -140,7 +143,7 @@ class ActivityServiceTest {
     @Test
     fun `Activity data is mapped correctly`() {
       assertThat(activityService.createActivity(createRequest))
-        .isEqualTo(ActivityResponse(COURSE_ACTIVITY_ID))
+        .isEqualTo(CreateActivityResponse(COURSE_ACTIVITY_ID))
 
       verify(activityRepository).save(
         check { activity ->

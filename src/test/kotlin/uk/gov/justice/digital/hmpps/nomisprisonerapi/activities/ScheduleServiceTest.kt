@@ -335,6 +335,36 @@ class ScheduleServiceTest {
     }
 
     @Test
+    fun `should allow creation of a new schedule for today`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseScheduleRule()
+            payRate()
+            courseSchedule(courseScheduleId = 1, scheduleDate = yesterday.toString())
+          }
+        }
+      }
+
+      val request = listOf(
+        requestTemplate.copy(id = 1, date = yesterday),
+        requestTemplate.copy(id = 0, date = today, startTime = LocalTime.of(8, 0), endTime = LocalTime.of(9, 0)),
+      )
+
+      val updatedSchedules = scheduleService.buildNewSchedules(request, courseActivity)
+
+      assertThat(updatedSchedules.size).isEqualTo(2)
+      with(updatedSchedules[0]) {
+        assertThat(scheduleDate).isEqualTo(yesterday)
+      }
+      with(updatedSchedules[1]) {
+        assertThat(scheduleDate).isEqualTo(today)
+        assertThat(startTime).isEqualTo("${today}T08:00:00")
+        assertThat(endTime).isEqualTo("${today}T09:00:00")
+      }
+    }
+
+    @Test
     fun `should handle multiple past and future schedules with deletes, additions and updates`() {
       nomisDataBuilder.build {
         programService {

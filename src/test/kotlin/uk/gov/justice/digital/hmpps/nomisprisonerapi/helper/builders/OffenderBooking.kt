@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustme
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDate
@@ -55,6 +57,7 @@ interface BookingDsl {
     endDate: String? = null,
     endReasonCode: String? = null,
     endComment: String? = null,
+    suspended: Boolean = false,
     dsl: CourseAllocationDsl.() -> Unit = { payBand() },
   ): OffenderProgramProfile
 
@@ -81,9 +84,11 @@ interface BookingDsl {
 class BookingBuilderRepository(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
+  private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
 ) {
   fun save(offenderBooking: OffenderBooking): OffenderBooking = offenderBookingRepository.save(offenderBooking)
   fun lookupAgencyLocation(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
+  fun lookupAgencyInternalLocation(id: Long): AgencyInternalLocation = agencyInternalLocationRepository.findByIdOrNull(id)!!
 }
 
 @Component
@@ -124,6 +129,7 @@ class BookingBuilder(
     active: Boolean,
     inOutStatus: String,
     youthAdultCode: String,
+    livingUnitId: Long,
   ): OffenderBooking {
     val agencyLocation = repository.lookupAgencyLocation(agencyLocationCode)
     return OffenderBooking(
@@ -136,6 +142,7 @@ class BookingBuilder(
       active = active,
       inOutStatus = inOutStatus,
       youthAdultCode = youthAdultCode,
+      assignedLivingUnit = repository.lookupAgencyInternalLocation(livingUnitId),
     )
       .let { repository.save(it) }
       .also { offenderBooking = it }
@@ -148,11 +155,12 @@ class BookingBuilder(
     endDate: String?,
     endReasonCode: String?,
     endComment: String?,
+    suspended: Boolean,
     dsl: CourseAllocationDsl.() -> Unit,
   ) =
     courseAllocationBuilderFactory.builder()
       .let { builder ->
-        builder.build(offenderBooking, startDate, programStatusCode, endDate, endReasonCode, endComment, courseActivity)
+        builder.build(offenderBooking, startDate, programStatusCode, endDate, endReasonCode, endComment, suspended, courseActivity)
           .also { offenderBooking.offenderProgramProfiles += it }
           .also { builder.apply(dsl) }
       }

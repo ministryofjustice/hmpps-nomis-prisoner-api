@@ -23,6 +23,7 @@ interface OffenderDsl {
     inOutStatus: String = "IN",
     youthAdultCode: String = "N",
     agencyLocationId: String = "BXI",
+    livingUnitId: Long = -3009,
     dsl: BookingDsl.() -> Unit = {},
   ): OffenderBooking
 }
@@ -75,6 +76,7 @@ class OffenderBuilder(
     inOutStatus: String,
     youthAdultCode: String,
     agencyLocationId: String,
+    livingUnitId: Long,
     dsl: BookingDsl.() -> Unit,
   ) = bookingBuilderFactory.builder()
     .let { builder ->
@@ -86,6 +88,7 @@ class OffenderBuilder(
         active = active,
         inOutStatus = inOutStatus,
         youthAdultCode = youthAdultCode,
+        livingUnitId = livingUnitId,
       )
         .also { offender.bookings += it }
         .also { builder.apply(dsl) }

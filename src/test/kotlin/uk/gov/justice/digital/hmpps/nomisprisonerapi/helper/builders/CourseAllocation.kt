@@ -73,6 +73,7 @@ class CourseAllocationBuilder(
     endDate: String?,
     endReasonCode: String?,
     endComment: String?,
+    suspended: Boolean,
     courseActivity: CourseActivity,
   ) =
     OffenderProgramProfile(
@@ -85,6 +86,7 @@ class CourseAllocationBuilder(
       endDate = endDate?.let { LocalDate.parse(endDate) },
       endReason = endReasonCode?.let { programEndReason(endReasonCode) },
       endComment = endComment,
+      suspended = suspended,
     )
       .also { courseAllocation = it }
 

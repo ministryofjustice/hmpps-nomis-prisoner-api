@@ -135,6 +135,7 @@ class ActivityRepositoryTest {
         active = true,
         iepLevel = seedIep,
         internalLocation = seedRoom,
+        payPerSession = PayPerSession.H,
       ),
     )
 

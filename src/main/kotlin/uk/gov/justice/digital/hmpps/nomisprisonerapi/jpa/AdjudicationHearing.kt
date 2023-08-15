@@ -12,6 +12,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -103,7 +104,13 @@ class AdjudicationHearing(
 
   @OneToMany(mappedBy = "hearing", cascade = [CascadeType.ALL], orphanRemoval = true)
   val hearingResults: MutableList<AdjudicationHearingResult> = mutableListOf(),
+
+  @Column(name = "CREATE_DATETIME", nullable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now(),
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
