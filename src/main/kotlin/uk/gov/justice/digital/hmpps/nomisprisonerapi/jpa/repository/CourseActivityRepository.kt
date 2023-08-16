@@ -18,6 +18,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     and ca.scheduleStartDate <= current_date 
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
     and ca.program.programCode not in :excludeProgramCodes
+    and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
     and ca.courseActivityId in
       (
        select distinct(opp.courseActivity.courseActivityId) 
@@ -32,5 +33,5 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       )   
   """,
   )
-  fun findActiveActivities(prisonId: String, excludeProgramCodes: List<String>, pageRequest: Pageable): Page<Long>
+  fun findActiveActivities(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageRequest: Pageable): Page<Long>
 }
