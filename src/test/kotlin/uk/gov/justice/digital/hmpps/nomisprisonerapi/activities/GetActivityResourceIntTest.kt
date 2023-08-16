@@ -393,6 +393,49 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
+
+      @Test
+      fun `should only include the course activity requested`() {
+        lateinit var otherCourseActivity: CourseActivity
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today")
+            otherCourseActivity = courseActivity(startDate = "$today")
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities(courseActivityId = otherCourseActivity.courseActivityId)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(otherCourseActivity.courseActivityId)
+      }
+
+      @Test
+      fun `should ignore the course activity requested if it doesn't respect other filters`() {
+        lateinit var otherCourseActivity: CourseActivity
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today")
+            otherCourseActivity = courseActivity(startDate = "$today")
+          }
+          offender {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities(courseActivityId = otherCourseActivity.courseActivityId)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
     }
 
     fun WebTestClient.getActiveActivities(
@@ -400,6 +443,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       page: Int = 0,
       prison: String = "BXI",
       excludeProgramCodes: List<String> = listOf(),
+      courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/activities/ids")
@@ -407,6 +451,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .queryParam("size", pageSize)
           .queryParam("page", page)
           .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
+          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
