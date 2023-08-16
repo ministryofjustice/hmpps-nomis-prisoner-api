@@ -425,7 +425,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
             otherCourseActivity = courseActivity(startDate = "$today")
           }
           offender {
-            booking(agencyLocationId = "LEI") {
+            booking(agencyLocationId = "LEI") { // wrong prison
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
               courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
             }

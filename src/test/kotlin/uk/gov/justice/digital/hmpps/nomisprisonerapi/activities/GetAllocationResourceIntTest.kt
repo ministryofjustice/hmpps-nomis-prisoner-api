@@ -447,6 +447,59 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
+
+      @Test
+      fun `should only include the course activity requested`() {
+        lateinit var otherCourseActivity: CourseActivity
+        lateinit var otherCourseAllocation: OffenderProgramProfile
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today")
+            otherCourseActivity = courseActivity(startDate = "$today")
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              otherCourseAllocation = courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveAllocations(courseActivityId = otherCourseActivity.courseActivityId)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].allocationId").isEqualTo(otherCourseAllocation.offenderProgramReferenceId)
+
+        webTestClient.getActiveActivities(courseActivityId = otherCourseActivity.courseActivityId)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(otherCourseActivity.courseActivityId)
+      }
+
+      @Test
+      fun `should ignore the course activity requested if it doesn't respect other filters`() {
+        lateinit var otherCourseActivity: CourseActivity
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today")
+            otherCourseActivity = courseActivity(startDate = "$today")
+          }
+          offender {
+            booking(agencyLocationId = "LEI") { // wrong prison
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveAllocations(courseActivityId = otherCourseActivity.courseActivityId)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities(courseActivityId = otherCourseActivity.courseActivityId)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
     }
 
     fun WebTestClient.getActiveAllocations(
@@ -454,6 +507,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       page: Int = 0,
       prison: String = "BXI",
       excludeProgramCodes: List<String> = listOf(),
+      courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/allocations/ids")
@@ -461,6 +515,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .queryParam("size", pageSize)
           .queryParam("page", page)
           .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
+          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
@@ -472,6 +527,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       page: Int = 0,
       prison: String = "BXI",
       excludeProgramCodes: List<String> = listOf(),
+      courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/activities/ids")
@@ -479,6 +535,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .queryParam("size", pageSize)
           .queryParam("page", page)
           .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
+          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
@@ -488,7 +545,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /allocations/{allocationId}")
-  inner class GetActivityMigration {
+  inner class GetActiveAllocation {
 
     private lateinit var courseActivity: CourseActivity
     private lateinit var courseAllocation: OffenderProgramProfile
