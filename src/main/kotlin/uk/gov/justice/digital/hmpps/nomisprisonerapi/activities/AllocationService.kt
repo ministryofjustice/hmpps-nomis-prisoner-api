@@ -69,6 +69,8 @@ class AllocationService(
     offenderProgramProfileRepository.findByIdOrNull(allocationId)
       ?.let {
         GetAllocationResponse(
+          prisonId = it.prison!!.id,
+          courseActivityId = it.courseActivity!!.courseActivityId,
           nomisId = it.offenderBooking.offender.nomsId,
           bookingId = it.offenderBooking.bookingId,
           startDate = it.startDate,
