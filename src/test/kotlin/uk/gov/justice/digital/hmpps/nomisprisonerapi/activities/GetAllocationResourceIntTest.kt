@@ -618,6 +618,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getAllocationDetails()
           .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("prisonId").isEqualTo("BXI")
           .jsonPath("nomisId").isEqualTo("A1234AA")
           .jsonPath("bookingId").isEqualTo(offenderBooking.bookingId)
           .jsonPath("startDate").isEqualTo("$yesterday")
