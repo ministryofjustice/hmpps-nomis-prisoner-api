@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import java.time.LocalDate
 
 @Entity
@@ -56,6 +57,9 @@ class AdjudicationInvestigation(
   @OneToMany(mappedBy = "investigation", cascade = [CascadeType.ALL], orphanRemoval = true)
   val evidence: MutableList<AdjudicationEvidence> = mutableListOf(),
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

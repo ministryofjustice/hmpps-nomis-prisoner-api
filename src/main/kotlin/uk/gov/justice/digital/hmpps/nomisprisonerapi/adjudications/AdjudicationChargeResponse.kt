@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -21,7 +22,13 @@ data class AdjudicationChargeResponse(
   val bookingId: Long,
 
   @Schema(description = "The adjudication number (business key)")
-  val adjudicationNumber: Long? = null,
+  val adjudicationNumber: Long,
+
+  @Schema(description = "Gender recorded in NOMIS")
+  val gender: CodeDescription,
+
+  @Schema(description = "Current prison or null if OUT")
+  val currentPrison: CodeDescription?,
 
   @Schema(description = "Date Prisoner was added to the adjudication ????", required = true)
   val partyAddedDate: LocalDate,

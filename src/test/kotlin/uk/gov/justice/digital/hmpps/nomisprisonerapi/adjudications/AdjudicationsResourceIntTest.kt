@@ -425,6 +425,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @Nested
   inner class GetAdjudicationAndGetAdjudicationCharge {
     private lateinit var prisoner: Offender
     lateinit var prisonerVictim: Offender
@@ -444,12 +445,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createPrisonerWithAdjudication() {
       nomisDataBuilder.build {
-        staff = staff(firstName = "SIMON", lastName = "BROWN")
-        staffInvestigator = staff(firstName = "ISLA", lastName = "INVESTIGATOR")
-        staffWitness = staff(firstName = "KOFI", lastName = "WITNESS")
-        staffVictim = staff(firstName = "KWEKU", lastName = "VICTIM")
-        staffInvolvedWithForce = staff(firstName = "JANE", lastName = "MUSCLES")
-        staffIncidentReportingOfficer = staff(firstName = "EAGLE", lastName = "EYES")
+        staff = staff(firstName = "SIMON", lastName = "BROWN") {
+          account(username = "S.BROWN_ADM", type = "ADMIN")
+          account(username = "S.BROWN_GEN", type = "GENERAL")
+        }
+        staffInvestigator =
+          staff(firstName = "ISLA", lastName = "INVESTIGATOR") { account(username = "I.INVESTIGATOR") }
+        staffWitness = staff(firstName = "KOFI", lastName = "WITNESS") { account(username = "K.WITNESS") }
+        staffVictim = staff(firstName = "KWEKU", lastName = "VICTIM") { account(username = "K.VICTIM") }
+        staffInvolvedWithForce = staff(firstName = "JANE", lastName = "MUSCLES") { account(username = "J.MUSCLES") }
+        staffIncidentReportingOfficer = staff(firstName = "EAGLE", lastName = "EYES") { account(username = "E.EYES") }
         prisonerVictim = offender(firstName = "CHARLIE", lastName = "VICTIM") { booking {} }
         prisonerWitness = offender(firstName = "CLIVE", lastName = "SNITCH") { booking {} }
         anotherSuspect = offender(firstName = "KILLER", lastName = "BROWN") { booking {} }
@@ -478,8 +483,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             actionDecision = PLACED_ON_REPORT_ACTION_CODE,
           )
         }
-        prisoner = offender(nomsId = "A1234TT") {
-          booking {
+        prisoner = offender(nomsId = "A1234TT", genderCode = "F") {
+          booking(agencyLocationId = "BXI") {
             adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
               val hoochCharge = charge(
                 offenceCode = "51:1N",
@@ -679,8 +684,46 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `returns details of the hearing outcome and punishments (aka awards)`() {
-          webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
-          getAdjudicationHearingOutcomeAndPunishmentTest("/adjudications/adjudication-number/$adjudicationNumber")
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$adjudicationNumber")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+            .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
+            .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
+            .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].createdByUsername").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[0].createdDateTime").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[1].pleaFindingType.description").isEqualTo("Unfit to Plea or Attend")
+            .jsonPath("hearings[0].hearingResults[1].findingType.description").isEqualTo("Charge Not Proceeded With")
+            .jsonPath("hearings[0].hearingResults[1].charge.offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[1].offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionStatus.description").isEqualTo("Suspended")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].effectiveDate").isEqualTo("2023-01-03")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].statusDate").isEqualTo("2023-01-04")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].comment").isEqualTo("award comment")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].chargeSequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.chargeSequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
+            .doesNotExist()
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(3)
         }
       }
     }
@@ -805,8 +848,55 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         }
 
         @Test
-        fun `returns details of the hearing outcome and punishments (aka awards)`() {
-          getAdjudicationHearingOutcomeAndPunishmentTest("/adjudications/adjudication-number/$adjudicationNumber/charge-sequence/$hoochChargeSequence")
+        fun `returns details of the hearing outcome and punishments (aka awards) only for this charge`() {
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$adjudicationNumber/charge-sequence/$hoochChargeSequence")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+            .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
+            .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
+            .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
+            .jsonPath("hearings[0].hearingResults[0].createdByUsername").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[0].createdDateTime").isNotEmpty
+            .jsonPath("hearings[0].hearingResults[1]").doesNotExist()
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionStatus.description").isEqualTo("Suspended")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].effectiveDate").isEqualTo("2023-01-03")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].statusDate").isEqualTo("2023-01-04")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].comment").isEqualTo("award comment")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
+            .isEqualTo("Removal from Activity")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
+            .isEqualTo("Stoppage of Earnings (amount)")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
+            .doesNotExist()
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(3)
+
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$adjudicationNumber/charge-sequence/$deadSwanChargeSequence")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
+            .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Unfit to Plea or Attend")
+            .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Not Proceeded With")
+            .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:3")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0]").doesNotExist()
         }
       }
     }
@@ -820,14 +910,19 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("offenderNo").isEqualTo("A1234TT")
         .jsonPath("bookingId").isEqualTo(offenderBookingId)
+        .jsonPath("gender.code").isEqualTo("F")
+        .jsonPath("currentPrison.code").isEqualTo("BXI")
         .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
         .jsonPath("incident.adjudicationIncidentId").isEqualTo(incident.id)
         .jsonPath("incident.reportingStaff.firstName").isEqualTo("SIMON")
         .jsonPath("incident.reportingStaff.lastName").isEqualTo("BROWN")
+        .jsonPath("incident.reportingStaff.username").isEqualTo("S.BROWN_GEN")
         .jsonPath("incident.incidentDate").isEqualTo("2023-01-01")
         .jsonPath("incident.incidentTime").isEqualTo("18:00:00")
         .jsonPath("incident.reportedDate").isEqualTo("2023-01-02")
         .jsonPath("incident.reportedTime").isEqualTo("15:00:00")
+        .jsonPath("incident.createdByUsername").isNotEmpty
+        .jsonPath("incident.createdDateTime").isNotEmpty
         .jsonPath("incident.internalLocation.description").isEqualTo("MDI-1-1-001")
         .jsonPath("incident.internalLocation.code").isEqualTo("1")
         .jsonPath("incident.internalLocation.locationId").isEqualTo("$aLocationInMoorland")
@@ -850,14 +945,17 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("investigations[0].investigator.firstName").isEqualTo("ISLA")
         .jsonPath("investigations[0].investigator.lastName").isEqualTo("INVESTIGATOR")
         .jsonPath("investigations[0].investigator.staffId").isEqualTo(staffInvestigator.id)
+        .jsonPath("investigations[0].investigator.username").isEqualTo("I.INVESTIGATOR")
         .jsonPath("investigations[0].evidence[0].detail").isEqualTo("smashed light bulb")
         .jsonPath("investigations[0].evidence[0].type.code").isEqualTo("PHOTO")
         .jsonPath("investigations[0].evidence[0].type.description").isEqualTo("Photographic Evidence")
         .jsonPath("investigations[0].evidence[0].date").isEqualTo("2023-01-03")
+        .jsonPath("investigations[0].evidence[0].createdByUsername").isNotEmpty
         .jsonPath("investigations[0].evidence[1].detail").isEqualTo("syringe")
         .jsonPath("investigations[0].evidence[1].type.code").isEqualTo("DRUGTEST")
         .jsonPath("investigations[0].evidence[1].type.description").isEqualTo("Drug Test Report")
         .jsonPath("investigations[0].evidence[1].date").isEqualTo("2023-01-04")
+        .jsonPath("investigations[0].evidence[1].createdByUsername").isNotEmpty
     }
 
     private fun getAdjudicationDamageTest(url: String) {
@@ -873,10 +971,12 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("incident.repairs[0].type.description").isEqualTo("Plumbing")
         .jsonPath("incident.repairs[0].comment").isEqualTo("Fixed the bog")
         .jsonPath("incident.repairs[0].cost").isEqualTo("10.3")
+        .jsonPath("incident.repairs[0].createdByUsername").isNotEmpty
         .jsonPath("incident.repairs[1].type.code").isEqualTo("CLEA")
         .jsonPath("incident.repairs[1].type.description").isEqualTo("Cleaning")
         .jsonPath("incident.repairs[1].comment").doesNotExist()
         .jsonPath("incident.repairs[1].cost").doesNotExist()
+        .jsonPath("incident.repairs[1].createdByUsername").isNotEmpty
     }
 
     private fun getAdjudicationHearingsTest(url: String) {
@@ -897,46 +997,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("hearings[0].comment").isEqualTo("Hearing comment")
         .jsonPath("hearings[0].representativeText").isEqualTo("rep text")
         .jsonPath("hearings[0].hearingStaff.staffId").isEqualTo(staff.id)
+        .jsonPath("hearings[0].hearingStaff.username").isEqualTo("S.BROWN_GEN")
         .jsonPath("hearings[0].representativeText").isEqualTo("rep text")
         .jsonPath("hearings[0].internalLocation.description").isEqualTo("MDI-1-1-001")
         .jsonPath("hearings[0].eventStatus.code").isEqualTo("SCH")
         .jsonPath("hearings[0].eventId").isEqualTo(1)
-    }
-
-    private fun getAdjudicationHearingOutcomeAndPunishmentTest(url: String) {
-      webTestClient.get()
-        .uri(url)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
-        .jsonPath("hearings[0].hearingResults[0].pleaFindingType.description").isEqualTo("Not guilty")
-        .jsonPath("hearings[0].hearingResults[0].findingType.description").isEqualTo("Charge Proved")
-        .jsonPath("hearings[0].hearingResults[0].charge.offence.code").isEqualTo("51:1N")
-        .jsonPath("hearings[0].hearingResults[0].offence.code").isEqualTo("51:1N")
-        .jsonPath("hearings[0].hearingResults[1].pleaFindingType.description").isEqualTo("Unfit to Plea or Attend")
-        .jsonPath("hearings[0].hearingResults[1].findingType.description").isEqualTo("Charge Not Proceeded With")
-        .jsonPath("hearings[0].hearingResults[1].charge.offence.code").isEqualTo("51:3")
-        .jsonPath("hearings[0].hearingResults[1].offence.code").isEqualTo("51:3")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionType.description")
-        .isEqualTo("Removal from Activity")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionStatus.description").isEqualTo("Suspended")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].effectiveDate").isEqualTo("2023-01-03")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].statusDate").isEqualTo("2023-01-04")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].comment").isEqualTo("award comment")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
-        .isEqualTo("Stoppage of Earnings (amount)")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
-        .isEqualTo("Removal from Activity")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
-        .isEqualTo("Stoppage of Earnings (amount)")
-        .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
-        .doesNotExist()
+        .jsonPath("hearings[0].createdByUsername").isNotEmpty
+        .jsonPath("hearings[0].createdDateTime").isNotEmpty
     }
 
     private fun getAdjudicationOtherPartiesTest(url: String) {
@@ -949,9 +1016,12 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("incident.staffWitnesses[0].firstName").isEqualTo("KOFI")
         .jsonPath("incident.staffWitnesses[0].lastName").isEqualTo("WITNESS")
         .jsonPath("incident.staffWitnesses[0].staffId").isEqualTo(staffWitness.id)
+        .jsonPath("incident.staffWitnesses[0].username").isEqualTo("K.WITNESS")
         .jsonPath("incident.staffVictims[0].staffId").isEqualTo(staffVictim.id)
         .jsonPath("incident.reportingOfficers[0].staffId").isEqualTo(staffIncidentReportingOfficer.id)
+        .jsonPath("incident.reportingOfficers[0].username").isEqualTo(staffIncidentReportingOfficer.accounts[0].username)
         .jsonPath("incident.otherStaffInvolved[0].staffId").isEqualTo(staffInvolvedWithForce.id)
+        .jsonPath("incident.otherStaffInvolved[0].username").isEqualTo(staffInvolvedWithForce.accounts[0].username)
         .jsonPath("incident.prisonerVictims[0].firstName").isEqualTo("CHARLIE")
         .jsonPath("incident.prisonerVictims[0].lastName").isEqualTo("VICTIM")
         .jsonPath("incident.prisonerVictims[0].offenderNo").isEqualTo(prisonerVictim.nomsId)

@@ -12,12 +12,14 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import java.io.Serializable
+import java.time.LocalDateTime
 
 @Embeddable
 class AdjudicationHearingResultId(
@@ -117,7 +119,14 @@ class AdjudicationHearingResult(
 
   @OneToMany(mappedBy = "hearingResult", cascade = [CascadeType.ALL], orphanRemoval = true)
   val resultAwards: MutableList<AdjudicationHearingResultAward> = mutableListOf(),
+
+  @Column(name = "CREATE_DATETIME", nullable = false)
+  var whenCreated: LocalDateTime = LocalDateTime.now(),
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

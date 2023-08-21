@@ -8,6 +8,12 @@ import java.time.LocalDate
 @Schema(description = "Allocation to an activity")
 data class GetAllocationResponse(
 
+  @Schema(description = "Prison ID", example = "BXI")
+  val prisonId: String,
+
+  @Schema(description = "Nomis Course Activity ID", example = "1234")
+  val courseActivityId: Long,
+
   @Schema(description = "Nomis ID", example = "A1234BC")
   val nomisId: String,
 
