@@ -2,8 +2,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
@@ -13,15 +16,17 @@ import java.time.LocalDateTime
 @Transactional
 class NomisDataBuilder(
   private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = ProgramServiceBuilderFactory(),
-  private val offenderBuilderFactory: OffenderBuilderFactory? = null, // note this means the offender DSL is not available in unit tests whereas programService is.
+  private val offenderBuilderFactory: OffenderBuilderFactory? = null,
   private val staffBuilderFactory: StaffBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
+  private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
     offenderBuilderFactory,
     staffBuilderFactory,
     adjudicationIncidentBuilderFactory,
+    nonAssociationBuilderFactory,
   ).apply(dsl)
 }
 
@@ -30,6 +35,7 @@ class NomisData(
   private val offenderBuilderFactory: OffenderBuilderFactory? = null,
   private val staffBuilderFactory: StaffBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
+  private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
@@ -103,6 +109,31 @@ class NomisData(
             builder.apply(dsl)
           }
       }
+
+  @NonAssociationDslMarker
+  override fun nonAssociation(
+    offender1: Offender,
+    offender2: Offender,
+    offenderBooking: OffenderBooking,
+    nsOffenderBooking: OffenderBooking,
+    nonAssociationReason: String,
+    recipNonAssociationReason: String,
+    dsl: NonAssociationDsl.() -> Unit,
+  ): OffenderNonAssociation =
+    nonAssociationBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          offender1,
+          offender2,
+          offenderBooking,
+          nsOffenderBooking,
+          nonAssociationReason,
+          recipNonAssociationReason,
+        )
+          .also {
+            builder.apply(dsl)
+          }
+      }
 }
 
 @NomisDataDslMarker
@@ -142,6 +173,17 @@ interface NomisDataDsl {
     reportingStaff: Staff,
     dsl: AdjudicationIncidentDsl.() -> Unit = {},
   ): AdjudicationIncident
+
+  @NonAssociationDslMarker
+  fun nonAssociation(
+    offender1: Offender,
+    offender2: Offender,
+    offenderBooking: OffenderBooking = offender1.latestBooking(),
+    nsOffenderBooking: OffenderBooking = offender2.latestBooking(),
+    nonAssociationReason: String = "PER",
+    recipNonAssociationReason: String = "VIC",
+    dsl: NonAssociationDsl.() -> Unit = {},
+  ): OffenderNonAssociation
 }
 
 @DslMarker

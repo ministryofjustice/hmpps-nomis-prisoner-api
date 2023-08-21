@@ -22,6 +22,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -47,6 +50,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -55,7 +59,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 
 @Repository
@@ -89,8 +92,8 @@ class Repository(
   val adjudicationIncidentRepository: AdjudicationIncidentRepository,
   val adjudicationIncidentPartyRepository: AdjudicationIncidentPartyRepository,
   val staffRepository: StaffRepository,
-  val staffUserAccountRepository: StaffUserAccountRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
+  val offenderNonAssociationRepository: OffenderNonAssociationRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -307,4 +310,16 @@ class Repository(
   fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()
   fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
   fun <T> runInTransaction(block: () -> T) = block()
+
+  fun save(offenderNonAssociation: OffenderNonAssociation, offenderNonAssociationDetail: OffenderNonAssociationDetail): OffenderNonAssociation =
+    offenderNonAssociationRepository.save(offenderNonAssociation).apply {
+      offenderNonAssociationDetail.nonAssociation = this
+      offenderNonAssociationDetails.add(offenderNonAssociationDetail)
+    }
+  fun getNonAssociation(first: Offender, second: Offender): OffenderNonAssociation =
+    offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
+      .also {
+        it.offenderNonAssociationDetails.size // hydrate
+      }
+  fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
 }

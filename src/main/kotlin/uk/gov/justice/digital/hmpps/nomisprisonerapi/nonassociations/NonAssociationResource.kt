@@ -43,11 +43,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ],
     ),
     responses = [
-      ApiResponse(
-        responseCode = "201",
-        description = "Successfully created non-association",
-        content = [Content(mediaType = "application/json")],
-      ),
+      ApiResponse(responseCode = "201", description = "Successfully created non-association"),
       ApiResponse(
         responseCode = "400",
         description = "Invalid data such as booking or location do not exist etc.",
@@ -77,18 +73,14 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     description = "Updates an existing non-association. Requires role NOMIS_NON_ASSOCIATIONS",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = CreateNonAssociationRequest::class)),
+        Content(mediaType = "application/json", schema = Schema(implementation = UpdateNonAssociationRequest::class)),
       ],
     ),
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Successfully updated non-association",
-        content = [Content(mediaType = "application/json")],
-      ),
+      ApiResponse(responseCode = "200", description = "Successfully updated non-association"),
       ApiResponse(
         responseCode = "404",
-        description = "Offender does not exist",
+        description = "Non-association does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -125,16 +117,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     summary = "Closes an existing non-association",
     description = "Closes an existing non-association. Requires role NOMIS_NON_ASSOCIATIONS",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Success",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateNonAssociationRequest::class)),
-        ],
-      ),
+      ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
         responseCode = "404",
-        description = "Event id does not exist",
+        description = "Non-association does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -149,7 +135,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
     ],
   )
-  fun cancelNonAssociation(
+  fun closeNonAssociation(
     @Schema(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
@@ -166,14 +152,14 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "NonAssociation information with created id",
+        description = "Non-association information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateNonAssociationRequest::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = NonAssociationResponse::class)),
         ],
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Booking, location and timestamp combination does not exist",
+        description = "Non-association does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -221,14 +207,8 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun getNonAssociationsByFilter(
-    @PageableDefault(sort = ["eventId"], direction = Sort.Direction.ASC)
+    @PageableDefault(sort = ["id.offender"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
-    @RequestParam(value = "prisonIds", required = false)
-    @Parameter(
-      description = "Filter results by prison ids (returns all prisons if not specified)",
-      example = "['MDI','LEI']",
-    )
-    prisonIds: List<String>?,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
