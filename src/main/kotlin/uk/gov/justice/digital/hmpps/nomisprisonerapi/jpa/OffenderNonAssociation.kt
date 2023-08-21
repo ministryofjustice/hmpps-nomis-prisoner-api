@@ -66,6 +66,7 @@ data class OffenderNonAssociation(
 
   @OneToMany(mappedBy = "nonAssociation", cascade = [CascadeType.ALL], orphanRemoval = true)
   val offenderNonAssociationDetails: MutableList<OffenderNonAssociationDetail> = mutableListOf(),
+
 ) {
   fun getOpenNonAssociationDetail(): OffenderNonAssociationDetail? =
     offenderNonAssociationDetails.firstOrNull { it.expiryDate == null }

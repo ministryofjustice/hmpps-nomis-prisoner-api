@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
@@ -17,7 +16,7 @@ import java.time.LocalDateTime
 @Transactional
 class NomisDataBuilder(
   private val programServiceBuilderFactory: ProgramServiceBuilderFactory? = ProgramServiceBuilderFactory(),
-  private val offenderBuilderFactory: OffenderBuilderFactory? = null, // note this means the offender DSL is not available in unit tests whereas programService is.
+  private val offenderBuilderFactory: OffenderBuilderFactory? = null,
   private val staffBuilderFactory: StaffBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
@@ -117,8 +116,8 @@ class NomisData(
     offender2: Offender,
     offenderBooking: OffenderBooking,
     nsOffenderBooking: OffenderBooking,
-    nonAssociationReason: NonAssociationReason,
-    recipNonAssociationReason: NonAssociationReason,
+    nonAssociationReason: String,
+    recipNonAssociationReason: String,
     dsl: NonAssociationDsl.() -> Unit,
   ): OffenderNonAssociation =
     nonAssociationBuilderFactory!!.builder()
@@ -181,8 +180,8 @@ interface NomisDataDsl {
     offender2: Offender,
     offenderBooking: OffenderBooking = offender1.latestBooking(),
     nsOffenderBooking: OffenderBooking = offender2.latestBooking(),
-    nonAssociationReason: NonAssociationReason = NonAssociationReason("NAP", "Not Appropriate"),
-    recipNonAssociationReason: NonAssociationReason = NonAssociationReason("NAP", "Not Appropriate"),
+    nonAssociationReason: String = "PER",
+    recipNonAssociationReason: String = "VIC",
     dsl: NonAssociationDsl.() -> Unit = {},
   ): OffenderNonAssociation
 }

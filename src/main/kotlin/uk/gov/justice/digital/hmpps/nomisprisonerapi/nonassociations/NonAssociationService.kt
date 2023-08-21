@@ -143,6 +143,7 @@ class NonAssociationService(
       nonAssociationReason = reason
       nonAssociationType = type
       effectiveDate = dto.effectiveDate
+      authorisedBy = dto.authorisedBy
       comment = dto.comment
     }
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
@@ -157,9 +158,9 @@ class NonAssociationService(
 
     otherExisting.getOpenNonAssociationDetail()?.apply {
       nonAssociationReason = otherExisting.nonAssociationReason!!
-      recipNonAssociationReason = otherExisting.recipNonAssociationReason
       nonAssociationType = type
       effectiveDate = dto.effectiveDate
+      authorisedBy = dto.authorisedBy
       comment = dto.comment
     }
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
@@ -224,12 +225,15 @@ class NonAssociationService(
     val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
       ?: throw NotFoundException("NS Offender with nomsId=$nsOffenderNo not found")
 
-    offenderNonAssociationRepository.findByIdOrNull(
-      OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
+    return offenderNonAssociationRepository.findByIdOrNull(
+      OffenderNonAssociationId(
+        offender = offender,
+        nsOffender = nsOffender,
+      ),
     )?.let {
-      return mapModel(it)
+      mapModel(it)
     }
-      ?: throw NotFoundException("NonAssociation not found")
+      ?: throw NotFoundException("Open NonAssociation not found")
   }
 
   fun findIdsByFilter(
@@ -239,16 +243,18 @@ class NonAssociationService(
     offenderNonAssociationRepository.findAll(NonAssociationSpecification(nonAssociationFilter), pageRequest)
       .map { NonAssociationIdResponse(it.id.offender.nomsId, it.id.nsOffender.nomsId) }
 
-  private fun mapModel(entity: OffenderNonAssociation) =
-    NonAssociationResponse(
-      offenderNo = entity.id.offender.nomsId,
-      nsOffenderNo = entity.id.nsOffender.nomsId,
-      // TODO - this is a bit of a guess, it's not clear what the correct behaviour should be yet
-      reason = entity.nonAssociationReason?.code,
-      recipReason = entity.recipNonAssociationReason?.code,
-      type = entity.getOpenNonAssociationDetail()?.nonAssociationType?.code,
-      effectiveDate = entity.getOpenNonAssociationDetail()?.effectiveDate,
-      authorisedBy = entity.getOpenNonAssociationDetail()?.authorisedBy,
-      comment = entity.getOpenNonAssociationDetail()?.comment,
-    )
+  private fun mapModel(entity: OffenderNonAssociation): NonAssociationResponse? =
+    entity.getOpenNonAssociationDetail()?.let { detail ->
+      NonAssociationResponse(
+        offenderNo = entity.id.offender.nomsId,
+        nsOffenderNo = entity.id.nsOffender.nomsId,
+        reason = detail.nonAssociationReason.code,
+        recipReason = entity.recipNonAssociationReason?.code,
+        type = detail.nonAssociationType.code,
+        effectiveDate = detail.effectiveDate,
+        expiryDate = detail.expiryDate,
+        authorisedBy = detail.authorisedBy,
+        comment = detail.comment,
+      )
+    }
 }

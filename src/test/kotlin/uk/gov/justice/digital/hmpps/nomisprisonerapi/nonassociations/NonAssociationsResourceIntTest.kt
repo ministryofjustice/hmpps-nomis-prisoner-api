@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
-import java.time.Duration
 import java.time.LocalDate
 
 class NonAssociationsResourceIntTest : IntegrationTestBase() {
@@ -81,9 +80,9 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   internal fun deleteData() {
     repository.deleteAllNonAssociations()
 
-    // repository.deleteNonAssociation(offenderAtMoorlands, offenderAtOtherPrison)
     repository.delete(offenderAtMoorlands)
     repository.delete(offenderAtLeeds)
+    repository.delete(offenderAtShrewsbury)
   }
 
   @Nested
@@ -572,13 +571,21 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
       nomisDataBuilder.build {
         na1 = nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
           nonAssociationDetail(
-            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
-            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
+            typeSeq = 1,
+            nonAssociationReason = "BUL",
             effectiveDate = LocalDate.parse("2021-02-28"),
-            expiryDate = LocalDate.parse("2022-02-28"),
-            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+            nonAssociationType = "LAND",
             authorisedBy = "Staff Member",
             comment = "this is a GET test!",
+          )
+          nonAssociationDetail(
+            typeSeq = 2,
+            nonAssociationReason = "PER",
+            effectiveDate = LocalDate.parse("2020-01-01"),
+            expiryDate = LocalDate.parse("2020-01-31"),
+            nonAssociationType = "WING",
+            authorisedBy = "Staff Member",
+            comment = "this is a closed NA",
           )
         }
       }
@@ -587,7 +594,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get by id`() {
       webTestClient
-        // .mutate().responseTimeout(Duration.ofSeconds(10000)).build()
         .get().uri(
           "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
           offenderAtMoorlands.nomsId,
@@ -598,13 +604,13 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
-        .jsonPath("$.offenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
         .jsonPath("$.reason").isEqualTo("BUL")
         .jsonPath("$.recipReason").isEqualTo("VIC")
         .jsonPath("$.type").isEqualTo("LAND")
         .jsonPath("$.authorisedBy").isEqualTo("Staff Member")
         .jsonPath("$.effectiveDate").isEqualTo("2021-02-28")
-        .jsonPath("$.expiryDate").isEqualTo("2022-02-28")
+        .jsonPath("$.expiryDate").doesNotExist()
         .jsonPath("$.comment").isEqualTo("this is a GET test!")
     }
 
@@ -657,33 +663,29 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     private lateinit var na1: OffenderNonAssociation
     private lateinit var na2: OffenderNonAssociation
     private lateinit var na3: OffenderNonAssociation
-    private lateinit var na4: OffenderNonAssociation
 
     @BeforeEach
     internal fun createNonAssociations() {
       nomisDataBuilder.build {
         na1 = nonAssociation(offenderAtLeeds, offenderAtMoorlands) {
           nonAssociationDetail(
-            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
-            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
+            nonAssociationReason = "BUL",
             effectiveDate = LocalDate.parse("2023-01-01"),
-            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+            nonAssociationType = "LAND",
           )
         }
         na2 = nonAssociation(offenderAtMoorlands, offenderAtShrewsbury) {
           nonAssociationDetail(
-            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
-            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
-            effectiveDate = LocalDate.parse("2023-01-03"),
-            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+            nonAssociationReason = "BUL",
+            effectiveDate = LocalDate.parse("2023-01-02"),
+            nonAssociationType = "LAND",
           )
         }
         na3 = nonAssociation(offenderAtShrewsbury, offenderAtLeeds) {
           nonAssociationDetail(
-            nonAssociationReason = repository.lookupNonAssociationReason("BUL"),
-            recipNonAssociationReason = repository.lookupNonAssociationReason("VIC"),
-            effectiveDate = LocalDate.parse("2023-01-02"),
-            nonAssociationType = repository.lookupNonAssociationType("LAND"),
+            nonAssociationReason = "BUL",
+            effectiveDate = LocalDate.parse("2023-01-03"),
+            nonAssociationType = "LAND",
           )
         }
       }
@@ -712,23 +714,26 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(1)
-        .jsonPath("$.content[0].offenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.content[0].offenderNo1").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.content[0].offenderNo2").isEqualTo(offenderAtMoorlands.nomsId)
     }
 
     @Test
     fun `get non-associations issued within a given date range 2`() {
-      webTestClient.get().uri {
-        it.path("/non-associations/ids")
-          .queryParam("fromDate", "2023-01-03")
-          .queryParam("toDate", "2026-01-01")
-          .build()
-      }
+      webTestClient
+        .get().uri {
+          it.path("/non-associations/ids")
+            .queryParam("fromDate", "2023-01-03")
+            .queryParam("toDate", "2026-01-01")
+            .build()
+        }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(1)
-        .jsonPath("$.content[0].offenderNo").isEqualTo(offenderAtShrewsbury.nomsId)
+        .jsonPath("$.content[0].offenderNo1").isEqualTo(offenderAtShrewsbury.nomsId)
+        .jsonPath("$.content[0].offenderNo2").isEqualTo(offenderAtLeeds.nomsId)
     }
 
     @Test

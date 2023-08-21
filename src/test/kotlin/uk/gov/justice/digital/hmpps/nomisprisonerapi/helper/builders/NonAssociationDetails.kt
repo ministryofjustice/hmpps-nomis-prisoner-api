@@ -27,8 +27,9 @@ class NonAssociationDetailBuilder : NonAssociationDetailDsl {
     nsOffender: Offender,
     offenderBooking: OffenderBooking,
     nsOffenderBooking: OffenderBooking,
+    typeSeq: Int,
     nonAssociationReason: NonAssociationReason,
-    recipNonAssociationReason: NonAssociationReason,
+    recipNonAssociationReason: NonAssociationReason?,
     nonAssociationType: NonAssociationType,
     effectiveDate: LocalDate,
     expiryDate: LocalDate?,
@@ -39,7 +40,8 @@ class NonAssociationDetailBuilder : NonAssociationDetailDsl {
     OffenderNonAssociationDetail(
       id = OffenderNonAssociationDetailId(
         offender = offender,
-        nsOffender = nsOffender, 1,
+        nsOffender = nsOffender,
+        typeSeq,
       ),
       offenderBooking = offenderBooking,
       nsOffenderBooking = nsOffenderBooking,
@@ -52,5 +54,4 @@ class NonAssociationDetailBuilder : NonAssociationDetailDsl {
       comment = comment,
       nonAssociation = nonAssociation,
     )
-
 }

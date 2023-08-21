@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -21,9 +22,10 @@ annotation class NonAssociationDslMarker
 interface NonAssociationDsl {
   @NonAssociationDetailDslMarker
   fun nonAssociationDetail(
-    nonAssociationReason: NonAssociationReason,
-    recipNonAssociationReason: NonAssociationReason,
-    nonAssociationType: NonAssociationType,
+    typeSeq: Int = 1,
+    nonAssociationReason: String,
+    recipNonAssociationReason: String? = null,
+    nonAssociationType: String,
     effectiveDate: LocalDate,
     expiryDate: LocalDate? = null,
     authorisedBy: String? = null,
@@ -35,12 +37,16 @@ interface NonAssociationDsl {
 class NonAssociationBuilderRepository(
   private val nonAssociationReasonRepository: ReferenceCodeRepository<NonAssociationReason>? = null,
   private val nonAssociationTypeRepository: ReferenceCodeRepository<NonAssociationType>? = null,
+  private val nonAssociationRepository: OffenderNonAssociationRepository? = null,
 ) {
   fun lookupNonAssociationReason(code: String): NonAssociationReason =
     nonAssociationReasonRepository?.findByIdOrNull(ReferenceCode.Pk(NonAssociationReason.DOMAIN, code))!!
 
   fun lookupNonAssociationType(code: String): NonAssociationType =
     nonAssociationTypeRepository?.findByIdOrNull(ReferenceCode.Pk(NonAssociationType.DOMAIN, code))!!
+
+  fun save(nonAssociation: OffenderNonAssociation) =
+    nonAssociationRepository?.findByIdOrNull(nonAssociation.id) ?: nonAssociationRepository?.save(nonAssociation)
 }
 
 @Component
@@ -68,8 +74,8 @@ class NonAssociationBuilder(
     nsOffender: Offender,
     offenderBooking: OffenderBooking,
     nsOffenderBooking: OffenderBooking,
-    nonAssociationReason: NonAssociationReason,
-    recipNonAssociationReason: NonAssociationReason,
+    nonAssociationReason: String,
+    recipNonAssociationReason: String,
   ): OffenderNonAssociation =
     OffenderNonAssociation(
       OffenderNonAssociationId(
@@ -78,15 +84,17 @@ class NonAssociationBuilder(
       ),
       offenderBooking = offenderBooking,
       nsOffenderBooking = nsOffenderBooking,
-      nonAssociationReason = nonAssociationReason,
-      recipNonAssociationReason = recipNonAssociationReason,
+      nonAssociationReason = repository?.lookupNonAssociationReason(nonAssociationReason),
+      recipNonAssociationReason = repository?.lookupNonAssociationReason(recipNonAssociationReason),
     )
+      .let { save(it) }
       .also { nonAssociation = it }
 
   override fun nonAssociationDetail(
-    nonAssociationReason: NonAssociationReason,
-    recipNonAssociationReason: NonAssociationReason,
-    nonAssociationType: NonAssociationType,
+    typeSeq: Int,
+    nonAssociationReason: String,
+    recipNonAssociationReason: String?,
+    nonAssociationType: String,
     effectiveDate: LocalDate,
     expiryDate: LocalDate?,
     authorisedBy: String?,
@@ -96,9 +104,10 @@ class NonAssociationBuilder(
     nsOffender = nonAssociation.id.nsOffender,
     offenderBooking = nonAssociation.id.offender.latestBooking(),
     nsOffenderBooking = nonAssociation.id.nsOffender.latestBooking(),
-    nonAssociationReason = nonAssociationReason,
-    recipNonAssociationReason = recipNonAssociationReason,
-    nonAssociationType = nonAssociationType,
+    typeSeq = typeSeq,
+    nonAssociationReason = repository?.lookupNonAssociationReason(nonAssociationReason)!!,
+    recipNonAssociationReason = recipNonAssociationReason?.let { repository.lookupNonAssociationReason(it) },
+    nonAssociationType = repository.lookupNonAssociationType(nonAssociationType),
     effectiveDate = effectiveDate,
     expiryDate = expiryDate,
     authorisedBy = authorisedBy,
@@ -108,4 +117,6 @@ class NonAssociationBuilder(
     .also {
       nonAssociation.offenderNonAssociationDetails += it
     }
+
+  private fun save(nonAssociation: OffenderNonAssociation) = repository?.save(nonAssociation) ?: nonAssociation
 }

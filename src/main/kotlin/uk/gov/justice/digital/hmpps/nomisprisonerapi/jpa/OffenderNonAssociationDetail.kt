@@ -84,7 +84,7 @@ data class OffenderNonAssociationDetail(
   var expiryDate: LocalDate? = null,
 
   @Column(name = "AUTHORIZED_STAFF")
-  val authorisedBy: String? = null,
+  var authorisedBy: String? = null,
 
   @Column(name = "COMMENT_TEXT")
   var comment: String? = null,

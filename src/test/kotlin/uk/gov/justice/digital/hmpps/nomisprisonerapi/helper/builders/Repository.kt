@@ -18,8 +18,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationReason
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
@@ -96,8 +94,6 @@ class Repository(
   val staffRepository: StaffRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
   val offenderNonAssociationRepository: OffenderNonAssociationRepository,
-  val nonAssociationReasonRepository: ReferenceCodeRepository<NonAssociationReason>,
-  val nonAssociationTypeRepository: ReferenceCodeRepository<NonAssociationType>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -323,14 +319,7 @@ class Repository(
   fun getNonAssociation(first: Offender, second: Offender): OffenderNonAssociation =
     offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
       .also {
-        it.offenderNonAssociationDetails.size
+        it.offenderNonAssociationDetails.size // hydrate
       }
-  fun deleteNonAssociation(first: Offender, second: Offender) {
-    offenderNonAssociationRepository.deleteById(OffenderNonAssociationId(first, second))
-  }
-  fun lookupNonAssociationReason(code: String): NonAssociationReason =
-    nonAssociationReasonRepository.findByIdOrNull(Pk(NonAssociationReason.DOMAIN, code))!!
-  fun lookupNonAssociationType(code: String): NonAssociationType =
-    nonAssociationTypeRepository.findByIdOrNull(Pk(NonAssociationType.DOMAIN, code))!!
   fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
 }

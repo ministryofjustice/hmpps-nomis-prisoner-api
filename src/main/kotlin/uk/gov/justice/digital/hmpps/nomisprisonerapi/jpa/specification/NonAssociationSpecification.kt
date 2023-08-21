@@ -6,7 +6,9 @@ import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.nonassociations.NonAssociationFilter
+import java.time.LocalDate
 
 class NonAssociationSpecification(private val filter: NonAssociationFilter) : Specification<OffenderNonAssociation> {
   override fun toPredicate(
@@ -16,18 +18,17 @@ class NonAssociationSpecification(private val filter: NonAssociationFilter) : Sp
   ): Predicate? {
     val predicates = mutableListOf<Predicate>()
 
+    val getEffectiveDate = root.get<LocalDate>(OffenderNonAssociation::offenderNonAssociationDetails.name)
+      .get<LocalDate>(OffenderNonAssociationDetail::effectiveDate.name)
+
     filter.fromDate?.run {
-      predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(OffenderNonAssociation::getEffectiveDate.name), this))
+      predicates.add(criteriaBuilder.greaterThanOrEqualTo(getEffectiveDate, this))
     }
 
     filter.toDate?.run {
-      predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(OffenderNonAssociation::getEffectiveDate.name), this))
+      predicates.add(criteriaBuilder.lessThanOrEqualTo(getEffectiveDate, this))
     }
 
     return criteriaBuilder.and(*predicates.toTypedArray())
   }
-}
-
-fun OffenderNonAssociation.getEffectiveDate(): java.time.LocalDate? {
-  return this.getOpenNonAssociationDetail()?.effectiveDate
 }
