@@ -113,6 +113,7 @@ class CourseActivityBuilder(
     internalLocationId: Long?,
     excludeBankHolidays: Boolean,
     payPerSession: PayPerSession,
+    outsideWork: Boolean,
   ): CourseActivity =
     CourseActivity(
       courseActivityId = courseActivityId,
@@ -129,6 +130,7 @@ class CourseActivityBuilder(
       internalLocation = internalLocationId?.let { lookupAgencyInternalLocation(it, prisonId) },
       excludeBankHolidays = excludeBankHolidays,
       payPerSession = payPerSession,
+      outsideWork = outsideWork,
     )
       .also { courseActivity = it }
 

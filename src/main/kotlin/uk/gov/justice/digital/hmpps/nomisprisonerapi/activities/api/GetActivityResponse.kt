@@ -54,6 +54,9 @@ data class GetActivityResponse(
 
   @Schema(description = "Pay rates available")
   val payRates: List<PayRatesResponse>,
+
+  @Schema(description = "Outside work flag", example = "false")
+  val outsideWork: Boolean,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
