@@ -488,6 +488,7 @@ fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false):
   HearingResultAward(
     sequence = this.id.sanctionSequence,
     chargeSequence = this.hearingResult?.chargeSequence!!, // we must have result for there to be an award
+    adjudicationNumber = this.hearingResult.hearing.adjudicationNumber,
     sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
       sanctionCode,
       "Unknown Sanction Code",

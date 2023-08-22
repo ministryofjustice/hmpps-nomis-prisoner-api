@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.W
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
@@ -34,6 +35,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 const val adjudicationNumber = 9000123L
+const val previousAdjudicationNumber = 8000123L
 
 class AdjudicationsResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -433,6 +435,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     lateinit var anotherSuspect: Offender
 
     lateinit var incident: AdjudicationIncident
+    lateinit var previousIncident: AdjudicationIncident
     lateinit var staff: Staff
     lateinit var staffInvestigator: Staff
     lateinit var staffWitness: Staff
@@ -458,6 +461,11 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         prisonerVictim = offender(firstName = "CHARLIE", lastName = "VICTIM") { booking {} }
         prisonerWitness = offender(firstName = "CLIVE", lastName = "SNITCH") { booking {} }
         anotherSuspect = offender(firstName = "KILLER", lastName = "BROWN") { booking {} }
+        previousIncident = adjudicationIncident(
+          reportingStaff = staff,
+          prisonId = "MDI",
+          agencyInternalLocationId = aLocationInMoorland,
+        )
         incident = adjudicationIncident(
           reportingStaff = staff,
           prisonId = "MDI",
@@ -483,8 +491,30 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             actionDecision = PLACED_ON_REPORT_ACTION_CODE,
           )
         }
+        lateinit var previousAward: AdjudicationHearingResultAward
         prisoner = offender(nomsId = "A1234TT", genderCode = "F") {
           booking(agencyLocationId = "BXI") {
+            adjudicationParty(incident = previousIncident, adjudicationNumber = previousAdjudicationNumber) {
+              val previousCharge = charge(offenceCode = "51:1B")
+              hearing(
+                internalLocationId = aLocationInMoorland,
+              ) {
+                result(
+                  charge = previousCharge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  previousAward = award(
+                    statusCode = "SUSPENDED",
+                    sanctionCode = "ADA",
+                    effectiveDate = LocalDate.parse("2023-01-08"),
+                    statusDate = LocalDate.parse("2023-01-09"),
+                    sanctionDays = 4,
+                    sanctionIndex = 1,
+                  )
+                }
+              }
+            }
             adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
               val hoochCharge = charge(
                 offenceCode = "51:1N",
@@ -518,8 +548,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                     sanctionMonths = 1,
                     sanctionDays = 2,
                     compensationAmount = BigDecimal.valueOf(12.2),
+                    sanctionIndex = 2,
                   )
-                  val secondAward = award(
+                  award(
                     statusCode = "SUSPEN_RED",
                     sanctionCode = "STOP_EARN",
                     effectiveDate = LocalDate.parse("2023-01-04"),
@@ -529,6 +560,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                     sanctionDays = 4,
                     compensationAmount = BigDecimal.valueOf(14.2),
                     consecutiveHearingResultAward = firstAward,
+                    sanctionIndex = 3,
                   )
                   award(
                     statusCode = "SUSPENDED",
@@ -539,7 +571,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                     sanctionMonths = 3,
                     sanctionDays = 4,
                     compensationAmount = BigDecimal.valueOf(14.2),
-                    consecutiveHearingResultAward = secondAward,
+                    consecutiveHearingResultAward = previousAward,
+                    sanctionIndex = 4,
                   )
                 }
                 result(
@@ -575,6 +608,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @AfterEach
     internal fun deletePrisoner() {
       repository.deleteHearingByAdjudicationNumber(adjudicationNumber)
+      repository.deleteHearingByAdjudicationNumber(previousAdjudicationNumber)
+      repository.delete(previousIncident)
       repository.delete(incident)
       repository.delete(prisoner)
       repository.delete(prisonerVictim)
@@ -710,20 +745,20 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
-            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(2)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].chargeSequence").isEqualTo(1)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
             .isEqualTo("Stoppage of Earnings (amount)")
             .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
             .isEqualTo("Removal from Activity")
             .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.chargeSequence").isEqualTo(1)
-            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(3)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
             .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
-            .isEqualTo("Stoppage of Earnings (amount)")
+            .isEqualTo("Additional Days Added")
             .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
             .doesNotExist()
-            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(3)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(4)
         }
       }
     }
@@ -872,18 +907,23 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].compensationAmount").isEqualTo(12.2)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionMonths").isEqualTo(1)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
-            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(2)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
             .isEqualTo("Stoppage of Earnings (amount)")
             .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")
             .isEqualTo("Removal from Activity")
-            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(2)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sequence").isEqualTo(3)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[2].effectiveDate").isEqualTo("2023-01-08")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].adjudicationNumber").isEqualTo(adjudicationNumber)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.sanctionType.description")
-            .isEqualTo("Stoppage of Earnings (amount)")
+            .isEqualTo("Additional Days Added")
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.adjudicationNumber")
+            .isEqualTo(previousAdjudicationNumber)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.chargeSequence")
+            .isEqualTo(1)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[2].consecutiveAward.consecutiveAward")
             .doesNotExist()
-            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(3)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[2].sequence").isEqualTo(4)
 
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$adjudicationNumber/charge-sequence/$deadSwanChargeSequence")
