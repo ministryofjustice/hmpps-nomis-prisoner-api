@@ -698,7 +698,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].effectiveDate").isEqualTo("2021-02-28")
         .jsonPath("$[0].expiryDate").doesNotExist()
         .jsonPath("$[0].comment").isEqualTo("this is a GET test!")
-
         .jsonPath("$[1].offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
         .jsonPath("$[1].nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
         .jsonPath("$[1].reason").isEqualTo("PER")
