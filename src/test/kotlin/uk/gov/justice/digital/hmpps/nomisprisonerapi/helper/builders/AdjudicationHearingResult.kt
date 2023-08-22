@@ -29,6 +29,7 @@ interface AdjudicationHearingResultDsl {
     effectiveDate: LocalDate,
     statusDate: LocalDate? = null,
     consecutiveHearingResultAward: AdjudicationHearingResultAward? = null,
+    sanctionIndex: Int? = null,
     dsl: AdjudicationHearingResultAwardDsl.() -> Unit = {},
   ): AdjudicationHearingResultAward
 }
@@ -93,6 +94,7 @@ class AdjudicationHearingResultBuilder(
     effectiveDate: LocalDate,
     statusDate: LocalDate?,
     consecutiveHearingResultAward: AdjudicationHearingResultAward?,
+    sanctionIndex: Int?,
     dsl: AdjudicationHearingResultAwardDsl.() -> Unit,
   ) =
     adjudicationHearingResultAwardBuilderFactory.builder().let { builder ->
@@ -107,7 +109,7 @@ class AdjudicationHearingResultBuilder(
         statusDate = statusDate,
         result = adjudicationHearingResult,
         party = adjudicationHearingResult.hearing.hearingParty,
-        sanctionIndex = adjudicationHearingResult.resultAwards.size + 1,
+        sanctionIndex = sanctionIndex ?: (adjudicationHearingResult.resultAwards.size + 1),
         consecutiveHearingResultAward = consecutiveHearingResultAward,
       )
         .also { adjudicationHearingResult.resultAwards += it }
