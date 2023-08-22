@@ -137,6 +137,7 @@ class ActivityService(
           payPerSession = it.payPerSession.name,
           scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
           payRates = payRatesService.mapRates(it.payRates),
+          outsideWork = it.outsideWork,
         )
       }
 
