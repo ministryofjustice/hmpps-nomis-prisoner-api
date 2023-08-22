@@ -441,6 +441,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @AfterEach
     internal fun deletePrisoner() {
       repository.delete(offenderAtMoorlands)
+      repository.delete(offenderAtMoorlandsWithoutIncentives)
     }
 
     @Test

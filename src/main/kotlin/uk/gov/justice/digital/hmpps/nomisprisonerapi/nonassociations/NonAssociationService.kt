@@ -41,6 +41,10 @@ class NonAssociationService(
     val recipReason = reasonRepository.findByIdOrNull(NonAssociationReason.pk(dto.recipReason))
       ?: throw BadDataException("Reciprocal reason with code=${dto.recipReason} does not exist")
 
+    if (dto.effectiveDate.isAfter(LocalDate.now())) {
+      throw BadDataException("Effective date must not be in the future")
+    }
+
     val existing = offenderNonAssociationRepository.findByIdOrNull(
       OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
     )
@@ -57,6 +61,8 @@ class NonAssociationService(
       if (otherExisting.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.nsOffenderNo} and nsOffender=${dto.offenderNo}")
       }
+      existing.nonAssociationReason = recipReason
+      existing.recipNonAssociationReason = recipReason
       existing.offenderNonAssociationDetails.add(
         mapDetails(
           recipReason,
@@ -65,6 +71,8 @@ class NonAssociationService(
           existing.nextAvailableSequence(),
         ),
       )
+      otherExisting.nonAssociationReason = recipReason
+      otherExisting.recipNonAssociationReason = reason
       otherExisting.offenderNonAssociationDetails.add(
         mapDetails(
           reason,
@@ -78,12 +86,12 @@ class NonAssociationService(
         id = OffenderNonAssociationId(offender, nsOffender),
         offenderBooking = offender.bookings.first(),
         nsOffenderBooking = nsOffender.bookings.first(),
-        nonAssociationReason = reason,
-        recipNonAssociationReason = reason,
+        nonAssociationReason = recipReason,
+        recipNonAssociationReason = recipReason,
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(reason, this, dto))
           }
         }
 
@@ -91,12 +99,12 @@ class NonAssociationService(
         id = OffenderNonAssociationId(nsOffender, offender),
         offenderBooking = nsOffender.bookings.first(),
         nsOffenderBooking = offender.bookings.first(),
-        nonAssociationReason = reason,
-        recipNonAssociationReason = recipReason,
+        nonAssociationReason = recipReason,
+        recipNonAssociationReason = reason,
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(reason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto))
           }
         }
     }
@@ -124,13 +132,18 @@ class NonAssociationService(
     val type = typeRepository.findByIdOrNull(NonAssociationType.pk(dto.type))
       ?: throw BadDataException("Type with code=${dto.type} does not exist")
 
-    existing.nonAssociationReason = reason
+    if (dto.effectiveDate.isAfter(LocalDate.now())) {
+      throw BadDataException("Effective date must not be in the future")
+    }
+
+    existing.nonAssociationReason = recipReason
     existing.recipNonAssociationReason = recipReason
 
     existing.getOpenNonAssociationDetail()?.apply {
-      nonAssociationReason = existing.nonAssociationReason!!
-      recipNonAssociationReason = existing.recipNonAssociationReason
+      nonAssociationReason = reason
+      nonAssociationType = type
       effectiveDate = dto.effectiveDate
+      authorisedBy = dto.authorisedBy
       comment = dto.comment
     }
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
@@ -140,18 +153,15 @@ class NonAssociationService(
     )
       ?: throw BadDataException("Opposite non-association not found where offender=$nsOffenderNo and nsOffender=$offenderNo")
 
-    if (otherExisting.getOpenNonAssociationDetail() != null) {
-      throw BadDataException("Non-association already exists for offender=$nsOffenderNo and nsOffender=$offenderNo")
-    }
     otherExisting.nonAssociationReason = recipReason
     otherExisting.recipNonAssociationReason = reason
 
     otherExisting.getOpenNonAssociationDetail()?.apply {
       nonAssociationReason = otherExisting.nonAssociationReason!!
-      recipNonAssociationReason = otherExisting.recipNonAssociationReason
-      effectiveDate = dto.effectiveDate
-      comment = dto.comment
       nonAssociationType = type
+      effectiveDate = dto.effectiveDate
+      authorisedBy = dto.authorisedBy
+      comment = dto.comment
     }
       ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
 
@@ -201,7 +211,6 @@ class NonAssociationService(
       offenderBooking = existing.offenderBooking,
       nsOffenderBooking = existing.nsOffenderBooking,
       nonAssociationReason = reason,
-      // recipNonAssociationReason = existing.recipNonAssociationReason,
       nonAssociation = existing,
       effectiveDate = dto.effectiveDate,
       comment = dto.comment,
@@ -216,12 +225,15 @@ class NonAssociationService(
     val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
       ?: throw NotFoundException("NS Offender with nomsId=$nsOffenderNo not found")
 
-    offenderNonAssociationRepository.findByIdOrNull(
-      OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
+    return offenderNonAssociationRepository.findByIdOrNull(
+      OffenderNonAssociationId(
+        offender = offender,
+        nsOffender = nsOffender,
+      ),
     )?.let {
-      return mapModel(it)
+      mapModel(it)
     }
-      ?: throw NotFoundException("NonAssociation not found")
+      ?: throw NotFoundException("Open NonAssociation not found")
   }
 
   fun findIdsByFilter(
@@ -231,16 +243,18 @@ class NonAssociationService(
     offenderNonAssociationRepository.findAll(NonAssociationSpecification(nonAssociationFilter), pageRequest)
       .map { NonAssociationIdResponse(it.id.offender.nomsId, it.id.nsOffender.nomsId) }
 
-  private fun mapModel(entity: OffenderNonAssociation) =
-    NonAssociationResponse(
-      offenderNo = entity.id.offender.nomsId,
-      nsOffenderNo = entity.id.nsOffender.nomsId,
-      // TODO - this is a bit of a guess, it's not clear what the correct behaviour should be yet
-      reason = entity.nonAssociationReason?.code,
-      recipReason = entity.recipNonAssociationReason?.code,
-      type = entity.getOpenNonAssociationDetail()?.nonAssociationType?.code,
-      effectiveDate = entity.getOpenNonAssociationDetail()?.effectiveDate,
-      authorisedBy = entity.getOpenNonAssociationDetail()?.authorisedBy,
-      comment = entity.getOpenNonAssociationDetail()?.comment,
-    )
+  private fun mapModel(entity: OffenderNonAssociation): NonAssociationResponse? =
+    entity.getOpenNonAssociationDetail()?.let { detail ->
+      NonAssociationResponse(
+        offenderNo = entity.id.offender.nomsId,
+        nsOffenderNo = entity.id.nsOffender.nomsId,
+        reason = detail.nonAssociationReason.code,
+        recipReason = entity.recipNonAssociationReason?.code,
+        type = detail.nonAssociationType.code,
+        effectiveDate = detail.effectiveDate,
+        expiryDate = detail.expiryDate,
+        authorisedBy = detail.authorisedBy,
+        comment = detail.comment,
+      )
+    }
 }

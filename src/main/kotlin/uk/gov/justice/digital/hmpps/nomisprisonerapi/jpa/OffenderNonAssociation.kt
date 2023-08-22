@@ -46,10 +46,7 @@ data class OffenderNonAssociation(
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + NonAssociationReason.DOMAIN + "'",
-          referencedColumnName = "domain",
-        ),
+        formula = JoinFormula(value = "'" + NonAssociationReason.DOMAIN + "'", referencedColumnName = "domain"),
       ),
       JoinColumnOrFormula(column = JoinColumn(name = "NS_REASON_CODE", referencedColumnName = "code")),
     ],
@@ -60,10 +57,7 @@ data class OffenderNonAssociation(
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + NonAssociationReason.DOMAIN + "'",
-          referencedColumnName = "domain",
-        ),
+        formula = JoinFormula(value = "'" + NonAssociationReason.DOMAIN + "'", referencedColumnName = "domain"),
       ),
       JoinColumnOrFormula(column = JoinColumn(name = "RECIP_NS_REASON_CODE", referencedColumnName = "code")),
     ],
@@ -72,6 +66,7 @@ data class OffenderNonAssociation(
 
   @OneToMany(mappedBy = "nonAssociation", cascade = [CascadeType.ALL], orphanRemoval = true)
   val offenderNonAssociationDetails: MutableList<OffenderNonAssociationDetail> = mutableListOf(),
+
 ) {
   fun getOpenNonAssociationDetail(): OffenderNonAssociationDetail? =
     offenderNonAssociationDetails.firstOrNull { it.expiryDate == null }

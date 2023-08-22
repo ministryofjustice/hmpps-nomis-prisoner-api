@@ -983,7 +983,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(updated.courseScheduleRules.size).isEqualTo(1)
         with(updated.courseScheduleRules[0]) {
           assertThat(startTime.toLocalTime()).isEqualTo("09:00")
-          assertThat(endTime?.toLocalTime()).isEqualTo("12:00")
+          assertThat(endTime.toLocalTime()).isEqualTo("12:00")
           assertThat(this.friday).isEqualTo(false)
         }
 

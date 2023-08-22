@@ -349,8 +349,9 @@ class ActivitiesResource(
     @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
+    @Schema(description = "Course Activity ID", required = false) @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> =
-    activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes)
+    activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/{courseActivityId}")
@@ -449,8 +450,9 @@ class ActivitiesResource(
     @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
+    @Schema(description = "Course Activity ID", required = false) @RequestParam courseActivityId: Long?,
   ): Page<FindActiveAllocationIdsResponse> =
-    allocationService.findActiveAllocations(pageRequest, prisonId, excludeProgramCodes)
+    allocationService.findActiveAllocations(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/{allocationId}")
