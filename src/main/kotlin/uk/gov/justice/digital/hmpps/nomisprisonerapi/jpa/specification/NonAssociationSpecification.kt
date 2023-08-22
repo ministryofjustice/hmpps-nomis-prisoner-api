@@ -32,10 +32,11 @@ class NonAssociationSpecification(private val filter: NonAssociationFilter) : Sp
 
     // Filter out duplicates by only returning the id - ordered record for each pair of offenders
     predicates.add(
-        criteriaBuilder.lessThan(
-            root.get<String>(OffenderNonAssociation::id.name).get<String>(OffenderNonAssociationId::offender.name),
-            root.get<String>(OffenderNonAssociation::id.name).get<String>(OffenderNonAssociationId::nsOffender.name),
-        ),
+      criteriaBuilder.lessThan(
+        root.get<String>(OffenderNonAssociation::id.name).get<String>(OffenderNonAssociationId::offender.name),
+        root.get<String>(OffenderNonAssociation::id.name)
+          .get<String>(OffenderNonAssociationId::nsOffender.name),
+      ),
     )
 
     return criteriaBuilder.and(*predicates.toTypedArray())
