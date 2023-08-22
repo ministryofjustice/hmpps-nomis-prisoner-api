@@ -250,6 +250,7 @@ data class HearingResultAward(
   val compensationAmount: BigDecimal?,
   val consecutiveAward: HearingResultAward?,
   val chargeSequence: Int,
+  val adjudicationNumber: Long,
 )
 
 fun Offender.toPrisoner(createUsername: String) =
