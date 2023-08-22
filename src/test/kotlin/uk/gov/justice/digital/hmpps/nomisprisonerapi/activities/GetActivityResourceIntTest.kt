@@ -520,6 +520,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
               minimumIncentiveLevelCode = "BAS",
               excludeBankHolidays = true,
               payPerSession = "F",
+              outsideWork = true,
             )
           }
         }
@@ -539,6 +540,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .jsonPath("minimumIncentiveLevel").isEqualTo("BAS")
           .jsonPath("excludeBankHolidays").isEqualTo(true)
           .jsonPath("payPerSession").isEqualTo("F")
+          .jsonPath("outsideWork").isEqualTo("true")
       }
 
       @Test
