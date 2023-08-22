@@ -28,36 +28,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   lateinit var offenderAtLeeds: Offender
   lateinit var offenderAtShrewsbury: Offender
 
-  private fun callCreateEndpoint() {
-    webTestClient.post().uri("/non-associations")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
-      .contentType(MediaType.APPLICATION_JSON)
-      .body(BodyInserters.fromValue(validCreateJsonRequest()))
-      .exchange()
-      .expectStatus().isCreated
-      .expectBody().isEmpty()
-  }
-
-  private fun validCreateJsonRequest() = """{
-            "offenderNo"    : "${offenderAtMoorlands.nomsId}",
-            "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
-            "reason"        : "RIV",
-            "recipReason"   : "PER",
-            "type"          : "WING",
-            "authorisedBy"  : "me!",
-            "effectiveDate" : "2023-02-27",
-            "comment"       : "this is a test!"
-          }
-  """.trimIndent()
-
-  private fun callCloseEndpoint(offenderNo: String, nsOffenderNo: String) {
-    webTestClient.put()
-      .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", offenderNo, nsOffenderNo)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
-      .exchange()
-      .expectStatus().isOk
-  }
-
   @BeforeEach
   internal fun createPrisoners() {
     nomisDataBuilder.build {
@@ -213,10 +183,17 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest().replace(
-        """"effectiveDate" : "2023-02-27"""",
-        """"effectiveDate" : "2023-13-27"""",
-      )
+      val invalidSchedule = """{
+                "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                "reason"        : "RIV",
+                "recipReason"   : "PER",
+                "type"          : "WING",
+                "authorisedBy"  : "me!",
+                "effectiveDate" : "2023-13-27", // INVALID DATE
+                "comment"       : "this is a test!"
+              }
+      """.trimIndent()
       webTestClient.post().uri("/non-associations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -230,7 +207,27 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will create non-association with correct details`() {
-      callCreateEndpoint()
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+            BodyInserters.fromValue(
+                """{
+                    "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                    "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                    "reason"        : "RIV",
+                    "recipReason"   : "PER",
+                    "type"          : "WING",
+                    "authorisedBy"  : "me!",
+                    "effectiveDate" : "2023-02-27",
+                    "comment"       : "this is a test!"
+                  }
+          """.trimIndent(),
+            ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody().isEmpty()
 
       // Check the database
       repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds).apply {
@@ -292,6 +289,31 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
       )
     }
 
+    @BeforeEach
+    internal fun createNonAssociation() {
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+            BodyInserters.fromValue(
+                """{
+                    "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                    "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                    "reason"        : "RIV",
+                    "recipReason"   : "PER",
+                    "type"          : "WING",
+                    "authorisedBy"  : "me!",
+                    "effectiveDate" : "2023-02-27",
+                    "comment"       : "this is a test!"
+                  }
+          """.trimIndent(),
+            ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody().isEmpty()
+    }
+
     @Test
     fun `access forbidden when no authority`() {
       webTestClient.put()
@@ -333,7 +355,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid reason`() {
-      callCreateEndpoint()
       webTestClient.put().uri(
         "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
         offenderAtMoorlands.nomsId,
@@ -350,7 +371,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid reciprocal reason`() {
-      callCreateEndpoint()
       webTestClient.put().uri(
         "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
         offenderAtMoorlands.nomsId,
@@ -367,7 +387,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid type`() {
-      callCreateEndpoint()
       webTestClient.put().uri(
         "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
         offenderAtMoorlands.nomsId,
@@ -384,7 +403,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `effectiveDate in the future`() {
-      callCreateEndpoint()
       webTestClient.put().uri(
         "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
         offenderAtMoorlands.nomsId,
@@ -402,7 +420,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `comment too long`() {
-      callCreateEndpoint()
       webTestClient.put().uri(
         "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
         offenderAtMoorlands.nomsId,
@@ -420,11 +437,15 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest().replace(
-        """"effectiveDate" : "2023-02-28"""",
-        """"effectiveDate" : "2023-13-27"""",
-      )
-      callCreateEndpoint()
+      val invalidSchedule = """{
+              "reason"        : "BUL",
+              "recipReason"   : "VIC",
+              "type"          : "LAND",
+              "authorisedBy"  : "Joe Bloggs",
+              "effectiveDate" : "2023-13-27", // INVALID DATE
+              "comment"       : "this is a modified test!"
+            }
+      """.trimIndent()
       webTestClient.put().uri(
         "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
         offenderAtMoorlands.nomsId,
@@ -442,8 +463,29 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will update non-association with correct details`() {
-      callCreateEndpoint()
-      callUpdateEndpoint(offenderAtMoorlands.nomsId, offenderAtLeeds.nomsId)
+      webTestClient.put()
+        .uri(
+            "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+            offenderAtMoorlands.nomsId,
+            offenderAtLeeds.nomsId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+            BodyInserters.fromValue(
+                """{
+                  "reason"        : "BUL",
+                  "recipReason"   : "VIC",
+                  "type"          : "LAND",
+                  "authorisedBy"  : "Joe Bloggs",
+                  "effectiveDate" : "2023-02-28",
+                  "comment"       : "this is a modified test!"
+                }
+          """.trimIndent(),
+            ),
+        )
+        .exchange()
+        .expectStatus().isOk
 
       // Check the database
       repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds).apply {
@@ -489,26 +531,6 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         assertThat(nd.nonAssociation).isEqualTo(this)
       }
     }
-
-    private fun callUpdateEndpoint(offenderNo: String, nsOffenderNo: String) {
-      webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", offenderNo, nsOffenderNo)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validUpdateJsonRequest()))
-        .exchange()
-        .expectStatus().isOk
-    }
-
-    private fun validUpdateJsonRequest() = """{
-            "reason"        : "BUL",
-            "recipReason"   : "VIC",
-            "type"          : "LAND",
-            "authorisedBy"  : "Joe Bloggs",
-            "effectiveDate" : "2023-02-28",
-            "comment"       : "this is a modified test!"
-          }
-    """.trimIndent()
   }
 
   @Nested
@@ -551,8 +573,36 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will close non-association correctly`() {
-      callCreateEndpoint()
-      callCloseEndpoint(offenderAtMoorlands.nomsId, offenderAtLeeds.nomsId)
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+            BodyInserters.fromValue(
+                """{
+                    "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                    "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                    "reason"        : "RIV",
+                    "recipReason"   : "PER",
+                    "type"          : "WING",
+                    "authorisedBy"  : "me!",
+                    "effectiveDate" : "2023-02-27",
+                    "comment"       : "this is a test!"
+                  }
+          """.trimIndent(),
+            ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody().isEmpty()
+      webTestClient.put()
+        .uri(
+            "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close",
+            offenderAtMoorlands.nomsId,
+            offenderAtLeeds.nomsId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
 
       // Check the database
       val na = repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds)
@@ -584,7 +634,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             effectiveDate = LocalDate.parse("2020-01-01"),
             expiryDate = LocalDate.parse("2020-01-31"),
             nonAssociationType = "WING",
-            authorisedBy = "Staff Member",
+            authorisedBy = "Staff Member 2",
             comment = "this is a closed NA",
           )
         }
@@ -603,15 +653,49 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
-        .jsonPath("$.nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
-        .jsonPath("$.reason").isEqualTo("BUL")
-        .jsonPath("$.recipReason").isEqualTo("VIC")
-        .jsonPath("$.type").isEqualTo("LAND")
-        .jsonPath("$.authorisedBy").isEqualTo("Staff Member")
-        .jsonPath("$.effectiveDate").isEqualTo("2021-02-28")
-        .jsonPath("$.expiryDate").doesNotExist()
-        .jsonPath("$.comment").isEqualTo("this is a GET test!")
+        .jsonPath("$[0].offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$[0].nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$[0].reason").isEqualTo("BUL")
+        .jsonPath("$[0].recipReason").isEqualTo("VIC")
+        .jsonPath("$[0].type").isEqualTo("LAND")
+        .jsonPath("$[0].authorisedBy").isEqualTo("Staff Member")
+        .jsonPath("$[0].effectiveDate").isEqualTo("2021-02-28")
+        .jsonPath("$[0].expiryDate").doesNotExist()
+        .jsonPath("$[0].comment").isEqualTo("this is a GET test!")
+        .jsonPath("$[1].offenderNo").doesNotExist()
+    }
+
+    @Test
+    fun `get all by id`() {
+      webTestClient
+        .get().uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}?get-all=true",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$[0].offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$[0].nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$[0].reason").isEqualTo("BUL")
+        .jsonPath("$[0].recipReason").isEqualTo("VIC")
+        .jsonPath("$[0].type").isEqualTo("LAND")
+        .jsonPath("$[0].authorisedBy").isEqualTo("Staff Member")
+        .jsonPath("$[0].effectiveDate").isEqualTo("2021-02-28")
+        .jsonPath("$[0].expiryDate").doesNotExist()
+        .jsonPath("$[0].comment").isEqualTo("this is a GET test!")
+
+        .jsonPath("$[1].offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$[1].nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$[1].reason").isEqualTo("PER")
+        .jsonPath("$[1].recipReason").isEqualTo("VIC")
+        .jsonPath("$[1].type").isEqualTo("WING")
+        .jsonPath("$[1].authorisedBy").isEqualTo("Staff Member 2")
+        .jsonPath("$[1].effectiveDate").isEqualTo("2020-01-01")
+        .jsonPath("$[1].expiryDate").isEqualTo("2020-01-31")
+        .jsonPath("$[1].comment").isEqualTo("this is a closed NA")
     }
 
     @Test
@@ -667,7 +751,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createNonAssociations() {
       nomisDataBuilder.build {
-        na1 = nonAssociation(offenderAtLeeds, offenderAtMoorlands) {
+        na1 = nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
           nonAssociationDetail(
             nonAssociationReason = "BUL",
             effectiveDate = LocalDate.parse("2023-01-01"),
@@ -681,7 +765,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             nonAssociationType = "LAND",
           )
         }
-        na3 = nonAssociation(offenderAtShrewsbury, offenderAtLeeds) {
+        na3 = nonAssociation(offenderAtLeeds, offenderAtShrewsbury) {
           nonAssociationDetail(
             nonAssociationReason = "BUL",
             effectiveDate = LocalDate.parse("2023-01-03"),
@@ -714,8 +798,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(1)
-        .jsonPath("$.content[0].offenderNo1").isEqualTo(offenderAtLeeds.nomsId)
-        .jsonPath("$.content[0].offenderNo2").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$.content[0].offenderNo1").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$.content[0].offenderNo2").isEqualTo(offenderAtLeeds.nomsId)
     }
 
     @Test
@@ -732,8 +816,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(1)
-        .jsonPath("$.content[0].offenderNo1").isEqualTo(offenderAtShrewsbury.nomsId)
-        .jsonPath("$.content[0].offenderNo2").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.content[0].offenderNo1").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.content[0].offenderNo2").isEqualTo(offenderAtShrewsbury.nomsId)
     }
 
     @Test

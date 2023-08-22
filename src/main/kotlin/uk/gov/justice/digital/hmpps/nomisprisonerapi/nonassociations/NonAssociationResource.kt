@@ -101,10 +101,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun updateNonAssociation(
-    @Schema(description = "Offender", example = "A3456GH", required = true)
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Schema(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
     @RequestBody @Valid
@@ -136,10 +136,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun closeNonAssociation(
-    @Schema(description = "Offender", example = "A3456GH", required = true)
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Schema(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
   ) = nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo)
@@ -175,14 +175,18 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun getNonAssociation(
-    @Schema(description = "Offender", example = "A3456GH", required = true)
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Schema(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
-  ): NonAssociationResponse =
-    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo)
+    @RequestParam(value = "get-all", required = false, defaultValue = "false")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Whether to get all (open and closed) details records or just open ones")
+    getAll: Boolean,
+  ): List<NonAssociationResponse> =
+    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, getAll)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/ids")

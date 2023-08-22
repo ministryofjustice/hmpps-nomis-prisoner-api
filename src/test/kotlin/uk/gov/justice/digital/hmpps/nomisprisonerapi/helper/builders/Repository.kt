@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
@@ -311,11 +310,6 @@ class Repository(
   fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
   fun <T> runInTransaction(block: () -> T) = block()
 
-  fun save(offenderNonAssociation: OffenderNonAssociation, offenderNonAssociationDetail: OffenderNonAssociationDetail): OffenderNonAssociation =
-    offenderNonAssociationRepository.save(offenderNonAssociation).apply {
-      offenderNonAssociationDetail.nonAssociation = this
-      offenderNonAssociationDetails.add(offenderNonAssociationDetail)
-    }
   fun getNonAssociation(first: Offender, second: Offender): OffenderNonAssociation =
     offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
       .also {

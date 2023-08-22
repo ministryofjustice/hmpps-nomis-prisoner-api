@@ -35,18 +35,18 @@ interface NonAssociationDsl {
 
 @Component
 class NonAssociationBuilderRepository(
-  private val nonAssociationReasonRepository: ReferenceCodeRepository<NonAssociationReason>? = null,
-  private val nonAssociationTypeRepository: ReferenceCodeRepository<NonAssociationType>? = null,
-  private val nonAssociationRepository: OffenderNonAssociationRepository? = null,
+  private val nonAssociationReasonRepository: ReferenceCodeRepository<NonAssociationReason>,
+  private val nonAssociationTypeRepository: ReferenceCodeRepository<NonAssociationType>,
+  private val nonAssociationRepository: OffenderNonAssociationRepository,
 ) {
   fun lookupNonAssociationReason(code: String): NonAssociationReason =
-    nonAssociationReasonRepository?.findByIdOrNull(ReferenceCode.Pk(NonAssociationReason.DOMAIN, code))!!
+    nonAssociationReasonRepository.findByIdOrNull(ReferenceCode.Pk(NonAssociationReason.DOMAIN, code))!!
 
   fun lookupNonAssociationType(code: String): NonAssociationType =
-    nonAssociationTypeRepository?.findByIdOrNull(ReferenceCode.Pk(NonAssociationType.DOMAIN, code))!!
+    nonAssociationTypeRepository.findByIdOrNull(ReferenceCode.Pk(NonAssociationType.DOMAIN, code))!!
 
   fun save(nonAssociation: OffenderNonAssociation) =
-    nonAssociationRepository?.findByIdOrNull(nonAssociation.id) ?: nonAssociationRepository?.save(nonAssociation)
+    nonAssociationRepository.findByIdOrNull(nonAssociation.id) ?: nonAssociationRepository.save(nonAssociation)
 }
 
 @Component
