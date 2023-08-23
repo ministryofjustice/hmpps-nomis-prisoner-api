@@ -26,7 +26,6 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
        join OffenderBooking ob on opp.offenderBooking = ob
        where opp.prison.id = :prisonId 
        and opp.programStatus.code = 'ALLOC'
-       and opp.startDate <= current_date 
        and (opp.endDate is null or opp.endDate > current_date)
        and ob.active = true
        and ob.location.id = :prisonId
