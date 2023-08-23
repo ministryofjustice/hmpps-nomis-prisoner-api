@@ -62,6 +62,21 @@ workflows:
             - validate
             - build_docker
             - helm_lint
+      - hmpps/deploy_env:
+          name: deploy_cp_dev
+          env: "cp-dev"
+          jira_update: true
+          context:
+            - hmpps-common-vars
+            - hmpps-nomis-prisoner-api-cp-dev
+          filters:
+            branches:
+              only:
+                - main
+          requires:
+            - validate
+            - build_docker
+            - helm_lint
       - request-preprod-approval:
           type: approval
           requires:
