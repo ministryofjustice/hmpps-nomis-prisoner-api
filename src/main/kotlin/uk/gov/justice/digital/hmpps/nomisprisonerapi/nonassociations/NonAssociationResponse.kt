@@ -15,19 +15,19 @@ data class NonAssociationResponse(
   val nsOffenderNo: String,
 
   @Schema(description = "Reason code of the first prisoner, domain NON_ASSO_RSN", required = true, example = "VIC")
-  val reason: String? = null,
+  val reason: String,
 
-  @Schema(description = "Reason code of the other prisoner, domain NON_ASSO_RSN", example = "PER")
-  val recipReason: String? = null,
+  @Schema(description = "Reason code of the other prisoner, domain NON_ASSO_RSN", required = true, example = "PER")
+  val recipReason: String,
 
   @Schema(description = "Type code, domain NON_ASSO_TYP", required = true, example = "WING")
-  val type: String? = null,
+  val type: String,
 
   @Schema(description = "Free text name of staff member", example = "Joe Bloggs")
   val authorisedBy: String? = null,
 
   @Schema(description = "Effective date", required = true, example = "2022-08-12")
-  val effectiveDate: LocalDate? = null,
+  val effectiveDate: LocalDate,
 
   @Schema(description = "Expiry date, open if null", example = "2022-08-12")
   val expiryDate: LocalDate? = null,
