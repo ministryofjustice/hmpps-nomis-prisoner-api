@@ -14,10 +14,6 @@ generic-service:
     port: 8080
 
   ingress:
-    annotations:
-      # this magic line automatically generates a certificate for the ingress
-      cert-manager.io/cluster-issuer: letsencrypt-production
-      kubernetes.io/ingress.class: nginx
     enabled: true
     dso_enabled: true
     host: app-hostname.local    # override per environment
@@ -37,9 +33,6 @@ generic-service:
       JDBC_URL: "JDBC_URL"
       DB_USERNAME: "DB_USERNAME"
       DB_PASSWORD: "DB_PASSWORD"
-
-  # Disabled for DSO AKS cluster
-  allowlist: null
 
   resources:
     requests:
