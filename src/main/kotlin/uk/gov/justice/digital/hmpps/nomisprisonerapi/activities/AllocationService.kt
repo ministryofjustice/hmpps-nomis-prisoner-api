@@ -98,7 +98,7 @@ class AllocationService(
 
     val courseActivity = findCourseActivityOrThrow(courseActivityId, offenderBooking, requestedPayBand, newAllocation = existingAllocation == null)
 
-    val requestedEndReason = findEndReasonOrThrow(request)
+    val requestedEndReason = findEndReasonOrThrow(request.endReason)
 
     val allocation = existingAllocation
       ?: newAllocation(request, offenderBooking, courseActivity, requestedPayBand)
@@ -118,10 +118,10 @@ class AllocationService(
     offenderProgramStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(programStatusCode))
       ?: throw BadDataException("Program status code=$programStatusCode does not exist")
 
-  private fun findEndReasonOrThrow(request: UpsertAllocationRequest): ProgramServiceEndReason? =
-    request.endReason?.let {
+  private fun findEndReasonOrThrow(endReason: String?): ProgramServiceEndReason? =
+    endReason?.let {
       programServiceEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(it))
-        ?: throw BadDataException("End reason code=${request.endReason} does not exist")
+        ?: throw BadDataException("End reason code=$endReason does not exist")
     }
 
   private fun findCourseActivityOrThrow(
@@ -235,4 +235,10 @@ class AllocationService(
   private fun findPrisonOrThrow(prisonId: String) =
     agencyLocationRepository.findByIdOrNull(prisonId)
       ?: throw BadDataException("Prison with id=$prisonId does not exist")
+
+  fun endAllocation(courseAllocation: OffenderProgramProfile, date: LocalDate) {
+    courseAllocation.endDate = date
+    courseAllocation.endReason = findEndReasonOrThrow("OTH")
+    courseAllocation.programStatus = findProgramStatus("END")
+  }
 }

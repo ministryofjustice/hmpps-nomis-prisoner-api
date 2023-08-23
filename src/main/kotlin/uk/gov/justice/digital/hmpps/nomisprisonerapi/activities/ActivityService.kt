@@ -36,6 +36,7 @@ class ActivityService(
   private val scheduleService: ScheduleService,
   private val scheduleRuleService: ScheduleRuleService,
   private val courseActivityRepository: CourseActivityRepository,
+  private val allocationService: AllocationService,
   private val telemetryClient: TelemetryClient,
 ) {
   fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
@@ -220,4 +221,18 @@ class ActivityService(
       ?: throw NotFoundException("Course Activity with id=$courseActivityId does not exist")
 
   fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
+
+  fun endActivity(courseActivityId: Long, date: LocalDate) {
+    val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
+      ?: throw NotFoundException("Course Activity $courseActivityId not found")
+
+    if (courseActivity.scheduleEndDate != null && courseActivity.scheduleEndDate!! < date) {
+      throw BadDataException("Course Activity id ${courseActivity.courseActivityId} ended on ${courseActivity.scheduleEndDate}")
+    }
+
+    courseActivity.scheduleEndDate = date
+    courseActivity.offenderProgramProfiles
+      .filter { it.endDate == null || it.endDate!! > date }
+      .forEach { allocationService.endAllocation(it, date) }
+  }
 }
