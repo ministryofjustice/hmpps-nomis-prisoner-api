@@ -251,7 +251,7 @@ class NonAssociationService(
           offenderNo = entity.id.offender.nomsId,
           nsOffenderNo = entity.id.nsOffender.nomsId,
           reason = detail.nonAssociationReason.code,
-          recipReason = entity.recipNonAssociationReason?.code,
+          recipReason = entity.recipNonAssociationReason?.code!!, // Always set in prod
           type = detail.nonAssociationType.code,
           effectiveDate = detail.effectiveDate,
           expiryDate = detail.expiryDate,

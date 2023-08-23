@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import java.time.LocalDate
 
 class NonAssociationsResourceIntTest : IntegrationTestBase() {
@@ -624,14 +623,120 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class GetNonAssociationById {
-
-    private lateinit var na1: OffenderNonAssociation
+  inner class GetOpenNonAssociationById {
 
     @BeforeEach
     internal fun createNonAssociations() {
       nomisDataBuilder.build {
-        na1 = nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "BUL",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+            nonAssociationType = "LAND",
+            authorisedBy = "Staff Member",
+            comment = "this is a GET test!",
+          )
+          nonAssociationDetail(
+            typeSeq = 2,
+            nonAssociationReason = "PER",
+            effectiveDate = LocalDate.parse("2020-01-01"),
+            expiryDate = LocalDate.parse("2020-01-31"),
+            nonAssociationType = "WING",
+            authorisedBy = "Staff Member 2",
+            comment = "this is a closed NA",
+          )
+        }
+        nonAssociation(offenderAtMoorlands, offenderAtShrewsbury) {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "VIC",
+            effectiveDate = LocalDate.parse("2020-01-01"),
+            expiryDate = LocalDate.parse("2020-01-31"),
+            nonAssociationType = "WING",
+            authorisedBy = "Staff Member 3",
+            comment = "this is a closed NA",
+          )
+        }
+      }
+    }
+
+    @Test
+    fun `get by id`() {
+      webTestClient
+        .get().uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$.nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.reason").isEqualTo("BUL")
+        .jsonPath("$.recipReason").isEqualTo("VIC")
+        .jsonPath("$.type").isEqualTo("LAND")
+        .jsonPath("$.authorisedBy").isEqualTo("Staff Member")
+        .jsonPath("$.effectiveDate").isEqualTo("2021-02-28")
+        .jsonPath("$.expiryDate").doesNotExist()
+        .jsonPath("$.comment").isEqualTo("this is a GET test!")
+    }
+
+    @Test
+    fun `offender not found`() {
+      webTestClient.get().uri("/non-associations/offender/A0000AA/ns-offender/A0000BB")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `non-associations not found`() {
+      repository.deleteAllNonAssociations()
+      webTestClient.get().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtLeeds.nomsId,
+        offenderAtMoorlands.nomsId,
+      )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `NA exists but no open non-associations`() {
+      repository.deleteAllNonAssociations()
+      webTestClient.get().uri(
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        offenderAtMoorlands.nomsId,
+        offenderAtShrewsbury.nomsId,
+      )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get non-associations prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get()
+          .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+  }
+
+  @Nested
+  inner class GetNonAssociationDetailsById {
+
+    @BeforeEach
+    internal fun createNonAssociations() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
           nonAssociationDetail(
             typeSeq = 1,
             nonAssociationReason = "BUL",
@@ -654,34 +759,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `get by id`() {
-      webTestClient
-        .get().uri(
-          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
-          offenderAtMoorlands.nomsId,
-          offenderAtLeeds.nomsId,
-        )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("$[0].offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
-        .jsonPath("$[0].nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
-        .jsonPath("$[0].reason").isEqualTo("BUL")
-        .jsonPath("$[0].recipReason").isEqualTo("VIC")
-        .jsonPath("$[0].type").isEqualTo("LAND")
-        .jsonPath("$[0].authorisedBy").isEqualTo("Staff Member")
-        .jsonPath("$[0].effectiveDate").isEqualTo("2021-02-28")
-        .jsonPath("$[0].expiryDate").doesNotExist()
-        .jsonPath("$[0].comment").isEqualTo("this is a GET test!")
-        .jsonPath("$[1].offenderNo").doesNotExist()
-    }
-
-    @Test
     fun `get all by id`() {
       webTestClient
         .get().uri(
-          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}?get-all=true",
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/all",
           offenderAtMoorlands.nomsId,
           offenderAtLeeds.nomsId,
         )
@@ -711,7 +792,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `offender not found`() {
-      webTestClient.get().uri("/non-associations/offender/A0000AA/ns-offender/A0000BB")
+      webTestClient.get().uri("/non-associations/offender/A0000AA/ns-offender/A0000BB/all")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
         .expectStatus().isNotFound
@@ -721,7 +802,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     fun `non-associations not found`() {
       repository.deleteAllNonAssociations()
       webTestClient.get().uri(
-        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/all",
         offenderAtLeeds.nomsId,
         offenderAtMoorlands.nomsId,
       )
@@ -734,20 +815,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     fun `get non-associations prevents access without appropriate role`() {
       assertThat(
         webTestClient.get()
-          .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
+          .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/all", "A1234AA", "A1234AA")
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
           .expectStatus().isForbidden,
-      )
-    }
-
-    @Test
-    fun `get non-associations prevents access without authorization`() {
-      assertThat(
-        webTestClient.get()
-          .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
-          .exchange()
-          .expectStatus().isUnauthorized,
       )
     }
   }
@@ -755,28 +826,24 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetNonAssociationIdsByFilterRequest {
 
-    private lateinit var na1: OffenderNonAssociation
-    private lateinit var na2: OffenderNonAssociation
-    private lateinit var na3: OffenderNonAssociation
-
     @BeforeEach
     internal fun createNonAssociations() {
       nomisDataBuilder.build {
-        na1 = nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
           nonAssociationDetail(
             nonAssociationReason = "BUL",
             effectiveDate = LocalDate.parse("2023-01-01"),
             nonAssociationType = "LAND",
           )
         }
-        na2 = nonAssociation(offenderAtMoorlands, offenderAtShrewsbury) {
+        nonAssociation(offenderAtMoorlands, offenderAtShrewsbury) {
           nonAssociationDetail(
             nonAssociationReason = "BUL",
             effectiveDate = LocalDate.parse("2023-01-02"),
             nonAssociationType = "LAND",
           )
         }
-        na3 = nonAssociation(offenderAtLeeds, offenderAtShrewsbury) {
+        nonAssociation(offenderAtLeeds, offenderAtShrewsbury) {
           nonAssociationDetail(
             nonAssociationReason = "BUL",
             effectiveDate = LocalDate.parse("2023-01-03"),
