@@ -32,7 +32,6 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        join CourseActivity ca on opp.courseActivity.courseActivityId = ca.courseActivityId 
        where opp.prison.id = :prisonId 
        and opp.programStatus.code = 'ALLOC'
-       and opp.startDate <= current_date
        and (opp.endDate is null or opp.endDate > current_date)
        and ob.active = true
        and ob.location.id = :prisonId

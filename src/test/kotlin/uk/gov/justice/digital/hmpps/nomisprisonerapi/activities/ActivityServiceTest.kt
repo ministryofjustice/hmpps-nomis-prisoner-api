@@ -63,6 +63,7 @@ class ActivityServiceTest {
   private val scheduleService: ScheduleService = mock()
   private val scheduleRuleService: ScheduleRuleService = mock()
   private val courseActivityRepository: CourseActivityRepository = mock()
+  private val courseAllocationService: AllocationService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val activityService = ActivityService(
@@ -75,6 +76,7 @@ class ActivityServiceTest {
     scheduleService,
     scheduleRuleService,
     courseActivityRepository,
+    courseAllocationService,
     telemetryClient,
   )
 
@@ -116,6 +118,7 @@ class ActivityServiceTest {
       ),
       payPerSession = PayPerSession.H,
       excludeBankHolidays = true,
+      outsideWork = true,
     )
 
     @BeforeEach
@@ -162,6 +165,7 @@ class ActivityServiceTest {
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
           assertThat(activity.excludeBankHolidays).isTrue()
+          assertThat(activity.outsideWork).isTrue()
         },
       )
     }
@@ -241,6 +245,7 @@ class ActivityServiceTest {
         ),
       ),
       excludeBankHolidays = false,
+      outsideWork = false,
       programCode = "INTTEST",
     )
     val nomisDataBuilder = NomisDataBuilder()
@@ -321,6 +326,7 @@ class ActivityServiceTest {
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID + 1)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.F)
           assertThat(activity.excludeBankHolidays).isFalse()
+          assertThat(activity.outsideWork).isFalse()
         },
       )
     }

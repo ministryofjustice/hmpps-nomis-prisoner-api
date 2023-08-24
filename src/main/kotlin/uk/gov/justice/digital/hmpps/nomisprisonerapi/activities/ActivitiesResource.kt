@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAlloca
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import java.time.LocalDate
 
 @RestController
 @Validated
@@ -588,4 +589,49 @@ class ActivitiesResource(
     ],
   )
   fun deleteAttendance(@PathVariable eventId: Long) = attendanceService.deleteAttendance(eventId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PutMapping("/activities/{courseActivityId}/end")
+  @Operation(
+    summary = "End a course activity",
+    description = "Ends a course activity and all active attendances with end date today. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity ended",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun endActivity(
+    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+  ) =
+    activityService.endActivity(courseActivityId, LocalDate.now())
 }

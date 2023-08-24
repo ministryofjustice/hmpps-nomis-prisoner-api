@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import java.time.LocalDate
 
 @RestController
@@ -101,10 +102,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun updateNonAssociation(
-    @Schema(description = "Offender", example = "A3456GH", required = true)
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Schema(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
     @RequestBody @Valid
@@ -136,10 +137,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun closeNonAssociation(
-    @Schema(description = "Offender", example = "A3456GH", required = true)
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Schema(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
   ) = nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo)
@@ -147,19 +148,13 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
   @Operation(
-    summary = "Get an non-association",
-    description = "Get an non-association given the two offender numbers. Requires role NOMIS_NON_ASSOCIATIONS",
+    summary = "Get an open non-association",
+    description = "Get the open non-association for the two offender numbers. Requires role NOMIS_NON_ASSOCIATIONS",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Non-association information with created id",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = NonAssociationResponse::class)),
-        ],
-      ),
+      ApiResponse(responseCode = "200", description = "Non-association information"),
       ApiResponse(
         responseCode = "404",
-        description = "Non-association does not exist",
+        description = "No open non-association exists for these offender numbers, or one of the offenders does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -174,15 +169,53 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
     ],
   )
-  fun getNonAssociation(
-    @Schema(description = "Offender", example = "A3456GH", required = true)
+  fun getOpenNonAssociation(
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Schema(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
   ): NonAssociationResponse =
-    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo)
+    try {
+      nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, false).first()
+    } catch (e: NoSuchElementException) {
+      throw NotFoundException("No open non-association exists for these offender numbers")
+    }
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/all")
+  @Operation(
+    summary = "Get all non-associations for the two offender numbers",
+    description = "Get all non-associations for the two offender numbers, including expired. Requires role NOMIS_NON_ASSOCIATIONS",
+    responses = [
+      ApiResponse(responseCode = "200", description = "List of non-associations"),
+      ApiResponse(
+        responseCode = "404",
+        description = "Non-association does not exist, or one of the offenders does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getNonAssociationDetails(
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
+    @PathVariable
+    nsOffenderNo: String,
+  ): List<NonAssociationResponse> =
+    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, true)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/ids")

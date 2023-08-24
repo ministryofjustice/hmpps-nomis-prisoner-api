@@ -330,25 +330,28 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should not include if prisoner allocation in future`() {
+      fun `should include if prisoner allocation in future`() {
+        lateinit var courseAllocation: OffenderProgramProfile
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow")
+              courseAllocation = courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow")
             }
           }
         }
 
         webTestClient.getActiveAllocations()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].allocationId").isEqualTo(courseAllocation.offenderProgramReferenceId)
 
         webTestClient.getActiveActivities()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
 
       @Test

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.CourseActivityAreaRepository
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import java.math.BigDecimal
@@ -249,6 +251,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
         assertThat(courseActivity.excludeBankHolidays).isEqualTo(true)
+        assertThat(courseActivity.outsideWork).isEqualTo(true)
       }
 
       @Test
@@ -369,7 +372,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               "saturday": false,
               "sunday": false
               }],
-            "excludeBankHolidays": true
+            "excludeBankHolidays": true,
+            "outsideWork": true
           }
     """.trimIndent()
   }
@@ -418,6 +422,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       "minimumIncentiveLevelCode": "BAS", 
       "payPerSession": "F", 
       "excludeBankHolidays": true, 
+      "outsideWork": true, 
       "programCode": "INTTEST",
     """.trimIndent()
 
@@ -1256,6 +1261,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(updated.iepLevel.code).isEqualTo("BAS")
         assertThat(updated.payPerSession).isEqualTo(PayPerSession.F)
         assertThat(updated.excludeBankHolidays).isTrue()
+        assertThat(updated.outsideWork).isTrue()
       }
 
       @Test
@@ -1457,6 +1463,144 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       assertThat(repository.activityRepository.findByIdOrNull(courseActivity.courseActivityId)).isNull()
       assertThat(repository.offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, offenderBooking)).isEmpty()
       assertThat(repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(schedule, offenderBooking)).isNull()
+    }
+  }
+
+  @Nested
+  inner class EndActivity {
+
+    private lateinit var courseActivity: CourseActivity
+
+    private fun WebTestClient.endAllocation(courseActivityId: Long) =
+      put().uri("/activities/$courseActivityId/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/activities/1/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/activities/1/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/activities/1/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return not found`() {
+      webTestClient.endAllocation(1)
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should end an activity and its allocations`() {
+      val courseAllocations = mutableListOf<OffenderProgramProfile>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        repeat(2) {
+          offender {
+            booking {
+              courseAllocations += courseAllocation(courseActivity = courseActivity)
+            }
+          }
+        }
+      }
+
+      webTestClient.endAllocation(courseActivity.courseActivityId)
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(today)
+      }
+      courseAllocations.forEach {
+        with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
+          assertThat(endDate).isEqualTo(today)
+          assertThat(programStatus.code).isEqualTo("END")
+          assertThat(endReason?.code).isEqualTo("OTH")
+        }
+      }
+    }
+
+    @Test
+    fun `should end an activity with no allocations`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+      }
+
+      webTestClient.endAllocation(courseActivity.courseActivityId)
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(today)
+      }
+    }
+
+    @Test
+    fun `should return bad request if activity already ended`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday")
+        }
+      }
+
+      webTestClient.endAllocation(courseActivity.courseActivityId)
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Course Activity id ${courseActivity.courseActivityId} ended on $yesterday")
+        }
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(yesterday)
+      }
+    }
+
+    @Test
+    fun `should not update allocations that are already ended`() {
+      lateinit var activeAllocation: OffenderProgramProfile
+      lateinit var endedAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        offender {
+          booking {
+            activeAllocation = courseAllocation(courseActivity = courseActivity)
+            endedAllocation = courseAllocation(courseActivity = courseActivity, endDate = "$yesterday")
+          }
+        }
+      }
+
+      webTestClient.endAllocation(courseActivity.courseActivityId)
+        .expectStatus().isOk
+
+      with(repository.getOffenderProgramProfile(activeAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(today)
+      }
+      with(repository.getOffenderProgramProfile(endedAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(yesterday)
+      }
     }
   }
 }

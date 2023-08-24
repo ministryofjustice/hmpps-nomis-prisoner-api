@@ -301,7 +301,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should not include if prisoner allocation in future`() {
+      fun `should include if prisoner allocation in future`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
@@ -315,7 +315,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActiveActivities()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
 
       @Test
@@ -366,6 +367,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
             }
           }
         }
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
 
       @Test
@@ -520,6 +526,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
               minimumIncentiveLevelCode = "BAS",
               excludeBankHolidays = true,
               payPerSession = "F",
+              outsideWork = true,
             )
           }
         }
@@ -539,6 +546,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .jsonPath("minimumIncentiveLevel").isEqualTo("BAS")
           .jsonPath("excludeBankHolidays").isEqualTo(true)
           .jsonPath("payPerSession").isEqualTo("F")
+          .jsonPath("outsideWork").isEqualTo("true")
       }
 
       @Test

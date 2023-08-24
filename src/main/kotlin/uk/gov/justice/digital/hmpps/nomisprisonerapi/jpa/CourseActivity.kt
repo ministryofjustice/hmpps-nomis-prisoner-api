@@ -106,6 +106,10 @@ data class CourseActivity(
   @Enumerated(STRING)
   var payPerSession: PayPerSession,
 
+  @Column(name = "OUTSIDE_WORK_FLAG", nullable = false)
+  @Convert(converter = YesNoConverter::class)
+  var outsideWork: Boolean = false,
+
   @OneToMany(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderProgramProfiles: MutableList<OffenderProgramProfile> = mutableListOf(),
 

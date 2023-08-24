@@ -43,6 +43,9 @@ data class UpdateActivityRequest(
   @Schema(description = "Exclude bank holidays?", required = true)
   val excludeBankHolidays: Boolean,
 
+  @Schema(description = "Outside work?", required = true)
+  val outsideWork: Boolean,
+
   @Schema(description = "Program Service code (from activity category)", required = true)
   val programCode: String,
 

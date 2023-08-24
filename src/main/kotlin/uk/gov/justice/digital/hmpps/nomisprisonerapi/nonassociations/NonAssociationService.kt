@@ -219,7 +219,7 @@ class NonAssociationService(
       authorisedBy = dto.authorisedBy,
     )
 
-  fun getNonAssociation(offenderNo: String, nsOffenderNo: String): NonAssociationResponse {
+  fun getNonAssociation(offenderNo: String, nsOffenderNo: String, getAll: Boolean): List<NonAssociationResponse> {
     val offender = offenderRepository.findRootByNomisId(offenderNo)
       ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
     val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
@@ -231,7 +231,7 @@ class NonAssociationService(
         nsOffender = nsOffender,
       ),
     )?.let {
-      mapModel(it)
+      mapModel(it, getAll)
     }
       ?: throw NotFoundException("Open NonAssociation not found")
   }
@@ -243,18 +243,20 @@ class NonAssociationService(
     offenderNonAssociationRepository.findAll(NonAssociationSpecification(nonAssociationFilter), pageRequest)
       .map { NonAssociationIdResponse(it.id.offender.nomsId, it.id.nsOffender.nomsId) }
 
-  private fun mapModel(entity: OffenderNonAssociation): NonAssociationResponse? =
-    entity.getOpenNonAssociationDetail()?.let { detail ->
-      NonAssociationResponse(
-        offenderNo = entity.id.offender.nomsId,
-        nsOffenderNo = entity.id.nsOffender.nomsId,
-        reason = detail.nonAssociationReason.code,
-        recipReason = entity.recipNonAssociationReason?.code,
-        type = detail.nonAssociationType.code,
-        effectiveDate = detail.effectiveDate,
-        expiryDate = detail.expiryDate,
-        authorisedBy = detail.authorisedBy,
-        comment = detail.comment,
-      )
-    }
+  private fun mapModel(entity: OffenderNonAssociation, getAll: Boolean): List<NonAssociationResponse> =
+    entity.offenderNonAssociationDetails
+      .filter { getAll || it.expiryDate == null }
+      .map { detail ->
+        NonAssociationResponse(
+          offenderNo = entity.id.offender.nomsId,
+          nsOffenderNo = entity.id.nsOffender.nomsId,
+          reason = detail.nonAssociationReason.code,
+          recipReason = entity.recipNonAssociationReason?.code!!, // Always set in prod
+          type = detail.nonAssociationType.code,
+          effectiveDate = detail.effectiveDate,
+          expiryDate = detail.expiryDate,
+          authorisedBy = detail.authorisedBy,
+          comment = detail.comment,
+        )
+      }
 }
