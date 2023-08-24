@@ -118,6 +118,7 @@ class ActivityServiceTest {
       ),
       payPerSession = PayPerSession.H,
       excludeBankHolidays = true,
+      outsideWork = true,
     )
 
     @BeforeEach
@@ -164,6 +165,7 @@ class ActivityServiceTest {
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
           assertThat(activity.excludeBankHolidays).isTrue()
+          assertThat(activity.outsideWork).isTrue()
         },
       )
     }
@@ -243,6 +245,7 @@ class ActivityServiceTest {
         ),
       ),
       excludeBankHolidays = false,
+      outsideWork = false,
       programCode = "INTTEST",
     )
     val nomisDataBuilder = NomisDataBuilder()
@@ -323,6 +326,7 @@ class ActivityServiceTest {
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID + 1)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.F)
           assertThat(activity.excludeBankHolidays).isFalse()
+          assertThat(activity.outsideWork).isFalse()
         },
       )
     }

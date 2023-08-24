@@ -251,6 +251,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
         assertThat(courseActivity.excludeBankHolidays).isEqualTo(true)
+        assertThat(courseActivity.outsideWork).isEqualTo(true)
       }
 
       @Test
@@ -371,7 +372,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
               "saturday": false,
               "sunday": false
               }],
-            "excludeBankHolidays": true
+            "excludeBankHolidays": true,
+            "outsideWork": true
           }
     """.trimIndent()
   }
@@ -420,6 +422,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       "minimumIncentiveLevelCode": "BAS", 
       "payPerSession": "F", 
       "excludeBankHolidays": true, 
+      "outsideWork": true, 
       "programCode": "INTTEST",
     """.trimIndent()
 
@@ -1258,6 +1261,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(updated.iepLevel.code).isEqualTo("BAS")
         assertThat(updated.payPerSession).isEqualTo(PayPerSession.F)
         assertThat(updated.excludeBankHolidays).isTrue()
+        assertThat(updated.outsideWork).isTrue()
       }
 
       @Test

@@ -83,6 +83,7 @@ class ActivityService(
       internalLocation = location,
       payPerSession = request.payPerSession,
       excludeBankHolidays = request.excludeBankHolidays,
+      outsideWork = request.outsideWork,
     )
   }
 
@@ -160,6 +161,7 @@ class ActivityService(
       iepLevel = prisonIepLevel.iepLevel
       payPerSession = request.payPerSession
       excludeBankHolidays = request.excludeBankHolidays
+      outsideWork = request.outsideWork
       payRatesService.buildNewPayRates(request.payRates, this).also { newPayRates ->
         payRates.clear()
         payRates.addAll(newPayRates)
