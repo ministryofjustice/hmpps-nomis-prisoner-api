@@ -57,6 +57,9 @@ data class CreateActivityRequest(
 
   @Schema(description = "Exclude bank holidays?", required = true)
   val excludeBankHolidays: Boolean,
+
+  @Schema(description = "Outside work?", required = true)
+  val outsideWork: Boolean,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

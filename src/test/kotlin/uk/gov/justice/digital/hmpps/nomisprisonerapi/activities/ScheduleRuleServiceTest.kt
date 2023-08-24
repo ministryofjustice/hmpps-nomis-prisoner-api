@@ -38,6 +38,7 @@ class ScheduleRuleServiceTest {
       payPerSession = PayPerSession.H,
       internalLocationId = null,
       excludeBankHolidays = true,
+      outsideWork = true,
     )
     private val createScheduleRuleRequest = ScheduleRuleRequest(
       startTime = LocalTime.parse("09:00"),
