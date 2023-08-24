@@ -4,19 +4,22 @@
 generic-service:
   replicaCount: 2
 
-  poddisruptionbudget:
+  service:
     enabled: true
-    minAvailable: 1
 
   ingress:
-    host: nomis-prsner-dev.aks-dev-1.studio-hosting.service.justice.gov.uk
-    annotations:
-      # this magic line automatically generates a certificate for the ingress
-      cert-manager.io/cluster-issuer: letsencrypt-production
-      kubernetes.io/ingress.class: nginx
+    host: nomis-prisoner-api-dev.prison.service.justice.gov.uk
+    dso_enabled: false
 
-  # Disabled for DSO AKS cluster
-  allowlist: null
+  allowlist:
+    office: "217.33.148.210/32"
+    health-kick: "35.177.252.195/32"
+    petty-france-wifi: "213.121.161.112/28"
+    global-protect: "35.176.93.186/32"
+    mojvpn: "81.134.202.29/32"
+    cloudplatform-live-1: "35.178.209.113/32"
+    cloudplatform-live-2: "3.8.51.207/32"
+    cloudplatform-live-3: "35.177.252.54/32"
 
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
