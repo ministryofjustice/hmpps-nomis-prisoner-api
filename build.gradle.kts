@@ -1,7 +1,7 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.3.0-beta"
-  kotlin("plugin.spring") version "1.9.0"
-  kotlin("plugin.jpa") version "1.9.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.4.0"
+  kotlin("plugin.spring") version "1.9.10"
+  kotlin("plugin.jpa") version "1.9.10"
   idea
 }
 
@@ -21,13 +21,13 @@ dependencies {
   implementation("com.vladmihalcea:hibernate-types-60:2.21.1")
   implementation("org.hibernate.orm:hibernate-community-dialects")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
 
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
 
   implementation("com.zaxxer:HikariCP:5.0.1")
   implementation("com.h2database:h2:2.2.220")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.19.0.0")
+  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.20.0.0")
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
 
