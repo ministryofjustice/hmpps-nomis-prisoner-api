@@ -120,7 +120,7 @@ data class CourseActivity(
   val courseScheduleRules: MutableList<CourseScheduleRule> = mutableListOf(),
 
   @Column
-  val commentText: String = "Copied from the DPS activities service",
+  var commentText: String = "Copied from the DPS activities service",
 
   @PrimaryKeyJoinColumn
   @OneToOne(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)

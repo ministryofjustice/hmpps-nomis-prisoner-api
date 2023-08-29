@@ -224,7 +224,7 @@ class ActivityService(
 
   fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
 
-  fun endActivity(courseActivityId: Long, date: LocalDate) {
+  fun endActivity(courseActivityId: Long, date: LocalDate, endComment: String? = null) {
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course Activity $courseActivityId not found")
 
@@ -232,9 +232,12 @@ class ActivityService(
       throw BadDataException("Course Activity id ${courseActivity.courseActivityId} ended on ${courseActivity.scheduleEndDate}")
     }
 
-    courseActivity.scheduleEndDate = date
+    with(courseActivity) {
+      scheduleEndDate = date
+      endComment?.run { commentText = endComment }
+    }
     courseActivity.offenderProgramProfiles
       .filter { it.endDate == null || it.endDate!! > date }
-      .forEach { allocationService.endAllocation(it, date) }
+      .forEach { allocationService.endAllocation(it, date, endComment) }
   }
 }
