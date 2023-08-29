@@ -393,6 +393,62 @@ class AdjudicationResource(
     @RequestBody @Valid
     request: UpdateRepairsRequest,
   ): UpdateRepairsResponse = adjudicationService.updateRepairs(adjudicationNumber, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @GetMapping("/adjudications/hearings/{hearingId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "get adjudication by adjudication number",
+    description = "Retrieves an adjudication by the adjudication number. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Hearing Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Hearing does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAdjudicationHearing(
+    @Schema(description = "NOMIS Hearing Id", example = "12345", required = true)
+    @PathVariable
+    hearingId: Long,
+  ): Hearing =
+    adjudicationService.getHearing(hearingId)
 }
 
 @Schema(description = "adjudication id")
