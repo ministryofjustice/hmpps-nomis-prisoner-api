@@ -452,6 +452,53 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should not include if there are no course schedule rules`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$yesterday") {} // no schedule rules
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveAllocations()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `should only include once if there are multiple course schedule rules`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$yesterday") {
+              courseScheduleRule(startTimeHours = 9, startTimeMinutes = 30, endTimeHours = 11, endTimeMinutes = 30)
+              courseScheduleRule(startTimeHours = 13, startTimeMinutes = 30, endTimeHours = 15, endTimeMinutes = 30)
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveAllocations()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
+      }
+
+      @Test
       fun `should only include the course activity requested`() {
         lateinit var otherCourseActivity: CourseActivity
         lateinit var otherCourseAllocation: OffenderProgramProfile
