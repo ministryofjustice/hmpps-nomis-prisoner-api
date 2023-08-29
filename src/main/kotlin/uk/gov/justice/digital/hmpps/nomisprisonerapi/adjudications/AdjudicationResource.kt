@@ -19,6 +19,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -336,6 +337,62 @@ class AdjudicationResource(
     @RequestBody @Valid
     request: CreateHearingRequest,
   ): CreateHearingResponse = adjudicationService.createHearing(adjudicationNumber, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/repairs")
+  @Operation(
+    summary = "Updates repairs (aka damages) for a given adjudication",
+    description = "List of repairs are refreshed so this operation may result in any combinations of inserts, updates or deletes. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Repairs updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = UpdateRepairsResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateRepairs(
+    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @PathVariable
+    adjudicationNumber: Long,
+    @RequestBody @Valid
+    request: UpdateRepairsRequest,
+  ): UpdateRepairsResponse = adjudicationService.updateRepairs(adjudicationNumber, request)
 }
 
 @Schema(description = "adjudication id")

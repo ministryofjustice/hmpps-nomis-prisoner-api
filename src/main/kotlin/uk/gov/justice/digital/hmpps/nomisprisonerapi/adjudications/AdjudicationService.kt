@@ -58,6 +58,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
+import java.math.BigDecimal
 
 @Service
 @Transactional
@@ -409,6 +410,19 @@ class AdjudicationService(
   private fun lookupHearingType(code: String): AdjudicationHearingType = hearingTypeRepository.findByIdOrNull(
     AdjudicationHearingType.pk(code),
   ) ?: throw BadDataException("Hearing type $code not found")
+
+  fun updateRepairs(adjudicationNumber: Long, request: UpdateRepairsRequest): UpdateRepairsResponse {
+    return UpdateRepairsResponse(
+      repairs = request.repairs.map {
+        Repair(
+          comment = it.comment,
+          type = CodeDescription(it.typeCode, ""),
+          createdByUsername = "",
+          cost = BigDecimal.ZERO,
+        )
+      },
+    )
+  }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
