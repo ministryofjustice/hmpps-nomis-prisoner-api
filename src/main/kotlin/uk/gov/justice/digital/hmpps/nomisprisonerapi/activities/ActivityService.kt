@@ -238,6 +238,7 @@ class ActivityService(
     }
     courseActivity.offenderProgramProfiles
       .filter { it.endDate == null || it.endDate!! > date }
+      .filter { it.programStatus.code == "ALLOC" }
       .forEach { allocationService.endAllocation(it, date, endComment) }
   }
 }
