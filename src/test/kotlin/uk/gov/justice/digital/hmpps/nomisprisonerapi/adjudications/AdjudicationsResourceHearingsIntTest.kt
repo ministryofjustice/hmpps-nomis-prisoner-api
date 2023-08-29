@@ -141,13 +141,12 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              aHearing(
-              ),
+              aHearing(),
             ),
           )
           .exchange()
           .expectStatus().isOk
-          assertThat(hearingId).isNotNull
+        assertThat(hearingId).isNotNull
       }
     }
 
@@ -166,6 +165,6 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
         "internalLocationId": $internalLocationId,
         "agencyId": "$agencyId"
       }
-    """.trimIndent()
+      """.trimIndent()
   }
 }

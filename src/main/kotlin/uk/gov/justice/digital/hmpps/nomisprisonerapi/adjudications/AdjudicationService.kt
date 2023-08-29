@@ -354,7 +354,7 @@ class AdjudicationService(
       agencyInternalLocation = internalLocation,
       hearingParty = party,
 
-      ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
+    ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
   }
 
   private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
