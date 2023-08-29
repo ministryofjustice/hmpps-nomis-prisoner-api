@@ -342,7 +342,7 @@ class AdjudicationService(
     }
   }
 
-  fun createHearing(adjudicationNumber: Long, request: CreateHearingRequest): CreateHearingResponse? {
+  fun createHearing(adjudicationNumber: Long, request: CreateHearingRequest): CreateHearingResponse {
     val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
     val internalLocation = findInternalLocation(request.internalLocationId)

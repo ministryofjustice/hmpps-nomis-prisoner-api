@@ -293,7 +293,7 @@ class AdjudicationResource(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AdjudicationResponse::class),
+            schema = Schema(implementation = CreateHearingResponse::class),
           ),
         ],
       ),
@@ -319,7 +319,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Prisoner does not exist",
+        description = "Adjudication does not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -335,7 +335,7 @@ class AdjudicationResource(
     adjudicationNumber: Long,
     @RequestBody @Valid
     request: CreateHearingRequest,
-  ): CreateHearingResponse? = adjudicationService.createHearing(adjudicationNumber, request)
+  ): CreateHearingResponse = adjudicationService.createHearing(adjudicationNumber, request)
 }
 
 @Schema(description = "adjudication id")
