@@ -1976,4 +1976,68 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       }
     """.trimIndent()
   }
+
+  @DisplayName("PUT /adjudications/adjudication-number/{adjudicationNumber}/repairs")
+  @Nested
+  inner class UpdateAdjudicationRepairs {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private val existingAdjudicationNumber = 123456L
+
+    @BeforeEach
+    fun createPrisoner() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {}
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(existingIncident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"repairs": []}"""))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"repairs": []}"""))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"repairs": []}"""))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+  }
 }
