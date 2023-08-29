@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -1992,7 +1993,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
           account(username = "JANESTAFF")
         }
-        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {
+          repair(repairType = "PLUM", comment = "Toilets need replacing")
+        }
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {}
@@ -2012,7 +2015,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{"repairs": []}"""))
@@ -2022,7 +2026,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{"repairs": []}"""))
@@ -2032,11 +2037,229 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{"repairs": []}"""))
           .exchange()
           .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `404 is returned if adjudication does not exist`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", 99999)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"repairs": []}"""))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `repair type code must be present`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "repairs": [
+                {
+                  "comment": "Toilets need replacing"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+      }
+
+      @Test
+      fun `repair type code must valid`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "repairs": [
+                {
+                  "comment": "Toilets need replacing",
+                  "typeCode": "BANANAS"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Repair type BANANAS not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private fun Repository.repairsFor(adjudicationNumber: Long): List<AdjudicationIncidentRepair> =
+        getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)?.repairs ?: emptyList()
+
+      @Test
+      fun `empty list will remove existing repairs`() {
+        repository.runInTransaction {
+          assertThat(repository.repairsFor(existingAdjudicationNumber)).hasSize(1)
+        }
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "repairs": []
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          assertThat(repository.repairsFor(existingAdjudicationNumber)).hasSize(0)
+        }
+      }
+
+      @Test
+      fun `can appear to update existing repairs`() {
+        repository.runInTransaction {
+          val repairs = repository.repairsFor(existingAdjudicationNumber)
+          assertThat(repairs).hasSize(1)
+          assertThat(repairs[0].type.code).isEqualTo("PLUM")
+          assertThat(repairs[0].comment).isEqualTo("Toilets need replacing")
+        }
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "repairs": [
+                {
+                  "comment": "Toilets need fixing",
+                  "typeCode": "PLUM"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          val repairs = repository.repairsFor(existingAdjudicationNumber)
+          assertThat(repairs).hasSize(1)
+          assertThat(repairs[0].type.code).isEqualTo("PLUM")
+          assertThat(repairs[0].comment).isEqualTo("Toilets need fixing")
+        }
+      }
+
+      @Test
+      fun `can replace and add repairs`() {
+        repository.runInTransaction {
+          val repairs = repository.repairsFor(existingAdjudicationNumber)
+          assertThat(repairs).hasSize(1)
+          assertThat(repairs[0].type.code).isEqualTo("PLUM")
+        }
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "repairs": [
+                {
+                  "comment": "Lights need fixing",
+                  "typeCode": "ELEC"
+                },
+                {
+                  "comment": "Carpets need cleaning",
+                  "typeCode": "DECO"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          val repairs = repository.repairsFor(existingAdjudicationNumber)
+          assertThat(repairs).hasSize(2)
+          assertThat(repairs[0].type.code).isEqualTo("ELEC")
+          assertThat(repairs[0].comment).isEqualTo("Lights need fixing")
+          assertThat(repairs[1].type.code).isEqualTo("DECO")
+          assertThat(repairs[1].comment).isEqualTo("Carpets need cleaning")
+        }
+      }
+
+      @Test
+      fun `update repair list is returned`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "repairs": [
+                {
+                  "comment": "Lights need fixing",
+                  "typeCode": "ELEC"
+                },
+                {
+                  "comment": "Carpets need cleaning",
+                  "typeCode": "DECO"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("repairs").isArray
+          .jsonPath("repairs[0].comment").isEqualTo("Lights need fixing")
+          .jsonPath("repairs[0].type.code").isEqualTo("ELEC")
+          .jsonPath("repairs[1].comment").isEqualTo("Carpets need cleaning")
+          .jsonPath("repairs[1].type.code").isEqualTo("DECO")
       }
     }
   }

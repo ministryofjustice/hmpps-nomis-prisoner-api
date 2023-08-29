@@ -58,7 +58,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
-import java.math.BigDecimal
 
 @Service
 @Transactional
@@ -417,16 +416,27 @@ class AdjudicationService(
   ) ?: throw BadDataException("Hearing type $code not found")
 
   fun updateRepairs(adjudicationNumber: Long, request: UpdateRepairsRequest): UpdateRepairsResponse {
-    return UpdateRepairsResponse(
-      repairs = request.repairs.map {
-        Repair(
-          comment = it.comment,
-          type = CodeDescription(it.typeCode, ""),
-          createdByUsername = "",
-          cost = BigDecimal.ZERO,
-        )
-      },
-    )
+    val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    val incident = adjudicationParty.incident
+
+    // delete all previous repairs first
+    adjudicationParty.incident.repairs.clear()
+    adjudicationIncidentPartyRepository.saveAndFlush(adjudicationParty)
+
+    val updatedRepairs = request.repairs.mapIndexed { index, repair ->
+      AdjudicationIncidentRepair(
+        id = AdjudicationIncidentRepairId(
+          incident.id,
+          index + 1,
+        ),
+        type = lookupRepairType(repair.typeCode),
+        comment = repair.comment,
+        incident = incident,
+      )
+    }
+    adjudicationParty.incident.repairs.addAll(updatedRepairs)
+    return UpdateRepairsResponse(updatedRepairs.map { it.toRepair() })
   }
 }
 
