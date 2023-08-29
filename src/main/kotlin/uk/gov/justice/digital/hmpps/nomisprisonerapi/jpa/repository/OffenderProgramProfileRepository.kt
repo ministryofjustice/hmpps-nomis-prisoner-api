@@ -30,6 +30,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        from OffenderProgramProfile opp
        join OffenderBooking ob on opp.offenderBooking = ob
        join CourseActivity ca on opp.courseActivity.courseActivityId = ca.courseActivityId 
+       join CourseScheduleRule csr on ca = csr.courseActivity
        where opp.prison.id = :prisonId 
        and opp.programStatus.code = 'ALLOC'
        and (opp.endDate is null or opp.endDate > current_date)
@@ -40,6 +41,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ca.scheduleStartDate <= current_date
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
        and ca.program.programCode not in :excludeProgramCodes
+       and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
        and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
   """,
   )
