@@ -236,9 +236,10 @@ class AllocationService(
     agencyLocationRepository.findByIdOrNull(prisonId)
       ?: throw BadDataException("Prison with id=$prisonId does not exist")
 
-  fun endAllocation(courseAllocation: OffenderProgramProfile, date: LocalDate) {
+  fun endAllocation(courseAllocation: OffenderProgramProfile, date: LocalDate, endAllocationComment: String? = null) {
     courseAllocation.endDate = date
     courseAllocation.endReason = findEndReasonOrThrow("OTH")
     courseAllocation.programStatus = findProgramStatus("END")
+    endAllocationComment?.run { courseAllocation.endComment = endAllocationComment }
   }
 }

@@ -1471,8 +1471,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private lateinit var courseActivity: CourseActivity
 
-    private fun WebTestClient.endAllocation(courseActivityId: Long) =
-      put().uri("/activities/$courseActivityId/end")
+    private fun WebTestClient.endAllocation(courseActivityId: Long, endComment: String? = null) =
+      put().uri {
+        it.path("/activities/$courseActivityId/end")
+          .apply { endComment?.run { it.queryParam("endComment", endComment) } }
+          .build()
+      }
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
@@ -1536,7 +1540,36 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           assertThat(endDate).isEqualTo(today)
           assertThat(programStatus.code).isEqualTo("END")
           assertThat(endReason?.code).isEqualTo("OTH")
+          assertThat(endComment).isNull()
         }
+      }
+    }
+
+    @Test
+    fun `should set an end allocation comment`() {
+      lateinit var courseAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        offender {
+          booking {
+            courseAllocation = courseAllocation(courseActivity = courseActivity)
+          }
+        }
+      }
+
+      webTestClient.endAllocation(courseActivity.courseActivityId, "Migrated to DPS Activities")
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(commentText).isEqualTo("Migrated to DPS Activities")
+      }
+      with(repository.getOffenderProgramProfile(courseAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(today)
+        assertThat(programStatus.code).isEqualTo("END")
+        assertThat(endReason?.code).isEqualTo("OTH")
+        assertThat(endComment).isEqualTo("Migrated to DPS Activities")
       }
     }
 

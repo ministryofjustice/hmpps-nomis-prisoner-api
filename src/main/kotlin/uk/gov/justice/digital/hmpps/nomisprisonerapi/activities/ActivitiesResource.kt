@@ -632,6 +632,7 @@ class ActivitiesResource(
   )
   fun endActivity(
     @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @Schema(description = "End comment", required = false) @RequestParam endComment: String?,
   ) =
-    activityService.endActivity(courseActivityId, LocalDate.now())
+    activityService.endActivity(courseActivityId, LocalDate.now(), endComment)
 }
