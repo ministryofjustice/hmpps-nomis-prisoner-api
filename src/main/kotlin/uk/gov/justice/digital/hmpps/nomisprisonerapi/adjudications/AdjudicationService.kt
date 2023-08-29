@@ -358,6 +358,11 @@ class AdjudicationService(
     ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
   }
 
+  fun getHearing(hearingId: Long): Hearing =
+    adjudicationHearingRepository.findByIdOrNull(hearingId)?.let { hearing ->
+      hearing.toHearing()
+    } ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
+
   private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
     if (adjudicationIncidentPartyRepository.existsByAdjudicationNumber(adjudicationNumber)) {
       throw ConflictException("Adjudication $adjudicationNumber already exists")
