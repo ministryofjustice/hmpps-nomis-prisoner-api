@@ -280,6 +280,62 @@ class AdjudicationResource(
     @RequestBody @Valid
     request: CreateAdjudicationRequest,
   ): AdjudicationResponse? = adjudicationService.createAdjudication(offenderNo, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings")
+  @Operation(
+    summary = "creates a hearing for a given adjudication",
+    description = "Creates an hearing for a given adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Hearing Created Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createHearing(
+    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @PathVariable
+    adjudicationNumber: Long,
+    @RequestBody @Valid
+    request: CreateHearingRequest,
+  ): CreateHearingResponse? = adjudicationService.createHearing(adjudicationNumber, request)
 }
 
 @Schema(description = "adjudication id")

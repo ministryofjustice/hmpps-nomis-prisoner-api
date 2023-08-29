@@ -59,7 +59,7 @@ class AdjudicationHearing(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "HEARING_STAFF_ID")
-  val hearingStaff: Staff?,
+  val hearingStaff: Staff? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID")
@@ -80,10 +80,10 @@ class AdjudicationHearing(
   val hearingType: AdjudicationHearingType?,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String?,
+  val comment: String? = null,
 
   @Column(name = "REPRESENTATIVE_TEXT")
-  val representativeText: String?,
+  val representativeText: String? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(

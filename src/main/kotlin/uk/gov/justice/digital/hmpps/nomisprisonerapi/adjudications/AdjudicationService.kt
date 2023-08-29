@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceTyp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentOffence
@@ -74,6 +75,7 @@ class AdjudicationService(
   private val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
   private val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
   private val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
+  private val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -340,6 +342,21 @@ class AdjudicationService(
     }
   }
 
+  fun createHearing(adjudicationNumber: Long, request: CreateHearingRequest): CreateHearingResponse? {
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    val internalLocation = findInternalLocation(request.internalLocationId)
+    return AdjudicationHearing(
+      adjudicationNumber = adjudicationNumber,
+      hearingDate = request.hearingDate,
+      hearingDateTime = request.hearingTime.atDate(request.hearingDate),
+      hearingType = lookupHearingType(request.hearingType),
+      agencyInternalLocation = internalLocation,
+      hearingParty = party,
+
+      ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
+  }
+
   private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
     if (adjudicationIncidentPartyRepository.existsByAdjudicationNumber(adjudicationNumber)) {
       throw ConflictException("Adjudication $adjudicationNumber already exists")
@@ -388,6 +405,10 @@ class AdjudicationService(
   private fun lookupRepairType(code: String): AdjudicationRepairType = repairTypeRepository.findByIdOrNull(
     AdjudicationRepairType.pk(code),
   ) ?: throw BadDataException("Repair type $code not found")
+
+  private fun lookupHearingType(code: String): AdjudicationHearingType = hearingTypeRepository.findByIdOrNull(
+    AdjudicationHearingType.pk(code),
+  ) ?: throw BadDataException("Hearing type $code not found")
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
