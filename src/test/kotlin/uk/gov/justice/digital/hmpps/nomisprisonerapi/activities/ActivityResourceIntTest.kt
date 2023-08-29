@@ -1635,5 +1635,32 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(endDate).isEqualTo(yesterday)
       }
     }
+
+    @Test
+    fun `should not update allocations that are waiting`() {
+      lateinit var activeAllocation: OffenderProgramProfile
+      lateinit var waitingAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        offender {
+          booking {
+            activeAllocation = courseAllocation(courseActivity = courseActivity)
+            waitingAllocation = courseAllocation(courseActivity = courseActivity, programStatusCode = "WAIT")
+          }
+        }
+      }
+
+      webTestClient.endAllocation(courseActivity.courseActivityId)
+        .expectStatus().isOk
+
+      with(repository.getOffenderProgramProfile(activeAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(today)
+      }
+      with(repository.getOffenderProgramProfile(waitingAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isNull()
+      }
+    }
   }
 }
