@@ -357,6 +357,11 @@ class AdjudicationService(
     ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
   }
 
+  fun getHearing(hearingId: Long): Hearing =
+    adjudicationHearingRepository.findByIdOrNull(hearingId)?.let { hearing ->
+      hearing.toHearing()
+    } ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
+
   private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
     if (adjudicationIncidentPartyRepository.existsByAdjudicationNumber(adjudicationNumber)) {
       throw ConflictException("Adjudication $adjudicationNumber already exists")
@@ -409,6 +414,30 @@ class AdjudicationService(
   private fun lookupHearingType(code: String): AdjudicationHearingType = hearingTypeRepository.findByIdOrNull(
     AdjudicationHearingType.pk(code),
   ) ?: throw BadDataException("Hearing type $code not found")
+
+  fun updateRepairs(adjudicationNumber: Long, request: UpdateRepairsRequest): UpdateRepairsResponse {
+    val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    val incident = adjudicationParty.incident
+
+    // delete all previous repairs first
+    adjudicationParty.incident.repairs.clear()
+    adjudicationIncidentPartyRepository.saveAndFlush(adjudicationParty)
+
+    val updatedRepairs = request.repairs.mapIndexed { index, repair ->
+      AdjudicationIncidentRepair(
+        id = AdjudicationIncidentRepairId(
+          incident.id,
+          index + 1,
+        ),
+        type = lookupRepairType(repair.typeCode),
+        comment = repair.comment,
+        incident = incident,
+      )
+    }
+    adjudicationParty.incident.repairs.addAll(updatedRepairs)
+    return UpdateRepairsResponse(updatedRepairs.map { it.toRepair() })
+  }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
