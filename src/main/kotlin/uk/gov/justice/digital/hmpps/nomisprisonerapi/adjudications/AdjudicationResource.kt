@@ -68,7 +68,7 @@ class AdjudicationResource(
     ],
   )
   fun getAdjudicationChargeIdsByFilter(
-    @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC, size = 20)
+    @PageableDefault(sort = ["id.agencyIncidentId", "id.chargeSequence"], direction = Sort.Direction.ASC, size = 20)
     pageRequest: Pageable,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

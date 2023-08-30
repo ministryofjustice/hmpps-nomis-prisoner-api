@@ -315,7 +315,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will order by whenCreated ascending`() {
+      fun `will order by primary key ascending - (eg order charges are created)`() {
         webTestClient.get().uri {
           it.path("/adjudications/charges/ids")
             .queryParam("size", "300")
@@ -325,10 +325,10 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("content[0].adjudicationNumber").isEqualTo(leedsAdjudicationNumberRange.first)
-          .jsonPath("content[0].offenderNo").isEqualTo(prisonerAtLeeds.nomsId)
-          .jsonPath("content[205].adjudicationNumber").isEqualTo(newAdjudicationNumberAtBrixton)
-          .jsonPath("content[205].offenderNo").isEqualTo(prisonerAtBrixton.nomsId)
+          .jsonPath("content[0].adjudicationNumber").isEqualTo(anotherNewAdjudicationNumberAtBrixton)
+          .jsonPath("content[0].offenderNo").isEqualTo(prisonerAtMoorlandPreviouslyAtBrixton.nomsId)
+          .jsonPath("content[205].adjudicationNumber").isEqualTo(leedsAdjudicationNumberRange.last)
+          .jsonPath("content[205].offenderNo").isEqualTo(prisonerAtLeeds.nomsId)
       }
 
       @Test
