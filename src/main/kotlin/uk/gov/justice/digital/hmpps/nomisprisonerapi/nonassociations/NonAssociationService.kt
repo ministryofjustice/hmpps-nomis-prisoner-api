@@ -248,6 +248,7 @@ class NonAssociationService(
         NonAssociationResponse(
           offenderNo = entity.id.offender.nomsId,
           nsOffenderNo = entity.id.nsOffender.nomsId,
+          typeSequence = detail.id.typeSequence,
           reason = detail.nonAssociationReason.code,
           recipReason = entity.recipNonAssociationReason?.code!!, // Always set in prod
           type = detail.nonAssociationType.code,

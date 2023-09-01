@@ -14,6 +14,9 @@ data class NonAssociationResponse(
   @Schema(description = "Noms id of the other prisoner", required = true, example = "A1234EG")
   val nsOffenderNo: String,
 
+  @Schema(description = "Sequence number", required = true, example = "1")
+  val typeSequence: Int,
+
   @Schema(description = "Reason code of the first prisoner, domain NON_ASSO_RSN", required = true, example = "VIC")
   val reason: String,
 
