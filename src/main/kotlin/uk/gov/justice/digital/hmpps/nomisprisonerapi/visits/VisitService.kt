@@ -196,7 +196,6 @@ class VisitService(
         startDateTime = updateVisitRequest.startDateTime,
         endDateTime = endDateTime,
         location = visit.location,
-        roomDescription = updateVisitRequest.room,
         isClosedVisit = "CLOSED" == updateVisitRequest.openClosedStatus,
       )
     visit.visitDate = updateVisitRequest.startDateTime.toLocalDate()
@@ -343,7 +342,6 @@ class VisitService(
         startDateTime = visitDto.startDateTime,
         endDateTime = endDateTime,
         location = location,
-        roomDescription = visitDto.room,
         isClosedVisit = "CLOSED" == visitDto.openClosedStatus,
       )
 
@@ -391,7 +389,6 @@ class VisitService(
     location: AgencyLocation,
     startDateTime: LocalDateTime,
     endDateTime: LocalDateTime,
-    roomDescription: String,
     isClosedVisit: Boolean,
   ): AgencyVisitSlot {
     val agencyVisitTime =
@@ -462,23 +459,6 @@ class VisitService(
 
   private fun AgencyInternalLocation.toInternalLocationDescription(isClosedVisit: Boolean) =
     "$description-VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
-
-  private fun String.toNomisBaseDescription() =
-    this.replace("room", "", ignoreCase = true)
-      .replace("visits", "", ignoreCase = true)
-      .replace("visit", "", ignoreCase = true)
-      .replace("[,'\".-]".toRegex(), "")
-      .trim()
-      .replace("\\s+".toRegex(), "-")
-      .uppercase()
-      .take(240 - 12) // Full description can not exceed 240 characters (12 additional characters will be added to this description)
-      .removeSuffix("-")
-
-  private fun String.toInternalLocationCode(locationId: String) =
-    this.replace("VSIP", "VP")
-      .replace(locationId, "")
-      .replace("-", "")
-      .take(12) // Code does not need to be unique so just take the first 12 characters
 
   private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay {
     return visitDayRepository.save(

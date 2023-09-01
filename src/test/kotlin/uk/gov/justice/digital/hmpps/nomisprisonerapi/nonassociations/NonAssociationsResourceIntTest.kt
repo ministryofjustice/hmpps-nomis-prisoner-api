@@ -232,7 +232,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody().isEmpty()
+        .expectBody()
+        .jsonPath("$.typeSequence").isEqualTo("1")
 
       // Check the database
       repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds).apply {
@@ -267,6 +268,110 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
         assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
         assertThat(nd.id.typeSequence).isEqualTo(1)
+        assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nd.nonAssociationReason.code).isEqualTo("PER")
+        assertThat(nd.recipNonAssociationReason?.code).isNull()
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2023-02-27"))
+        assertThat(nd.nonAssociationType.code).isEqualTo("WING")
+        assertThat(nd.authorisedBy).isEqualTo("me!")
+        assertThat(nd.comment).isEqualTo("this is a test!")
+        assertThat(nd.nonAssociation).isEqualTo(this)
+      }
+    }
+
+    @Test
+    fun `will create non-association where parent record already exists`() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "PER",
+            effectiveDate = LocalDate.parse("2020-01-01"),
+            expiryDate = LocalDate.parse("2020-01-31"),
+            nonAssociationType = "WING",
+            authorisedBy = "Staff Member 1",
+            comment = "this is a closed NA",
+          )
+        }
+        nonAssociation(offenderAtLeeds, offenderAtMoorlands) {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "VIC",
+            effectiveDate = LocalDate.parse("2020-01-01"),
+            expiryDate = LocalDate.parse("2020-01-31"),
+            nonAssociationType = "WING",
+            authorisedBy = "Staff Member 1",
+            comment = "this is a closed NA",
+          )
+        }
+      }
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                    "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                    "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                    "reason"        : "RIV",
+                    "recipReason"   : "PER",
+                    "type"          : "WING",
+                    "authorisedBy"  : "me!",
+                    "effectiveDate" : "2023-02-27",
+                    "comment"       : "this is a test!"
+                  }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("$.typeSequence").isEqualTo("2")
+
+      // Check the database
+      repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds).apply {
+        assertThat(id.offender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nsOffenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nonAssociationReason?.code).isEqualTo("PER")
+        assertThat(recipNonAssociationReason?.code).isEqualTo("PER")
+
+        val existing = offenderNonAssociationDetails.first()
+        assertThat(existing.id.typeSequence).isEqualTo(1)
+        assertThat(existing.expiryDate).isEqualTo(LocalDate.parse("2020-01-31"))
+
+        val nd = offenderNonAssociationDetails.last()
+        assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(nd.id.typeSequence).isEqualTo(2)
+        assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nd.nonAssociationReason.code).isEqualTo("RIV")
+        assertThat(nd.recipNonAssociationReason?.code).isNull()
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2023-02-27"))
+        assertThat(nd.nonAssociationType.code).isEqualTo("WING")
+        assertThat(nd.authorisedBy).isEqualTo("me!")
+        assertThat(nd.comment).isEqualTo("this is a test!")
+        assertThat(nd.nonAssociation).isEqualTo(this)
+      }
+      repository.getNonAssociation(offenderAtLeeds, offenderAtMoorlands).apply {
+        assertThat(id.offender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
+        assertThat(nsOffenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(nonAssociationReason?.code).isEqualTo("PER")
+        assertThat(recipNonAssociationReason?.code).isEqualTo("RIV")
+
+        val existing = offenderNonAssociationDetails.first()
+        assertThat(existing.id.typeSequence).isEqualTo(1)
+        assertThat(existing.expiryDate).isEqualTo(LocalDate.parse("2020-01-31"))
+
+        val nd = offenderNonAssociationDetails.last()
+        assertThat(nd.id.offender.nomsId).isEqualTo(offenderAtLeeds.nomsId)
+        assertThat(nd.id.nsOffender.nomsId).isEqualTo(offenderAtMoorlands.nomsId)
+        assertThat(nd.id.typeSequence).isEqualTo(2)
         assertThat(nd.offenderBooking.bookingId).isEqualTo(offenderAtLeeds.latestBooking().bookingId)
         assertThat(nd.nsOffenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
         assertThat(nd.nonAssociationReason.code).isEqualTo("PER")
@@ -316,7 +421,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody().isEmpty()
+        .expectBody()
+        .jsonPath("$.typeSequence").isEqualTo("1")
     }
 
     @Test
@@ -604,7 +710,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody().isEmpty()
+
       webTestClient.put()
         .uri(
           "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close",
