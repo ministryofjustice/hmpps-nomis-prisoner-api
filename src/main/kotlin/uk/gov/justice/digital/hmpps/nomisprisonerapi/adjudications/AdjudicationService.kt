@@ -54,7 +54,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationChargeSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
@@ -154,17 +153,20 @@ class AdjudicationService(
     pageRequest: Pageable,
     adjudicationFilter: AdjudicationFilter,
   ): Page<AdjudicationChargeIdResponse> {
-    return adjudicationIncidentChargeRepository.findAll(
-      AdjudicationChargeSpecification(adjudicationFilter),
+    val prisonIds = adjudicationFilter.prisonIds?.takeIf { it.isNotEmpty() }
+    return adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
+      fromDate = adjudicationFilter.fromDate?.atStartOfDay(),
+      toDate = adjudicationFilter.toDate?.plusDays(1)?.atStartOfDay(),
+      prisonIds = prisonIds,
+      hasPrisonFilter = prisonIds?.let { true } ?: false,
       pageRequest,
-    )
-      .map {
-        AdjudicationChargeIdResponse(
-          adjudicationNumber = it.incidentParty.adjudicationNumber!!,
-          offenderNo = it.incidentParty.offenderBooking!!.offender.nomsId,
-          chargeSequence = it.id.chargeSequence,
-        )
-      }
+    ).map {
+      AdjudicationChargeIdResponse(
+        adjudicationNumber = it.getAdjudicationNumber(),
+        chargeSequence = it.getChargeSequence(),
+        offenderNo = it.getNomsId(),
+      )
+    }
   }
 
   @Audit
