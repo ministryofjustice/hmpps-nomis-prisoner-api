@@ -65,7 +65,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   fun createNonAssociation(
     @RequestBody @Valid
     createNonAssociationRequest: CreateNonAssociationRequest,
-  ) = nonAssociationService.createNonAssociation(createNonAssociationRequest)
+  ): CreateNonAssociationResponse = nonAssociationService.createNonAssociation(createNonAssociationRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
@@ -234,7 +234,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_NON_ASSOCIATIONS not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],

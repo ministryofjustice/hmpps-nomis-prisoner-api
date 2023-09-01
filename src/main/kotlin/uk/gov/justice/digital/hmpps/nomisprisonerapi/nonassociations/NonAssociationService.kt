@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.NonAssociationSpecification
+import java.lang.RuntimeException
 import java.time.LocalDate
 
 @Service
@@ -31,7 +32,7 @@ class NonAssociationService(
   private val typeRepository: ReferenceCodeRepository<NonAssociationType>,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createNonAssociation(dto: CreateNonAssociationRequest) {
+  fun createNonAssociation(dto: CreateNonAssociationRequest): CreateNonAssociationResponse {
     val offender = offenderRepository.findRootByNomisId(dto.offenderNo)
       ?: throw BadDataException("Offender with nomsId=${dto.offenderNo} not found")
     val nsOffender = offenderRepository.findRootByNomisId(dto.nsOffenderNo)
@@ -48,6 +49,9 @@ class NonAssociationService(
     val existing = offenderNonAssociationRepository.findByIdOrNull(
       OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
     )
+
+    var typeSequence = 1
+
     if (existing != null) {
       if (existing.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.offenderNo} and nsOffender=${dto.nsOffenderNo}")
@@ -61,26 +65,19 @@ class NonAssociationService(
       if (otherExisting.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.nsOffenderNo} and nsOffender=${dto.offenderNo}")
       }
+
+      typeSequence = existing.nextAvailableSequence()
       existing.nonAssociationReason = recipReason
       existing.recipNonAssociationReason = recipReason
-      existing.offenderNonAssociationDetails.add(
-        mapDetails(
-          recipReason,
-          existing,
-          dto,
-          existing.nextAvailableSequence(),
-        ),
-      )
+      existing.offenderNonAssociationDetails.add(mapDetails(reason, existing, dto, typeSequence))
+
+      if (typeSequence != otherExisting.nextAvailableSequence()) {
+        throw RuntimeException("Non-association type sequence mismatch for offender=${dto.offenderNo} and nsOffender=${dto.nsOffenderNo}, next values are $typeSequence and ${otherExisting.nextAvailableSequence()}")
+      }
+
       otherExisting.nonAssociationReason = recipReason
       otherExisting.recipNonAssociationReason = reason
-      otherExisting.offenderNonAssociationDetails.add(
-        mapDetails(
-          reason,
-          otherExisting,
-          dto,
-          otherExisting.nextAvailableSequence(),
-        ),
-      )
+      otherExisting.offenderNonAssociationDetails.add(mapDetails(recipReason, otherExisting, dto, typeSequence))
     } else {
       OffenderNonAssociation(
         id = OffenderNonAssociationId(offender, nsOffender),
@@ -91,7 +88,7 @@ class NonAssociationService(
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(reason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(reason, this, dto, typeSequence))
           }
         }
 
@@ -104,7 +101,7 @@ class NonAssociationService(
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto, typeSequence))
           }
         }
     }
@@ -115,6 +112,7 @@ class NonAssociationService(
         "nsOffender" to dto.nsOffenderNo,
       ),
     )
+    return CreateNonAssociationResponse(typeSequence)
   }
 
   fun updateNonAssociation(offenderNo: String, nsOffenderNo: String, dto: UpdateNonAssociationRequest) {
@@ -200,7 +198,7 @@ class NonAssociationService(
     reason: NonAssociationReason,
     existing: OffenderNonAssociation,
     dto: CreateNonAssociationRequest,
-    typeSequence: Int = 1,
+    typeSequence: Int,
   ) =
     OffenderNonAssociationDetail(
       id = OffenderNonAssociationDetailId(

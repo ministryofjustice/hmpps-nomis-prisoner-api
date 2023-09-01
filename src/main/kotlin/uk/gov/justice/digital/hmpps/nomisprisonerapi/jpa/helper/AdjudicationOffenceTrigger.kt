@@ -15,6 +15,6 @@ class AdjudicationOffenceTrigger : org.h2.api.Trigger {
     statement.setInt(1, Random.nextInt(999999))
     statement.setBigDecimal(2, incidentId)
     statement.setBigDecimal(3, chargeSequence)
-    val rows = statement.executeUpdate()
+    statement.executeUpdate()
   }
 }
