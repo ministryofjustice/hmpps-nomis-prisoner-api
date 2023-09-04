@@ -217,7 +217,12 @@ class NonAssociationService(
       authorisedBy = dto.authorisedBy,
     )
 
-  fun getNonAssociation(offenderNo: String, nsOffenderNo: String, getAll: Boolean): List<NonAssociationResponse> {
+  fun getNonAssociation(
+    offenderNo: String,
+    nsOffenderNo: String,
+    typeSequence: Int?,
+    getAll: Boolean,
+  ): List<NonAssociationResponse> {
     val offender = offenderRepository.findRootByNomisId(offenderNo)
       ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
     val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
@@ -229,9 +234,13 @@ class NonAssociationService(
         nsOffender = nsOffender,
       ),
     )?.let {
-      mapModel(it, getAll)
+      mapModel(it, typeSequence, getAll)
     }
-      ?: throw NotFoundException("Open NonAssociation not found")
+      ?: throw if (typeSequence == null) {
+        NotFoundException("Open NonAssociation not found")
+      } else {
+        NotFoundException("Non-association with sequence $typeSequence not found for these offender numbers")
+      }
   }
 
   fun findIdsByFilter(
@@ -241,9 +250,19 @@ class NonAssociationService(
     offenderNonAssociationRepository.findAll(NonAssociationSpecification(nonAssociationFilter), pageRequest)
       .map { NonAssociationIdResponse(it.id.offender.nomsId, it.id.nsOffender.nomsId) }
 
-  private fun mapModel(entity: OffenderNonAssociation, getAll: Boolean): List<NonAssociationResponse> =
+  private fun mapModel(
+    entity: OffenderNonAssociation,
+    typeSequence: Int?,
+    getAll: Boolean,
+  ): List<NonAssociationResponse> =
     entity.offenderNonAssociationDetails
-      .filter { getAll || it.expiryDate == null }
+      .filter {
+        getAll || if (typeSequence != null) {
+          it.id.typeSequence == typeSequence
+        } else {
+          it.expiryDate == null
+        }
+      }
       .map { detail ->
         NonAssociationResponse(
           offenderNo = entity.id.offender.nomsId,

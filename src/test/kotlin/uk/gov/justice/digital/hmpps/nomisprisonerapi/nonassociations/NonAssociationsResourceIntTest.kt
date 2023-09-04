@@ -729,7 +729,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class GetOpenNonAssociationById {
+  inner class GetSpecificNonAssociationById {
 
     @BeforeEach
     internal fun createNonAssociations() {
@@ -768,7 +768,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `get by id`() {
+    fun `get open NA by id`() {
       webTestClient
         .get().uri(
           "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
@@ -789,6 +789,37 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.effectiveDate").isEqualTo("2021-02-28")
         .jsonPath("$.expiryDate").doesNotExist()
         .jsonPath("$.comment").isEqualTo("this is a GET test!")
+    }
+
+    @Test
+    fun `get NA by id and sequence`() {
+      webTestClient
+        .get().uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}?typeSequence=2",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$.nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$.typeSequence").isEqualTo("2")
+        .jsonPath("$.comment").isEqualTo("this is a closed NA")
+    }
+
+    @Test
+    fun `get NA by id and sequence not found`() {
+      webTestClient
+        .get().uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}?typeSequence=4",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
     }
 
     @Test
@@ -838,7 +869,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class GetNonAssociationDetailsById {
+  inner class GetAllNonAssociationDetailsById {
 
     @BeforeEach
     internal fun createNonAssociations() {
