@@ -169,16 +169,19 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
     ],
   )
-  fun getOpenNonAssociation(
+  fun getNonAssociation(
     @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
     @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
+    @Parameter(description = "Sequence number. If present, get this detail record, otherwise get the open record if there is one.", example = "2")
+    @RequestParam("typeSequence", required = false)
+    typeSequence: Int?,
   ): NonAssociationResponse =
     try {
-      nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, false).first()
+      nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, typeSequence, false).first()
     } catch (e: NoSuchElementException) {
       throw NotFoundException("No open non-association exists for these offender numbers")
     }
@@ -215,7 +218,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @PathVariable
     nsOffenderNo: String,
   ): List<NonAssociationResponse> =
-    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, true)
+    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, null, true)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/ids")
