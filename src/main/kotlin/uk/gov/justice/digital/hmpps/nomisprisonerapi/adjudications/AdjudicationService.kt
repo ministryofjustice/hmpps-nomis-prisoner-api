@@ -43,6 +43,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isVictim
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isWitness
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
@@ -58,6 +59,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -154,7 +156,7 @@ class AdjudicationService(
     adjudicationFilter: AdjudicationFilter,
   ): Page<AdjudicationChargeIdResponse> {
     val prisonIds = adjudicationFilter.prisonIds?.takeIf { it.isNotEmpty() }
-    return adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
+    return findAllAdjudicationChargeIds(
       fromDate = adjudicationFilter.fromDate?.atStartOfDay(),
       toDate = adjudicationFilter.toDate?.plusDays(1)?.atStartOfDay(),
       prisonIds = prisonIds,
@@ -167,6 +169,26 @@ class AdjudicationService(
         offenderNo = it.getNomsId(),
       )
     }
+  }
+
+  fun findAllAdjudicationChargeIds(
+    fromDate: LocalDateTime?,
+    toDate: LocalDateTime?,
+    prisonIds: List<String>?,
+    hasPrisonFilter: Boolean,
+    pageable: Pageable,
+  ): Page<AdjudicationChargeId> = if (fromDate == null && toDate == null && !hasPrisonFilter) {
+    adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(pageable)
+  } else {
+    // optimisation: only do the complex SQL if we have a filter
+    // typically we won't when run in production
+    adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
+      fromDate,
+      toDate,
+      prisonIds,
+      hasPrisonFilter,
+      pageable,
+    )
   }
 
   @Audit

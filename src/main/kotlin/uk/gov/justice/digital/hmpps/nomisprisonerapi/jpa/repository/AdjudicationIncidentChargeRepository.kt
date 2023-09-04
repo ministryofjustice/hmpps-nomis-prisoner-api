@@ -33,6 +33,20 @@ interface AdjudicationIncidentChargeRepository :
     hasPrisonFilter: Boolean,
     pageable: org.springframework.data.domain.Pageable,
   ): Page<AdjudicationChargeId>
+
+  @Query(
+    """
+      select 
+        charge.incidentParty.adjudicationNumber as adjudicationNumber, 
+        charge.id.chargeSequence as chargeSequence, 
+        charge.incidentParty.offenderBooking.offender.nomsId as nomsId
+      from AdjudicationIncidentCharge charge 
+        order by charge.incident.id, charge.id.chargeSequence asc
+    """,
+  )
+  fun findAllAdjudicationChargeIds(
+    pageable: org.springframework.data.domain.Pageable,
+  ): Page<AdjudicationChargeId>
 }
 
 interface AdjudicationChargeId {
