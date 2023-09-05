@@ -16,7 +16,7 @@ import java.util.Objects
 
 @Entity
 @Table(name = "AGENCY_INTERNAL_LOCATIONS")
-class AgencyInternalLocation(
+data class AgencyInternalLocation(
   @Id
   @SequenceGenerator(name = "INTERNAL_LOCATION_ID", sequenceName = "INTERNAL_LOCATION_ID", allocationSize = 1)
   @GeneratedValue(generator = "INTERNAL_LOCATION_ID")

@@ -18,7 +18,7 @@ import java.util.Objects
 
 @Entity
 @Table(name = "AGENCY_LOCATIONS")
-class AgencyLocation(
+data class AgencyLocation(
   @Id
   @Column(name = "AGY_LOC_ID")
   val id: String,
