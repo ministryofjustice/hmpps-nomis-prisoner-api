@@ -27,16 +27,16 @@ import java.time.LocalDate
 @DiscriminatorColumn(name = "OWNER_CLASS")
 @Inheritance
 abstract class Address(
-  val premise: String? = null,
-  val street: String? = null,
-  val locality: String? = null,
+  open val premise: String? = null,
+  open val street: String? = null,
+  open val locality: String? = null,
   @Column(name = "START_DATE")
-  val startDate: LocalDate = LocalDate.now(),
+  open val startDate: LocalDate = LocalDate.now(),
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
-  val noFixedAddressFlag: String = "N",
+  open val noFixedAddressFlag: String = "N",
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @Where(clause = "OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
-  val phones: MutableList<AddressPhone> = ArrayList(),
+  open val phones: MutableList<AddressPhone> = ArrayList(),
 ) {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
