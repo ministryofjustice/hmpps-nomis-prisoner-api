@@ -656,7 +656,12 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden when no authority`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -664,7 +669,12 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden when no role`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
         .headers(setAuthorisation(roles = listOf()))
         .exchange()
         .expectStatus().isForbidden
@@ -673,7 +683,12 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden with wrong role`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .exchange()
         .expectStatus().isForbidden
@@ -682,10 +697,82 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `non-association does not exist`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close", "A1234AA", "A1234AA")
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
         .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `non-association detail does not exist`() {
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          45,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `non-association not open`() {
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                    "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                    "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                    "reason"        : "RIV",
+                    "recipReason"   : "PER",
+                    "type"          : "WING",
+                    "authorisedBy"  : "me!",
+                    "effectiveDate" : "2023-02-27",
+                    "comment"       : "this is a test!"
+                  }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+
+      // now try to close it again, this time it will fail
+
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("developerMessage")
+        .isEqualTo("Non-association already closed for offender=A1234TT, nsOffender=A1234TU, typeSequence=1")
+        .jsonPath("userMessage")
+        .isEqualTo("Bad request: Non-association already closed for offender=A1234TT, nsOffender=A1234TU, typeSequence=1")
     }
 
     @Test
@@ -713,9 +800,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
       webTestClient.put()
         .uri(
-          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close",
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
           offenderAtMoorlands.nomsId,
           offenderAtLeeds.nomsId,
+          1,
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()

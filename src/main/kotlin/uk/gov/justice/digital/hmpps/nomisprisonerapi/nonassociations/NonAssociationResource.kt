@@ -113,7 +113,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   ) = nonAssociationService.updateNonAssociation(offenderNo, nsOffenderNo, updateNonAssociationRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
-  @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close")
+  @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close")
   @Operation(
     summary = "Closes an existing non-association",
     description = "Closes an existing non-association. Requires role NOMIS_NON_ASSOCIATIONS",
@@ -122,6 +122,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ApiResponse(
         responseCode = "404",
         description = "Non-association does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Non-association is already closed",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -143,7 +148,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
-  ) = nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo)
+    @Parameter(description = "Sequence number. Close this specific detail record", example = "2", required = true)
+    @PathVariable
+    typeSequence: Int,
+  ) = nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo, typeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
