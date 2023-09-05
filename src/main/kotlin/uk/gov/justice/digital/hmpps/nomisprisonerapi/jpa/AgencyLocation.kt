@@ -13,11 +13,13 @@ import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.util.Objects
 
 @Entity
 @Table(name = "AGENCY_LOCATIONS")
+@EntityOpen
 data class AgencyLocation(
   @Id
   @Column(name = "AGY_LOC_ID")

@@ -51,3 +51,7 @@ tasks {
     }
   }
 }
+
+allOpen {
+  annotation("uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen")
+}

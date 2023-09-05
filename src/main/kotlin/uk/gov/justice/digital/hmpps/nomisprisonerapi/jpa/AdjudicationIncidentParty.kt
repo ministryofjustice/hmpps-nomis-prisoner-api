@@ -53,7 +53,6 @@ class AdjudicationIncidentPartyId(
       attributeNodes = [
         NamedAttributeNode("offender", subgraph = "offender-with-gender"),
         NamedAttributeNode("location"),
-        NamedAttributeNode("createLocation"),
         NamedAttributeNode("visitBalance"),
       ],
     ),
@@ -63,7 +62,7 @@ class AdjudicationIncidentPartyId(
         NamedAttributeNode("agencyInternalLocation"),
         NamedAttributeNode("incidentType"),
         NamedAttributeNode("prison"),
-        NamedAttributeNode("reportingStaff"),
+        NamedAttributeNode("reportingStaff", subgraph = "staff-accounts"),
 
       ],
     ),
@@ -73,6 +72,7 @@ class AdjudicationIncidentPartyId(
         NamedAttributeNode("gender"),
       ],
     ),
+    NamedSubgraph(name = "staff-accounts", attributeNodes = [NamedAttributeNode("accounts")]),
   ],
 )
 class AdjudicationIncidentParty(
