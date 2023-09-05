@@ -73,7 +73,7 @@ class AdjudicationHearingResult(
 
   /* Having to make optional as contains values from OIC_FINDING domain in older records.
      Mapping code directly in separate property */
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [

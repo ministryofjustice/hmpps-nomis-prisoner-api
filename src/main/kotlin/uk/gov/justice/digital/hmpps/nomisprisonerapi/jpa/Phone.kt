@@ -30,10 +30,10 @@ abstract class Phone(
   open var phoneId: Long = 0
 
   @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenCreated: LocalDateTime = LocalDateTime.now()
+  open var whenCreated: LocalDateTime = LocalDateTime.now()
 
   @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenModified: LocalDateTime? = null
+  open var whenModified: LocalDateTime? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

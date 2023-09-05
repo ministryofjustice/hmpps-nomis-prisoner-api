@@ -38,7 +38,7 @@ data class VisitOrder(
   @Column(nullable = false)
   val issueDate: LocalDate,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -59,7 +59,7 @@ data class VisitOrder(
   var visitOrderType: VisitOrderType,
 
 /* status content seems to be mainly set to scheduled and the other options don't all make sense */
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
