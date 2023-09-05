@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetailId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationDetailRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -28,6 +29,7 @@ import java.time.LocalDate
 class NonAssociationService(
   private val offenderRepository: OffenderRepository,
   private val offenderNonAssociationRepository: OffenderNonAssociationRepository,
+  private val offenderNonAssociationDetailRepository: OffenderNonAssociationDetailRepository,
   private val reasonRepository: ReferenceCodeRepository<NonAssociationReason>,
   private val typeRepository: ReferenceCodeRepository<NonAssociationType>,
   private val telemetryClient: TelemetryClient,
@@ -172,26 +174,47 @@ class NonAssociationService(
     )
   }
 
-  fun closeNonAssociation(offenderNo: String, nsOffenderNo: String) {
+  fun closeNonAssociation(offenderNo: String, nsOffenderNo: String, typeSequence: Int) {
     val offender = offenderRepository.findRootByNomisId(offenderNo)
       ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
     val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
       ?: throw NotFoundException("NS Offender with nomsId=$nsOffenderNo not found")
-    val existing = offenderNonAssociationRepository.findByIdOrNull(
-      OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
-    ) ?: throw NotFoundException("Non-association not found where offender=$offenderNo and nsOffender=$nsOffenderNo")
 
-    existing.getOpenNonAssociationDetail()?.apply {
-      expiryDate = LocalDate.now()
+    val existing = offenderNonAssociationDetailRepository.findByIdOrNull(
+      OffenderNonAssociationDetailId(offender = offender, nsOffender = nsOffender, typeSequence = typeSequence),
+    ) ?: throw NotFoundException("Non-association detail not found for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+
+    val otherExisting = offenderNonAssociationDetailRepository.findByIdOrNull(
+      OffenderNonAssociationDetailId(offender = nsOffender, nsOffender = offender, typeSequence = typeSequence),
+    ) ?: throw NotFoundException("Non-association detail not found where offender=$nsOffenderNo, nsOffender=$offenderNo, typeSequence=$typeSequence")
+
+    val today = LocalDate.now()
+    existing.apply {
+      if (expiryDate != null) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+      expiryDate = today
       telemetryClient.trackEvent(
         "non-association-closed",
         mapOf(
-          "bookingId" to offenderBooking.bookingId.toString(),
+          "offender" to offenderNo,
+          "nsOffender" to nsOffenderNo,
+          "typeSequence" to "$typeSequence",
         ),
         null,
       )
     }
-      ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
+    otherExisting.apply {
+      if (expiryDate != null) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+      expiryDate = today
+      telemetryClient.trackEvent(
+        "non-association-closed",
+        mapOf(
+          "offender" to nsOffenderNo,
+          "nsOffender" to offenderNo,
+          "typeSequence" to "$typeSequence",
+        ),
+        null,
+      )
+    }
   }
 
   private fun mapDetails(
