@@ -182,13 +182,20 @@ class AdjudicationService(
   } else {
     // optimisation: only do the complex SQL if we have a filter
     // typically we won't when run in production
-    adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
-      fromDate,
-      toDate,
-      prisonIds,
-      hasPrisonFilter,
-      pageable,
-    )
+    if (fromDate == null && toDate == null) {
+      adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
+        prisonIds,
+        pageable,
+      )
+    } else {
+      adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
+        fromDate,
+        toDate,
+        prisonIds,
+        hasPrisonFilter,
+        pageable,
+      )
+    }
   }
 
   @Audit

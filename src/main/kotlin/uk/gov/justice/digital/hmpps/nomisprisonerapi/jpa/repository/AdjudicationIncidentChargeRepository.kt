@@ -41,6 +41,23 @@ interface AdjudicationIncidentChargeRepository :
         charge.id.chargeSequence as chargeSequence, 
         charge.incidentParty.offenderBooking.offender.nomsId as nomsId
       from AdjudicationIncidentCharge charge 
+        where 
+          charge.incident.prison.id in :prisonIds 
+        order by charge.incident.id, charge.id.chargeSequence asc
+    """,
+  )
+  fun findAllAdjudicationChargeIds(
+    prisonIds: List<String>?,
+    pageable: org.springframework.data.domain.Pageable,
+  ): Page<AdjudicationChargeId>
+
+  @Query(
+    """
+      select 
+        charge.incidentParty.adjudicationNumber as adjudicationNumber, 
+        charge.id.chargeSequence as chargeSequence, 
+        charge.incidentParty.offenderBooking.offender.nomsId as nomsId
+      from AdjudicationIncidentCharge charge 
         order by charge.incident.id, charge.id.chargeSequence asc
     """,
   )
