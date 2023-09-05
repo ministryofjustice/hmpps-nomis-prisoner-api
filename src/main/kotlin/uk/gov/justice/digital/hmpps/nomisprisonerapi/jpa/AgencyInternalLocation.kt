@@ -12,10 +12,12 @@ import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.util.Objects
 
 @Entity
 @Table(name = "AGENCY_INTERNAL_LOCATIONS")
+@EntityOpen
 data class AgencyInternalLocation(
   @Id
   @SequenceGenerator(name = "INTERNAL_LOCATION_ID", sequenceName = "INTERNAL_LOCATION_ID", allocationSize = 1)
