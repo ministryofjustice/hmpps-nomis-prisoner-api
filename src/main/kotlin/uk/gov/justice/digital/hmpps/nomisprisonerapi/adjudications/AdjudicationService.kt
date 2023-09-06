@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.AdjudicationCharge.Companion.badDataNotFound
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -482,7 +483,7 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
     "Unknown Plea Finding Code",
   ),
   findingType = this.findingType.toCodeDescription(),
-  charge = this.incidentCharge.toCharge(),
+  charge = this.incidentCharge?.toCharge() ?: badDataNotFound(this.offence.toOffence()),
   offence = this.offence.toOffence(),
   resultAwards = this.resultAwards.map { it.toAward() },
   createdDateTime = this.whenCreated,

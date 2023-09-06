@@ -45,6 +45,7 @@ class AdjudicationHearingResult(
   @JoinColumn(name = "OIC_OFFENCE_ID")
   val offence: AdjudicationIncidentOffence,
 
+  @NotFound(action = NotFoundAction.IGNORE)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumns(
     value = [
@@ -62,7 +63,7 @@ class AdjudicationHearingResult(
       ),
     ],
   )
-  val incidentCharge: AdjudicationIncidentCharge,
+  val incidentCharge: AdjudicationIncidentCharge?,
 
   @Column(name = "CHARGE_SEQ", nullable = false)
   val chargeSequence: Int, // having to set this outside the incidentCharge mapping as that has to be insertable = false
