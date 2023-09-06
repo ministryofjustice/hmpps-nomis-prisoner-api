@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.AdjudicationCharge.Companion.badDataNotFound
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -483,7 +482,7 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
     "Unknown Plea Finding Code",
   ),
   findingType = this.findingType.toCodeDescription(),
-  charge = this.incidentCharge?.toCharge() ?: badDataNotFound(this.offence.toOffence()),
+  charge = this.incidentCharge?.toCharge()!!, // this is only called when this is non-null
   offence = this.offence.toOffence(),
   resultAwards = this.resultAwards.map { it.toAward() },
   createdDateTime = this.whenCreated,
@@ -503,7 +502,8 @@ private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
   hearingStaff = this.hearingStaff?.toStaff(this.createUsername),
   eventStatus = this.eventStatus?.toCodeDescription(),
   eventId = this.eventId,
-  hearingResults = this.hearingResults.map { it.toHearingResult() },
+  // remove bad data, results with no charges
+  hearingResults = this.hearingResults.filter { it.incidentCharge != null }.map { it.toHearingResult() },
   createdDateTime = this.whenCreated,
   createdByUsername = this.createUsername,
 )

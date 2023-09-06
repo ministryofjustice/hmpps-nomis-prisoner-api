@@ -60,23 +60,7 @@ data class AdjudicationCharge(
   val reportDetail: String?,
   val offenceId: String?,
   val chargeSequence: Int,
-) {
-  constructor(offence: AdjudicationOffence) : this(
-    offence = offence,
-    evidence = null,
-    reportDetail = null,
-    offenceId = null,
-    chargeSequence = BAD_DATA_NOT_FOUND,
-  )
-
-  companion object {
-    // Not Found scenario for NOMIS bad data; these would always be filtered out since there would be no matching adjudication/charge combination
-    // but is required to prevent null charges leaking into model
-    // the scenario occurs for a Hearing with awards for a charge that no longer not exist in the adjudication
-    fun badDataNotFound(offence: AdjudicationOffence) = AdjudicationCharge(offence)
-    const val BAD_DATA_NOT_FOUND = -1
-  }
-}
+)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AdjudicationOffence(
