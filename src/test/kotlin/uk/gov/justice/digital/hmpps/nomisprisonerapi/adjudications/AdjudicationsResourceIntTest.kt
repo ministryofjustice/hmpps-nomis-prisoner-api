@@ -479,11 +479,21 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         ) {
           repair(repairType = "PLUM", comment = "Fixed the bog", repairCost = BigDecimal("10.30"))
           repair(repairType = "CLEA")
-          party(role = WITNESS, staff = staffWitness)
+          party(
+            role = WITNESS,
+            staff = staffWitness,
+            partyAddedDate = LocalDate.parse("2023-01-03"),
+            comment = "They saw everything",
+          )
           party(role = VICTIM, staff = staffVictim)
           party(role = STAFF_CONTROL, staff = staffInvolvedWithForce)
           party(role = STAFF_REPORTING_OFFICER, staff = staffIncidentReportingOfficer)
-          party(role = VICTIM, offenderBooking = prisonerVictim.latestBooking())
+          party(
+            role = VICTIM,
+            offenderBooking = prisonerVictim.latestBooking(),
+            partyAddedDate = LocalDate.parse("2023-01-04"),
+            comment = "Beaten up",
+          )
           party(role = WITNESS, offenderBooking = prisonerWitness.latestBooking())
           party(
             role = SUSPECT,
@@ -1058,6 +1068,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("incident.staffWitnesses[0].lastName").isEqualTo("WITNESS")
         .jsonPath("incident.staffWitnesses[0].staffId").isEqualTo(staffWitness.id)
         .jsonPath("incident.staffWitnesses[0].username").isEqualTo("K.WITNESS")
+        .jsonPath("incident.staffWitnesses[0].dateAddedToIncident").isEqualTo("2023-01-03")
+        .jsonPath("incident.staffWitnesses[0].comment").isEqualTo("They saw everything")
         .jsonPath("incident.staffVictims[0].staffId").isEqualTo(staffVictim.id)
         .jsonPath("incident.reportingOfficers[0].staffId").isEqualTo(staffIncidentReportingOfficer.id)
         .jsonPath("incident.reportingOfficers[0].username").isEqualTo(staffIncidentReportingOfficer.accounts[0].username)
@@ -1066,6 +1078,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("incident.prisonerVictims[0].firstName").isEqualTo("CHARLIE")
         .jsonPath("incident.prisonerVictims[0].lastName").isEqualTo("VICTIM")
         .jsonPath("incident.prisonerVictims[0].offenderNo").isEqualTo(prisonerVictim.nomsId)
+        .jsonPath("incident.prisonerVictims[0].dateAddedToIncident").isEqualTo("2023-01-04")
+        .jsonPath("incident.prisonerVictims[0].comment").isEqualTo("Beaten up")
         .jsonPath("incident.prisonerWitnesses[0].offenderNo").isEqualTo(prisonerWitness.nomsId)
         .jsonPath("incident.otherPrisonersInvolved[0].offenderNo").isEqualTo(anotherSuspect.nomsId)
         .jsonPath("incident.otherPrisonersInvolved[1]").doesNotExist()

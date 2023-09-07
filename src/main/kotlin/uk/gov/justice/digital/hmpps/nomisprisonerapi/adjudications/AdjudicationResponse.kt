@@ -148,6 +148,10 @@ data class Staff(
   val lastName: String,
   @Schema(description = "Username of person who created the record in NOMIS where this staff is used", required = true)
   val createdByUsername: String,
+  @Schema(description = "date added in NOMIS to the adjudication incident")
+  val dateAddedToIncident: LocalDate,
+  @Schema(description = "comment about why they were added to the adjudication incident")
+  val comment: String? = null,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -160,6 +164,10 @@ data class Prisoner(
   val lastName: String,
   @Schema(description = "Username of person who created the record in NOMIS where this prisoner is used", required = true)
   val createdByUsername: String,
+  @Schema(description = "date added in NOMIS to the adjudication incident")
+  val dateAddedToIncident: LocalDate,
+  @Schema(description = "comment about why they were added to the adjudication incident")
+  val comment: String? = null,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -253,10 +261,12 @@ data class HearingResultAward(
   val adjudicationNumber: Long,
 )
 
-fun Offender.toPrisoner(createUsername: String) =
+fun Offender.toPrisoner(createUsername: String, dateAddedToIncident: LocalDate, comment: String? = null) =
   Prisoner(
     offenderNo = nomsId,
     firstName = firstName,
     lastName = lastName,
     createdByUsername = createUsername,
+    dateAddedToIncident = dateAddedToIncident,
+    comment = comment,
   )
