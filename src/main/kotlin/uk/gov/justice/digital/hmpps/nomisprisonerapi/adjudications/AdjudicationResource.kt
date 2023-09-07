@@ -338,6 +338,75 @@ class AdjudicationResource(
   ): CreateHearingResponse = adjudicationService.createHearing(adjudicationNumber, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}")
+  @Operation(
+    summary = "Updates a hearing",
+    description = "Updates an hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Updated Hearing Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = UpdateHearingRequest::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Hearing does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateHearing(
+    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Hearing Id", example = "12345", required = true)
+    @PathVariable
+    hearingId: Long,
+    @RequestBody @Valid
+    request: UpdateHearingRequest,
+  ): Hearing = adjudicationService.updateHearing(adjudicationNumber, hearingId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/repairs")
   @Operation(
     summary = "Updates repairs (aka damages) for a given adjudication",

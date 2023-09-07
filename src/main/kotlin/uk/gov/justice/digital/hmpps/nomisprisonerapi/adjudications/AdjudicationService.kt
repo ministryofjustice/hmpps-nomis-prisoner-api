@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingNotification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
@@ -393,9 +394,8 @@ class AdjudicationService(
   }
 
   fun getHearing(hearingId: Long): Hearing =
-    adjudicationHearingRepository.findByIdOrNull(hearingId)?.let { hearing ->
-      hearing.toHearing()
-    } ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
+    adjudicationHearingRepository.findByIdOrNull(hearingId)?.toHearing()
+      ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
 
   private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
     if (adjudicationIncidentPartyRepository.existsByAdjudicationNumber(adjudicationNumber)) {
@@ -475,6 +475,19 @@ class AdjudicationService(
     adjudicationIncidentPartyRepository.saveAndFlush(adjudicationParty)
     return UpdateRepairsResponse(updatedRepairs.map { it.toRepair() })
   }
+
+  fun updateHearing(adjudicationNumber: Long, hearingId: Long, request: UpdateHearingRequest): Hearing {
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    adjudicationHearingRepository.findByIdOrNull(hearingId)?.let {
+      val internalLocation = findInternalLocation(request.internalLocationId)
+      it.hearingDate = request.hearingDate
+      it.hearingDateTime = request.hearingTime.atDate(request.hearingDate)
+      it.hearingType = lookupHearingType(request.hearingType)
+      it.agencyInternalLocation = internalLocation
+      return it.toHearing()
+    } ?: throw NotFoundException("Adjudication hearing with hearing Id $hearingId not found")
+  }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
@@ -507,6 +520,14 @@ private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
   hearingResults = this.hearingResults.filter { it.incidentCharge != null }.map { it.toHearingResult() },
   createdDateTime = this.whenCreated,
   createdByUsername = this.createUsername,
+  notifications = this.hearingNotifications.map { it.toNotification() },
+)
+
+private fun AdjudicationHearingNotification.toNotification(): HearingNotification = HearingNotification(
+  deliveryDate = this.deliveryDate,
+  deliveryTime = this.deliveryDateTime.toLocalTime(),
+  comment = this.comment,
+  notifiedStaff = this.deliveryStaff.toStaff(),
 )
 
 private fun AdjudicationInvestigation.toInvestigation(): Investigation = Investigation(
@@ -574,6 +595,13 @@ fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff(
     createdByUsername = createUsername,
     dateAddedToIncident = dateAddedToIncident,
     comment = comment,
+  )
+fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
+  Staff(
+    staffId = id,
+    firstName = firstName,
+    lastName = lastName,
+    username = accounts.usernamePreferringGeneralAccount(),
   )
 
 private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
