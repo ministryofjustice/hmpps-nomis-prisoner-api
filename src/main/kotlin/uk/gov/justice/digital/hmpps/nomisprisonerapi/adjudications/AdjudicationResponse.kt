@@ -146,7 +146,7 @@ data class Staff(
   val firstName: String,
   @Schema(description = "Last name of staff member")
   val lastName: String,
-  @Schema(description = "Username of person who created the record in NOMIS where this staff is used", required = true)
+  @Schema(description = "Username of person who created the record in NOMIS where this staff is used")
   val createdByUsername: String? = null,
   @Schema(description = "date added in NOMIS to the adjudication incident")
   val dateAddedToIncident: LocalDate? = null,
