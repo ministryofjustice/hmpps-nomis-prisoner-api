@@ -389,7 +389,7 @@ class AdjudicationService(
       agencyInternalLocation = internalLocation,
       hearingParty = party,
 
-      ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
+    ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
   }
 
   fun getHearing(hearingId: Long): Hearing =
