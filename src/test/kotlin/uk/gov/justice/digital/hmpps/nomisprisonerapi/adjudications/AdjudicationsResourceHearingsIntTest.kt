@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -22,7 +23,8 @@ import java.time.LocalDateTime
 class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
-  private var aLocationInMoorland = 101L
+  private var aLocationInMoorland = -41L
+  private var aSecondLocationInMoorland = -42L
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -30,6 +32,7 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
   @BeforeEach
   fun setUp() {
     aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI").locationId
+    aSecondLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-002", "MDI").locationId
   }
 
   @DisplayName("POST /adjudications/adjudication-number/{adjudicationNumber}/hearings")
@@ -139,16 +142,17 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
 
       @Test
       fun `create an adjudication hearing`() {
-        val hearingId = webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              aHearing(),
-            ),
-          )
-          .exchange()
-          .expectStatus().isOk
+        val hearingId =
+          webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                aHearing(),
+              ),
+            )
+            .exchange()
+            .expectStatus().isOk
         assertThat(hearingId).isNotNull
       }
     }
@@ -167,6 +171,191 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
         "hearingTime": "$hearingTime",
         "internalLocationId": $internalLocationId,
         "agencyId": "$agencyId"
+      }
+      """.trimIndent()
+  }
+
+  @DisplayName("PUT /adjudications/adjudication-number/{adjudicationNumber}/hearings/hearingId")
+  @Nested
+  inner class UpdateHearing {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private lateinit var existingHearing: AdjudicationHearing
+    private val existingAdjudicationNumber = 123456L
+
+    @BeforeEach
+    fun createPrisonerAndAdjudication() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
+              charge(offenceCode = "51:1B")
+              existingHearing = hearing(
+                internalLocationId = aLocationInMoorland,
+                scheduleDate = LocalDate.parse("2023-01-02"),
+                scheduleTime = LocalDateTime.parse("2023-01-02T14:00:00"),
+                hearingDate = LocalDate.parse("2023-01-03"),
+                hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
+                hearingStaff = reportingStaff,
+                hearingTypeCode = AdjudicationHearingType.GOVERNORS_HEARING,
+              )
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteHearingByAdjudicationNumber(existingAdjudicationNumber)
+      repository.delete(existingIncident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aHearingUpdate()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aHearingUpdate()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aHearingUpdate()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will return 404 if adjudication not found`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aHearingUpdate()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Adjudication party with adjudication number 88888 not found")
+      }
+
+      @Test
+      fun `will return 404 if hearing not found`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aHearingUpdate()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Adjudication hearing with hearing Id 88888 not found")
+      }
+
+      @Test
+      fun `will return 400 if hearing type is not valid`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aHearingUpdate(hearingType = "VVV")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("""Hearing type VVV not found""")
+      }
+
+      @Test
+      fun `will return 400 if update fields not provided`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+      {
+      }
+      """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `update an adjudication hearing`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingUpdate(hearingDate = "2023-06-06", hearingTime = "14:30", internalLocationId = aSecondLocationInMoorland),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("hearingDate").isEqualTo("2023-06-06")
+          .jsonPath("hearingTime").isEqualTo("14:30:00")
+          .jsonPath("internalLocation.description").isEqualTo("MDI-1-1-002")
+      }
+    }
+
+    private fun aHearingUpdate(
+      hearingType: String = "GOV",
+      internalLocationId: Long = aLocationInMoorland,
+      hearingDate: String = "2023-01-01",
+      hearingTime: String = "10:15",
+    ): String =
+      """
+      {
+        "hearingType": "$hearingType",
+        "hearingDate": "$hearingDate",
+        "hearingTime": "$hearingTime",
+        "internalLocationId": $internalLocationId
       }
       """.trimIndent()
   }

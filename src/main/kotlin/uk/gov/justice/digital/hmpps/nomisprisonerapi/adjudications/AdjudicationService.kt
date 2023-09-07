@@ -389,13 +389,12 @@ class AdjudicationService(
       agencyInternalLocation = internalLocation,
       hearingParty = party,
 
-    ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
+      ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
   }
 
   fun getHearing(hearingId: Long): Hearing =
-    adjudicationHearingRepository.findByIdOrNull(hearingId)?.let { hearing ->
-      hearing.toHearing()
-    } ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
+    adjudicationHearingRepository.findByIdOrNull(hearingId)?.toHearing()
+      ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
 
   private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
     if (adjudicationIncidentPartyRepository.existsByAdjudicationNumber(adjudicationNumber)) {
@@ -474,6 +473,19 @@ class AdjudicationService(
     adjudicationParty.incident.repairs.addAll(updatedRepairs)
     adjudicationIncidentPartyRepository.saveAndFlush(adjudicationParty)
     return UpdateRepairsResponse(updatedRepairs.map { it.toRepair() })
+  }
+
+  fun updateHearing(adjudicationNumber: Long, hearingId: Long, request: UpdateHearingRequest): Hearing {
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    adjudicationHearingRepository.findByIdOrNull(hearingId)?.let {
+      val internalLocation = findInternalLocation(request.internalLocationId)
+      it.hearingDate = request.hearingDate
+      it.hearingDateTime = request.hearingTime.atDate(request.hearingDate)
+      it.hearingType = lookupHearingType(request.hearingType)
+      it.agencyInternalLocation = internalLocation
+      return it.toHearing()
+    } ?: throw NotFoundException("Adjudication hearing with hearing Id $hearingId not found")
   }
 }
 
