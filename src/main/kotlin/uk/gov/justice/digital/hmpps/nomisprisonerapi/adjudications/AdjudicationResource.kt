@@ -9,7 +9,6 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
@@ -68,7 +67,7 @@ class AdjudicationResource(
     ],
   )
   fun getAdjudicationChargeIdsByFilter(
-    @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC, size = 20)
+    @PageableDefault(size = 20)
     pageRequest: Pageable,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.AdjudicationCharge.Companion.badDataNotFound
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
@@ -42,6 +44,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isVictim
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isWitness
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
@@ -53,11 +56,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AdjudicationChargeSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -153,19 +156,50 @@ class AdjudicationService(
     pageRequest: Pageable,
     adjudicationFilter: AdjudicationFilter,
   ): Page<AdjudicationChargeIdResponse> {
-    return adjudicationIncidentChargeRepository.findAll(
-      AdjudicationChargeSpecification(adjudicationFilter),
+    val prisonIds = adjudicationFilter.prisonIds?.takeIf { it.isNotEmpty() }
+    return findAllAdjudicationChargeIds(
+      fromDate = adjudicationFilter.fromDate?.atStartOfDay(),
+      toDate = adjudicationFilter.toDate?.plusDays(1)?.atStartOfDay(),
+      prisonIds = prisonIds,
+      hasPrisonFilter = prisonIds?.let { true } ?: false,
       pageRequest,
-    )
-      .map {
-        AdjudicationChargeIdResponse(
-          adjudicationNumber = it.incidentParty.adjudicationNumber!!,
-          offenderNo = it.incidentParty.offenderBooking!!.offender.nomsId,
-          chargeSequence = it.id.chargeSequence,
-        )
-      }
+    ).map {
+      AdjudicationChargeIdResponse(
+        adjudicationNumber = it.getAdjudicationNumber(),
+        chargeSequence = it.getChargeSequence(),
+        offenderNo = it.getNomsId(),
+      )
+    }
   }
 
+  fun findAllAdjudicationChargeIds(
+    fromDate: LocalDateTime?,
+    toDate: LocalDateTime?,
+    prisonIds: List<String>?,
+    hasPrisonFilter: Boolean,
+    pageable: Pageable,
+  ): Page<AdjudicationChargeId> = if (fromDate == null && toDate == null && !hasPrisonFilter) {
+    adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(pageable)
+  } else {
+    // optimisation: only do the complex SQL if we have a filter
+    // typically we won't when run in production
+    if (fromDate == null && toDate == null) {
+      adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
+        prisonIds,
+        pageable,
+      )
+    } else {
+      adjudicationIncidentChargeRepository.findAllAdjudicationChargeIds(
+        fromDate,
+        toDate,
+        prisonIds,
+        hasPrisonFilter,
+        pageable,
+      )
+    }
+  }
+
+  @Audit
   fun createAdjudication(
     offenderNo: String,
     request: CreateAdjudicationRequest,
@@ -342,6 +376,7 @@ class AdjudicationService(
     }
   }
 
+  @Audit
   fun createHearing(adjudicationNumber: Long, request: CreateHearingRequest): CreateHearingResponse {
     val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
@@ -415,6 +450,7 @@ class AdjudicationService(
     AdjudicationHearingType.pk(code),
   ) ?: throw BadDataException("Hearing type $code not found")
 
+  @Audit
   fun updateRepairs(adjudicationNumber: Long, request: UpdateRepairsRequest): UpdateRepairsResponse {
     val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
@@ -436,6 +472,7 @@ class AdjudicationService(
       )
     }
     adjudicationParty.incident.repairs.addAll(updatedRepairs)
+    adjudicationIncidentPartyRepository.saveAndFlush(adjudicationParty)
     return UpdateRepairsResponse(updatedRepairs.map { it.toRepair() })
   }
 }
@@ -446,7 +483,7 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
     "Unknown Plea Finding Code",
   ),
   findingType = this.findingType.toCodeDescription(),
-  charge = this.incidentCharge.toCharge(),
+  charge = this.incidentCharge?.toCharge() ?: badDataNotFound(this.offence.toOffence()),
   offence = this.offence.toOffence(),
   resultAwards = this.resultAwards.map { it.toAward() },
   createdDateTime = this.whenCreated,

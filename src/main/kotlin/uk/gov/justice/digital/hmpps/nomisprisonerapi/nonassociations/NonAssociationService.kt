@@ -15,11 +15,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetailId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationDetailRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.NonAssociationSpecification
+import java.lang.RuntimeException
 import java.time.LocalDate
 
 @Service
@@ -27,11 +29,12 @@ import java.time.LocalDate
 class NonAssociationService(
   private val offenderRepository: OffenderRepository,
   private val offenderNonAssociationRepository: OffenderNonAssociationRepository,
+  private val offenderNonAssociationDetailRepository: OffenderNonAssociationDetailRepository,
   private val reasonRepository: ReferenceCodeRepository<NonAssociationReason>,
   private val typeRepository: ReferenceCodeRepository<NonAssociationType>,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createNonAssociation(dto: CreateNonAssociationRequest) {
+  fun createNonAssociation(dto: CreateNonAssociationRequest): CreateNonAssociationResponse {
     val offender = offenderRepository.findRootByNomisId(dto.offenderNo)
       ?: throw BadDataException("Offender with nomsId=${dto.offenderNo} not found")
     val nsOffender = offenderRepository.findRootByNomisId(dto.nsOffenderNo)
@@ -48,6 +51,9 @@ class NonAssociationService(
     val existing = offenderNonAssociationRepository.findByIdOrNull(
       OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
     )
+
+    var typeSequence = 1
+
     if (existing != null) {
       if (existing.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.offenderNo} and nsOffender=${dto.nsOffenderNo}")
@@ -61,26 +67,19 @@ class NonAssociationService(
       if (otherExisting.getOpenNonAssociationDetail() != null) {
         throw BadDataException("Non-association already exists for offender=${dto.nsOffenderNo} and nsOffender=${dto.offenderNo}")
       }
+
+      typeSequence = existing.nextAvailableSequence()
       existing.nonAssociationReason = recipReason
       existing.recipNonAssociationReason = recipReason
-      existing.offenderNonAssociationDetails.add(
-        mapDetails(
-          recipReason,
-          existing,
-          dto,
-          existing.nextAvailableSequence(),
-        ),
-      )
+      existing.offenderNonAssociationDetails.add(mapDetails(reason, existing, dto, typeSequence))
+
+      if (typeSequence != otherExisting.nextAvailableSequence()) {
+        throw RuntimeException("Non-association type sequence mismatch for offender=${dto.offenderNo} and nsOffender=${dto.nsOffenderNo}, next values are $typeSequence and ${otherExisting.nextAvailableSequence()}")
+      }
+
       otherExisting.nonAssociationReason = recipReason
       otherExisting.recipNonAssociationReason = reason
-      otherExisting.offenderNonAssociationDetails.add(
-        mapDetails(
-          reason,
-          otherExisting,
-          dto,
-          otherExisting.nextAvailableSequence(),
-        ),
-      )
+      otherExisting.offenderNonAssociationDetails.add(mapDetails(recipReason, otherExisting, dto, typeSequence))
     } else {
       OffenderNonAssociation(
         id = OffenderNonAssociationId(offender, nsOffender),
@@ -91,7 +90,7 @@ class NonAssociationService(
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(reason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(reason, this, dto, typeSequence))
           }
         }
 
@@ -104,7 +103,7 @@ class NonAssociationService(
       )
         .also {
           offenderNonAssociationRepository.save(it).apply {
-            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto))
+            offenderNonAssociationDetails.add(mapDetails(recipReason, this, dto, typeSequence))
           }
         }
     }
@@ -115,6 +114,7 @@ class NonAssociationService(
         "nsOffender" to dto.nsOffenderNo,
       ),
     )
+    return CreateNonAssociationResponse(typeSequence)
   }
 
   fun updateNonAssociation(offenderNo: String, nsOffenderNo: String, dto: UpdateNonAssociationRequest) {
@@ -174,33 +174,54 @@ class NonAssociationService(
     )
   }
 
-  fun closeNonAssociation(offenderNo: String, nsOffenderNo: String) {
+  fun closeNonAssociation(offenderNo: String, nsOffenderNo: String, typeSequence: Int) {
     val offender = offenderRepository.findRootByNomisId(offenderNo)
       ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
     val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
       ?: throw NotFoundException("NS Offender with nomsId=$nsOffenderNo not found")
-    val existing = offenderNonAssociationRepository.findByIdOrNull(
-      OffenderNonAssociationId(offender = offender, nsOffender = nsOffender),
-    ) ?: throw NotFoundException("Non-association not found where offender=$offenderNo and nsOffender=$nsOffenderNo")
 
-    existing.getOpenNonAssociationDetail()?.apply {
-      expiryDate = LocalDate.now()
+    val existing = offenderNonAssociationDetailRepository.findByIdOrNull(
+      OffenderNonAssociationDetailId(offender = offender, nsOffender = nsOffender, typeSequence = typeSequence),
+    ) ?: throw NotFoundException("Non-association detail not found for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+
+    val otherExisting = offenderNonAssociationDetailRepository.findByIdOrNull(
+      OffenderNonAssociationDetailId(offender = nsOffender, nsOffender = offender, typeSequence = typeSequence),
+    ) ?: throw NotFoundException("Non-association detail not found where offender=$nsOffenderNo, nsOffender=$offenderNo, typeSequence=$typeSequence")
+
+    val today = LocalDate.now()
+    existing.apply {
+      if (expiryDate != null) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+      expiryDate = today
       telemetryClient.trackEvent(
         "non-association-closed",
         mapOf(
-          "bookingId" to offenderBooking.bookingId.toString(),
+          "offender" to offenderNo,
+          "nsOffender" to nsOffenderNo,
+          "typeSequence" to "$typeSequence",
         ),
         null,
       )
     }
-      ?: throw BadDataException("No open Non-association detail found for offender=$offenderNo and nsOffender=$nsOffenderNo")
+    otherExisting.apply {
+      if (expiryDate != null) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+      expiryDate = today
+      telemetryClient.trackEvent(
+        "non-association-closed",
+        mapOf(
+          "offender" to nsOffenderNo,
+          "nsOffender" to offenderNo,
+          "typeSequence" to "$typeSequence",
+        ),
+        null,
+      )
+    }
   }
 
   private fun mapDetails(
     reason: NonAssociationReason,
     existing: OffenderNonAssociation,
     dto: CreateNonAssociationRequest,
-    typeSequence: Int = 1,
+    typeSequence: Int,
   ) =
     OffenderNonAssociationDetail(
       id = OffenderNonAssociationDetailId(
@@ -219,7 +240,12 @@ class NonAssociationService(
       authorisedBy = dto.authorisedBy,
     )
 
-  fun getNonAssociation(offenderNo: String, nsOffenderNo: String, getAll: Boolean): List<NonAssociationResponse> {
+  fun getNonAssociation(
+    offenderNo: String,
+    nsOffenderNo: String,
+    typeSequence: Int?,
+    getAll: Boolean,
+  ): List<NonAssociationResponse> {
     val offender = offenderRepository.findRootByNomisId(offenderNo)
       ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
     val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
@@ -231,9 +257,13 @@ class NonAssociationService(
         nsOffender = nsOffender,
       ),
     )?.let {
-      mapModel(it, getAll)
+      mapModel(it, typeSequence, getAll)
     }
-      ?: throw NotFoundException("Open NonAssociation not found")
+      ?: throw if (typeSequence == null) {
+        NotFoundException("Open NonAssociation not found")
+      } else {
+        NotFoundException("Non-association with sequence $typeSequence not found for these offender numbers")
+      }
   }
 
   fun findIdsByFilter(
@@ -243,13 +273,24 @@ class NonAssociationService(
     offenderNonAssociationRepository.findAll(NonAssociationSpecification(nonAssociationFilter), pageRequest)
       .map { NonAssociationIdResponse(it.id.offender.nomsId, it.id.nsOffender.nomsId) }
 
-  private fun mapModel(entity: OffenderNonAssociation, getAll: Boolean): List<NonAssociationResponse> =
+  private fun mapModel(
+    entity: OffenderNonAssociation,
+    typeSequence: Int?,
+    getAll: Boolean,
+  ): List<NonAssociationResponse> =
     entity.offenderNonAssociationDetails
-      .filter { getAll || it.expiryDate == null }
+      .filter {
+        getAll || if (typeSequence != null) {
+          it.id.typeSequence == typeSequence
+        } else {
+          it.expiryDate == null
+        }
+      }
       .map { detail ->
         NonAssociationResponse(
           offenderNo = entity.id.offender.nomsId,
           nsOffenderNo = entity.id.nsOffender.nomsId,
+          typeSequence = detail.id.typeSequence,
           reason = detail.nonAssociationReason.code,
           recipReason = entity.recipNonAssociationReason?.code!!, // Always set in prod
           type = detail.nonAssociationType.code,

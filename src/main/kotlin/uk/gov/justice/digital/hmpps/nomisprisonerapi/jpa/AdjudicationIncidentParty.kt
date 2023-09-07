@@ -8,6 +8,9 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
+import jakarta.persistence.NamedSubgraph
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -37,6 +40,41 @@ class AdjudicationIncidentPartyId(
 
 @Entity
 @Table(name = "AGENCY_INCIDENT_PARTIES")
+@NamedEntityGraph(
+  name = "full-adjudication",
+  attributeNodes = [
+    NamedAttributeNode(value = "actionDecision"),
+    NamedAttributeNode(value = "incident", subgraph = "full-incident"),
+    NamedAttributeNode(value = "offenderBooking", subgraph = "booking-offender"),
+  ],
+  subgraphs = [
+    NamedSubgraph(
+      name = "booking-offender",
+      attributeNodes = [
+        NamedAttributeNode("offender", subgraph = "offender-with-gender"),
+        NamedAttributeNode("location"),
+        NamedAttributeNode("visitBalance"),
+      ],
+    ),
+    NamedSubgraph(
+      name = "full-incident",
+      attributeNodes = [
+        NamedAttributeNode("agencyInternalLocation"),
+        NamedAttributeNode("incidentType"),
+        NamedAttributeNode("prison"),
+        NamedAttributeNode("reportingStaff", subgraph = "staff-accounts"),
+
+      ],
+    ),
+    NamedSubgraph(
+      name = "offender-with-gender",
+      attributeNodes = [
+        NamedAttributeNode("gender"),
+      ],
+    ),
+    NamedSubgraph(name = "staff-accounts", attributeNodes = [NamedAttributeNode("accounts")]),
+  ],
+)
 class AdjudicationIncidentParty(
 
   @EmbeddedId
@@ -46,8 +84,7 @@ class AdjudicationIncidentParty(
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking? = null,
 
-  // @MapsId("agencyIncidentId")
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "AGENCY_INCIDENT_ID", insertable = false, updatable = false)
   val incident: AdjudicationIncident,
 

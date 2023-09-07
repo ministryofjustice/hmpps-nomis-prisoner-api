@@ -8,6 +8,9 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
+import jakarta.persistence.NamedSubgraph
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
@@ -21,6 +24,19 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "OIC_HEARINGS")
+@NamedEntityGraph(
+  name = "full-hearing",
+  attributeNodes = [
+    NamedAttributeNode(value = "agencyInternalLocation"),
+    NamedAttributeNode(value = "hearingStaff", subgraph = "staff-accounts"),
+    NamedAttributeNode(value = "hearingParty"),
+    NamedAttributeNode(value = "hearingType"),
+    NamedAttributeNode(value = "eventStatus"),
+  ],
+  subgraphs = [
+    NamedSubgraph(name = "staff-accounts", attributeNodes = [NamedAttributeNode("accounts")]),
+  ],
+)
 class AdjudicationHearing(
   @SequenceGenerator(
     name = "OIC_HEARING_ID",

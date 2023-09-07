@@ -65,7 +65,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   fun createNonAssociation(
     @RequestBody @Valid
     createNonAssociationRequest: CreateNonAssociationRequest,
-  ) = nonAssociationService.createNonAssociation(createNonAssociationRequest)
+  ): CreateNonAssociationResponse = nonAssociationService.createNonAssociation(createNonAssociationRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
@@ -113,7 +113,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   ) = nonAssociationService.updateNonAssociation(offenderNo, nsOffenderNo, updateNonAssociationRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
-  @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/close")
+  @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close")
   @Operation(
     summary = "Closes an existing non-association",
     description = "Closes an existing non-association. Requires role NOMIS_NON_ASSOCIATIONS",
@@ -122,6 +122,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ApiResponse(
         responseCode = "404",
         description = "Non-association does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Non-association is already closed",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -143,7 +148,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
-  ) = nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo)
+    @Parameter(description = "Sequence number. Close this specific detail record", example = "2", required = true)
+    @PathVariable
+    typeSequence: Int,
+  ) = nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo, typeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
@@ -169,16 +177,19 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
     ],
   )
-  fun getOpenNonAssociation(
+  fun getNonAssociation(
     @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
     @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
+    @Parameter(description = "Sequence number. If present, get this detail record, otherwise get the open record if there is one.", example = "2")
+    @RequestParam("typeSequence", required = false)
+    typeSequence: Int?,
   ): NonAssociationResponse =
     try {
-      nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, false).first()
+      nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, typeSequence, false).first()
     } catch (e: NoSuchElementException) {
       throw NotFoundException("No open non-association exists for these offender numbers")
     }
@@ -215,7 +226,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @PathVariable
     nsOffenderNo: String,
   ): List<NonAssociationResponse> =
-    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, true)
+    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, null, true)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/ids")
@@ -234,7 +245,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_NON_ASSOCIATIONS not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
