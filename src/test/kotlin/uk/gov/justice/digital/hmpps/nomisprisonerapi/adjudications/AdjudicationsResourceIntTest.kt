@@ -591,6 +591,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                   pleaFindingCode = "UNFIT",
                   findingCode = "NOT_PROCEED",
                 )
+                notification(staff = staff, deliveryDate = LocalDate.parse("2023-01-04"), deliveryDateTime = LocalDateTime.parse("2023-01-04T10:00:00"))
+                notification(staff = staffInvestigator, deliveryDate = LocalDate.parse("2023-01-05"), deliveryDateTime = LocalDateTime.parse("2023-01-05T11:30:00"), comment = "You have been issued this hearing")
               }
               investigation(
                 investigator = staffInvestigator,
@@ -1055,6 +1057,17 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("hearings[0].eventId").isEqualTo(1)
         .jsonPath("hearings[0].createdByUsername").isNotEmpty
         .jsonPath("hearings[0].createdDateTime").isNotEmpty
+        .jsonPath("hearings[0].notifications").isArray
+        .jsonPath("hearings[0].notifications[0].deliveryDate").isEqualTo("2023-01-04")
+        .jsonPath("hearings[0].notifications[0].deliveryTime").isEqualTo("10:00:00")
+        .jsonPath("hearings[0].notifications[0].comment").doesNotExist()
+        .jsonPath("hearings[0].notifications[0].notifiedStaff.username").isEqualTo("S.BROWN_GEN")
+        .jsonPath("hearings[0].notifications[0].notifiedStaff.staffId").isEqualTo(staff.id)
+        .jsonPath("hearings[0].notifications[1].deliveryDate").isEqualTo("2023-01-05")
+        .jsonPath("hearings[0].notifications[1].deliveryTime").isEqualTo("11:30:00")
+        .jsonPath("hearings[0].notifications[1].comment").isEqualTo("You have been issued this hearing")
+        .jsonPath("hearings[0].notifications[1].notifiedStaff.username").isEqualTo("I.INVESTIGATOR")
+        .jsonPath("hearings[0].notifications[1].notifiedStaff.staffId").isEqualTo(staffInvestigator.id)
     }
 
     private fun getAdjudicationOtherPartiesTest(url: String) {

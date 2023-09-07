@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingNotification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
@@ -28,15 +29,25 @@ interface AdjudicationHearingDsl {
     findingCode: String = "PROVED",
     dsl: AdjudicationHearingResultDsl.() -> Unit = {},
   ): AdjudicationHearingResult
+
+  @AdjudicationHearingNotificationDslMarker
+  fun notification(
+    staff: Staff,
+    deliveryDateTime: LocalDateTime = LocalDateTime.now(),
+    deliveryDate: LocalDate = LocalDate.now(),
+    comment: String? = null,
+    dsl: AdjudicationHearingNotificationDsl.() -> Unit = {},
+  ): AdjudicationHearingNotification
 }
 
 @Component
 class AdjudicationHearingBuilderFactory(
   private val adjudicationHearingResultBuilderFactory: AdjudicationHearingResultBuilderFactory,
+  private val adjudicationHearingNotificationBuilderFactory: AdjudicationHearingNotificationBuilderFactory,
   private val repository: AdjudicationHearingBuilderRepository,
 ) {
   fun builder(): AdjudicationHearingBuilder {
-    return AdjudicationHearingBuilder(adjudicationHearingResultBuilderFactory, repository)
+    return AdjudicationHearingBuilder(adjudicationHearingResultBuilderFactory, adjudicationHearingNotificationBuilderFactory, repository)
   }
 }
 
@@ -58,6 +69,7 @@ class AdjudicationHearingBuilderRepository(
 
 class AdjudicationHearingBuilder(
   private val adjudicationHearingResultBuilderFactory: AdjudicationHearingResultBuilderFactory,
+  private val adjudicationHearingNotificationBuilderFactory: AdjudicationHearingNotificationBuilderFactory,
   private val repository: AdjudicationHearingBuilderRepository,
 ) : AdjudicationHearingDsl {
   private lateinit var adjudicationHearing: AdjudicationHearing
@@ -108,6 +120,26 @@ class AdjudicationHearingBuilder(
         index = adjudicationHearing.hearingResults.size + 1,
       )
         .also { adjudicationHearing.hearingResults += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun notification(
+    staff: Staff,
+    deliveryDateTime: LocalDateTime,
+    deliveryDate: LocalDate,
+    comment: String?,
+    dsl: AdjudicationHearingNotificationDsl.() -> Unit,
+  ) =
+    adjudicationHearingNotificationBuilderFactory.builder().let { builder ->
+      builder.build(
+        hearing = adjudicationHearing,
+        staff = staff,
+        deliveryDateTime = deliveryDateTime,
+        deliveryDate = deliveryDate,
+        comment = comment,
+        index = adjudicationHearing.hearingNotifications.size + 1,
+      )
+        .also { adjudicationHearing.hearingNotifications += it }
         .also { builder.apply(dsl) }
     }
 }

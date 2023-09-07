@@ -147,9 +147,9 @@ data class Staff(
   @Schema(description = "Last name of staff member")
   val lastName: String,
   @Schema(description = "Username of person who created the record in NOMIS where this staff is used", required = true)
-  val createdByUsername: String,
+  val createdByUsername: String? = null,
   @Schema(description = "date added in NOMIS to the adjudication incident")
-  val dateAddedToIncident: LocalDate,
+  val dateAddedToIncident: LocalDate? = null,
   @Schema(description = "comment about why they were added to the adjudication incident")
   val comment: String? = null,
 )
@@ -229,6 +229,20 @@ data class Hearing(
   val createdDateTime: LocalDateTime,
   @Schema(description = "Username of person who created the record in NOMIS", required = true)
   val createdByUsername: String,
+  @Schema(description = "List of hearing notifications")
+  val notifications: List<HearingNotification>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class HearingNotification(
+  @Schema(description = "Hearing notification date")
+  val deliveryDate: LocalDate,
+  @Schema(description = "Hearing notification time")
+  val deliveryTime: LocalTime,
+  @Schema(description = "Notification comment")
+  val comment: String?,
+  @Schema(description = "Staff notified")
+  val notifiedStaff: Staff,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
