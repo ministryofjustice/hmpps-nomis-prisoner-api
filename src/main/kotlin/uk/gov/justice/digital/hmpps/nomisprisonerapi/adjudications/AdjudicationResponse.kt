@@ -60,23 +60,7 @@ data class AdjudicationCharge(
   val reportDetail: String?,
   val offenceId: String?,
   val chargeSequence: Int,
-) {
-  constructor(offence: AdjudicationOffence) : this(
-    offence = offence,
-    evidence = null,
-    reportDetail = null,
-    offenceId = null,
-    chargeSequence = BAD_DATA_NOT_FOUND,
-  )
-
-  companion object {
-    // Not Found scenario for NOMIS bad data; these would always be filtered out since there would be no matching adjudication/charge combination
-    // but is required to prevent null charges leaking into model
-    // the scenario occurs for a Hearing with awards for a charge that no longer not exist in the adjudication
-    fun badDataNotFound(offence: AdjudicationOffence) = AdjudicationCharge(offence)
-    const val BAD_DATA_NOT_FOUND = -1
-  }
-}
+)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AdjudicationOffence(
@@ -164,6 +148,10 @@ data class Staff(
   val lastName: String,
   @Schema(description = "Username of person who created the record in NOMIS where this staff is used", required = true)
   val createdByUsername: String,
+  @Schema(description = "date added in NOMIS to the adjudication incident")
+  val dateAddedToIncident: LocalDate,
+  @Schema(description = "comment about why they were added to the adjudication incident")
+  val comment: String? = null,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -176,6 +164,10 @@ data class Prisoner(
   val lastName: String,
   @Schema(description = "Username of person who created the record in NOMIS where this prisoner is used", required = true)
   val createdByUsername: String,
+  @Schema(description = "date added in NOMIS to the adjudication incident")
+  val dateAddedToIncident: LocalDate,
+  @Schema(description = "comment about why they were added to the adjudication incident")
+  val comment: String? = null,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -269,10 +261,12 @@ data class HearingResultAward(
   val adjudicationNumber: Long,
 )
 
-fun Offender.toPrisoner(createUsername: String) =
+fun Offender.toPrisoner(createUsername: String, dateAddedToIncident: LocalDate, comment: String? = null) =
   Prisoner(
     offenderNo = nomsId,
     firstName = firstName,
     lastName = lastName,
     createdByUsername = createUsername,
+    dateAddedToIncident = dateAddedToIncident,
+    comment = comment,
   )
