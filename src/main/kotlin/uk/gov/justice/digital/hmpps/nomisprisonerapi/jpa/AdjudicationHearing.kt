@@ -121,6 +121,9 @@ class AdjudicationHearing(
   @OneToMany(mappedBy = "hearing", cascade = [CascadeType.ALL], orphanRemoval = true)
   val hearingResults: MutableList<AdjudicationHearingResult> = mutableListOf(),
 
+  @OneToMany(mappedBy = "hearing", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val hearingNotifications: MutableList<AdjudicationHearingNotification> = mutableListOf(),
+
   @Column(name = "CREATE_DATETIME", nullable = false)
   var whenCreated: LocalDateTime = LocalDateTime.now(),
 ) {

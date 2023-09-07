@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingNotification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
@@ -519,6 +520,14 @@ private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
   hearingResults = this.hearingResults.filter { it.incidentCharge != null }.map { it.toHearingResult() },
   createdDateTime = this.whenCreated,
   createdByUsername = this.createUsername,
+  notifications = this.hearingNotifications.map { it.toNotification() },
+)
+
+private fun AdjudicationHearingNotification.toNotification(): HearingNotification = HearingNotification(
+  deliveryDate = this.deliveryDate,
+  deliveryTime = this.deliveryDateTime.toLocalTime(),
+  comment = this.comment,
+  notifiedStaff = this.deliveryStaff.toStaff(),
 )
 
 private fun AdjudicationInvestigation.toInvestigation(): Investigation = Investigation(
@@ -586,6 +595,13 @@ fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff(
     createdByUsername = createUsername,
     dateAddedToIncident = dateAddedToIncident,
     comment = comment,
+  )
+fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
+  Staff(
+    staffId = id,
+    firstName = firstName,
+    lastName = lastName,
+    username = accounts.usernamePreferringGeneralAccount(),
   )
 
 private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
