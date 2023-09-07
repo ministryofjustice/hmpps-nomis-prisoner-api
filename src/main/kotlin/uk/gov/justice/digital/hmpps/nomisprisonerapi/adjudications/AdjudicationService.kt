@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications.AdjudicationCharge.Companion.badDataNotFound
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -60,6 +59,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -126,7 +126,7 @@ class AdjudicationService(
       comment = adjudication.comment,
       incident = AdjudicationIncident(
         adjudicationIncidentId = adjudication.id.agencyIncidentId,
-        reportingStaff = adjudication.incident.reportingStaff.toStaff(adjudication.incident.createUsername),
+        reportingStaff = adjudication.incident.reportingStaff.toStaff(adjudication.incident.createUsername, adjudication.incident.reportedDate),
         incidentDate = adjudication.incident.incidentDate,
         incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
         reportedDate = adjudication.incident.reportedDate,
@@ -495,7 +495,7 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
     "Unknown Plea Finding Code",
   ),
   findingType = this.findingType.toCodeDescription(),
-  charge = this.incidentCharge?.toCharge() ?: badDataNotFound(this.offence.toOffence()),
+  charge = this.incidentCharge?.toCharge()!!, // this is only called when this is non-null
   offence = this.offence.toOffence(),
   resultAwards = this.resultAwards.map { it.toAward() },
   createdDateTime = this.whenCreated,
@@ -512,16 +512,17 @@ private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
   scheduleTime = this.scheduleDateTime?.toLocalTime(),
   internalLocation = this.agencyInternalLocation?.toInternalLocation(),
   representativeText = this.representativeText,
-  hearingStaff = this.hearingStaff?.toStaff(this.createUsername),
+  hearingStaff = this.hearingStaff?.toStaff(this.createUsername, this.whenCreated.toLocalDate()),
   eventStatus = this.eventStatus?.toCodeDescription(),
   eventId = this.eventId,
-  hearingResults = this.hearingResults.map { it.toHearingResult() },
+  // remove bad data, results with no charges
+  hearingResults = this.hearingResults.filter { it.incidentCharge != null }.map { it.toHearingResult() },
   createdDateTime = this.whenCreated,
   createdByUsername = this.createUsername,
 )
 
 private fun AdjudicationInvestigation.toInvestigation(): Investigation = Investigation(
-  investigator = this.investigator.toStaff(createUsername),
+  investigator = this.investigator.toStaff(createUsername, this.assignedDate),
   comment = this.comment,
   dateAssigned = this.assignedDate,
   evidence = this.evidence.map { it.toEvidence() },
@@ -541,10 +542,11 @@ private fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncide
   this.incident.parties.filter { it.offenderBooking != null }
 
 private fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> =
-  this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff(it.createUsername) }
+  this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff(it.createUsername, it.partyAddedDate, it.comment) }
 
 private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> =
-  this.prisonerParties().filter { filter(it) && it != this }.map { it.prisonerParty().toPrisoner(it.createUsername) }
+  this.prisonerParties().filter { filter(it) && it != this }
+    .map { it.prisonerParty().toPrisoner(it.createUsername, it.partyAddedDate, it.comment) }
 
 private fun AdjudicationIncidentRepair.toRepair(): Repair =
   Repair(
@@ -571,13 +573,19 @@ fun AdjudicationIncidentOffence.toOffence(): AdjudicationOffence = AdjudicationO
 fun AgencyInternalLocation.toInternalLocation() =
   InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
 
-fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff(createUsername: String) =
+fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff(
+  createUsername: String,
+  dateAddedToIncident: LocalDate,
+  comment: String? = null,
+) =
   Staff(
     staffId = id,
     firstName = firstName,
     lastName = lastName,
     username = accounts.usernamePreferringGeneralAccount(),
     createdByUsername = createUsername,
+    dateAddedToIncident = dateAddedToIncident,
+    comment = comment,
   )
 
 private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
