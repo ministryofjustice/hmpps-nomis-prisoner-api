@@ -52,10 +52,10 @@ class AdjudicationHearing(
   val adjudicationNumber: Long,
 
   @Column(name = "HEARING_TIME")
-  val hearingDateTime: LocalDateTime? = LocalDateTime.now(),
+  var hearingDateTime: LocalDateTime? = LocalDateTime.now(),
 
   @Column(name = "HEARING_DATE")
-  val hearingDate: LocalDate? = LocalDate.now(),
+  var hearingDate: LocalDate? = LocalDate.now(),
 
   @Column(name = "SCHEDULE_TIME")
   val scheduleDateTime: LocalDateTime? = LocalDateTime.now(),
@@ -79,7 +79,7 @@ class AdjudicationHearing(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID")
-  val agencyInternalLocation: AgencyInternalLocation?,
+  var agencyInternalLocation: AgencyInternalLocation?,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -93,7 +93,7 @@ class AdjudicationHearing(
       JoinColumnOrFormula(column = JoinColumn(name = "OIC_HEARING_TYPE", referencedColumnName = "code")),
     ],
   )
-  val hearingType: AdjudicationHearingType?,
+  var hearingType: AdjudicationHearingType?,
 
   @Column(name = "COMMENT_TEXT")
   val comment: String? = null,
