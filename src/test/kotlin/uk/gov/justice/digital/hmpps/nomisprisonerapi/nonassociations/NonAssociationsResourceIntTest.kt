@@ -428,7 +428,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden when no authority`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AA", 1)
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
         .expectStatus().isUnauthorized
@@ -437,7 +437,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden when no role`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AA", 1)
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -447,7 +447,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden with wrong role`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AA", 1)
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -455,37 +455,81 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `non-association does not exist`() {
+    fun `offenders are the same`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}", "A1234AA", "A1234AA")
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .body(BodyInserters.fromValue(updateNonAssociationRequest()))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("developerMessage")
+        .isEqualTo("Offender and NS Offender cannot be the same")
+        .jsonPath("userMessage")
+        .isEqualTo("Bad request: Offender and NS Offender cannot be the same")
+    }
+
+    @Test
+    fun `non-association offender does not exist`() {
+      webTestClient.put()
+        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AB", 1)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
         .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("developerMessage").isEqualTo("Offender with nomsId=A1234AA not found")
+        .jsonPath("userMessage").isEqualTo("Not Found: Offender with nomsId=A1234AA not found")
+    }
+
+    @Test
+    fun `non-association does not exist`() {
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          99,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .body(BodyInserters.fromValue(updateNonAssociationRequest()))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("developerMessage")
+        .isEqualTo("Non-association not found where offender=A1234TT, nsOffender=A1234TU, typeSequence=99")
+        .jsonPath("userMessage")
+        .isEqualTo("Not Found: Non-association not found where offender=A1234TT, nsOffender=A1234TU, typeSequence=99")
     }
 
     @Test
     fun `invalid reason`() {
       webTestClient.put().uri(
-        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
         offenderAtMoorlands.nomsId,
         offenderAtLeeds.nomsId,
+        1,
       )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(reason = "invalid")))
         .exchange()
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Reason with code=invalid does not exist")
-        }
+        .expectBody()
+        .jsonPath("userMessage").isEqualTo("Bad request: Reason with code=invalid does not exist")
     }
 
     @Test
     fun `invalid reciprocal reason`() {
       webTestClient.put().uri(
-        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
         offenderAtMoorlands.nomsId,
         offenderAtLeeds.nomsId,
+        1,
       )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(recipReason = "invalid")))
@@ -499,9 +543,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid type`() {
       webTestClient.put().uri(
-        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
         offenderAtMoorlands.nomsId,
         offenderAtLeeds.nomsId,
+        1,
       )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(type = "INVALID")))
@@ -515,9 +560,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `effectiveDate in the future`() {
       webTestClient.put().uri(
-        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
         offenderAtMoorlands.nomsId,
         offenderAtLeeds.nomsId,
+        1,
       )
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
@@ -538,9 +584,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `comment too long`() {
       webTestClient.put().uri(
-        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
         offenderAtMoorlands.nomsId,
         offenderAtLeeds.nomsId,
+        1,
       )
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
@@ -564,9 +611,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             }
       """.trimIndent()
       webTestClient.put().uri(
-        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+        "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
         offenderAtMoorlands.nomsId,
         offenderAtLeeds.nomsId,
+        1,
       )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -582,9 +630,10 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     fun `will update non-association with correct details`() {
       webTestClient.put()
         .uri(
-          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}",
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
           offenderAtMoorlands.nomsId,
           offenderAtLeeds.nomsId,
+          1,
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -700,12 +749,31 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .uri(
           "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
           "A1234AA",
-          "A1234AA",
+          "A1234AB",
           1,
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
         .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `non-associations are the same`() {
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("developerMessage")
+        .isEqualTo("Offender and NS Offender cannot be the same")
+        .jsonPath("userMessage")
+        .isEqualTo("Bad request: Offender and NS Offender cannot be the same")
     }
 
     @Test
