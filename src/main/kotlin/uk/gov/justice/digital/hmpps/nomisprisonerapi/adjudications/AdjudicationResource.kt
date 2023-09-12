@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -285,7 +286,7 @@ class AdjudicationResource(
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings")
   @Operation(
     summary = "creates a hearing for a given adjudication",
-    description = "Creates an hearing for a given adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates a hearing for a given adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -341,7 +342,7 @@ class AdjudicationResource(
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}")
   @Operation(
     summary = "Updates a hearing",
-    description = "Updates an hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Updates a hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -405,6 +406,57 @@ class AdjudicationResource(
     @RequestBody @Valid
     request: UpdateHearingRequest,
   ): Hearing = adjudicationService.updateHearing(adjudicationNumber, hearingId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}")
+  @Operation(
+    summary = "Deletes a hearing",
+    description = "Deletes a hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Hearing deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteHearing(
+    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Hearing Id", example = "12345", required = true)
+    @PathVariable
+    hearingId: Long,
+  ) = adjudicationService.deleteHearing(adjudicationNumber, hearingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/repairs")
