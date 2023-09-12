@@ -68,7 +68,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   ): CreateNonAssociationResponse = nonAssociationService.createNonAssociation(createNonAssociationRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
-  @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
+  @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}")
   @Operation(
     summary = "Updates an existing non-association",
     description = "Updates an existing non-association. Requires role NOMIS_NON_ASSOCIATIONS",
@@ -78,7 +78,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ],
     ),
     responses = [
-      ApiResponse(responseCode = "200", description = "Successfully updated non-association"),
+      ApiResponse(responseCode = "200", description = "Successfully amended non-association"),
       ApiResponse(
         responseCode = "404",
         description = "Non-association does not exist",
@@ -108,9 +108,12 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
+    @Parameter(description = "Sequence number. Amend this specific detail record", example = "1", required = true)
+    @PathVariable
+    typeSequence: Int,
     @RequestBody @Valid
     updateNonAssociationRequest: UpdateNonAssociationRequest,
-  ) = nonAssociationService.updateNonAssociation(offenderNo, nsOffenderNo, updateNonAssociationRequest)
+  ) = nonAssociationService.updateNonAssociation(offenderNo, nsOffenderNo, typeSequence, updateNonAssociationRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close")
