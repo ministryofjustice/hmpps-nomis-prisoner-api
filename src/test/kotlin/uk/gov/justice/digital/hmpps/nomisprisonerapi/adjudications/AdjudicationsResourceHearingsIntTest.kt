@@ -491,7 +491,7 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
-              charge(offenceCode = "51:1B")
+              val previousCharge = charge(offenceCode = "51:1B")
               existingHearing = hearing(
                 internalLocationId = aLocationInMoorland,
                 scheduleDate = LocalDate.parse("2023-01-02"),
@@ -500,7 +500,23 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
                 hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
                 hearingStaff = reportingStaff,
                 hearingTypeCode = AdjudicationHearingType.GOVERNORS_HEARING,
-              )
+              ){
+                result(
+                  charge = previousCharge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    statusCode = "SUSPENDED",
+                    sanctionCode = "ADA",
+                    effectiveDate = LocalDate.parse("2023-01-08"),
+                    statusDate = LocalDate.parse("2023-01-09"),
+                    sanctionDays = 4,
+                    sanctionIndex = 1,
+                  )
+                }
+                notification(staff = reportingStaff, deliveryDate = LocalDate.parse("2023-01-04"), deliveryDateTime = LocalDateTime.parse("2023-01-04T10:00:00"))
+              }
             }
           }
         }
