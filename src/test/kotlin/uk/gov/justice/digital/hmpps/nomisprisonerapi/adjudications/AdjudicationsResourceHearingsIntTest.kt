@@ -500,7 +500,7 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
                 hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
                 hearingStaff = reportingStaff,
                 hearingTypeCode = AdjudicationHearingType.GOVERNORS_HEARING,
-              ){
+              ) {
                 result(
                   charge = previousCharge,
                   pleaFindingCode = "NOT_GUILTY",
