@@ -591,7 +591,6 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage").isEqualTo("Hearing not found. Hearing Id: ${existingHearing.id}")
-
       }
     }
   }
