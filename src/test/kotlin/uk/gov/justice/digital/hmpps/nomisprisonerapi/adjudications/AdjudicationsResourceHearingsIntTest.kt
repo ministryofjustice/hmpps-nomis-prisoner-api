@@ -562,7 +562,7 @@ class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Adjudication party with adjudication number 88888 not found")
+          .jsonPath("developerMessage").isEqualTo("Hearing with id ${existingHearing.id} delete failed: Adjudication party with adjudication number 88888 not found")
       }
 
       @Test
