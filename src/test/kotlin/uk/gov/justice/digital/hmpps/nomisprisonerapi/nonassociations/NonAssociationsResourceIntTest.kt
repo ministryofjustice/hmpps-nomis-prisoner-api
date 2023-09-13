@@ -428,7 +428,12 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden when no authority`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AA", 1)
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
         .expectStatus().isUnauthorized
@@ -437,7 +442,12 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden when no role`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AA", 1)
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -447,7 +457,12 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `access forbidden with wrong role`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AA", 1)
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -477,7 +492,12 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `non-association offender does not exist`() {
       webTestClient.put()
-        .uri("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}", "A1234AA", "A1234AB", 1)
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AB",
+          1,
+        )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
@@ -881,6 +901,253 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
       val na = repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds)
 
       assertThat(na.offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.now())
+    }
+  }
+
+  @Nested
+  inner class DeleteNonAssociation {
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AB",
+          1,
+        )
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AB",
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AB",
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `non-association does not exist`() {
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AB",
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `non-associations are the same`() {
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          "A1234AA",
+          "A1234AA",
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("developerMessage")
+        .isEqualTo("Offender and NS Offender cannot be the same")
+        .jsonPath("userMessage")
+        .isEqualTo("Bad request: Offender and NS Offender cannot be the same")
+    }
+
+    @Test
+    fun `non-association detail does not exist`() {
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          45,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `non-associations have non-matching details lists`() {
+      nomisDataBuilder.build {
+        nonAssociation(
+          offender1 = offenderAtMoorlands,
+          offender2 = offenderAtLeeds,
+        )
+        {
+          nonAssociationDetail(
+            nonAssociationReason = "VIC",
+            nonAssociationType = "WING",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+          )
+        }
+
+        nonAssociation(
+          offender1 = offenderAtLeeds,
+          offender2 = offenderAtMoorlands,
+        )
+        {
+          nonAssociationDetail(
+            nonAssociationReason = "PER",
+            nonAssociationType = "WING",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+          )
+          nonAssociationDetail(
+            typeSeq = 2,
+            nonAssociationReason = "PER",
+            nonAssociationType = "WING",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+            comment = "extra invalid detail",
+          )
+        }
+      }
+
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().is5xxServerError
+    }
+
+    @Test
+    fun `will delete non-association with 1 detail correctly`() {
+      webTestClient
+        .post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                    "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                    "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                    "reason"        : "RIV",
+                    "recipReason"   : "PER",
+                    "type"          : "WING",
+                    "authorisedBy"  : "me!",
+                    "effectiveDate" : "2023-02-27",
+                    "comment"       : "this is a test!"
+                  }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      webTestClient
+        .delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+
+      // Check the database
+      assertThat(repository.getNonAssociationOrNull(offenderAtMoorlands, offenderAtLeeds)).isNull()
+      assertThat(repository.getNonAssociationOrNull(offenderAtLeeds, offenderAtMoorlands)).isNull()
+    }
+
+    @Test
+    fun `will delete non-association with 2 details correctly`() {
+      nomisDataBuilder.build {
+        nonAssociation(
+          offender1 = offenderAtMoorlands,
+          offender2 = offenderAtLeeds,
+        )
+        {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "VIC",
+            nonAssociationType = "WING",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+            comment = "keep this one",
+          )
+          nonAssociationDetail(
+            typeSeq = 2,
+            nonAssociationReason = "VIC",
+            nonAssociationType = "WING",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+            comment = "delete this",
+          )
+        }
+        nonAssociation(
+          offender1 = offenderAtLeeds,
+          offender2 = offenderAtMoorlands,
+        )
+        {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "PER",
+            nonAssociationType = "WING",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+            comment = "keep this one",
+          )
+          nonAssociationDetail(
+            typeSeq = 2,
+            nonAssociationReason = "PER",
+            nonAssociationType = "WING",
+            effectiveDate = LocalDate.parse("2021-02-28"),
+            comment = "delete this",
+          )
+        }
+      }
+
+      webTestClient.delete()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          2,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+
+      // Check the database
+      repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds).apply {
+        assertThat(offenderNonAssociationDetails).hasSize(1)
+        assertThat(offenderNonAssociationDetails.first().comment).isEqualTo("keep this one")
+      }
+      repository.getNonAssociation(offenderAtLeeds, offenderAtMoorlands).apply {
+        assertThat(offenderNonAssociationDetails).hasSize(1)
+        assertThat(offenderNonAssociationDetails.first().comment).isEqualTo("keep this one")
+      }
     }
   }
 

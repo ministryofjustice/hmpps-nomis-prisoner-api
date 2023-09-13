@@ -315,5 +315,12 @@ class Repository(
       .also {
         it.offenderNonAssociationDetails.size // hydrate
       }
+
+  fun getNonAssociationOrNull(first: Offender, second: Offender): OffenderNonAssociation? =
+    offenderNonAssociationRepository.findByIdOrNull(OffenderNonAssociationId(first, second))
+      ?.also {
+        it.offenderNonAssociationDetails.size // hydrate
+      }
+
   fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
 }
