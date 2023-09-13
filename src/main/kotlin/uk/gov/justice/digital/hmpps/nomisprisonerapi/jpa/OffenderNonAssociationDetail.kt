@@ -106,4 +106,9 @@ data class OffenderNonAssociationDetail(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+
+  override fun toString(): String =
+    this::class.simpleName +
+      "((${id.offender.nomsId},${id.nsOffender.nomsId},${id.typeSequence}), offenderBooking=${offenderBooking.bookingId}, nsOffenderBooking=${nsOffenderBooking.bookingId}, nonAssociationReason=${nonAssociationReason.code}, recipNonAssociationReason=$recipNonAssociationReason, nonAssociationType=${nonAssociationType.code}, effectiveDate=$effectiveDate, expiryDate=$expiryDate, authorisedBy=$authorisedBy, comment=$comment"
+  // Omit offenderNonAssociation parent to avoid infinite recursion
 }
