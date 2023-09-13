@@ -313,13 +313,13 @@ class Repository(
   fun getNonAssociation(first: Offender, second: Offender): OffenderNonAssociation =
     offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
       .also {
-        it.offenderNonAssociationDetails.size // hydrate
+        it.toString() // hydrate
       }
 
   fun getNonAssociationOrNull(first: Offender, second: Offender): OffenderNonAssociation? =
     offenderNonAssociationRepository.findByIdOrNull(OffenderNonAssociationId(first, second))
       ?.also {
-        it.offenderNonAssociationDetails.size // hydrate
+        it.toString() // hydrate
       }
 
   fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()

@@ -1001,8 +1001,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         nonAssociation(
           offender1 = offenderAtMoorlands,
           offender2 = offenderAtLeeds,
-        )
-        {
+        ) {
           nonAssociationDetail(
             nonAssociationReason = "VIC",
             nonAssociationType = "WING",
@@ -1013,8 +1012,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         nonAssociation(
           offender1 = offenderAtLeeds,
           offender2 = offenderAtMoorlands,
-        )
-        {
+        ) {
           nonAssociationDetail(
             nonAssociationReason = "PER",
             nonAssociationType = "WING",
@@ -1089,8 +1087,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         nonAssociation(
           offender1 = offenderAtMoorlands,
           offender2 = offenderAtLeeds,
-        )
-        {
+        ) {
           nonAssociationDetail(
             typeSeq = 1,
             nonAssociationReason = "VIC",
@@ -1109,8 +1106,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         nonAssociation(
           offender1 = offenderAtLeeds,
           offender2 = offenderAtMoorlands,
-        )
-        {
+        ) {
           nonAssociationDetail(
             typeSeq = 1,
             nonAssociationReason = "PER",
