@@ -209,7 +209,6 @@ class NonAssociationService(
           "nsOffender" to nsOffenderNo,
           "typeSequence" to "$typeSequence",
         ),
-        null,
       )
     }
     otherExisting.apply {
@@ -222,9 +221,49 @@ class NonAssociationService(
           "nsOffender" to offenderNo,
           "typeSequence" to "$typeSequence",
         ),
-        null,
       )
     }
+  }
+
+  fun deleteNonAssociation(offenderNo: String, nsOffenderNo: String, typeSequence: Int) {
+    if (offenderNo == nsOffenderNo) {
+      throw BadDataException("Offender and NS Offender cannot be the same")
+    }
+    val offender = offenderRepository.findRootByNomisId(offenderNo)
+      ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
+    val nsOffender = offenderRepository.findRootByNomisId(nsOffenderNo)
+      ?: throw NotFoundException("NS Offender with nomsId=$nsOffenderNo not found")
+
+    val existingDetail = offenderNonAssociationDetailRepository.findByIdOrNull(
+      OffenderNonAssociationDetailId(offender = offender, nsOffender = nsOffender, typeSequence = typeSequence),
+    ) ?: throw NotFoundException("Non-association detail not found for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+
+    val otherExistingDetail = offenderNonAssociationDetailRepository.findByIdOrNull(
+      OffenderNonAssociationDetailId(offender = nsOffender, nsOffender = offender, typeSequence = typeSequence),
+    ) ?: throw NotFoundException("Non-association detail not found where offender=$nsOffenderNo, nsOffender=$offenderNo, typeSequence=$typeSequence")
+
+    val existingNonAssociation = existingDetail.nonAssociation
+    val otherExistingNonAssociation = otherExistingDetail.nonAssociation
+    existingNonAssociation.offenderNonAssociationDetails.remove(existingDetail)
+    otherExistingNonAssociation.offenderNonAssociationDetails.remove(otherExistingDetail)
+
+    if (existingNonAssociation.offenderNonAssociationDetails.size != otherExistingNonAssociation.offenderNonAssociationDetails.size) {
+      throw RuntimeException("Non-association type sequence mismatch for offender=$offenderNo and nsOffender=$nsOffenderNo, differing number of details records")
+    }
+
+    if (existingNonAssociation.offenderNonAssociationDetails.isEmpty()) {
+      offenderNonAssociationRepository.delete(existingNonAssociation)
+      offenderNonAssociationRepository.delete(otherExistingNonAssociation)
+    }
+
+    telemetryClient.trackEvent(
+      "non-association-deleted",
+      mapOf(
+        "offender" to offenderNo,
+        "nsOffender" to nsOffenderNo,
+        "typeSequence" to "$typeSequence",
+      ),
+    )
   }
 
   private fun mapDetails(

@@ -83,6 +83,10 @@ data class OffenderNonAssociation(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+
+  override fun toString(): String =
+    this::class.simpleName +
+      "(id = (${id.offender.nomsId},${id.nsOffender.nomsId}), offenderBooking=${offenderBooking.bookingId}, nsOffenderBooking=${nsOffenderBooking.bookingId}, nonAssociationReason=${nonAssociationReason?.code}, recipNonAssociationReason=${recipNonAssociationReason?.code}, offenderNonAssociationDetails=$offenderNonAssociationDetails)"
 }
 
 @Entity

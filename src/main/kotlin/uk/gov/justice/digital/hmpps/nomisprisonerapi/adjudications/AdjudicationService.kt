@@ -488,6 +488,13 @@ class AdjudicationService(
       return it.toHearing()
     } ?: throw NotFoundException("Adjudication hearing with hearing Id $hearingId not found")
   }
+
+  fun deleteHearing(adjudicationNumber: Long, hearingId: Long) {
+    // allow delete request to fail if adjudication doesn't exist as should never happen
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Hearing with id $hearingId delete failed: Adjudication party with adjudication number $adjudicationNumber not found")
+    adjudicationHearingRepository.deleteById(hearingId)
+  }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(

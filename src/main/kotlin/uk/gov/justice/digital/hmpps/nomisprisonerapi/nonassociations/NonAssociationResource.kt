@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -113,7 +114,9 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     typeSequence: Int,
     @RequestBody @Valid
     updateNonAssociationRequest: UpdateNonAssociationRequest,
-  ) = nonAssociationService.updateNonAssociation(offenderNo, nsOffenderNo, typeSequence, updateNonAssociationRequest)
+  ) {
+    nonAssociationService.updateNonAssociation(offenderNo, nsOffenderNo, typeSequence, updateNonAssociationRequest)
+  }
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close")
@@ -154,7 +157,47 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Sequence number. Close this specific detail record", example = "2", required = true)
     @PathVariable
     typeSequence: Int,
-  ) = nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo, typeSequence)
+  ) {
+    nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo, typeSequence)
+  }
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @DeleteMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}")
+  @Operation(
+    summary = "Deletes a non-association",
+    description = "Deletes the specified non-association detail record. if there was only one, the parent NA record is deleted too. Requires role NOMIS_NON_ASSOCIATIONS",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Success"),
+      ApiResponse(
+        responseCode = "404",
+        description = "Non-association does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun deleteNonAssociation(
+    @Parameter(description = "Offender", example = "A3456GH", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
+    @PathVariable
+    nsOffenderNo: String,
+    @Parameter(description = "Sequence number. Close this specific detail record", example = "2", required = true)
+    @PathVariable
+    typeSequence: Int,
+  ) {
+    nonAssociationService.deleteNonAssociation(offenderNo, nsOffenderNo, typeSequence)
+  }
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
