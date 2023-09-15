@@ -356,5 +356,5 @@ class NonAssociationService(
 
 private val OffenderNonAssociationDetail.updatedBy: String
   get() {
-    return modifiedBy ?: createdBy!!
+    return modifiedBy ?: createdBy
   }
