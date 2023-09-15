@@ -87,7 +87,7 @@ data class OffenderNonAssociationDetail(
   var authorisedBy: String? = null,
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  var createdBy: String= "",
+  var createdBy: String = "",
 
   @Column(name = "MODIFY_USER_ID")
   var modifiedBy: String? = null,
