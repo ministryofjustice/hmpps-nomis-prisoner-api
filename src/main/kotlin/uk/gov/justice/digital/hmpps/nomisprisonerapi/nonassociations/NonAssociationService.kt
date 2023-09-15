@@ -348,7 +348,13 @@ class NonAssociationService(
           effectiveDate = detail.effectiveDate,
           expiryDate = detail.expiryDate,
           authorisedBy = detail.authorisedBy,
+          updatedBy = detail.updatedBy,
           comment = detail.comment,
         )
       }
 }
+
+private val OffenderNonAssociationDetail.updatedBy: String
+  get() {
+    return modifiedBy ?: createdBy!!
+  }

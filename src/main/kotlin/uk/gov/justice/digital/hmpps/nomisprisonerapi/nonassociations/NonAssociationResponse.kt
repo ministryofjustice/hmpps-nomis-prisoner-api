@@ -29,6 +29,9 @@ data class NonAssociationResponse(
   @Schema(description = "Free text name of staff member", example = "Joe Bloggs")
   val authorisedBy: String? = null,
 
+  @Schema(description = "Last updated by", example = "JSMITH_GEN")
+  val updatedBy: String,
+
   @Schema(description = "Effective date", required = true, example = "2022-08-12")
   val effectiveDate: LocalDate,
 
