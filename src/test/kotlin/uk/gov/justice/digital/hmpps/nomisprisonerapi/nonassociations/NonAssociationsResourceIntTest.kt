@@ -302,6 +302,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             expiryDate = LocalDate.parse("2020-01-31"),
             nonAssociationType = "WING",
             authorisedBy = "Staff Member 1",
+            modifiedBy = "TJONES_ADM",
             comment = "this is a closed NA",
           )
         }
@@ -1160,6 +1161,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             effectiveDate = LocalDate.parse("2021-02-28"),
             nonAssociationType = "LAND",
             authorisedBy = "Staff Member",
+            modifiedBy = "JSMITH_GEN",
             comment = "this is a GET test!",
           )
           nonAssociationDetail(
@@ -1169,7 +1171,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             expiryDate = LocalDate.parse("2020-01-31"),
             nonAssociationType = "WING",
             authorisedBy = "Staff Member 2",
-            comment = "this is a closed NA",
+            modifiedBy = "TJONES_ADM",
+            comment = "this is a closed NA2",
           )
         }
         nonAssociation(offenderAtMoorlands, offenderAtShrewsbury) {
@@ -1180,7 +1183,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             expiryDate = LocalDate.parse("2020-01-31"),
             nonAssociationType = "WING",
             authorisedBy = "Staff Member 3",
-            comment = "this is a closed NA",
+            comment = "this is a closed NA3",
           )
         }
       }
@@ -1205,6 +1208,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.recipReason").isEqualTo("VIC")
         .jsonPath("$.type").isEqualTo("LAND")
         .jsonPath("$.authorisedBy").isEqualTo("Staff Member")
+        .jsonPath("$.updatedBy").isEqualTo("JSMITH_GEN")
         .jsonPath("$.effectiveDate").isEqualTo("2021-02-28")
         .jsonPath("$.expiryDate").doesNotExist()
         .jsonPath("$.comment").isEqualTo("this is a GET test!")
@@ -1225,7 +1229,8 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.offenderNo").isEqualTo(offenderAtMoorlands.nomsId)
         .jsonPath("$.nsOffenderNo").isEqualTo(offenderAtLeeds.nomsId)
         .jsonPath("$.typeSequence").isEqualTo("2")
-        .jsonPath("$.comment").isEqualTo("this is a closed NA")
+        .jsonPath("$.updatedBy").isEqualTo("TJONES_ADM")
+        .jsonPath("$.comment").isEqualTo("this is a closed NA2")
     }
 
     @Test
@@ -1310,6 +1315,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
             nonAssociationType = "WING",
             authorisedBy = "Staff Member 2",
             comment = "this is a closed NA",
+            modifiedBy = "TSMITH_ADM",
           )
         }
       }
@@ -1334,6 +1340,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].recipReason").isEqualTo("VIC")
         .jsonPath("$[0].type").isEqualTo("LAND")
         .jsonPath("$[0].authorisedBy").isEqualTo("Staff Member")
+        .jsonPath("$[0].updatedBy").isEqualTo("SA")
         .jsonPath("$[0].effectiveDate").isEqualTo("2021-02-28")
         .jsonPath("$[0].expiryDate").doesNotExist()
         .jsonPath("$[0].comment").isEqualTo("this is a GET test!")
@@ -1344,6 +1351,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[1].recipReason").isEqualTo("VIC")
         .jsonPath("$[1].type").isEqualTo("WING")
         .jsonPath("$[1].authorisedBy").isEqualTo("Staff Member 2")
+        .jsonPath("$[1].updatedBy").isEqualTo("TSMITH_ADM")
         .jsonPath("$[1].effectiveDate").isEqualTo("2020-01-01")
         .jsonPath("$[1].expiryDate").isEqualTo("2020-01-31")
         .jsonPath("$[1].comment").isEqualTo("this is a closed NA")

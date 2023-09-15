@@ -86,6 +86,12 @@ data class OffenderNonAssociationDetail(
   @Column(name = "AUTHORIZED_STAFF")
   var authorisedBy: String? = null,
 
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  var createdBy: String = "",
+
+  @Column(name = "MODIFY_USER_ID")
+  var modifiedBy: String? = null,
+
   @Column(name = "COMMENT_TEXT")
   var comment: String? = null,
 
@@ -109,6 +115,9 @@ data class OffenderNonAssociationDetail(
 
   override fun toString(): String =
     this::class.simpleName +
-      "((${id.offender.nomsId},${id.nsOffender.nomsId},${id.typeSequence}), offenderBooking=${offenderBooking.bookingId}, nsOffenderBooking=${nsOffenderBooking.bookingId}, nonAssociationReason=${nonAssociationReason.code}, recipNonAssociationReason=$recipNonAssociationReason, nonAssociationType=${nonAssociationType.code}, effectiveDate=$effectiveDate, expiryDate=$expiryDate, authorisedBy=$authorisedBy, comment=$comment"
+      "((${id.offender.nomsId},${id.nsOffender.nomsId},${id.typeSequence}), offenderBooking=${offenderBooking.bookingId}," +
+      " nsOffenderBooking=${nsOffenderBooking.bookingId}, nonAssociationReason=${nonAssociationReason.code}, " +
+      "recipNonAssociationReason=$recipNonAssociationReason, nonAssociationType=${nonAssociationType.code}, " +
+      "effectiveDate=$effectiveDate, expiryDate=$expiryDate, authorisedBy=$authorisedBy, modifiedBy=$modifiedBy, comment=$comment"
   // Omit offenderNonAssociation parent to avoid infinite recursion
 }
