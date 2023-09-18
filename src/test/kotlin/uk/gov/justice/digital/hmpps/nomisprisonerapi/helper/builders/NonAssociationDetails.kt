@@ -34,6 +34,7 @@ class NonAssociationDetailBuilder : NonAssociationDetailDsl {
     effectiveDate: LocalDate,
     expiryDate: LocalDate?,
     authorisedBy: String?,
+    modifiedBy: String?,
     comment: String?,
     nonAssociation: OffenderNonAssociation,
   ): OffenderNonAssociationDetail =
@@ -51,6 +52,7 @@ class NonAssociationDetailBuilder : NonAssociationDetailDsl {
       effectiveDate = effectiveDate,
       expiryDate = expiryDate,
       authorisedBy = authorisedBy,
+      modifiedBy = modifiedBy,
       comment = comment,
       nonAssociation = nonAssociation,
     )

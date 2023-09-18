@@ -29,6 +29,7 @@ interface NonAssociationDsl {
     effectiveDate: LocalDate,
     expiryDate: LocalDate? = null,
     authorisedBy: String? = null,
+    modifiedBy: String? = null,
     comment: String? = null,
   ): OffenderNonAssociationDetail
 }
@@ -98,6 +99,7 @@ class NonAssociationBuilder(
     effectiveDate: LocalDate,
     expiryDate: LocalDate?,
     authorisedBy: String?,
+    modifiedBy: String?,
     comment: String?,
   ) = nonAssociationDetailBuilderFactory.builder().build(
     offender = nonAssociation.id.offender,
@@ -111,6 +113,7 @@ class NonAssociationBuilder(
     effectiveDate = effectiveDate,
     expiryDate = expiryDate,
     authorisedBy = authorisedBy,
+    modifiedBy = modifiedBy,
     comment = comment,
     nonAssociation = nonAssociation,
   )
