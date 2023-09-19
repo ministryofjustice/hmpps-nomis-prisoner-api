@@ -518,8 +518,8 @@ class AdjudicationResource(
   @GetMapping("/adjudications/hearings/{hearingId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "get adjudication by adjudication number",
-    description = "Retrieves an adjudication by the adjudication number. Requires ROLE_NOMIS_ADJUDICATIONS",
+    summary = "get hearing by hearing Id",
+    description = "Retrieves a hearing by the hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -638,6 +638,62 @@ class AdjudicationResource(
     @RequestBody @Valid
     request: CreateHearingResultRequest,
   ): CreateHearingResultResponse = adjudicationService.createHearingResult(adjudicationNumber, hearingId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @GetMapping("/adjudications/hearings/{hearingId}/result")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "get hearing result by hearing id",
+    description = "Retrieves a hearing result by the nomis hearing id. DPS migrated and synchronised hearing results always have a result sequence of 1 Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Hearing Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Hearing result does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAdjudicationHearingResult(
+    @Schema(description = "NOMIS Hearing Id", example = "12345", required = true)
+    @PathVariable
+    hearingId: Long,
+  ): HearingResult =
+    adjudicationService.getHearingResult(hearingId)
 }
 
 @Schema(description = "adjudication id")
