@@ -278,7 +278,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   @GetMapping("/non-associations/ids")
   @Operation(
     summary = "get non-associations by filter",
-    description = "Retrieves a paged list of incentive composite ids by filter. Requires ROLE_NOMIS_NON_ASSOCIATIONS.",
+    description = "Retrieves a paged list of composite ids by filter. Requires ROLE_NOMIS_NON_ASSOCIATIONS.",
     responses = [
       ApiResponse(
         responseCode = "200",
