@@ -13,26 +13,27 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
-  private var aLocationInMoorland = -41L
-  private var aSecondLocationInMoorland = -42L
+  lateinit var aLocationInMoorland: AgencyInternalLocation
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @BeforeEach
   fun setUp() {
-    aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI").locationId
-    aSecondLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-002", "MDI").locationId
+    aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI")
   }
 
   @DisplayName("POST /adjudications/adjudication-number/{adjudicationNumber}/hearings")
@@ -57,7 +58,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
               charge(offenceCode = "51:1B")
               existingHearing = hearing(
-                internalLocationId = aLocationInMoorland,
+                internalLocationId = aLocationInMoorland.locationId,
                 scheduleDate = LocalDate.parse("2023-01-02"),
                 scheduleTime = LocalDateTime.parse("2023-01-02T14:00:00"),
                 hearingDate = LocalDate.parse("2023-01-03"),
@@ -83,7 +84,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -93,7 +95,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -103,7 +106,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
           .exchange()
@@ -148,7 +152,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 400 if plea finding type not valid`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest(pleaFindingCode = "rubbish")))
@@ -160,7 +165,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 400 if finding type not valid`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest(findingCode = "rubbish")))
@@ -177,12 +183,13 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `create an adjudication hearing result`() {
         val hearingId =
-          webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          webTestClient.post()
+            .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
-                aHearingResultRequest(),
+                aHearingResultRequest(pleaFindingCode = "GUILTY"),
               ),
             )
             .exchange()
@@ -197,6 +204,14 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("hearingStaff.staffId").isEqualTo(reportingStaff.id)
           .jsonPath("hearingStaff.username").isEqualTo("JANESTAFF")
+
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("NOT_PROCEED")
+          .jsonPath("pleaFindingType.code").isEqualTo("GUILTY")
       }
     }
 
@@ -212,5 +227,126 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
         "pleaFindingCode": "$pleaFindingCode"
       }
       """.trimIndent()
+  }
+
+  @DisplayName("GET /adjudications/hearings/{hearingId}/result")
+  @Nested
+  inner class GetHearingResult {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private val existingAdjudicationNumber = 123456L
+    private lateinit var existingHearing: AdjudicationHearing
+    private lateinit var existingHearingResult: AdjudicationHearingResult
+
+    @BeforeEach
+    fun createPrisonerAndAdjudication() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
+              val charge = charge(offenceCode = "51:1B")
+              existingHearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                scheduleDate = LocalDate.parse("2023-01-02"),
+                scheduleTime = LocalDateTime.parse("2023-01-02T14:00:00"),
+                hearingDate = LocalDate.parse("2023-01-03"),
+                hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
+                hearingStaff = reportingStaff,
+              ) {
+                existingHearingResult = result(
+                  charge = charge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    statusCode = "SUSPEN_RED",
+                    sanctionCode = "STOP_EARN",
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                    statusDate = LocalDate.parse("2023-01-05"),
+                    comment = "award comment",
+                    sanctionMonths = 3,
+                    sanctionDays = 4,
+                    compensationAmount = BigDecimal.valueOf(14.2),
+                    sanctionIndex = 3,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteHearingByAdjudicationNumber(existingAdjudicationNumber)
+      repository.delete(existingIncident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/adjudications/hearings/123/result")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/adjudications/hearings/123/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/adjudications/hearings/123/result")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if hearing result not found`() {
+        webTestClient.get().uri("/adjudications/hearings/123/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Hearing Result not found. Hearing Id: 123, result sequence: 1")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `get adjudication hearing result`() {
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("PROVED")
+          .jsonPath("findingType.description").isEqualTo("Charge Proved")
+          .jsonPath("pleaFindingType.code").isEqualTo("NOT_GUILTY")
+          .jsonPath("pleaFindingType.description").isEqualTo("Not guilty")
+          .jsonPath("resultAwards[0]").exists()
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdDateTime").isNotEmpty
+      }
+    }
   }
 }
