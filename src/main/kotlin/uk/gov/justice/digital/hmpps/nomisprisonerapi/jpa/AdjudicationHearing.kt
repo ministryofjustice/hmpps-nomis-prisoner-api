@@ -75,7 +75,7 @@ class AdjudicationHearing(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "HEARING_STAFF_ID")
-  val hearingStaff: Staff? = null,
+  var hearingStaff: Staff? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID")

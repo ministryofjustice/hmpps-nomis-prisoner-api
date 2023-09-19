@@ -569,6 +569,75 @@ class AdjudicationResource(
     hearingId: Long,
   ): Hearing =
     adjudicationService.getHearing(hearingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/result")
+  @Operation(
+    summary = "creates a hearing result for a given hearing",
+    description = "Creates a hearing result for a given hearing. DPS only supports 1 result per hearing. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Hearing result created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateHearingResultResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Hearing does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createHearingResult(
+    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Nomis Hearing Id", example = "123", required = true)
+    @PathVariable
+    hearingId: Long,
+    @RequestBody @Valid
+    request: CreateHearingResultRequest,
+  ): CreateHearingResultResponse = adjudicationService.createHearingResult(adjudicationNumber, hearingId, request)
 }
 
 @Schema(description = "adjudication id")

@@ -13,10 +13,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingNotification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentChargeId
@@ -27,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepairId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -46,6 +49,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingResultRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
@@ -70,6 +74,7 @@ class AdjudicationService(
   private val adjudicationIncidentChargeRepository: AdjudicationIncidentChargeRepository,
   private val adjudicationIncidentRepository: AdjudicationIncidentRepository,
   private val adjudicationHearingRepository: AdjudicationHearingRepository,
+  private val adjudicationHearingResultRepository: AdjudicationHearingResultRepository,
   private val offenderRepository: OffenderRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
@@ -80,6 +85,8 @@ class AdjudicationService(
   private val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
   private val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
   private val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
+  private val pleaFindingTypeRepository: ReferenceCodeRepository<AdjudicationPleaFindingType>,
+  private val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -127,7 +134,10 @@ class AdjudicationService(
       comment = adjudication.comment,
       incident = AdjudicationIncident(
         adjudicationIncidentId = adjudication.id.agencyIncidentId,
-        reportingStaff = adjudication.incident.reportingStaff.toStaff(adjudication.incident.createUsername, adjudication.incident.reportedDate),
+        reportingStaff = adjudication.incident.reportingStaff.toStaff(
+          adjudication.incident.createUsername,
+          adjudication.incident.reportedDate,
+        ),
         incidentDate = adjudication.incident.incidentDate,
         incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
         reportedDate = adjudication.incident.reportedDate,
@@ -450,6 +460,15 @@ class AdjudicationService(
     AdjudicationHearingType.pk(code),
   ) ?: throw BadDataException("Hearing type $code not found")
 
+  private fun lookupPleaFindingType(code: String): AdjudicationPleaFindingType =
+    pleaFindingTypeRepository.findByIdOrNull(
+      AdjudicationPleaFindingType.pk(code),
+    ) ?: throw BadDataException("Plea finding type $code not found")
+
+  private fun lookupFindingType(code: String): AdjudicationFindingType = findingTypeRepository.findByIdOrNull(
+    AdjudicationFindingType.pk(code),
+  ) ?: throw BadDataException("Finding type $code not found")
+
   @Audit
   fun updateRepairs(adjudicationNumber: Long, request: UpdateRepairsRequest): UpdateRepairsResponse {
     val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
@@ -494,6 +513,39 @@ class AdjudicationService(
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Hearing with id $hearingId delete failed: Adjudication party with adjudication number $adjudicationNumber not found")
     adjudicationHearingRepository.deleteById(hearingId)
+  }
+
+  @Audit
+  fun createHearingResult(
+    adjudicationNumber: Long,
+    hearingId: Long,
+    request: CreateHearingResultRequest,
+  ): CreateHearingResultResponse {
+    // DPS only allows 1 result per hearing, the created result has a result sequence of 1
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    // DPS created (or migrated) adjudications will have 1 charge
+    val incidentCharge = party.charges.getOrNull(0)
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber")
+
+    val hearing = adjudicationHearingRepository.findByIdOrNull(hearingId)
+      ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
+
+    request.adjudicatorUsername?.let { hearing.hearingStaff = findStaffByUsername(request.adjudicatorUsername) }
+
+    return AdjudicationHearingResult(
+      id = AdjudicationHearingResultId(oicHearingId = hearingId, 1),
+      incident = party.incident,
+      pleaFindingType = lookupPleaFindingType(request.pleaFindingCode),
+      pleaFindingCode = request.pleaFindingCode,
+      findingType = lookupFindingType(request.findingCode),
+      hearing = hearing,
+      chargeSequence = incidentCharge.id.chargeSequence,
+      incidentCharge = incidentCharge,
+      offence = incidentCharge.offence,
+    ).let { adjudicationHearingResultRepository.save(it) }
+      .let { CreateHearingResultResponse(hearingId = it.id.oicHearingId, resultSequence = it.id.resultSequence) }
   }
 }
 
@@ -558,7 +610,8 @@ private fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncide
   this.incident.parties.filter { it.offenderBooking != null }
 
 private fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> =
-  this.staffParties().filter { filter(it) }.map { it.staffParty().toStaff(it.createUsername, it.partyAddedDate, it.comment) }
+  this.staffParties().filter { filter(it) }
+    .map { it.staffParty().toStaff(it.createUsername, it.partyAddedDate, it.comment) }
 
 private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> =
   this.prisonerParties().filter { filter(it) && it != this }
@@ -603,6 +656,7 @@ fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff(
     dateAddedToIncident = dateAddedToIncident,
     comment = comment,
   )
+
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
   Staff(
     staffId = id,

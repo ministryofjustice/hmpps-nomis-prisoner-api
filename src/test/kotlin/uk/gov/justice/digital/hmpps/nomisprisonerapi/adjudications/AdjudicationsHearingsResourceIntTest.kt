@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class AdjudicationsResourceHearingsIntTest : IntegrationTestBase() {
+class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
   private var aLocationInMoorland = -41L
