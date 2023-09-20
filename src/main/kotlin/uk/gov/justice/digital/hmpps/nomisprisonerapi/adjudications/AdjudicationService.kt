@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -87,6 +88,7 @@ class AdjudicationService(
   private val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
   private val pleaFindingTypeRepository: ReferenceCodeRepository<AdjudicationPleaFindingType>,
   private val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
+  private val telemetryClient: TelemetryClient,
 ) {
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
@@ -549,8 +551,41 @@ class AdjudicationService(
   }
 
   fun getHearingResult(hearingId: Long, resultSeq: Int = 1): HearingResult =
-    adjudicationHearingResultRepository.findByIdOrNull(AdjudicationHearingResultId(hearingId, resultSeq))?.toHearingResult()
+    adjudicationHearingResultRepository.findByIdOrNull(AdjudicationHearingResultId(hearingId, resultSeq))
+      ?.toHearingResult()
       ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, result sequence: $resultSeq")
+
+  fun deleteHearingResult(adjudicationNumber: Long, hearingId: Long) {
+    // allow delete request to fail if adjudication doesn't exist as should never happen
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Hearing with id $hearingId delete failed: Adjudication party with adjudication number $adjudicationNumber not found")
+
+    adjudicationHearingResultRepository.findByIdOrNull(
+      AdjudicationHearingResultId(
+        oicHearingId = hearingId,
+        resultSequence = 1,
+      ),
+    )?.also {
+      adjudicationHearingResultRepository.delete(it)
+      telemetryClient.trackEvent(
+        "hearing-result-deleted",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "hearingId" to hearingId.toString(),
+          "resultSequence" to "1",
+        ),
+        null,
+      )
+    } ?: telemetryClient.trackEvent(
+      "hearing-result-delete-not-found",
+      mapOf(
+        "adjudicationNumber" to adjudicationNumber.toString(),
+        "hearingId" to hearingId.toString(),
+        "resultSequence" to "1",
+      ),
+      null,
+    )
+  }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
