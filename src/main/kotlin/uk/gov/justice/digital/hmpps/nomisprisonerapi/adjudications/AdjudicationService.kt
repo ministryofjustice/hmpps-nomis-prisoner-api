@@ -547,6 +547,10 @@ class AdjudicationService(
     ).let { adjudicationHearingResultRepository.save(it) }
       .let { CreateHearingResultResponse(hearingId = it.id.oicHearingId, resultSequence = it.id.resultSequence) }
   }
+
+  fun getHearingResult(hearingId: Long, resultSeq: Int = 1): HearingResult =
+    adjudicationHearingResultRepository.findByIdOrNull(AdjudicationHearingResultId(hearingId, resultSeq))?.toHearingResult()
+      ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, result sequence: $resultSeq")
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
