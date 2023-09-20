@@ -738,10 +738,10 @@ class AdjudicationResource(
     ],
   )
   fun deleteHearingResult(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
-    @Schema(description = "Hearing Id", example = "12345", required = true)
+    @Schema(description = "Hearing Id", example = "12345")
     @PathVariable
     hearingId: Long,
   ) = adjudicationService.deleteHearingResult(adjudicationNumber, hearingId)
