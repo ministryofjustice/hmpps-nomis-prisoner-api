@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -34,6 +35,7 @@ class NonAssociationService(
   private val typeRepository: ReferenceCodeRepository<NonAssociationType>,
   private val telemetryClient: TelemetryClient,
 ) {
+  @Audit
   fun createNonAssociation(dto: CreateNonAssociationRequest): CreateNonAssociationResponse {
     if (dto.offenderNo == dto.nsOffenderNo) {
       throw BadDataException("Offender and NS Offender cannot be the same")
@@ -121,6 +123,7 @@ class NonAssociationService(
     return CreateNonAssociationResponse(typeSequence)
   }
 
+  @Audit
   fun updateNonAssociation(offenderNo: String, nsOffenderNo: String, typeSequence: Int, dto: UpdateNonAssociationRequest) {
     if (offenderNo == nsOffenderNo) {
       throw BadDataException("Offender and NS Offender cannot be the same")
@@ -181,6 +184,7 @@ class NonAssociationService(
     )
   }
 
+  @Audit
   fun closeNonAssociation(offenderNo: String, nsOffenderNo: String, typeSequence: Int) {
     if (offenderNo == nsOffenderNo) {
       throw BadDataException("Offender and NS Offender cannot be the same")
@@ -225,6 +229,7 @@ class NonAssociationService(
     }
   }
 
+  @Audit
   fun deleteNonAssociation(offenderNo: String, nsOffenderNo: String, typeSequence: Int) {
     if (offenderNo == nsOffenderNo) {
       throw BadDataException("Offender and NS Offender cannot be the same")
