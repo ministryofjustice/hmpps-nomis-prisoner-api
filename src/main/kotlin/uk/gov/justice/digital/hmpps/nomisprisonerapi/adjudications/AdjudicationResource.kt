@@ -70,21 +70,21 @@ class AdjudicationResource(
   fun getAdjudicationChargeIdsByFilter(
     @PageableDefault(size = 20)
     pageRequest: Pageable,
-    @RequestParam(value = "fromDate", required = false)
+    @RequestParam(value = "fromDate")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
       description = "Filter results by adjudication charges that were created on or after the given date",
       example = "2021-11-03",
     )
     fromDate: LocalDate?,
-    @RequestParam(value = "toDate", required = false)
+    @RequestParam(value = "toDate")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
       description = "Filter results by adjudication charges that were created on or before the given date",
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-    @RequestParam(value = "prisonIds", required = false)
+    @RequestParam(value = "prisonIds")
     @Parameter(
       description = "Filter results by adjudication charges that were created in one of the given prisons",
       example = "MDI",
@@ -150,7 +150,7 @@ class AdjudicationResource(
     ],
   )
   fun getAdjudication(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
   ): AdjudicationResponse =
@@ -206,10 +206,10 @@ class AdjudicationResource(
     ],
   )
   fun getAdjudicationByCharge(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
-    @Schema(description = "Charge sequence", example = "1", required = true)
+    @Schema(description = "Charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
   ): AdjudicationChargeResponse =
@@ -274,7 +274,7 @@ class AdjudicationResource(
     ],
   )
   fun createAdjudication(
-    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ")
     @PathVariable("offenderNo")
     @Pattern(regexp = OFFENDER_NO_PATTERN)
     offenderNo: String,
@@ -331,7 +331,7 @@ class AdjudicationResource(
     ],
   )
   fun createHearing(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
     @RequestBody @Valid
@@ -397,10 +397,10 @@ class AdjudicationResource(
     ],
   )
   fun updateHearing(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
-    @Schema(description = "Hearing Id", example = "12345", required = true)
+    @Schema(description = "Hearing Id", example = "12345")
     @PathVariable
     hearingId: Long,
     @RequestBody @Valid
@@ -450,10 +450,10 @@ class AdjudicationResource(
     ],
   )
   fun deleteHearing(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
-    @Schema(description = "Hearing Id", example = "12345", required = true)
+    @Schema(description = "Hearing Id", example = "12345")
     @PathVariable
     hearingId: Long,
   ) = adjudicationService.deleteHearing(adjudicationNumber, hearingId)
@@ -507,7 +507,7 @@ class AdjudicationResource(
     ],
   )
   fun updateRepairs(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
     @RequestBody @Valid
@@ -564,7 +564,7 @@ class AdjudicationResource(
     ],
   )
   fun getAdjudicationHearing(
-    @Schema(description = "NOMIS Hearing Id", example = "12345", required = true)
+    @Schema(description = "NOMIS Hearing Id", example = "12345")
     @PathVariable
     hearingId: Long,
   ): Hearing =
@@ -629,10 +629,10 @@ class AdjudicationResource(
     ],
   )
   fun createHearingResult(
-    @Schema(description = "Adjudication number", example = "12345", required = true)
+    @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
-    @Schema(description = "Nomis Hearing Id", example = "123", required = true)
+    @Schema(description = "Nomis Hearing Id", example = "123")
     @PathVariable
     hearingId: Long,
     @RequestBody @Valid
@@ -689,7 +689,7 @@ class AdjudicationResource(
     ],
   )
   fun getAdjudicationHearingResult(
-    @Schema(description = "NOMIS Hearing Id", example = "12345", required = true)
+    @Schema(description = "NOMIS Hearing Id", example = "12345")
     @PathVariable
     hearingId: Long,
   ): HearingResult =
@@ -749,10 +749,10 @@ class AdjudicationResource(
 
 @Schema(description = "adjudication id")
 data class AdjudicationChargeIdResponse(
-  @Schema(description = "The adjudication number", required = true)
+  @Schema(description = "The adjudication number")
   val adjudicationNumber: Long,
-  @Schema(description = "The adjudication charge sequence", required = true)
+  @Schema(description = "The adjudication charge sequence")
   val chargeSequence: Int,
-  @Schema(description = "The prisoner number", required = true)
+  @Schema(description = "The prisoner number")
   val offenderNo: String,
 )
