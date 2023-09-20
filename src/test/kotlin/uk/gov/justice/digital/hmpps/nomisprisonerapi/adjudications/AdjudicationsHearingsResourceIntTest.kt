@@ -6,6 +6,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
@@ -142,7 +145,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `create an adjudication hearing`() {
-        val hearingId =
+        val hearingResponse =
           webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -153,7 +156,18 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
             )
             .exchange()
             .expectStatus().isOk
-        assertThat(hearingId).isNotNull
+            .expectBody(CreateHearingResponse::class.java)
+            .returnResult().responseBody!!
+        assertThat(hearingResponse.hearingId).isNotNull
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-created"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("hearingId", hearingResponse.hearingId.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+          },
+          isNull(),
+        )
       }
     }
 
@@ -332,7 +346,11 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              aHearingUpdate(hearingDate = "2023-06-06", hearingTime = "14:30", internalLocationId = aSecondLocationInMoorland),
+              aHearingUpdate(
+                hearingDate = "2023-06-06",
+                hearingTime = "14:30",
+                internalLocationId = aSecondLocationInMoorland,
+              ),
             ),
           )
           .exchange()
@@ -341,6 +359,15 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearingDate").isEqualTo("2023-06-06")
           .jsonPath("hearingTime").isEqualTo("14:30:00")
           .jsonPath("internalLocation.description").isEqualTo("MDI-1-1-002")
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-updated"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+          },
+          isNull(),
+        )
       }
     }
 
@@ -515,7 +542,11 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
                     sanctionIndex = 1,
                   )
                 }
-                notification(staff = reportingStaff, deliveryDate = LocalDate.parse("2023-01-04"), deliveryDateTime = LocalDateTime.parse("2023-01-04T10:00:00"))
+                notification(
+                  staff = reportingStaff,
+                  deliveryDate = LocalDate.parse("2023-01-04"),
+                  deliveryDateTime = LocalDateTime.parse("2023-01-04T10:00:00"),
+                )
               }
             }
           }
@@ -578,15 +609,25 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Hearing with id ${existingHearing.id} delete failed: Adjudication party with adjudication number 88888 not found")
+          .jsonPath("developerMessage")
+          .isEqualTo("Hearing with id ${existingHearing.id} delete failed: Adjudication party with adjudication number 88888 not found")
       }
 
       @Test
-      fun `will not throw error if hearing not found`() {
+      fun `will not throw error and will track event if hearing not found`() {
         webTestClient.delete().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk()
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-delete-not-found"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("hearingId", "88888")
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+          },
+          isNull(),
+        )
       }
     }
 
@@ -607,6 +648,15 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage").isEqualTo("Hearing not found. Hearing Id: ${existingHearing.id}")
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-deleted"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+          },
+          isNull(),
+        )
       }
     }
   }
