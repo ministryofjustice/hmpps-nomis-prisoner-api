@@ -28,13 +28,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetActivityResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateCourseScheduleResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import java.time.LocalDate
 
@@ -62,9 +58,6 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "201",
         description = "Activity information with created id",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -141,7 +134,7 @@ class ActivitiesResource(
     ],
   )
   fun updateActivity(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     updateActivityRequest: UpdateActivityRequest,
   ): CreateActivityResponse = activityService.updateActivity(courseActivityId, updateActivityRequest)
@@ -188,7 +181,7 @@ class ActivitiesResource(
     ],
   )
   fun upsertAllocation(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     upsertRequest: UpsertAllocationRequest,
   ) =
@@ -211,9 +204,6 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "200",
         description = "Success",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = UpdateCourseScheduleResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -246,7 +236,7 @@ class ActivitiesResource(
     ],
   )
   fun updateCourseSchedule(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     updateRequest: CourseScheduleRequest,
   ) =
@@ -266,9 +256,6 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "200",
         description = "Attendance updated",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -294,8 +281,8 @@ class ActivitiesResource(
     ],
   )
   fun upsertAttendance(
-    @Schema(description = "Course schedule id", required = true) @PathVariable courseScheduleId: Long,
-    @Schema(description = "Booking id", required = true) @PathVariable bookingId: Long,
+    @Schema(description = "Course schedule id") @PathVariable courseScheduleId: Long,
+    @Schema(description = "Booking id") @PathVariable bookingId: Long,
     @RequestBody @Valid
     upsertAttendanceRequest: UpsertAttendanceRequest,
   ) =
@@ -310,9 +297,6 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "200",
         description = "OK",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = FindActiveActivityIdsResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -346,11 +330,11 @@ class ActivitiesResource(
   )
   fun findActiveActivities(
     @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
-    @Schema(description = "Prison id", required = true) @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
+    @Schema(description = "Prison id") @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
-    @Schema(description = "Course Activity ID", required = false) @RequestParam courseActivityId: Long?,
+    @Schema(description = "Course Activity ID") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> =
     activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
 
@@ -363,9 +347,6 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "200",
         description = "OK",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = GetActivityResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -398,7 +379,7 @@ class ActivitiesResource(
     ],
   )
   fun getActivity(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
+    @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
   ) =
     activityService.getActivity(courseActivityId)
 
@@ -411,9 +392,6 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "200",
         description = "OK",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = FindActiveAllocationIdsResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -447,11 +425,11 @@ class ActivitiesResource(
   )
   fun findActiveAllocations(
     @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
-    @Schema(description = "Prison id", required = true) @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode", required = false)
+    @Schema(description = "Prison id") @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
-    @Schema(description = "Course Activity ID", required = false) @RequestParam courseActivityId: Long?,
+    @Schema(description = "Course Activity ID") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveAllocationIdsResponse> =
     allocationService.findActiveAllocations(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
 
@@ -464,9 +442,6 @@ class ActivitiesResource(
       ApiResponse(
         responseCode = "200",
         description = "OK",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = GetAllocationResponse::class)),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -499,7 +474,7 @@ class ActivitiesResource(
     ],
   )
   fun getAllocation(
-    @Schema(description = "Allocation id", required = true) @PathVariable allocationId: Long,
+    @Schema(description = "Allocation id") @PathVariable allocationId: Long,
   ) =
     allocationService.getAllocation(allocationId)
 
@@ -631,8 +606,8 @@ class ActivitiesResource(
     ],
   )
   fun endActivity(
-    @Schema(description = "Course activity id", required = true) @PathVariable courseActivityId: Long,
-    @Schema(description = "End comment", required = false) @RequestParam endComment: String?,
+    @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
+    @Schema(description = "End comment") @RequestParam endComment: String?,
   ) =
     activityService.endActivity(courseActivityId, LocalDate.now(), endComment)
 }
