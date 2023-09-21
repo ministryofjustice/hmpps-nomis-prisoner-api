@@ -903,6 +903,51 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
 
       assertThat(na.offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.now())
     }
+
+    @Test
+    fun `will close non-association correctly where future expiry date already set `() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "PER",
+            effectiveDate = LocalDate.parse("2020-01-01"),
+            expiryDate = LocalDate.parse("2100-01-31"),
+            nonAssociationType = "WING",
+            authorisedBy = "Staff Member 1",
+            comment = "this is a future-closed NA, logically open now",
+          )
+        }
+        nonAssociation(offenderAtLeeds, offenderAtMoorlands) {
+          nonAssociationDetail(
+            typeSeq = 1,
+            nonAssociationReason = "VIC",
+            effectiveDate = LocalDate.parse("2020-01-01"),
+            expiryDate = LocalDate.parse("2100-01-31"),
+            nonAssociationType = "WING",
+            authorisedBy = "Staff Member 1",
+            modifiedBy = "TJONES_ADM",
+            comment = "this is a future-closed NA, logically open now",
+          )
+        }
+      }
+
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+
+      // Check the database
+      val na = repository.getNonAssociation(offenderAtMoorlands, offenderAtLeeds)
+
+      assertThat(na.offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.now())
+    }
   }
 
   @Nested
