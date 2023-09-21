@@ -1590,22 +1590,28 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return bad request if activity already ended`() {
+    fun `should end allocations if activity already ended`() {
+      lateinit var courseAllocation: OffenderProgramProfile
       nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday")
         }
+        offender {
+          booking {
+            courseAllocation = courseAllocation(courseActivity = courseActivity)
+          }
+        }
       }
 
       webTestClient.endAllocation(courseActivity.courseActivityId)
-        .expectStatus().isBadRequest
-        .expectBody()
-        .jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Course Activity id ${courseActivity.courseActivityId} ended on $yesterday")
-        }
+        .expectStatus().isOk
 
-      with(repository.getActivity(courseActivity.courseActivityId)) {
+      val savedActivity = repository.getActivity(courseActivity.courseActivityId)
+      with(savedActivity) {
         assertThat(scheduleEndDate).isEqualTo(yesterday)
+      }
+      with(repository.getOffenderProgramProfile(courseAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(today)
       }
     }
 
