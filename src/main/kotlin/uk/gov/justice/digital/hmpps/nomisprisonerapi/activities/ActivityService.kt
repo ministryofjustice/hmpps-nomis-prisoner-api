@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import java.time.LocalDate
 
@@ -37,6 +38,7 @@ class ActivityService(
   private val scheduleRuleService: ScheduleRuleService,
   private val courseActivityRepository: CourseActivityRepository,
   private val allocationService: AllocationService,
+  private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
@@ -228,17 +230,14 @@ class ActivityService(
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course Activity $courseActivityId not found")
 
-    if (courseActivity.scheduleEndDate != null && courseActivity.scheduleEndDate!! < date) {
-      throw BadDataException("Course Activity id ${courseActivity.courseActivityId} ended on ${courseActivity.scheduleEndDate}")
-    }
-
     with(courseActivity) {
-      scheduleEndDate = date
-      endComment?.run { commentText = endComment }
+      if (courseActivity.scheduleEndDate == null || courseActivity.scheduleEndDate!! > date) {
+        scheduleEndDate = date
+        endComment?.run { commentText = endComment }
+      }
     }
-    courseActivity.offenderProgramProfiles
+    offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndProgramStatusCode(courseActivityId, "ALLOC")
       .filter { it.endDate == null || it.endDate!! > date }
-      .filter { it.programStatus.code == "ALLOC" }
       .forEach { allocationService.endAllocation(it, date, endComment) }
   }
 }
