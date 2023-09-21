@@ -334,7 +334,7 @@ class ActivitiesResource(
     @Schema(description = "Exclude program codes", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
-    @Schema(description = "Course Activity ID") @RequestParam courseActivityId: Long?,
+    @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> =
     activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
 
@@ -429,7 +429,7 @@ class ActivitiesResource(
     @Schema(description = "Exclude program codes", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
-    @Schema(description = "Course Activity ID") @RequestParam courseActivityId: Long?,
+    @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveAllocationIdsResponse> =
     allocationService.findActiveAllocations(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
 
