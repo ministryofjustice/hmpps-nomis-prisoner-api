@@ -310,13 +310,13 @@ class Repository(
   fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
   fun <T> runInTransaction(block: () -> T) = block()
 
-  fun getNonAssociation(first: Offender, second: Offender): OffenderNonAssociation =
+  fun getNonAssociation(first: Long, second: Long): OffenderNonAssociation =
     offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
       .also {
         it.toString() // hydrate
       }
 
-  fun getNonAssociationOrNull(first: Offender, second: Offender): OffenderNonAssociation? =
+  fun getNonAssociationOrNull(first: Long, second: Long): OffenderNonAssociation? =
     offenderNonAssociationRepository.findByIdOrNull(OffenderNonAssociationId(first, second))
       ?.also {
         it.toString() // hydrate
