@@ -3,8 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetailId
@@ -23,10 +21,10 @@ class NonAssociationDetailBuilderFactory() {
 
 class NonAssociationDetailBuilder : NonAssociationDetailDsl {
   fun build(
-    offender: Offender,
-    nsOffender: Offender,
-    offenderBooking: OffenderBooking,
-    nsOffenderBooking: OffenderBooking,
+    offenderId: Long,
+    nsOffenderId: Long,
+    offenderBookingId: Long,
+    nsOffenderBookingId: Long,
     typeSeq: Int,
     nonAssociationReason: NonAssociationReason,
     recipNonAssociationReason: NonAssociationReason?,
@@ -40,12 +38,12 @@ class NonAssociationDetailBuilder : NonAssociationDetailDsl {
   ): OffenderNonAssociationDetail =
     OffenderNonAssociationDetail(
       id = OffenderNonAssociationDetailId(
-        offender = offender,
-        nsOffender = nsOffender,
+        offenderId = offenderId,
+        nsOffenderId = nsOffenderId,
         typeSeq,
       ),
-      offenderBooking = offenderBooking,
-      nsOffenderBooking = nsOffenderBooking,
+      offenderBookingId = offenderBookingId,
+      nsOffenderBookingId = nsOffenderBookingId,
       nonAssociationReason = nonAssociationReason,
       recipNonAssociationReason = recipNonAssociationReason,
       nonAssociationType = nonAssociationType,

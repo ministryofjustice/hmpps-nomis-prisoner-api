@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -114,8 +113,6 @@ class NomisData(
   override fun nonAssociation(
     offender1: Offender,
     offender2: Offender,
-    offenderBooking: OffenderBooking,
-    nsOffenderBooking: OffenderBooking,
     nonAssociationReason: String,
     recipNonAssociationReason: String,
     dsl: NonAssociationDsl.() -> Unit,
@@ -123,10 +120,10 @@ class NomisData(
     nonAssociationBuilderFactory!!.builder()
       .let { builder ->
         builder.build(
-          offender1,
-          offender2,
-          offenderBooking,
-          nsOffenderBooking,
+          offender1.id,
+          offender2.id,
+          offender1.latestBooking(),
+          offender2.latestBooking(),
           nonAssociationReason,
           recipNonAssociationReason,
         )
@@ -178,8 +175,6 @@ interface NomisDataDsl {
   fun nonAssociation(
     offender1: Offender,
     offender2: Offender,
-    offenderBooking: OffenderBooking = offender1.latestBooking(),
-    nsOffenderBooking: OffenderBooking = offender2.latestBooking(),
     nonAssociationReason: String = "PER",
     recipNonAssociationReason: String = "VIC",
     dsl: NonAssociationDsl.() -> Unit = {},

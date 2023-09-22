@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -27,7 +26,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import java.time.LocalDate
 
 @RestController
 @Validated
@@ -297,25 +295,10 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun getNonAssociationsByFilter(
-    @PageableDefault(sort = ["id.offender"], direction = Sort.Direction.ASC)
+    @PageableDefault(sort = ["id.offenderId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
-    @RequestParam(value = "fromDate", required = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by non-associations that were created on or after the given date",
-      example = "2021-11-03",
-    )
-    fromDate: LocalDate?,
-    @RequestParam(value = "toDate", required = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by non-associations that were created on or before the given date",
-      example = "2022-04-11",
-    )
-    toDate: LocalDate?,
   ): Page<NonAssociationIdResponse> =
     nonAssociationService.findIdsByFilter(
       pageRequest = pageRequest,
-      NonAssociationFilter(toDate = toDate, fromDate = fromDate),
     )
 }
