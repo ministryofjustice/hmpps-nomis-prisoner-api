@@ -401,8 +401,16 @@ class AdjudicationService(
       hearingType = lookupHearingType(request.hearingType),
       agencyInternalLocation = internalLocation,
       hearingParty = party,
-
-    ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }
+    ).let { adjudicationHearingRepository.save(it) }.let { CreateHearingResponse(hearingId = it.id) }.also {
+      telemetryClient.trackEvent(
+        "hearing-created",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "hearingId" to it.hearingId.toString(),
+        ),
+        null,
+      )
+    }
   }
 
   fun getHearing(hearingId: Long): Hearing =
@@ -500,13 +508,22 @@ class AdjudicationService(
   fun updateHearing(adjudicationNumber: Long, hearingId: Long, request: UpdateHearingRequest): Hearing {
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
-    adjudicationHearingRepository.findByIdOrNull(hearingId)?.let {
+    return adjudicationHearingRepository.findByIdOrNull(hearingId)?.let {
       val internalLocation = findInternalLocation(request.internalLocationId)
       it.hearingDate = request.hearingDate
       it.hearingDateTime = request.hearingTime.atDate(request.hearingDate)
       it.hearingType = lookupHearingType(request.hearingType)
       it.agencyInternalLocation = internalLocation
-      return it.toHearing()
+      it.toHearing()
+    }.also {
+      telemetryClient.trackEvent(
+        "hearing-updated",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "hearingId" to hearingId.toString(),
+        ),
+        null,
+      )
     } ?: throw NotFoundException("Adjudication hearing with hearing Id $hearingId not found")
   }
 
@@ -514,7 +531,26 @@ class AdjudicationService(
     // allow delete request to fail if adjudication doesn't exist as should never happen
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Hearing with id $hearingId delete failed: Adjudication party with adjudication number $adjudicationNumber not found")
-    adjudicationHearingRepository.deleteById(hearingId)
+    adjudicationHearingRepository.findByIdOrNull(
+      hearingId,
+    )?.also {
+      adjudicationHearingRepository.deleteById(hearingId)
+      telemetryClient.trackEvent(
+        "hearing-deleted",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "hearingId" to hearingId.toString(),
+        ),
+        null,
+      )
+    } ?: telemetryClient.trackEvent(
+      "hearing-delete-not-found",
+      mapOf(
+        "adjudicationNumber" to adjudicationNumber.toString(),
+        "hearingId" to hearingId.toString(),
+      ),
+      null,
+    )
   }
 
   @Audit
@@ -547,7 +583,17 @@ class AdjudicationService(
       incidentCharge = incidentCharge,
       offence = incidentCharge.offence,
     ).let { adjudicationHearingResultRepository.save(it) }
-      .let { CreateHearingResultResponse(hearingId = it.id.oicHearingId, resultSequence = it.id.resultSequence) }
+      .let { CreateHearingResultResponse(hearingId = it.id.oicHearingId, resultSequence = it.id.resultSequence) }.also {
+        telemetryClient.trackEvent(
+          "hearing-result-created",
+          mapOf(
+            "adjudicationNumber" to adjudicationNumber.toString(),
+            "hearingId" to hearingId.toString(),
+            "resultSequence" to "1",
+          ),
+          null,
+        )
+      }
   }
 
   fun getHearingResult(hearingId: Long, resultSeq: Int = 1): HearingResult =

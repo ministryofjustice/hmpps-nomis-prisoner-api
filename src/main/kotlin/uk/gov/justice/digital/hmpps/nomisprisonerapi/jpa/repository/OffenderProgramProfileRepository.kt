@@ -22,6 +22,11 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
     code: String,
   ): OffenderProgramProfile?
 
+  fun findByCourseActivityCourseActivityIdAndProgramStatusCode(
+    courseActivityId: Long,
+    code: String,
+  ): List<OffenderProgramProfile>
+
   fun findByCourseActivity(courseActivity: CourseActivity): List<OffenderProgramProfile>
 
   @Query(

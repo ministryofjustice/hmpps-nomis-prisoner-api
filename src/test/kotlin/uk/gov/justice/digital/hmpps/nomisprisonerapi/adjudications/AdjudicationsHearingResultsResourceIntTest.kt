@@ -215,6 +215,16 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("findingType.code").isEqualTo("NOT_PROCEED")
           .jsonPath("pleaFindingType.code").isEqualTo("GUILTY")
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-created"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("resultSequence", "1")
+          },
+          isNull(),
+        )
       }
     }
 

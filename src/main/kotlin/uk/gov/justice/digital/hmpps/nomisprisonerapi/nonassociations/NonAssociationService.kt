@@ -204,7 +204,7 @@ class NonAssociationService(
 
     val today = LocalDate.now()
     existing.apply {
-      if (expiryDate != null) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+      if (expiryDate != null && !expiryDate!!.isAfter(today)) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
       expiryDate = today
       telemetryClient.trackEvent(
         "non-association-closed",
@@ -216,7 +216,7 @@ class NonAssociationService(
       )
     }
     otherExisting.apply {
-      if (expiryDate != null) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
+      if (expiryDate != null && !expiryDate!!.isAfter(today)) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
       expiryDate = today
       telemetryClient.trackEvent(
         "non-association-closed",

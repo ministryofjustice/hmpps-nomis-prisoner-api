@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -64,6 +65,7 @@ class ActivityServiceTest {
   private val scheduleRuleService: ScheduleRuleService = mock()
   private val courseActivityRepository: CourseActivityRepository = mock()
   private val courseAllocationService: AllocationService = mock()
+  private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val activityService = ActivityService(
@@ -77,6 +79,7 @@ class ActivityServiceTest {
     scheduleRuleService,
     courseActivityRepository,
     courseAllocationService,
+    offenderProgramProfileRepository,
     telemetryClient,
   )
 
