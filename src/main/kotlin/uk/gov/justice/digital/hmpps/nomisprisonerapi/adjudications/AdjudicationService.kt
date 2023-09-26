@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingNotification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAwardId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
@@ -32,6 +33,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentTyp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
@@ -50,6 +53,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerOnReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.prisonerParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingResultAwardRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingResultRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentOffenceRepository
@@ -76,6 +80,7 @@ class AdjudicationService(
   private val adjudicationIncidentRepository: AdjudicationIncidentRepository,
   private val adjudicationHearingRepository: AdjudicationHearingRepository,
   private val adjudicationHearingResultRepository: AdjudicationHearingResultRepository,
+  private val adjudicationHearingResultAwardRepository: AdjudicationHearingResultAwardRepository,
   private val offenderRepository: OffenderRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
@@ -88,6 +93,8 @@ class AdjudicationService(
   private val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
   private val pleaFindingTypeRepository: ReferenceCodeRepository<AdjudicationPleaFindingType>,
   private val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
+  private val sanctionTypeRepository: ReferenceCodeRepository<AdjudicationSanctionType>,
+  private val sanctionStatusRepository: ReferenceCodeRepository<AdjudicationSanctionStatus>,
   private val telemetryClient: TelemetryClient,
 ) {
 
@@ -479,6 +486,14 @@ class AdjudicationService(
     AdjudicationFindingType.pk(code),
   ) ?: throw BadDataException("Finding type $code not found")
 
+  private fun lookupSanctionType(code: String): AdjudicationSanctionType = sanctionTypeRepository.findByIdOrNull(
+    AdjudicationSanctionType.pk(code),
+  ) ?: throw BadDataException("sanction type $code not found")
+
+  private fun lookupSanctionStatus(code: String): AdjudicationSanctionStatus = sanctionStatusRepository.findByIdOrNull(
+    AdjudicationSanctionStatus.pk(code),
+  ) ?: throw BadDataException("sanction status $code not found")
+
   @Audit
   fun updateRepairs(adjudicationNumber: Long, request: UpdateRepairsRequest): UpdateRepairsResponse {
     val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
@@ -557,6 +572,7 @@ class AdjudicationService(
   fun createHearingResult(
     adjudicationNumber: Long,
     hearingId: Long,
+    chargeSequence: Int,
     request: CreateHearingResultRequest,
   ): CreateHearingResultResponse {
     // DPS only allows 1 result per hearing, the created result has a result sequence of 1
@@ -564,8 +580,8 @@ class AdjudicationService(
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
 
     // DPS created (or migrated) adjudications will have 1 charge
-    val incidentCharge = party.charges.getOrNull(0)
-      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber")
+    val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
 
     val hearing = adjudicationHearingRepository.findByIdOrNull(hearingId)
       ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
@@ -579,7 +595,7 @@ class AdjudicationService(
       pleaFindingCode = request.pleaFindingCode,
       findingType = lookupFindingType(request.findingCode),
       hearing = hearing,
-      chargeSequence = incidentCharge.id.chargeSequence,
+      chargeSequence = chargeSequence,
       incidentCharge = incidentCharge,
       offence = incidentCharge.offence,
     ).let { adjudicationHearingResultRepository.save(it) }
@@ -588,6 +604,7 @@ class AdjudicationService(
           "hearing-result-created",
           mapOf(
             "adjudicationNumber" to adjudicationNumber.toString(),
+            "chargeSequence" to chargeSequence.toString(),
             "hearingId" to hearingId.toString(),
             "resultSequence" to "1",
           ),
@@ -601,16 +618,16 @@ class AdjudicationService(
       ?.toHearingResult()
       ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, result sequence: $resultSeq")
 
-  fun deleteHearingResult(adjudicationNumber: Long, hearingId: Long) {
+  fun deleteHearingResult(adjudicationNumber: Long, hearingId: Long, chargeSequence: Int) {
     // allow delete request to fail if adjudication doesn't exist as should never happen
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Hearing with id $hearingId delete failed: Adjudication party with adjudication number $adjudicationNumber not found")
 
-    adjudicationHearingResultRepository.findByIdOrNull(
-      AdjudicationHearingResultId(
-        oicHearingId = hearingId,
-        resultSequence = 1,
-      ),
+    adjudicationHearingResultRepository.findFirstOrNullById_OicHearingIdAndChargeSequence(
+
+      hearingId = hearingId,
+      chargeSequence = chargeSequence,
+
     )?.also {
       adjudicationHearingResultRepository.delete(it)
       telemetryClient.trackEvent(
@@ -618,7 +635,7 @@ class AdjudicationService(
         mapOf(
           "adjudicationNumber" to adjudicationNumber.toString(),
           "hearingId" to hearingId.toString(),
-          "resultSequence" to "1",
+          "resultSequence" to it.id.resultSequence.toString(),
         ),
         null,
       )
@@ -627,10 +644,64 @@ class AdjudicationService(
       mapOf(
         "adjudicationNumber" to adjudicationNumber.toString(),
         "hearingId" to hearingId.toString(),
-        "resultSequence" to "1",
+        "chargeSequence" to chargeSequence.toString(),
       ),
       null,
     )
+  }
+
+  @Audit
+  fun createHearingResultAward(
+    adjudicationNumber: Long,
+    requests: CreateHearingResultAwardRequests,
+  ): CreateHearingResultAwardResponse {
+    // DPS does not associate award with result (migrated or synchronised data)
+
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    val offenderBookId = party.offenderBooking!!.bookingId // the adjudication party will always have a booking Id
+
+    val sanctionSeq =
+      adjudicationHearingResultAwardRepository.getNextSanctionSequence(offenderBookId = offenderBookId)
+
+    // latest result should always be target result
+    val hearingResult =
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_resultSequenceDesc(
+        party.charges.single(),
+      ) ?: throw BadDataException("Hearing result for adjudication number $adjudicationNumber not found")
+
+    requests.awardRequests.forEachIndexed { index, request ->
+      AdjudicationHearingResultAward(
+        id = AdjudicationHearingResultAwardId(
+          offenderBookId = offenderBookId,
+          sanctionSequence = sanctionSeq + index,
+        ),
+        incidentParty = party,
+        sanctionType = lookupSanctionType(request.sanctionType),
+        sanctionCode = request.sanctionType,
+        compensationAmount = request.compensationAmount,
+        effectiveDate = request.effectiveDate,
+        sanctionDays = request.sanctionDays, // mpnths no longer used after migration
+        comment = request.commentText,
+        sanctionStatus = lookupSanctionStatus(request.sanctionStatus),
+        hearingResult = hearingResult,
+      ).let { adjudicationHearingResultAwardRepository.save(it) }
+        .also {
+          telemetryClient.trackEvent(
+            "hearing-result-award-created",
+            mapOf(
+              "adjudicationNumber" to adjudicationNumber.toString(),
+              "sanctionSequence" to sanctionSeq.toString(),
+              "bookingId" to offenderBookId.toString(),
+              "resultSequence" to hearingResult.id.resultSequence.toString(),
+              "hearingId" to hearingResult.id.oicHearingId.toString(),
+            ),
+            null,
+          )
+        }
+    }
+    return CreateHearingResultAwardResponse(sanctionSequence = sanctionSeq, bookingId = offenderBookId)
   }
 }
 

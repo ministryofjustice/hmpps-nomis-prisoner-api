@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -39,7 +40,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI")
   }
 
-  @DisplayName("POST /adjudications/adjudication-number/{adjudicationNumber}/hearings")
+  @DisplayName("POST /adjudications/adjudication-number/{adjudicationNumber}/hearings/charge/{chargeSequence}/result")
   @Nested
   inner class CreateHearingResult {
     private val offenderNo = "A1965NM"
@@ -48,6 +49,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     private lateinit var existingIncident: AdjudicationIncident
     private val existingAdjudicationNumber = 123456L
     private lateinit var existingHearing: AdjudicationHearing
+    private lateinit var existingCharge: AdjudicationIncidentCharge
 
     @BeforeEach
     fun createPrisonerWithAdjudicationAndHearing() {
@@ -59,7 +61,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
-              charge(offenceCode = "51:1B")
+              existingCharge = charge(offenceCode = "51:1B")
               existingHearing = hearing(
                 internalLocationId = aLocationInMoorland.locationId,
                 scheduleDate = LocalDate.parse("2023-01-02"),
@@ -88,7 +90,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -99,7 +101,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -110,7 +112,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
           .exchange()
@@ -131,7 +133,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if adjudication (associated with the hearing) not found`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/result")
+        webTestClient.post().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -143,7 +145,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if hearing not found`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/result")
+        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -156,7 +158,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if plea finding type not valid`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest(pleaFindingCode = "rubbish")))
@@ -169,7 +171,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if finding type not valid`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest(findingCode = "rubbish")))
@@ -187,7 +189,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       fun `create an adjudication hearing result`() {
         val hearingId =
           webTestClient.post()
-            .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+            .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
@@ -208,7 +210,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearingStaff.staffId").isEqualTo(reportingStaff.id)
           .jsonPath("hearingStaff.username").isEqualTo("JANESTAFF")
 
-        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/result")
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -222,6 +224,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
+            assertThat(it).containsEntry("chargeSequence", existingCharge.id.chargeSequence.toString())
           },
           isNull(),
         )
@@ -252,6 +255,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     private val existingAdjudicationNumber = 123456L
     private lateinit var existingHearing: AdjudicationHearing
     private lateinit var existingHearingResult: AdjudicationHearingResult
+    private lateinit var existingCharge: AdjudicationIncidentCharge
 
     @BeforeEach
     fun createPrisonerAndAdjudication() {
@@ -263,7 +267,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
-              val charge = charge(offenceCode = "51:1B")
+              existingCharge = charge(offenceCode = "51:1B")
               existingHearing = hearing(
                 internalLocationId = aLocationInMoorland.locationId,
                 scheduleDate = LocalDate.parse("2023-01-02"),
@@ -273,7 +277,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
                 hearingStaff = reportingStaff,
               ) {
                 existingHearingResult = result(
-                  charge = charge,
+                  charge = existingCharge,
                   pleaFindingCode = "NOT_GUILTY",
                   findingCode = "PROVED",
                 ) {
@@ -308,7 +312,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/adjudications/hearings/123/result")
+        webTestClient.get().uri("/adjudications/hearings/123/charge/1/result")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -316,7 +320,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/adjudications/hearings/123/result")
+        webTestClient.get().uri("/adjudications/hearings/123/charge/1/result")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -324,7 +328,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/adjudications/hearings/123/result")
+        webTestClient.get().uri("/adjudications/hearings/123/charge/1/result")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -334,7 +338,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if hearing result not found`() {
-        webTestClient.get().uri("/adjudications/hearings/123/result")
+        webTestClient.get().uri("/adjudications/hearings/123/charge/1/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isNotFound
@@ -347,7 +351,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `get adjudication hearing result`() {
-        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/result")
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -363,7 +367,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("DELETE /adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/result")
+  @DisplayName("DELETE /adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/charge/{chargeSequence}/result")
   @Nested
   inner class DeleteHearingResult {
     private val offenderNo = "A1965NM"
@@ -373,6 +377,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     private val existingAdjudicationNumber = 123456L
     private lateinit var existingHearing: AdjudicationHearing
     private lateinit var existingHearingResult: AdjudicationHearingResult
+    private lateinit var existingCharge: AdjudicationIncidentCharge
 
     @BeforeEach
     fun createPrisonerAndAdjudication() {
@@ -384,7 +389,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
-              val charge = charge(offenceCode = "51:1B")
+              existingCharge = charge(offenceCode = "51:1B")
               existingHearing = hearing(
                 internalLocationId = aLocationInMoorland.locationId,
                 scheduleDate = LocalDate.parse("2023-01-02"),
@@ -394,7 +399,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
                 hearingStaff = reportingStaff,
               ) {
                 existingHearingResult = result(
-                  charge = charge,
+                  charge = existingCharge,
                   pleaFindingCode = "NOT_GUILTY",
                   findingCode = "PROVED",
                 ) {
@@ -430,7 +435,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.delete()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -439,7 +444,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.delete()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -448,7 +453,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.delete()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -467,7 +472,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if adjudication not found`() {
-        webTestClient.delete().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/result")
+        webTestClient.delete().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isNotFound
@@ -477,7 +482,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will track event if hearing result not found`() {
-        webTestClient.delete().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/result")
+        webTestClient.delete().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk()
@@ -487,7 +492,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           org.mockito.kotlin.check {
             assertThat(it).containsEntry("hearingId", "88888")
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
-            assertThat(it).containsEntry("resultSequence", "1")
+            assertThat(it).containsEntry("chargeSequence", existingCharge.id.chargeSequence.toString())
           },
           isNull(),
         )
@@ -500,12 +505,12 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `delete an adjudication hearing`() {
         webTestClient.delete()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/result")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
 
-        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/result")
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isNotFound
