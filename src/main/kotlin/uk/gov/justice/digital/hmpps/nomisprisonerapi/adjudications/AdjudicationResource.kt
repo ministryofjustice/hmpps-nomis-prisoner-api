@@ -760,7 +760,7 @@ class AdjudicationResource(
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/awards")
   @Operation(
     summary = "creates a hearing result award for a given adjudication",
-    description = "Creates a hearing result for a given hearing. DPS only supports 1 result per hearing. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates a hearing result award. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -795,16 +795,6 @@ class AdjudicationResource(
       ApiResponse(
         responseCode = "404",
         description = "Adjudication does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Hearing does not exist",
         content = [
           Content(
             mediaType = "application/json",
