@@ -17,13 +17,11 @@ import java.time.LocalDate
 
 @Embeddable
 data class OffenderNonAssociationDetailId(
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_ID", nullable = false, referencedColumnName = "OFFENDER_ID", insertable = false, updatable = false)
-  val offender: Offender,
+  @Column(name = "OFFENDER_ID", nullable = false)
+  val offenderId: Long = 0,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "NS_OFFENDER_ID", nullable = false, referencedColumnName = "OFFENDER_ID", insertable = false, updatable = false)
-  val nsOffender: Offender,
+  @Column(name = "NS_OFFENDER_ID", nullable = false)
+  val nsOffenderId: Long = 0,
 
   @Column(name = "TYPE_SEQ", nullable = false)
   val typeSequence: Int,
@@ -36,15 +34,13 @@ data class OffenderNonAssociationDetail(
   @EmbeddedId
   val id: OffenderNonAssociationDetailId,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
-  val offenderBooking: OffenderBooking,
+  @Column(name = "OFFENDER_BOOK_ID", nullable = false)
+  val offenderBookingId: Long,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "NS_OFFENDER_BOOK_ID", nullable = false)
-  val nsOffenderBooking: OffenderBooking,
+  @Column(name = "NS_OFFENDER_BOOK_ID", nullable = false)
+  val nsOffenderBookingId: Long,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = FetchType.EAGER)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -55,7 +51,7 @@ data class OffenderNonAssociationDetail(
   )
   var nonAssociationReason: NonAssociationReason,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -66,7 +62,7 @@ data class OffenderNonAssociationDetail(
   )
   var recipNonAssociationReason: NonAssociationReason? = null,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = FetchType.EAGER)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -115,8 +111,8 @@ data class OffenderNonAssociationDetail(
 
   override fun toString(): String =
     this::class.simpleName +
-      "((${id.offender.nomsId},${id.nsOffender.nomsId},${id.typeSequence}), offenderBooking=${offenderBooking.bookingId}," +
-      " nsOffenderBooking=${nsOffenderBooking.bookingId}, nonAssociationReason=${nonAssociationReason.code}, " +
+      "((${id.offenderId},${id.nsOffenderId},${id.typeSequence}), offenderBooking=$offenderBookingId," +
+      " nsOffenderBooking=$nsOffenderBookingId, nonAssociationReason=${nonAssociationReason.code}, " +
       "recipNonAssociationReason=$recipNonAssociationReason, nonAssociationType=${nonAssociationType.code}, " +
       "effectiveDate=$effectiveDate, expiryDate=$expiryDate, authorisedBy=$authorisedBy, modifiedBy=$modifiedBy, comment=$comment"
   // Omit offenderNonAssociation parent to avoid infinite recursion

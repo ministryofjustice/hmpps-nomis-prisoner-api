@@ -2,10 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NonAssociationType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
@@ -71,8 +69,8 @@ class NonAssociationBuilder(
   private lateinit var nonAssociation: OffenderNonAssociation
 
   fun build(
-    offender: Offender,
-    nsOffender: Offender,
+    offenderId: Long,
+    nsOffenderId: Long,
     offenderBooking: OffenderBooking,
     nsOffenderBooking: OffenderBooking,
     nonAssociationReason: String,
@@ -80,11 +78,11 @@ class NonAssociationBuilder(
   ): OffenderNonAssociation =
     OffenderNonAssociation(
       OffenderNonAssociationId(
-        offender = offender,
-        nsOffender = nsOffender,
+        offenderId = offenderId,
+        nsOffenderId = nsOffenderId,
       ),
-      offenderBooking = offenderBooking,
-      nsOffenderBooking = nsOffenderBooking,
+      offenderBookingId = offenderBooking.bookingId,
+      nsOffenderBookingId = nsOffenderBooking.bookingId,
       nonAssociationReason = repository?.lookupNonAssociationReason(nonAssociationReason),
       recipNonAssociationReason = repository?.lookupNonAssociationReason(recipNonAssociationReason),
     )
@@ -102,10 +100,10 @@ class NonAssociationBuilder(
     modifiedBy: String?,
     comment: String?,
   ) = nonAssociationDetailBuilderFactory.builder().build(
-    offender = nonAssociation.id.offender,
-    nsOffender = nonAssociation.id.nsOffender,
-    offenderBooking = nonAssociation.id.offender.latestBooking(),
-    nsOffenderBooking = nonAssociation.id.nsOffender.latestBooking(),
+    offenderId = nonAssociation.id.offenderId,
+    nsOffenderId = nonAssociation.id.nsOffenderId,
+    offenderBookingId = nonAssociation.nsOffenderBookingId,
+    nsOffenderBookingId = nonAssociation.nsOffenderBookingId,
     typeSeq = typeSeq,
     nonAssociationReason = repository?.lookupNonAssociationReason(nonAssociationReason)!!,
     recipNonAssociationReason = recipNonAssociationReason?.let { repository.lookupNonAssociationReason(it) },

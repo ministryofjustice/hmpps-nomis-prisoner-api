@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
@@ -18,13 +19,11 @@ import java.io.Serializable
 
 @Embeddable
 data class OffenderNonAssociationId(
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_ID", nullable = false)
-  val offender: Offender,
+  @Column(name = "OFFENDER_ID", nullable = false)
+  val offenderId: Long = 0,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "NS_OFFENDER_ID", nullable = false, referencedColumnName = "OFFENDER_ID")
-  val nsOffender: Offender,
+  @Column(name = "NS_OFFENDER_ID", nullable = false)
+  val nsOffenderId: Long = 0,
 ) : Serializable
 
 @Entity
@@ -34,13 +33,11 @@ data class OffenderNonAssociation(
   @EmbeddedId
   val id: OffenderNonAssociationId,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
-  val offenderBooking: OffenderBooking,
+  @Column(name = "OFFENDER_BOOK_ID", nullable = false)
+  val offenderBookingId: Long,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "NS_OFFENDER_BOOK_ID", nullable = false)
-  val nsOffenderBooking: OffenderBooking,
+  @Column(name = "NS_OFFENDER_BOOK_ID", nullable = false)
+  val nsOffenderBookingId: Long,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -64,7 +61,7 @@ data class OffenderNonAssociation(
   )
   var recipNonAssociationReason: NonAssociationReason? = null,
 
-  @OneToMany(mappedBy = "nonAssociation", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "nonAssociation", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
   val offenderNonAssociationDetails: MutableList<OffenderNonAssociationDetail> = mutableListOf(),
 
 ) {
@@ -86,7 +83,7 @@ data class OffenderNonAssociation(
 
   override fun toString(): String =
     this::class.simpleName +
-      "(id = (${id.offender.nomsId},${id.nsOffender.nomsId}), offenderBooking=${offenderBooking.bookingId}, nsOffenderBooking=${nsOffenderBooking.bookingId}, nonAssociationReason=${nonAssociationReason?.code}, recipNonAssociationReason=${recipNonAssociationReason?.code}, offenderNonAssociationDetails=$offenderNonAssociationDetails)"
+      "(id = (${id.offenderId},${id.nsOffenderId}), offenderBooking=$offenderBookingId, nsOffenderBooking=$nsOffenderBookingId, nonAssociationReason=${nonAssociationReason?.code}, recipNonAssociationReason=${recipNonAssociationReason?.code}, offenderNonAssociationDetails=$offenderNonAssociationDetails)"
 }
 
 @Entity
