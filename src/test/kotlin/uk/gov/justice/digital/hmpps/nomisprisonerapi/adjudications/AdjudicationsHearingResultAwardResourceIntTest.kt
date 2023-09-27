@@ -97,7 +97,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/awards")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultAwardRequest()))
@@ -108,7 +108,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/awards")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultAwardRequest()))
@@ -119,7 +119,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/awards")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultAwardRequest()))
           .exchange()
@@ -139,8 +139,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return 404 if adjudication (associated with the hearing) not found`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/88888/awards")
+      fun `will return 404 if adjudication not found`() {
+        webTestClient.post().uri("/adjudications/adjudication-number/88888/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultAwardRequest()))
@@ -151,9 +151,21 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will return 404 if charge not found`() {
+        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/88/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(aHearingResultAwardRequest()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Charge not found for adjudication number $existingAdjudicationNumber and charge sequence 88")
+      }
+
+      @Test
       fun `will return 400 if sanction type not valid`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/awards")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultAwardRequest(sanctionType = "madeup")))
@@ -166,7 +178,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if sanction status not valid`() {
         webTestClient.post()
-          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/awards")
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultAwardRequest(sanctionStatus = "nope")))
@@ -184,7 +196,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       fun `create an adjudication hearing result award`() {
         val hearingId =
           webTestClient.post()
-            .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/awards")
+            .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
@@ -196,6 +208,19 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
         assertThat(hearingId).isNotNull
 
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sequence").isEqualTo(1)
+          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-01")
+          .jsonPath("sanctionDays").isEqualTo(2)
+          .jsonPath("compensationAmount").isEqualTo(10.5)
+          .jsonPath("comment").isEqualTo("a comment")
+
         verify(telemetryClient).trackEvent(
           eq("hearing-result-award-created"),
           org.mockito.kotlin.check {
@@ -203,7 +228,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
-            assertThat(it).containsEntry("sanctionSequence", existingCharge.id.chargeSequence.toString())
+            assertThat(it).containsEntry("sanctionSequence", "1")
           },
           isNull(),
         )

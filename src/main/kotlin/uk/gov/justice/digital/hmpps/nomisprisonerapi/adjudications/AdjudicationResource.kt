@@ -757,7 +757,7 @@ class AdjudicationResource(
   ) = adjudicationService.deleteHearingResult(adjudicationNumber, hearingId, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
-  @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/awards")
+  @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Operation(
     summary = "creates a hearing result award for a given adjudication",
     description = "Creates a hearing result award. Requires ROLE_NOMIS_ADJUDICATIONS",
@@ -802,15 +802,87 @@ class AdjudicationResource(
           ),
         ],
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Charge does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
   fun createHearingResultAward(
     @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
+    @Schema(description = "Nomis charge sequence", example = "1")
+    @PathVariable
+    chargeSequence: Int,
     @RequestBody @Valid
     requests: CreateHearingResultAwardRequests,
-  ): CreateHearingResultAwardResponse = adjudicationService.createHearingResultAward(adjudicationNumber, requests)
+  ) = adjudicationService.createHearingResultAward(adjudicationNumber, chargeSequence, requests)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/awards/{sanctionSequence}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "get hearing result award by Id ",
+    description = "Retrieves a hearing result by the Id (bookingId and sanctionSequence). Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Hearing Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Hearing result award does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAdjudicationHearingResultAward(
+    @Schema(description = "NOMIS booking Id", example = "12345")
+    @PathVariable
+    bookingId: Long,
+    @Schema(description = "Nomis sanction sequence", example = "1")
+    @PathVariable
+    sanctionSequence: Int,
+  ): HearingResultAward =
+    adjudicationService.getHearingResultAward(bookingId, sanctionSequence)
 }
 
 @Schema(description = "adjudication id")
