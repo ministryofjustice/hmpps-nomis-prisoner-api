@@ -834,7 +834,7 @@ class AdjudicationResource(
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Hearing Information Returned",
+        description = "Hearing result award Information Returned",
         content = [
           Content(
             mediaType = "application/json",
