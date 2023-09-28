@@ -39,7 +39,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           booking(agencyLocationId = "LEI")
         }
       offenderAtShrewsbury =
-        offender(nomsId = "A1234TV") {
+        offender(nomsId = "A1234TA") {
           booking(agencyLocationId = "SYI")
         }
     }
