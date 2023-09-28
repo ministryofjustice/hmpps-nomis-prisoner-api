@@ -653,8 +653,9 @@ class AdjudicationService(
   @Audit
   fun createHearingResultAward(
     adjudicationNumber: Long,
+    chargeSequence: Int,
     requests: CreateHearingResultAwardRequests,
-  ): CreateHearingResultAwardResponse {
+  ) {
     // DPS does not associate award with result (migrated or synchronised data)
 
     val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
@@ -665,10 +666,13 @@ class AdjudicationService(
     val sanctionSeq =
       adjudicationHearingResultAwardRepository.getNextSanctionSequence(offenderBookId = offenderBookId)
 
+    val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+
     // latest result should always be target result
     val hearingResult =
       adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_resultSequenceDesc(
-        party.charges.single(),
+        incidentCharge,
       ) ?: throw BadDataException("Hearing result for adjudication number $adjudicationNumber not found")
 
     requests.awardRequests.forEachIndexed { index, request ->
@@ -701,8 +705,12 @@ class AdjudicationService(
           )
         }
     }
-    return CreateHearingResultAwardResponse(sanctionSequence = sanctionSeq, bookingId = offenderBookId)
   }
+
+  fun getHearingResultAward(bookingId: Long, sanctionSequence: Int): HearingResultAward =
+    adjudicationHearingResultAwardRepository.findByIdOrNull(AdjudicationHearingResultAwardId(bookingId, sanctionSequence))
+      ?.toAward()
+      ?: throw NotFoundException("Hearing Result Award not found. booking Id: $bookingId, sanction sequence: $sanctionSequence")
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
