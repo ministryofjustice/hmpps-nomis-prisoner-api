@@ -295,7 +295,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     ],
   )
   fun getNonAssociationsByFilter(
-    @PageableDefault(sort = ["id.offenderId"], direction = Sort.Direction.ASC)
+    @PageableDefault(sort = ["id.offenderId", "id.nsOffenderId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
   ): Page<NonAssociationIdResponse> =
     nonAssociationService.findIdsByFilter(
