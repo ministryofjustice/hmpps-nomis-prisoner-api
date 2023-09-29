@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.W
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResultAward
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentRepair
@@ -34,6 +35,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 const val adjudicationNumber = 9000123L
 const val previousAdjudicationNumber = 8000123L
@@ -2287,6 +2289,318 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("repairs[0].type.code").isEqualTo("ELEC")
           .jsonPath("repairs[1].comment").isEqualTo("Carpets need cleaning")
           .jsonPath("repairs[1].type.code").isEqualTo("DECO")
+      }
+    }
+  }
+
+  @DisplayName("PUT /adjudications/adjudication-number/{adjudicationNumber}/evidence")
+  @Nested
+  inner class UpdateAdjudicationEvidence {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private val existingAdjudicationNumber = 123456L
+
+    @BeforeEach
+    fun createPrisoner() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {
+        }
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
+              investigation(
+                investigator = reportingStaff,
+                comment = "Isla comment for investigation",
+                assignedDate = LocalDate.parse("2023-01-02"),
+              ) {
+                evidence(
+                  date = LocalDate.parse("2023-01-03"),
+                  detail = "smashed light bulb",
+                  type = "PHOTO",
+                )
+                evidence(
+                  date = LocalDate.parse("2023-01-04"),
+                  detail = "syringe",
+                  type = "DRUGTEST",
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(existingIncident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"evidence": []}"""))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"evidence": []}"""))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"evidence": []}"""))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `404 is returned if adjudication does not exist`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", 99999)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue("""{"evidence": []}"""))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `evidence type code must be present`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "evidence": [
+                {
+                  "detail": "Photo of the incident"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+      }
+
+      @Test
+      fun `evidence type code must valid`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "evidence": [
+                {
+                  "detail": "Photo of incident",
+                  "typeCode": "BANANAS"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Evidence type BANANAS not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private fun Repository.evidenceFor(adjudicationNumber: Long): List<AdjudicationEvidence> =
+        adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.investigations?.flatMap { it.evidence } ?: emptyList()
+
+      @Test
+      fun `empty list will remove existing evidence`() {
+        repository.runInTransaction {
+          assertThat(repository.evidenceFor(existingAdjudicationNumber)).hasSize(2)
+        }
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "evidence": []
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          assertThat(repository.evidenceFor(existingAdjudicationNumber)).hasSize(0)
+        }
+      }
+
+      @Test
+      fun `can appear to update existing evidence`() {
+        repository.runInTransaction {
+          val evidence = repository.evidenceFor(existingAdjudicationNumber)
+          assertThat(evidence).hasSize(2)
+          assertThat(evidence[0].statementType.code).isEqualTo("PHOTO")
+          assertThat(evidence[0].statementDetail).isEqualTo("smashed light bulb")
+          assertThat(evidence[1].statementType.code).isEqualTo("DRUGTEST")
+          assertThat(evidence[1].statementDetail).isEqualTo("syringe")
+        }
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "evidence": [
+                {
+                  "detail": "Damaged bed",
+                  "typeCode": "PHOTO"
+                },
+                {
+                  "detail": "Drugs need testing",
+                  "typeCode": "DRUGTEST"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          val evidence = repository.evidenceFor(existingAdjudicationNumber)
+          assertThat(evidence).hasSize(2)
+          assertThat(evidence[0].statementType.code).isEqualTo("PHOTO")
+          assertThat(evidence[0].statementDetail).isEqualTo("Damaged bed")
+          assertThat(evidence[1].statementType.code).isEqualTo("DRUGTEST")
+          assertThat(evidence[1].statementDetail).isEqualTo("Drugs need testing")
+        }
+      }
+
+      @Test
+      fun `can replace and add evidence`() {
+        repository.runInTransaction {
+          val evidence = repository.evidenceFor(existingAdjudicationNumber)
+          assertThat(evidence).hasSize(2)
+          assertThat(evidence[0].statementType.code).isEqualTo("PHOTO")
+          assertThat(evidence[1].statementType.code).isEqualTo("DRUGTEST")
+        }
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "evidence": [
+                {
+                  "detail": "smashed light bulb",
+                  "typeCode": "PHOTO"
+                },
+                {
+                  "detail": "Knife used",
+                  "typeCode": "EVI_BAG"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          val evidence = repository.evidenceFor(existingAdjudicationNumber)
+          assertThat(evidence[0].statementType.code).isEqualTo("PHOTO")
+          assertThat(evidence[0].statementDetail).isEqualTo("smashed light bulb")
+          assertThat(evidence[1].statementType.code).isEqualTo("EVI_BAG")
+          assertThat(evidence[1].statementDetail).isEqualTo("Knife used")
+        }
+      }
+
+      @Test
+      fun `updated evidence list is returned`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              //language=json
+              """
+            {
+              "evidence": [
+                {
+                  "detail": "smashed light bulb",
+                  "typeCode": "PHOTO"
+                },
+                {
+                  "detail": "Knife used",
+                  "typeCode": "EVI_BAG"
+                }
+              ]
+            }
+              """.trimIndent(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("evidence").isArray
+          .jsonPath("evidence[0].detail").isEqualTo("smashed light bulb")
+          .jsonPath("evidence[0].date").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
+          .jsonPath("evidence[0].type.code").isEqualTo("PHOTO")
+          .jsonPath("evidence[1].detail").isEqualTo("Knife used")
+          .jsonPath("evidence[1].date").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
+          .jsonPath("evidence[1].type.code").isEqualTo("EVI_BAG")
       }
     }
   }

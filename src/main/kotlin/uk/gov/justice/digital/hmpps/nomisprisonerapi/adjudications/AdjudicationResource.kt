@@ -515,6 +515,62 @@ class AdjudicationResource(
   ): UpdateRepairsResponse = adjudicationService.updateRepairs(adjudicationNumber, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/evidence")
+  @Operation(
+    summary = "Updates evidence for a given adjudication",
+    description = "List of evidence items are refreshed so this operation may result in any combinations of inserts, updates or deletes. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Evidence updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = UpdateEvidenceResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateEvidence(
+    @Schema(description = "Adjudication number", example = "12345")
+    @PathVariable
+    adjudicationNumber: Long,
+    @RequestBody @Valid
+    request: UpdateEvidenceRequest,
+  ): UpdateEvidenceResponse = adjudicationService.updateEvidence(adjudicationNumber, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/adjudications/hearings/{hearingId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(

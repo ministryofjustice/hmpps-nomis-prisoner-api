@@ -520,6 +520,51 @@ class AdjudicationService(
     return UpdateRepairsResponse(updatedRepairs.map { it.toRepair() })
   }
 
+  @Audit
+  fun updateEvidence(
+    adjudicationNumber: Long,
+    request: UpdateEvidenceRequest,
+  ): UpdateEvidenceResponse {
+    val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    // any evidence for any investigation needs to be cleared down, ready to be replaced
+    adjudicationParty.investigations.forEach { it.evidence.clear() }.also {
+      adjudicationIncidentPartyRepository.saveAndFlush(adjudicationParty)
+    }
+
+    if (request.evidence.isNotEmpty()) {
+      createOrGetLastInvestigation(adjudicationParty).apply {
+        this.evidence.addAll(
+          request.evidence.map { evidence ->
+            AdjudicationEvidence(
+              statementDetail = evidence.detail,
+              statementDate = LocalDate.now(),
+              statementType = lookupEvidenceType(evidence.typeCode),
+              investigation = this,
+            )
+          },
+        )
+      }.also {
+        adjudicationIncidentPartyRepository.saveAndFlush(adjudicationParty)
+      }
+    }
+    return UpdateEvidenceResponse(evidence = adjudicationParty.toEvidenceList())
+  }
+
+  private fun createOrGetLastInvestigation(adjudicationParty: AdjudicationIncidentParty): AdjudicationInvestigation {
+    val investigations = adjudicationParty.investigations
+    return if (investigations.isEmpty()) {
+      createInvestigation(
+        incident = adjudicationParty.incident,
+        party = adjudicationParty,
+        evidenceList = emptyList(),
+      ).also { adjudicationParty.investigations.add(it) }
+    } else {
+      investigations.last()
+    }
+  }
+
   fun updateHearing(adjudicationNumber: Long, hearingId: Long, request: UpdateHearingRequest): Hearing {
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
@@ -708,7 +753,12 @@ class AdjudicationService(
   }
 
   fun getHearingResultAward(bookingId: Long, sanctionSequence: Int): HearingResultAward =
-    adjudicationHearingResultAwardRepository.findByIdOrNull(AdjudicationHearingResultAwardId(bookingId, sanctionSequence))
+    adjudicationHearingResultAwardRepository.findByIdOrNull(
+      AdjudicationHearingResultAwardId(
+        bookingId,
+        sanctionSequence,
+      ),
+    )
       ?.toAward()
       ?: throw NotFoundException("Hearing Result Award not found. booking Id: $bookingId, sanction sequence: $sanctionSequence")
 }
@@ -766,6 +816,9 @@ private fun AdjudicationEvidence.toEvidence(): Evidence = Evidence(
   detail = this.statementDetail,
   createdByUsername = this.createUsername,
 )
+
+private fun AdjudicationIncidentParty.toEvidenceList(): List<Evidence> =
+  this.investigations.flatMap { investigation -> investigation.evidence.map { it.toEvidence() } }
 
 private fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> =
   this.incident.parties.filter { it.staff != null }
