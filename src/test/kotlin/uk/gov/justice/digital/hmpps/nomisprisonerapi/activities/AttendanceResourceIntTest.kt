@@ -677,6 +677,39 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(eventStatus.code).isEqualTo("COMP")
         }
       }
+
+      @Test
+      fun `should allow update of a completed attendance status back to cancelled`() {
+        nomisDataBuilder.build {
+          offender {
+            offenderBooking = booking {
+              allocation = courseAllocation(courseActivity) {
+                payBand()
+                attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP")
+              }
+            }
+          }
+        }
+
+        // Try to update the status back to CANC
+        val response = webTestClient.upsertAttendance(
+          courseSchedule.courseScheduleId,
+          offenderBooking.bookingId,
+          validJsonRequest.withEventStatusCode("CANC"),
+        )
+          .expectStatus().isOk
+          .expectBody(UpsertAttendanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
+        assertThat(response.created).isFalse()
+
+        val saved = repository.getAttendance(response.eventId)
+        with(saved) {
+          assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
+          assertThat(eventStatus.code).isEqualTo("CANC")
+        }
+      }
     }
 
     @Nested
