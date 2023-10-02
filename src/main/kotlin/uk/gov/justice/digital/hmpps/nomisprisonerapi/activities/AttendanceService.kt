@@ -160,7 +160,7 @@ class AttendanceService(
     scheduleRepository.findByIdOrNull(courseScheduleId)
       ?: throw BadDataException("Course schedule for courseScheduleId=$courseScheduleId not found")
 
-  private fun getEventStatus(requestStatus: EventStatus, oldStatus: EventStatus) = if (oldStatus.code == "COMP") oldStatus else requestStatus
+  private fun getEventStatus(requestStatus: EventStatus, oldStatus: EventStatus) = if (oldStatus.code == "COMP" && requestStatus.code != "CANC") oldStatus else requestStatus
 
   fun deleteAttendance(eventId: Long) = attendanceRepository.deleteById(eventId)
 }
