@@ -26,7 +26,7 @@ dependencies {
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
 
   implementation("com.zaxxer:HikariCP:5.0.1")
-  implementation("com.h2database:h2:2.2.222")
+  implementation("com.h2database:h2:2.2.224")
   runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.20.0.0")
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
