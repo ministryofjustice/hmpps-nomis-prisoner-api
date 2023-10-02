@@ -76,7 +76,18 @@ data class IncidentToCreate(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class RepairToCreate(
-  @Schema(description = "Type of repairs", example = "PLUM")
+  @Schema(
+    description = "Type of repairs",
+    example = "PLUM",
+    allowableValues = [
+      "CLEA",
+      "DECO",
+      "ELEC",
+      "FABR",
+      "LOCK",
+      "PLUM",
+    ],
+  )
   val typeCode: String,
   @Schema(description = "Optional description of repairs", example = "Damage to the plumbing")
   val comment: String?,
@@ -86,7 +97,20 @@ data class RepairToCreate(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class EvidenceToCreate(
-  @Schema(description = "Type of evidence", example = "PHOTO")
+  @Schema(
+    description = "Type of evidence",
+    example = "PHOTO",
+    allowableValues = [
+      "BEHAV",
+      "DRUGTEST",
+      "EVI_BAG",
+      "OTHER",
+      "PHOTO",
+      "VICTIM",
+      "WEAP",
+      "WITNESS",
+    ],
+  )
   val typeCode: String,
   @Schema(description = "Description of evidence", example = "Image of damages")
   val detail: String,
