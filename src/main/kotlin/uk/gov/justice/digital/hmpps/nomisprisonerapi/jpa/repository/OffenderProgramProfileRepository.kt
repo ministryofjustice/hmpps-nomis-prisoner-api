@@ -3,11 +3,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import java.time.LocalDate
 
 @Repository
 interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfile, Long> {
@@ -51,4 +53,18 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
   """,
   )
   fun findActiveAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageable: Pageable): Page<Long>
+
+  @Suppress("SqlNoDataSourceInspection")
+  @Modifying
+  @Query(
+    nativeQuery = true,
+    value = """
+      update offender_program_profiles opp
+      set opp.offender_end_date = :date, opp.offender_end_reason = 'OTH', opp.offender_program_status = 'END'
+      where opp.crs_acty_id in :courseActivityIds
+      and opp.offender_program_status = 'ALLOC'
+      and (opp.offender_end_date is null or opp.offender_end_date > current_date)
+    """,
+  )
+  fun endAllocations(courseActivityIds: Collection<Long>, date: LocalDate)
 }

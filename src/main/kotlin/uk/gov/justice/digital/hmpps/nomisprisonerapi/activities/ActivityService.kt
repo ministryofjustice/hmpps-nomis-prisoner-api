@@ -240,4 +240,9 @@ class ActivityService(
       .filter { it.endDate == null || it.endDate!! > date }
       .forEach { allocationService.endAllocation(it, date, endComment) }
   }
+
+  fun endActivities(courseActivityIds: Collection<Long>, date: LocalDate) {
+    courseActivityRepository.endActivities(courseActivityIds, date)
+    allocationService.endAllocations(courseActivityIds, date)
+  }
 }

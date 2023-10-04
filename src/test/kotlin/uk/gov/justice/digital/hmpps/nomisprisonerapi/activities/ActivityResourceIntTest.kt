@@ -1669,4 +1669,213 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @Nested
+  inner class EndActivities {
+
+    private lateinit var courseActivity: CourseActivity
+
+    private fun WebTestClient.endActivities(courseActivityIds: Collection<Long>) =
+      put().uri("/activities/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds }"""))
+        .exchange()
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/activities/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue("""{ "courseActivityIds": [1] }"""))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/activities/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue("""{ "courseActivityIds": [1] }"""))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/activities/end")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue("""{ "courseActivityIds": [1] }"""))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should end an activity and its allocations`() {
+      val courseAllocations = mutableListOf<OffenderProgramProfile>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        repeat(2) {
+          offender {
+            booking {
+              courseAllocations += courseAllocation(courseActivity = courseActivity)
+            }
+          }
+        }
+      }
+
+      webTestClient.endActivities(listOf(courseActivity.courseActivityId))
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(today)
+      }
+      courseAllocations.forEach {
+        with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
+          assertThat(endDate).isEqualTo(today)
+          assertThat(programStatus.code).isEqualTo("END")
+          assertThat(endReason?.code).isEqualTo("OTH")
+          assertThat(endComment).isNull()
+        }
+      }
+    }
+
+    @Test
+    fun `should end an activity with no allocations`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+      }
+
+      webTestClient.endActivities(listOf(courseActivity.courseActivityId))
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(today)
+      }
+    }
+
+    @Test
+    fun `should end allocations if activity already ended`() {
+      lateinit var courseAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday")
+        }
+        offender {
+          booking {
+            courseAllocation = courseAllocation(courseActivity = courseActivity)
+          }
+        }
+      }
+
+      webTestClient.endActivities(listOf(courseActivity.courseActivityId))
+        .expectStatus().isOk
+
+      val savedActivity = repository.getActivity(courseActivity.courseActivityId)
+      with(savedActivity) {
+        assertThat(scheduleEndDate).isEqualTo(yesterday)
+      }
+      with(repository.getOffenderProgramProfile(courseAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(today)
+      }
+    }
+
+    @Test
+    fun `should not update allocations that are already ended`() {
+      lateinit var activeAllocation: OffenderProgramProfile
+      lateinit var endedAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        offender {
+          booking {
+            activeAllocation = courseAllocation(courseActivity = courseActivity)
+            endedAllocation = courseAllocation(courseActivity = courseActivity, endDate = "$yesterday")
+          }
+        }
+      }
+
+      webTestClient.endActivities(listOf(courseActivity.courseActivityId))
+        .expectStatus().isOk
+
+      with(repository.getOffenderProgramProfile(activeAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(today)
+      }
+      with(repository.getOffenderProgramProfile(endedAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(yesterday)
+      }
+    }
+
+    @Test
+    fun `should not update allocations that are waiting`() {
+      lateinit var activeAllocation: OffenderProgramProfile
+      lateinit var waitingAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        offender {
+          booking {
+            activeAllocation = courseAllocation(courseActivity = courseActivity)
+            waitingAllocation = courseAllocation(courseActivity = courseActivity, programStatusCode = "WAIT")
+          }
+        }
+      }
+
+      webTestClient.endActivities(listOf(courseActivity.courseActivityId))
+        .expectStatus().isOk
+
+      with(repository.getOffenderProgramProfile(activeAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(today)
+      }
+      with(repository.getOffenderProgramProfile(waitingAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
+    fun `should end multiple activities with multiple allocations`() {
+      val courseActivities = mutableListOf<CourseActivity>()
+      val courseAllocations = mutableListOf<OffenderProgramProfile>()
+      nomisDataBuilder.build {
+        repeat(3) {
+          programService {
+            courseActivities += courseActivity(startDate = "$yesterday")
+          }
+        }
+        courseActivities.forEach { ca ->
+          offender {
+            booking {
+              repeat(2) {
+                courseAllocations += courseAllocation(courseActivity = ca)
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.endActivities(courseActivities.map { it.courseActivityId })
+        .expectStatus().isOk
+
+      courseActivities.forEach {
+        with(repository.getActivity(it.courseActivityId)) {
+          assertThat(scheduleEndDate).isEqualTo(today)
+        }
+      }
+      courseAllocations.forEach {
+        with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
+          assertThat(endDate).isEqualTo(today)
+          assertThat(programStatus.code).isEqualTo("END")
+          assertThat(endReason?.code).isEqualTo("OTH")
+          assertThat(endComment).isNull()
+        }
+      }
+    }
+  }
 }

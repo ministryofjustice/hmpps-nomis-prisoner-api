@@ -242,4 +242,8 @@ class AllocationService(
     courseAllocation.programStatus = findProgramStatus("END")
     endAllocationComment?.run { courseAllocation.endComment = endAllocationComment }
   }
+
+  fun endAllocations(courseActivityIds: Collection<Long>, date: LocalDate) {
+    offenderProgramProfileRepository.endAllocations(courseActivityIds, date)
+  }
 }
