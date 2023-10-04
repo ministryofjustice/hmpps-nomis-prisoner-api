@@ -617,6 +617,14 @@ class ActivitiesResource(
   @Operation(
     summary = "End multiple course activities",
     description = "Ends course activities and all active allocations with end date today. Requires role NOMIS_ACTIVITIES",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = EndActivitiesRequest::class),
+        ),
+      ],
+    ),
     responses = [
       ApiResponse(
         responseCode = "200",
