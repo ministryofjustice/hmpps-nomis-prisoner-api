@@ -696,8 +696,7 @@ class AdjudicationResource(
     chargeSequence: Int,
     @RequestBody @Valid
     request: CreateHearingResultRequest,
-  ): CreateHearingResultResponse =
-    adjudicationService.createHearingResult(adjudicationNumber, hearingId, chargeSequence, request)
+  ) = adjudicationService.createHearingResult(adjudicationNumber, hearingId, chargeSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/adjudications/hearings/{hearingId}/charge/{chargeSequence}/result")

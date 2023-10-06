@@ -619,43 +619,62 @@ class AdjudicationService(
     hearingId: Long,
     chargeSequence: Int,
     request: CreateHearingResultRequest,
-  ): CreateHearingResultResponse {
-    // DPS only allows 1 result per hearing, the created result has a result sequence of 1
-    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
-      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+  ) {
+    if (validateFindingCode(request.findingCode)) {
+      // DPS only allows 1 result per hearing, the created result has a result sequence of 1
+      val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+        ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
 
-    // DPS created (or migrated) adjudications will have 1 charge
-    val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
-      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+      // DPS created (or migrated) adjudications will have 1 charge
+      val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+        ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
 
-    val hearing = adjudicationHearingRepository.findByIdOrNull(hearingId)
-      ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
+      val hearing = adjudicationHearingRepository.findByIdOrNull(hearingId)
+        ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
 
-    request.adjudicatorUsername?.let { hearing.hearingStaff = findStaffByUsername(request.adjudicatorUsername) }
+      request.adjudicatorUsername?.let { hearing.hearingStaff = findStaffByUsername(request.adjudicatorUsername) }
 
-    return AdjudicationHearingResult(
-      id = AdjudicationHearingResultId(oicHearingId = hearingId, 1),
-      incident = party.incident,
-      pleaFindingType = lookupPleaFindingType(request.pleaFindingCode),
-      pleaFindingCode = request.pleaFindingCode,
-      findingType = lookupFindingType(request.findingCode),
-      hearing = hearing,
-      chargeSequence = chargeSequence,
-      incidentCharge = incidentCharge,
-      offence = incidentCharge.offence,
-    ).let { adjudicationHearingResultRepository.save(it) }
-      .let { CreateHearingResultResponse(hearingId = it.id.oicHearingId, resultSequence = it.id.resultSequence) }.also {
-        telemetryClient.trackEvent(
-          "hearing-result-created",
-          mapOf(
-            "adjudicationNumber" to adjudicationNumber.toString(),
-            "chargeSequence" to chargeSequence.toString(),
-            "hearingId" to hearingId.toString(),
-            "resultSequence" to "1",
-          ),
-          null,
-        )
-      }
+      AdjudicationHearingResult(
+        id = AdjudicationHearingResultId(oicHearingId = hearingId, 1),
+        incident = party.incident,
+        pleaFindingType = lookupPleaFindingType(request.pleaFindingCode),
+        pleaFindingCode = request.pleaFindingCode,
+        findingType = lookupFindingType(request.findingCode),
+        hearing = hearing,
+        chargeSequence = chargeSequence,
+        incidentCharge = incidentCharge,
+        offence = incidentCharge.offence,
+      ).let { adjudicationHearingResultRepository.save(it) }
+        .also {
+          telemetryClient.trackEvent(
+            "hearing-result-created",
+            mapOf(
+              "adjudicationNumber" to adjudicationNumber.toString(),
+              "chargeSequence" to chargeSequence.toString(),
+              "hearingId" to hearingId.toString(),
+              "resultSequence" to "1",
+            ),
+            null,
+          )
+        }
+    } else {
+      telemetryClient.trackEvent(
+        "hearing-result-created-ignored",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "chargeSequence" to chargeSequence.toString(),
+          "hearingId" to hearingId.toString(),
+          "resultSequence" to "1",
+          "findingCode" to request.findingCode,
+        ),
+        null,
+      )
+    }
+  }
+
+  fun validateFindingCode(dpsFindingCode: String): Boolean {
+    val dpsCodesToIgnore = listOf("REF_INAD")
+    return !dpsCodesToIgnore.contains(dpsFindingCode)
   }
 
   fun getHearingResult(hearingId: Long, resultSeq: Int = 1): HearingResult =
