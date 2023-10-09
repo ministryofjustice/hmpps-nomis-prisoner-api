@@ -187,19 +187,17 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `create an adjudication hearing result`() {
-        val hearingId =
-          webTestClient.post()
-            .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(
-              BodyInserters.fromValue(
-                aHearingResultRequest(pleaFindingCode = "GUILTY"),
-              ),
-            )
-            .exchange()
-            .expectStatus().isOk
-        assertThat(hearingId).isNotNull
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(pleaFindingCode = "GUILTY"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
 
         // confirm hearing has been updated with an adjudicator
         webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}")
@@ -225,6 +223,42 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
             assertThat(it).containsEntry("chargeSequence", existingCharge.id.chargeSequence.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class ignoreSpecificFindingCodes {
+
+      @Test
+      fun `Should not create a result for REF_INAD finding code`() {
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(findingCode = "REF_INAD"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-created-ignored"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("resultSequence", "1")
+            assertThat(it).containsEntry("chargeSequence", existingCharge.id.chargeSequence.toString())
+            assertThat(it).containsEntry("findingCode", "REF_INAD")
           },
           isNull(),
         )
