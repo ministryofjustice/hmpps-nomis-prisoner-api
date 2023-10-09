@@ -537,7 +537,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
 
       @Test
-      fun `delete an adjudication hearing`() {
+      fun `delete an adjudication hearing result`() {
         webTestClient.delete()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -560,6 +560,13 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           },
           isNull(),
         )
+        // confirm hearing adjudicator has been removed
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("hearingStaff").doesNotExist()
       }
     }
   }
