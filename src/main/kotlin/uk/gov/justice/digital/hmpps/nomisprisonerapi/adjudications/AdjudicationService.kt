@@ -694,6 +694,7 @@ class AdjudicationService(
 
     )?.also {
       adjudicationHearingResultRepository.delete(it)
+      adjudicationHearingRepository.findByIdOrNull(hearingId)?.let { it.hearingStaff = null }
       telemetryClient.trackEvent(
         "hearing-result-deleted",
         mapOf(
