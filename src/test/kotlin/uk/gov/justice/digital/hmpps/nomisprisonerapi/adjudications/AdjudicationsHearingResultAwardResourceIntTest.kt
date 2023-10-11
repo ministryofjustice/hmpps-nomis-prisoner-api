@@ -194,19 +194,20 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `create an adjudication hearing result award`() {
-        val hearingId =
-          webTestClient.post()
-            .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(
-              BodyInserters.fromValue(
-                aHearingResultAwardRequest(),
-              ),
-            )
-            .exchange()
-            .expectStatus().isOk
-        assertThat(hearingId).isNotNull
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultAwardRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("awardResponses[0].sanctionSequence").isEqualTo(1)
+          .jsonPath("awardResponses[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
         webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/1")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
