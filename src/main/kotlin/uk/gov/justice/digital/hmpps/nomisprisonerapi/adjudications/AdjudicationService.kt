@@ -720,7 +720,7 @@ class AdjudicationService(
     adjudicationNumber: Long,
     chargeSequence: Int,
     requests: CreateHearingResultAwardRequests,
-  ) {
+  ): CreateHearingResultAwardResponses {
     // DPS does not associate award with result (migrated or synchronised data)
 
     val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
@@ -740,7 +740,7 @@ class AdjudicationService(
         incidentCharge,
       ) ?: throw BadDataException("Hearing result for adjudication number $adjudicationNumber not found")
 
-    requests.awardRequests.forEachIndexed { index, request ->
+    return requests.awardRequests.mapIndexed { index, request ->
       AdjudicationHearingResultAward(
         id = AdjudicationHearingResultAwardId(
           offenderBookId = offenderBookId,
@@ -769,7 +769,13 @@ class AdjudicationService(
             null,
           )
         }
-    }
+        .let {
+          CreateHearingResultAwardResponse(
+            bookingId = it.id.offenderBookId,
+            sanctionSequence = it.id.sanctionSequence,
+          )
+        }
+    }.let { CreateHearingResultAwardResponses(it) }
   }
 
   fun getHearingResultAward(bookingId: Long, sanctionSequence: Int): HearingResultAward =
