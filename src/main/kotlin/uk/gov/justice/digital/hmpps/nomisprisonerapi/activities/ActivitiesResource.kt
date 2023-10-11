@@ -664,4 +664,42 @@ class ActivitiesResource(
     @Schema(description = "End activities request") @RequestBody request: EndActivitiesRequest,
   ) =
     activityService.endActivities(request.courseActivityIds, LocalDate.now())
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/allocations/reconciliation/{prisonId}")
+  @Operation(
+    summary = "Get data for an allocation sync reconciliation",
+    description = "Gets the number of active allocations for each booking in the prison",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Reconciliation data returned",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getAllocationReconciliationSummary(
+    @Schema(description = "Prison id", required = true) @PathVariable prisonId: String,
+  ) =
+    allocationService.findActiveAllocationsSummary(prisonId)
 }

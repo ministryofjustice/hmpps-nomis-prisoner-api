@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AllocationReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
@@ -246,4 +247,13 @@ class AllocationService(
   fun endAllocations(courseActivityIds: Collection<Long>, date: LocalDate) {
     offenderProgramProfileRepository.endAllocations(courseActivityIds, date)
   }
+
+  fun findActiveAllocationsSummary(prisonId: String): AllocationReconciliationResponse =
+    offenderProgramProfileRepository.findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId, "ALLOC")
+      .let {
+        AllocationReconciliationResponse(
+          prisonId = prisonId,
+          bookings = it,
+        )
+      }
 }
