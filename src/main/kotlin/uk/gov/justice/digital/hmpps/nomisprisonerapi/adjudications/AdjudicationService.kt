@@ -716,7 +716,7 @@ class AdjudicationService(
   }
 
   @Audit
-  fun createHearingResultAward(
+  fun createHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
     requests: CreateHearingResultAwardRequests,
