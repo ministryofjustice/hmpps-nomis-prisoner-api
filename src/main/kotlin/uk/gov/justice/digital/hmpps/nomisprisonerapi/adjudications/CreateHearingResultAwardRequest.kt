@@ -16,10 +16,41 @@ data class CreateHearingResultAwardRequests(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Hearing result award (aka punishment) to be created")
 data class CreateHearingResultAwardRequest(
-  @Schema(description = "The type of award", example = "CAUTION")
+  @Schema(
+    description = "The type of award",
+    example = "CAUTION",
+    allowableValues = [
+      "ADA",
+      "CAUTION",
+      "CC",
+      "EXTRA_WORK",
+      "EXTW",
+      "FORFEIT",
+      "OTHER",
+      "REMACT",
+      "REMWIN",
+      "STOP_EARN",
+      "STOP_PCT",
+    ],
+  )
   val sanctionType: String,
 
-  @Schema(description = "The status of the award", example = "IMMEDIATE")
+  @Schema(
+    description = "The status of the award",
+    example = "IMMEDIATE",
+    allowableValues = [
+      "AS_AWARDED",
+      "AWARD_RED",
+      "IMMEDIATE",
+      "PROSPECTIVE",
+      "QUASHED",
+      "REDAPP",
+      "SUSPENDED",
+      "SUSPEN_EXT",
+      "SUSPEN_RED",
+      "SUSP_PROSP",
+    ],
+  )
   val sanctionStatus: String,
 
   @Schema(description = "Award comment", example = "GUILTY")
