@@ -819,11 +819,11 @@ class AdjudicationResource(
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Hearing result award created",
+        description = "Hearing result award IDs created",
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = CreateHearingResultAwardResponse::class),
+            schema = Schema(implementation = CreateHearingResultAwardResponses::class),
           ),
         ],
       ),
@@ -878,7 +878,7 @@ class AdjudicationResource(
     chargeSequence: Int,
     @RequestBody @Valid
     requests: CreateHearingResultAwardRequests,
-  ) = adjudicationService.createHearingResultAward(adjudicationNumber, chargeSequence, requests)
+  ) = adjudicationService.createHearingResultAwards(adjudicationNumber, chargeSequence, requests)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/prisoners/booking-id/{bookingId}/awards/{sanctionSequence}")
