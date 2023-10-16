@@ -738,9 +738,9 @@ class AdjudicationService(
     val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
       ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
 
-    // latest result should always be target result
+    // find the latest result on the latest hearing
     val hearingResult =
-      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_resultSequenceDesc(
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
         incidentCharge,
       ) ?: throw BadDataException("Hearing result for adjudication number $adjudicationNumber not found")
 
