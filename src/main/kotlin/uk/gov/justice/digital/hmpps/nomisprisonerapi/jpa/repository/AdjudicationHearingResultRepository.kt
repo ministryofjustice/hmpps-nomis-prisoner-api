@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCha
 
 @Repository
 interface AdjudicationHearingResultRepository : JpaRepository<AdjudicationHearingResult, AdjudicationHearingResultId> {
-  fun findFirstOrNullByIncidentChargeOrderById_resultSequenceDesc(incidentCharge: AdjudicationIncidentCharge): AdjudicationHearingResult?
+  fun findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(incidentCharge: AdjudicationIncidentCharge): AdjudicationHearingResult?
 
   fun findFirstOrNullById_OicHearingIdAndChargeSequence(hearingId: Long, chargeSequence: Int): AdjudicationHearingResult?
 }
