@@ -629,8 +629,8 @@ class AdjudicationResource(
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/charge/{chargeSequence}/result")
   @Operation(
-    summary = "creates a hearing result for a given hearing",
-    description = "Creates a hearing result for a given hearing. DPS only supports 1 result per hearing. Requires ROLE_NOMIS_ADJUDICATIONS",
+    summary = "creates or updates a hearing result for a given hearing and charge.",
+    description = "Creates a (or updates the existing) hearing result for a given hearing and charge. DPS only supports 1 result per hearing. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -684,7 +684,7 @@ class AdjudicationResource(
       ),
     ],
   )
-  fun createHearingResult(
+  fun upsertHearingResult(
     @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
@@ -696,7 +696,7 @@ class AdjudicationResource(
     chargeSequence: Int,
     @RequestBody @Valid
     request: CreateHearingResultRequest,
-  ) = adjudicationService.createHearingResult(adjudicationNumber, hearingId, chargeSequence, request)
+  ) = adjudicationService.upsertHearingResult(adjudicationNumber, hearingId, chargeSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/adjudications/hearings/{hearingId}/charge/{chargeSequence}/result")
