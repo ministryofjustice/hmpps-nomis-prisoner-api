@@ -54,6 +54,9 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun createPrisonerWithAdjudicationAndHearing() {
       nomisDataBuilder.build {
+        staff(firstName = "BILL", lastName = "STAFF") {
+          account(username = "BILLSTAFF")
+        }
         reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
           account(username = "JANESTAFF")
         }
@@ -133,7 +136,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if adjudication (associated with the hearing) not found`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -145,7 +149,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if hearing not found`() {
-        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/charge/${existingCharge.id.chargeSequence}/result")
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingResultRequest()))
@@ -208,7 +213,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .jsonPath("hearingStaff.staffId").isEqualTo(reportingStaff.id)
           .jsonPath("hearingStaff.username").isEqualTo("JANESTAFF")
 
-        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+        webTestClient.get()
+          .uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -227,38 +233,64 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           isNull(),
         )
       }
-    }
-
-    @Nested
-    inner class ignoreSpecificFindingCodes {
 
       @Test
-      fun `Should not create a result for REF_INAD finding code`() {
+      fun `update an adjudication hearing result`() {
         webTestClient.post()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              aHearingResultRequest(findingCode = "REF_INAD"),
+              aHearingResultRequest(pleaFindingCode = "GUILTY"),
             ),
           )
           .exchange()
           .expectStatus().isOk
 
-        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+        // update the newly created result
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(
+                pleaFindingCode = "NOT_ASKED",
+                findingCode = "PROSECUTED",
+                adjudicatorUsername = "BILLSTAFF",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        // confirm hearing has been updated with an adjudicator
+        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
-          .expectStatus().isNotFound
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("hearingStaff.username").isEqualTo("BILLSTAFF")
+
+        webTestClient.get()
+          .uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("PROSECUTED")
+          .jsonPath("pleaFindingType.code").isEqualTo("NOT_ASKED")
 
         verify(telemetryClient).trackEvent(
-          eq("hearing-result-created-ignored"),
+          eq("hearing-result-updated"),
           org.mockito.kotlin.check {
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
+            assertThat(it).containsEntry("findingCode", "PROSECUTED")
+            assertThat(it).containsEntry("plea", "NOT_ASKED")
             assertThat(it).containsEntry("chargeSequence", existingCharge.id.chargeSequence.toString())
-            assertThat(it).containsEntry("findingCode", "REF_INAD")
           },
           isNull(),
         )
@@ -385,7 +417,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `get adjudication hearing result`() {
-        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+        webTestClient.get()
+          .uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -506,17 +539,20 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if adjudication not found`() {
-        webTestClient.delete().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Hearing with id ${existingHearing.id} delete failed: Adjudication party with adjudication number 88888 not found")
+          .jsonPath("developerMessage")
+          .isEqualTo("Hearing with id ${existingHearing.id} delete failed: Adjudication party with adjudication number 88888 not found")
       }
 
       @Test
       fun `will track event if hearing result not found`() {
-        webTestClient.delete().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/charge/${existingCharge.id.chargeSequence}/result")
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk()
@@ -544,12 +580,14 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+        webTestClient.get()
+          .uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Hearing Result not found. Hearing Id: ${existingHearing.id}, result sequence: 1")
+          .jsonPath("developerMessage")
+          .isEqualTo("Hearing Result not found. Hearing Id: ${existingHearing.id}, result sequence: 1")
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-deleted"),

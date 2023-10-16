@@ -93,10 +93,10 @@ class AdjudicationHearingResult(
       ),
     ],
   )
-  val pleaFindingType: AdjudicationPleaFindingType?,
+  var pleaFindingType: AdjudicationPleaFindingType?,
 
   @Column(name = "PLEA_FINDING_CODE", updatable = false, insertable = false)
-  val pleaFindingCode: String,
+  var pleaFindingCode: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
@@ -116,7 +116,7 @@ class AdjudicationHearingResult(
       ),
     ],
   )
-  val findingType: AdjudicationFindingType,
+  var findingType: AdjudicationFindingType,
 
   @OneToMany(mappedBy = "hearingResult", cascade = [CascadeType.ALL], orphanRemoval = true)
   val resultAwards: MutableList<AdjudicationHearingResultAward> = mutableListOf(),
