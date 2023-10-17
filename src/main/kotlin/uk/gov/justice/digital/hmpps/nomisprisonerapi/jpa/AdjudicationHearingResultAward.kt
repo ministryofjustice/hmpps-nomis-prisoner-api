@@ -72,8 +72,6 @@ class AdjudicationHearingResultAward(
     name = "OIC_INCIDENT_ID",
     referencedColumnName = "OIC_INCIDENT_ID",
     nullable = false,
-    insertable = false,
-    updatable = false,
   )
   val incidentParty: AdjudicationIncidentParty,
 
