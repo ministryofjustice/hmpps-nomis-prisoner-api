@@ -65,5 +65,14 @@ data class CreateHearingResultAwardRequest(
   @Schema(description = "the duration  of the award, in days")
   val sanctionDays: Int?,
 
-  // TODO val consecutiveChargeNumber:
+  @Schema(description = "adjudication that contains the matching award that this award is consecutive to")
+  val consecutiveCharge: AdjudicationChargeId?,
+)
+
+data class AdjudicationChargeId(
+  @Schema(description = "adjudication number")
+  val adjudicationNumber: Long,
+
+  @Schema(description = "charge sequence within the adjudication")
+  val chargeSequence: Int,
 )
