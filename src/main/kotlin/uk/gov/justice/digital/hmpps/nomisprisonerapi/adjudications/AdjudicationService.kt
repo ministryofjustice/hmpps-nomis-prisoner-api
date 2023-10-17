@@ -755,10 +755,18 @@ class AdjudicationService(
         sanctionCode = request.sanctionType,
         compensationAmount = request.compensationAmount,
         effectiveDate = request.effectiveDate,
-        sanctionDays = request.sanctionDays, // mpnths no longer used after migration
+        sanctionDays = request.sanctionDays,
         comment = request.commentText,
         sanctionStatus = lookupSanctionStatus(request.sanctionStatus),
         hearingResult = hearingResult,
+        consecutiveHearingResultAward = request.consecutiveCharge
+          ?.let {
+            findMatchingSanctionAwardForAdjudicationCharge(
+              adjudicationNumber = it.adjudicationNumber,
+              chargeSequence = it.chargeSequence,
+              sanctionCode = request.sanctionType,
+            )
+          },
       ).let { adjudicationHearingResultAwardRepository.save(it) }
         .also {
           telemetryClient.trackEvent(
@@ -781,6 +789,18 @@ class AdjudicationService(
         }
     }.let { CreateHearingResultAwardResponses(it) }
   }
+
+  private fun findMatchingSanctionAwardForAdjudicationCharge(
+    adjudicationNumber: Long,
+    chargeSequence: Int,
+    sanctionCode: String,
+  ): AdjudicationHearingResultAward =
+    adjudicationHearingResultAwardRepository.findFirstOrNullByIncidentParty_adjudicationNumberAndSanctionCodeAndHearingResult_chargeSequence(
+      adjudicationNumber = adjudicationNumber,
+      sanctionCode = sanctionCode,
+      chargeSequence = chargeSequence,
+    )
+      ?: throw BadDataException("Matching consecutive adjudication award not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence, sanction code: $sanctionCode")
 
   fun getHearingResultAward(bookingId: Long, sanctionSequence: Int): HearingResultAward =
     adjudicationHearingResultAwardRepository.findByIdOrNull(

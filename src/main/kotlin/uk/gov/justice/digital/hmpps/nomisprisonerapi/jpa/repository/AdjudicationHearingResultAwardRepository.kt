@@ -10,4 +10,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResu
 interface AdjudicationHearingResultAwardRepository : JpaRepository<AdjudicationHearingResultAward, AdjudicationHearingResultAwardId> {
   @Query(value = "SELECT NVL(MAX(SANCTION_SEQ)+1, 1) FROM OFFENDER_OIC_SANCTIONS oos WHERE OFFENDER_BOOK_ID = :offenderBookId", nativeQuery = true)
   fun getNextSanctionSequence(offenderBookId: Long): Int
+
+  fun findFirstOrNullByIncidentParty_adjudicationNumberAndSanctionCodeAndHearingResult_chargeSequence(
+    adjudicationNumber: Long,
+    sanctionCode: String,
+    chargeSequence: Int,
+  ): AdjudicationHearingResultAward?
 }
