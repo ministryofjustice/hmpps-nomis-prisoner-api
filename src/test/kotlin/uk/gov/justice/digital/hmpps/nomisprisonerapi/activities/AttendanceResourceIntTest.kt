@@ -14,6 +14,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadRequestError
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -232,6 +233,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Attendance ${attendance.eventId} cannot be changed after it has already been paid")
           }
+          .jsonPath("errorCode").isEqualTo(BadRequestError.ATTENDANCE_PAID.errorCode)
       }
 
       @Test
