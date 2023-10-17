@@ -2,10 +2,14 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.data
 
 import java.util.function.Supplier
 
-class BadDataException(message: String?) : RuntimeException(message), Supplier<BadDataException> {
+class BadDataException(message: String?, val error: BadRequestError? = null) : RuntimeException(message), Supplier<BadDataException> {
   override fun get(): BadDataException {
-    return BadDataException(message)
+    return BadDataException(message, error)
   }
+}
+
+enum class BadRequestError(val errorCode: Int) {
+  ATTENDANCE_PAID(1001),
 }
 
 class ConflictException(message: String?) : RuntimeException(message), Supplier<ConflictException> {

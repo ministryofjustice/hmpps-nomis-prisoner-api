@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadRequestError
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AttendanceOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -128,7 +129,7 @@ class AttendanceService(
   private fun findEventStatusOrThrow(eventStatusCode: String) =
     (
       eventStatusRepository.findByIdOrNull(EventStatus.pk(eventStatusCode))
-        ?: throw BadDataException("Event status code $eventStatusCode does not exist")
+        ?: throw BadDataException(message = "Event status code $eventStatusCode does not exist")
       )
 
   private fun findAttendance(
@@ -142,7 +143,14 @@ class AttendanceService(
     offenderBooking: OffenderBooking,
   ): OffenderCourseAttendance? =
     findAttendance(courseSchedule, offenderBooking)
-      ?.also { if (!it.isUpdatable()) throw BadDataException("Attendance ${it.eventId} cannot be changed after it has already been paid") }
+      ?.also {
+        if (it.isPaid()) {
+          throw BadDataException(
+            message = "Attendance ${it.eventId} cannot be changed after it has already been paid",
+            error = BadRequestError.ATTENDANCE_PAID,
+          )
+        }
+      }
 
   private fun findOffenderProgramProfileOrThrow(
     courseSchedule: CourseSchedule,

@@ -142,7 +142,7 @@ class OffenderCourseAttendance(
   var bonusPay = bonusPay?.setScale(3, RoundingMode.HALF_UP)
     set(value) { field = value?.setScale(3, RoundingMode.HALF_UP) }
 
-  fun isUpdatable() = paidTransactionId == null
+  fun isPaid() = paidTransactionId != null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
