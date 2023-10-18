@@ -44,7 +44,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role SYNCHRONISATION_REPORTING",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
