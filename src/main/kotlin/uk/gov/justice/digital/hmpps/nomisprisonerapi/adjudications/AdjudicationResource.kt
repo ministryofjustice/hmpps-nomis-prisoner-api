@@ -699,6 +699,59 @@ class AdjudicationResource(
   ) = adjudicationService.upsertHearingResult(adjudicationNumber, hearingId, chargeSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
+  @Operation(
+    summary = "creates a result for a given charge. This requires a dummy hearing to be created",
+    description = "Creates a result for a charge. DPS allows results to be created without hearings eg: Refer to Police. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Result created",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createResultWithDummyHearing(
+    @Schema(description = "Adjudication number", example = "12345")
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Nomis charge sequence", example = "1")
+    @PathVariable
+    chargeSequence: Int,
+    @RequestBody @Valid
+    request: CreateHearingResultRequest,
+  ) = adjudicationService.createResultWithDummyHearing(adjudicationNumber, chargeSequence, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/adjudications/hearings/{hearingId}/charge/{chargeSequence}/result")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
