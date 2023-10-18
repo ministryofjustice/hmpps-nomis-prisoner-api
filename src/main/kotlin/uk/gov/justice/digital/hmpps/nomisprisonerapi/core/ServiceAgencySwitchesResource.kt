@@ -52,7 +52,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
     ],
   )
   fun getServicePrisons(
-    @Schema(name = "The code of the service from the EXTERNAL_SERVICES table") @PathVariable serviceCode: String,
+    @Schema(description = "The code of the service from the EXTERNAL_SERVICES table") @PathVariable serviceCode: String,
   ): List<PrisonDetails> =
     service.getServicePrisons(serviceCode)
 }
