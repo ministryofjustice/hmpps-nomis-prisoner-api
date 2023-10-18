@@ -71,6 +71,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Service
 @Transactional
@@ -811,6 +812,63 @@ class AdjudicationService(
     )
       ?.toAward()
       ?: throw NotFoundException("Hearing Result Award not found. booking Id: $bookingId, sanction sequence: $sanctionSequence")
+
+  fun createResultWithDummyHearing(
+    adjudicationNumber: Long,
+    chargeSequence: Int,
+    request: CreateHearingResultRequest,
+  ) {
+    val telemetryMap = mutableMapOf(
+      "adjudicationNumber" to adjudicationNumber.toString(),
+      "chargeSequence" to chargeSequence.toString(),
+      "findingCode" to request.findingCode,
+      "plea" to request.pleaFindingCode,
+    )
+
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    // DPS created (or migrated) adjudications will have 1 charge
+    val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+
+    val adjudicationRoom =
+      agencyInternalLocationRepository.findAgencyInternalLocationsByAgencyIdAndLocationTypeAndActive(
+        agencyId = incidentCharge.incident.prison.id,
+        locationType = "ADJU",
+      ).firstOrNull()
+        ?: throw NotFoundException("Adjudication room (location type ADJU) not found at prison ${incidentCharge.incident.prison.id}")
+
+    val hearing = AdjudicationHearing(
+      adjudicationNumber = adjudicationNumber,
+      hearingDate = LocalDate.now(),
+      hearingDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT),
+      hearingType = lookupHearingType(AdjudicationHearingType.GOVERNORS_HEARING),
+      agencyInternalLocation = adjudicationRoom,
+      hearingParty = party,
+      comment = "DPS_REFERRAL_PLACEHOLDER",
+    ).let { adjudicationHearingRepository.save(it) }.also { telemetryMap["hearingId"] = it.id.toString() }
+
+    AdjudicationHearingResult(
+      id = AdjudicationHearingResultId(oicHearingId = hearing.id, 1),
+      incident = party.incident,
+      pleaFindingType = lookupPleaFindingType(request.pleaFindingCode),
+      pleaFindingCode = request.pleaFindingCode,
+      findingType = lookupFindingType(request.findingCode),
+      hearing = hearing,
+      chargeSequence = chargeSequence,
+      incidentCharge = incidentCharge,
+      offence = incidentCharge.offence,
+    ).let { adjudicationHearingResultRepository.saveAndFlush(it) }
+      .also {
+        telemetryMap["resultSequence"] = it.id.resultSequence.toString()
+        telemetryClient.trackEvent(
+          "hearing-result-created",
+          telemetryMap,
+          null,
+        )
+      }
+  }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(
