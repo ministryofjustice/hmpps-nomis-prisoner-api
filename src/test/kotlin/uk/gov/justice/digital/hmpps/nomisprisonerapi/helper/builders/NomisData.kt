@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -19,6 +20,7 @@ class NomisDataBuilder(
   private val staffBuilderFactory: StaffBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
+  private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -26,6 +28,7 @@ class NomisDataBuilder(
     staffBuilderFactory,
     adjudicationIncidentBuilderFactory,
     nonAssociationBuilderFactory,
+    externalServiceBuilderFactory,
   ).apply(dsl)
 }
 
@@ -35,6 +38,7 @@ class NomisData(
   private val staffBuilderFactory: StaffBuilderFactory? = null,
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
+  private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
@@ -131,6 +135,23 @@ class NomisData(
             builder.apply(dsl)
           }
       }
+
+  @ExternalServiceDslMarker
+  override fun externalService(
+    serviceName: String,
+    description: String,
+    dsl: ExternalServiceDsl.() -> Unit,
+  ): ExternalService =
+    externalServiceBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          serviceName,
+          description,
+        )
+          .also {
+            builder.apply(dsl)
+          }
+      }
 }
 
 @NomisDataDslMarker
@@ -179,6 +200,13 @@ interface NomisDataDsl {
     recipNonAssociationReason: String = "VIC",
     dsl: NonAssociationDsl.() -> Unit = {},
   ): OffenderNonAssociation
+
+  @ExternalServiceDslMarker
+  fun externalService(
+    serviceName: String,
+    description: String = serviceName,
+    dsl: ExternalServiceDsl.() -> Unit = {},
+  ): ExternalService
 }
 
 @DslMarker
