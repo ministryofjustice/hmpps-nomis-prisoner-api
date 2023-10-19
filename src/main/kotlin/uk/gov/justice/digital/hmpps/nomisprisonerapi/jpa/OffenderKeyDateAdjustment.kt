@@ -21,7 +21,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 const val adjustmentIdsInner = "select adjustment_id, adjustment_category, create_datetime  from (" +
-  "    select offender_key_date_adjust_id adjustment_id, 'KEY_DATE' adjustment_category, create_datetime from offender_key_date_adjusts " +
+  "    select offender_key_date_adjust_id adjustment_id, 'KEY-DATE' adjustment_category, create_datetime from offender_key_date_adjusts " +
   "    union " +
   "    select  offender_sentence_adjust_id adjustment_id, 'SENTENCE' adjustment_category , create_datetime from offender_sentence_adjusts " +
   "    where offender_key_date_adjust_id is null" +
