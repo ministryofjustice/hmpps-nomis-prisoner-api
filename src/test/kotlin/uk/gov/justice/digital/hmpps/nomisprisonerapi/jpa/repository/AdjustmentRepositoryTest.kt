@@ -60,7 +60,7 @@ class AdjustmentRepositoryTest {
   fun findAdjustmentsNoDateFilter() {
     val persistedVisitList = repository.adjustmentIdsQuery_named(pageable = Pageable.ofSize(10))
 
-    assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactlyInAnyOrder("KEY_DATE", "SENTENCE")
+    assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactlyInAnyOrder("KEY-DATE", "SENTENCE")
   }
 
   @Test
@@ -76,7 +76,7 @@ class AdjustmentRepositoryTest {
     val persistedVisitList =
       repository.adjustmentIdsQuery_named(toDate = dateTimeJan5.toLocalDate(), pageable = Pageable.ofSize(10))
 
-    assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactly("KEY_DATE")
+    assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactly("KEY-DATE")
   }
 
   @Test
@@ -87,7 +87,7 @@ class AdjustmentRepositoryTest {
       pageable = Pageable.ofSize(10),
     )
 
-    assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactly("KEY_DATE", "SENTENCE")
+    assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactly("KEY-DATE", "SENTENCE")
   }
 
   @Test
@@ -104,7 +104,7 @@ class AdjustmentRepositoryTest {
     )
 
     assertThat(page1.totalPages).isEqualTo(2)
-    assertThat(page1.content).extracting("adjustmentCategory").containsExactly("KEY_DATE")
+    assertThat(page1.content).extracting("adjustmentCategory").containsExactly("KEY-DATE")
     assertThat(page2.content).extracting("adjustmentCategory").containsExactly("SENTENCE")
   }
 }

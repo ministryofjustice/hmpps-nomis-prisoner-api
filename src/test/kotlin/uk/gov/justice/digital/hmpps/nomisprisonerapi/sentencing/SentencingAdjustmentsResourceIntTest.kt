@@ -1818,8 +1818,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(4)
         .jsonPath("$.content[0].adjustmentCategory").isEqualTo("SENTENCE")
-        .jsonPath("$.content[1].adjustmentCategory").isEqualTo("KEY_DATE")
-        .jsonPath("$.content[2].adjustmentCategory").isEqualTo("KEY_DATE")
+        .jsonPath("$.content[1].adjustmentCategory").isEqualTo("KEY-DATE")
+        .jsonPath("$.content[2].adjustmentCategory").isEqualTo("KEY-DATE")
         .jsonPath("$.content[3].adjustmentCategory").isEqualTo("SENTENCE")
     }
 
