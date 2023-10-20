@@ -749,7 +749,7 @@ class AdjudicationResource(
     chargeSequence: Int,
     @RequestBody @Valid
     request: CreateHearingResultRequest,
-  ) = adjudicationService.createResultWithDummyHearing(adjudicationNumber, chargeSequence, request)
+  ) = adjudicationService.upsertResultWithDummyHearing(adjudicationNumber, chargeSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/adjudications/hearings/{hearingId}/charge/{chargeSequence}/result")
