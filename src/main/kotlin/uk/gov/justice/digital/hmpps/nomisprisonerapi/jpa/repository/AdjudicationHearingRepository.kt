@@ -11,4 +11,5 @@ interface AdjudicationHearingRepository : JpaRepository<AdjudicationHearing, Lon
   @EntityGraph(type = FETCH, value = "full-hearing")
   fun findByAdjudicationNumber(adjudicationNumber: Long): List<AdjudicationHearing>
   fun deleteByAdjudicationNumber(adjudicationNumber: Long)
+  fun findByAdjudicationNumberAndComment(adjudicationNumber: Long, comment: String): AdjudicationHearing?
 }

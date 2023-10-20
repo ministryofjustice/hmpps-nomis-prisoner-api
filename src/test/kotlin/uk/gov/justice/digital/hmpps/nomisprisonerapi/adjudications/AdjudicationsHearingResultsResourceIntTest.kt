@@ -326,6 +326,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     private lateinit var existingIncident: AdjudicationIncident
     private val existingAdjudicationNumber = 123456L
     private lateinit var existingCharge: AdjudicationIncidentCharge
+    private lateinit var existingSecondCharge: AdjudicationIncidentCharge
 
     @BeforeEach
     fun createPrisonerWithAdjudicationAndHearing() {
@@ -341,6 +342,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
               existingCharge = charge(offenceCode = "51:1B")
+              existingSecondCharge = charge(offenceCode = "51:1C")
             }
           }
         }
@@ -471,9 +473,71 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
 
         repository.runInTransaction {
           val adjudicationHearing = hearingRepository.findByAdjudicationNumber(existingAdjudicationNumber)[0]
-          assertThat(adjudicationHearing.comment).isEqualTo("DPS_REFERRAL_PLACEHOLDER")
+          assertThat(adjudicationHearing.comment).isEqualTo("DPS_REFERRAL_PLACEHOLDER-${existingCharge.id.chargeSequence}")
           assertThat(adjudicationHearing.hearingDateTime).isEqualTo(LocalDateTime.now().with(LocalTime.MIDNIGHT))
           assertThat(adjudicationHearing.hearingResults[0].findingType.code).isEqualTo("REF_POLICE")
+        }
+      }
+
+      @Test
+      fun `create an referral result using existing placeholder hearing`() {
+        // create a dummy hearings associated with 2 charges for the adjudication - to test the correct one is updated
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(pleaFindingCode = "NOT_ASKED", findingCode = "REF_POLICE"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingSecondCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(pleaFindingCode = "NOT_ASKED", findingCode = "REF_POLICE"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        // update the hearing on first charge
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(pleaFindingCode = "NOT_ASKED", findingCode = "NOT_PROCEED"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-updated"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsKey("hearingId")
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("resultSequence", "1")
+            assertThat(it).containsEntry("chargeSequence", existingCharge.id.chargeSequence.toString())
+          },
+          isNull(),
+        )
+
+        repository.runInTransaction {
+          assertThat(hearingRepository.findByAdjudicationNumber(existingAdjudicationNumber)).hasSize(2)
+          val adjudicationHearingForCharge1 = hearingRepository.findByAdjudicationNumberAndComment(existingAdjudicationNumber, "DPS_REFERRAL_PLACEHOLDER-${existingCharge.id.chargeSequence}")!!
+          val adjudicationHearingForCharge2 = hearingRepository.findByAdjudicationNumberAndComment(existingAdjudicationNumber, "DPS_REFERRAL_PLACEHOLDER-${existingSecondCharge.id.chargeSequence}")!!
+          assertThat(adjudicationHearingForCharge1.hearingDateTime).isEqualTo(LocalDateTime.now().with(LocalTime.MIDNIGHT))
+          assertThat(adjudicationHearingForCharge1.hearingResults[0].findingType.code).isEqualTo("NOT_PROCEED")
+          // dummy hearing for other charge is not updated
+          assertThat(adjudicationHearingForCharge2.hearingResults[0].findingType.code).isEqualTo("REF_POLICE")
         }
       }
     }

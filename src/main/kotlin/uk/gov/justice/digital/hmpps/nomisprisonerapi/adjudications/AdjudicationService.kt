@@ -73,6 +73,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+private const val DPS_REFERRAL_PLACEHOLDER_HEARING = "DPS_REFERRAL_PLACEHOLDER"
+
 @Service
 @Transactional
 class AdjudicationService(
@@ -813,7 +815,7 @@ class AdjudicationService(
       ?.toAward()
       ?: throw NotFoundException("Hearing Result Award not found. booking Id: $bookingId, sanction sequence: $sanctionSequence")
 
-  fun createResultWithDummyHearing(
+  fun upsertResultWithDummyHearing(
     adjudicationNumber: Long,
     chargeSequence: Int,
     request: CreateHearingResultRequest,
@@ -839,35 +841,58 @@ class AdjudicationService(
       ).firstOrNull()
         ?: throw NotFoundException("Adjudication room (location type ADJU) not found at prison ${incidentCharge.incident.prison.id}")
 
-    val hearing = AdjudicationHearing(
+    val dummyHearingIdentifier = "$DPS_REFERRAL_PLACEHOLDER_HEARING-$chargeSequence"
+    val existingDummyHearing = adjudicationHearingRepository.findByAdjudicationNumberAndComment(
       adjudicationNumber = adjudicationNumber,
-      hearingDate = LocalDate.now(),
-      hearingDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT),
-      hearingType = lookupHearingType(AdjudicationHearingType.GOVERNORS_HEARING),
-      agencyInternalLocation = adjudicationRoom,
-      hearingParty = party,
-      comment = "DPS_REFERRAL_PLACEHOLDER",
-    ).let { adjudicationHearingRepository.save(it) }.also { telemetryMap["hearingId"] = it.id.toString() }
+      comment = dummyHearingIdentifier,
+    )
 
-    AdjudicationHearingResult(
-      id = AdjudicationHearingResultId(oicHearingId = hearing.id, 1),
-      incident = party.incident,
-      pleaFindingType = lookupPleaFindingType(request.pleaFindingCode),
-      pleaFindingCode = request.pleaFindingCode,
-      findingType = lookupFindingType(request.findingCode),
-      hearing = hearing,
-      chargeSequence = chargeSequence,
-      incidentCharge = incidentCharge,
-      offence = incidentCharge.offence,
-    ).let { adjudicationHearingResultRepository.saveAndFlush(it) }
-      .also {
-        telemetryMap["resultSequence"] = it.id.resultSequence.toString()
-        telemetryClient.trackEvent(
-          "hearing-result-created",
-          telemetryMap,
-          null,
-        )
-      }
+    val hearing = existingDummyHearing ?: let {
+      AdjudicationHearing(
+        adjudicationNumber = adjudicationNumber,
+        hearingDate = LocalDate.now(),
+        hearingDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT),
+        hearingType = lookupHearingType(AdjudicationHearingType.GOVERNORS_HEARING),
+        agencyInternalLocation = adjudicationRoom,
+        hearingParty = party,
+        comment = dummyHearingIdentifier,
+      ).let { adjudicationHearingRepository.save(it) }
+    }
+
+    telemetryMap["hearingId"] = hearing.id.toString()
+
+    hearing.hearingResults.firstOrNull()?.let {
+      it.pleaFindingType = lookupPleaFindingType(request.pleaFindingCode)
+      it.pleaFindingCode = request.pleaFindingCode
+      it.findingType = lookupFindingType(request.findingCode)
+      adjudicationHearingResultRepository.saveAndFlush(it)
+      telemetryMap["resultSequence"] = it.id.resultSequence.toString()
+      telemetryClient.trackEvent(
+        "hearing-result-updated",
+        telemetryMap,
+        null,
+      )
+    } ?: let {
+      AdjudicationHearingResult(
+        id = AdjudicationHearingResultId(oicHearingId = hearing.id, 1),
+        incident = party.incident,
+        pleaFindingType = lookupPleaFindingType(request.pleaFindingCode),
+        pleaFindingCode = request.pleaFindingCode,
+        findingType = lookupFindingType(request.findingCode),
+        hearing = hearing,
+        chargeSequence = chargeSequence,
+        incidentCharge = incidentCharge,
+        offence = incidentCharge.offence,
+      ).let { adjudicationHearingResultRepository.saveAndFlush(it) }
+        .also {
+          telemetryMap["resultSequence"] = it.id.resultSequence.toString()
+          telemetryClient.trackEvent(
+            "hearing-result-created",
+            telemetryMap,
+            null,
+          )
+        }
+    }
   }
 }
 
