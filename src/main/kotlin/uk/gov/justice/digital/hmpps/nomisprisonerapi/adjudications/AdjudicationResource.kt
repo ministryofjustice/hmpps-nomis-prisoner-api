@@ -865,6 +865,57 @@ class AdjudicationResource(
   ) = adjudicationService.deleteHearingResult(adjudicationNumber, hearingId, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
+  @Operation(
+    summary = "Deletes a result",
+    description = "Deletes a result for a given adjudication and charge sequence. The result will be associated with a dummy hearing used by DPS to record referrals. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "result deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteResult(
+    @Schema(description = "Adjudication number", example = "12345")
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Nomis charge sequence", example = "1")
+    @PathVariable
+    chargeSequence: Int,
+  ) = adjudicationService.deleteResultWithDummyHearing(adjudicationNumber, chargeSequence)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Operation(
     summary = "creates a hearing result award for a given adjudication",

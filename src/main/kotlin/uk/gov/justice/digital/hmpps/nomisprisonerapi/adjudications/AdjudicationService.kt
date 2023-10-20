@@ -73,7 +73,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-private const val DPS_REFERRAL_PLACEHOLDER_HEARING = "DPS_REFERRAL_PLACEHOLDER"
+internal const val DPS_REFERRAL_PLACEHOLDER_HEARING = "DPS_REFERRAL_PLACEHOLDER"
 
 @Service
 @Transactional
@@ -892,6 +892,38 @@ class AdjudicationService(
             null,
           )
         }
+    }
+  }
+
+  fun deleteResultWithDummyHearing(adjudicationNumber: Long, chargeSequence: Int) {
+    // allow delete request to fail if adjudication doesn't exist as should never happen
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    // a referral result must have an associated dummy hearing. Delete the hearing, which will cascade and delete the result.
+    adjudicationHearingRepository.findByAdjudicationNumberAndComment(
+      adjudicationNumber,
+      "$DPS_REFERRAL_PLACEHOLDER_HEARING-$chargeSequence",
+    )?.let {
+      adjudicationHearingRepository.delete(it)
+      telemetryClient.trackEvent(
+        "hearing-result-deleted",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "hearingId" to it.id.toString(),
+          "resultSequence" to it.hearingResults.firstOrNull()?.id?.resultSequence.toString(),
+        ),
+        null,
+      )
+    } ?: let {
+      telemetryClient.trackEvent(
+        "hearing-result-delete-not-found",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "chargeSequence" to chargeSequence.toString(),
+        ),
+        null,
+      )
     }
   }
 }
