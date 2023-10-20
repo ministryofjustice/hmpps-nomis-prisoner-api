@@ -853,4 +853,171 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("DELETE /adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
+  @Nested
+  inner class DeleteResultWithDummyHearing {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private val existingAdjudicationNumber = 123456L
+    private lateinit var existingHearing: AdjudicationHearing
+    private lateinit var existingHearingResult: AdjudicationHearingResult
+    private lateinit var existingCharge: AdjudicationIncidentCharge
+
+    @BeforeEach
+    fun createPrisonerAndAdjudication() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
+              existingCharge = charge(offenceCode = "51:1B")
+              existingHearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                scheduleDate = LocalDate.parse("2023-01-02"),
+                scheduleTime = LocalDateTime.parse("2023-01-02T00:00:00"),
+                hearingDate = LocalDate.parse("2023-01-02"),
+                hearingTime = LocalDateTime.parse("2023-01-02T00:00:00"),
+                comment = "$DPS_REFERRAL_PLACEHOLDER_HEARING-${existingCharge.id.chargeSequence}",
+              ) {
+                existingHearingResult = result(
+                  charge = existingCharge,
+                  pleaFindingCode = "NOT_ASKED",
+                  findingCode = "PROSECUTED",
+                ) {
+                  award(
+                    statusCode = "SUSPEN_RED",
+                    sanctionCode = "STOP_EARN",
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                    statusDate = LocalDate.parse("2023-01-05"),
+                    comment = "award comment",
+                    sanctionMonths = 3,
+                    sanctionDays = 4,
+                    compensationAmount = BigDecimal.valueOf(14.2),
+                    sanctionIndex = 3,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteHearingByAdjudicationNumber(existingAdjudicationNumber)
+      repository.delete(existingIncident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/result")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will return 404 if adjudication not found`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/88888/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Adjudication party with adjudication number 88888 not found")
+      }
+
+      @Test
+      fun `will track event if hearing result not found`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/77/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk()
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-delete-not-found"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("chargeSequence", "77")
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `delete an adjudication hearing result`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+
+        // get using the dummy hearing
+        webTestClient.get()
+          .uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Hearing Result not found. Hearing Id: ${existingHearing.id}, result sequence: 1")
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-deleted"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("resultSequence", "1")
+          },
+          isNull(),
+        )
+      }
+    }
+  }
 }
