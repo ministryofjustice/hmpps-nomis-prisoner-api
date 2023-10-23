@@ -8,12 +8,5 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class CreateHearingResultAwardResponses(
 
   @Schema(description = "an ordered list of award response, the order matching the request order")
-  val awardResponses: List<CreateHearingResultAwardResponse>,
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Provides the generated Hearing Result Award composite ID after creation")
-data class CreateHearingResultAwardResponse(
-  val bookingId: Long,
-  val sanctionSequence: Int,
+  val awardResponses: List<HearingResultAwardResponse>,
 )
