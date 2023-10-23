@@ -76,22 +76,22 @@ class AdjudicationHearingResultAward(
   val incidentParty: AdjudicationIncidentParty,
 
   @Column(name = "EFFECTIVE_DATE")
-  val effectiveDate: LocalDate,
+  var effectiveDate: LocalDate,
 
   @Column(name = "STATUS_DATE", nullable = false)
   val statusDate: LocalDate? = LocalDate.now(),
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @Column(name = "SANCTION_DAYS")
-  val sanctionDays: Int? = null,
+  var sanctionDays: Int? = null,
 
   @Column(name = "SANCTION_MONTHS")
   val sanctionMonths: Int? = null,
 
   @Column(name = "COMPENSATION_AMOUNT")
-  val compensationAmount: BigDecimal? = null,
+  var compensationAmount: BigDecimal? = null,
 
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE) // one code of "LOR" not on reference table
@@ -112,14 +112,14 @@ class AdjudicationHearingResultAward(
       ),
     ],
   )
-  val sanctionStatus: AdjudicationSanctionStatus?,
+  var sanctionStatus: AdjudicationSanctionStatus?,
 
   @Column(
     name = "OIC_SANCTION_CODE",
     updatable = false,
     insertable = false,
   ) // need to map for when type is not one of the reference data codes
-  val sanctionCode: String,
+  var sanctionCode: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
@@ -139,7 +139,7 @@ class AdjudicationHearingResultAward(
       ),
     ],
   )
-  val sanctionType: AdjudicationSanctionType? = null,
+  var sanctionType: AdjudicationSanctionType? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

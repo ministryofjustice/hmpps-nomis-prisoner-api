@@ -484,7 +484,29 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                   charge = existingCharge,
                   pleaFindingCode = "NOT_GUILTY",
                   findingCode = "PROVED",
-                )
+                ) {
+                  award(
+                    sanctionIndex = 5,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "CC",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                  award(
+                    sanctionIndex = 6,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "ASSO",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                  award(
+                    sanctionIndex = 7,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "EXTW",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                }
               }
             }
           }
@@ -654,15 +676,15 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("awardResponsesCreated[0].sanctionSequence").isEqualTo(4)
+          .jsonPath("awardResponsesCreated[0].sanctionSequence").isEqualTo(8)
           .jsonPath("awardResponsesCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/4")
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/8")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("sequence").isEqualTo(4)
+          .jsonPath("sequence").isEqualTo(8)
           .jsonPath("sanctionType.code").isEqualTo("ASSO")
           .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
           .jsonPath("effectiveDate").isEqualTo("2023-01-01")
@@ -677,7 +699,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
-            assertThat(it).containsEntry("sanctionSequence", "4")
+            assertThat(it).containsEntry("sanctionSequence", "8")
           },
           isNull(),
         )
@@ -729,15 +751,15 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("awardResponsesCreated[0].sanctionSequence").isEqualTo(4)
+          .jsonPath("awardResponsesCreated[0].sanctionSequence").isEqualTo(8)
           .jsonPath("awardResponsesCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/4")
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/8")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("sequence").isEqualTo(4)
+          .jsonPath("sequence").isEqualTo(8)
           .jsonPath("sanctionType.code").isEqualTo("ADA")
           .jsonPath("sanctionStatus.code").isEqualTo("SUSPENDED")
           .jsonPath("effectiveDate").isEqualTo("2023-01-01")
@@ -758,10 +780,119 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
-            assertThat(it).containsEntry("sanctionSequence", "4")
+            assertThat(it).containsEntry("sanctionSequence", "8")
           },
           isNull(),
         )
+      }
+
+      @Test
+      fun `will update existing awards`() {
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("CC")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/6")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/7")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("EXTW")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              // language=json
+              """
+                {
+                  "awardRequestsToCreate": [],
+                  "awardRequestsToUpdate": [
+                    { 
+                      "sanctionSequence": 5,
+                      "awardRequests": {
+                         "sanctionType": "CC",
+                         "sanctionStatus": "IMMEDIATE",
+                         "sanctionDays": 3,
+                         "effectiveDate": "2023-01-04"
+                      }
+                    },
+                    { 
+                      "sanctionSequence": 6,
+                      "awardRequests": {
+                         "sanctionType": "ASSO",
+                         "sanctionStatus": "SUSPENDED",
+                         "sanctionDays": 2,
+                         "effectiveDate": "2023-02-04"
+                      }
+                    },
+                    { 
+                      "sanctionSequence": 7,
+                      "awardRequests": {
+                         "sanctionType": "EXTRA_WORK",
+                         "sanctionStatus": "IMMEDIATE",
+                         "sanctionDays": 6,
+                         "effectiveDate": "2023-01-04"
+                      }
+                    }
+                  ]
+                }
+      """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("CC")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(3)
+
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/6")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionStatus.code").isEqualTo("SUSPENDED")
+          .jsonPath("effectiveDate").isEqualTo("2023-02-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/7")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("EXTRA_WORK")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(6)
       }
     }
 
