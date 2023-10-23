@@ -726,7 +726,7 @@ class AdjudicationService(
   fun createHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
-    requests: CreateHearingResultAwardRequests,
+    requests: CreateHearingResultAwardRequest,
   ): CreateHearingResultAwardResponses {
     // DPS does not associate award with result (migrated or synchronised data)
 
@@ -791,6 +791,71 @@ class AdjudicationService(
           )
         }
     }.let { CreateHearingResultAwardResponses(it) }
+  }
+
+  @Audit
+  fun updateCreateAndDeleteHearingResultAwards(adjudicationNumber: Long, chargeSequence: Int, requests: UpdateHearingResultAwardRequest): UpdateHearingResultAwardResponses {
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    val offenderBookId = party.offenderBooking!!.bookingId // the adjudication party will always have a booking Id
+
+    val sanctionSeq =
+      adjudicationHearingResultAwardRepository.getNextSanctionSequence(offenderBookId = offenderBookId)
+
+    val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+
+    // find the latest result on the latest hearing
+    val hearingResult =
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
+        incidentCharge,
+      ) ?: throw BadDataException("Hearing result for adjudication number $adjudicationNumber not found")
+
+    return requests.awardRequestsToCreate.mapIndexed { index, request ->
+      AdjudicationHearingResultAward(
+        id = AdjudicationHearingResultAwardId(
+          offenderBookId = offenderBookId,
+          sanctionSequence = sanctionSeq + index,
+        ),
+        incidentParty = party,
+        sanctionType = lookupSanctionType(request.sanctionType),
+        sanctionCode = request.sanctionType,
+        compensationAmount = request.compensationAmount,
+        effectiveDate = request.effectiveDate,
+        sanctionDays = request.sanctionDays,
+        comment = request.commentText,
+        sanctionStatus = lookupSanctionStatus(request.sanctionStatus),
+        hearingResult = hearingResult,
+        consecutiveHearingResultAward = request.consecutiveCharge
+          ?.let {
+            findMatchingSanctionAwardForAdjudicationCharge(
+              adjudicationNumber = it.adjudicationNumber,
+              chargeSequence = it.chargeSequence,
+              sanctionCode = request.sanctionType,
+            )
+          },
+      ).let { adjudicationHearingResultAwardRepository.save(it) }
+        .also {
+          telemetryClient.trackEvent(
+            "hearing-result-award-created",
+            mapOf(
+              "adjudicationNumber" to adjudicationNumber.toString(),
+              "sanctionSequence" to sanctionSeq.toString(),
+              "bookingId" to offenderBookId.toString(),
+              "resultSequence" to hearingResult.id.resultSequence.toString(),
+              "hearingId" to hearingResult.id.oicHearingId.toString(),
+            ),
+            null,
+          )
+        }
+        .let {
+          HearingResultAwardResponse(
+            bookingId = it.id.offenderBookId,
+            sanctionSequence = it.id.sanctionSequence,
+          )
+        }
+    }.let { UpdateHearingResultAwardResponses(awardResponsesCreated = it, awardsDeleted = emptyList()) }
   }
 
   private fun findMatchingSanctionAwardForAdjudicationCharge(

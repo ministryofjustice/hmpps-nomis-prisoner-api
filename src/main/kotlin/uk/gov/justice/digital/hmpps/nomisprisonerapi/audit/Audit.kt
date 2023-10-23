@@ -1,4 +1,4 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.audit
 
-@Target(allowedTargets = [AnnotationTarget.FUNCTION])
+@Target(allowedTargets = arrayOf(AnnotationTarget.FUNCTION))
 annotation class Audit()
