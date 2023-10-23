@@ -6,10 +6,13 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
+import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 
 class PrisonersResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -110,6 +113,107 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().is5xxServerError
       }
+    }
+  }
+
+  @Nested
+  inner class GetPrisonerBookings {
+    private lateinit var bookingBxi: OffenderBooking
+    private lateinit var bookingOut: OffenderBooking
+    private lateinit var bookingTrn: OffenderBooking
+
+    @BeforeEach
+    internal fun createPrisoners() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234TT") {
+          bookingBxi = booking(agencyLocationId = "BXI")
+        }
+        offender(nomsId = "A1234WW") {
+          bookingOut = booking(active = false, agencyLocationId = "OUT")
+        }
+        offender(nomsId = "A1234XX") {
+          bookingTrn = booking(active = false, agencyLocationId = "TRN")
+        }
+      }
+    }
+
+    @AfterEach
+    fun deletePrisoners() {
+      repository.deleteOffenders()
+    }
+
+    @Test
+    fun `should return unauthorised with no auth token`() {
+      webTestClient.post().uri("/prisoners/bookings")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue("[]")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden when no role`() {
+      webTestClient.post().uri("/prisoners/bookings")
+        .headers(setAuthorisation(roles = listOf()))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue("[]")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden with wrong role`() {
+      webTestClient.post().uri("/prisoners/bookings")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue("[]")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return empty list if not found`() {
+      webTestClient.post().uri("/prisoners/bookings")
+        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(""" [99999] """))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should get prisoner details`() {
+      webTestClient.post().uri("/prisoners/bookings")
+        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(""" [${bookingBxi.bookingId}] """))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(1)
+        .jsonPath("$[0].location").isEqualTo("BXI")
+        .jsonPath("$[0].bookingId").isEqualTo(bookingBxi.bookingId)
+        .jsonPath("$[0].offenderNo").isEqualTo("A1234TT")
+    }
+
+    @Test
+    fun `should get inactive prisoner details`() {
+      webTestClient.post().uri("/prisoners/bookings")
+        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(""" [${bookingOut.bookingId}, ${bookingTrn.bookingId}] """))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(2)
+        .jsonPath("$[0].location").isEqualTo("OUT")
+        .jsonPath("$[0].bookingId").isEqualTo(bookingOut.bookingId)
+        .jsonPath("$[0].offenderNo").isEqualTo("A1234WW")
+        .jsonPath("$[1].location").isEqualTo("TRN")
+        .jsonPath("$[1].bookingId").isEqualTo(bookingTrn.bookingId)
+        .jsonPath("$[1].offenderNo").isEqualTo("A1234XX")
     }
   }
 }

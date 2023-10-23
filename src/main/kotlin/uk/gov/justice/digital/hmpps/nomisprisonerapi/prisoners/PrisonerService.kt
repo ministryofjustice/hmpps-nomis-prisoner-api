@@ -12,4 +12,9 @@ class PrisonerService(private val bookingRepository: OffenderBookingRepository) 
     return bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
       .map { PrisonerId(it.bookingId, it.offender.nomsId) }
   }
+
+  fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> {
+    return bookingRepository.findAllById(bookingIds)
+      .map { PrisonerDetails(it.offender.nomsId, it.bookingId, it.location?.id ?: "") }
+  }
 }
