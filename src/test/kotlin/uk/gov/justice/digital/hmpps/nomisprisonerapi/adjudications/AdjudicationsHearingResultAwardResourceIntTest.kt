@@ -241,7 +241,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
               // language=JSON
               """
               {
-                "awardRequests": [
+                "awards": [
                   {
                     "sanctionType": "EXTRA_WORK",
                     "sanctionStatus": "SUSPENDED",
@@ -283,8 +283,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("awardResponses[0].sanctionSequence").isEqualTo(4)
-          .jsonPath("awardResponses[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
+          .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo(4)
+          .jsonPath("awardsCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
         webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/4")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -337,7 +337,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
               // language=JSON
               """
               {
-                "awardRequests": [
+                "awards": [
                   {
                     "sanctionType": "ADA",
                     "sanctionStatus": "SUSPENDED",
@@ -357,8 +357,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("awardResponses[0].sanctionSequence").isEqualTo(4)
-          .jsonPath("awardResponses[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
+          .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo(4)
+          .jsonPath("awardsCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
         webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/4")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -400,7 +400,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
     ): String =
       """
       {
-        "awardRequests": [{
+        "awards": [{
          "sanctionType": "$sanctionType",
          "sanctionStatus": "$sanctionStatus",
          "commentText": "a comment",
@@ -634,7 +634,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
               // language=JSON
               """
               {
-                "awardRequestsToCreate": [
+                "awardsToCreate": [
                   {
                     "sanctionType": "EXTRA_WORK",
                     "sanctionStatus": "SUSPENDED",
@@ -647,7 +647,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                     }
                   }
                 ],
-                "awardRequestsToUpdate": []
+                "awardsToUpdate": []
               }
               """.trimIndent(),
             ),
@@ -734,7 +734,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
               // language=JSON
               """
               {
-                "awardRequestsToCreate": [
+                "awardsToCreate": [
                   {
                     "sanctionType": "ADA",
                     "sanctionStatus": "SUSPENDED",
@@ -747,7 +747,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                     }
                   }
                 ], 
-                "awardRequestsToUpdate": []
+                "awardsToUpdate": []
               }
               """.trimIndent(),
             ),
@@ -832,11 +832,11 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
               // language=json
               """
                 {
-                  "awardRequestsToCreate": [],
-                  "awardRequestsToUpdate": [
+                  "awardsToCreate": [],
+                  "awardsToUpdate": [
                     { 
                       "sanctionSequence": 5,
-                      "awardRequests": {
+                      "award": {
                          "sanctionType": "CC",
                          "sanctionStatus": "IMMEDIATE",
                          "sanctionDays": 3,
@@ -845,7 +845,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                     },
                     { 
                       "sanctionSequence": 6,
-                      "awardRequests": {
+                      "award": {
                          "sanctionType": "ASSO",
                          "sanctionStatus": "SUSPENDED",
                          "sanctionDays": 2,
@@ -854,7 +854,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                     },
                     { 
                       "sanctionSequence": 7,
-                      "awardRequests": {
+                      "award": {
                          "sanctionType": "EXTRA_WORK",
                          "sanctionStatus": "IMMEDIATE",
                          "sanctionDays": 6,
@@ -942,11 +942,11 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
               // language=json
               """
                 {
-                  "awardRequestsToCreate": [],
-                  "awardRequestsToUpdate": [
+                  "awardsToCreate": [],
+                  "awardsToUpdate": [
                     { 
                       "sanctionSequence": 6,
-                      "awardRequests": {
+                      "award": {
                          "sanctionType": "ASSO",
                          "sanctionStatus": "SUSPENDED",
                          "sanctionDays": 2,
@@ -955,7 +955,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                     },
                     { 
                       "sanctionSequence": 7,
-                      "awardRequests": {
+                      "award": {
                          "sanctionType": "EXTRA_WORK",
                          "sanctionStatus": "IMMEDIATE",
                          "sanctionDays": 6,
@@ -1009,7 +1009,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
               // language=json
               """
                 {
-                  "awardRequestsToCreate": [
+                  "awardsToCreate": [
                     {
                        "sanctionType": "ASSO",
                        "sanctionStatus": "SUSPENDED",
@@ -1017,10 +1017,10 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                        "effectiveDate": "2023-02-04"
                     }
                   ],
-                  "awardRequestsToUpdate": [
+                  "awardsToUpdate": [
                     { 
                       "sanctionSequence": 7,
-                      "awardRequests": {
+                      "award": {
                          "sanctionType": "EXTRA_WORK",
                          "sanctionStatus": "IMMEDIATE",
                          "sanctionDays": 16,
@@ -1122,7 +1122,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
   ): String =
     """
       {
-        "awardRequestsToCreate": [{
+        "awardsToCreate": [{
          "sanctionType": "$sanctionType",
          "sanctionStatus": "$sanctionStatus",
          "commentText": "a comment",
@@ -1130,7 +1130,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
          "effectiveDate": "$effectiveDate",
          "compensationAmount": 10.5
         }],
-        "awardRequestsToUpdate": []
+        "awardsToUpdate": []
       }
     """.trimIndent()
 }

@@ -10,22 +10,22 @@ import java.time.LocalDate
 data class CreateHearingResultAwardRequest(
 
   @Schema(description = "a list of award requests")
-  val awardRequests: List<HearingResultAwardRequest>,
+  val awards: List<HearingResultAwardRequest>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "A list of Hearing result awards (aka punishment) to be created and updated")
 data class UpdateHearingResultAwardRequest(
   @Schema(description = "a list of award requests to create")
-  val awardRequestsToCreate: List<HearingResultAwardRequest>,
+  val awardsToCreate: List<HearingResultAwardRequest>,
   @Schema(description = "a list of award requests to update")
-  val awardRequestsToUpdate: List<ExistingHearingResultAwardRequest>,
+  val awardsToUpdate: List<ExistingHearingResultAwardRequest>,
 )
 
 @Schema(description = "Hearing result award (aka punishment) to be created")
 data class ExistingHearingResultAwardRequest(
   @Schema(description = "award to update")
-  val awardRequests: HearingResultAwardRequest,
+  val award: HearingResultAwardRequest,
   @Schema(description = "sanction sequence for the booking associated with the adjudication")
   val sanctionSequence: Int,
 )
