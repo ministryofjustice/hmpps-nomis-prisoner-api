@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
@@ -300,7 +301,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-award-created"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("bookingId", prisoner.latestBooking().bookingId.toString())
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
@@ -380,7 +381,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-award-created"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("bookingId", prisoner.latestBooking().bookingId.toString())
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
@@ -664,6 +665,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `create any adjudication hearing result awards that need adding`() {
+        val bookingId = prisoner.bookings.first().bookingId
+
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -676,10 +679,10 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("awardResponsesCreated[0].sanctionSequence").isEqualTo(8)
-          .jsonPath("awardResponsesCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
+          .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo(8)
+          .jsonPath("awardsCreated[0].bookingId").isEqualTo(bookingId)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/8")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/8")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -694,8 +697,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-award-created"),
-          org.mockito.kotlin.check {
-            assertThat(it).containsEntry("bookingId", prisoner.latestBooking().bookingId.toString())
+          check {
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
@@ -708,7 +711,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       @Test
       fun `create a consecutive adjudication hearing result award`() {
         // given there is an existing ADA
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/2")
+        val bookingId = prisoner.bookings.first().bookingId
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/2")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -751,10 +755,10 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("awardResponsesCreated[0].sanctionSequence").isEqualTo(8)
-          .jsonPath("awardResponsesCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
+          .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo(8)
+          .jsonPath("awardsCreated[0].bookingId").isEqualTo(bookingId)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/8")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/8")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -775,8 +779,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-award-created"),
-          org.mockito.kotlin.check {
-            assertThat(it).containsEntry("bookingId", prisoner.latestBooking().bookingId.toString())
+          check {
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
             assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
             assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
             assertThat(it).containsEntry("resultSequence", "1")
@@ -788,7 +792,8 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will update existing awards`() {
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/5")
+        val bookingId = prisoner.bookings.first().bookingId
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -798,7 +803,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("effectiveDate").isEqualTo("2023-01-04")
           .jsonPath("sanctionDays").isEqualTo(2)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/6")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/6")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -808,7 +813,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("effectiveDate").isEqualTo("2023-01-04")
           .jsonPath("sanctionDays").isEqualTo(2)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/7")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/7")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -864,7 +869,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/5")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -874,7 +879,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("effectiveDate").isEqualTo("2023-01-04")
           .jsonPath("sanctionDays").isEqualTo(3)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/6")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/6")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -884,7 +889,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("effectiveDate").isEqualTo("2023-02-04")
           .jsonPath("sanctionDays").isEqualTo(2)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/7")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/7")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -894,14 +899,228 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("effectiveDate").isEqualTo("2023-01-04")
           .jsonPath("sanctionDays").isEqualTo(6)
       }
-    }
 
-    private fun aUpdateHearingResultAwardRequest(
-      sanctionType: String = "ASSO",
-      sanctionStatus: String = "IMMEDIATE",
-      effectiveDate: String = "2023-01-01",
-    ): String =
-      """
+      @Test
+      fun `will delete awards no longer referenced and return their IDs`() {
+        val bookingId = prisoner.bookings.first().bookingId
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("CC")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/6")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/7")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("EXTW")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              // language=json
+              """
+                {
+                  "awardRequestsToCreate": [],
+                  "awardRequestsToUpdate": [
+                    { 
+                      "sanctionSequence": 6,
+                      "awardRequests": {
+                         "sanctionType": "ASSO",
+                         "sanctionStatus": "SUSPENDED",
+                         "sanctionDays": 2,
+                         "effectiveDate": "2023-02-04"
+                      }
+                    },
+                    { 
+                      "sanctionSequence": 7,
+                      "awardRequests": {
+                         "sanctionType": "EXTRA_WORK",
+                         "sanctionStatus": "IMMEDIATE",
+                         "sanctionDays": 6,
+                         "effectiveDate": "2023-01-04"
+                      }
+                    }
+                  ]
+                }
+      """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("awardsDeleted[0].sanctionSequence").isEqualTo("5")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/6")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionStatus.code").isEqualTo("SUSPENDED")
+          .jsonPath("effectiveDate").isEqualTo("2023-02-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/7")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("EXTRA_WORK")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-01-04")
+          .jsonPath("sanctionDays").isEqualTo(6)
+      }
+
+      @Test
+      fun `can add, update and delete all in a single call`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              // language=json
+              """
+                {
+                  "awardRequestsToCreate": [
+                    {
+                       "sanctionType": "ASSO",
+                       "sanctionStatus": "SUSPENDED",
+                       "sanctionDays": 2,
+                       "effectiveDate": "2023-02-04"
+                    }
+                  ],
+                  "awardRequestsToUpdate": [
+                    { 
+                      "sanctionSequence": 7,
+                      "awardRequests": {
+                         "sanctionType": "EXTRA_WORK",
+                         "sanctionStatus": "IMMEDIATE",
+                         "sanctionDays": 16,
+                         "effectiveDate": "2023-02-04"
+                      }
+                    }
+                  ]
+                }
+      """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo("8")
+          .jsonPath("awardsDeleted[0].sanctionSequence").isEqualTo("5")
+          .jsonPath("awardsDeleted[1].sanctionSequence").isEqualTo("6")
+
+        val bookingId = prisoner.bookings.first().bookingId
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/6")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/7")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("EXTRA_WORK")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("effectiveDate").isEqualTo("2023-02-04")
+          .jsonPath("sanctionDays").isEqualTo(16)
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/8")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionStatus.code").isEqualTo("SUSPENDED")
+          .jsonPath("effectiveDate").isEqualTo("2023-02-04")
+          .jsonPath("sanctionDays").isEqualTo(2)
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-award-created"),
+          check {
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("hearingId", existingHearing.id.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("resultSequence", "1")
+            assertThat(it).containsEntry("sanctionSequence", "8")
+          },
+          isNull(),
+        )
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-award-updated"),
+          check {
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("sanctionSequence", "7")
+          },
+          isNull(),
+        )
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-award-deleted"),
+          check {
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("sanctionSequence", "5")
+          },
+          isNull(),
+        )
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-award-deleted"),
+          check {
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("sanctionSequence", "6")
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  private fun aUpdateHearingResultAwardRequest(
+    sanctionType: String = "ASSO",
+    sanctionStatus: String = "IMMEDIATE",
+    effectiveDate: String = "2023-01-01",
+  ): String =
+    """
       {
         "awardRequestsToCreate": [{
          "sanctionType": "$sanctionType",
@@ -913,6 +1132,5 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         }],
         "awardRequestsToUpdate": []
       }
-      """.trimIndent()
-  }
+    """.trimIndent()
 }

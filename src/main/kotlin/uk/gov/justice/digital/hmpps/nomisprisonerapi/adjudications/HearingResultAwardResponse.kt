@@ -14,7 +14,7 @@ data class CreateHearingResultAwardResponses(
 @Schema(description = "A list of Hearing result awards created (aka punishment)")
 data class UpdateHearingResultAwardResponses(
   @Schema(description = "an ordered list of awards created, the order matching the request order for awardRequestsToCreate")
-  val awardResponsesCreated: List<HearingResultAwardResponse>,
+  val awardsCreated: List<HearingResultAwardResponse>,
   @Schema(description = "a list of awards that were deleted due to this update")
   val awardsDeleted: List<HearingResultAwardResponse>,
 )

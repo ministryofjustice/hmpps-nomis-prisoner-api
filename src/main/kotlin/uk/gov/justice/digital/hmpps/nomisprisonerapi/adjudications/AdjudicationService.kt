@@ -727,20 +727,7 @@ class AdjudicationService(
     adjudicationNumber: Long,
     chargeSequence: Int,
     requests: CreateHearingResultAwardRequest,
-  ): CreateHearingResultAwardResponses =
-    CreateHearingResultAwardResponses(
-      createHearingResultAwards(
-        adjudicationNumber,
-        chargeSequence,
-        requests.awardRequests,
-      ),
-    )
-
-  private fun createHearingResultAwards(
-    adjudicationNumber: Long,
-    chargeSequence: Int,
-    awardsToCreate: List<HearingResultAwardRequest>,
-  ): List<HearingResultAwardResponse> {
+  ): CreateHearingResultAwardResponses {
     val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
 
@@ -749,14 +736,32 @@ class AdjudicationService(
     val sanctionSeq =
       adjudicationHearingResultAwardRepository.getNextSanctionSequence(offenderBookId = offenderBookId)
 
+    return CreateHearingResultAwardResponses(
+      createHearingResultAwards(
+        party = party,
+        chargeSequence = chargeSequence,
+        sanctionSeq = sanctionSeq,
+        awardsToCreate = requests.awardRequests,
+      ),
+    )
+  }
+
+  private fun createHearingResultAwards(
+    party: AdjudicationIncidentParty,
+    chargeSequence: Int,
+    sanctionSeq: Int,
+    awardsToCreate: List<HearingResultAwardRequest>,
+  ): List<HearingResultAwardResponse> {
+    val offenderBookId = party.prisonerOnReport().bookingId
+
     val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
-      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+      ?: throw NotFoundException("Charge not found for adjudication number ${party.adjudicationNumber} and charge sequence $chargeSequence")
 
     // find the latest result on the latest hearing
     val hearingResult =
       adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
         incidentCharge,
-      ) ?: throw BadDataException("Hearing result for adjudication number $adjudicationNumber not found")
+      ) ?: throw BadDataException("Hearing result for adjudication number ${party.adjudicationNumber} not found")
 
     return awardsToCreate.mapIndexed { index, request ->
       AdjudicationHearingResultAward(
@@ -786,7 +791,7 @@ class AdjudicationService(
           telemetryClient.trackEvent(
             "hearing-result-award-created",
             mapOf(
-              "adjudicationNumber" to adjudicationNumber.toString(),
+              "adjudicationNumber" to party.adjudicationNumber.toString(),
               "sanctionSequence" to sanctionSeq.toString(),
               "bookingId" to offenderBookId.toString(),
               "resultSequence" to hearingResult.id.resultSequence.toString(),
@@ -813,10 +818,49 @@ class AdjudicationService(
     val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
     val offenderBookId = party.prisonerOnReport().bookingId
+    // grab next sequence before we start deleting awards
+    val sanctionSeq = adjudicationHearingResultAwardRepository.getNextSanctionSequence(offenderBookId = offenderBookId)
 
-    val createdAwards = createHearingResultAwards(adjudicationNumber, chargeSequence, requests.awardRequestsToCreate)
+    val deletedAwards = deletedRemovedHearingResultAwards(
+      adjudicationNumber = adjudicationNumber,
+      chargeSequence = chargeSequence,
+      sanctionsToKeep = requests.awardRequestsToUpdate.map { it.sanctionSequence },
+    )
+    val createdAwards = createHearingResultAwards(
+      party = party,
+      sanctionSeq = sanctionSeq,
+      chargeSequence = chargeSequence,
+      awardsToCreate = requests.awardRequestsToCreate,
+    )
     updateHearingResultAwards(offenderBookId, adjudicationNumber, requests.awardRequestsToUpdate)
-    return UpdateHearingResultAwardResponses(awardResponsesCreated = createdAwards, awardsDeleted = emptyList())
+    return UpdateHearingResultAwardResponses(awardsCreated = createdAwards, awardsDeleted = deletedAwards)
+  }
+
+  private fun deletedRemovedHearingResultAwards(
+    adjudicationNumber: Long,
+    chargeSequence: Int,
+    sanctionsToKeep: List<Int>,
+  ): List<HearingResultAwardResponse> {
+    val allAwards =
+      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequence(
+        adjudicationNumber,
+        chargeSequence = chargeSequence,
+      )
+
+    val sanctionsToDelete = allAwards.filterNot { sanctionsToKeep.contains(it.id.sanctionSequence) }
+    return sanctionsToDelete.map {
+      adjudicationHearingResultAwardRepository.delete(it)
+      telemetryClient.trackEvent(
+        "hearing-result-award-deleted",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "sanctionSequence" to it.id.sanctionSequence.toString(),
+          "bookingId" to it.id.offenderBookId.toString(),
+        ),
+        null,
+      )
+      HearingResultAwardResponse(it.id.offenderBookId, it.id.sanctionSequence)
+    }
   }
 
   private fun updateHearingResultAwards(
