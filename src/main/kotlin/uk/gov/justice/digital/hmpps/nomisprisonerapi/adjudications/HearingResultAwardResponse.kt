@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(description = "A list of Hearing result awards created (aka punishment)")
 data class CreateHearingResultAwardResponses(
   @Schema(description = "an ordered list of award response, the order matching the request order")
-  val awardResponses: List<HearingResultAwardResponse>,
+  val awardsCreated: List<HearingResultAwardResponse>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

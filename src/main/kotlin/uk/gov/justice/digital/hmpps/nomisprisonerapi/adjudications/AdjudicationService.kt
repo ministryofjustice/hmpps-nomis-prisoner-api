@@ -741,7 +741,7 @@ class AdjudicationService(
         party = party,
         chargeSequence = chargeSequence,
         sanctionSeq = sanctionSeq,
-        awardsToCreate = requests.awardRequests,
+        awardsToCreate = requests.awards,
       ),
     )
   }
@@ -824,15 +824,15 @@ class AdjudicationService(
     val deletedAwards = deletedRemovedHearingResultAwards(
       adjudicationNumber = adjudicationNumber,
       chargeSequence = chargeSequence,
-      sanctionsToKeep = requests.awardRequestsToUpdate.map { it.sanctionSequence },
+      sanctionsToKeep = requests.awardsToUpdate.map { it.sanctionSequence },
     )
     val createdAwards = createHearingResultAwards(
       party = party,
       sanctionSeq = sanctionSeq,
       chargeSequence = chargeSequence,
-      awardsToCreate = requests.awardRequestsToCreate,
+      awardsToCreate = requests.awardsToCreate,
     )
-    updateHearingResultAwards(offenderBookId, adjudicationNumber, requests.awardRequestsToUpdate)
+    updateHearingResultAwards(offenderBookId, adjudicationNumber, requests.awardsToUpdate)
     return UpdateHearingResultAwardResponses(awardsCreated = createdAwards, awardsDeleted = deletedAwards)
   }
 
@@ -878,19 +878,19 @@ class AdjudicationService(
         ?: throw NotFoundException("Hearing result award not found. booking Id: $offenderBookId, sanction sequence: ${it.sanctionSequence}")
 
       with(award) {
-        sanctionType = lookupSanctionType(it.awardRequests.sanctionType)
-        sanctionCode = it.awardRequests.sanctionType
-        compensationAmount = it.awardRequests.compensationAmount
-        effectiveDate = it.awardRequests.effectiveDate
-        sanctionDays = it.awardRequests.sanctionDays
-        comment = it.awardRequests.commentText
-        sanctionStatus = lookupSanctionStatus(it.awardRequests.sanctionStatus)
-        consecutiveHearingResultAward = it.awardRequests.consecutiveCharge
+        sanctionType = lookupSanctionType(it.award.sanctionType)
+        sanctionCode = it.award.sanctionType
+        compensationAmount = it.award.compensationAmount
+        effectiveDate = it.award.effectiveDate
+        sanctionDays = it.award.sanctionDays
+        comment = it.award.commentText
+        sanctionStatus = lookupSanctionStatus(it.award.sanctionStatus)
+        consecutiveHearingResultAward = it.award.consecutiveCharge
           ?.let { charge ->
             findMatchingSanctionAwardForAdjudicationCharge(
               adjudicationNumber = charge.adjudicationNumber,
               chargeSequence = charge.chargeSequence,
-              sanctionCode = it.awardRequests.sanctionType,
+              sanctionCode = it.award.sanctionType,
             )
           }
 
