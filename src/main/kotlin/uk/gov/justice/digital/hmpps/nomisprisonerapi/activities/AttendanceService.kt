@@ -4,6 +4,7 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AttendanceReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -91,10 +93,10 @@ class AttendanceService(
       attendanceOutcome = request.eventOutcomeCode?.let { findAttendanceOutcomeOrThrow(it) }
       unexcusedAbsence = request.unexcusedAbsence
       bonusPay = request.bonusPay
-      paid = request.paid
+      pay = request.paid
       authorisedAbsence = request.authorisedAbsence
       commentText = request.comments
-      performanceCode = attendanceOutcome?.let { if (it.code == "ATT" && paid == true) "STANDARD" else null }
+      performanceCode = attendanceOutcome?.let { if (it.code == "ATT" && pay == true) "STANDARD" else null }
     }
   }
 
@@ -171,4 +173,14 @@ class AttendanceService(
   private fun getEventStatus(requestStatus: EventStatus, oldStatus: EventStatus) = if (oldStatus.code == "COMP" && requestStatus.code != "CANC") oldStatus else requestStatus
 
   fun deleteAttendance(eventId: Long) = attendanceRepository.deleteById(eventId)
+
+  fun findPaidAttendancesSummary(prisonId: String, date: LocalDate) =
+    attendanceRepository.findBookingPaidAttendanceCountsByPrisonAndDate(prisonId, date)
+      .let {
+        AttendanceReconciliationResponse(
+          prisonId = prisonId,
+          date = date,
+          bookings = it,
+        )
+      }
 }
