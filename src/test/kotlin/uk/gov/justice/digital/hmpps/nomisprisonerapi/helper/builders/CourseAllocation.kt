@@ -25,6 +25,7 @@ interface CourseAllocationDsl {
     eventStatusCode: String = "SCH",
     toInternalLocationId: Long? = -3005,
     outcomeReasonCode: String? = null,
+    pay: Boolean? = null,
     paidTransactionId: Long? = null,
   ): OffenderCourseAttendance
 
@@ -105,6 +106,7 @@ class CourseAllocationBuilder(
     eventStatusCode: String,
     toInternalLocationId: Long?,
     outcomeReasonCode: String?,
+    pay: Boolean?,
     paidTransactionId: Long?,
   ) =
     courseAttendanceBuilderFactory.builder().build(
@@ -114,6 +116,7 @@ class CourseAllocationBuilder(
       eventStatusCode,
       toInternalLocationId,
       outcomeReasonCode,
+      pay,
       paidTransactionId,
     )
       .also { courseAllocation.offenderCourseAttendances += it }

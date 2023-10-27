@@ -608,7 +608,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(commentText).isEqualTo("Cancelled")
           assertThat(unexcusedAbsence).isEqualTo(false)
           assertThat(authorisedAbsence).isEqualTo(true)
-          assertThat(paid).isEqualTo(true)
+          assertThat(pay).isEqualTo(true)
           assertThat(bonusPay).isEqualTo(BigDecimal(1.5).setScale(3, RoundingMode.HALF_UP))
           assertThat(performanceCode).isNull()
         }
@@ -644,7 +644,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(commentText).isEqualTo("Attended")
           assertThat(unexcusedAbsence).isEqualTo(false)
           assertThat(authorisedAbsence).isEqualTo(false)
-          assertThat(paid).isEqualTo(true)
+          assertThat(pay).isEqualTo(true)
           assertThat(bonusPay).isEqualTo(BigDecimal(1.5).setScale(3, RoundingMode.HALF_UP))
           assertThat(performanceCode).isEqualTo("STANDARD")
         }

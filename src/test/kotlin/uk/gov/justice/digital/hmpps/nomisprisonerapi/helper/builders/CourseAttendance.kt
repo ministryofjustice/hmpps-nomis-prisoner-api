@@ -44,6 +44,7 @@ class CourseAttendanceBuilder(
     eventStatusCode: String,
     toInternalLocationId: Long?,
     outcomeReasonCode: String?,
+    pay: Boolean?,
     paidTransactionId: Long?,
   ): OffenderCourseAttendance =
     OffenderCourseAttendance(
@@ -62,6 +63,7 @@ class CourseAttendanceBuilder(
       courseActivity = courseSchedule.courseActivity,
       prison = courseSchedule.courseActivity.prison,
       program = courseSchedule.courseActivity.program,
+      pay = pay,
       paidTransactionId = paidTransactionId,
     )
 

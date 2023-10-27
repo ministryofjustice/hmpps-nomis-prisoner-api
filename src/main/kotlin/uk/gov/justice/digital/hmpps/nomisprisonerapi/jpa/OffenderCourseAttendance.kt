@@ -119,7 +119,7 @@ class OffenderCourseAttendance(
 
   @Column(name = "PAY_FLAG")
   @Convert(converter = YesNoConverter::class)
-  var paid: Boolean? = false,
+  var pay: Boolean? = null,
 
   @Column(name = "AUTHORISED_ABSENCE_FLAG")
   @Convert(converter = YesNoConverter::class)
@@ -154,5 +154,5 @@ class OffenderCourseAttendance(
 
   override fun hashCode(): Int = javaClass.hashCode()
   override fun toString(): String =
-    "OffenderCourseAttendance(eventId=$eventId, offenderBookingId=${offenderBooking.bookingId}, courseScheduleId=${courseSchedule.courseScheduleId}, eventDate=$eventDate, attendanceOutcome=${attendanceOutcome?.code}, paid=$paid)"
+    "OffenderCourseAttendance(eventId=$eventId, offenderBookingId=${offenderBooking.bookingId}, courseScheduleId=${courseSchedule.courseScheduleId}, eventDate=$eventDate, attendanceOutcome=${attendanceOutcome?.code}, paid=$pay)"
 }
