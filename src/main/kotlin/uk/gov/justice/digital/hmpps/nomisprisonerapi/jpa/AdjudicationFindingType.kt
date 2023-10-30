@@ -10,6 +10,7 @@ class AdjudicationFindingType(code: String, description: String) : ReferenceCode
   companion object {
     const val OIC_FINDING = "OIC_FINDING"
     const val PROVED = "PROVED"
+    const val QUASHED = "QUASHED"
     fun pk(code: String): Pk = Pk(OIC_FINDING, code)
   }
 }
