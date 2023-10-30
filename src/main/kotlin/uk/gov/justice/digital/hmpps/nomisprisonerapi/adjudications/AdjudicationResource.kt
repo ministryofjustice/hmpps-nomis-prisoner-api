@@ -1058,7 +1058,7 @@ class AdjudicationResource(
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/quash")
   @Operation(
     summary = "updates adjudication charge outcome and awards to quashed",
-    description = "Latest a hearing result is updated to quashed along with all awards associated with this charge. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "The latest hearing result is set to quashed along with all awards associated with this charge (that may be associated with other hearings). Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "200",
