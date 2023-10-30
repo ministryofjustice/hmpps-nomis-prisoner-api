@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationPleaFindingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationRepairType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionStatus.Companion.QUASHED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationSanctionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -684,10 +685,10 @@ class AdjudicationService(
     }
   }
 
-  fun getHearingResult(hearingId: Long, resultSeq: Int = 1): HearingResult =
-    adjudicationHearingResultRepository.findByIdOrNull(AdjudicationHearingResultId(hearingId, resultSeq))
+  fun getHearingResult(hearingId: Long, chargeSequence: Int): HearingResult =
+    adjudicationHearingResultRepository.findFirstOrNullById_OicHearingIdAndChargeSequence(hearingId, chargeSequence)
       ?.toHearingResult()
-      ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, result sequence: $resultSeq")
+      ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, charge sequence: $chargeSequence")
 
   fun deleteHearingResult(adjudicationNumber: Long, hearingId: Long, chargeSequence: Int) {
     // allow delete request to fail if adjudication doesn't exist as should never happen
@@ -860,6 +861,29 @@ class AdjudicationService(
         null,
       )
       HearingResultAwardResponse(it.id.offenderBookId, it.id.sanctionSequence)
+    }
+  }
+  private fun squashHearingResultAwards(
+    adjudicationNumber: Long,
+    chargeSequence: Int,
+  ) {
+    val allAwards =
+      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequence(
+        adjudicationNumber,
+        chargeSequence = chargeSequence,
+      )
+
+    allAwards.forEach {
+      it.sanctionStatus = lookupSanctionStatus(QUASHED)
+      telemetryClient.trackEvent(
+        "hearing-result-award-quashed",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "sanctionSequence" to it.id.sanctionSequence.toString(),
+          "bookingId" to it.id.offenderBookId.toString(),
+        ),
+        null,
+      )
     }
   }
 
@@ -1039,6 +1063,35 @@ class AdjudicationService(
         null,
       )
     }
+  }
+
+  fun quashHearingResultAndAwards(adjudicationNumber: Long, chargeSequence: Int) {
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+
+    // find the latest result on the latest hearing
+    val hearingResult =
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
+        incidentCharge,
+      ) ?: throw BadDataException("Hearing result for adjudication number ${party.adjudicationNumber} not found")
+
+    hearingResult.findingType = lookupFindingType(AdjudicationFindingType.QUASHED)
+
+    squashHearingResultAwards(adjudicationNumber, chargeSequence)
+
+    telemetryClient.trackEvent(
+      "hearing-result-quashed",
+      mapOf(
+        "adjudicationNumber" to adjudicationNumber.toString(),
+        "chargeSequence" to chargeSequence.toString(),
+        "hearingId" to hearingResult.id.oicHearingId.toString(),
+        "offenderNo" to party.prisonerParty().nomsId,
+      ),
+      null,
+    )
   }
 }
 

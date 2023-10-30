@@ -6,9 +6,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -41,7 +43,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
     aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI")
   }
 
-  @DisplayName("POST /adjudications/adjudication-number/{adjudicationNumber}/awards")
+  @DisplayName("POST /adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Nested
   inner class CreateHearingResultAward {
     private val offenderNo = "A1965NM"
@@ -412,7 +414,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       """.trimIndent()
   }
 
-  @DisplayName("PUT /adjudications/adjudication-number/{adjudicationNumber}/awards")
+  @DisplayName("PUT /adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Nested
   inner class UpdateHearingResultAward {
     private val offenderNo = "A1965NM"
@@ -1113,14 +1115,12 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         )
       }
     }
-  }
-
-  private fun aUpdateHearingResultAwardRequest(
-    sanctionType: String = "ASSO",
-    sanctionStatus: String = "IMMEDIATE",
-    effectiveDate: String = "2023-01-01",
-  ): String =
-    """
+    private fun aUpdateHearingResultAwardRequest(
+      sanctionType: String = "ASSO",
+      sanctionStatus: String = "IMMEDIATE",
+      effectiveDate: String = "2023-01-01",
+    ): String =
+      """
       {
         "awardsToCreate": [{
          "sanctionType": "$sanctionType",
@@ -1132,5 +1132,371 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         }],
         "awardsToUpdate": []
       }
-    """.trimIndent()
+      """.trimIndent()
+  }
+
+  @DisplayName("PUT /adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/quash")
+  @Nested
+  inner class SquashHearingResultAward {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private lateinit var previousIncident: AdjudicationIncident
+    private val dpsCreateAdjudication = 123456L
+    private val nomisMigratedAdjudication = 123455L
+    private lateinit var nomisCreatedCharge1: AdjudicationIncidentCharge
+    private lateinit var nomisCreatedCharge2: AdjudicationIncidentCharge
+    private lateinit var dpsHearing: AdjudicationHearing
+    private lateinit var lastNomisHearing: AdjudicationHearing
+    private lateinit var previousNomisHearing: AdjudicationHearing
+
+    @BeforeEach
+    fun createPrisonerWithAdjudicationAndHearing() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = previousIncident, adjudicationNumber = dpsCreateAdjudication) {
+              val charge = charge(offenceCode = "51:1A")
+              dpsHearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                hearingDate = LocalDate.parse("2022-01-03"),
+                hearingTime = LocalDateTime.parse("2022-01-03T15:00:00"),
+                hearingStaff = reportingStaff,
+              ) {
+                result(
+                  charge = charge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    sanctionIndex = 1,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "CC",
+                    sanctionDays = 9,
+                    effectiveDate = LocalDate.parse("2022-01-01"),
+                  )
+                  award(
+                    sanctionIndex = 2,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "ADA",
+                    sanctionDays = 10,
+                    effectiveDate = LocalDate.parse("2022-01-02"),
+                  )
+                  award(
+                    sanctionIndex = 3,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "ASSO",
+                    sanctionDays = 11,
+                    effectiveDate = LocalDate.parse("2022-01-03"),
+                  )
+                }
+              }
+            }
+            adjudicationParty(incident = existingIncident, adjudicationNumber = nomisMigratedAdjudication) {
+              nomisCreatedCharge1 = charge(offenceCode = "51:1B")
+              nomisCreatedCharge2 = charge(offenceCode = "51:1C")
+              previousNomisHearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                hearingDate = LocalDate.parse("2023-01-03"),
+                hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
+                hearingStaff = reportingStaff,
+              ) {
+                result(
+                  charge = nomisCreatedCharge1,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    sanctionIndex = 4,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "CC",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                }
+                result(
+                  charge = nomisCreatedCharge2,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    sanctionIndex = 5,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "CC",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                }
+              }
+
+              lastNomisHearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                hearingDate = LocalDate.parse("2023-01-04"),
+                hearingTime = LocalDateTime.parse("2023-01-04T15:00:00"),
+                hearingStaff = reportingStaff,
+              ) {
+                result(
+                  charge = nomisCreatedCharge2,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    sanctionIndex = 6,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "ASSO",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                  award(
+                    sanctionIndex = 7,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "EXTW",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteHearingByAdjudicationNumber(dpsCreateAdjudication)
+      repository.deleteHearingByAdjudicationNumber(nomisMigratedAdjudication)
+      repository.delete(previousIncident)
+      repository.delete(existingIncident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$dpsCreateAdjudication/charge/${nomisCreatedCharge1.id.chargeSequence}/quash")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$dpsCreateAdjudication/charge/${nomisCreatedCharge1.id.chargeSequence}/quash")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$dpsCreateAdjudication/charge/${nomisCreatedCharge1.id.chargeSequence}/quash")
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will return 404 if adjudication not found`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/88888/charge/1/quash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Adjudication party with adjudication number 88888 not found")
+      }
+
+      @Test
+      fun `will return 404 if charge not found`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/$dpsCreateAdjudication/charge/88/quash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Charge not found for adjudication number $dpsCreateAdjudication and charge sequence 88")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `awards and outcome all set to quashed`() {
+        val bookingId = prisoner.bookings.first().bookingId
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$dpsCreateAdjudication/charge/1/quash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get()
+          .uri("/adjudications/hearings/${dpsHearing.id}/charge/1/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("QUASHED")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/3")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+
+        // different adjudication so not quashed
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/4")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-quashed"),
+          check {
+            assertThat(it).containsEntry("offenderNo", prisoner.nomsId)
+            assertThat(it).containsEntry("hearingId", dpsHearing.id.toString())
+            assertThat(it).containsEntry("adjudicationNumber", dpsCreateAdjudication.toString())
+          },
+          isNull(),
+        )
+        verify(telemetryClient, times(3)).trackEvent(
+          eq("hearing-result-award-quashed"),
+          any(),
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will only quash awards for the specific charge for a migrated adjudication`() {
+        val bookingId = prisoner.bookings.first().bookingId
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$nomisMigratedAdjudication/charge/${nomisCreatedCharge2.id.chargeSequence}/quash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isOk
+
+        // nomisCreatedCharge1 awards remains unchanged
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/4")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/6")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/7")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+      }
+
+      @Test
+      fun `will only quash hearing outcome last hearing for that charge`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$nomisMigratedAdjudication/charge/${nomisCreatedCharge2.id.chargeSequence}/quash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isOk
+
+        // first hearing for different charge untouched
+        webTestClient.get()
+          .uri("/adjudications/hearings/${previousNomisHearing.id}/charge/${nomisCreatedCharge1.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("PROVED")
+
+        // first hearing for charge also untouched
+        webTestClient.get()
+          .uri("/adjudications/hearings/${previousNomisHearing.id}/charge/${nomisCreatedCharge2.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("PROVED")
+
+        // latest hearing for other charge untouched
+        webTestClient.get()
+          .uri("/adjudications/hearings/${previousNomisHearing.id}/charge/${nomisCreatedCharge1.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("PROVED")
+
+        // latest hearing for this charge set to quashed
+        webTestClient.get()
+          .uri("/adjudications/hearings/${lastNomisHearing.id}/charge/${nomisCreatedCharge2.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("QUASHED")
+      }
+    }
+  }
 }

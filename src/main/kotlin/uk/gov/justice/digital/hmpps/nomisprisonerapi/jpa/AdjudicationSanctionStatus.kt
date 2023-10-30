@@ -9,6 +9,7 @@ class AdjudicationSanctionStatus(code: String, description: String) : ReferenceC
 
   companion object {
     const val OIC_SANCT_ST = "OIC_SANCT_ST"
+    const val QUASHED = "QUASHED"
     fun pk(code: String): Pk = Pk(OIC_SANCT_ST, code)
   }
 }

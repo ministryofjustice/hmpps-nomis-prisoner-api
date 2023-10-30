@@ -654,7 +654,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Hearing Result not found. Hearing Id: 123, result sequence: 1")
+          .jsonPath("developerMessage").isEqualTo("Hearing Result not found. Hearing Id: 123, charge sequence: 1")
       }
     }
 
@@ -832,7 +832,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Hearing Result not found. Hearing Id: ${existingHearing.id}, result sequence: 1")
+          .isEqualTo("Hearing Result not found. Hearing Id: ${existingHearing.id}, charge sequence: 1")
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-deleted"),
@@ -1007,7 +1007,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Hearing Result not found. Hearing Id: ${existingHearing.id}, result sequence: 1")
+          .isEqualTo("Hearing Result not found. Hearing Id: ${existingHearing.id}, charge sequence: 1")
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-deleted"),
