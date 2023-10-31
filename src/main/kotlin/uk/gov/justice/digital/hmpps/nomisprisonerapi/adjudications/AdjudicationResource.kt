@@ -701,8 +701,8 @@ class AdjudicationResource(
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
   @Operation(
-    summary = "creates a result for a given charge. This requires a dummy hearing to be created",
-    description = "Creates a result for a charge. DPS allows results to be created without hearings eg: Refer to Police. Requires ROLE_NOMIS_ADJUDICATIONS",
+    summary = "creates or updates a result for a given charge. This requires a dummy hearing to be created",
+    description = "Creates or updates a result for a charge. DPS allows results to be created without hearings eg: Refer to Police. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1053,6 +1053,73 @@ class AdjudicationResource(
     requests: UpdateHearingResultAwardRequest,
   ): UpdateHearingResultAwardResponses =
     adjudicationService.updateCreateAndDeleteHearingResultAwards(adjudicationNumber, chargeSequence, requests)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
+  @Operation(
+    summary = "Deletes hearing result awards for a given adjudication and charge sequence",
+    description = "Deletes hearing result awards for a given adjudication and charge sequence. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Hearing result awards deleted",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = UpdateHearingResultAwardResponses::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Charge does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteHearingResultAwards(
+    @Schema(description = "Adjudication number", example = "12345")
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Nomis charge sequence", example = "1")
+    @PathVariable
+    chargeSequence: Int,
+  ) = adjudicationService.deleteHearingResultAwards(adjudicationNumber, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/quash")

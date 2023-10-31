@@ -822,7 +822,7 @@ class AdjudicationService(
     // grab next sequence before we start deleting awards
     val sanctionSeq = adjudicationHearingResultAwardRepository.getNextSanctionSequence(offenderBookId = offenderBookId)
 
-    val deletedAwards = deletedRemovedHearingResultAwards(
+    val deletedAwards = deleteAwards(
       adjudicationNumber = adjudicationNumber,
       chargeSequence = chargeSequence,
       sanctionsToKeep = requests.awardsToUpdate.map { it.sanctionSequence },
@@ -837,10 +837,26 @@ class AdjudicationService(
     return UpdateHearingResultAwardResponses(awardsCreated = createdAwards, awardsDeleted = deletedAwards)
   }
 
-  private fun deletedRemovedHearingResultAwards(
+  @Audit
+  fun deleteHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
-    sanctionsToKeep: List<Int>,
+  ) {
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+
+    deleteAwards(
+      adjudicationNumber = adjudicationNumber,
+      chargeSequence = chargeSequence,
+    )
+  }
+
+  private fun deleteAwards(
+    adjudicationNumber: Long,
+    chargeSequence: Int,
+    sanctionsToKeep: List<Int> = emptyList(),
   ): List<HearingResultAwardResponse> {
     val allAwards =
       adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequence(
@@ -863,6 +879,7 @@ class AdjudicationService(
       HearingResultAwardResponse(it.id.offenderBookId, it.id.sanctionSequence)
     }
   }
+
   private fun squashHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
