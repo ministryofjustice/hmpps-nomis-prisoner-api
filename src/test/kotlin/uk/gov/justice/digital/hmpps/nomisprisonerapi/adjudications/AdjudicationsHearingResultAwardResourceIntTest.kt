@@ -1499,4 +1499,225 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("DELETE /adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
+  @Nested
+  inner class DeleteHearingResultAwards {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private lateinit var previousIncident: AdjudicationIncident
+    private val existingAdjudicationNumber = 123456L
+    private val previousAdjudicationNumber = 123455L
+    private lateinit var existingHearing: AdjudicationHearing
+    private lateinit var existingCharge: AdjudicationIncidentCharge
+    private lateinit var existingHearingResult: AdjudicationHearingResult
+    private lateinit var previousHearingResult: AdjudicationHearingResult
+
+    @BeforeEach
+    fun createPrisonerWithAdjudicationAndHearingAndAwards() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = previousIncident, adjudicationNumber = previousAdjudicationNumber) {
+              val charge = charge(offenceCode = "51:1A")
+              hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                hearingDate = LocalDate.parse("2022-01-03"),
+                hearingTime = LocalDateTime.parse("2022-01-03T15:00:00"),
+                hearingStaff = reportingStaff,
+              ) {
+                previousHearingResult = result(
+                  charge = charge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    sanctionIndex = 4,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "CC",
+                    sanctionDays = 9,
+                    effectiveDate = LocalDate.parse("2022-01-01"),
+                  )
+                }
+              }
+            }
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
+              existingCharge = charge(offenceCode = "51:1B")
+              existingHearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                scheduleDate = LocalDate.parse("2023-01-02"),
+                scheduleTime = LocalDateTime.parse("2023-01-02T14:00:00"),
+                hearingDate = LocalDate.parse("2023-01-03"),
+                hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
+                hearingTypeCode = AdjudicationHearingType.GOVERNORS_HEARING,
+                // no staff added to hearing as hearing result POST will add it
+              ) {
+                existingHearingResult = result(
+                  charge = existingCharge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    sanctionIndex = 5,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "CC",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                  award(
+                    sanctionIndex = 6,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "ASSO",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteHearingByAdjudicationNumber(existingAdjudicationNumber)
+      repository.deleteHearingByAdjudicationNumber(previousAdjudicationNumber)
+      repository.delete(previousIncident)
+      repository.delete(existingIncident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will return 404 if adjudication not found`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/88888/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Adjudication party with adjudication number 88888 not found")
+      }
+
+      @Test
+      fun `will return 404 if charge not found`() {
+        webTestClient.delete().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/88/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Charge not found for adjudication number $existingAdjudicationNumber and charge sequence 88")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete awards and audit the deletions`() {
+        val bookingId = prisoner.bookings.first().bookingId
+        webTestClient.get().uri("/adjudications/hearings/${previousHearingResult.hearing.id}/charge/${previousHearingResult.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.resultAwards.size()").isEqualTo(1)
+
+        webTestClient.get().uri("/adjudications/hearings/${existingHearingResult.hearing.id}/charge/${existingHearingResult.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.resultAwards.size()").isEqualTo(2)
+
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+
+        // from another incident so ignored
+        webTestClient.get().uri("/adjudications/hearings/${previousHearingResult.hearing.id}/charge/${previousHearingResult.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.resultAwards.size()").isEqualTo(1)
+
+        webTestClient.get().uri("/adjudications/hearings/${existingHearingResult.hearing.id}/charge/${existingHearingResult.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.resultAwards.size()").isEqualTo(0)
+
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-award-deleted"),
+          check {
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("sanctionSequence", "5")
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+          },
+          isNull(),
+        )
+        verify(telemetryClient).trackEvent(
+          eq("hearing-result-award-deleted"),
+          check {
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+            assertThat(it).containsEntry("sanctionSequence", "6")
+            assertThat(it).containsEntry("bookingId", bookingId.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+  }
 }
