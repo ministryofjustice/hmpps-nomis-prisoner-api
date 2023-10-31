@@ -16,6 +16,7 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingType
@@ -801,6 +802,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk()
+          .expectBody()
+          .jsonPath("$.awardsDeleted.size()").isEqualTo(0)
 
         verify(telemetryClient).trackEvent(
           eq("hearing-result-delete-not-found"),
@@ -824,6 +827,10 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.awardsDeleted.size()").isEqualTo(1)
+          .jsonPath("awardsDeleted[0].sanctionSequence").isEqualTo(3)
+          .jsonPath("awardsDeleted[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
         webTestClient.get()
           .uri("/adjudications/hearings/${existingHearing.id}/charge/${existingCharge.id.chargeSequence}/result")

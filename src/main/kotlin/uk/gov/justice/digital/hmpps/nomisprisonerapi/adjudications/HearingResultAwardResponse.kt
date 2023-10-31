@@ -20,6 +20,13 @@ data class UpdateHearingResultAwardResponses(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "A list of Hearing result awards deleted (aka punishment)")
+data class DeleteHearingResultAwardResponses(
+  @Schema(description = "a list of awards that were deleted")
+  val awardsDeleted: List<HearingResultAwardResponse>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Provides the generated Hearing Result Award composite ID after creation")
 data class HearingResultAwardResponse(
   val bookingId: Long,
