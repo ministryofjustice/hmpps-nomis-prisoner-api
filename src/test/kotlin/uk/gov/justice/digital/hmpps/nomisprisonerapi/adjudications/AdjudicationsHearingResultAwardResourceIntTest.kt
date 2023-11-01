@@ -1500,6 +1500,315 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/unquash")
+  @Nested
+  inner class UnquashHearingResultAward {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var incident: AdjudicationIncident
+    private val adjudicationNumber = 123456L
+    private lateinit var hearing: AdjudicationHearing
+    private lateinit var charge: AdjudicationIncidentCharge
+    private lateinit var hearingResult: AdjudicationHearingResult
+
+    @BeforeEach
+    fun createPrisonerWithAdjudicationAndHearing() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        incident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
+              charge = charge(offenceCode = "51:1B")
+              hearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                hearingDate = LocalDate.parse("2023-01-03"),
+                hearingTime = LocalDateTime.parse("2023-01-03T15:00:00"),
+                hearingTypeCode = AdjudicationHearingType.GOVERNORS_HEARING,
+              ) {
+                hearingResult = result(
+                  charge = charge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "QUASHED",
+                ) {
+                  award(
+                    sanctionIndex = 1,
+                    statusCode = "QUASHED",
+                    sanctionCode = "CC",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                  award(
+                    sanctionIndex = 2,
+                    statusCode = "QUASHED",
+                    sanctionCode = "ASSO",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                  award(
+                    sanctionIndex = 3,
+                    statusCode = "QUASHED",
+                    sanctionCode = "EXTW",
+                    sanctionDays = 2,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteHearingByAdjudicationNumber(adjudicationNumber)
+      repository.delete(incident)
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(anUnquashHearingResultAwardRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(anUnquashHearingResultAwardRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(anUnquashHearingResultAwardRequest()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will return 404 if adjudication not found`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/88888/charge/${charge.id.chargeSequence}/unquash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(anUnquashHearingResultAwardRequest()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Adjudication party with adjudication number 88888 not found")
+      }
+
+      @Test
+      fun `will return 404 if charge not found`() {
+        webTestClient.put().uri("/adjudications/adjudication-number/$adjudicationNumber/charge/88/unquash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(anUnquashHearingResultAwardRequest()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Charge not found for adjudication number $adjudicationNumber and charge sequence 88")
+      }
+
+      @Test
+      fun `will return 400 if sanction type not valid`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(anUnquashHearingResultAwardRequest(firstSanctionType = "madeup")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("sanction type madeup not found")
+      }
+
+      @Test
+      fun `will return 400 if sanction status not valid`() {
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(anUnquashHearingResultAwardRequest(firstSanctionStatus = "nope")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("sanction status nope not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update existing awards`() {
+        val bookingId = prisoner.bookings.first().bookingId
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/3")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionStatus.code").isEqualTo("QUASHED")
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              // language=json
+              """
+                {
+                  "awards": {
+                    "awardsToCreate": [],
+                    "awardsToUpdate": [
+                      { 
+                        "sanctionSequence": 1,
+                        "award": {
+                           "sanctionType": "CC",
+                           "sanctionStatus": "IMMEDIATE",
+                           "sanctionDays": 3,
+                           "effectiveDate": "2023-01-04"
+                        }
+                      },
+                      { 
+                        "sanctionSequence": 2,
+                        "award": {
+                           "sanctionType": "ASSO",
+                           "sanctionStatus": "SUSPENDED",
+                           "sanctionDays": 2,
+                           "effectiveDate": "2023-02-04"
+                        }
+                      },
+                      { 
+                        "sanctionSequence": 3,
+                        "award": {
+                           "sanctionType": "EXTW",
+                           "sanctionStatus": "IMMEDIATE",
+                           "sanctionDays": 6,
+                           "effectiveDate": "2023-01-04"
+                        }
+                      }
+                    ]
+                  },
+                  "findingCode": "PROVED" 
+                }
+            """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("CC")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionStatus.code").isEqualTo("SUSPENDED")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/3")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("sanctionType.code").isEqualTo("EXTW")
+          .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+      }
+    }
+    private fun anUnquashHearingResultAwardRequest(firstSanctionType: String = "CC", firstSanctionStatus: String = "IMMEDIATE"): String =
+      // language=json
+      """
+      {
+        "awards": {
+          "awardsToUpdate": [
+            { 
+              "sanctionSequence": 1,
+              "award": {
+                 "sanctionType": "$firstSanctionType",
+                 "sanctionStatus": "$firstSanctionStatus",
+                 "sanctionDays": 3,
+                 "effectiveDate": "2023-01-04"
+              }
+            },
+            { 
+              "sanctionSequence": 2,
+              "award": {
+                 "sanctionType": "ASSO",
+                 "sanctionStatus": "SUSPENDED",
+                 "sanctionDays": 2,
+                 "effectiveDate": "2023-02-04"
+              }
+            },
+            { 
+              "sanctionSequence": 3,
+              "award": {
+                 "sanctionType": "EXTW",
+                 "sanctionStatus": "IMMEDIATE",
+                 "sanctionDays": 6,
+                 "effectiveDate": "2023-01-04"
+              }
+            }
+          ],
+          "awardsToCreate": []
+        },
+        "findingCode": "PROVED"
+      }
+      """.trimIndent()
+  }
+
   @DisplayName("DELETE /adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Nested
   inner class DeleteHearingResultAwards {
