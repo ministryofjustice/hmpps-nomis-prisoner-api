@@ -814,11 +814,17 @@ class AdjudicationResource(
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/charge/{chargeSequence}/result")
   @Operation(
     summary = "Deletes a hearing result",
-    description = "Deletes a hearing result for a given adjudication and hearing Id. The result sequence is always 1 for synchronising DPS migrated/created data. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Deletes a hearing result for a given adjudication and hearing Id. Returns list of any deleted award Ids to allow removal of award mappings in the sync service. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "200",
         description = "Hearing result deleted",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = DeleteHearingResultResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -862,7 +868,8 @@ class AdjudicationResource(
     @Schema(description = "Nomis charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
-  ) = adjudicationService.deleteHearingResult(adjudicationNumber, hearingId, chargeSequence)
+  ): DeleteHearingResultResponse =
+    adjudicationService.deleteHearingResult(adjudicationNumber, hearingId, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
@@ -1058,7 +1065,7 @@ class AdjudicationResource(
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Operation(
     summary = "Deletes hearing result awards for a given adjudication and charge sequence",
-    description = "Deletes hearing result awards for a given adjudication and charge sequence. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Deletes hearing result awards for a given adjudication and charge sequence. Returns list of deleted award keys. Requires ROLE_NOMIS_ADJUDICATIONS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1066,7 +1073,7 @@ class AdjudicationResource(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = UpdateHearingResultAwardResponses::class),
+            schema = Schema(implementation = DeleteHearingResultAwardResponses::class),
           ),
         ],
       ),
@@ -1119,7 +1126,8 @@ class AdjudicationResource(
     @Schema(description = "Nomis charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
-  ) = adjudicationService.deleteHearingResultAwards(adjudicationNumber, chargeSequence)
+  ): DeleteHearingResultAwardResponses =
+    adjudicationService.deleteHearingResultAwards(adjudicationNumber, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/quash")
