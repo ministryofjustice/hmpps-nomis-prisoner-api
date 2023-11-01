@@ -1992,40 +1992,35 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.awardsDeleted.size()").isEqualTo(2)
+          .jsonPath("awardsDeleted[0].sanctionSequence").isEqualTo(5)
+          .jsonPath("awardsDeleted[0].bookingId").isEqualTo(bookingId)
+          .jsonPath("awardsDeleted[1].sanctionSequence").isEqualTo(6)
+          .jsonPath("awardsDeleted[1].bookingId").isEqualTo(bookingId)
 
-        // from another incident so ignored
-        webTestClient.get().uri("/adjudications/hearings/${previousHearingResult.hearing.id}/charge/${previousHearingResult.chargeSequence}/result")
+        verify(telemetryClient, times(2)).trackEvent(
+          eq("hearing-result-award-deleted"),
+          any(),
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will return response if no awards found`() {
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("$.resultAwards.size()").isEqualTo(1)
-
-        webTestClient.get().uri("/adjudications/hearings/${existingHearingResult.hearing.id}/charge/${existingHearingResult.chargeSequence}/result")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.resultAwards.size()").isEqualTo(0)
-
-        verify(telemetryClient).trackEvent(
-          eq("hearing-result-award-deleted"),
-          check {
-            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
-            assertThat(it).containsEntry("sanctionSequence", "5")
-            assertThat(it).containsEntry("bookingId", bookingId.toString())
-          },
-          isNull(),
-        )
-        verify(telemetryClient).trackEvent(
-          eq("hearing-result-award-deleted"),
-          check {
-            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
-            assertThat(it).containsEntry("sanctionSequence", "6")
-            assertThat(it).containsEntry("bookingId", bookingId.toString())
-          },
-          isNull(),
-        )
+          .jsonPath("$.awardsDeleted.size()").isEqualTo(0)
       }
     }
   }
