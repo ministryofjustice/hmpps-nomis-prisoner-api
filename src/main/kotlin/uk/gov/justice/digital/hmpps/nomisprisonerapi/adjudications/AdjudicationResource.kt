@@ -1184,6 +1184,76 @@ class AdjudicationResource(
     adjudicationService.quashHearingResultAndAwards(adjudicationNumber, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/unquash")
+  @Operation(
+    summary = "updates adjudication charge outcome and awards to the requested state before a quash",
+    description = "The latest hearing result is set to back to the supplied value along with all awards associated with this charge. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Hearing result award IDs created and awards deleted. These list should be empty unless there was a previous synchronisation issue that meant the NOMIS awards are not in the correct state",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = UpdateHearingResultAwardResponses::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjudication does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Charge does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun unquashHearingResultAndAwards(
+    @Schema(description = "Adjudication number", example = "12345")
+    @PathVariable
+    adjudicationNumber: Long,
+    @Schema(description = "Nomis charge sequence", example = "1")
+    @PathVariable
+    chargeSequence: Int,
+    @RequestBody @Valid
+    request: UnquashHearingResultAwardRequest,
+  ): UpdateHearingResultAwardResponses =
+    adjudicationService.unquashHearingResultAndAwards(adjudicationNumber, chargeSequence, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/prisoners/booking-id/{bookingId}/awards/{sanctionSequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(

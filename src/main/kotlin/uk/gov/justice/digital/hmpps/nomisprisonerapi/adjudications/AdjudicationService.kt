@@ -1120,6 +1120,30 @@ class AdjudicationService(
       null,
     )
   }
+
+  fun unquashHearingResultAndAwards(
+    adjudicationNumber: Long,
+    chargeSequence: Int,
+    request: UnquashHearingResultAwardRequest,
+  ): UpdateHearingResultAwardResponses {
+    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
+      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
+    val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
+      ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
+
+    val hearingResult =
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
+        incidentCharge,
+      ) ?: throw BadDataException("Hearing result for adjudication number ${party.adjudicationNumber} not found")
+
+    hearingResult.findingType = lookupFindingType(request.findingCode)
+    return updateCreateAndDeleteHearingResultAwards(
+      adjudicationNumber = adjudicationNumber,
+      chargeSequence = chargeSequence,
+      requests = request.awards,
+    )
+  }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(

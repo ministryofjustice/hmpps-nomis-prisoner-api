@@ -22,6 +22,13 @@ data class UpdateHearingResultAwardRequest(
   val awardsToUpdate: List<ExistingHearingResultAwardRequest>,
 )
 
+data class UnquashHearingResultAwardRequest(
+  @Schema(description = "Finding code", example = "PROVED")
+  val findingCode: String,
+  @Schema(description = "A list of current result awards (aka punishment) updated. Typically the awardsToCreate would be empty unless there was a previous synchronisation problem")
+  val awards: UpdateHearingResultAwardRequest,
+)
+
 @Schema(description = "Hearing result award (aka punishment) to be created")
 data class ExistingHearingResultAwardRequest(
   @Schema(description = "award to update")
