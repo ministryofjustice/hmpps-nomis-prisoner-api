@@ -690,37 +690,47 @@ class AdjudicationService(
       ?.toHearingResult()
       ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, charge sequence: $chargeSequence")
 
-  fun deleteHearingResult(adjudicationNumber: Long, hearingId: Long, chargeSequence: Int) {
+  fun deleteHearingResult(adjudicationNumber: Long, hearingId: Long, chargeSequence: Int): DeleteHearingResultResponse {
     // allow delete request to fail if adjudication doesn't exist as should never happen
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Hearing with id $hearingId delete failed: Adjudication party with adjudication number $adjudicationNumber not found")
 
-    adjudicationHearingResultRepository.findFirstOrNullById_OicHearingIdAndChargeSequence(
-
+    return adjudicationHearingResultRepository.findFirstOrNullById_OicHearingIdAndChargeSequence(
       hearingId = hearingId,
       chargeSequence = chargeSequence,
-
-    )?.also {
-      adjudicationHearingResultRepository.delete(it)
+    )?.let { result ->
+      val deletedAwards = result.resultAwards
+      adjudicationHearingResultRepository.delete(result)
       adjudicationHearingRepository.findByIdOrNull(hearingId)?.let { it.hearingStaff = null }
       telemetryClient.trackEvent(
         "hearing-result-deleted",
         mapOf(
           "adjudicationNumber" to adjudicationNumber.toString(),
           "hearingId" to hearingId.toString(),
-          "resultSequence" to it.id.resultSequence.toString(),
+          "resultSequence" to result.id.resultSequence.toString(),
         ),
         null,
       )
-    } ?: telemetryClient.trackEvent(
-      "hearing-result-delete-not-found",
-      mapOf(
-        "adjudicationNumber" to adjudicationNumber.toString(),
-        "hearingId" to hearingId.toString(),
-        "chargeSequence" to chargeSequence.toString(),
-      ),
-      null,
-    )
+      DeleteHearingResultResponse(
+        deletedAwards.map {
+          HearingResultAwardResponse(
+            it.id.offenderBookId,
+            it.id.sanctionSequence,
+          )
+        },
+      )
+    } ?: let {
+      telemetryClient.trackEvent(
+        "hearing-result-delete-not-found",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "hearingId" to hearingId.toString(),
+          "chargeSequence" to chargeSequence.toString(),
+        ),
+        null,
+      )
+      DeleteHearingResultResponse()
+    }
   }
 
   @Audit
@@ -841,16 +851,16 @@ class AdjudicationService(
   fun deleteHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
-  ) {
+  ): DeleteHearingResultAwardResponses {
     val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
     party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
       ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
 
-    deleteAwards(
+    return deleteAwards(
       adjudicationNumber = adjudicationNumber,
       chargeSequence = chargeSequence,
-    )
+    ).let { DeleteHearingResultAwardResponses(it) }
   }
 
   private fun deleteAwards(
@@ -859,7 +869,7 @@ class AdjudicationService(
     sanctionsToKeep: List<Int> = emptyList(),
   ): List<HearingResultAwardResponse> {
     val allAwards =
-      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequence(
+      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequenceOrderById_sanctionSequence(
         adjudicationNumber,
         chargeSequence = chargeSequence,
       )
@@ -885,7 +895,7 @@ class AdjudicationService(
     chargeSequence: Int,
   ) {
     val allAwards =
-      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequence(
+      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequenceOrderById_sanctionSequence(
         adjudicationNumber,
         chargeSequence = chargeSequence,
       )

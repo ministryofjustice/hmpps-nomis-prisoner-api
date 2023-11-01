@@ -17,7 +17,7 @@ interface AdjudicationHearingResultAwardRepository : JpaRepository<AdjudicationH
     chargeSequence: Int,
   ): AdjudicationHearingResultAward?
 
-  fun findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequence(
+  fun findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequenceOrderById_sanctionSequence(
     adjudicationNumber: Long,
     chargeSequence: Int,
   ): List<AdjudicationHearingResultAward>
