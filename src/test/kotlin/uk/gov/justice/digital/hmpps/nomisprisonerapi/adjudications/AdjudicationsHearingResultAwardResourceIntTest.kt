@@ -1742,6 +1742,9 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
+          .expectBody()
+          .jsonPath("awardsCreated").isEmpty
+          .jsonPath("awardsDeleted").isEmpty
 
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/1")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -1766,6 +1769,71 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("sanctionType.code").isEqualTo("EXTW")
           .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
+      }
+
+      @Test
+      fun `will return any new or deleted awards when the unquash happens with NOMIS is out of sync with DPS`() {
+        val bookingId = prisoner.bookings.first().bookingId
+
+        webTestClient.put()
+          .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              // language=json
+              """
+                {
+                  "awards": {
+                    "awardsToCreate": [
+                      {
+                         "sanctionType": "CC",
+                         "sanctionStatus": "SUSPENDED",
+                         "sanctionDays": 2,
+                         "effectiveDate": "2023-02-04"
+                      }
+                    ],
+                    "awardsToUpdate": [
+                      { 
+                        "sanctionSequence": 2,
+                        "award": {
+                           "sanctionType": "ASSO",
+                           "sanctionStatus": "SUSPENDED",
+                           "sanctionDays": 2,
+                           "effectiveDate": "2023-02-04"
+                        }
+                      },
+                      { 
+                        "sanctionSequence": 3,
+                        "award": {
+                           "sanctionType": "EXTW",
+                           "sanctionStatus": "IMMEDIATE",
+                           "sanctionDays": 6,
+                           "effectiveDate": "2023-01-04"
+                        }
+                      }
+                    ]
+                  },
+                  "findingCode": "PROVED" 
+                }
+            """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo("4")
+          .jsonPath("awardsDeleted[0].sanctionSequence").isEqualTo("1")
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/4")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
       }
     }
     private fun anUnquashHearingResultAwardRequest(firstSanctionType: String = "CC", firstSanctionStatus: String = "IMMEDIATE"): String =
