@@ -762,6 +762,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sanctionDays").isEqualTo(2)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].sequence").isEqualTo(2)
             .jsonPath("hearings[0].hearingResults[0].resultAwards[0].chargeSequence").isEqualTo(1)
+            .jsonPath("hearings[0].hearingResults[0].resultAwards[0].createdByUsername").isNotEmpty
             .jsonPath("hearings[0].hearingResults[0].resultAwards[1].sanctionType.description")
             .isEqualTo("Stoppage of Earnings (amount)")
             .jsonPath("hearings[0].hearingResults[0].resultAwards[1].consecutiveAward.sanctionType.description")

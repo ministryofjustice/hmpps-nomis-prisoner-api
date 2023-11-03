@@ -1283,6 +1283,7 @@ fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false):
     statusDate = this.statusDate,
     sanctionDays = this.sanctionDays,
     sanctionMonths = this.sanctionMonths,
+    createdByUsername = this.createUsername,
     compensationAmount = this.compensationAmount,
     consecutiveAward = if (!isConsecutiveAward) {
       this.consecutiveHearingResultAward?.toAward(true)
