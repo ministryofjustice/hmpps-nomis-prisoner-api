@@ -273,6 +273,8 @@ data class HearingResultAward(
   val consecutiveAward: HearingResultAward?,
   val chargeSequence: Int,
   val adjudicationNumber: Long,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
 )
 
 fun Offender.toPrisoner(createUsername: String, dateAddedToIncident: LocalDate, comment: String? = null) =
