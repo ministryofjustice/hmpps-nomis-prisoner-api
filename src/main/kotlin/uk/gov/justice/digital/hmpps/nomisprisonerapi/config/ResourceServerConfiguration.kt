@@ -20,8 +20,8 @@ import org.springframework.security.web.SecurityFilterChain
 @EnableCaching
 class ResourceServerConfiguration {
   @Bean
-  fun filterChain(http: HttpSecurity): SecurityFilterChain {
-    http {
+  fun filterChain(http: HttpSecurity): SecurityFilterChain =
+    http.invoke {
       sessionManagement { SessionCreationPolicy.STATELESS }
       headers { frameOptions { sameOrigin = true } }
       csrf { disable() }
@@ -34,9 +34,7 @@ class ResourceServerConfiguration {
         authorize(anyRequest, authenticated)
       }
       oauth2ResourceServer { jwt { jwtAuthenticationConverter = AuthAwareTokenConverter() } }
-    }
-    return http.build()
-  }
+    }.let { http.build() }
 
   @Bean
   fun locallyCachedJwtDecoder(

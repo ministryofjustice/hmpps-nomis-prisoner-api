@@ -33,7 +33,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     .info(
       Info().title("NOMIS Synchronisation API")
         .version(version)
-        .description("Controls writing Prisoner information back to NOMIS for data synchronistion (not intended for general usage)")
+        .description("Controls writing Prisoner information back to NOMIS for data synchronisation (not intended for general usage)")
         .contact(Contact().name("HMPPS Digital Studio").email("feedback@digital.justice.gov.uk")),
     )
     .components(
@@ -50,25 +50,24 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     .addSecurityItem(SecurityRequirement().addList("bearer-jwt", listOf("read", "write")))
 
   @Bean
-  fun openAPICustomiser(): OpenApiCustomizer {
-    PrimitiveType.enablePartialTime() // Prevents generation of a LocalTime schema which causes conflicts with java.time.LocalTime
-    return OpenApiCustomizer {
-      it.components.schemas.forEach { (_, schema: Schema<*>) ->
-        val properties = schema.properties ?: mutableMapOf()
-        for (propertyName in properties.keys) {
-          val propertySchema = properties[propertyName]!!
-          if (propertySchema is DateTimeSchema) {
-            properties.replace(
-              propertyName,
-              StringSchema()
-                .example("2021-07-05T10:35:17")
-                .pattern("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
-                .description(propertySchema.description)
-                .required(propertySchema.required),
-            )
-          }
+  fun openAPICustomiser(): OpenApiCustomizer = OpenApiCustomizer {
+    it.components.schemas.forEach { (_, schema: Schema<*>) ->
+      val properties = schema.properties ?: mutableMapOf()
+      for (propertyName in properties.keys) {
+        val propertySchema = properties[propertyName]!!
+        if (propertySchema is DateTimeSchema) {
+          properties.replace(
+            propertyName,
+            StringSchema()
+              .example("2021-07-05T10:35:17")
+              .pattern("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
+              .description(propertySchema.description)
+              .required(propertySchema.required),
+          )
         }
       }
     }
+  }.also {
+    PrimitiveType.enablePartialTime() // Prevents generation of a LocalTime schema which causes conflicts with java.time.LocalTime
   }
 }
