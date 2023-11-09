@@ -4,12 +4,15 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderActivityExclusion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -35,6 +38,12 @@ interface CourseAllocationDsl {
     endDate: String? = null,
     payBandCode: String = "5",
   ): OffenderProgramProfilePayBand
+
+  @OffenderActivityExclusionDslMarker
+  fun exclusion(
+    slotCategory: SlotCategory? = null,
+    excludeDay: WeekDay = WeekDay.MON,
+  ): OffenderActivityExclusion
 }
 
 @Component
@@ -51,11 +60,13 @@ class CourseAllocationBuilderFactory(
   private val repository: CourseAllocationBuilderRepository? = null,
   private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory = CourseAllocationPayBandBuilderFactory(),
   private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory = CourseAttendanceBuilderFactory(),
+  private val exclusionBuilderFactory: OffenderActivityExclusionBuilderFactory = OffenderActivityExclusionBuilderFactory(),
 ) {
   fun builder() = CourseAllocationBuilder(
     repository,
     payBandBuilderFactory,
     courseAttendanceBuilderFactory,
+    exclusionBuilderFactory,
   )
 }
 
@@ -63,6 +74,7 @@ class CourseAllocationBuilder(
   private val repository: CourseAllocationBuilderRepository? = null,
   private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory,
   private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory,
+  private val exclusionBuilderFactory: OffenderActivityExclusionBuilderFactory,
 ) : CourseAllocationDsl {
 
   private lateinit var courseAllocation: OffenderProgramProfile
@@ -120,6 +132,19 @@ class CourseAllocationBuilder(
       paidTransactionId,
     )
       .also { courseAllocation.offenderCourseAttendances += it }
+
+  override fun exclusion(
+    slotCategory: SlotCategory?,
+    excludeDay: WeekDay,
+  ): OffenderActivityExclusion =
+    exclusionBuilderFactory.builder().build(
+      courseAllocation.offenderBooking,
+      courseAllocation,
+      courseAllocation.courseActivity,
+      slotCategory,
+      excludeDay,
+    )
+      .also { courseAllocation.offenderExclusions += it }
 
   private fun programStatus(programStatusCode: String) = repository?.programStatus(programStatusCode)
     ?: OffenderProgramStatus(code = programStatusCode, description = programStatusCode)

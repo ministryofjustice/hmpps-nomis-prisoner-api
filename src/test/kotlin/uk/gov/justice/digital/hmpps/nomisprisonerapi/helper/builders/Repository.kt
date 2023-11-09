@@ -275,6 +275,7 @@ class Repository(
   fun getOffenderProgramProfile(id: Long): OffenderProgramProfile =
     offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
       it.payBands.size
+      it.offenderExclusions.size
     }
 
   fun getAppointment(id: Long): OffenderIndividualSchedule? = offenderIndividualScheduleRepository.findByIdOrNull(id)
