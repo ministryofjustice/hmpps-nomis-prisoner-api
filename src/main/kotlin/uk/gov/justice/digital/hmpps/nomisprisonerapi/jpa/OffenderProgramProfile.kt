@@ -57,7 +57,7 @@ data class OffenderProgramProfile(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CRS_ACTY_ID")
-  val courseActivity: CourseActivity? = null,
+  val courseActivity: CourseActivity,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
