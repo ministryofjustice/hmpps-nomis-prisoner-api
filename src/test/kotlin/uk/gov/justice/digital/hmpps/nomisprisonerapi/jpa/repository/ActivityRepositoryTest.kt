@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
@@ -18,9 +19,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderActivityExclusion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -154,7 +158,26 @@ class ActivityRepositoryTest {
         courseActivity = seedCourseActivity,
         prison = seedPrison,
         endDate = LocalDate.parse("2023-01-11"),
-      ),
+      ).apply {
+        offenderExclusions.addAll(
+          listOf(
+            OffenderActivityExclusion(
+              offenderBooking = seedOffenderBooking,
+              offenderProgramProfile = this,
+              courseActivity = seedCourseActivity,
+              slotCategory = SlotCategory.AM,
+              excludeDay = WeekDay.FRI,
+            ),
+            OffenderActivityExclusion(
+              offenderBooking = seedOffenderBooking,
+              offenderProgramProfile = this,
+              courseActivity = seedCourseActivity,
+              slotCategory = null,
+              excludeDay = WeekDay.SAT,
+            ),
+          ),
+        )
+      },
     )
 
     val persistedRecord = offenderProgramProfileRepository.findAll().first()
@@ -168,6 +191,10 @@ class ActivityRepositoryTest {
       assertThat(courseActivity?.courseActivityId).isEqualTo(seedCourseActivity.courseActivityId)
       assertThat(prison?.id).isEqualTo(seedPrison.id)
       assertThat(endDate).isEqualTo(LocalDate.parse("2023-01-11"))
+      assertThat(offenderExclusions).extracting("slotCategory", "excludeDay").containsExactlyInAnyOrder(
+        tuple(SlotCategory.AM, WeekDay.FRI),
+        tuple(null, WeekDay.SAT),
+      )
     }
   }
 }
