@@ -402,8 +402,10 @@ class AdjudicationService(
 
   @Audit
   fun createHearing(adjudicationNumber: Long, request: CreateHearingRequest): CreateHearingResponse {
-    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
-      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    val party =
+      adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.also { it.generateOffenceIds() }
+        ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+
     val internalLocation = findInternalLocation(request.internalLocationId)
     return AdjudicationHearing(
       adjudicationNumber = adjudicationNumber,
@@ -529,8 +531,9 @@ class AdjudicationService(
     adjudicationNumber: Long,
     request: UpdateEvidenceRequest,
   ): UpdateEvidenceResponse {
-    val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
-      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    val adjudicationParty =
+      adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.also { it.generateOffenceIds() }
+        ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
 
     // any evidence for any investigation needs to be cleared down, ready to be replaced
     adjudicationParty.investigations.forEach { it.evidence.clear() }.also {
@@ -992,8 +995,9 @@ class AdjudicationService(
       "plea" to request.pleaFindingCode,
     )
 
-    val party = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
-      ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
+    val party =
+      adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.also { it.generateOffenceIds() }
+        ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
 
     // DPS created (or migrated) adjudications will have 1 charge
     val incidentCharge = party.charges.firstOrNull { it.id.chargeSequence == chargeSequence }
@@ -1144,6 +1148,14 @@ class AdjudicationService(
       requests = request.awards,
     )
   }
+}
+
+private fun AdjudicationIncidentParty.generateOffenceIds() {
+  this.charges
+    .filter { it.offenceId == null }
+    .forEach {
+      it.offenceId = "${this.adjudicationNumber}/${it.id.chargeSequence}"
+    }
 }
 
 private fun AdjudicationHearingResult.toHearingResult(): HearingResult = HearingResult(

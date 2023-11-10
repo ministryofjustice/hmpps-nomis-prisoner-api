@@ -57,7 +57,8 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
-              charge(offenceCode = "51:1B")
+              charge(offenceCode = "51:1B", generateOfficeId = false)
+              charge(offenceCode = "51:1A", generateOfficeId = false)
             }
           }
         }
@@ -168,6 +169,34 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
           },
           isNull(),
         )
+      }
+
+      @Test
+      fun `will set offenceId on charge when missing`() {
+        repository.runInTransaction {
+          with(repository.adjudicationIncidentPartyRepository.findByAdjudicationNumber(existingAdjudicationNumber)!!) {
+            assertThat(charges[0].offenceId).isNull()
+            assertThat(charges[1].offenceId).isNull()
+          }
+        }
+
+        webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearing(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          with(repository.adjudicationIncidentPartyRepository.findByAdjudicationNumber(existingAdjudicationNumber)!!) {
+            assertThat(charges[0].offenceId).isEqualTo("$existingAdjudicationNumber/1")
+            assertThat(charges[1].offenceId).isEqualTo("$existingAdjudicationNumber/2")
+          }
+        }
       }
     }
 

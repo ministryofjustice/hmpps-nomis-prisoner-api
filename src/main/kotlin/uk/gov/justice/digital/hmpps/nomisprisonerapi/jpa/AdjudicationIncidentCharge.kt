@@ -72,7 +72,7 @@ class AdjudicationIncidentCharge(
 
   // adjudication number / charge index at incident level eg 4577667/1
   @Column(name = "OIC_CHARGE_ID")
-  val offenceId: String? = null,
+  var offenceId: String? = null,
 
   @Column(name = "CREATE_DATETIME", nullable = false)
   var whenCreated: LocalDateTime = LocalDateTime.now(),
