@@ -40,4 +40,7 @@ data class GetAllocationResponse(
 
   @Schema(description = "Cell description (can be null if OUT or being transferred)", example = "RSI-A-1-001")
   val livingUnitDescription: String? = null,
+
+  @Schema(description = "Sessions excluded from the allocation during which period attendances will not be generated")
+  val exclusions: List<AllocationExclusion> = listOf(),
 )

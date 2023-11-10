@@ -1,5 +1,3 @@
-@file:Suppress("ClassName")
-
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import org.assertj.core.api.Assertions.assertThat
@@ -17,6 +15,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.time.LocalDate
 
 class GetAllocationResourceIntTest : IntegrationTestBase() {
@@ -679,6 +679,32 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .jsonPath("suspended").isEqualTo(false)
           .jsonPath("payBand").isEqualTo("1")
           .jsonPath("livingUnitDescription").isEqualTo("BXI-A-1-016")
+          .jsonPath("exclusions").isEmpty
+      }
+
+      @Test
+      fun `should return allocation exclusions`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity()
+          }
+          offender {
+            offenderBooking = booking {
+              courseAllocation = courseAllocation(courseActivity) {
+                exclusion(SlotCategory.AM, WeekDay.MON)
+                exclusion(null, WeekDay.TUE)
+              }
+            }
+          }
+        }
+
+        webTestClient.getAllocationDetails()
+          .expectBody()
+          .jsonPath("courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("exclusions[0].slot").isEqualTo("AM")
+          .jsonPath("exclusions[0].day").isEqualTo("MON")
+          .jsonPath("exclusions[1].slot").doesNotExist()
+          .jsonPath("exclusions[1].day").isEqualTo("TUE")
       }
 
       @Test

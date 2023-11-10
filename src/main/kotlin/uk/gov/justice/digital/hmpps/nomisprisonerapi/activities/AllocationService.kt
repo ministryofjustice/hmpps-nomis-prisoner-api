@@ -85,6 +85,12 @@ class AllocationService(
           suspended = it.suspended,
           payBand = it.payBands.firstOrNull(OffenderProgramProfilePayBand::isActive)?.payBand?.code,
           livingUnitDescription = it.offenderBooking.assignedLivingUnit?.description,
+          exclusions = it.offenderExclusions.map { exclusion ->
+            AllocationExclusion(
+              day = exclusion.excludeDay.name,
+              slot = exclusion.slotCategory?.name,
+            )
+          },
         )
       }
       ?: throw NotFoundException("Offender program profile with id=$allocationId does not exist")
