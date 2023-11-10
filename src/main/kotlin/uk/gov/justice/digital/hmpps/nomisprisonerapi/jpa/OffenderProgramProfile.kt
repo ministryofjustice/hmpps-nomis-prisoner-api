@@ -93,7 +93,7 @@ data class OffenderProgramProfile(
   @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderCourseAttendances: MutableList<OffenderCourseAttendance> = mutableListOf(),
 
-  @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val offenderExclusions: MutableList<OffenderActivityExclusion> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {

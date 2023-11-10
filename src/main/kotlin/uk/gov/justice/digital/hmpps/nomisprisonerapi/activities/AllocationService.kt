@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AllocationExclusion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AllocationReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAllocationResponse
@@ -14,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAlloca
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderActivityExclusion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
@@ -21,6 +23,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfileP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -71,7 +75,7 @@ class AllocationService(
       ?.let {
         GetAllocationResponse(
           prisonId = it.prison!!.id,
-          courseActivityId = it.courseActivity!!.courseActivityId,
+          courseActivityId = it.courseActivity.courseActivityId,
           nomisId = it.offenderBooking.offender.nomsId,
           bookingId = it.offenderBooking.bookingId,
           startDate = it.startDate,
@@ -112,6 +116,7 @@ class AllocationService(
       endComment = updateEndComment(request)
       updatePayBands(requestedPayBand, request)
       programStatus = findProgramStatus(request.programStatusCode)
+      updateExclusions(request.exclusions)
     }
   }
 
@@ -195,6 +200,35 @@ class AllocationService(
       payBand = payBand,
       endDate = endDate,
     )
+
+  private fun OffenderProgramProfile.updateExclusions(requestedExclusions: List<AllocationExclusion>) {
+    requestedExclusions
+      .map { requestedExclusion -> findOrCreateExclusion(requestedExclusion) }
+      .also {
+        offenderExclusions.clear()
+        offenderExclusions.addAll(it)
+      }
+  }
+
+  private fun OffenderProgramProfile.findOrCreateExclusion(requestedExclusion: AllocationExclusion) =
+    offenderExclusions.find { existing ->
+      requestedExclusion.day == existing.excludeDay.name && requestedExclusion.slot == existing.slotCategory?.name
+    }
+      ?: OffenderActivityExclusion(
+        offenderBooking = offenderBooking,
+        courseActivity = courseActivity,
+        offenderProgramProfile = this,
+        excludeDay = findExcludeDay(requestedExclusion.day),
+        slotCategory = requestedExclusion.slot?.let { findSlotCategory(requestedExclusion.slot) },
+      )
+
+  private fun findExcludeDay(day: String): WeekDay =
+    WeekDay.entries.find { it.name == day }
+      ?: throw BadDataException("Exclusion day $day does not exist")
+
+  private fun findSlotCategory(slot: String): SlotCategory =
+    SlotCategory.entries.find { it.name == slot }
+      ?: throw BadDataException("Exclusion slot $slot does not exist")
 
   private fun updateEndComment(request: UpsertAllocationRequest) =
     if (request.endDate != null) {

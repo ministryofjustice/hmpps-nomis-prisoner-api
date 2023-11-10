@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -25,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderActivityExclusion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfilePayBand
@@ -71,7 +71,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     "startDate": "2022-11-14",
     "payBandCode": "5",
     "programStatusCode": "ALLOC",
-    "prisonerExclusions": []
+    "exclusions": []
   }
   """.trimIndent()
 
@@ -89,8 +89,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   private fun String.withPrisonerExclusions(exclusions: List<Pair<String, String?>>) =
     replace(
-      """"prisonerExclusions": []""",
-      """"prisonerExclusions": [${exclusions.joinToString(", ") { ex -> """{"dayOfWeek": "${ex.first}", "slotCategory": ${ex.second?.let { "\"$it\"" } ?: ""}}""" }}]""",
+      """"exclusions": []""",
+      """"exclusions": [${exclusions.joinToString(", ") { ex -> """{"day": "${ex.first}", "slot": ${ex.second?.let { "\"$it\"" } ?: "null"}}""" }}]""",
     )
 
   private fun String.withEndDate(newEndDate: String?) =
@@ -326,7 +326,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    @Disabled("WIP")
     fun `should return bad request if invalid day in prisoner exclusion`() {
       val request = upsertRequest().withPrisonerExclusions(listOf("INVALID" to "AM"))
 
@@ -337,7 +336,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    @Disabled("WIP")
     fun `should return bad request if invalid slot category in prisoner exclusion`() {
       val request = upsertRequest().withPrisonerExclusions(listOf("MON" to "INVALID"))
 
@@ -367,7 +365,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    @Disabled("WIP")
     fun `should save a prisoner exclusion to a new allocation`() {
       val response = upsertAllocationIsOk(
         upsertRequest().withPrisonerExclusions(listOf("TUE" to "AM")),
@@ -378,6 +375,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved.offenderExclusions[0]) {
+        assertThat(id).isGreaterThan(0)
         assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
         assertThat(courseActivity.courseActivityId).isEqualTo(this@AllocationResourceIntTest.courseActivity.courseActivityId)
         assertThat(slotCategory).isEqualTo(SlotCategory.AM)
@@ -386,7 +384,6 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    @Disabled("WIP")
     fun `should save multiple prisoner exclusions`() {
       val response = upsertAllocationIsOk(
         upsertRequest().withPrisonerExclusions(listOf("MON" to null, "TUE" to "AM")),
@@ -882,8 +879,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Disabled("WIP")
-    inner class PrisonerExclusions {
+    inner class AllocationExclusions {
       private lateinit var allocation: OffenderProgramProfile
 
       @Test
@@ -903,6 +899,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         val updated = repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)
         assertThat(updated.offenderExclusions.size).isEqualTo(1)
         with(updated.offenderExclusions[0]) {
+          assertThat(id).isGreaterThan(0)
           assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
           assertThat(courseActivity.courseActivityId).isEqualTo(this@AllocationResourceIntTest.courseActivity.courseActivityId)
           assertThat(slotCategory).isNull()
@@ -912,11 +909,12 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should add to existing exclusions`() {
+        lateinit var exclusion: OffenderActivityExclusion
         nomisDataBuilder.build {
           offender = offender {
             bookingId = booking {
               allocation = courseAllocation(courseActivity) {
-                exclusion(null, WeekDay.MON)
+                exclusion = exclusion(null, WeekDay.MON)
               }
             }.bookingId
           }
@@ -927,22 +925,27 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         )
 
         val updated = repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)
-        assertThat(updated.offenderExclusions)
-          .extracting("slotCategory", "excludeDay")
-          .containsExactlyInAnyOrder(
-            tuple(null, WeekDay.MON),
-            tuple(SlotCategory.AM, WeekDay.TUE),
-          )
+        assertThat(updated.offenderExclusions.size).isEqualTo(2)
+        with(updated.offenderExclusions.find { it.excludeDay.name == "MON" }!!) {
+          assertThat(id).isEqualTo(exclusion.id)
+          assertThat(slotCategory).isNull()
+        }
+        with(updated.offenderExclusions.find { it.excludeDay.name == "TUE" }!!) {
+          assertThat(id).isGreaterThan(0).isNotEqualTo(exclusion.id)
+          assertThat(slotCategory).isEqualTo(SlotCategory.AM)
+        }
       }
 
       @Test
       fun `should replace exclusions`() {
+        lateinit var exclusion: OffenderActivityExclusion
+        lateinit var exclusion2: OffenderActivityExclusion
         nomisDataBuilder.build {
           offender = offender {
             bookingId = booking {
               allocation = courseAllocation(courseActivity) {
-                exclusion(SlotCategory.AM, WeekDay.WED)
-                exclusion(SlotCategory.PM, WeekDay.SAT)
+                exclusion = exclusion(SlotCategory.AM, WeekDay.WED)
+                exclusion2 = exclusion(SlotCategory.PM, WeekDay.SAT)
               }
             }.bookingId
           }
@@ -953,12 +956,15 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         )
 
         val updated = repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)
-        assertThat(updated.offenderExclusions)
-          .extracting("slotCategoty", "excludeDay")
-          .containsExactlyInAnyOrder(
-            tuple(SlotCategory.ED, WeekDay.SUN),
-            tuple(SlotCategory.PM, WeekDay.WED),
-          )
+        assertThat(updated.offenderExclusions.size).isEqualTo(2)
+        with(updated.offenderExclusions.find { it.excludeDay.name == "THU" }!!) {
+          assertThat(id).isGreaterThan(0).isNotIn(exclusion.id, exclusion2.id)
+          assertThat(slotCategory).isEqualTo(SlotCategory.PM)
+        }
+        with(updated.offenderExclusions.find { it.excludeDay.name == "SUN" }!!) {
+          assertThat(id).isGreaterThan(0).isNotIn(exclusion.id, exclusion2.id)
+          assertThat(slotCategory).isEqualTo(SlotCategory.ED)
+        }
       }
 
       @Test
