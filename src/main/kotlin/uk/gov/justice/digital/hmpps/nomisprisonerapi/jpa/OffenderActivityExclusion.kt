@@ -18,8 +18,8 @@ import org.hibernate.Hibernate
 data class OffenderActivityExclusion(
   @Id
   @Column(name = "OFFENDER_EXCLUDE_ACT_SCHD_ID")
-  @SequenceGenerator(name = "OFFENDER_EXCLUDE_ACT_SCHD_ID", sequenceName = "OFFENDER_EXCLUDE_ACT_SCHD_ID", allocationSize = 1)
-  @GeneratedValue(generator = "OFFENDER_EXCLUDE_ACT_SCHD_ID")
+  @SequenceGenerator(name = "OFFENDER_EXCLUDE_ACT_SCHDS_SEQ", sequenceName = "OFFENDER_EXCLUDE_ACT_SCHDS_SEQ", allocationSize = 1)
+  @GeneratedValue(generator = "OFFENDER_EXCLUDE_ACT_SCHDS_SEQ")
   val id: Long = 0,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
