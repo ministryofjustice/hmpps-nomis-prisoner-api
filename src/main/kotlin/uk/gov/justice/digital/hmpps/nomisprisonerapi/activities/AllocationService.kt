@@ -116,7 +116,7 @@ class AllocationService(
       endComment = updateEndComment(request)
       updatePayBands(requestedPayBand, request)
       programStatus = findProgramStatus(request.programStatusCode)
-      updateExclusions(request.exclusions)
+      updateExclusions(request.exclusions ?: listOf())
     }
   }
 

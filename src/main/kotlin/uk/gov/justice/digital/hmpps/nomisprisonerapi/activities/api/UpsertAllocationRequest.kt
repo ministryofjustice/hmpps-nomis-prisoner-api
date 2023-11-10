@@ -50,7 +50,7 @@ data class UpsertAllocationRequest(
   val programStatusCode: String,
 
   @Schema(description = "Sessions excluded from the allocation during which period attendances will not be generated")
-  val exclusions: List<AllocationExclusion> = listOf(),
+  val exclusions: List<AllocationExclusion>? = listOf(),
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
