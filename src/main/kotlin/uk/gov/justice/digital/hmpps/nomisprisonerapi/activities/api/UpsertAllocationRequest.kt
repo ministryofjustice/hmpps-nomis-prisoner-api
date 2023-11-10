@@ -23,7 +23,7 @@ data class UpsertAllocationRequest(
   @field:Length(min = 1, max = 12)
   val payBandCode: String,
 
-  @Schema(description = "Activity start date", required = true, example = "2022-08-12")
+  @Schema(description = "Activity start date", example = "2022-08-12")
   val startDate: LocalDate,
 
   @Schema(description = "Activity end date", example = "2022-08-12")
@@ -48,4 +48,17 @@ data class UpsertAllocationRequest(
   @field:NotBlank
   @field:Length(min = 1, max = 12)
   val programStatusCode: String,
+
+  @Schema(description = "Sessions excluded from the allocation during which period attendances will not be generated")
+  val exclusions: List<AllocationExclusion> = listOf(),
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "A session to exclude from the allocation during which period attendances will not be generated")
+data class AllocationExclusion(
+  @Schema(description = "The day of the exclusion", example = "MON", allowableValues = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"])
+  val day: String,
+
+  @Schema(description = "The session the exclusion applies to (morning, afternoon or evening). Or null for the whole day.", example = "AM", allowableValues = ["AM", "PM", "ED"])
+  val slot: String? = null,
 )
