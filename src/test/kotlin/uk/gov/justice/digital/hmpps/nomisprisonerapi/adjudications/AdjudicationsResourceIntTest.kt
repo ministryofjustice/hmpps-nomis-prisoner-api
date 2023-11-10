@@ -2314,6 +2314,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
+              charge(offenceCode = "51:1N", generateOfficeId = false)
+              charge(offenceCode = "51:1B", generateOfficeId = false)
               investigation(
                 investigator = reportingStaff,
                 comment = "Isla comment for investigation",
@@ -2602,6 +2604,49 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .jsonPath("evidence[1].detail").isEqualTo("Knife used")
           .jsonPath("evidence[1].date").isEqualTo(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
           .jsonPath("evidence[1].type.code").isEqualTo("EVI_BAG")
+      }
+    }
+
+    @Test
+    fun `will set offenceId on all charges when missing`() {
+      repository.runInTransaction {
+        with(repository.adjudicationIncidentPartyRepository.findByAdjudicationNumber(existingAdjudicationNumber)!!) {
+          assertThat(charges[0].offenceId).isNull()
+          assertThat(charges[1].offenceId).isNull()
+        }
+      }
+
+      webTestClient.put()
+        .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            //language=json
+            """
+            {
+              "evidence": [
+                {
+                  "detail": "smashed light bulb",
+                  "typeCode": "PHOTO"
+                },
+                {
+                  "detail": "Knife used",
+                  "typeCode": "EVI_BAG"
+                }
+              ]
+            }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      repository.runInTransaction {
+        with(repository.adjudicationIncidentPartyRepository.findByAdjudicationNumber(existingAdjudicationNumber)!!) {
+          assertThat(charges[0].offenceId).isEqualTo("$existingAdjudicationNumber/1")
+          assertThat(charges[1].offenceId).isEqualTo("$existingAdjudicationNumber/2")
+        }
       }
     }
   }

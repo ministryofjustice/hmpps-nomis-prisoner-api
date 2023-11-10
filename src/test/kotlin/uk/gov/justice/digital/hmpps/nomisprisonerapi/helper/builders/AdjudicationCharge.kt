@@ -42,6 +42,7 @@ class AdjudicationChargeBuilder(
     reportDetail: String?,
     incidentParty: AdjudicationIncidentParty,
     chargeSequence: Int,
+    generateOfficeId: Boolean,
     whenCreated: LocalDateTime,
   ): AdjudicationIncidentCharge = AdjudicationIncidentCharge(
     id = AdjudicationIncidentChargeId(incidentParty.id.agencyIncidentId, chargeSequence),
@@ -51,7 +52,11 @@ class AdjudicationChargeBuilder(
     offence = repository.lookupAdjudicationOffence(offenceCode),
     guiltyEvidence = guiltyEvidence,
     reportDetails = reportDetail,
-    offenceId = "${incidentParty.adjudicationNumber}/$chargeSequence",
+    offenceId = if (generateOfficeId) {
+      "${incidentParty.adjudicationNumber}/$chargeSequence"
+    } else {
+      null
+    },
     whenCreated = whenCreated,
   )
     .also { adjudicationCharge = it }

@@ -330,7 +330,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     private lateinit var existingSecondCharge: AdjudicationIncidentCharge
 
     @BeforeEach
-    fun createPrisonerWithAdjudicationAndHearing() {
+    fun createPrisonerWithAdjudication() {
       nomisDataBuilder.build {
         staff(firstName = "BILL", lastName = "STAFF") {
           account(username = "BILLSTAFF")
@@ -342,8 +342,8 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
-              existingCharge = charge(offenceCode = "51:1B")
-              existingSecondCharge = charge(offenceCode = "51:1C")
+              existingCharge = charge(offenceCode = "51:1B", generateOfficeId = false)
+              existingSecondCharge = charge(offenceCode = "51:1C", generateOfficeId = false)
             }
           }
         }
@@ -539,6 +539,37 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           assertThat(adjudicationHearingForCharge1.hearingResults[0].findingType.code).isEqualTo("NOT_PROCEED")
           // dummy hearing for other charge is not updated
           assertThat(adjudicationHearingForCharge2.hearingResults[0].findingType.code).isEqualTo("REF_POLICE")
+        }
+      }
+
+      @Test
+      fun `will set offenceId on all charges when missing`() {
+        repository.runInTransaction {
+          with(repository.adjudicationIncidentPartyRepository.findByAdjudicationNumber(existingAdjudicationNumber)!!) {
+            assertThat(charges[0].offenceId).isNull()
+            assertThat(charges[1].offenceId).isNull()
+          }
+        }
+
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(pleaFindingCode = "NOT_ASKED", findingCode = "REF_POLICE"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          with(repository.adjudicationIncidentPartyRepository.findByAdjudicationNumber(existingAdjudicationNumber)!!) {
+            // even though the referral is on a specific charge - offence id is set on all charges which is consistent
+            // with NOMIS behaviour
+            assertThat(charges[0].offenceId).isEqualTo("$existingAdjudicationNumber/1")
+            assertThat(charges[1].offenceId).isEqualTo("$existingAdjudicationNumber/2")
+          }
         }
       }
     }
