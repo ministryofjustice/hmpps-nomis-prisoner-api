@@ -10,6 +10,7 @@ class BadDataException(message: String?, val error: BadRequestError? = null) : R
 
 enum class BadRequestError(val errorCode: Int) {
   ATTENDANCE_PAID(1001),
+  PRISONER_MOVED_ALLOCATION_ENDED(1002),
 }
 
 class ConflictException(message: String?) : RuntimeException(message), Supplier<ConflictException> {

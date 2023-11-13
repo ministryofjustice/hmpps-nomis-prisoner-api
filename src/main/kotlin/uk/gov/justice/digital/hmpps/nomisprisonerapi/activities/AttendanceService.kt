@@ -80,6 +80,9 @@ class AttendanceService(
       ).also {
         offenderProgramProfile.endDate?.run {
           if (this.isBefore(courseSchedule.scheduleDate)) {
+            if (courseSchedule.courseActivity.prison.id != offenderBooking.location?.id) {
+              throw BadDataException("Cannot create an attendance for allocation ${offenderProgramProfile.offenderProgramReferenceId} after its end date of $this with prisoner now in location ${offenderBooking.location?.id}", BadRequestError.PRISONER_MOVED_ALLOCATION_ENDED)
+            }
             throw BadDataException("Cannot create an attendance for allocation ${offenderProgramProfile.offenderProgramReferenceId} after its end date of $this")
           }
         }
