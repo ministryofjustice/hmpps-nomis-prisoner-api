@@ -665,7 +665,7 @@ class AdjudicationService(
         null,
       )
     } ?: let {
-      val resultSeq = hearing.hearingResults.size + 1
+      val resultSeq = hearing.hearingResults.highestSequence() + 1
       AdjudicationHearingResult(
         id = AdjudicationHearingResultId(oicHearingId = hearingId, resultSeq),
         incident = party.incident,
@@ -1149,6 +1149,9 @@ class AdjudicationService(
     )
   }
 }
+
+private fun Iterable<AdjudicationHearingResult>.highestSequence(): Int =
+  this.maxOfOrNull { it.id.resultSequence } ?: 0
 
 private fun AdjudicationIncidentParty.generateOffenceIds() {
   this.charges
