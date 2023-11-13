@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -47,6 +48,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
@@ -93,6 +95,7 @@ class Repository(
   val staffRepository: StaffRepository,
   val adjudicationHearingRepository: AdjudicationHearingRepository,
   val offenderNonAssociationRepository: OffenderNonAssociationRepository,
+  val courtCaseRepository: CourtCaseRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -206,6 +209,8 @@ class Repository(
   fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
   fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) =
     adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
+
+  fun delete(courtCase: CourtCase) = courtCaseRepository.deleteById(courtCase.id)
 
   // Builder lookups
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
