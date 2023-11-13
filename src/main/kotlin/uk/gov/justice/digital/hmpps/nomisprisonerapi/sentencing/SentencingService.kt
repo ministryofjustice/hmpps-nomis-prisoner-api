@@ -42,7 +42,7 @@ class SentencingService(
         statusUpdateDate = it.statusUpdateDate,
         statusUpdateStaffId = it.statusUpdateStaff?.id,
         createdDateTime = it.createDatetime,
-        createdByUsername = it.createUsername
+        createdByUsername = it.createUsername,
       )
     } ?: throw NotFoundException("Court case $id not found")
   }
