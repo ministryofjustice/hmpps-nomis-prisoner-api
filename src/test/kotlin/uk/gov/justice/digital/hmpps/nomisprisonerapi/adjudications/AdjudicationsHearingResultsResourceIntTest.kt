@@ -54,9 +54,14 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     private lateinit var prisoner: Offender
     private lateinit var reportingStaff: Staff
     private lateinit var existingIncident: AdjudicationIncident
+    private lateinit var migratedIncident: AdjudicationIncident
     private val existingAdjudicationNumber = 123456L
+    private val migratedAdjudicationNumber = 119999L
     private lateinit var existingHearing: AdjudicationHearing
+    private lateinit var migratedHearing: AdjudicationHearing
     private lateinit var existingCharge: AdjudicationIncidentCharge
+    private lateinit var migratedCharge1: AdjudicationIncidentCharge
+    private lateinit var migratedCharge2: AdjudicationIncidentCharge
 
     @BeforeEach
     fun createPrisonerWithAdjudicationAndHearing() {
@@ -68,6 +73,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           account(username = "JANESTAFF")
         }
         existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
+        migratedIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
           booking {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
@@ -82,6 +88,19 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
                 // no staff added to hearing as hearing result POST will add it
               )
             }
+            adjudicationParty(incident = migratedIncident, adjudicationNumber = migratedAdjudicationNumber) {
+              migratedCharge1 = charge(offenceCode = "51:1B")
+              migratedCharge2 = charge(offenceCode = "51:1A")
+              migratedHearing = hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                hearingDate = LocalDate.parse("2022-01-03"),
+                hearingTime = LocalDateTime.parse("2022-01-03T15:00:00"),
+                hearingTypeCode = AdjudicationHearingType.GOVERNORS_HEARING,
+              ) {
+                result(charge = migratedCharge1, findingCode = "NOT_PROCEED", pleaFindingCode = "NOT_GUILTY")
+                result(charge = migratedCharge2, findingCode = "PROVED", pleaFindingCode = "GUILTY")
+              }
+            }
           }
         }
       }
@@ -90,7 +109,9 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteHearingByAdjudicationNumber(existingAdjudicationNumber)
+      repository.deleteHearingByAdjudicationNumber(migratedAdjudicationNumber)
       repository.delete(existingIncident)
+      repository.delete(migratedIncident)
       repository.delete(prisoner)
       repository.delete(reportingStaff)
     }
@@ -301,6 +322,75 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           },
           isNull(),
         )
+      }
+    }
+
+    @Nested
+    inner class MigratedHearing {
+      @Test
+      fun `can create and remove and add results for multiple charges`() {
+        // GIVEN there are two charges from a migrated records
+        webTestClient.get()
+          .uri("/adjudications/hearings/${migratedHearing.id}/charge/${migratedCharge1.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("NOT_PROCEED")
+          .jsonPath("pleaFindingType.code").isEqualTo("NOT_GUILTY")
+
+        webTestClient.get()
+          .uri("/adjudications/hearings/${migratedHearing.id}/charge/${migratedCharge2.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("PROVED")
+          .jsonPath("pleaFindingType.code").isEqualTo("GUILTY")
+
+        // WHEN the first one is deleted
+        webTestClient.delete()
+          .uri("/adjudications/adjudication-number/$migratedAdjudicationNumber/hearings/${migratedHearing.id}/charge/${migratedCharge1.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+        webTestClient.get()
+          .uri("/adjudications/hearings/${migratedHearing.id}/charge/${migratedCharge1.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+
+        // AND re-added
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$migratedAdjudicationNumber/hearings/${migratedHearing.id}/charge/${migratedCharge1.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(pleaFindingCode = "NOT_GUILTY", findingCode = "NOT_PROCEED"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        // THEN both results should be present
+        webTestClient.get()
+          .uri("/adjudications/hearings/${migratedHearing.id}/charge/${migratedCharge1.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("NOT_PROCEED")
+          .jsonPath("pleaFindingType.code").isEqualTo("NOT_GUILTY")
+
+        webTestClient.get()
+          .uri("/adjudications/hearings/${migratedHearing.id}/charge/${migratedCharge2.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("findingType.code").isEqualTo("PROVED")
+          .jsonPath("pleaFindingType.code").isEqualTo("GUILTY")
       }
     }
 
