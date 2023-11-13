@@ -60,6 +60,16 @@ class SentencingResource(private val sentencingService: SentencingService) {
           ),
         ],
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
   fun getCourtCase(
