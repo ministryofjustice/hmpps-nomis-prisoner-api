@@ -263,6 +263,33 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should return bad request and error code if creating an attendance after an allocation has ended and prisoner has moved`() {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(prisonId = "BXI") {
+              courseSchedule = courseSchedule(scheduleDate = "$today")
+              courseScheduleRule()
+              payRate()
+            }
+          }
+          offender(nomsId = "A1111AA") {
+            offenderBooking = booking(agencyLocationId = "MDI") {
+              allocation = courseAllocation(courseActivity, programStatusCode = "END", endDate = "$yesterday")
+            }
+          }
+        }
+
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Cannot create an attendance for allocation ${allocation.offenderProgramReferenceId} after its end date of $yesterday with prisoner now in location MDI")
+          }
+          .jsonPath("errorCode").isEqualTo(BadRequestError.PRISONER_MOVED_ALLOCATION_ENDED.errorCode)
+      }
+
+      @Test
       fun `should return OK if creating an attendance on the day an allocation ends`() {
         val yesterday = LocalDate.now().minusDays(1)
         nomisDataBuilder.build {

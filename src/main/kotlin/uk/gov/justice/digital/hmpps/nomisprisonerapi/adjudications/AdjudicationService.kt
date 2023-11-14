@@ -1169,10 +1169,16 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
   findingType = this.findingType.toCodeDescription(),
   charge = this.incidentCharge?.toCharge()!!, // this is only called when this is non-null
   offence = this.offence.toOffence(),
-  resultAwards = this.resultAwards.map { it.toAward() },
+  resultAwards = this.resultAwards.filter { it.matchesAdjudicationParty() }.map { it.toAward() },
   createdDateTime = this.whenCreated,
   createdByUsername = this.createUsername,
 )
+
+// edge case for NOMIS merge where two sets of sanctions for different bookings attached
+// to same hearing result. There is only one case of this in production so this simple fix is preferred over
+// a complicated mapping change
+private fun AdjudicationHearingResultAward.matchesAdjudicationParty(): Boolean =
+  this.id.offenderBookId == this.incidentParty.offenderBooking?.bookingId
 
 private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
   hearingId = this.id,
