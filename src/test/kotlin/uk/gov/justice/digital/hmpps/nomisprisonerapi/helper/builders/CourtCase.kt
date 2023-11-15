@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -21,14 +22,34 @@ import java.time.LocalDateTime
 annotation class CourtCaseDslMarker
 
 @NomisDataDslMarker
-interface CourtCaseDsl
+interface CourtCaseDsl {
+  @CourtEventDslMarker
+  fun courtEvent(
+    commentText: String? = "Court event comment",
+    prison: String = "MDI",
+    courtEventType: String = "TRIAL",
+    eventStatusCode: String = "SCH",
+    outcomeReasonCode: String? = "1046",
+    judgeName: String? = "Mike",
+    directionCode: String? = "IN",
+    eventDate: LocalDate = LocalDate.of(2023, 1, 1),
+    startTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
+    nextEventStartTime: LocalDateTime? = LocalDateTime.of(2023, 1, 5, 10, 30),
+    nextEventDate: LocalDate? = LocalDate.of(2023, 1, 5),
+    nextEventRequestFlag: Boolean? = false,
+    orderRequestedFlag: Boolean? = false,
+    holdFlag: Boolean? = false,
+    dsl: CourtEventDsl.() -> Unit = {},
+  ): CourtEvent
+}
 
 @Component
 class CourtCaseBuilderFactory(
   private val repository: CourtCaseBuilderRepository,
+  private val courtEventBuilderFactory: CourtEventBuilderFactory,
 ) {
   fun builder(): CourtCaseBuilder {
-    return CourtCaseBuilder(repository)
+    return CourtCaseBuilder(repository, courtEventBuilderFactory)
   }
 }
 
@@ -61,6 +82,7 @@ class CourtCaseBuilderRepository(
 
 class CourtCaseBuilder(
   private val repository: CourtCaseBuilderRepository,
+  private val courtEventBuilderFactory: CourtEventBuilderFactory,
 ) : CourtCaseDsl {
   private lateinit var courtCase: CourtCase
   private lateinit var whenCreated: LocalDateTime
@@ -103,4 +125,44 @@ class CourtCaseBuilder(
     .let { repository.save(it) }
     .also { courtCase = it }
     .also { this.whenCreated = whenCreated }
+
+  override fun courtEvent(
+    commentText: String?,
+    prison: String,
+    courtEventType: String,
+    eventStatusCode: String,
+    outcomeReasonCode: String?,
+    judgeName: String?,
+    directionCode: String?,
+    eventDate: LocalDate,
+    startTime: LocalDateTime,
+    nextEventStartTime: LocalDateTime?,
+    nextEventDate: LocalDate?,
+    nextEventRequestFlag: Boolean?,
+    orderRequestedFlag: Boolean?,
+    holdFlag: Boolean?,
+    dsl: CourtEventDsl.() -> Unit,
+  ) =
+    courtEventBuilderFactory.builder().let { builder ->
+      builder.build(
+        commentText = commentText,
+        prison = prison,
+        courtEventType = courtEventType,
+        eventStatusCode = eventStatusCode,
+        outcomeReasonCode = outcomeReasonCode,
+        judgeName = judgeName,
+        directionCode = directionCode,
+        eventDate = eventDate,
+        startTime = startTime,
+        nextEventStartTime = nextEventStartTime,
+        nextEventDate = nextEventDate,
+        offenderBooking = courtCase.offenderBooking,
+        courtCase = courtCase,
+        nextEventRequestFlag = nextEventRequestFlag,
+        orderRequestedFlag = orderRequestedFlag,
+        holdFlag = holdFlag,
+      )
+        .also { courtCase.courtEvents += it }
+        .also { builder.apply(dsl) }
+    }
 }

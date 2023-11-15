@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -83,6 +84,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
 }
 
 @Schema(description = "Court Case")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtCaseResponse(
   val id: Long,
   val offenderNo: String,
@@ -100,6 +102,30 @@ data class CourtCaseResponse(
   val lidsCaseId: Int?,
   val lidsCombinedCaseId: Int?,
   val lidsCaseNumber: Int,
+  val createdDateTime: LocalDateTime,
+  val createdByUsername: String,
+  val courtEvents: List<CourtEventResponse>,
+)
+
+@Schema(description = "Court Event")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtEventResponse(
+  val id: Long,
+  val offenderNo: String,
+  val eventDate: LocalDate,
+  val startTime: LocalDateTime,
+  val courtEventType: CodeDescription,
+  val eventStatus: CodeDescription,
+  val directionCode: CodeDescription?,
+  val judgeName: String?,
+  val prisonId: String,
+  val outcomeReasonCode: String?,
+  val commentText: String?,
+  val orderRequestedFlag: Boolean?,
+  val holdFlag: Boolean?,
+  val nextEventRequestFlag: Boolean?,
+  val nextEventDate: LocalDate?,
+  val nextEventStartTime: LocalDateTime?,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
 )
