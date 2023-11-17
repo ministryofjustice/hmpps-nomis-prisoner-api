@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.8.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.9.0"
   kotlin("plugin.spring") version "1.9.20"
   kotlin("plugin.jpa") version "1.9.20"
   idea
@@ -23,11 +23,9 @@ dependencies {
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
 
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.3")
-
-  implementation("com.zaxxer:HikariCP:5.0.1")
+  implementation("com.zaxxer:HikariCP:5.1.0")
   implementation("com.h2database:h2:2.2.224")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.20.0.0")
+  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.21.0.0")
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
 
@@ -38,7 +36,7 @@ dependencies {
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.18") {
     exclude(group = "io.swagger.core.v3")
   }
-  testImplementation("io.swagger.core.v3:swagger-core-jakarta:2.2.18")
+  testImplementation("io.swagger.core.v3:swagger-core-jakarta:2.2.19")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 }
