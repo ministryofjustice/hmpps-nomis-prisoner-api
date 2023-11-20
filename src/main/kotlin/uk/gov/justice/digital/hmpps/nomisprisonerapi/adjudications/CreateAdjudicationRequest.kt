@@ -10,9 +10,6 @@ import java.time.LocalTime
 @Schema(description = "Core Adjudication to be created")
 data class CreateAdjudicationRequest(
 
-  @Schema(description = "The adjudication number (business key)", example = "10128828")
-  val adjudicationNumber: Long,
-
   @Schema(description = "Associated incident details")
   val incident: IncidentToCreate,
 
@@ -27,8 +24,6 @@ data class CreateAdjudicationRequest(
 data class ChargeToCreate(
   @Schema(description = "Offence code they are charged with", example = "51:1N")
   val offenceCode: String,
-  @Schema(description = "Charges associated with this adjudication (business key)", example = "1234567/1")
-  val offenceId: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

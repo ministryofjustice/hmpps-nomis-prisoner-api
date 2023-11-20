@@ -217,6 +217,7 @@ class AdjudicationResource(
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/prisoners/{offenderNo}/adjudications")
+  @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "creates an adjudication on the latest booking of a prisoner",
     description = "Creates an adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",

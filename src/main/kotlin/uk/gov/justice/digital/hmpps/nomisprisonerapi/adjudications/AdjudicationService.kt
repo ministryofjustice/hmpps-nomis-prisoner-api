@@ -228,7 +228,7 @@ class AdjudicationService(
     offenderNo: String,
     request: CreateAdjudicationRequest,
   ): AdjudicationResponse {
-    val adjudicationNumber = checkAdjudicationDoesNotExist(request.adjudicationNumber)
+    val adjudicationNumber = adjudicationIncidentPartyRepository.getNextAdjudicationNumber()
     val prisoner = findPrisoner(offenderNo)
     val offenderBooking = findBooking(prisoner)
     val reportingStaff = findStaffByUsername(request.incident.reportingStaffUsername)
@@ -248,7 +248,12 @@ class AdjudicationService(
       createUsername = request.incident.reportingStaffUsername,
     ).let { adjudicationIncidentRepository.save(it) }
       .apply {
-        parties += createPrisonerAdjudicationParty(this, offenderBooking, request)
+        parties += createPrisonerAdjudicationParty(
+          adjudicationNumber = adjudicationNumber,
+          incident = this,
+          offenderBooking = offenderBooking,
+          request = request,
+        )
         parties += request.incident.staffWitnessesUsernames.mapIndexed { index, username ->
           createStaffWitness(
             incident = this,
@@ -298,12 +303,13 @@ class AdjudicationService(
   }
 
   private fun createPrisonerAdjudicationParty(
+    adjudicationNumber: Long,
     incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
     offenderBooking: OffenderBooking,
     request: CreateAdjudicationRequest,
   ): AdjudicationIncidentParty = AdjudicationIncidentParty(
     id = AdjudicationIncidentPartyId(agencyIncidentId = incident.id, partySequence = incident.parties.size + 1),
-    adjudicationNumber = request.adjudicationNumber,
+    adjudicationNumber = adjudicationNumber,
     offenderBooking = offenderBooking,
     incident = incident,
     incidentRole = suspectRole,
@@ -376,7 +382,7 @@ class AdjudicationService(
       partySequence = incidentParty.id.partySequence,
       incidentParty = incidentParty,
       offence = lookupOffence(charge.offenceCode),
-      offenceId = charge.offenceId,
+      offenceId = "${incidentParty.adjudicationNumber}/$chargeSequence",
     )
   }
 
