@@ -43,4 +43,7 @@ data class GetAllocationResponse(
 
   @Schema(description = "Sessions excluded from the allocation during which period attendances will not be generated")
   val exclusions: List<AllocationExclusion> = listOf(),
+
+  @Schema(description = "Rules for creating schedules - days and times")
+  val scheduleRules: List<ScheduleRulesResponse> = listOf(),
 )

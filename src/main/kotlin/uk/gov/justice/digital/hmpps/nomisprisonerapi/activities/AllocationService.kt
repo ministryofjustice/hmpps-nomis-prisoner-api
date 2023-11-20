@@ -35,6 +35,7 @@ import java.time.LocalDate
 @Service
 @Transactional
 class AllocationService(
+  private val scheduleRuleService: ScheduleRuleService,
   private val activityRepository: ActivityRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
@@ -91,6 +92,7 @@ class AllocationService(
               slot = exclusion.slotCategory?.name,
             )
           },
+          scheduleRules = scheduleRuleService.mapRules(it.courseActivity.courseScheduleRules),
         )
       }
       ?: throw NotFoundException("Offender program profile with id=$allocationId does not exist")
