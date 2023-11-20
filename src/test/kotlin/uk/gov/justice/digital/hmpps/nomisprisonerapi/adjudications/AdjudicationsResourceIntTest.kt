@@ -7,7 +7,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
@@ -1298,27 +1297,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("developerMessage").isEqualTo("Prison BANANAS not found")
       }
-
-      @Test
-      fun `will return 409 if adjudication already exists`() {
-        assertThat(repository.getAdjudicationIncidentByAdjudicationNumber(existingAdjudicationNumber)).isNotNull()
-
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              aSimpleAdjudication(
-                adjudicationNumber = existingAdjudicationNumber.toString(),
-                reportingStaffUsername = "JANESTAFF",
-              ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isEqualTo(HttpStatus.CONFLICT)
-          .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Adjudication $existingAdjudicationNumber already exists")
-      }
     }
 
     @Nested
@@ -1330,6 +1308,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       private lateinit var staffVictimShivav: StaffUserAccount
       private lateinit var prisonerVictimG1234VV: Offender
       private lateinit var prisonerVictimA1234CT: Offender
+      private var adjudicationNumber: Long = 0
 
       @BeforeEach
       fun setUp() {
@@ -1352,21 +1331,20 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `create an adjudication with minimal data`() {
-        assertThat(repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)).isNull()
-
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               aSimpleAdjudication(
-                adjudicationNumber = adjudicationNumber.toString(),
                 reportingStaffUsername = "JANESTAFF",
               ),
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1379,20 +1357,21 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can create adjudication with multiple charges even though this is not expected to happen`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               aMultiChargeAdjudication(
-                adjudicationNumber = adjudicationNumber.toString(),
                 offenceCode1 = "51:1N",
                 offenceCode2 = "51:19A",
               ),
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1413,16 +1392,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `core data create in an adjudication is returned and in the NOMIS database and can be queried by API`() {
-        assertThat(repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)).isNull()
-
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+      fun `core data created in an adjudication is returned and in the NOMIS database and can be queried by API`() {
+        val response = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               aSimpleAdjudication(
-                adjudicationNumber = adjudicationNumber.toString(),
                 reportingStaffUsername = "JANESTAFF",
                 internalLocationId = aLocationInMoorland,
                 prisonId = "MDI",
@@ -1436,32 +1412,36 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("offenderNo").isEqualTo(offenderNo)
-          .jsonPath("bookingId").isEqualTo(prisoner.latestBooking().bookingId)
-          .jsonPath("adjudicationNumber").isEqualTo(adjudicationNumber)
-          .jsonPath("incident.adjudicationIncidentId").isNumber
-          .jsonPath("incident.reportingStaff.firstName").isEqualTo("JANE")
-          .jsonPath("incident.reportingStaff.lastName").isEqualTo("STAFF")
-          .jsonPath("incident.incidentDate").isEqualTo("2023-01-01")
-          .jsonPath("incident.incidentTime").isEqualTo("10:15:00")
-          .jsonPath("incident.reportedDate").isEqualTo("2023-02-10")
-          .jsonPath("incident.reportedTime").isEqualTo("09:15:00")
-          .jsonPath("incident.internalLocation.description").isEqualTo("MDI-1-1-001")
-          .jsonPath("incident.internalLocation.code").isEqualTo("1")
-          .jsonPath("incident.internalLocation.locationId").isEqualTo("$aLocationInMoorland")
-          .jsonPath("incident.prison.code").isEqualTo("MDI")
-          .jsonPath("incident.prison.description").isEqualTo("MOORLAND")
-          .jsonPath("incident.details").isEqualTo("There was a fight in the toilets")
-          .jsonPath("incident.incidentType.code").isEqualTo("GOV")
-          .jsonPath("incident.incidentType.description").isEqualTo("Governor's Report")
-          .jsonPath("charges[0].offence.code").isEqualTo("51:1N")
-          .jsonPath("charges[0].offence.description")
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!
+
+        adjudicationNumber = response.adjudicationNumber
+
+        assertThat(response.offenderNo).isEqualTo(offenderNo)
+        assertThat(response.bookingId).isEqualTo(prisoner.latestBooking().bookingId)
+        assertThat(response.adjudicationNumber).isNotNull()
+        assertThat(response.incident.adjudicationIncidentId).isNotNull()
+        assertThat(response.incident.reportingStaff.firstName).isEqualTo("JANE")
+        assertThat(response.incident.reportingStaff.lastName).isEqualTo("STAFF")
+        assertThat(response.incident.incidentDate).isEqualTo("2023-01-01")
+        assertThat(response.incident.incidentTime).isEqualTo("10:15:00")
+        assertThat(response.incident.reportedDate).isEqualTo("2023-02-10")
+        assertThat(response.incident.reportedTime).isEqualTo("09:15:00")
+        assertThat(response.incident.internalLocation.description).isEqualTo("MDI-1-1-001")
+        assertThat(response.incident.internalLocation.code).isEqualTo("1")
+        assertThat(response.incident.internalLocation.locationId).isEqualTo(aLocationInMoorland)
+        assertThat(response.incident.prison.code).isEqualTo("MDI")
+        assertThat(response.incident.prison.description).isEqualTo("MOORLAND")
+        assertThat(response.incident.details).isEqualTo("There was a fight in the toilets")
+        assertThat(response.incident.incidentType.code).isEqualTo("GOV")
+        assertThat(response.incident.incidentType.description).isEqualTo("Governor's Report")
+        assertThat(response.charges[0].offence.code).isEqualTo("51:1N")
+        assertThat(response.charges[0].offence.description)
           .isEqualTo("Commits any assault - assault on non prison officer member of staff")
-          .jsonPath("charges[0].offence.type.description").isEqualTo("Prison Rule 51")
-          .jsonPath("charges[0].offenceId").isEqualTo("$adjudicationNumber/1")
-          .jsonPath("charges[0].chargeSequence").isEqualTo("1")
+        assertThat(response.charges[0].offence.type?.description).isEqualTo("Prison Rule 51")
+        assertThat(response.charges[0].offenceId).isEqualTo("${response.adjudicationNumber}/1")
+        assertThat(response.charges[0].chargeSequence).isEqualTo(1)
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1518,7 +1498,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can create adjudication with evidence`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -1533,7 +1513,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1563,7 +1545,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can create adjudication with damages (aka repairs)`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -1576,7 +1558,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1600,19 +1584,20 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can create adjudication with witnesses`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               aSimpleAdjudication(
-                adjudicationNumber = adjudicationNumber.toString(),
                 staffWitnessesUsernames = listOf(staffWitnessAdaeze.username, staffWitnessAbiodun.username),
               ),
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1627,19 +1612,20 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can create adjudication with staff victims`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               aSimpleAdjudication(
-                adjudicationNumber = adjudicationNumber.toString(),
                 staffVictimsUsernames = listOf(staffVictimAarav.username, staffVictimShivav.username),
               ),
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1654,19 +1640,20 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can create adjudication with prisoner victims`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               aSimpleAdjudication(
-                adjudicationNumber = adjudicationNumber.toString(),
                 prisonerVictimsOffenderNumbers = listOf(prisonerVictimG1234VV.nomsId, prisonerVictimA1234CT.nomsId),
               ),
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1682,14 +1669,13 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can create a complex adjudication with many people involved`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
+        adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
               """
                   {
-                    "adjudicationNumber": $adjudicationNumber,
                     "incident": {
                       "reportingStaffUsername": "JANESTAFF",
                       "incidentDate": "2023-01-01",
@@ -1724,12 +1710,10 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                     },
                     "charges": [
                       {
-                        "offenceCode": "51:1N",
-                        "offenceId": "$adjudicationNumber/1"
+                        "offenceCode": "51:1N"
                       },
                       {
-                        "offenceCode": "51:19A",
-                        "offenceId": "$adjudicationNumber/2"
+                        "offenceCode": "51:19A"
                       }
                     ],
                     "evidence": [
@@ -1748,7 +1732,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
+          .expectBody(AdjudicationResponse::class.java)
+          .returnResult().responseBody!!.adjudicationNumber
 
         repository.runInTransaction {
           incident = repository.getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)
@@ -1826,7 +1812,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     private fun aSimpleAdjudication(
       reportingStaffUsername: String = "JANESTAFF",
       offenceCode: String = "51:1N",
-      adjudicationNumber: String = "12345678",
       internalLocationId: Long = aLocationInMoorland,
       prisonId: String = "MDI",
       incidentDate: String = "2023-01-01",
@@ -1839,7 +1824,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       staffVictimsUsernames: List<String> = emptyList(),
     ): String = """
       {
-        "adjudicationNumber": $adjudicationNumber,
         "incident": {
           "reportingStaffUsername":  "$reportingStaffUsername",
           "incidentDate": "$incidentDate",
@@ -1856,8 +1840,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         },
         "charges": [
           {
-            "offenceCode": "$offenceCode",
-            "offenceId": "$adjudicationNumber/1"
+            "offenceCode": "$offenceCode"
           }
         ],
         "evidence": []
@@ -1868,7 +1851,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       reportingStaffUsername: String = "JANESTAFF",
       offenceCode1: String = "51:1N",
       offenceCode2: String = "51:19A",
-      adjudicationNumber: String = "12345678",
       internalLocationId: Long = aLocationInMoorland,
       prisonId: String = "MDI",
       incidentDate: String = "2023-01-01",
@@ -1878,7 +1860,6 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       incidentDetails: String = "A fight that lead to so much blood",
     ): String = """
       {
-        "adjudicationNumber": $adjudicationNumber,
         "incident": {
           "reportingStaffUsername":  "$reportingStaffUsername",
           "incidentDate": "$incidentDate",
@@ -1895,12 +1876,10 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         },
         "charges": [
           {
-            "offenceCode": "$offenceCode1",
-            "offenceId": "$adjudicationNumber/1"
+            "offenceCode": "$offenceCode1"
           },
           {
-            "offenceCode": "$offenceCode2",
-            "offenceId": "$adjudicationNumber/2"
+            "offenceCode": "$offenceCode2"
           }
         ],
         "evidence": []
