@@ -746,6 +746,46 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .jsonPath("nomisId").isEqualTo("A1111AA")
           .jsonPath("payBand").doesNotExist()
       }
+
+      @Test
+      fun `should return all schedule rules`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity {
+              courseSchedule()
+              payRate()
+              courseScheduleRule(startTimeHours = 9, startTimeMinutes = 30, endTimeHours = 11, endTimeMinutes = 30)
+              courseScheduleRule(startTimeHours = 14, startTimeMinutes = 0, endTimeHours = 17, endTimeMinutes = 0)
+            }
+          }
+          offender {
+            booking {
+              courseAllocation = courseAllocation(courseActivity = courseActivity)
+            }
+          }
+        }
+
+        webTestClient.getAllocationDetails()
+          .expectBody()
+          .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
+          .jsonPath("scheduleRules[0].endTime").isEqualTo("11:30")
+          .jsonPath("scheduleRules[0].monday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].tuesday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].wednesday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].thursday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].friday").isEqualTo(true)
+          .jsonPath("scheduleRules[0].saturday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].sunday").isEqualTo(false)
+          .jsonPath("scheduleRules[1].startTime").isEqualTo("14:00")
+          .jsonPath("scheduleRules[1].endTime").isEqualTo("17:00")
+          .jsonPath("scheduleRules[1].monday").isEqualTo(true)
+          .jsonPath("scheduleRules[1].tuesday").isEqualTo(true)
+          .jsonPath("scheduleRules[1].wednesday").isEqualTo(true)
+          .jsonPath("scheduleRules[1].thursday").isEqualTo(true)
+          .jsonPath("scheduleRules[1].friday").isEqualTo(true)
+          .jsonPath("scheduleRules[1].saturday").isEqualTo(false)
+          .jsonPath("scheduleRules[1].sunday").isEqualTo(false)
+      }
     }
 
     private fun WebTestClient.getAllocationDetails(): WebTestClient.ResponseSpec =
