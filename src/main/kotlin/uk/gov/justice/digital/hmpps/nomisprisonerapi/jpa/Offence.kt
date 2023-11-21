@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
@@ -10,7 +11,9 @@ import java.io.Serializable
 
 @Embeddable
 class OffenceId(
+  @Column(name = "OFFENCE_CODE", nullable = false)
   val offenceCode: String,
+  @Column(name = "STATUTE_CODE", nullable = false)
   val statuteCode: String,
 ) : Serializable
 
@@ -31,4 +34,7 @@ class Offence(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+  override fun toString(): String {
+    return "Offence(id=$id, description='$description')"
+  }
 }

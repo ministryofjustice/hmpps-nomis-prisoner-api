@@ -56,7 +56,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           statusUpdateDate = LocalDate.parse(aDateString),
           statusUpdateStaff = staff,
         ) {
-          courtEvent()
+          val offenderCharge1 = offenderCharge(offenceCode = "M1", plea = "G")
+          val offenderCharge2 = offenderCharge()
+          courtEvent() {
+            courtEventCharge(
+              offenderCharge = offenderCharge1,
+              plea = "NG", // overrides from the parent offender charge fields
+            )
+            courtEventCharge(
+              offenderCharge = offenderCharge2,
+            )
+          }
         }
         courtCaseTwo = courtCase(
           offender = prisonerAtMoorland,
