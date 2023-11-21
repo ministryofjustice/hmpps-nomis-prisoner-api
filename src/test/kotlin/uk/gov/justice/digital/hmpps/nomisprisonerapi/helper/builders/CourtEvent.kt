@@ -5,12 +5,15 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -18,15 +21,37 @@ import java.time.LocalDateTime
 annotation class CourtEventDslMarker
 
 @NomisDataDslMarker
-interface CourtEventDsl
+interface CourtEventDsl {
+  @CourtEventChargeDslMarker
+  fun courtEventCharge(
+    offenderCharge: OffenderCharge,
+    offencesCount: Int? = 1,
+    offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
+    offenceEndDate: LocalDate? = LocalDate.of(2023, 2, 1),
+    plea: String? = "G",
+    propertyValue: BigDecimal? = BigDecimal(3.2),
+    totalPropertyValue: BigDecimal? = BigDecimal(10),
+    cjitCode1: String? = "cjit1",
+    cjitCode2: String? = "cjit2",
+    cjitCode3: String? = "cjit3",
+    resultCode1: String? = "1002",
+    resultCode2: String? = "1003",
+    resultCode1Indicator: String? = "rci1",
+    resultCode2Indicator: String? = "rci2",
+    mostSeriousFlag: Boolean = false,
+    dsl: CourtEventChargeDsl.() -> Unit = {},
+  ): CourtEventCharge
+}
 
 @Component
 class CourtEventBuilderFactory(
   private val repository: CourtEventBuilderRepository,
+  private val courtEventChargeBuilderFactory: CourtEventChargeBuilderFactory,
 ) {
   fun builder(): CourtEventBuilder {
     return CourtEventBuilder(
       repository,
+      courtEventChargeBuilderFactory,
     )
   }
 }
@@ -52,6 +77,7 @@ class CourtEventBuilderRepository(
 
 class CourtEventBuilder(
   private val repository: CourtEventBuilderRepository,
+  private val courtEventChargeBuilderFactory: CourtEventChargeBuilderFactory,
 ) : CourtEventDsl {
   private lateinit var courtEvent: CourtEvent
 
@@ -88,7 +114,47 @@ class CourtEventBuilder(
     holdFlag = holdFlag,
     nextEventStartTime = nextEventStartTime,
     nextEventDate = nextEventDate,
-    directionCode = directionCode?. let { repository.lookupDirectionType(directionCode) },
+    directionCode = directionCode?.let { repository.lookupDirectionType(directionCode) },
   )
     .also { courtEvent = it }
+
+  override fun courtEventCharge(
+    offenderCharge: OffenderCharge,
+    offencesCount: Int?,
+    offenceDate: LocalDate?,
+    offenceEndDate: LocalDate?,
+    plea: String?,
+    propertyValue: BigDecimal?,
+    totalPropertyValue: BigDecimal?,
+    cjitCode1: String?,
+    cjitCode2: String?,
+    cjitCode3: String?,
+    resultCode1: String?,
+    resultCode2: String?,
+    resultCode1Indicator: String?,
+    resultCode2Indicator: String?,
+    mostSeriousFlag: Boolean,
+    dsl: CourtEventChargeDsl.() -> Unit,
+  ) =
+    courtEventChargeBuilderFactory.builder().let { builder ->
+      builder.build(
+        courtEvent = courtEvent,
+        offenderCharge = offenderCharge,
+        offencesCount = offencesCount,
+        offenceDate = offenceDate,
+        offenceEndDate = offenceEndDate,
+        plea = plea,
+        propertyValue = propertyValue,
+        totalPropertyValue = totalPropertyValue,
+        cjitCode1 = cjitCode1,
+        cjitCode2 = cjitCode2,
+        cjitCode3 = cjitCode3,
+        resultCode1 = resultCode1,
+        resultCode2 = resultCode2,
+        resultCode1Indicator = resultCode1Indicator,
+        resultCode2Indicator = resultCode2Indicator,
+        mostSeriousFlag = mostSeriousFlag,
+      )
+        .also { builder.apply(dsl) }
+    }
 }
