@@ -1011,7 +1011,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().is5xxServerError
         .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("query did not return a unique result")
+          assertThat(it).contains("Query did not return a unique result")
         }
 
       // delete the duplicate
