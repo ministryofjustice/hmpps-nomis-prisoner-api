@@ -33,22 +33,8 @@ class SentencingAdjustmentService(
   private val telemetryClient: TelemetryClient,
 ) {
   fun getSentenceAdjustment(adjustmentId: Long): SentenceAdjustmentResponse =
-    offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.let {
-      SentenceAdjustmentResponse(
-        id = it.id,
-        bookingId = it.offenderBooking.bookingId,
-        sentenceSequence = it.sentenceSequence,
-        adjustmentType = SentencingAdjustmentType(it.sentenceAdjustment.id, it.sentenceAdjustment.description),
-        adjustmentDate = it.adjustmentDate,
-        adjustmentFromDate = it.fromDate,
-        adjustmentToDate = it.toDate,
-        adjustmentDays = it.adjustmentNumberOfDays,
-        comment = it.comment,
-        active = it.active,
-        hiddenFromUsers = it.offenderKeyDateAdjustmentId != null,
-        offenderNo = it.offenderBooking.offender.nomsId,
-      )
-    } ?: throw NotFoundException("Sentence adjustment $adjustmentId not found")
+    offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.toAdjustmentResponse()
+      ?: throw NotFoundException("Sentence adjustment $adjustmentId not found")
 
   @Audit
   fun createSentenceAdjustment(bookingId: Long, sentenceSequence: Long, request: CreateSentenceAdjustmentRequest) =
@@ -143,20 +129,8 @@ class SentencingAdjustmentService(
       ?: throw BadDataException("Sentence adjustment type $adjustmentTypeCode not found")
 
   fun getKeyDateAdjustment(adjustmentId: Long): KeyDateAdjustmentResponse =
-    keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.let {
-      KeyDateAdjustmentResponse(
-        id = it.id,
-        bookingId = it.offenderBooking.bookingId,
-        adjustmentType = SentencingAdjustmentType(it.sentenceAdjustment.id, it.sentenceAdjustment.description),
-        adjustmentDate = it.adjustmentDate,
-        adjustmentFromDate = it.fromDate,
-        adjustmentToDate = it.toDate,
-        adjustmentDays = it.adjustmentNumberOfDays,
-        comment = it.comment,
-        active = it.active,
-        offenderNo = it.offenderBooking.offender.nomsId,
-      )
-    } ?: throw NotFoundException("Key date adjustment $adjustmentId not found")
+    keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.toAdjustmentResponse()
+      ?: throw NotFoundException("Key date adjustment $adjustmentId not found")
 
   @Audit
   fun createKeyDateAdjustment(bookingId: Long, request: CreateKeyDateAdjustmentRequest) =
@@ -251,4 +225,46 @@ class SentencingAdjustmentService(
       pageRequest,
     )
   }
+
+  fun getActiveSentencingAdjustments(bookingId: Long) =
+    offenderBookingRepository.findByIdOrNull(bookingId)?.let { offenderBooking ->
+      SentencingAdjustmentsResponse(
+        keyDateAdjustments = keyDateAdjustmentRepository.findByOffenderBookingAndActive(offenderBooking, true)
+          .map { it.toAdjustmentResponse() },
+        sentenceAdjustments = offenderSentenceAdjustmentRepository.findByOffenderBookingAndActiveAndOffenderKeyDateAdjustmentIdIsNull(
+          offenderBooking,
+          true,
+        )
+          .map { it.toAdjustmentResponse() },
+      )
+    } ?: throw NotFoundException("Booking $bookingId not found")
 }
+
+private fun OffenderKeyDateAdjustment.toAdjustmentResponse() =
+  KeyDateAdjustmentResponse(
+    id = this.id,
+    bookingId = this.offenderBooking.bookingId,
+    adjustmentType = SentencingAdjustmentType(this.sentenceAdjustment.id, this.sentenceAdjustment.description),
+    adjustmentDate = this.adjustmentDate,
+    adjustmentFromDate = this.fromDate,
+    adjustmentToDate = this.toDate,
+    adjustmentDays = this.adjustmentNumberOfDays,
+    comment = this.comment,
+    active = this.active,
+    offenderNo = this.offenderBooking.offender.nomsId,
+  )
+
+private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustmentResponse(
+  id = this.id,
+  bookingId = this.offenderBooking.bookingId,
+  sentenceSequence = this.sentenceSequence,
+  adjustmentType = SentencingAdjustmentType(this.sentenceAdjustment.id, this.sentenceAdjustment.description),
+  adjustmentDate = this.adjustmentDate,
+  adjustmentFromDate = this.fromDate,
+  adjustmentToDate = this.toDate,
+  adjustmentDays = this.adjustmentNumberOfDays,
+  comment = this.comment,
+  active = this.active,
+  hiddenFromUsers = this.offenderKeyDateAdjustmentId != null,
+  offenderNo = this.offenderBooking.offender.nomsId,
+)
