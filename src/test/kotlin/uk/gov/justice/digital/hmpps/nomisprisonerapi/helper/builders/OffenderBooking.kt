@@ -76,6 +76,7 @@ interface BookingDsl {
     adjustmentDate: LocalDate = LocalDate.now(),
     createdDate: LocalDateTime = LocalDateTime.now(), // used in migration date filtering
     adjustmentNumberOfDays: Long = 10,
+    active: Boolean = true,
     dsl: OffenderKeyDateAdjustmentDsl.() -> Unit = { },
   ): OffenderKeyDateAdjustment
 }
@@ -191,6 +192,7 @@ class BookingBuilder(
     adjustmentDate: LocalDate,
     createdDate: LocalDateTime,
     adjustmentNumberOfDays: Long,
+    active: Boolean,
     dsl: OffenderKeyDateAdjustmentDsl.() -> Unit,
   ): OffenderKeyDateAdjustment = offenderKeyDateAdjustmentBuilderFactory.builder().let { builder ->
     builder.build(
@@ -198,6 +200,7 @@ class BookingBuilder(
       adjustmentDate = adjustmentDate,
       createdDate = createdDate,
       adjustmentNumberOfDays = adjustmentNumberOfDays,
+      active = active,
       offenderBooking = offenderBooking,
     )
       .also { offenderBooking.keyDateAdjustments += it }

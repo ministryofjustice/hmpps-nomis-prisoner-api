@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing.AdjustmentIdResponse
 import java.time.LocalDate
@@ -16,4 +17,5 @@ interface OffenderKeyDateAdjustmentRepository :
   JpaSpecificationExecutor<OffenderKeyDateAdjustment> {
   @Query(nativeQuery = true)
   fun adjustmentIdsQuery_named(fromDate: LocalDate? = null, toDate: LocalDate? = null, pageable: Pageable): Page<AdjustmentIdResponse>
+  fun findByOffenderBookingAndActive(offenderBooking: OffenderBooking, isOffenderActive: Boolean): List<OffenderKeyDateAdjustment>
 }

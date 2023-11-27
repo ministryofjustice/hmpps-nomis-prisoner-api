@@ -42,6 +42,7 @@ class OffenderSentenceAdjustmentBuilder(
     createdDate: LocalDateTime,
     adjustmentNumberOfDays: Long,
     keyDateAdjustmentId: Long?,
+    active: Boolean,
     sentence: OffenderSentence,
   ): OffenderSentenceAdjustment = OffenderSentenceAdjustment(
     offenderBooking = sentence.id.offenderBooking,
@@ -52,6 +53,7 @@ class OffenderSentenceAdjustmentBuilder(
     createdDate = createdDate,
     adjustmentNumberOfDays = adjustmentNumberOfDays,
     offenderKeyDateAdjustmentId = keyDateAdjustmentId,
+    active = active,
   )
     .also { offenderSentenceAdjustment = it }
 }

@@ -24,6 +24,7 @@ interface OffenderSentenceDsl {
     createdDate: LocalDateTime = LocalDateTime.now(),
     adjustmentNumberOfDays: Long = 10,
     keyDateAdjustmentId: Long? = null,
+    active: Boolean = true,
     dsl: OffenderSentenceAdjustmentDsl.() -> Unit = {},
   ): OffenderSentenceAdjustment
 }
@@ -73,6 +74,7 @@ class OffenderSentenceBuilder(
     createdDate: LocalDateTime,
     adjustmentNumberOfDays: Long,
     keyDateAdjustmentId: Long?,
+    active: Boolean,
     dsl: OffenderSentenceAdjustmentDsl.() -> Unit,
   ): OffenderSentenceAdjustment = sentenceAdjustmentBuilderFactory.builder().let { builder ->
     builder.build(
@@ -81,6 +83,7 @@ class OffenderSentenceBuilder(
       createdDate = createdDate,
       adjustmentNumberOfDays = adjustmentNumberOfDays,
       keyDateAdjustmentId = keyDateAdjustmentId,
+      active = active,
       sentence = offenderSentence,
     )
       .also { offenderSentence.adjustments += it }
