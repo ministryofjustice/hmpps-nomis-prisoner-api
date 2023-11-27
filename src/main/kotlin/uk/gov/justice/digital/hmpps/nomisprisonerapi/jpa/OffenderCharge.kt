@@ -46,14 +46,10 @@ class OffenderCharge(
       JoinColumn(
         name = "OFFENCE_CODE",
         referencedColumnName = "OFFENCE_CODE",
-        insertable = false,
-        updatable = false,
       ),
       JoinColumn(
         name = "STATUTE_CODE",
         referencedColumnName = "STATUTE_CODE",
-        insertable = false,
-        updatable = false,
       ),
     ],
   )
@@ -103,7 +99,7 @@ class OffenderCharge(
           referencedColumnName = "domain",
         ),
       ),
-      JoinColumnOrFormula(column = JoinColumn(name = "CHARGE_STATUSD", referencedColumnName = "code")),
+      JoinColumnOrFormula(column = JoinColumn(name = "CHARGE_STATUS", referencedColumnName = "code")),
     ],
   )
   val chargeStatus: ChargeStatusType?,
@@ -129,7 +125,6 @@ class OffenderCharge(
   @JoinColumn(name = "CASE_ID")
   val courtCase: CourtCase,
 
-  @Column(name = "NO_OF_CHARGES")
   val lidsOffenceNumber: Int?, // always populated in prod but presumably won't be by DPS
 
   /* COLUMNS NOT MAPPED
