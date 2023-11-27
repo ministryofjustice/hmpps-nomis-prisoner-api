@@ -141,7 +141,7 @@ class AllocationService(
   private fun findCourseActivityOrThrow(
     courseActivityId: Long,
     offenderBooking: OffenderBooking,
-    requestedPayBand: PayBand,
+    requestedPayBand: PayBand?,
     newAllocation: Boolean,
   ): CourseActivity {
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
@@ -151,8 +151,10 @@ class AllocationService(
       throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
     }
 
-    if (courseActivity.payRates.find { it.payBand.code == requestedPayBand.code } == null) {
-      throw BadDataException("Pay band code ${requestedPayBand.code} does not exist for course activity with id=$courseActivityId")
+    requestedPayBand?.run {
+      if (courseActivity.payRates.find { it.payBand.code == requestedPayBand.code } == null) {
+        throw BadDataException("Pay band code ${requestedPayBand.code} does not exist for course activity with id=$courseActivityId")
+      }
     }
 
     return courseActivity
@@ -162,25 +164,31 @@ class AllocationService(
     offenderBookingRepository.findByIdOrNull(bookingId)
       ?: throw BadDataException("Booking with id=$bookingId does not exist")
 
-  private fun findPayBandOrThrow(payBandCode: String): PayBand =
-    payBandRepository.findByIdOrNull(PayBand.pk(payBandCode))
-      ?: throw BadDataException("Pay band code $payBandCode does not exist")
+  private fun findPayBandOrThrow(payBandCode: String?): PayBand? =
+    payBandCode?.let {
+      payBandRepository.findByIdOrNull(PayBand.pk(payBandCode))
+        ?: throw BadDataException("Pay band code $payBandCode does not exist")
+    }
 
-  private fun OffenderProgramProfile.updatePayBands(requestedPayBand: PayBand, request: UpsertAllocationRequest) {
+  private fun OffenderProgramProfile.updatePayBands(requestedPayBand: PayBand?, request: UpsertAllocationRequest) {
     val today = LocalDate.now()
     val tomorrow = today.plusDays(1)
     val expiredPayBand = payBands.filter { it.endDate != null }.filter { it.endDate!! < today }.maxByOrNull { it.id.startDate }
     val activePayBand = payBands.firstOrNull { it.id.startDate <= today && (it.endDate == null || it.endDate!! >= today) }
     val futurePayBand = payBands.firstOrNull { it.id.startDate > today }
     when {
-      // if no active pay band then add a new pay band from today
+      // if no active pay band then add a new pay band from today (or the date requested if in the future)
       activePayBand == null && futurePayBand == null -> {
-        payBands.add(payBand(requestedPayBand, today, request.endDate))
+        requestedPayBand?.also {
+          payBands.add(payBand(requestedPayBand, listOf(today, request.startDate).max(), request.endDate))
+        }
       }
       // if an active pay band is changed then it is end dated to today and the new pay band becomes effective tomorrow
-      activePayBand != null && futurePayBand == null && requestedPayBand.code != activePayBand.payBand.code -> {
+      activePayBand != null && futurePayBand == null && (requestedPayBand == null || requestedPayBand.code != activePayBand.payBand.code) -> {
         activePayBand.endDate = today
-        payBands.add(payBand(requestedPayBand, tomorrow, request.endDate))
+        requestedPayBand?.also {
+          payBands.add(payBand(requestedPayBand, tomorrow, request.endDate))
+        }
       }
       // if the active pay band is not changed then the only thing that can be updated is the end date
       activePayBand != null && futurePayBand == null -> {
@@ -189,12 +197,18 @@ class AllocationService(
       // pay bands not yet active should be replaced with the new request
       expiredPayBand == null && activePayBand == null && futurePayBand != null -> {
         payBands.remove(futurePayBand)
-        payBands.add(payBand(requestedPayBand, request.startDate, request.endDate))
+        requestedPayBand?.also {
+          payBands.add(payBand(requestedPayBand, request.startDate, request.endDate))
+        }
       }
       // pay bands not yet active with an existing expired/active pay band can update everything apart from their start date
       futurePayBand != null -> {
-        futurePayBand.payBand = requestedPayBand
-        futurePayBand.endDate = request.endDate
+        if (requestedPayBand == null) {
+          payBands.remove(futurePayBand)
+        } else {
+          futurePayBand.payBand = requestedPayBand
+          futurePayBand.endDate = request.endDate
+        }
       }
     }
   }
@@ -251,7 +265,7 @@ class AllocationService(
     request: UpsertAllocationRequest,
     offenderBooking: OffenderBooking,
     courseActivity: CourseActivity,
-    payBand: PayBand,
+    payBand: PayBand?,
   ) =
     OffenderProgramProfile(
       offenderBooking = offenderBooking,
@@ -262,15 +276,17 @@ class AllocationService(
       prison = courseActivity.prison,
     )
       .apply {
-        payBands.add(
-          OffenderProgramProfilePayBand(
-            id = OffenderProgramProfilePayBandId(
-              offenderProgramProfile = this,
-              startDate = request.startDate,
+        payBand?.also {
+          payBands.add(
+            OffenderProgramProfilePayBand(
+              id = OffenderProgramProfilePayBandId(
+                offenderProgramProfile = this,
+                startDate = request.startDate,
+              ),
+              payBand = payBand,
             ),
-            payBand = payBand,
-          ),
-        )
+          )
+        }
       }
 
   fun deleteAllocation(referenceId: Long) = offenderProgramProfileRepository.deleteById(referenceId)

@@ -19,9 +19,8 @@ data class UpsertAllocationRequest(
   val bookingId: Long,
 
   @Schema(description = "The prisoner's pay band", example = "2")
-  @field:NotBlank
   @field:Length(min = 1, max = 12)
-  val payBandCode: String,
+  val payBandCode: String? = null,
 
   @Schema(description = "Activity start date", example = "2022-08-12")
   val startDate: LocalDate,
