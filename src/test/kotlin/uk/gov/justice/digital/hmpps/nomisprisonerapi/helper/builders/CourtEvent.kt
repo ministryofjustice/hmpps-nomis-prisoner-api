@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -27,13 +28,13 @@ interface CourtEventDsl {
     offenderCharge: OffenderCharge,
     offencesCount: Int? = 1,
     offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
-    offenceEndDate: LocalDate? = LocalDate.of(2023, 2, 1),
+    offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 5),
     plea: String? = "G",
     propertyValue: BigDecimal? = BigDecimal(3.2),
     totalPropertyValue: BigDecimal? = BigDecimal(10),
-    cjitCode1: String? = "cjit1",
-    cjitCode2: String? = "cjit2",
-    cjitCode3: String? = "cjit3",
+    cjitCode1: String? = "cj1",
+    cjitCode2: String? = "cj2",
+    cjitCode3: String? = "cj3",
     resultCode1: String? = "1002",
     resultCode2: String? = "1003",
     resultCode1Indicator: String? = "rci1",
@@ -58,11 +59,15 @@ class CourtEventBuilderFactory(
 
 @Component
 class CourtEventBuilderRepository(
+  val repository: CourtEventRepository,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   val directionTypeRepository: ReferenceCodeRepository<DirectionType>,
   val courtEventTypeRepository: ReferenceCodeRepository<CourtEventType>,
   val agencyLocationRepository: AgencyLocationRepository,
 ) {
+  fun save(courtEvent: CourtEvent): CourtEvent =
+    repository.save(courtEvent)
+
   fun lookupEventStatus(code: String): EventStatus =
     eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
 
@@ -116,6 +121,7 @@ class CourtEventBuilder(
     nextEventDate = nextEventDate,
     directionCode = directionCode?.let { repository.lookupDirectionType(directionCode) },
   )
+    .let { repository.save(it) }
     .also { courtEvent = it }
 
   override fun courtEventCharge(
@@ -155,6 +161,7 @@ class CourtEventBuilder(
         resultCode2Indicator = resultCode2Indicator,
         mostSeriousFlag = mostSeriousFlag,
       )
+        .also { courtEvent.courtEventCharges += it }
         .also { builder.apply(dsl) }
     }
 }

@@ -44,23 +44,23 @@ interface CourtCaseDsl {
   @OffenderChargeDslMarker
   fun offenderCharge(
     offenceDate: LocalDate = LocalDate.of(2023, 1, 1),
-    offenceEndDate: LocalDate = LocalDate.of(2023, 1, 2),
+    offenceEndDate: LocalDate = LocalDate.of(2023, 1, 5),
     offenceCode: String = "RC86354",
     statuteCode: String = "RC86",
     offencesCount: Int? = 1,
-    cjitCode1: String? = "cjit1",
-    cjitCode2: String? = "cjit2",
-    cjitCode3: String? = "cjit3",
-    resultCode1: String? = "1002",
-    resultCode2: String? = "1003",
-    resultCode1Indicator: String? = "rci1",
-    resultCode2Indicator: String? = "rci2",
-    mostSeriousFlag: Boolean = false,
+    cjitCode1: String? = "cj6",
+    cjitCode2: String? = "cj7",
+    cjitCode3: String? = "cj8",
+    resultCode1: String? = "1005",
+    resultCode2: String? = "1006",
+    resultCode1Indicator: String? = "r1",
+    resultCode2Indicator: String? = "r2",
+    mostSeriousFlag: Boolean = true,
     chargeStatus: String? = "A",
-    propertyValue: BigDecimal? = BigDecimal(3.2),
-    totalPropertyValue: BigDecimal? = BigDecimal(10),
+    propertyValue: BigDecimal? = BigDecimal(8.3),
+    totalPropertyValue: BigDecimal? = BigDecimal(11),
     plea: String? = "G",
-    lidsOffenceNumber: Int? = 1,
+    lidsOffenceNumber: Int? = 11,
     dsl: OffenderChargeDsl.() -> Unit = {},
   ): OffenderCharge
 }
@@ -186,7 +186,7 @@ class CourtCaseBuilder(
         totalPropertyValue = totalPropertyValue,
         plea = plea,
       )
-        // .also { courtCase.courtEvents += it }
+        .also { courtCase.offenderCharges += it }
         .also { builder.apply(dsl) }
     }
 
