@@ -108,6 +108,9 @@ class CourtCase(
   @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
   val courtEvents: MutableList<CourtEvent> = mutableListOf(),
 
+  @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val offenderCharges: MutableList<OffenderCharge> = mutableListOf(),
+
   /* COLUMNS NOT MAPPED
     VICTIM_LIAISON_UNIT - not used
     CASE_INFO_PREFIX - not used

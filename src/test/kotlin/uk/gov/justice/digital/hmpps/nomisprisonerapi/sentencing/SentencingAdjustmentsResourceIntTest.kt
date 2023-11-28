@@ -1860,4 +1860,81 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .jsonPath("size").isEqualTo(2)
     }
   }
+
+  @Nested
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/sentencing-adjustments")
+  inner class GetAdjustmentByBookingId {
+    private lateinit var anotherPrisoner: Offender
+    private var bookingId: Long = 0
+    private lateinit var linkedUal: OffenderKeyDateAdjustment
+    private lateinit var ual: OffenderSentenceAdjustment
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      nomisDataBuilder.build {
+        anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking {
+            adjustment(adjustmentTypeCode = "LAL", active = false)
+            linkedUal = adjustment(adjustmentTypeCode = "UAL")
+            adjustment(adjustmentTypeCode = "ADA")
+            sentence {
+              adjustment(adjustmentTypeCode = "RSR")
+              adjustment(adjustmentTypeCode = "S240A")
+              ual = adjustment(adjustmentTypeCode = "UAL", keyDateAdjustmentId = linkedUal.id)
+              adjustment(adjustmentTypeCode = "RX", active = false)
+            }
+          }
+        }
+      }
+
+      bookingId = anotherPrisoner.bookings.first().bookingId
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(ual)
+      repository.delete(anotherPrisoner)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments", bookingId)
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments", bookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments", bookingId)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `get all active adjustments ignoring linked key date adjustments`() {
+      webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments", bookingId)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.keyDateAdjustments.size()").isEqualTo(2)
+        .jsonPath("$.keyDateAdjustments[0].adjustmentType.code").isEqualTo("UAL")
+        .jsonPath("$.keyDateAdjustments[1].adjustmentType.code").isEqualTo("ADA")
+        .jsonPath("$.sentenceAdjustments.size()").isEqualTo(2)
+        .jsonPath("$.sentenceAdjustments[0].adjustmentType.code").isEqualTo("RSR")
+        .jsonPath("$.sentenceAdjustments[1].adjustmentType.code").isEqualTo("S240A")
+    }
+  }
 }

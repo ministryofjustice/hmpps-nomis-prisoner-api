@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -105,6 +106,7 @@ data class CourtCaseResponse(
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
   val courtEvents: List<CourtEventResponse>,
+  val offenderCharges: List<OffenderChargeResponse>,
 )
 
 @Schema(description = "Court Event")
@@ -128,4 +130,57 @@ data class CourtEventResponse(
   val nextEventStartTime: LocalDateTime?,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
+  val courtEventCharges: List<CourtEventChargeResponse>,
+)
+
+@Schema(description = "Offender Charge")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderChargeResponse(
+  val id: Long,
+  val offence: OffenceResponse,
+  val offencesCount: Int?,
+  val offenceDate: LocalDate?,
+  val offenceEndDate: LocalDate?,
+  val plea: CodeDescription?,
+  val propertyValue: BigDecimal?,
+  val totalPropertyValue: BigDecimal?,
+  val cjitCode1: String?,
+  val cjitCode2: String?,
+  val cjitCode3: String?,
+  val chargeStatus: CodeDescription?,
+  val resultCode1: CodeDescription?,
+  val resultCode2: CodeDescription?,
+  val resultCode1Indicator: String?,
+  val resultCode2Indicator: String?,
+  val mostSeriousFlag: Boolean,
+  val lidsOffenceNumber: Int?,
+)
+
+@Schema(description = "Offence")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenceResponse(
+  val offenceCode: String,
+  val statuteCode: String,
+  val description: String,
+)
+
+@Schema(description = "Court Event Charge")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtEventChargeResponse(
+  val eventId: Long,
+  val offenderChargeId: Long,
+  val offencesCount: Int?,
+  val offenceDate: LocalDate?,
+  val offenceEndDate: LocalDate?,
+  val plea: CodeDescription?,
+  val propertyValue: BigDecimal?,
+  val totalPropertyValue: BigDecimal?,
+  val cjitCode1: String?,
+  val cjitCode2: String?,
+  val cjitCode3: String?,
+  val resultCode1: CodeDescription?,
+  val resultCode2: CodeDescription?,
+  val resultCode1Indicator: String?,
+  val resultCode2Indicator: String?,
+  val mostSeriousFlag: Boolean,
 )

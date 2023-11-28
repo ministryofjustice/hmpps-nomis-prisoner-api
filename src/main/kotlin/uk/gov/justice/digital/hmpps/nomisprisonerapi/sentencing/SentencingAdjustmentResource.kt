@@ -516,6 +516,45 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
         fromDate = fromDate,
       ),
     )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/sentencing-adjustments")
+  @Operation(
+    summary = "get active sentence and key date adjustments for a booking",
+    description = "Retrieves all the current active sentence and key date adjustments (by booking) for a prisoner. Requires NOMIS_SENTENCING.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the list of adjustments details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActiveAdjustments(
+    @Schema(description = "NOMIS booking Id", example = "12345", required = true)
+    @PathVariable
+    bookingId: Long,
+  ): SentencingAdjustmentsResponse =
+    sentencingAdjustmentService.getActiveSentencingAdjustments(bookingId = bookingId)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -682,4 +721,11 @@ data class AdjustmentIdResponse(
   val adjustmentId: Long,
   @Schema(description = "SENTENCE or KEY_DATE", required = true)
   val adjustmentCategory: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Sentencing adjustment")
+data class SentencingAdjustmentsResponse(
+  val keyDateAdjustments: List<KeyDateAdjustmentResponse>,
+  val sentenceAdjustments: List<SentenceAdjustmentResponse>,
 )

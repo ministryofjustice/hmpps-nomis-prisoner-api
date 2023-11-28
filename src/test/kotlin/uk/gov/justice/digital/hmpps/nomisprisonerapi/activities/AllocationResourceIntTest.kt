@@ -226,13 +226,10 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return bad request if pay band code missing`() {
+    fun `should return OK if pay band code missing`() {
       val request = upsertRequest().withPayBandCode(null)
 
-      upsertAllocationIsBadRequest(request)
-        .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("payBandCode")
-        }
+      upsertAllocationIsOk(request)
     }
 
     @Test
@@ -655,8 +652,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       fun `pay band updates`(
         testDescription: String,
         initialPayBands: List<PayBandTestParameter>,
-        requestedPayBand: PayBandTestParameter,
-        newFirstPayBand: PayBandTestParameter,
+        requestedPayBand: PayBandTestParameter?,
+        newFirstPayBand: PayBandTestParameter?,
         newSecondPayBand: PayBandTestParameter?,
       ) {
         lateinit var allocation: OffenderProgramProfile
@@ -664,7 +661,11 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender = offender {
             bookingId = booking {
-              allocation = courseAllocation(courseActivity, startDate = initialPayBands[0].startDate.toString(), endDate = initialPayBands[0].endDate?.toString()) {
+              allocation = courseAllocation(
+                courseActivity = courseActivity,
+                startDate = (initialPayBands.firstOrNull()?.startDate ?: courseActivity.scheduleStartDate).toString(),
+                endDate = initialPayBands.firstOrNull()?.endDate?.toString(),
+              ) {
                 initialPayBands.forEach {
                   payBands += payBand(payBandCode = it.payBandCode, startDate = it.startDate.toString(), endDate = it.endDate?.toString())
                 }
@@ -672,28 +673,26 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             }.bookingId
           }
         }
-        assertThat(allocation.startDate).isEqualTo(initialPayBands[0].startDate)
-        assertThat(allocation.endDate).isEqualTo(initialPayBands[0].endDate)
-        assertThat(payBands[0].id.startDate).isEqualTo(initialPayBands[0].startDate)
-        val expectedAllocationStartDate = listOf(newFirstPayBand.startDate, newSecondPayBand?.startDate).mapNotNull { it }.min()
+        assertThat(allocation.startDate).isEqualTo(initialPayBands.firstOrNull()?.startDate ?: courseActivity.scheduleStartDate)
+        assertThat(allocation.endDate).isEqualTo(initialPayBands.firstOrNull()?.endDate)
+        assertThat(payBands.firstOrNull()?.id?.startDate).isEqualTo(initialPayBands.firstOrNull()?.startDate)
 
         val request = upsertRequest()
-          .withPayBandCode(requestedPayBand.payBandCode)
-          .withStartDate(requestedPayBand.startDate.toString())
-          .withEndDate(requestedPayBand.endDate?.toString())
+          .withPayBandCode(requestedPayBand?.payBandCode)
+          .withStartDate((requestedPayBand?.startDate ?: courseActivity.scheduleStartDate).toString())
+          .withEndDate(requestedPayBand?.endDate?.toString())
         upsertAllocationIsOk(request)
 
         val updated = repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)
-        assertThat(updated.startDate).isEqualTo(expectedAllocationStartDate)
-        assertThat(updated.payBands[0].id.startDate).isEqualTo(newFirstPayBand.startDate)
-        assertThat(updated.payBands[0].endDate).isEqualTo(newFirstPayBand.endDate)
-        assertThat(updated.payBands[0].payBand.code).isEqualTo(newFirstPayBand.payBandCode)
+        assertThat(updated.payBands.firstOrNull()?.id?.startDate).isEqualTo(newFirstPayBand?.startDate)
+        assertThat(updated.payBands.firstOrNull()?.endDate).isEqualTo(newFirstPayBand?.endDate)
+        assertThat(updated.payBands.firstOrNull()?.payBand?.code).isEqualTo(newFirstPayBand?.payBandCode)
         if (newSecondPayBand != null) {
           assertThat(updated.payBands[1].id.startDate).isEqualTo(newSecondPayBand.startDate)
           assertThat(updated.payBands[1].endDate).isEqualTo(newSecondPayBand.endDate)
           assertThat(updated.payBands[1].payBand.code).isEqualTo(newSecondPayBand.payBandCode)
         } else {
-          assertThat(updated.payBands.size).isEqualTo(1)
+          assertThat(updated.payBands.size).isEqualTo(newFirstPayBand?.let { 1 } ?: 0)
         }
       }
 
@@ -710,7 +709,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
         return listOf(
           // Changing the pay band code for existing pay bands with various start/end dates
           Arguments.of(
-            "A new pay band is active from today",
+            "A new pay band is active from tomorrow",
             listOf(PayBandTestParameter("5", yesterday, null)),
             PayBandTestParameter("6", yesterday, null),
             PayBandTestParameter("5", yesterday, today),
@@ -779,6 +778,13 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             PayBandTestParameter("6", yesterday, tomorrow),
             PayBandTestParameter("6", yesterday, tomorrow),
             null,
+          ),
+          Arguments.of(
+            "A future pay band becomes effective on its requested date if old pay band is expired",
+            listOf(PayBandTestParameter("5", yesterday, yesterday)),
+            PayBandTestParameter("6", tomorrow, null),
+            PayBandTestParameter("5", yesterday, yesterday),
+            PayBandTestParameter("6", tomorrow, null),
           ),
           // Changing the start/end dates but keeping pay band same
           Arguments.of(
@@ -872,6 +878,49 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             PayBandTestParameter("7", yesterday, null),
             PayBandTestParameter("5", yesterday, today),
             PayBandTestParameter("7", tomorrow, null),
+          ),
+          // Handling missing pay bands
+          Arguments.of(
+            "A missing pay band continues to be missing",
+            listOf<PayBandTestParameter>(),
+            null,
+            null,
+            null,
+          ),
+          Arguments.of(
+            "A pay band can replace a missing pay band",
+            listOf<PayBandTestParameter>(),
+            PayBandTestParameter("5", today, null),
+            PayBandTestParameter("5", today, null),
+            null,
+          ),
+          Arguments.of(
+            "A future pay band can replace a missing pay band",
+            listOf<PayBandTestParameter>(),
+            PayBandTestParameter("5", tomorrow, null),
+            PayBandTestParameter("5", tomorrow, null),
+            null,
+          ),
+          Arguments.of(
+            "A pay band will be expired if it is updated to be missing",
+            listOf(PayBandTestParameter("5", yesterday, null)),
+            null,
+            PayBandTestParameter("5", yesterday, today),
+            null,
+          ),
+          Arguments.of(
+            "A future pay band will be removed if it is updated to be missing",
+            listOf(PayBandTestParameter("5", tomorrow, null)),
+            null,
+            null,
+            null,
+          ),
+          Arguments.of(
+            "An expired pay band will be ignored if it is updated to be missing",
+            listOf(PayBandTestParameter("5", yesterday, yesterday)),
+            null,
+            PayBandTestParameter("5", yesterday, yesterday),
+            null,
           ),
         )
       }

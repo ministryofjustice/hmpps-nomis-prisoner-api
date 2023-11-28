@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderKeyDateAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -27,8 +28,11 @@ class OffenderKeyDateAdjustmentBuilderFactory(
 @Component
 class OffenderKeyDateAdjustmentBuilderRepository(
   val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
+  val offenderKeyDateAdjustmentRepository: OffenderKeyDateAdjustmentRepository,
 ) {
   fun lookupKeyDateAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
+  fun save(adjustment: OffenderKeyDateAdjustment): OffenderKeyDateAdjustment =
+    offenderKeyDateAdjustmentRepository.save(adjustment)
 }
 
 class OffenderKeyDateAdjustmentBuilder(
@@ -41,6 +45,7 @@ class OffenderKeyDateAdjustmentBuilder(
     adjustmentDate: LocalDate,
     createdDate: LocalDateTime,
     adjustmentNumberOfDays: Long,
+    active: Boolean,
     offenderBooking: OffenderBooking,
   ): OffenderKeyDateAdjustment = OffenderKeyDateAdjustment(
     offenderBooking = offenderBooking,
@@ -48,6 +53,8 @@ class OffenderKeyDateAdjustmentBuilder(
     adjustmentDate = adjustmentDate,
     adjustmentNumberOfDays = adjustmentNumberOfDays,
     createdDate = createdDate,
+    active = active,
   )
+    .let { repository.save(it) }
     .also { offenderKeyDateAdjustment = it }
 }

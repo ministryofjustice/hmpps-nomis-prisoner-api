@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PleaStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -35,11 +36,15 @@ class OffenderChargeBuilderFactory(
 
 @Component
 class OffenderChargeBuilderRepository(
+  val repository: OffenderChargeRepository,
   val chargeStatusTypeRepository: ReferenceCodeRepository<ChargeStatusType>,
   val pleaStatusTypeRepository: ReferenceCodeRepository<PleaStatusType>,
   val offenceResultCodeRepository: OffenceResultCodeRepository,
   val offenceRepository: OffenceRepository,
 ) {
+  fun save(offenderCharge: OffenderCharge): OffenderCharge =
+    repository.save(offenderCharge)
+
   fun lookupChargeStatus(code: String): ChargeStatusType =
     chargeStatusTypeRepository.findByIdOrNull(ChargeStatusType.pk(code))!!
 
@@ -99,5 +104,6 @@ class OffenderChargeBuilder(
     mostSeriousFlag = mostSeriousFlag,
     lidsOffenceNumber = lidsOffenceNumber,
   )
+    .let { repository.save(it) }
     .also { offenderCharge = it }
 }
