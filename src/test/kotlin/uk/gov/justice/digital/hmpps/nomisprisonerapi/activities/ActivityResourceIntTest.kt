@@ -215,6 +215,27 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("PayPerSession").contains("""String "f": not one of the values accepted for Enum class: [H, F]""")
           }
       }
+
+      @Test
+      fun `Empty pay rates should still create activity and rules`() {
+        val missingPayRates = validJsonRequest(payRatesJson = """"payRates" : [],""")
+
+        val id = callCreateEndpoint(request = missingPayRates)
+
+        val courseActivity = repository.getActivity(id)
+        assertThat(courseActivity.payRates).isEmpty()
+        assertThat(courseActivity.courseScheduleRules.size).isGreaterThan(0)
+      }
+
+      @Test
+      fun `Missing pay rates should return bad request`() {
+        val missingPayRates = validJsonRequest(payRatesJson = "")
+
+        createActivityExpectingBadRequest(missingPayRates)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("payRates").contains("missing")
+          }
+      }
     }
 
     @Nested
@@ -320,8 +341,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isBadRequest
 
-    private fun callCreateEndpoint(): Long {
-      val response = callCreateEndpointAndExpect()
+    private fun callCreateEndpoint(request: String = validJsonRequest()): Long {
+      val response = callCreateEndpointAndExpect(request)
         .expectBody(CreateActivityResponse::class.java)
         .returnResult().responseBody
       assertThat(response?.courseActivityId).isGreaterThan(0)
@@ -344,6 +365,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
                   "endTime" : "11:00"
               } ],
       """.trimIndent(),
+      payRatesJson: String? = """
+              "payRates" : [ {
+                  "incentiveLevel" : "BAS",
+                  "payBand" : "5",
+                  "rate" : 0.4
+              } ],
+      """.trimIndent(),
     ) = """{
             "prisonId" : "BXI",
             "code" : "CA",
@@ -354,11 +382,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             "endDate" : "2022-11-30",
             "minimumIncentiveLevelCode" : "STD",
             "internalLocationId" : -3005,
-            "payRates" : [ {
-                "incentiveLevel" : "BAS",
-                "payBand" : "5",
-                "rate" : 0.4
-                } ],
+            $payRatesJson
             "payPerSession": "F",
             $schedulesJson
             "scheduleRules": [{
