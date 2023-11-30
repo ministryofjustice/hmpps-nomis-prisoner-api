@@ -120,6 +120,9 @@ class CourtEvent(
   @OneToMany(mappedBy = "id.courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   val courtEventCharges: MutableList<CourtEventCharge> = mutableListOf(),
 
+  @OneToMany(mappedBy = "courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val courtOrders: MutableList<CourtOrder> = mutableListOf(),
+
   /* COLUMNS NOT MAPPED
     END_TIME - not used
     EVENT_OUTCOME - not used

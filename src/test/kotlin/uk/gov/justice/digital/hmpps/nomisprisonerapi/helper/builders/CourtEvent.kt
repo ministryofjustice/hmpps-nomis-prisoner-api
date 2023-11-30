@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -42,17 +43,34 @@ interface CourtEventDsl {
     mostSeriousFlag: Boolean = false,
     dsl: CourtEventChargeDsl.() -> Unit = {},
   ): CourtEventCharge
+
+  @CourtOrderDslMarker
+  fun courtOrder(
+    courtDate: LocalDate = LocalDate.of(2023, 1, 1),
+    issuingCourt: String = "MDI",
+    orderType: String = "AUTO",
+    orderStatus: String = "A",
+    requestDate: LocalDate? = LocalDate.of(2023, 1, 1),
+    dueDate: LocalDate? = LocalDate.of(2023, 1, 5),
+    courtInfoId: String? = "A12345",
+    seriousnessLevel: String? = "HIGH",
+    commentText: String? = "a court order comment",
+    nonReportFlag: Boolean = false,
+    dsl: CourtOrderDsl.() -> Unit = {},
+  ): CourtOrder
 }
 
 @Component
 class CourtEventBuilderFactory(
   private val repository: CourtEventBuilderRepository,
   private val courtEventChargeBuilderFactory: CourtEventChargeBuilderFactory,
+  private val courtOrderBuilderFactory: CourtOrderBuilderFactory,
 ) {
   fun builder(): CourtEventBuilder {
     return CourtEventBuilder(
       repository,
       courtEventChargeBuilderFactory,
+      courtOrderBuilderFactory,
     )
   }
 }
@@ -83,6 +101,7 @@ class CourtEventBuilderRepository(
 class CourtEventBuilder(
   private val repository: CourtEventBuilderRepository,
   private val courtEventChargeBuilderFactory: CourtEventChargeBuilderFactory,
+  private val courtOrderBuilderFactory: CourtOrderBuilderFactory,
 ) : CourtEventDsl {
   private lateinit var courtEvent: CourtEvent
 
@@ -162,6 +181,37 @@ class CourtEventBuilder(
         mostSeriousFlag = mostSeriousFlag,
       )
         .also { courtEvent.courtEventCharges += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun courtOrder(
+    courtDate: LocalDate,
+    issuingCourt: String,
+    orderType: String,
+    orderStatus: String,
+    requestDate: LocalDate?,
+    dueDate: LocalDate?,
+    courtInfoId: String?,
+    seriousnessLevel: String?,
+    commentText: String?,
+    nonReportFlag: Boolean,
+    dsl: CourtOrderDsl.() -> Unit,
+  ) =
+    courtOrderBuilderFactory.builder().let { builder ->
+      builder.build(
+        courtEvent = courtEvent,
+        courtDate = courtDate,
+        issuingCourt = issuingCourt,
+        orderType = orderType,
+        orderStatus = orderStatus,
+        requestDate = requestDate,
+        dueDate = dueDate,
+        courtInfoId = courtInfoId,
+        seriousnessLevel = seriousnessLevel,
+        commentText = commentText,
+        nonReportFlag = nonReportFlag,
+      )
+        .also { courtEvent.courtOrders += it }
         .also { builder.apply(dsl) }
     }
 }

@@ -131,6 +131,7 @@ data class CourtEventResponse(
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
   val courtEventCharges: List<CourtEventChargeResponse>,
+  val courtOrders: List<CourtOrderResponse>,
 )
 
 @Schema(description = "Offender Charge")
@@ -183,4 +184,20 @@ data class CourtEventChargeResponse(
   val resultCode1Indicator: String?,
   val resultCode2Indicator: String?,
   val mostSeriousFlag: Boolean,
+)
+
+@Schema(description = "Court Order")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtOrderResponse(
+  val id: Long,
+  val courtDate: LocalDate,
+  val issuingCourt: String,
+  val courtInfoId: String?,
+  val orderType: String,
+  val orderStatus: String,
+  val dueDate: LocalDate?,
+  val requestDate: LocalDate?,
+  val seriousnessLevel: CodeDescription?,
+  val commentText: String?,
+  val nonReportFlag: Boolean?,
 )
