@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -131,4 +132,19 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   createdDateTime = this.createDatetime,
   createdByUsername = this.createUsername,
   courtEventCharges = this.courtEventCharges.map { it.toCourtEventCharge() },
+  courtOrders = this.courtOrders.map { it.toCourtOrder() },
+)
+
+private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
+  id = this.id,
+  courtDate = this.courtDate,
+  issuingCourt = this.issuingCourt.id,
+  courtInfoId = this.courtInfoId,
+  orderType = this.orderType,
+  orderStatus = this.orderStatus,
+  dueDate = this.dueDate,
+  requestDate = this.requestDate,
+  seriousnessLevel = this.seriousnessLevel?.toCodeDescription(),
+  commentText = this.commentText,
+  nonReportFlag = this.nonReportFlag,
 )

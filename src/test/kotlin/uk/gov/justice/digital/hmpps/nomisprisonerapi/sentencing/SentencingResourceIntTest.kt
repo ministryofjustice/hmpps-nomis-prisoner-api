@@ -68,6 +68,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             courtEventCharge(
               offenderCharge = offenderCharge2,
             )
+            courtOrder()
           }
         }
         courtCaseTwo = courtCase(
@@ -211,16 +212,28 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].courtEventCharges[0].cjitCode2").isEqualTo("cj2")
           .jsonPath("courtEvents[0].courtEventCharges[0].cjitCode3").isEqualTo("cj3")
           .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.description").isEqualTo("Imprisonment")
-          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode2.description").isEqualTo("Detained during HM Pleasure")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode2.description")
+          .isEqualTo("Detained during HM Pleasure")
           .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1Indicator").isEqualTo("rci1")
           .jsonPath("courtEvents[0].courtEventCharges[0].resultCode2Indicator").isEqualTo("rci2")
           .jsonPath("courtEvents[0].courtEventCharges[0].mostSeriousFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].courtOrders[0].id").exists()
+          .jsonPath("courtEvents[0].courtOrders[0].orderType").isEqualTo("AUTO")
+          .jsonPath("courtEvents[0].courtOrders[0].orderStatus").isEqualTo("A")
+          .jsonPath("courtEvents[0].courtOrders[0].courtInfoId").isEqualTo("A12345")
+          .jsonPath("courtEvents[0].courtOrders[0].issuingCourt").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].courtOrders[0].seriousnessLevel.description")
+          .isEqualTo("High")
+          .jsonPath("courtEvents[0].courtOrders[0].courtDate").isEqualTo(aDateString)
+          .jsonPath("courtEvents[0].courtOrders[0].requestDate").isEqualTo(aDateString)
+          .jsonPath("courtEvents[0].courtOrders[0].dueDate").isEqualTo(aLaterDateString)
+          .jsonPath("courtEvents[0].courtOrders[0].commentText").isEqualTo("a court order comment")
+          .jsonPath("courtEvents[0].courtOrders[0].nonReportFlag").isEqualTo(false)
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
           .jsonPath("offenderCharges[0].offence.description").isEqualTo("Actual bodily harm")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1) // what is this?
-          .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
           .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
           .jsonPath("offenderCharges[0].totalPropertyValue").isEqualTo(11)
