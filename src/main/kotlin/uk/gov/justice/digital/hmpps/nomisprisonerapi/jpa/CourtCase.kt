@@ -122,6 +122,7 @@ class CourtCase(
   lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
   lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {

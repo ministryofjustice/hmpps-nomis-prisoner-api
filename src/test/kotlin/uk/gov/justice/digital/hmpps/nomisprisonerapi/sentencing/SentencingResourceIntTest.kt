@@ -68,7 +68,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             courtEventCharge(
               offenderCharge = offenderCharge2,
             )
-            courtOrder()
+            courtOrder() {
+              sentencePurpose(purposeCode = "REPAIR")
+              sentencePurpose(purposeCode = "PUNISH")
+            }
           }
         }
         courtCaseTwo = courtCase(
@@ -229,6 +232,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].courtOrders[0].dueDate").isEqualTo(aLaterDateString)
           .jsonPath("courtEvents[0].courtOrders[0].commentText").isEqualTo("a court order comment")
           .jsonPath("courtEvents[0].courtOrders[0].nonReportFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].purposeCode").isEqualTo("REPAIR")
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].orderPartyCode").isEqualTo("CRT")
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].orderId").exists()
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].purposeCode").isEqualTo("REPAIR")
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[1].purposeCode").isEqualTo("PUNISH")
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
@@ -8,6 +9,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -86,6 +88,9 @@ class CourtOrder(
 
   val commentText: String?, // not used since 2018
 
+  @OneToMany(mappedBy = "id.orderId", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val sentencePurposes: MutableList<SentencePurpose> = mutableListOf(),
+
   /* COLUMNS NOT MAPPED
     COURT_SERIOUSNESS_LEVEL - not used
     STAFF_WORK_ID - not used
@@ -105,6 +110,7 @@ class CourtOrder(
   lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
   lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
