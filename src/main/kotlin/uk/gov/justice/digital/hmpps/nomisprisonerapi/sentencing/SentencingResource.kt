@@ -200,4 +200,13 @@ data class CourtOrderResponse(
   val seriousnessLevel: CodeDescription?,
   val commentText: String?,
   val nonReportFlag: Boolean?,
+  val sentencePurposes: List<SentencePurposeResponse>,
+)
+
+@Schema(description = "Sentence Purpose")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class SentencePurposeResponse(
+  val orderId: Long,
+  val orderPartyCode: String,
+  val purposeCode: String,
 )

@@ -14,8 +14,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurposeType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 
 @Service
@@ -23,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNo
 class SentencingService(
   private val courtCaseRepository: CourtCaseRepository,
   private val offenderRepository: OffenderRepository,
+  private val purposeRepository: ReferenceCodeRepository<SentencePurposeType>,
   private val telemetryClient: TelemetryClient,
 ) {
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
@@ -135,16 +139,25 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   courtOrders = this.courtOrders.map { it.toCourtOrder() },
 )
 
-private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
-  id = this.id,
-  courtDate = this.courtDate,
-  issuingCourt = this.issuingCourt.id,
-  courtInfoId = this.courtInfoId,
-  orderType = this.orderType,
-  orderStatus = this.orderStatus,
-  dueDate = this.dueDate,
-  requestDate = this.requestDate,
-  seriousnessLevel = this.seriousnessLevel?.toCodeDescription(),
-  commentText = this.commentText,
-  nonReportFlag = this.nonReportFlag,
-)
+private fun CourtOrder.toCourtOrder(): CourtOrderResponse =
+  CourtOrderResponse(
+    id = this.id,
+    courtDate = this.courtDate,
+    issuingCourt = this.issuingCourt.id,
+    courtInfoId = this.courtInfoId,
+    orderType = this.orderType,
+    orderStatus = this.orderStatus,
+    dueDate = this.dueDate,
+    requestDate = this.requestDate,
+    seriousnessLevel = this.seriousnessLevel?.toCodeDescription(),
+    commentText = this.commentText,
+    nonReportFlag = this.nonReportFlag,
+    sentencePurposes = this.sentencePurposes.map { it.toSentencePurpose() },
+  )
+
+private fun SentencePurpose.toSentencePurpose(): SentencePurposeResponse =
+  SentencePurposeResponse(
+    orderId = this.id.orderId,
+    orderPartyCode = this.id.orderPartyCode,
+    purposeCode = this.id.purposeCode,
+  )
