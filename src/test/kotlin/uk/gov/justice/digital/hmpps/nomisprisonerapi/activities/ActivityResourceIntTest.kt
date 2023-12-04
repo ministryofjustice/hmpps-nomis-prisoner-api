@@ -136,6 +136,24 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("description").contains("length must be between 1 and 40")
           }
       }
+
+      @Test
+      fun `Inactive pay band IEP should return bad request`() {
+        val invalidSchedule = validJsonRequest(
+          payRatesJson = """
+              "payRates" : [ {
+                  "incentiveLevel" : "ENT",
+                  "payBand" : "5",
+                  "rate" : 0.4
+              } ],
+          """.trimIndent(),
+        )
+
+        createActivityExpectingBadRequest(invalidSchedule)
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("IEP type ENT does not exist for prison BXI")
+          }
+      }
     }
 
     @Nested
@@ -695,6 +713,26 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
             assertThat(it).contains("IEP type EN2 does not exist for prison BXI")
+          }
+      }
+
+      @Test
+      fun `should return bad request when incentive level inactive for prison`() {
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            payRatesJson = """
+              "payRates" : [ {
+                  "incentiveLevel" : "ENT",
+                  "payBand" : "5",
+                  "rate" : "1.2"
+                  } ],
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("IEP type ENT does not exist for prison BXI")
           }
       }
 
