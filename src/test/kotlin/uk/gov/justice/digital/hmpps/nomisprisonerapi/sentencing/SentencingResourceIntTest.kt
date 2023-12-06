@@ -9,9 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
 
@@ -307,6 +309,209 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     internal fun deletePrisoner() {
       repository.delete(courtCase)
       repository.delete(courtCaseTwo)
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{seq}")
+  @Nested
+  inner class GetOffenderSentence {
+    private lateinit var staff: Staff
+    private lateinit var prisonerAtMoorland: Offender
+    private var latestBookingId: Long = 0
+    private lateinit var sentence: OffenderSentence
+    private val aDateString = "2023-01-01"
+    private val aDateTimeString = "2023-01-01T10:30:00"
+    private val aLaterDateString = "2023-01-05"
+    private val aLaterDateTimeString = "2023-01-05T10:30:00"
+
+    @BeforeEach
+    internal fun createPrisonerAndSentence() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              sentence = sentence(statusUpdateStaff = staff)
+            }
+          }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if sentence not found`() {
+        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Offender sentence for booking $latestBookingId and sentence sequence 11 not found")
+      }
+
+      @Test
+      fun `will return 404 if offender booking not found`() {
+        webTestClient.get().uri("/prisoners/booking-id/123/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offender booking 123 not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the offender sentence`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(sentence.id.sequence)
+          .jsonPath("status").isEqualTo("I")
+          .jsonPath("calculationType").isEqualTo("ADIMP_ORA")
+          .jsonPath("category.code").isEqualTo("2003")
+          .jsonPath("startDate").isEqualTo(aDateString)
+          // .jsonPath("courtOrder").isEqualTo("I")
+          .jsonPath("consecSequence").isEqualTo(2)
+          .jsonPath("endDate").isEqualTo(aLaterDateString)
+          .jsonPath("commentText").isEqualTo("a sentence comment")
+          .jsonPath("absenceCount").isEqualTo(2)
+          // .jsonPath("caseId").isEqualTo(2)
+          .jsonPath("etdCalculatedDate").isEqualTo("2023-01-02")
+          .jsonPath("mtdCalculatedDate").isEqualTo("2023-01-03")
+          .jsonPath("ltdCalculatedDate").isEqualTo("2023-01-04")
+          .jsonPath("ardCalculatedDate").isEqualTo("2023-01-05")
+          .jsonPath("crdCalculatedDate").isEqualTo("2023-01-06")
+          .jsonPath("pedCalculatedDate").isEqualTo("2023-01-07")
+          .jsonPath("npdCalculatedDate").isEqualTo("2023-01-08")
+          .jsonPath("ledCalculatedDate").isEqualTo("2023-01-09")
+          .jsonPath("sedCalculatedDate").isEqualTo("2023-01-10")
+          .jsonPath("prrdCalculatedDate").isEqualTo("2023-01-11")
+          .jsonPath("tariffCalculatedDate").isEqualTo("2023-01-12")
+          .jsonPath("dprrdCalculatedDate").isEqualTo("2023-01-13")
+          .jsonPath("tusedCalculatedDate").isEqualTo("2023-01-14")
+          .jsonPath("aggSentenceSequence").isEqualTo(3)
+          .jsonPath("aggAdjustDays").isEqualTo(6)
+          .jsonPath("sentenceLevel").isEqualTo("AGG")
+          .jsonPath("extendedDays").isEqualTo(4)
+          .jsonPath("counts").isEqualTo(5)
+          .jsonPath("statusUpdateReason").isEqualTo("update rsn")
+          .jsonPath("statusUpdateComment").isEqualTo("update comment")
+          .jsonPath("statusUpdateDate").isEqualTo("2023-01-05")
+          .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
+          .jsonPath("fineAmount").isEqualTo(12.5)
+          .jsonPath("dischargeDate").isEqualTo("2023-01-05")
+          .jsonPath("nomSentDetailRef").isEqualTo(11)
+          .jsonPath("nomConsToSentDetailRef").isEqualTo(12)
+          .jsonPath("nomConsFromSentDetailRef").isEqualTo(13)
+          .jsonPath("nomConsWithSentDetailRef").isEqualTo(14)
+          .jsonPath("lineSequence").isEqualTo(1)
+          .jsonPath("hdcExclusionFlag").isEqualTo(true)
+          .jsonPath("hdcExclusionReason").isEqualTo("hdc reason")
+          .jsonPath("cjaAct").isEqualTo("A")
+          .jsonPath("sled2Calc").isEqualTo("2023-01-20")
+          .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdDateTime").isNotEmpty
+      }
+
+      /*fun `will return the sentence minimal data`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCaseTwo.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
+          .jsonPath("caseSequence").isEqualTo(2)
+          .jsonPath("prisonId").isEqualTo("MDI")
+          .jsonPath("caseStatus.code").isEqualTo("A")
+          .jsonPath("caseStatus.description").isEqualTo("Active")
+          .jsonPath("caseType.code").isEqualTo("A")
+          .jsonPath("caseType.description").isEqualTo("Adult")
+          .jsonPath("beginDate").isEqualTo(aLaterDateString)
+          .jsonPath("caseInfoNumber").isEqualTo("AB1")
+          .jsonPath("statusUpdateComment").doesNotExist()
+          .jsonPath("statusUpdateReason").doesNotExist()
+          .jsonPath("statusUpdateDate").doesNotExist()
+          .jsonPath("statusUpdateStaffId").doesNotExist()
+          .jsonPath("lidsCaseNumber").isEqualTo(1)
+          .jsonPath("lidsCaseId").doesNotExist()
+          .jsonPath("lidsCombinedCaseId").doesNotExist()
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].id").exists()
+          .jsonPath("courtEvents[0].offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
+          .jsonPath("courtEvents[0].eventDate").isEqualTo(aDateString)
+          .jsonPath("courtEvents[0].startTime").isEqualTo(aDateTimeString)
+          .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Trial")
+          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[0].directionCode").doesNotExist()
+          .jsonPath("courtEvents[0].judgeName").doesNotExist()
+          .jsonPath("courtEvents[0].prisonId").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].outcomeReasonCode").doesNotExist()
+          .jsonPath("courtEvents[0].commentText").doesNotExist()
+          .jsonPath("courtEvents[0].orderRequestedFlag").doesNotExist()
+          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[0].nextEventRequestFlag").doesNotExist()
+          .jsonPath("courtEvents[0].nextEventDate").doesNotExist()
+          .jsonPath("courtEvents[0].nextEventStartTime").doesNotExist()
+          .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
+      }*/
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(sentence)
       repository.delete(prisonerAtMoorland)
       repository.delete(staff)
     }
