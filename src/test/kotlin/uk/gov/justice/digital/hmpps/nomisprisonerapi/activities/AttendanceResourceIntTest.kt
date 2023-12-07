@@ -171,10 +171,10 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should return bad request if offender booking not found`() {
-        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, 222)
+        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, 22222)
           .expectStatus().isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Offender booking with id=222 not found")
+            assertThat(it).contains("Offender booking with id=22222 not found")
           }
       }
 
