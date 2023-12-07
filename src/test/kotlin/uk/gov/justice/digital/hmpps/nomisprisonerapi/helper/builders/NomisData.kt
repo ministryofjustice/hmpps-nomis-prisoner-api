@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -160,6 +161,7 @@ class NomisData(
   @CourtCaseDslMarker
   override fun courtCase(
     offender: Offender,
+    offenderBooking: OffenderBooking?,
     whenCreated: LocalDateTime,
     caseStatus: String,
     caseType: String,
@@ -181,7 +183,7 @@ class NomisData(
     .let { builder ->
       builder.build(
         whenCreated = whenCreated,
-        offenderBooking = offender.latestBooking(),
+        offenderBooking = offenderBooking ?: offender.latestBooking(),
         combinedCase = combinedCase,
         caseStatus = caseStatus,
         caseType = caseType,
@@ -260,6 +262,7 @@ interface NomisDataDsl {
   @CourtCaseDslMarker
   fun courtCase(
     offender: Offender,
+    offenderBooking: OffenderBooking? = null,
     whenCreated: LocalDateTime = LocalDateTime.now(),
     caseStatus: String = "A",
     caseType: String = "A",
@@ -269,7 +272,7 @@ interface NomisDataDsl {
     prisonId: String = "MDI",
     combinedCase: CourtCase? = null,
     reportingStaff: Staff,
-    statusUpdateStaff: Staff?,
+    statusUpdateStaff: Staff? = null,
     statusUpdateDate: LocalDate? = null,
     statusUpdateReason: String? = "a reason",
     statusUpdateComment: String? = "a comment",
