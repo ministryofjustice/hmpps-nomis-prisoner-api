@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -65,8 +66,47 @@ interface BookingDsl {
   fun sentence(
     calculationType: String = "ADIMP_ORA",
     category: String = "2003",
-    startDate: LocalDate = LocalDate.now(),
+    startDate: LocalDate = LocalDate.of(2023, 1, 1),
     status: String = "I",
+    sentenceLevel: String = "AGG",
+    consecSequence: Int? = 2,
+    courtOrder: Long? = null,
+    endDate: LocalDate = LocalDate.of(2023, 1, 5),
+    commentText: String? = "a sentence comment",
+    absenceCount: Int? = 2,
+    etdCalculatedDate: LocalDate? = LocalDate.parse("2023-01-02"),
+    mtdCalculatedDate: LocalDate? = LocalDate.parse("2023-01-03"),
+    ltdCalculatedDate: LocalDate? = LocalDate.parse("2023-01-04"),
+    ardCalculatedDate: LocalDate? = LocalDate.parse("2023-01-05"),
+    crdCalculatedDate: LocalDate? = LocalDate.parse("2023-01-06"),
+    pedCalculatedDate: LocalDate? = LocalDate.parse("2023-01-07"),
+    npdCalculatedDate: LocalDate? = LocalDate.parse("2023-01-08"),
+    ledCalculatedDate: LocalDate? = LocalDate.parse("2023-01-09"),
+    sedCalculatedDate: LocalDate? = LocalDate.parse("2023-01-10"),
+    prrdCalculatedDate: LocalDate? = LocalDate.parse("2023-01-11"),
+    tariffCalculatedDate: LocalDate? = LocalDate.parse("2023-01-12"),
+    dprrdCalculatedDate: LocalDate? = LocalDate.parse("2023-01-13"),
+    tusedCalculatedDate: LocalDate? = LocalDate.parse("2023-01-14"),
+    aggAdjustDays: Int? = 6,
+    aggSentenceSequence: Int? = 3,
+    extendedDays: Int? = 4,
+    counts: Int? = 5,
+    statusUpdateReason: String? = "update rsn",
+    statusUpdateComment: String? = "update comment",
+    statusUpdateDate: LocalDate? = LocalDate.parse("2023-01-05"),
+    statusUpdateStaff: Staff? = null,
+    fineAmount: BigDecimal? = BigDecimal.valueOf(12.5),
+    dischargeDate: LocalDate? = LocalDate.parse("2023-01-05"),
+    nomSentDetailRef: Long? = 11,
+    nomConsToSentDetailRef: Long? = 12,
+    nomConsFromSentDetailRef: Long? = 13,
+    nomConsWithSentDetailRef: Long? = 14,
+    lineSequence: Int? = 1,
+    hdcExclusionFlag: Boolean? = true,
+    hdcExclusionReason: String? = "hdc reason",
+    cjaAct: String? = "A",
+    sled2Calc: LocalDate? = LocalDate.parse("2023-01-20"),
+    startDate2Calc: LocalDate? = LocalDate.parse("2023-01-21"),
     dsl: OffenderSentenceDsl.() -> Unit = { },
   ): OffenderSentence
 
@@ -89,7 +129,8 @@ class BookingBuilderRepository(
 ) {
   fun save(offenderBooking: OffenderBooking): OffenderBooking = offenderBookingRepository.save(offenderBooking)
   fun lookupAgencyLocation(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
-  fun lookupAgencyInternalLocation(id: Long): AgencyInternalLocation = agencyInternalLocationRepository.findByIdOrNull(id)!!
+  fun lookupAgencyInternalLocation(id: Long): AgencyInternalLocation =
+    agencyInternalLocationRepository.findByIdOrNull(id)!!
 }
 
 @Component
@@ -161,7 +202,16 @@ class BookingBuilder(
   ) =
     courseAllocationBuilderFactory.builder()
       .let { builder ->
-        builder.build(offenderBooking, startDate, programStatusCode, endDate, endReasonCode, endComment, suspended, courseActivity)
+        builder.build(
+          offenderBooking,
+          startDate,
+          programStatusCode,
+          endDate,
+          endReasonCode,
+          endComment,
+          suspended,
+          courseActivity,
+        )
           .also { offenderBooking.offenderProgramProfiles += it }
           .also { builder.apply(dsl) }
       }
@@ -171,8 +221,47 @@ class BookingBuilder(
     category: String,
     startDate: LocalDate,
     status: String,
+    sentenceLevel: String,
+    consecSequence: Int?,
+    courtOrder: Long?,
+    endDate: LocalDate,
+    commentText: String?,
+    absenceCount: Int?,
+    etdCalculatedDate: LocalDate?,
+    mtdCalculatedDate: LocalDate?,
+    ltdCalculatedDate: LocalDate?,
+    ardCalculatedDate: LocalDate?,
+    crdCalculatedDate: LocalDate?,
+    pedCalculatedDate: LocalDate?,
+    npdCalculatedDate: LocalDate?,
+    ledCalculatedDate: LocalDate?,
+    sedCalculatedDate: LocalDate?,
+    prrdCalculatedDate: LocalDate?,
+    tariffCalculatedDate: LocalDate?,
+    dprrdCalculatedDate: LocalDate?,
+    tusedCalculatedDate: LocalDate?,
+    aggAdjustDays: Int?,
+    aggSentenceSequence: Int?,
+    extendedDays: Int?,
+    counts: Int?,
+    statusUpdateReason: String?,
+    statusUpdateComment: String?,
+    statusUpdateDate: LocalDate?,
+    statusUpdateStaff: Staff?,
+    fineAmount: BigDecimal?,
+    dischargeDate: LocalDate?,
+    nomSentDetailRef: Long?,
+    nomConsToSentDetailRef: Long?,
+    nomConsFromSentDetailRef: Long?,
+    nomConsWithSentDetailRef: Long?,
+    lineSequence: Int?,
+    hdcExclusionFlag: Boolean?,
+    hdcExclusionReason: String?,
+    cjaAct: String?,
+    sled2Calc: LocalDate?,
+    startDate2Calc: LocalDate?,
     dsl: OffenderSentenceDsl.() -> Unit,
-  ) =
+  ): OffenderSentence =
     offenderSentenceBuilderFactory.builder()
       .let { builder ->
         builder.build(
@@ -182,6 +271,45 @@ class BookingBuilder(
           status = status,
           offenderBooking = offenderBooking,
           sequence = offenderBooking.sentences.size.toLong() + 1,
+          sentenceLevel = sentenceLevel,
+          consecSequence = consecSequence,
+          courtOrder = null, // todo
+          endDate = endDate,
+          commentText = commentText,
+          absenceCount = absenceCount,
+          etdCalculatedDate = etdCalculatedDate,
+          mtdCalculatedDate = mtdCalculatedDate,
+          ltdCalculatedDate = ltdCalculatedDate,
+          ardCalculatedDate = ardCalculatedDate,
+          crdCalculatedDate = crdCalculatedDate,
+          pedCalculatedDate = pedCalculatedDate,
+          npdCalculatedDate = npdCalculatedDate,
+          ledCalculatedDate = ledCalculatedDate,
+          sedCalculatedDate = sedCalculatedDate,
+          prrdCalculatedDate = prrdCalculatedDate,
+          tariffCalculatedDate = tariffCalculatedDate,
+          dprrdCalculatedDate = dprrdCalculatedDate,
+          tusedCalculatedDate = tusedCalculatedDate,
+          aggAdjustDays = aggAdjustDays,
+          aggSentenceSequence = aggSentenceSequence,
+          extendedDays = extendedDays,
+          counts = counts,
+          statusUpdateReason = statusUpdateReason,
+          statusUpdateComment = statusUpdateComment,
+          statusUpdateDate = statusUpdateDate,
+          statusUpdateStaff = statusUpdateStaff,
+          fineAmount = fineAmount,
+          dischargeDate = dischargeDate,
+          nomSentDetailRef = nomSentDetailRef,
+          nomConsToSentDetailRef = nomConsToSentDetailRef,
+          nomConsFromSentDetailRef = nomConsFromSentDetailRef,
+          nomConsWithSentDetailRef = nomConsWithSentDetailRef,
+          lineSequence = lineSequence,
+          hdcExclusionFlag = hdcExclusionFlag,
+          hdcExclusionReason = hdcExclusionReason,
+          cjaAct = cjaAct,
+          sled2Calc = sled2Calc,
+          startDate2Calc = startDate2Calc,
         )
           .also { offenderBooking.sentences += it }
           .also { builder.apply(dsl) }

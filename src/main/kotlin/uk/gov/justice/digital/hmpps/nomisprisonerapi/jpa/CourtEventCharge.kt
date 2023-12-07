@@ -40,7 +40,7 @@ class CourtEventCharge(
   val id: CourtEventChargeId,
 
   @Column(name = "NO_OF_OFFENCES")
-  val offencesCount: Int? = 0,
+  val offencesCount: Int? = 0, // offences taken into consideration button on OCDCCASE
 
   val offenceDate: LocalDate?,
 
@@ -63,7 +63,7 @@ class CourtEventCharge(
 
   val propertyValue: BigDecimal?,
 
-  val totalPropertyValue: BigDecimal?,
+  val totalPropertyValue: BigDecimal?, // offences taken into consideration button on OCDCCASE
 
   @Column(name = "CJIT_OFFENCE_CODE_1")
   val cjitCode1: String?,

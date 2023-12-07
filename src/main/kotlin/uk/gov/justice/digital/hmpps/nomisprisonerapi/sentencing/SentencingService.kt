@@ -14,10 +14,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurposeType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 
@@ -25,7 +28,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNo
 @Transactional
 class SentencingService(
   private val courtCaseRepository: CourtCaseRepository,
+  private val offenderSentenceRepository: OffenderSentenceRepository,
   private val offenderRepository: OffenderRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
   private val purposeRepository: ReferenceCodeRepository<SentencePurposeType>,
   private val telemetryClient: TelemetryClient,
 ) {
@@ -58,6 +63,69 @@ class SentencingService(
     } ?: throw NotFoundException("Court case $id not found")
   }
 
+  fun getOffenderSentence(sentenceSequence: Long, bookingId: Long): SentenceResponse {
+    val offenderBooking = findOffenderBooking(bookingId)
+
+    return offenderSentenceRepository.findByIdOrNull(
+      SentenceId(
+        offenderBooking = offenderBooking,
+        sequence = sentenceSequence,
+      ),
+    )?.let { sentence ->
+      SentenceResponse(
+        bookingId = sentence.id.offenderBooking.bookingId,
+        sentenceSeq = sentence.id.sequence,
+        status = sentence.status,
+        calculationType = sentence.calculationType.id.calculationType,
+        startDate = sentence.startDate,
+        courtOrder = sentence.courtOrder?.toCourtOrder(),
+        consecSequence = sentence.consecSequence,
+        endDate = sentence.endDate,
+        commentText = sentence.commentText,
+        absenceCount = sentence.absenceCount,
+        caseId = sentence.courtCase?.id,
+        etdCalculatedDate = sentence.etdCalculatedDate,
+        mtdCalculatedDate = sentence.mtdCalculatedDate,
+        ltdCalculatedDate = sentence.ltdCalculatedDate,
+        ardCalculatedDate = sentence.ardCalculatedDate,
+        crdCalculatedDate = sentence.crdCalculatedDate,
+        pedCalculatedDate = sentence.pedCalculatedDate,
+        npdCalculatedDate = sentence.npdCalculatedDate,
+        ledCalculatedDate = sentence.ledCalculatedDate,
+        sedCalculatedDate = sentence.sedCalculatedDate,
+        prrdCalculatedDate = sentence.prrdCalculatedDate,
+        tariffCalculatedDate = sentence.tariffCalculatedDate,
+        dprrdCalculatedDate = sentence.dprrdCalculatedDate,
+        tusedCalculatedDate = sentence.tusedCalculatedDate,
+        aggSentenceSequence = sentence.aggSentenceSequence,
+        aggAdjustDays = sentence.aggAdjustDays,
+        sentenceLevel = sentence.sentenceLevel,
+        extendedDays = sentence.extendedDays,
+        counts = sentence.counts,
+        statusUpdateReason = sentence.statusUpdateReason,
+        statusUpdateComment = sentence.statusUpdateComment,
+        statusUpdateDate = sentence.statusUpdateDate,
+        statusUpdateStaffId = sentence.statusUpdateStaff?.id,
+        category = sentence.category.toCodeDescription(),
+        fineAmount = sentence.fineAmount,
+        dischargeDate = sentence.dischargeDate,
+        nomSentDetailRef = sentence.nomSentDetailRef,
+        nomConsToSentDetailRef = sentence.nomConsToSentDetailRef,
+        nomConsFromSentDetailRef = sentence.nomConsFromSentDetailRef,
+        nomConsWithSentDetailRef = sentence.nomConsWithSentDetailRef,
+        lineSequence = sentence.lineSequence,
+        hdcExclusionFlag = sentence.hdcExclusionFlag,
+        hdcExclusionReason = sentence.hdcExclusionReason,
+        cjaAct = sentence.cjaAct,
+        sled2Calc = sentence.sled2Calc,
+        startDate2Calc = sentence.startDate2Calc,
+        createdDateTime = sentence.createDatetime,
+        createdByUsername = sentence.createUsername,
+      )
+    }
+      ?: throw NotFoundException("Offender sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
+  }
+
   private fun Offender.findLatestBooking(): OffenderBooking {
     return this.bookings.firstOrNull { it.bookingSequence == 1 }
       ?: throw BadDataException("Prisoner ${this.nomsId} has no bookings")
@@ -66,6 +134,11 @@ class SentencingService(
   private fun findPrisoner(offenderNo: String): Offender {
     return offenderRepository.findRootByNomisId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found")
+  }
+
+  private fun findOffenderBooking(id: Long): OffenderBooking {
+    return offenderBookingRepository.findByIdOrNull(id)
+      ?: throw NotFoundException("Offender booking $id not found")
   }
 }
 

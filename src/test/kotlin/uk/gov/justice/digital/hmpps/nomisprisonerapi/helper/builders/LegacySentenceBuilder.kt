@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -14,18 +15,22 @@ class LegacySentenceBuilder(
   var category: String = "2003",
   var startDate: LocalDate = LocalDate.now(),
   var status: String = "I",
+  var sentenceLevel: String = "IND",
   var adjustments: List<LegacySentenceAdjustmentBuilder> = emptyList(),
 ) {
   fun build(
     offenderBooking: OffenderBooking,
     sequence: Long = 1,
     calculationType: SentenceCalculationType,
+    category: SentenceCategoryType,
   ): OffenderSentence =
     OffenderSentence(
       id = SentenceId(offenderBooking = offenderBooking, sequence = sequence),
       status = status,
       startDate = startDate,
       calculationType = calculationType,
+      category = category,
+      sentenceLevel = sentenceLevel,
     )
 
   fun withAdjustment(sentenceAdjustmentBuilder: LegacySentenceAdjustmentBuilder = LegacySentenceAdjustmentBuilder()): LegacySentenceBuilder {

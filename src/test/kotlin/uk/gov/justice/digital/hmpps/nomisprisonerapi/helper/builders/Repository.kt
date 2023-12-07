@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSched
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -34,6 +35,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
@@ -56,6 +58,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -98,7 +101,9 @@ class Repository(
   val adjudicationHearingRepository: AdjudicationHearingRepository,
   val offenderNonAssociationRepository: OffenderNonAssociationRepository,
   val courtCaseRepository: CourtCaseRepository,
+  val offenderSentenceRepository: OffenderSentenceRepository,
   val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
+  val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -160,9 +165,10 @@ class Repository(
       booking.sentences.addAll(
         offenderBuilder.bookingBuilders[bookingIndex].sentences.mapIndexed { sentenceIndex, sentenceBuilder ->
           val sentence = sentenceBuilder.build(
-            booking,
-            sentenceIndex.toLong() + 1,
-            lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category),
+            offenderBooking = booking,
+            sequence = sentenceIndex.toLong() + 1,
+            calculationType = lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category),
+            category = lookupSentenceCategory(sentenceBuilder.category),
           )
           sentence.adjustments.addAll(
             sentenceBuilder.adjustments.map {
@@ -214,6 +220,7 @@ class Repository(
     adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
 
   fun delete(courtCase: CourtCase) = courtCaseRepository.deleteById(courtCase.id)
+  fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
 
   // Builder lookups
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
@@ -226,6 +233,8 @@ class Repository(
 
   fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
     sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
+
+  fun lookupSentenceCategory(code: String): SentenceCategoryType = sentenceCategoryTypeRepository.findByIdOrNull(Pk(SentenceCategoryType.CATEGORY, code))!!
 
   fun lookupSentenceAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
 

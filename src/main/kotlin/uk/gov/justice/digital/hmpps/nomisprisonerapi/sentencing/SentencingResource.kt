@@ -82,6 +82,67 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
   ): CourtCaseResponse = sentencingService.getCourtCase(id, offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @Operation(
+    summary = "get sentences for an offender using the given booking id and sentence sequence",
+    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the sentence details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Sentence not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender booking not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderSentence(
+    @Schema(description = "Sentence sequence", example = "1")
+    @PathVariable
+    sequence: Long,
+    @Schema(description = "Offender Booking Id", example = "12345")
+    @PathVariable
+    bookingId: Long,
+  ): SentenceResponse = sentencingService.getOffenderSentence(sequence, bookingId)
 }
 
 @Schema(description = "Court Case")
@@ -209,4 +270,57 @@ data class SentencePurposeResponse(
   val orderId: Long,
   val orderPartyCode: String,
   val purposeCode: String,
+)
+
+@Schema(description = "Offender Sentence")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class SentenceResponse(
+  val bookingId: Long,
+  val sentenceSeq: Long,
+  val status: String,
+  val calculationType: String,
+  val category: CodeDescription,
+  val startDate: LocalDate,
+  val courtOrder: CourtOrderResponse?,
+  val consecSequence: Int?,
+  val endDate: LocalDate?,
+  val commentText: String?,
+  val absenceCount: Int?,
+  val caseId: Long?, // may return object ?
+  val etdCalculatedDate: LocalDate?,
+  val mtdCalculatedDate: LocalDate?,
+  val ltdCalculatedDate: LocalDate?,
+  val ardCalculatedDate: LocalDate?,
+  val crdCalculatedDate: LocalDate?,
+  val pedCalculatedDate: LocalDate?,
+  val npdCalculatedDate: LocalDate?,
+  val ledCalculatedDate: LocalDate?,
+  val sedCalculatedDate: LocalDate?,
+  val prrdCalculatedDate: LocalDate?,
+  val tariffCalculatedDate: LocalDate?,
+  val dprrdCalculatedDate: LocalDate?,
+  val tusedCalculatedDate: LocalDate?,
+  val aggSentenceSequence: Int?,
+  val aggAdjustDays: Int?,
+  val sentenceLevel: String?,
+  val extendedDays: Int?,
+  val counts: Int?,
+  val statusUpdateReason: String?,
+  val statusUpdateComment: String?,
+  val statusUpdateDate: LocalDate?,
+  val statusUpdateStaffId: Long?,
+  val fineAmount: BigDecimal?,
+  val dischargeDate: LocalDate?,
+  val nomSentDetailRef: Long?,
+  val nomConsToSentDetailRef: Long?,
+  val nomConsFromSentDetailRef: Long?,
+  val nomConsWithSentDetailRef: Long?,
+  val lineSequence: Int?,
+  val hdcExclusionFlag: Boolean?,
+  val hdcExclusionReason: String?,
+  val cjaAct: String?,
+  val sled2Calc: LocalDate?,
+  val startDate2Calc: LocalDate?,
+  val createdDateTime: LocalDateTime,
+  val createdByUsername: String,
 )
