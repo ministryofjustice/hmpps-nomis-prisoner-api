@@ -30,8 +30,6 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
     code: String,
   ): List<OffenderProgramProfile>
 
-  fun findByCourseActivity(courseActivity: CourseActivity): List<OffenderProgramProfile>
-
   @Query(
     value = """
        select opp.offenderProgramReferenceId

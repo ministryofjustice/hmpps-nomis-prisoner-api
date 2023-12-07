@@ -106,6 +106,7 @@ data class OffenderProgramProfile(
   override fun hashCode(): Int = javaClass.hashCode()
 
   fun isPayRateApplicable(payBandCode: String, iepLevelCode: String): Boolean {
+    if (this.offenderBooking.incentives.isEmpty()) return false
     val iepLevel = this.offenderBooking.incentives.maxBy { it.id.sequence }
     if (iepLevel.iepLevel.code != iepLevelCode) return false
     return this.payBands

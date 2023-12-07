@@ -848,6 +848,27 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should return OK if pay rate removed for an offender whose allocation has ended`() {
+        nomisDataBuilder.build {
+          offender {
+            offenderBooking = booking {
+              incentive(iepLevelCode = "STD")
+              courseAllocation(courseActivity, endDate = yesterday.toString(), programStatusCode = "END")
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(payRatesJson = """ "payRates" : [],"""),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+        assertThat(updated.payRates[0].endDate).isEqualTo(today)
+      }
+
+      @Test
       fun `should adjust pay rates start date if activity start date moved back`() {
         nomisDataBuilder.build {
           programService {
@@ -961,6 +982,27 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           assertThat(id.startDate).isEqualTo(tomorrow)
           assertThat(endDate).isNull()
         }
+      }
+
+      @Test
+      fun `should not error when checking pay rates if an offender without an incentive level is allocated`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity()
+          }
+          offender {
+            offenderBooking = booking {
+              // the offender has no incentive level
+              courseAllocation(courseActivity)
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(),
+        )
+          .expectStatus().isOk
       }
 
       private fun findPayRate(rates: List<CourseActivityPayRate>, halfDayRate: Double) =
