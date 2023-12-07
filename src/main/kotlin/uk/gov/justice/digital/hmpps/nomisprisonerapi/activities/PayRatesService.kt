@@ -137,7 +137,7 @@ class PayRatesService(
 
   private fun List<CourseActivityPayRate>.throwIfPayBandsInUse() =
     this.forEach { activityPayRate ->
-      offenderProgramProfileRepository.findByCourseActivity(activityPayRate.id.courseActivity)
+      offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndProgramStatusCode(activityPayRate.id.courseActivity.courseActivityId, "ALLOC")
         .filter { profile -> profile.isPayRateApplicable(activityPayRate.payBand.code, activityPayRate.iepLevel.code) }
         .map { offender -> offender.offenderBooking.offender.nomsId }
         .toList()
