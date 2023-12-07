@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
@@ -16,12 +17,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurposeType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 
 @Service
@@ -31,36 +30,31 @@ class SentencingService(
   private val offenderSentenceRepository: OffenderSentenceRepository,
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
-  private val purposeRepository: ReferenceCodeRepository<SentencePurposeType>,
   private val telemetryClient: TelemetryClient,
 ) {
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
     findPrisoner(offenderNo).findLatestBooking()
 
-    return courtCaseRepository.findByIdOrNull(id)?.let { courtCase ->
-      CourtCaseResponse(
-        id = courtCase.id,
-        offenderNo = courtCase.offenderBooking.offender.nomsId,
-        caseInfoNumber = courtCase.caseInfoNumber,
-        caseSequence = courtCase.caseSequence,
-        caseStatus = courtCase.caseStatus.toCodeDescription(),
-        caseType = courtCase.legalCaseType.toCodeDescription(),
-        beginDate = courtCase.beginDate,
-        prisonId = courtCase.prison.id,
-        combinedCaseId = courtCase.combinedCase?.id,
-        lidsCaseNumber = courtCase.lidsCaseNumber,
-        lidsCaseId = courtCase.lidsCaseId,
-        lidsCombinedCaseId = courtCase.lidsCombinedCaseId,
-        statusUpdateReason = courtCase.statusUpdateReason,
-        statusUpdateComment = courtCase.statusUpdateComment,
-        statusUpdateDate = courtCase.statusUpdateDate,
-        statusUpdateStaffId = courtCase.statusUpdateStaff?.id,
-        createdDateTime = courtCase.createDatetime,
-        createdByUsername = courtCase.createUsername,
-        courtEvents = courtCase.courtEvents.map { it.toCourtEvent() },
-        offenderCharges = courtCase.offenderCharges.map { it.toOffenderCharge() },
-      )
-    } ?: throw NotFoundException("Court case $id not found")
+    return courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
+      ?: throw NotFoundException("Court case $id not found")
+  }
+
+  fun getCourtCasesByOffender(offenderNo: String): List<CourtCaseResponse> {
+    findPrisoner(offenderNo).findLatestBooking()
+
+    return courtCaseRepository.findByOffenderBooking_offender_nomsIdOrderByCreateDatetimeDesc(offenderNo)
+      .map { courtCase ->
+        courtCase.toCourtCaseResponse()
+      }
+  }
+
+  fun getCourtCasesByOffenderBooking(bookingId: Long): List<CourtCaseResponse> {
+    return findOffenderBooking(bookingId).let {
+      courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(it)
+        .map { courtCase ->
+          courtCase.toCourtCaseResponse()
+        }
+    }
   }
 
   fun getOffenderSentence(sentenceSequence: Long, bookingId: Long): SentenceResponse {
@@ -141,6 +135,30 @@ class SentencingService(
       ?: throw NotFoundException("Offender booking $id not found")
   }
 }
+
+private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseResponse(
+  id = this.id,
+  offenderNo = this.offenderBooking.offender.nomsId,
+  bookingId = this.offenderBooking.bookingId,
+  caseInfoNumber = this.caseInfoNumber,
+  caseSequence = this.caseSequence,
+  caseStatus = this.caseStatus.toCodeDescription(),
+  caseType = this.legalCaseType.toCodeDescription(),
+  beginDate = this.beginDate,
+  prisonId = this.prison.id,
+  combinedCaseId = this.combinedCase?.id,
+  lidsCaseNumber = this.lidsCaseNumber,
+  lidsCaseId = this.lidsCaseId,
+  lidsCombinedCaseId = this.lidsCombinedCaseId,
+  statusUpdateReason = this.statusUpdateReason,
+  statusUpdateComment = this.statusUpdateComment,
+  statusUpdateDate = this.statusUpdateDate,
+  statusUpdateStaffId = this.statusUpdateStaff?.id,
+  createdDateTime = this.createDatetime,
+  createdByUsername = this.createUsername,
+  courtEvents = this.courtEvents.map { it.toCourtEvent() },
+  offenderCharges = this.offenderCharges.map { it.toOffenderCharge() },
+)
 
 private fun OffenderCharge.toOffenderCharge(): OffenderChargeResponse = OffenderChargeResponse(
   id = this.id,

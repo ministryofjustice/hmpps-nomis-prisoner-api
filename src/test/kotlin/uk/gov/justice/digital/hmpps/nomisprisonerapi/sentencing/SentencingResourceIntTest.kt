@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -30,7 +31,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI").locationId
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-case/{id}")
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Nested
   inner class GetCourtCase {
     private lateinit var staff: Staff
@@ -107,7 +108,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCase.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -115,7 +116,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCase.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -123,14 +124,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCase.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access allowed with correct role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCase.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -141,7 +142,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if court case not found`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/11")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/11")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
@@ -151,7 +152,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if offender not found`() {
-        webTestClient.get().uri("/prisoners/XXXX/sentencing/court-case/${courtCase.id}")
+        webTestClient.get().uri("/prisoners/XXXX/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
@@ -164,7 +165,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return the court case and events`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCase.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -261,7 +262,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return the court case and events with minimal data`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCaseTwo.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCaseTwo.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -310,6 +311,240 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       repository.delete(courtCase)
       repository.delete(courtCaseTwo)
       repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases")
+  @Nested
+  inner class GetCourtCasesByOffender {
+    private lateinit var staff: Staff
+    private lateinit var prisoner1: Offender
+    private lateinit var prisoner1Booking: OffenderBooking
+    private lateinit var prisoner1Booking2: OffenderBooking
+    private lateinit var prisoner2: Offender
+    private lateinit var prisoner1CourtCase: CourtCase
+    private lateinit var prisoner1CourtCase2: CourtCase
+    private lateinit var prisoner2CourtCase: CourtCase
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisoner1 =
+          offender(nomsId = "A1234AB") {
+            prisoner1Booking = booking(agencyLocationId = "MDI")
+            prisoner1Booking2 = booking(agencyLocationId = "MDI")
+          }
+        prisoner2 =
+          offender(nomsId = "A1234AC") {
+            booking(agencyLocationId = "MDI")
+          }
+        prisoner1CourtCase = courtCase(
+          offender = prisoner1,
+          offenderBooking = prisoner1Booking,
+          reportingStaff = staff,
+        ) {}
+        prisoner1CourtCase2 = courtCase(
+          offender = prisoner1,
+          offenderBooking = prisoner1Booking2, // different booking to first court case
+          reportingStaff = staff,
+        ) {}
+        prisoner2CourtCase = courtCase(
+          offender = prisoner2,
+          reportingStaff = staff,
+        ) {}
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `will return 404 if offender not found`() {
+        webTestClient.get().uri("/prisoners/XXXX/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the court cases for the offender`() {
+        webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(2)
+          .jsonPath("$[0].offenderNo").isEqualTo(prisoner1.nomsId)
+          .jsonPath("$[0].bookingId").isEqualTo(prisoner1Booking2.bookingId)
+          .jsonPath("$[1].offenderNo").isEqualTo(prisoner1.nomsId)
+          .jsonPath("$[1].bookingId").isEqualTo(prisoner1Booking.bookingId)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisoner1CourtCase)
+      repository.delete(prisoner1CourtCase2)
+      repository.delete(prisoner1)
+      repository.delete(staff)
+    }
+  }
+
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/sentencing/court-cases")
+  @Nested
+  inner class GetCourtCasesByOffenderBooking {
+    private lateinit var staff: Staff
+    private lateinit var prisoner1: Offender
+    private lateinit var prisoner1Booking: OffenderBooking
+    private lateinit var prisoner1Booking2: OffenderBooking
+    private lateinit var prisoner2: Offender
+    private lateinit var prisoner1CourtCase: CourtCase
+    private lateinit var prisoner1CourtCase2: CourtCase
+    private lateinit var prisoner2CourtCase: CourtCase
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisoner1 =
+          offender(nomsId = "A1234AB") {
+            prisoner1Booking = booking(agencyLocationId = "MDI")
+            prisoner1Booking2 = booking(agencyLocationId = "MDI")
+          }
+        prisoner2 =
+          offender(nomsId = "A1234AC") {
+            booking(agencyLocationId = "MDI")
+          }
+        prisoner1CourtCase = courtCase(
+          offender = prisoner1,
+          offenderBooking = prisoner1Booking,
+          reportingStaff = staff,
+        ) {}
+        prisoner1CourtCase2 = courtCase(
+          offender = prisoner1,
+          offenderBooking = prisoner1Booking2, // different booking to first court case
+          reportingStaff = staff,
+        ) {}
+        prisoner2CourtCase = courtCase(
+          offender = prisoner2,
+          reportingStaff = staff,
+        ) {}
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner1Booking.bookingId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner1Booking.bookingId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner1Booking.bookingId}/sentencing/court-cases")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner1Booking.bookingId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `will return 404 if offender not found`() {
+        webTestClient.get().uri("/prisoners/booking-id/234/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offender booking 234 not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the court cases for the offender booking`() {
+        webTestClient.get().uri("/prisoners/booking-id/${prisoner1Booking.bookingId}/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].offenderNo").isEqualTo(prisoner1.nomsId)
+          .jsonPath("$[0].bookingId").isEqualTo(prisoner1Booking.bookingId)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisoner1CourtCase)
+      repository.delete(prisoner1CourtCase2)
+      repository.delete(prisoner1)
       repository.delete(staff)
     }
   }
@@ -465,7 +700,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       /*fun `will return the sentence minimal data`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-case/${courtCaseTwo.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCaseTwo.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk

@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class SentencingResource(private val sentencingService: SentencingService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @GetMapping("/prisoners/{offenderNo}/sentencing/court-case/{id}")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Operation(
     summary = "get a court case",
     description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
@@ -82,6 +82,102 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
   ): CourtCaseResponse = sentencingService.getCourtCase(id, offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases")
+  @Operation(
+    summary = "get court cases for an offender",
+    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the list of court cases",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtCasesByOffender(
+    @Schema(description = "Offender No", example = "AA12345")
+    @PathVariable
+    offenderNo: String,
+  ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffender(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/sentencing/court-cases")
+  @Operation(
+    summary = "get court cases for an offender booking",
+    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the list of court cases",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender booking not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtCasesByOffenderBooking(
+    @Schema(description = "Booking Id", example = "12345")
+    @PathVariable
+    bookingId: Long,
+  ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffenderBooking(bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
@@ -150,6 +246,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
 data class CourtCaseResponse(
   val id: Long,
   val offenderNo: String,
+  val bookingId: Long,
   val caseInfoNumber: String?,
   val caseSequence: Int,
   val caseStatus: CodeDescription,
