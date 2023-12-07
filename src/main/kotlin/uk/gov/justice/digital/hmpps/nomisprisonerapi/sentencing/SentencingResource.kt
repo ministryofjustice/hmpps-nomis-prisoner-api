@@ -115,16 +115,6 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Court case not found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
         description = "Offender not found",
         content = [
           Content(
@@ -164,16 +154,6 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ApiResponse(
         responseCode = "403",
         description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Court case not found",
         content = [
           Content(
             mediaType = "application/json",
