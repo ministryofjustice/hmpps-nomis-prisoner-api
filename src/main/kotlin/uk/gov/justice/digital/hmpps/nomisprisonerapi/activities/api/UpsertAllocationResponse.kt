@@ -14,4 +14,8 @@ data class UpsertAllocationResponse(
   @Schema(description = "Whether or not the allocation was created", required = true)
   @NotNull
   val created: Boolean,
+
+  @Schema(description = "Prison code", required = true)
+  @NotNull
+  val prisonId: String,
 )

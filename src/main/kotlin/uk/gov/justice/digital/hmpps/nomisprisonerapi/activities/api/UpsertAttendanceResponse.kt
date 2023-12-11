@@ -18,4 +18,8 @@ data class UpsertAttendanceResponse(
   @Schema(description = "Whether or the attendance was created", required = true)
   @NotNull
   val created: Boolean,
+
+  @Schema(description = "Prison code", required = true)
+  @NotNull
+  val prisonId: String,
 )

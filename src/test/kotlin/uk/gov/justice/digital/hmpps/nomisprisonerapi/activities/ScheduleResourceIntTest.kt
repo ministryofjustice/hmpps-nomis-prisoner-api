@@ -388,6 +388,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
           check<MutableMap<String, String>> {
             assertThat(it["nomisCourseScheduleId"]).isEqualTo("${courseSchedule.courseScheduleId}")
             assertThat(it["nomisCourseActivityId"]).isEqualTo("${courseSchedule.courseActivity.courseActivityId}")
+            assertThat(it["prisonId"]).isEqualTo(courseSchedule.courseActivity.prison.id)
           },
           isNull(),
         )

@@ -49,7 +49,7 @@ class AllocationService(
     val allocation = toOffenderProgramProfile(courseActivityId, request)
     val created = allocation.offenderProgramReferenceId == 0L
     return offenderProgramProfileRepository.save(allocation)
-      .let { UpsertAllocationResponse(it.offenderProgramReferenceId, created) }
+      .let { UpsertAllocationResponse(it.offenderProgramReferenceId, created, it.prison?.id ?: "") }
       .also {
         telemetryClient.trackEvent(
           "activity-allocation-${if (it.created) "created" else "updated"}",
@@ -58,6 +58,7 @@ class AllocationService(
             "nomisAllocationId" to it.offenderProgramReferenceId.toString(),
             "bookingId" to allocation.offenderBooking.bookingId.toString(),
             "offenderNo" to allocation.offenderBooking.offender.nomsId,
+            "prisonId" to allocation.prison?.id,
           ),
           null,
         )
