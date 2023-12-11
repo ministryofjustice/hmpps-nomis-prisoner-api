@@ -434,7 +434,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
         assertThat(response.created).isTrue()
-        assertThat(response.prison).isEqualTo("BXI")
+        assertThat(response.prisonId).isEqualTo("BXI")
 
         val saved = repository.getAttendance(response.eventId)
         with(saved) {
@@ -530,7 +530,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .jsonPath("eventId").isEqualTo(attendance.eventId)
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
           .jsonPath("created").isEqualTo("false")
-          .jsonPath("prison").isEqualTo("BXI")
+          .jsonPath("prisonId").isEqualTo("BXI")
 
         val saved = repository.getAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("SCH")

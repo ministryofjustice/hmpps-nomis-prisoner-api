@@ -351,7 +351,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       assertThat(response?.created).isTrue()
-      assertThat(response?.prison).isEqualTo("BXI")
+      assertThat(response?.prisonId).isEqualTo("BXI")
 
       val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
@@ -505,7 +505,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
-      assertThat(response?.prison).isEqualTo("BXI")
+      assertThat(response?.prisonId).isEqualTo("BXI")
 
       val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {

@@ -21,5 +21,5 @@ data class UpsertAttendanceResponse(
 
   @Schema(description = "Prison code", required = true)
   @NotNull
-  val prison: String,
+  val prisonId: String,
 )
