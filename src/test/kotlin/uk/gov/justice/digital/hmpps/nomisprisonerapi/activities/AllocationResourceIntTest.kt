@@ -351,6 +351,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
       assertThat(response?.created).isTrue()
+      assertThat(response?.prison).isEqualTo("BXI")
 
       val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
@@ -459,6 +460,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
           assertThat(it["nomisAllocationId"]).isEqualTo(response?.offenderProgramReferenceId.toString())
           assertThat(it["bookingId"]).isEqualTo(bookingId.toString())
           assertThat(it["offenderNo"]).isEqualTo(offender.nomsId)
+          assertThat(it["prisonId"]).isEqualTo(courseActivity.prison.id)
         },
         isNull(),
       )
@@ -502,7 +504,8 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       val response = upsertAllocationIsOk(request)
 
       assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
-      assertThat(response?.created).isFalse()
+      assertThat(response?.offenderProgramReferenceId).isGreaterThan(0)
+      assertThat(response?.prison).isEqualTo("BXI")
 
       val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
       with(saved) {
@@ -578,6 +581,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
           assertThat(it["nomisAllocationId"]).isEqualTo(response?.offenderProgramReferenceId.toString())
           assertThat(it["bookingId"]).isEqualTo(bookingId.toString())
           assertThat(it["offenderNo"]).isEqualTo(offender.nomsId)
+          assertThat(it["prisonId"]).isEqualTo(courseActivity.prison.id)
         },
         isNull(),
       )

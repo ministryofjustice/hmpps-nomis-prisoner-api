@@ -42,7 +42,7 @@ class AttendanceService(
     val attendance = toOffenderCourseAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
     val created = attendance.eventId == 0L
     return attendanceRepository.save(attendance)
-      .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule.courseScheduleId, created) }
+      .let { UpsertAttendanceResponse(it.eventId, it.courseSchedule.courseScheduleId, created, it.prison?.id ?: "") }
       .also {
         telemetryClient.trackEvent(
           "activity-attendance-${if (it.created) "created" else "updated"}",
@@ -52,6 +52,7 @@ class AttendanceService(
             "bookingId" to attendance.offenderBooking.bookingId.toString(),
             "offenderNo" to attendance.offenderBooking.offender.nomsId,
             "nomisAttendanceEventId" to attendance.eventId.toString(),
+            "prisonId" to attendance.courseActivity.prison.id,
           ),
           null,
         )

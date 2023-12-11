@@ -115,6 +115,7 @@ class ScheduleService(
       mapOf(
         "nomisCourseScheduleId" to schedule.courseScheduleId.toString(),
         "nomisCourseActivityId" to courseActivityId.toString(),
+        "prisonId" to schedule.courseActivity.prison.id,
       ),
       null,
     )

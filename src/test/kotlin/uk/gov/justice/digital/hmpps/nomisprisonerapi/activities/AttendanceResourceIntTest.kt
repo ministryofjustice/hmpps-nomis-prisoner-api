@@ -434,6 +434,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
         assertThat(response.created).isTrue()
+        assertThat(response.prison).isEqualTo("BXI")
 
         val saved = repository.getAttendance(response.eventId)
         with(saved) {
@@ -496,6 +497,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             assertThat(it["bookingId"]).isEqualTo(offenderBooking.bookingId.toString())
             assertThat(it["offenderNo"]).isEqualTo(offenderBooking.offender.nomsId)
             assertThat(it["nomisAttendanceEventId"]).isEqualTo(response.eventId.toString())
+            assertThat(it["prisonId"]).isEqualTo(courseActivity.prison.id)
           },
           isNull(),
         )
@@ -528,6 +530,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           .jsonPath("eventId").isEqualTo(attendance.eventId)
           .jsonPath("courseScheduleId").isEqualTo(courseSchedule.courseScheduleId)
           .jsonPath("created").isEqualTo("false")
+          .jsonPath("prison").isEqualTo("BXI")
 
         val saved = repository.getAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("SCH")
@@ -600,6 +603,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
             assertThat(it["bookingId"]).isEqualTo(offenderBooking.bookingId.toString())
             assertThat(it["offenderNo"]).isEqualTo(offenderBooking.offender.nomsId)
             assertThat(it["nomisAttendanceEventId"]).isEqualTo(attendance.eventId.toString())
+            assertThat(it["prisonId"]).isEqualTo(courseActivity.prison.id)
           },
           isNull(),
         )
