@@ -184,9 +184,9 @@ class AppointmentService(
     val fromDate = appointmentFilter.fromDate ?: LocalDate.now().plusYears(-100)
     val toDate = appointmentFilter.toDate ?: LocalDate.now().plusYears(100)
     val totalElements = offenderIndividualScheduleRepository.findAllCount(
-        prisons,
-        fromDate,
-        toDate,
+      prisons,
+      fromDate,
+      toDate,
     )
     return offenderIndividualScheduleRepository.findAllByPage(
       prisons,

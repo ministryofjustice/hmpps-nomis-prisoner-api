@@ -205,7 +205,8 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid start time should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
+      val invalidSchedule =
+        validCreateJsonRequest(false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -233,7 +234,10 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(false).replace(""""eventDate"          : "2023-02-27"""", """"eventDate": "2022-13-31",""")
+      val invalidSchedule = validCreateJsonRequest(false).replace(
+          """"eventDate"          : "2023-02-27"""",
+          """"eventDate": "2022-13-31",""",
+      )
       webTestClient.post().uri("/appointments")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -367,7 +371,8 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid start time should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest(false).replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
+      val invalidSchedule =
+        validUpdateJsonRequest(false).replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
@@ -397,7 +402,10 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest(false).replace(""""eventDate"          : "2023-02-28"""", """"eventDate": "2022-13-31",""")
+      val invalidSchedule = validUpdateJsonRequest(false).replace(
+          """"eventDate"          : "2023-02-28"""",
+          """"eventDate": "2022-13-31",""",
+      )
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -844,7 +852,8 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
         .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(2)
         .jsonPath("$.content[0].eventId").isEqualTo(appointment1.eventId)
-        .jsonPath("$.content[1].eventId").isEqualTo(appointment2.eventId)    }
+        .jsonPath("$.content[1].eventId").isEqualTo(appointment2.eventId)
+    }
 
     @Test
     fun `can request a different page`() {
