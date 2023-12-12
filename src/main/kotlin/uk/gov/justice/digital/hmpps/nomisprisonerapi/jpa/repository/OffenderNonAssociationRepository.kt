@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.nonassociations.NonAssociat
 interface OffenderNonAssociationRepository :
   CrudRepository<OffenderNonAssociation, OffenderNonAssociationId>, JpaSpecificationExecutor<OffenderNonAssociation> {
 
-  // Filter out duplicates by only returning the "nomsId1 < nomsId2" ordered record for each pair of offenders
+  // Filter out duplicates by only returning the "offenderId 1 < offenderId 2" ordered record for each pair of offenders
   @Query(
     """select new uk.gov.justice.digital.hmpps.nomisprisonerapi.nonassociations.NonAssociationIdResponse(o1.nomsId, o2.nomsId)
          from OffenderNonAssociation na, Offender o1, Offender o2 

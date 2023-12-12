@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.appointments
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -15,7 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.AppointmentSpecification
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -178,9 +179,25 @@ class AppointmentService(
     }
       ?: throw NotFoundException("Appointment not found")
 
-  fun findIdsByFilter(pageRequest: Pageable, appointmentFilter: AppointmentFilter): Page<AppointmentIdResponse> =
-    offenderIndividualScheduleRepository.findAll(AppointmentSpecification(appointmentFilter), pageRequest)
-      .map { AppointmentIdResponse(eventId = it.eventId) }
+  fun findIdsByFilter(pageRequest: Pageable, appointmentFilter: AppointmentFilter): Page<AppointmentIdResponse> {
+    val prisons = appointmentFilter.prisonIds
+    val fromDate = appointmentFilter.fromDate ?: LocalDate.now().plusYears(-100)
+    val toDate = appointmentFilter.toDate ?: LocalDate.now().plusYears(100)
+    val totalElements = offenderIndividualScheduleRepository.findAllCount(
+        prisons,
+        fromDate,
+        toDate,
+    )
+    return offenderIndividualScheduleRepository.findAllByPage(
+      prisons,
+      fromDate,
+      toDate,
+      pageRequest.offset + 1,
+      pageRequest.offset + pageRequest.pageSize,
+    )
+      .let { content -> PageImpl(content, pageRequest, totalElements) }
+      .map { AppointmentIdResponse(eventId = it) }
+  }
 }
 
 private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse =
