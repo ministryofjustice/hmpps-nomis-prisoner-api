@@ -4,10 +4,8 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -157,52 +155,6 @@ class NomisData(
             builder.apply(dsl)
           }
       }
-
-  @CourtCaseDslMarker
-  override fun courtCase(
-    offender: Offender,
-    offenderBooking: OffenderBooking?,
-    whenCreated: LocalDateTime,
-    caseStatus: String,
-    caseType: String,
-    beginDate: LocalDate,
-    caseSequence: Int,
-    caseInfoNumber: String?,
-    prisonId: String,
-    combinedCase: CourtCase?,
-    reportingStaff: Staff,
-    statusUpdateStaff: Staff?,
-    statusUpdateDate: LocalDate?,
-    statusUpdateReason: String?,
-    statusUpdateComment: String?,
-    lidsCaseNumber: Int,
-    lidsCaseId: Int?,
-    lidsCombinedCaseId: Int?,
-    dsl: CourtCaseDsl.() -> Unit,
-  ): CourtCase = courtCaseBuilderFactory!!.builder()
-    .let { builder ->
-      builder.build(
-        whenCreated = whenCreated,
-        offenderBooking = offenderBooking ?: offender.latestBooking(),
-        combinedCase = combinedCase,
-        caseStatus = caseStatus,
-        caseType = caseType,
-        caseSequence = caseSequence,
-        beginDate = beginDate,
-        caseInfoNumber = caseInfoNumber,
-        prisonId = prisonId,
-        statusUpdateStaff = statusUpdateStaff,
-        statusUpdateDate = statusUpdateDate,
-        statusUpdateComment = statusUpdateComment,
-        statusUpdateReason = statusUpdateReason,
-        lidsCaseNumber = lidsCaseNumber,
-        lidsCaseId = lidsCaseId,
-        lidsCombinedCaseId = lidsCombinedCaseId,
-      )
-        .also {
-          builder.apply(dsl)
-        }
-    }
 }
 
 @NomisDataDslMarker
@@ -258,29 +210,6 @@ interface NomisDataDsl {
     description: String = serviceName,
     dsl: ExternalServiceDsl.() -> Unit = {},
   ): ExternalService
-
-  @CourtCaseDslMarker
-  fun courtCase(
-    offender: Offender,
-    offenderBooking: OffenderBooking? = null,
-    whenCreated: LocalDateTime = LocalDateTime.now(),
-    caseStatus: String = "A",
-    caseType: String = "A",
-    beginDate: LocalDate = LocalDate.now(),
-    caseSequence: Int = 1,
-    caseInfoNumber: String? = "AB1",
-    prisonId: String = "MDI",
-    combinedCase: CourtCase? = null,
-    reportingStaff: Staff,
-    statusUpdateStaff: Staff? = null,
-    statusUpdateDate: LocalDate? = null,
-    statusUpdateReason: String? = "a reason",
-    statusUpdateComment: String? = "a comment",
-    lidsCaseNumber: Int = 1,
-    lidsCaseId: Int? = 2,
-    lidsCombinedCaseId: Int? = 3,
-    dsl: CourtCaseDsl.() -> Unit,
-  ): CourtCase
 }
 
 @DslMarker

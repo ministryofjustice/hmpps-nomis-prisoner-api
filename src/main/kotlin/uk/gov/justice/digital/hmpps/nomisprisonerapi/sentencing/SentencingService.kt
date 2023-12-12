@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
@@ -115,6 +116,8 @@ class SentencingService(
         startDate2Calc = sentence.startDate2Calc,
         createdDateTime = sentence.createDatetime,
         createdByUsername = sentence.createUsername,
+        sentenceTerms = sentence.offenderSentenceTerms.map { it.toSentenceTermResponse() },
+        offenderCharges = sentence.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
       )
     }
       ?: throw NotFoundException("Offender sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
@@ -251,4 +254,18 @@ private fun SentencePurpose.toSentencePurpose(): SentencePurposeResponse =
     orderId = this.id.orderId,
     orderPartyCode = this.id.orderPartyCode,
     purposeCode = this.id.purposeCode,
+  )
+
+private fun OffenderSentenceTerm.toSentenceTermResponse(): SentenceTermResponse =
+  SentenceTermResponse(
+    termSequence = this.id.termSequence,
+    years = this.years,
+    months = this.months,
+    weeks = this.weeks,
+    days = this.days,
+    hours = this.hours,
+    startDate = this.startDate,
+    endDate = this.endDate,
+    lifeSentenceFlag = this.lifeSentenceFlag,
+    sentenceTermType = this.sentenceTermType.toCodeDescription(),
   )

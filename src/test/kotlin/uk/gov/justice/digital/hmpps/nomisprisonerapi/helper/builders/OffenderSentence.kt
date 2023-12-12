@@ -3,8 +3,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
@@ -31,6 +34,26 @@ interface OffenderSentenceDsl {
     active: Boolean = true,
     dsl: OffenderSentenceAdjustmentDsl.() -> Unit = {},
   ): OffenderSentenceAdjustment
+
+  @OffenderSentenceTermDslMarker
+  fun term(
+    startDate: LocalDate = LocalDate.of(2023, 1, 1),
+    endDate: LocalDate = LocalDate.of(2023, 1, 5),
+    years: Int? = 2,
+    months: Int? = 3,
+    weeks: Int? = 4,
+    days: Int? = 5,
+    hours: Int? = 6,
+    sentenceTermType: String = "SEC86",
+    active: Boolean = true,
+    dsl: OffenderSentenceTermDsl.() -> Unit = {},
+  ): OffenderSentenceTerm
+
+  @OffenderSentenceChargeDslMarker
+  fun offenderSentenceCharge(
+    offenderCharge: OffenderCharge,
+    dsl: OffenderSentenceChargeDsl.() -> Unit = {},
+  ): OffenderSentenceCharge
 }
 
 @Component
@@ -47,16 +70,25 @@ class OffenderSentenceBuilderRepository(
 
 @Component
 class OffenderSentenceBuilderFactory(
+  private val sentenceTermBuilderFactory: OffenderSentenceTermBuilderFactory,
+  private val sentenceChargeBuilderFactory: OffenderSentenceChargeBuilderFactory,
   private val sentenceAdjustmentBuilderFactory: OffenderSentenceAdjustmentBuilderFactory,
   private val repository: OffenderSentenceBuilderRepository,
 ) {
   fun builder(): OffenderSentenceBuilder {
-    return OffenderSentenceBuilder(sentenceAdjustmentBuilderFactory, repository)
+    return OffenderSentenceBuilder(
+      sentenceAdjustmentBuilderFactory,
+      sentenceTermBuilderFactory,
+      sentenceChargeBuilderFactory,
+      repository,
+    )
   }
 }
 
 class OffenderSentenceBuilder(
   private val sentenceAdjustmentBuilderFactory: OffenderSentenceAdjustmentBuilderFactory,
+  private val sentenceTermBuilderFactory: OffenderSentenceTermBuilderFactory,
+  private val sentenceChargeBuilderFactory: OffenderSentenceChargeBuilderFactory,
   private val repository: OffenderSentenceBuilderRepository,
 ) : OffenderSentenceDsl {
   private lateinit var offenderSentence: OffenderSentence
@@ -174,6 +206,49 @@ class OffenderSentenceBuilder(
       sentence = offenderSentence,
     )
       .also { offenderSentence.adjustments += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun term(
+    startDate: LocalDate,
+    endDate: LocalDate,
+    years: Int?,
+    months: Int?,
+    weeks: Int?,
+    days: Int?,
+    hours: Int?,
+    sentenceTermType: String,
+    lifeSentenceFlag: Boolean,
+    dsl: OffenderSentenceTermDsl.() -> Unit,
+  ): OffenderSentenceTerm = sentenceTermBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderSentence.id.offenderBooking,
+      termSequence = (offenderSentence.offenderSentenceTerms.size + 1).toLong(),
+      startDate = startDate,
+      endDate = endDate,
+      years = years,
+      months = months,
+      weeks = weeks,
+      days = days,
+      hours = hours,
+      sentenceTermType = sentenceTermType,
+      lifeSentenceFlag = lifeSentenceFlag,
+      sentence = offenderSentence,
+    )
+      .also { offenderSentence.offenderSentenceTerms += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun offenderSentenceCharge(
+    offenderCharge: OffenderCharge,
+    dsl: OffenderSentenceChargeDsl.() -> Unit,
+  ): OffenderSentenceCharge = sentenceChargeBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderSentence.id.offenderBooking,
+      offenderCharge = offenderCharge,
+      sentence = offenderSentence,
+    )
+      .also { offenderSentence.offenderSentenceCharges += it }
       .also { builder.apply(dsl) }
   }
 }

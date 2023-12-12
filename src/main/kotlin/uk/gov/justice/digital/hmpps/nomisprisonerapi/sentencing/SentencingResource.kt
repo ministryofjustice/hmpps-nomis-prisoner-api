@@ -420,4 +420,21 @@ data class SentenceResponse(
   val startDate2Calc: LocalDate?,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
+  val sentenceTerms: List<SentenceTermResponse>,
+  val offenderCharges: List<OffenderChargeResponse>,
+)
+
+@Schema(description = "Sentence Term")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class SentenceTermResponse(
+  val termSequence: Long,
+  val sentenceTermType: CodeDescription?,
+  val years: Int?,
+  val months: Int?,
+  val weeks: Int?,
+  val days: Int?,
+  val hours: Int?,
+  val startDate: LocalDate,
+  val endDate: LocalDate?,
+  val lifeSentenceFlag: Boolean?,
 )
