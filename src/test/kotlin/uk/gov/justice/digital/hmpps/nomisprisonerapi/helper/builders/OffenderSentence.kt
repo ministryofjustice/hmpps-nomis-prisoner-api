@@ -45,7 +45,7 @@ interface OffenderSentenceDsl {
     days: Int? = 5,
     hours: Int? = 6,
     sentenceTermType: String = "SEC86",
-    active: Boolean = true,
+    lifeSentenceFlag: Boolean = true,
     dsl: OffenderSentenceTermDsl.() -> Unit = {},
   ): OffenderSentenceTerm
 
