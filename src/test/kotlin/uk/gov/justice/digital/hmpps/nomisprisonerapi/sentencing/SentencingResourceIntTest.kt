@@ -52,55 +52,54 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
         prisonerAtMoorland =
           offender(nomsId = "A1234AB") {
-            booking(agencyLocationId = "MDI")
-          }
-        courtCase = courtCase(
-          offender = prisonerAtMoorland,
-          reportingStaff = staff,
-          beginDate = LocalDate.parse(aDateString),
-          statusUpdateDate = LocalDate.parse(aDateString),
-          statusUpdateStaff = staff,
-        ) {
-          offenderCharge1 = offenderCharge(offenceCode = "M1", plea = "G")
-          val offenderCharge2 = offenderCharge()
-          courtEvent() {
-            courtEventCharge(
-              offenderCharge = offenderCharge1,
-              plea = "NG", // overrides from the parent offender charge fields
-            )
-            courtEventCharge(
-              offenderCharge = offenderCharge2,
-            )
-            courtOrder() {
-              sentencePurpose(purposeCode = "REPAIR")
-              sentencePurpose(purposeCode = "PUNISH")
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aDateString),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                offenderCharge1 = offenderCharge(offenceCode = "M1", plea = "G")
+                val offenderCharge2 = offenderCharge()
+                courtEvent() {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG", // overrides from the parent offender charge fields
+                  )
+                  courtEventCharge(
+                    offenderCharge = offenderCharge2,
+                  )
+                  courtOrder() {
+                    sentencePurpose(purposeCode = "REPAIR")
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                }
+              }
+              courtCaseTwo = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aLaterDateString),
+                statusUpdateDate = null,
+                statusUpdateComment = null,
+                statusUpdateReason = null,
+                statusUpdateStaff = null,
+                lidsCaseId = null,
+                lidsCombinedCaseId = null,
+                caseSequence = 2,
+              ) {
+                courtEvent(
+                  commentText = null,
+                  outcomeReasonCode = null,
+                  judgeName = null,
+                  directionCode = null,
+                  nextEventStartTime = null,
+                  nextEventDate = null,
+                  nextEventRequestFlag = null,
+                  orderRequestedFlag = null,
+                  holdFlag = null,
+                )
+              }
             }
           }
-        }
-        courtCaseTwo = courtCase(
-          offender = prisonerAtMoorland,
-          reportingStaff = staff,
-          beginDate = LocalDate.parse(aLaterDateString),
-          statusUpdateDate = null,
-          statusUpdateComment = null,
-          statusUpdateReason = null,
-          statusUpdateStaff = null,
-          lidsCaseId = null,
-          lidsCombinedCaseId = null,
-          caseSequence = 2,
-        ) {
-          courtEvent(
-            commentText = null,
-            outcomeReasonCode = null,
-            judgeName = null,
-            directionCode = null,
-            nextEventStartTime = null,
-            nextEventDate = null,
-            nextEventRequestFlag = null,
-            orderRequestedFlag = null,
-            holdFlag = null,
-          )
-        }
       }
     }
 
@@ -335,27 +334,25 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
         prisoner1 =
           offender(nomsId = "A1234AB") {
-            prisoner1Booking = booking(agencyLocationId = "MDI")
-            prisoner1Booking2 = booking(agencyLocationId = "MDI")
+            prisoner1Booking = booking(agencyLocationId = "MDI") {
+              prisoner1CourtCase = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
+            prisoner1Booking2 = booking(agencyLocationId = "MDI") {
+              prisoner1CourtCase2 = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
           }
         prisoner2 =
           offender(nomsId = "A1234AC") {
-            booking(agencyLocationId = "MDI")
+            booking(agencyLocationId = "MDI") {
+              prisoner2CourtCase = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
           }
-        prisoner1CourtCase = courtCase(
-          offender = prisoner1,
-          offenderBooking = prisoner1Booking,
-          reportingStaff = staff,
-        ) {}
-        prisoner1CourtCase2 = courtCase(
-          offender = prisoner1,
-          offenderBooking = prisoner1Booking2, // different booking to first court case
-          reportingStaff = staff,
-        ) {}
-        prisoner2CourtCase = courtCase(
-          offender = prisoner2,
-          reportingStaff = staff,
-        ) {}
       }
     }
 
@@ -453,27 +450,25 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
         prisoner1 =
           offender(nomsId = "A1234AB") {
-            prisoner1Booking = booking(agencyLocationId = "MDI")
-            prisoner1Booking2 = booking(agencyLocationId = "MDI")
+            prisoner1Booking = booking(agencyLocationId = "MDI") {
+              prisoner1CourtCase = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
+            prisoner1Booking2 = booking(agencyLocationId = "MDI") {
+              prisoner1CourtCase2 = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
           }
         prisoner2 =
           offender(nomsId = "A1234AC") {
-            booking(agencyLocationId = "MDI")
+            booking(agencyLocationId = "MDI") {
+              prisoner2CourtCase = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
           }
-        prisoner1CourtCase = courtCase(
-          offender = prisoner1,
-          offenderBooking = prisoner1Booking,
-          reportingStaff = staff,
-        ) {}
-        prisoner1CourtCase2 = courtCase(
-          offender = prisoner1,
-          offenderBooking = prisoner1Booking2, // different booking to first court case
-          reportingStaff = staff,
-        ) {}
-        prisoner2CourtCase = courtCase(
-          offender = prisoner2,
-          reportingStaff = staff,
-        ) {}
       }
     }
 
@@ -556,6 +551,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var prisonerAtMoorland: Offender
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
+    private lateinit var courtCase: CourtCase
+    private lateinit var offenderCharge: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
     private val aDateString = "2023-01-01"
     private val aDateTimeString = "2023-01-01T10:30:00"
     private val aLaterDateString = "2023-01-05"
@@ -570,7 +568,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         prisonerAtMoorland =
           offender(nomsId = "A1234AB") {
             booking(agencyLocationId = "MDI") {
-              sentence = sentence(statusUpdateStaff = staff)
+              courtCase = courtCase(reportingStaff = staff) {
+                offenderCharge = offenderCharge { }
+                offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
+              }
+              sentence = sentence(statusUpdateStaff = staff) {
+                offenderSentenceCharge(offenderCharge = offenderCharge)
+                offenderSentenceCharge(offenderCharge = offenderCharge2)
+                term {}
+                term(startDate = LocalDate.parse(aLaterDateString), days = 35)
+              }
             }
           }
       }
@@ -660,7 +667,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("endDate").isEqualTo(aLaterDateString)
           .jsonPath("commentText").isEqualTo("a sentence comment")
           .jsonPath("absenceCount").isEqualTo(2)
-          // .jsonPath("caseId").isEqualTo(2)
           .jsonPath("etdCalculatedDate").isEqualTo("2023-01-02")
           .jsonPath("mtdCalculatedDate").isEqualTo("2023-01-03")
           .jsonPath("ltdCalculatedDate").isEqualTo("2023-01-04")
@@ -697,56 +703,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
+          .jsonPath("sentenceTerms[1].startDate").isEqualTo(aLaterDateString)
+          .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
+          .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
       }
-
-      /*fun `will return the sentence minimal data`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCaseTwo.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
-          .jsonPath("caseSequence").isEqualTo(2)
-          .jsonPath("prisonId").isEqualTo("MDI")
-          .jsonPath("caseStatus.code").isEqualTo("A")
-          .jsonPath("caseStatus.description").isEqualTo("Active")
-          .jsonPath("caseType.code").isEqualTo("A")
-          .jsonPath("caseType.description").isEqualTo("Adult")
-          .jsonPath("beginDate").isEqualTo(aLaterDateString)
-          .jsonPath("caseInfoNumber").isEqualTo("AB1")
-          .jsonPath("statusUpdateComment").doesNotExist()
-          .jsonPath("statusUpdateReason").doesNotExist()
-          .jsonPath("statusUpdateDate").doesNotExist()
-          .jsonPath("statusUpdateStaffId").doesNotExist()
-          .jsonPath("lidsCaseNumber").isEqualTo(1)
-          .jsonPath("lidsCaseId").doesNotExist()
-          .jsonPath("lidsCombinedCaseId").doesNotExist()
-          .jsonPath("createdByUsername").isNotEmpty
-          .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("courtEvents[0].id").exists()
-          .jsonPath("courtEvents[0].offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
-          .jsonPath("courtEvents[0].eventDate").isEqualTo(aDateString)
-          .jsonPath("courtEvents[0].startTime").isEqualTo(aDateTimeString)
-          .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Trial")
-          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[0].directionCode").doesNotExist()
-          .jsonPath("courtEvents[0].judgeName").doesNotExist()
-          .jsonPath("courtEvents[0].prisonId").isEqualTo("MDI")
-          .jsonPath("courtEvents[0].outcomeReasonCode").doesNotExist()
-          .jsonPath("courtEvents[0].commentText").doesNotExist()
-          .jsonPath("courtEvents[0].orderRequestedFlag").doesNotExist()
-          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
-          .jsonPath("courtEvents[0].nextEventRequestFlag").doesNotExist()
-          .jsonPath("courtEvents[0].nextEventDate").doesNotExist()
-          .jsonPath("courtEvents[0].nextEventStartTime").doesNotExist()
-          .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
-          .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
-      }*/
     }
 
     @AfterEach
     internal fun deletePrisoner() {
       repository.delete(sentence)
+      repository.delete(courtCase)
       repository.delete(prisonerAtMoorland)
       repository.delete(staff)
     }

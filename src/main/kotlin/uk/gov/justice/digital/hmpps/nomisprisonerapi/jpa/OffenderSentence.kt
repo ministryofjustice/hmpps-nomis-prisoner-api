@@ -196,6 +196,12 @@ data class OffenderSentence(
   @Column(name = "SLED_2CALC")
   val startDate2Calc: LocalDate? = null,
 
+  @OneToMany(mappedBy = "offenderSentence", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val offenderSentenceCharges: MutableList<OffenderSentenceCharge> = mutableListOf(),
+
+  @OneToMany(mappedBy = "offenderSentence", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val offenderSentenceTerms: MutableList<OffenderSentenceTerm> = mutableListOf(),
+
   /* COLUMNS NOT MAPPED
     TERMINATION_REASON - not used
     TERMINATION_DATE - not used

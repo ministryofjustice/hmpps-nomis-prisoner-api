@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -119,6 +120,27 @@ interface BookingDsl {
     active: Boolean = true,
     dsl: OffenderKeyDateAdjustmentDsl.() -> Unit = { },
   ): OffenderKeyDateAdjustment
+
+  @CourtCaseDslMarker
+  fun courtCase(
+    whenCreated: LocalDateTime = LocalDateTime.now(),
+    caseStatus: String = "A",
+    caseType: String = "A",
+    beginDate: LocalDate = LocalDate.now(),
+    caseSequence: Int = 1,
+    caseInfoNumber: String? = "AB1",
+    prisonId: String = "MDI",
+    combinedCase: CourtCase? = null,
+    reportingStaff: Staff,
+    statusUpdateStaff: Staff? = null,
+    statusUpdateDate: LocalDate? = null,
+    statusUpdateReason: String? = "a reason",
+    statusUpdateComment: String? = "a comment",
+    lidsCaseNumber: Int = 1,
+    lidsCaseId: Int? = 2,
+    lidsCombinedCaseId: Int? = 3,
+    dsl: CourtCaseDsl.() -> Unit = { },
+  ): CourtCase
 }
 
 @Component
@@ -140,6 +162,7 @@ class BookingBuilderFactory(
   private val incentiveBuilderFactory: IncentiveBuilderFactory,
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
+  private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
@@ -148,6 +171,7 @@ class BookingBuilderFactory(
     incentiveBuilderFactory,
     adjudicationPartyBuilderFactory,
     offenderSentenceBuilderFactory,
+    courtCaseBuilderFactory,
     offenderKeyDateAdjustmentBuilderFactory,
   )
 }
@@ -158,6 +182,7 @@ class BookingBuilder(
   private val incentiveBuilderFactory: IncentiveBuilderFactory,
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
+  private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
 ) : BookingDsl {
 
@@ -314,6 +339,50 @@ class BookingBuilder(
           .also { offenderBooking.sentences += it }
           .also { builder.apply(dsl) }
       }
+
+  @CourtCaseDslMarker
+  override fun courtCase(
+    whenCreated: LocalDateTime,
+    caseStatus: String,
+    caseType: String,
+    beginDate: LocalDate,
+    caseSequence: Int,
+    caseInfoNumber: String?,
+    prisonId: String,
+    combinedCase: CourtCase?,
+    reportingStaff: Staff,
+    statusUpdateStaff: Staff?,
+    statusUpdateDate: LocalDate?,
+    statusUpdateReason: String?,
+    statusUpdateComment: String?,
+    lidsCaseNumber: Int,
+    lidsCaseId: Int?,
+    lidsCombinedCaseId: Int?,
+    dsl: CourtCaseDsl.() -> Unit,
+  ): CourtCase = courtCaseBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        whenCreated = whenCreated,
+        offenderBooking = offenderBooking,
+        combinedCase = combinedCase,
+        caseStatus = caseStatus,
+        caseType = caseType,
+        caseSequence = caseSequence,
+        beginDate = beginDate,
+        caseInfoNumber = caseInfoNumber,
+        prisonId = prisonId,
+        statusUpdateStaff = statusUpdateStaff,
+        statusUpdateDate = statusUpdateDate,
+        statusUpdateComment = statusUpdateComment,
+        statusUpdateReason = statusUpdateReason,
+        lidsCaseNumber = lidsCaseNumber,
+        lidsCaseId = lidsCaseId,
+        lidsCombinedCaseId = lidsCombinedCaseId,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun adjustment(
     adjustmentTypeCode: String,
