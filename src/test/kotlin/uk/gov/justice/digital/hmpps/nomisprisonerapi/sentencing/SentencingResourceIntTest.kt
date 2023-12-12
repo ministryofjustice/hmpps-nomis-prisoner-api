@@ -569,7 +569,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           offender(nomsId = "A1234AB") {
             booking(agencyLocationId = "MDI") {
               courtCase = courtCase(reportingStaff = staff) {
-                offenderCharge = offenderCharge { }
+                offenderCharge = offenderCharge(offenceCode = "M1")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
               }
               sentence = sentence(statusUpdateStaff = staff) {
@@ -703,9 +703,35 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("sentenceTerms.size()").isEqualTo(2)
           .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
+          .jsonPath("sentenceTerms[0].endDate").isEqualTo(aLaterDateString)
+          .jsonPath("sentenceTerms[0].years").isEqualTo(2)
+          .jsonPath("sentenceTerms[0].months").isEqualTo(3)
+          .jsonPath("sentenceTerms[0].weeks").isEqualTo(4)
+          .jsonPath("sentenceTerms[0].days").isEqualTo(5)
+          .jsonPath("sentenceTerms[0].hours").isEqualTo(6)
+          .jsonPath("sentenceTerms[0].sentenceTermType.description").isEqualTo("Section 86 of 2000 Act")
+          .jsonPath("sentenceTerms[0].lifeSentenceFlag").isEqualTo(true)
           .jsonPath("sentenceTerms[1].startDate").isEqualTo(aLaterDateString)
+          .jsonPath("offenderCharges.size()").isEqualTo(2)
+          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
+          .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Actual bodily harm")
+          .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
+          .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
+          .jsonPath("offenderCharges[0].totalPropertyValue").isEqualTo(11)
+          .jsonPath("offenderCharges[0].cjitCode1").isEqualTo("cj6")
+          .jsonPath("offenderCharges[0].cjitCode2").isEqualTo("cj7")
+          .jsonPath("offenderCharges[0].cjitCode3").isEqualTo("cj8")
+          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("offenderCharges[0].resultCode2.description").isEqualTo("Detention Centre")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("r1")
+          .jsonPath("offenderCharges[0].resultCode2Indicator").isEqualTo("r2")
+          .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
       }
     }
