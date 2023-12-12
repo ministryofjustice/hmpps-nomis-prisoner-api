@@ -27,16 +27,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
@@ -59,7 +56,6 @@ class ActivityServiceTest {
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository = mock()
   private val programServiceRepository: ProgramServiceRepository = mock()
-  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val payRatesService: PayRatesService = mock()
   private val scheduleService: ScheduleService = mock()
   private val scheduleRuleService: ScheduleRuleService = mock()
@@ -73,7 +69,6 @@ class ActivityServiceTest {
     agencyLocationRepository,
     agencyInternalLocationRepository,
     programServiceRepository,
-    availablePrisonIepLevelRepository,
     payRatesService,
     scheduleService,
     scheduleRuleService,
@@ -96,8 +91,6 @@ class ActivityServiceTest {
     locationCode = "ROOM-1",
     locationId = ROOM_ID,
   )
-
-  private fun defaultIepLevel(code: String) = IEPLevel(code, "$code-desc")
 
   @Nested
   internal inner class CreateActivity {
@@ -133,11 +126,6 @@ class ActivityServiceTest {
         defaultProgramService,
       )
       whenever(agencyInternalLocationRepository.findById(ROOM_ID)).thenReturn(Optional.of(defaultRoom))
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
-        val prison = (it.arguments[0] as AgencyLocation)
-        val code = (it.arguments[1] as String)
-        return@thenAnswer AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
-      }
       whenever(activityRepository.save(any())).thenAnswer {
         returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
         returnedCourseActivity
@@ -164,7 +152,7 @@ class ActivityServiceTest {
           assertThat(activity.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
           assertThat(activity.providerPartyCode).isEqualTo(PRISON_ID)
           assertThat(activity.courseActivityType).isEqualTo("PA")
-          assertThat(activity.iepLevel.code).isEqualTo(IEP_LEVEL)
+          assertThat(activity.iepLevel).isNull()
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.H)
           assertThat(activity.excludeBankHolidays).isTrue()
@@ -201,16 +189,6 @@ class ActivityServiceTest {
         activityService.createActivity(createRequest)
       }
       assertThat(thrown.message).isEqualTo("Program Service with code=$PROGRAM_CODE does not exist")
-    }
-
-    @Test
-    fun invalidIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), eq(IEP_LEVEL))).thenReturn(null)
-
-      val thrown = assertThrows<BadDataException> {
-        activityService.createActivity(createRequest)
-      }
-      assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison $PRISON_ID")
     }
   }
 
@@ -265,11 +243,6 @@ class ActivityServiceTest {
         Optional.of(defaultPrison),
       )
       whenever(agencyInternalLocationRepository.findById(ROOM_ID + 1)).thenReturn(Optional.of(defaultRoom.copy(locationId = ROOM_ID + 1)))
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
-        val prison = (it.arguments[0] as AgencyLocation)
-        val code = (it.arguments[1] as String)
-        return@thenAnswer AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
-      }
       whenever(activityRepository.saveAndFlush(any())).thenAnswer {
         returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
         returnedCourseActivity
@@ -304,17 +277,6 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `should throw if iep level not available in prison`() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), anyString())).thenReturn(null)
-
-      assertThatThrownBy {
-        activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
-      }
-        .isInstanceOf(BadDataException::class.java)
-        .hasMessageContaining("IEP type BAS does not exist for prison ${courseActivity.caseloadId}")
-    }
-
-    @Test
     fun `should update OK`() {
       activityService.updateActivity(courseActivity.courseActivityId, updateRequest)
 
@@ -325,7 +287,7 @@ class ActivityServiceTest {
           assertThat(activity.active).isTrue
           assertThat(activity.scheduleStartDate).isEqualTo(LocalDate.parse("2022-11-01"))
           assertThat(activity.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-02"))
-          assertThat(activity.iepLevel.code).isEqualTo("BAS")
+          assertThat(activity.iepLevel).isNull()
           assertThat(activity.internalLocation?.locationId).isEqualTo(ROOM_ID + 1)
           assertThat(activity.payPerSession).isEqualTo(PayPerSession.F)
           assertThat(activity.excludeBankHolidays).isFalse()

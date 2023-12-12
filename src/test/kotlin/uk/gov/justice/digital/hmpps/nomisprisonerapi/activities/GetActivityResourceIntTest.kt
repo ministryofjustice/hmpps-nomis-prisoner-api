@@ -562,7 +562,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
               internalLocationId = -3005,
               capacity = 10,
               description = "Kitchen work",
-              minimumIncentiveLevelCode = "BAS",
               excludeBankHolidays = true,
               payPerSession = "F",
               outsideWork = true,
@@ -582,7 +581,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .jsonPath("internalLocationDescription").isEqualTo("BXI-CLASS1")
           .jsonPath("capacity").isEqualTo(10)
           .jsonPath("description").isEqualTo("Kitchen work")
-          .jsonPath("minimumIncentiveLevel").isEqualTo("BAS")
+          .jsonPath("minimumIncentiveLevel").doesNotExist()
           .jsonPath("excludeBankHolidays").isEqualTo(true)
           .jsonPath("payPerSession").isEqualTo("F")
           .jsonPath("outsideWork").isEqualTo("true")

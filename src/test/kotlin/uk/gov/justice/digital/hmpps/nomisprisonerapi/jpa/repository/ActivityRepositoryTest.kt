@@ -188,7 +188,7 @@ class ActivityRepositoryTest {
       assertThat(program.programCode).isEqualTo("TESTPS")
       assertThat(startDate).isEqualTo(LocalDate.parse("2023-01-10"))
       assertThat(programStatus.code).isEqualTo("ALLOC")
-      assertThat(courseActivity?.courseActivityId).isEqualTo(seedCourseActivity.courseActivityId)
+      assertThat(courseActivity.courseActivityId).isEqualTo(seedCourseActivity.courseActivityId)
       assertThat(prison?.id).isEqualTo(seedPrison.id)
       assertThat(endDate).isEqualTo(LocalDate.parse("2023-01-11"))
       assertThat(offenderExclusions).extracting("slotCategory", "excludeDay").containsExactlyInAnyOrder(
