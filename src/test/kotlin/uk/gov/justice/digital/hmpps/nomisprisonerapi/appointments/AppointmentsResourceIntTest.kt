@@ -235,8 +235,8 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
     @Test
     fun `invalid date should return bad request`() {
       val invalidSchedule = validCreateJsonRequest(false).replace(
-          """"eventDate"          : "2023-02-27"""",
-          """"eventDate": "2022-13-31",""",
+        """"eventDate"          : "2023-02-27"""",
+        """"eventDate": "2022-13-31",""",
       )
       webTestClient.post().uri("/appointments")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -403,8 +403,8 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
     @Test
     fun `invalid date should return bad request`() {
       val invalidSchedule = validUpdateJsonRequest(false).replace(
-          """"eventDate"          : "2023-02-28"""",
-          """"eventDate": "2022-13-31",""",
+        """"eventDate"          : "2023-02-28"""",
+        """"eventDate": "2022-13-31",""",
       )
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
