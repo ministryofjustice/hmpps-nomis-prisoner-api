@@ -14,12 +14,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
@@ -32,7 +30,6 @@ class ActivityService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val programServiceRepository: ProgramServiceRepository,
-  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val payRatesService: PayRatesService,
   private val scheduleService: ScheduleService,
   private val scheduleRuleService: ScheduleRuleService,
@@ -69,8 +66,6 @@ class ActivityService(
 
     val programService = findProgramServiceOrThrow(request.programCode)
 
-    val prisonIepLevel = findAvailablePrisonIepLevelOrThrow(request.minimumIncentiveLevelCode, prison)
-
     return CourseActivity(
       code = request.code,
       program = programService,
@@ -81,7 +76,6 @@ class ActivityService(
       active = true,
       scheduleStartDate = request.startDate,
       scheduleEndDate = request.endDate,
-      iepLevel = prisonIepLevel.iepLevel,
       internalLocation = location,
       payPerSession = request.payPerSession,
       excludeBankHolidays = request.excludeBankHolidays,
@@ -136,7 +130,7 @@ class ActivityService(
           internalLocationDescription = it.internalLocation?.description,
           capacity = it.capacity ?: 0,
           description = it.description ?: "",
-          minimumIncentiveLevel = it.iepLevel.code,
+          minimumIncentiveLevel = it.iepLevel?.code,
           excludeBankHolidays = it.excludeBankHolidays,
           payPerSession = it.payPerSession.name,
           scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
@@ -148,8 +142,6 @@ class ActivityService(
   private fun mapActivityModel(existingActivity: CourseActivity, request: UpdateActivityRequest): CourseActivity {
     val location = findLocationInPrisonOrThrow(request.internalLocationId, existingActivity.prison.id)
 
-    val prisonIepLevel = findAvailablePrisonIepLevelOrThrow(request.minimumIncentiveLevelCode, existingActivity.prison)
-
     val requestedProgramService = findProgramServiceOrThrow(request.programCode)
 
     checkDatesInOrder(request.startDate, request.endDate)
@@ -160,7 +152,6 @@ class ActivityService(
       internalLocation = location
       capacity = request.capacity
       description = request.description
-      iepLevel = prisonIepLevel.iepLevel
       payPerSession = request.payPerSession
       excludeBankHolidays = request.excludeBankHolidays
       outsideWork = request.outsideWork
@@ -193,10 +184,6 @@ class ActivityService(
         throw BadDataException("Start date $startDate must not be after end date $endDate")
       }
     }
-
-  private fun findAvailablePrisonIepLevelOrThrow(iepLevelCode: String, prison: AgencyLocation) =
-    availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(prison, iepLevelCode)
-      ?: throw BadDataException("IEP type $iepLevelCode does not exist for prison ${prison.id}")
 
   private fun findProgramServiceOrThrow(programCode: String) =
     (

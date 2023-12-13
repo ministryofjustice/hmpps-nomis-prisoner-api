@@ -1362,7 +1362,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(updated.internalLocation?.locationId).isEqualTo(-3006)
         assertThat(updated.capacity).isEqualTo(30)
         assertThat(updated.description).isEqualTo("updated description")
-        assertThat(updated.iepLevel.code).isEqualTo("BAS")
+        assertThat(updated.iepLevel).isNull()
         assertThat(updated.payPerSession).isEqualTo(PayPerSession.F)
         assertThat(updated.excludeBankHolidays).isTrue()
         assertThat(updated.outsideWork).isTrue()

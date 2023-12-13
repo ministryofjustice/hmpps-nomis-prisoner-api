@@ -41,7 +41,8 @@ data class GetActivityResponse(
   val description: String,
 
   @Schema(description = "The minimum incentive level allowed on the course", example = "BAS")
-  val minimumIncentiveLevel: String,
+  @Deprecated("Currently being ignored - soon to be removed")
+  val minimumIncentiveLevel: String?,
 
   @Schema(description = "Whether the course runs on bank holidays", example = "false")
   val excludeBankHolidays: Boolean,
