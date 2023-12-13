@@ -92,7 +92,7 @@ data class CourseActivity(
       JoinColumnOrFormula(column = JoinColumn(name = "IEP_LEVEL", referencedColumnName = "code")),
     ],
   )
-  var iepLevel: IEPLevel,
+  var iepLevel: IEPLevel? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID")

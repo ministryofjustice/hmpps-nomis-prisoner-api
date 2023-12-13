@@ -109,7 +109,6 @@ class CourseActivityBuilder(
     active: Boolean,
     startDate: String,
     endDate: String?,
-    minimumIncentiveLevelCode: String,
     internalLocationId: Long?,
     excludeBankHolidays: Boolean,
     payPerSession: PayPerSession,
@@ -126,7 +125,6 @@ class CourseActivityBuilder(
       active = active,
       scheduleStartDate = LocalDate.parse(startDate),
       scheduleEndDate = endDate?.let { LocalDate.parse(it) },
-      iepLevel = lookupIepLevel(minimumIncentiveLevelCode),
       internalLocation = internalLocationId?.let { lookupAgencyInternalLocation(it, prisonId) },
       excludeBankHolidays = excludeBankHolidays,
       payPerSession = payPerSession,
@@ -205,8 +203,6 @@ class CourseActivityBuilder(
 
   private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
-  private fun lookupIepLevel(code: String): IEPLevel = repository?.lookupIepLevel(code)
-    ?: IEPLevel(code = code, description = code)
   private fun lookupAgencyInternalLocation(internalLocationId: Long, prisonId: String) = repository?.lookupAgencyInternalLocation(internalLocationId)
     ?: AgencyInternalLocation(
       locationId = internalLocationId,

@@ -32,7 +32,8 @@ data class UpdateActivityRequest(
   val description: String,
 
   @Schema(description = "Minimum Incentive Level")
-  val minimumIncentiveLevelCode: String,
+  @Deprecated("Currently being ignored - soon to be removed")
+  val minimumIncentiveLevelCode: String?,
 
   @Schema(description = "Half or Full day (H or F)", required = true, example = "H")
   val payPerSession: PayPerSession,
