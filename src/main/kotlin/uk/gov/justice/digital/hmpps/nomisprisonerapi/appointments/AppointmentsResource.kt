@@ -313,7 +313,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
   @GetMapping("/appointments/ids")
   @Operation(
     summary = "get appointments by filter",
-    description = "Retrieves a paged list of incentive composite ids by filter. Requires ROLE_NOMIS_APPOINTMENTS.",
+    description = "Retrieves a paged list of appointment ids by filter. Requires ROLE_NOMIS_APPOINTMENTS.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -326,7 +326,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -334,12 +334,12 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
   fun getAppointmentsByFilter(
     @PageableDefault(sort = ["eventId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
-    @RequestParam(value = "prisonIds", required = false)
+    @RequestParam(value = "prisonIds", required = true)
     @Parameter(
-      description = "Filter results by prison ids (returns all prisons if not specified)",
+      description = "Filter results by prison ids",
       example = "['MDI','LEI']",
     )
-    prisonIds: List<String>?,
+    prisonIds: List<String>,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(
@@ -357,6 +357,6 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
   ): Page<AppointmentIdResponse> =
     appointmentService.findIdsByFilter(
       pageRequest = pageRequest,
-      AppointmentFilter(prisonIds = prisonIds ?: listOf(), toDate = toDate, fromDate = fromDate),
+      AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
     )
 }

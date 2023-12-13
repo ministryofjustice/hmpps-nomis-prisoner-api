@@ -205,7 +205,8 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid start time should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
+      val invalidSchedule =
+        validCreateJsonRequest(false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -233,7 +234,10 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(false).replace(""""eventDate"          : "2023-02-27"""", """"eventDate": "2022-13-31",""")
+      val invalidSchedule = validCreateJsonRequest(false).replace(
+        """"eventDate"          : "2023-02-27"""",
+        """"eventDate": "2022-13-31",""",
+      )
       webTestClient.post().uri("/appointments")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -367,7 +371,8 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid start time should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest(false).replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
+      val invalidSchedule =
+        validUpdateJsonRequest(false).replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
@@ -397,7 +402,10 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest(false).replace(""""eventDate"          : "2023-02-28"""", """"eventDate": "2022-13-31",""")
+      val invalidSchedule = validUpdateJsonRequest(false).replace(
+        """"eventDate"          : "2023-02-28"""",
+        """"eventDate": "2022-13-31",""",
+      )
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -751,8 +759,24 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     }
 
     @Test
-    fun `get all ids - no filter specified`() {
+    fun `prison filter missing`() {
       webTestClient.get().uri("/appointments/ids")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Missing request parameter")
+        }
+    }
+
+    @Test
+    fun `get all ids - prisons specified`() {
+      webTestClient.get()
+        .uri {
+          it.path("/appointments/ids")
+            .queryParam("prisonIds", "MDI", "SWI", "BXI")
+            .build()
+        }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .exchange()
         .expectStatus().isOk
@@ -764,6 +788,7 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     fun `get appointments issued within a given date range 1`() {
       webTestClient.get().uri {
         it.path("/appointments/ids")
+          .queryParam("prisonIds", "MDI")
           .queryParam("fromDate", "2000-01-01")
           .queryParam("toDate", "2023-01-01")
           .build()
@@ -780,6 +805,7 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     fun `get appointments issued within a given date range 2`() {
       webTestClient.get().uri {
         it.path("/appointments/ids")
+          .queryParam("prisonIds", "MDI")
           .queryParam("fromDate", "2023-01-03")
           .queryParam("toDate", "2026-01-01")
           .build()
@@ -812,6 +838,7 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     fun `can request a different page size`() {
       webTestClient.get().uri {
         it.path("/appointments/ids")
+          .queryParam("prisonIds", "MDI", "BXI", "LEI")
           .queryParam("size", "2")
           .build()
       }
@@ -824,12 +851,15 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
         .jsonPath("number").isEqualTo(0)
         .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(2)
+        .jsonPath("$.content[0].eventId").isEqualTo(appointment1.eventId)
+        .jsonPath("$.content[1].eventId").isEqualTo(appointment2.eventId)
     }
 
     @Test
     fun `can request a different page`() {
       webTestClient.get().uri {
         it.path("/appointments/ids")
+          .queryParam("prisonIds", "MDI", "BXI", "LEI")
           .queryParam("size", "2")
           .queryParam("page", "1")
           .build()
@@ -843,12 +873,14 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
         .jsonPath("number").isEqualTo(1)
         .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(2)
+        .jsonPath("$.content[0].eventId").isEqualTo(appointment3.eventId)
     }
 
     @Test
     fun `malformed date returns bad request`() {
       webTestClient.get().uri {
         it.path("/appointments/ids")
+          .queryParam("prisonIds", "MDI", "SWI", "LEI")
           .queryParam("fromDate", "202-10-01")
           .build()
       }
@@ -860,7 +892,11 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
     @Test
     fun `get appointments prevents access without appropriate role`() {
       assertThat(
-        webTestClient.get().uri("/appointments/ids")
+        webTestClient.get().uri {
+          it.path("/appointments/ids")
+            .queryParam("prisonIds", "MDI")
+            .build()
+        }
           .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
           .exchange()
           .expectStatus().isForbidden,
