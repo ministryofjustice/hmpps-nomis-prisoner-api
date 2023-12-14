@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
@@ -141,6 +142,13 @@ interface BookingDsl {
     lidsCombinedCaseId: Int? = 3,
     dsl: CourtCaseDsl.() -> Unit = { },
   ): CourtCase
+
+  @OffenderExternalMovementDslMarker
+  fun prisonTransfer(
+    from: String = "BXI",
+    to: String = "MDI",
+    date: LocalDateTime = LocalDateTime.now(),
+  ): Pair<OffenderExternalMovement, OffenderExternalMovement>
 }
 
 @Component
@@ -164,6 +172,7 @@ class BookingBuilderFactory(
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
+  private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -173,6 +182,7 @@ class BookingBuilderFactory(
     offenderSentenceBuilderFactory,
     courtCaseBuilderFactory,
     offenderKeyDateAdjustmentBuilderFactory,
+    offenderExternalMovementBuilderFactory,
   )
 }
 
@@ -184,6 +194,7 @@ class BookingBuilder(
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
+  private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -383,6 +394,24 @@ class BookingBuilder(
           builder.apply(dsl)
         }
     }
+
+  override fun prisonTransfer(
+    from: String,
+    to: String,
+    date: LocalDateTime,
+  ): Pair<OffenderExternalMovement, OffenderExternalMovement> =
+    offenderExternalMovementBuilderFactory.builder()
+      .let { builder ->
+        builder.buildTransfer(
+          offenderBooking = offenderBooking,
+          fromPrisonId = from,
+          toPrisonId = to,
+          date = date,
+        )
+          .also { offenderBooking.externalMovements.forEach { it.active = false } }
+          .also { offenderBooking.externalMovements += it.first }
+          .also { offenderBooking.externalMovements += it.second }
+      }
 
   override fun adjustment(
     adjustmentTypeCode: String,
