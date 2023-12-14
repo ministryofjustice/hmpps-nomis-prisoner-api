@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
@@ -62,6 +61,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.Adjudication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
@@ -86,6 +87,7 @@ class AdjudicationService(
   private val adjudicationHearingResultRepository: AdjudicationHearingResultRepository,
   private val adjudicationHearingResultAwardRepository: AdjudicationHearingResultAwardRepository,
   private val offenderRepository: OffenderRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
@@ -99,6 +101,7 @@ class AdjudicationService(
   private val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
   private val sanctionTypeRepository: ReferenceCodeRepository<AdjudicationSanctionType>,
   private val sanctionStatusRepository: ReferenceCodeRepository<AdjudicationSanctionStatus>,
+  private val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   private val telemetryClient: TelemetryClient,
 ) {
 
@@ -435,13 +438,6 @@ class AdjudicationService(
   fun getHearing(hearingId: Long): Hearing =
     adjudicationHearingRepository.findByIdOrNull(hearingId)?.toHearing()
       ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
-
-  private fun checkAdjudicationDoesNotExist(adjudicationNumber: Long): Long {
-    if (adjudicationIncidentPartyRepository.existsByAdjudicationNumber(adjudicationNumber)) {
-      throw ConflictException("Adjudication $adjudicationNumber already exists")
-    }
-    return adjudicationNumber
-  }
 
   private fun findPrisoner(offenderNo: String): Offender {
     return offenderRepository.findRootByNomisId(offenderNo)
@@ -1153,6 +1149,14 @@ class AdjudicationService(
       chargeSequence = chargeSequence,
       requests = request.awards,
     )
+  }
+
+  fun getADAHearingResultAwardSummary(bookingId: Long): AdjudicationADAAwardSummaryResponse {
+    val booking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Prisoner with bookingId $bookingId not found")
+
+    val prisonIds = offenderExternalMovementRepository.findPrisonsAdmittedIntoByBooking(booking)
+    return AdjudicationADAAwardSummaryResponse(bookingId, offenderNo = booking.offender.nomsId, prisonIds = prisonIds)
   }
 }
 

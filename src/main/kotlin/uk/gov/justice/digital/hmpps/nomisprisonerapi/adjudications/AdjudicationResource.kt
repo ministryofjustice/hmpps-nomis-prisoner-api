@@ -1320,6 +1320,62 @@ class AdjudicationResource(
     sanctionSequence: Int,
   ): HearingResultAward =
     adjudicationService.getHearingResultAward(bookingId, sanctionSequence)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/awards/ada/summary")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get ADA award summary result award by booking ",
+    description = "Retrieves a summary of ADA awards along with associated adjudication for a given booking. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "ADA Summary award Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AdjudicationADAAwardSummaryResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAdjudicationADASummary(
+    @Schema(description = "NOMIS booking Id", example = "12345")
+    @PathVariable
+    bookingId: Long,
+  ): AdjudicationADAAwardSummaryResponse =
+    adjudicationService.getADAHearingResultAwardSummary(bookingId)
 }
 
 @Schema(description = "adjudication id")

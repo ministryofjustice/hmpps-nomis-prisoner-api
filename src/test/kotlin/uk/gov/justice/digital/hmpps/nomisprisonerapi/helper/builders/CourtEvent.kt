@@ -6,10 +6,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -80,7 +80,7 @@ class CourtEventBuilderRepository(
   val repository: CourtEventRepository,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   val directionTypeRepository: ReferenceCodeRepository<DirectionType>,
-  val courtEventTypeRepository: ReferenceCodeRepository<CourtEventType>,
+  val courtEventTypeRepository: ReferenceCodeRepository<MovementReason>,
   val agencyLocationRepository: AgencyLocationRepository,
 ) {
   fun save(courtEvent: CourtEvent): CourtEvent =
@@ -92,8 +92,8 @@ class CourtEventBuilderRepository(
   fun lookupDirectionType(code: String): DirectionType =
     directionTypeRepository.findByIdOrNull(DirectionType.pk(code))!!
 
-  fun lookupCourtEventType(code: String): CourtEventType =
-    courtEventTypeRepository.findByIdOrNull(CourtEventType.pk(code))!!
+  fun lookupCourtEventType(code: String): MovementReason =
+    courtEventTypeRepository.findByIdOrNull(MovementReason.pk(code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 }

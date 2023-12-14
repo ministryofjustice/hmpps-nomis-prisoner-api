@@ -54,14 +54,14 @@ class CourtEvent(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'" + CourtEventType.MOVE_RSN + "'",
+          value = "'" + MovementReason.MOVE_RSN + "'",
           referencedColumnName = "domain",
         ),
       ),
       JoinColumnOrFormula(column = JoinColumn(name = "COURT_EVENT_TYPE", referencedColumnName = "code")),
     ],
   )
-  val courtEventType: CourtEventType,
+  val courtEventType: MovementReason,
 
   // only 50 last used in 2009
   val judgeName: String?,
