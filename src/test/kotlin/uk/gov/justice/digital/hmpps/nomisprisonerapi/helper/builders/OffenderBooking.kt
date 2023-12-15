@@ -223,6 +223,17 @@ class BookingBuilder(
       assignedLivingUnit = repository.lookupAgencyInternalLocation(livingUnitId),
     )
       .let { repository.save(it) }
+      .also {
+        offenderExternalMovementBuilderFactory.builder()
+          .build(
+            toPrisonId = agencyLocationCode,
+            date = bookingBeginDate,
+            fromPrisonId = "COURT1",
+            movementReason = "N",
+            movementType = "ADM",
+            offenderBooking = it,
+          ).also { movement -> it.externalMovements += movement }
+      }
       .also { offenderBooking = it }
   }
 

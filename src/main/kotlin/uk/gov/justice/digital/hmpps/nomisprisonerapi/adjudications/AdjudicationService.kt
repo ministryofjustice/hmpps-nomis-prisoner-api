@@ -1156,7 +1156,24 @@ class AdjudicationService(
       ?: throw NotFoundException("Prisoner with bookingId $bookingId not found")
 
     val prisonIds = offenderExternalMovementRepository.findPrisonsAdmittedIntoByBooking(booking)
-    return AdjudicationADAAwardSummaryResponse(bookingId, offenderNo = booking.offender.nomsId, prisonIds = prisonIds)
+    val awards = adjudicationHearingResultAwardRepository.findById_offenderBookIdAndSanctionCodeOrderById_SanctionSequenceAsc(
+      offenderBookId = bookingId,
+      sanctionCode = "ADA",
+    )
+    return AdjudicationADAAwardSummaryResponse(
+      bookingId,
+      offenderNo = booking.offender.nomsId,
+      prisonIds = prisonIds,
+      adaSummaries = awards.map {
+        ADASummary(
+          adjudicationNumber = it.incidentParty.adjudicationNumber!!,
+          days = it.sanctionDays ?: 0,
+          effectiveDate = it.effectiveDate,
+          sanctionSequence = it.id.sanctionSequence,
+          sanctionStatus = it.sanctionStatus?.toCodeDescription() ?: CodeDescription("UNKNOWN", "UNKNOWN"),
+        )
+      },
+    )
   }
 }
 

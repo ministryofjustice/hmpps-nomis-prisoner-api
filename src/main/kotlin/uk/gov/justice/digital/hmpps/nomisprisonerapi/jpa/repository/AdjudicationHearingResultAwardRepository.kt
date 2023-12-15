@@ -21,4 +21,9 @@ interface AdjudicationHearingResultAwardRepository : JpaRepository<AdjudicationH
     adjudicationNumber: Long,
     chargeSequence: Int,
   ): List<AdjudicationHearingResultAward>
+
+  fun findById_offenderBookIdAndSanctionCodeOrderById_SanctionSequenceAsc(
+    offenderBookId: Long,
+    sanctionCode: String,
+  ): List<AdjudicationHearingResultAward>
 }
