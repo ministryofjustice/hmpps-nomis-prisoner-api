@@ -40,8 +40,10 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
     private var bookingId = 0L
     private lateinit var prisoner: Offender
     private lateinit var reportingStaff: Staff
+    private lateinit var veryOldIncident: AdjudicationIncident
     private lateinit var existingIncident: AdjudicationIncident
     private lateinit var previousIncident: AdjudicationIncident
+    private val veryOldAdjudicationNumber = 123454L
     private val existingAdjudicationNumber = 123456L
     private val previousAdjudicationNumber = 123455L
     private lateinit var existingHearing: AdjudicationHearing
@@ -55,9 +57,42 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
         reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
           account(username = "JANESTAFF")
         }
+        veryOldIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
+          booking(agencyLocationId = "LEI", bookingBeginDate = LocalDateTime.parse("1999-01-01T10:00"), active = false) {
+            adjudicationParty(incident = veryOldIncident, adjudicationNumber = veryOldAdjudicationNumber) {
+              val charge = charge(offenceCode = "51:1B")
+              hearing(
+                internalLocationId = aLocationInMoorland.locationId,
+                hearingDate = LocalDate.parse("1999-01-04"),
+                hearingTime = LocalDateTime.parse("1999-01-04T15:00:00"),
+                hearingTypeCode = AdjudicationHearingType.INDEPENDENT_HEARING,
+              ) {
+                result(
+                  charge = charge,
+                  pleaFindingCode = "NOT_GUILTY",
+                  findingCode = "PROVED",
+                ) {
+                  award(
+                    sanctionIndex = 1,
+                    statusCode = "IMMEDIATE",
+                    sanctionCode = "ADA",
+                    sanctionDays = 4,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                  award(
+                    sanctionIndex = 2,
+                    statusCode = "SUSPENDED",
+                    sanctionCode = "ADA",
+                    sanctionDays = 5,
+                    effectiveDate = LocalDate.parse("2023-01-04"),
+                  )
+                }
+              }
+            }
+          }
           bookingId = booking(agencyLocationId = "BXI", bookingBeginDate = LocalDateTime.parse("2022-01-01T10:00")) {
             prisonTransfer(from = "BXI", to = "MDI", date = LocalDateTime.parse("2022-01-02T10:00"))
             prisonTransfer(from = "MDI", to = "BXI", date = LocalDateTime.parse("2022-01-03T10:00"))
@@ -124,7 +159,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
                     statusCode = "SUSPENDED",
                     sanctionCode = "ADA",
                     sanctionDays = 5,
-                    effectiveDate = LocalDate.parse("2023-01-04"),
+                    effectiveDate = LocalDate.parse("2023-01-05"),
                   )
                   award(
                     sanctionIndex = 6,
@@ -150,8 +185,10 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
+      repository.deleteHearingByAdjudicationNumber(veryOldAdjudicationNumber)
       repository.deleteHearingByAdjudicationNumber(existingAdjudicationNumber)
       repository.deleteHearingByAdjudicationNumber(previousAdjudicationNumber)
+      repository.delete(veryOldIncident)
       repository.delete(previousIncident)
       repository.delete(existingIncident)
       repository.delete(prisoner)
@@ -227,6 +264,118 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
           .jsonPath("prisonIds[0]").isEqualTo("BMI")
           .jsonPath("prisonIds[1]").isEqualTo("BXI")
           .jsonPath("prisonIds[2]").isEqualTo("MDI")
+      }
+
+      @Test
+      fun `there will be a summary for each ADA award across all adjudications for this booking`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adaSummaries.size()").isEqualTo("5")
+      }
+
+      @Test
+      fun `each ADA sanction is returned`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adaSummaries[0].sanctionSequence").isEqualTo("1")
+          .jsonPath("adaSummaries[1].sanctionSequence").isEqualTo("4")
+          .jsonPath("adaSummaries[2].sanctionSequence").isEqualTo("5")
+          .jsonPath("adaSummaries[3].sanctionSequence").isEqualTo("6")
+          .jsonPath("adaSummaries[4].sanctionSequence").isEqualTo("7")
+      }
+
+      @Test
+      fun `each ADA sanction is returned regardless of status`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adaSummaries[0].sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("adaSummaries[1].sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("adaSummaries[2].sanctionStatus.code").isEqualTo("SUSPENDED")
+          .jsonPath("adaSummaries[3].sanctionStatus.code").isEqualTo("PROSPECTIVE")
+          .jsonPath("adaSummaries[4].sanctionStatus.code").isEqualTo("QUASHED")
+      }
+
+      @Test
+      fun `summary of ADA is returned`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adaSummaries[0].adjudicationNumber").isEqualTo(previousAdjudicationNumber)
+          .jsonPath("adaSummaries[0].sanctionSequence").isEqualTo("1")
+          .jsonPath("adaSummaries[0].days").isEqualTo("3")
+          .jsonPath("adaSummaries[0].effectiveDate").isEqualTo("2022-01-03")
+          .jsonPath("adaSummaries[0].sanctionStatus.code").isEqualTo("IMMEDIATE")
+          .jsonPath("adaSummaries[0].sanctionStatus.description").isEqualTo("Immediate")
+      }
+    }
+
+    @Nested
+    inner class NoAdjudications {
+      private val noAdjudicationsOffenderNo = "A2965NM"
+      private var noAdjudicationsBookingId = 0L
+      private lateinit var noAdjudicationsPrisoner: Offender
+
+      @BeforeEach
+      fun createPrisonerWithAdjudicationAndHearingAndAwards() {
+        nomisDataBuilder.build {
+          noAdjudicationsPrisoner = offender(nomsId = noAdjudicationsOffenderNo) {
+            noAdjudicationsBookingId = booking(agencyLocationId = "BXI").bookingId
+          }
+        }
+      }
+
+      @Test
+      fun `will return offender number related to booking`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", noAdjudicationsBookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(noAdjudicationsPrisoner.nomsId)
+      }
+
+      @Test
+      fun `will list all prisons for this booking`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", noAdjudicationsBookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("prisonIds.size()").isEqualTo("1")
+          .jsonPath("prisonIds[0]").isEqualTo("BXI")
+      }
+
+      @Test
+      fun `will have no adjudication summaries`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", noAdjudicationsBookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adaSummaries.size()").isEqualTo("0")
+      }
+
+      @AfterEach
+      fun tearDown() {
+        repository.delete(noAdjudicationsPrisoner)
       }
     }
   }

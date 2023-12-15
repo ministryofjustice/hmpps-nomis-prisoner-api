@@ -44,7 +44,7 @@ class OffenderExternalMovementBuilderRepository(
   fun lookupMovementType(code: String): MovementType =
     movementTypeRepository.findByIdOrNull(Pk(MovementType.MOVE_TYPE, code))!!
 
-  fun lookupPrison(prisonId: String): AgencyLocation =
+  fun lookupAgency(prisonId: String): AgencyLocation =
     agencyLocationRepository.findByIdOrNull(prisonId)!!
 
   fun save(movement: OffenderExternalMovement): OffenderExternalMovement =
@@ -71,8 +71,8 @@ class OffenderExternalMovementBuilder(
         movementDirection = OUT,
         movementType = repository.lookupMovementType("TRN"),
         movementReason = repository.lookupMovementReason("28"),
-        fromAgency = repository.lookupPrison(fromPrisonId),
-        toAgency = repository.lookupPrison(toPrisonId),
+        fromAgency = repository.lookupAgency(fromPrisonId),
+        toAgency = repository.lookupAgency(toPrisonId),
         active = false,
       ),
     ) to repository.save(
@@ -86,8 +86,32 @@ class OffenderExternalMovementBuilder(
         movementDirection = IN,
         movementType = repository.lookupMovementType("ADM"),
         movementReason = repository.lookupMovementReason("INT"),
-        fromAgency = repository.lookupPrison(fromPrisonId),
-        toAgency = repository.lookupPrison(toPrisonId),
+        fromAgency = repository.lookupAgency(fromPrisonId),
+        toAgency = repository.lookupAgency(toPrisonId),
+        active = true,
+      ),
+    )
+  fun build(
+    fromPrisonId: String,
+    toPrisonId: String,
+    date: LocalDateTime,
+    offenderBooking: OffenderBooking,
+    movementType: String,
+    movementReason: String,
+  ): OffenderExternalMovement =
+    repository.save(
+      OffenderExternalMovement(
+        id = OffenderExternalMovementId(
+          offenderBooking,
+          offenderBooking.externalMovements.size + 1L,
+        ),
+        movementDate = date.toLocalDate(),
+        movementTime = date,
+        movementDirection = IN,
+        movementType = repository.lookupMovementType(movementType),
+        movementReason = repository.lookupMovementReason(movementReason),
+        fromAgency = repository.lookupAgency(fromPrisonId),
+        toAgency = repository.lookupAgency(toPrisonId),
         active = true,
       ),
     )
