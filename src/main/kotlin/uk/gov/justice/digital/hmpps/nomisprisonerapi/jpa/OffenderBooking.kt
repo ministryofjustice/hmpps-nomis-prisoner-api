@@ -132,6 +132,9 @@ data class OffenderBooking(
   @Where(clause = "OIC_INCIDENT_ID is not null")
   val adjudicationParties: MutableList<AdjudicationIncidentParty> = mutableListOf(),
 
+  @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val courtCases: MutableList<CourtCase> = mutableListOf(),
+
 ) {
   fun getNextSequence(): Long = incentives.map { it.id.sequence }.maxOrNull()?.let { it + 1 } ?: 1
 

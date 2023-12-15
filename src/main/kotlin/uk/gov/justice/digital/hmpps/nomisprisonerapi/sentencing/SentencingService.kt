@@ -4,13 +4,17 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -18,10 +22,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 
 @Service
@@ -32,6 +38,9 @@ class SentencingService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val telemetryClient: TelemetryClient,
+  private val legalCaseTypeRepository: ReferenceCodeRepository<LegalCaseType>,
+  private val caseStatusRepository: ReferenceCodeRepository<CaseStatus>,
+  private val agencyLocationRepository: AgencyLocationRepository,
 ) {
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
     findPrisoner(offenderNo).findLatestBooking()
@@ -57,6 +66,31 @@ class SentencingService(
         }
     }
   }
+
+  @Audit
+  fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) =
+    findPrisoner(offenderNo).findLatestBooking().let { booking ->
+      val courtCaseId = courtCaseRepository.save(
+        CourtCase(
+          offenderBooking = booking,
+          legalCaseType = lookupLegalCaseType(request.legalCaseType),
+          beginDate = request.startDate,
+          caseStatus = lookupCaseStatus(request.status),
+          court = lookupEstablishment(request.court),
+        ),
+      ).id
+      telemetryClient.trackEvent(
+        "court-case-created",
+        mapOf(
+          "bookingId" to booking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+          "court" to request.court,
+          "legalCaseType" to request.legalCaseType,
+        ),
+        null,
+      )
+      CreateCourtCaseResponse(courtCaseId)
+    }
 
   fun getOffenderSentence(sentenceSequence: Long, bookingId: Long): SentenceResponse {
     val offenderBooking = findOffenderBooking(bookingId)
@@ -137,6 +171,19 @@ class SentencingService(
     return offenderBookingRepository.findByIdOrNull(id)
       ?: throw NotFoundException("Offender booking $id not found")
   }
+
+  private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(
+    LegalCaseType.pk(code),
+  ) ?: throw BadDataException("Legal Case Type $code not found")
+
+  private fun lookupCaseStatus(code: String): CaseStatus = caseStatusRepository.findByIdOrNull(
+    CaseStatus.pk(code),
+  ) ?: throw BadDataException("Case status $code not found")
+
+  private fun lookupEstablishment(establishmentId: String): AgencyLocation {
+    return agencyLocationRepository.findByIdOrNull(establishmentId)
+      ?: throw BadDataException("Establishment $establishmentId not found")
+  }
 }
 
 private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseResponse(
@@ -146,9 +193,9 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   caseInfoNumber = this.caseInfoNumber,
   caseSequence = this.caseSequence,
   caseStatus = this.caseStatus.toCodeDescription(),
-  caseType = this.legalCaseType.toCodeDescription(),
+  legalCaseType = this.legalCaseType.toCodeDescription(),
   beginDate = this.beginDate,
-  prisonId = this.prison.id,
+  establishmentId = this.court.id,
   combinedCaseId = this.combinedCase?.id,
   lidsCaseNumber = this.lidsCaseNumber,
   lidsCaseId = this.lidsCaseId,
