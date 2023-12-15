@@ -47,7 +47,7 @@ class CourtCase(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  val prison: AgencyLocation,
+  val court: AgencyLocation,
 
   // optional and without referential integrity on DB but no nulls and all reference codes 100% match
   @ManyToOne
@@ -83,7 +83,7 @@ class CourtCase(
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "COMBINED_CASE_ID")
-  val combinedCase: CourtCase?,
+  val combinedCase: CourtCase? = null,
 
   val statusUpdateComment: String? = null,
 
