@@ -126,7 +126,7 @@ interface BookingDsl {
   fun courtCase(
     whenCreated: LocalDateTime = LocalDateTime.now(),
     caseStatus: String = "A",
-    caseType: String = "A",
+    legalCaseType: String = "A",
     beginDate: LocalDate = LocalDate.now(),
     caseSequence: Int = 1,
     caseInfoNumber: String? = "AB1",
@@ -355,7 +355,7 @@ class BookingBuilder(
   override fun courtCase(
     whenCreated: LocalDateTime,
     caseStatus: String,
-    caseType: String,
+    legalCaseType: String,
     beginDate: LocalDate,
     caseSequence: Int,
     caseInfoNumber: String?,
@@ -377,7 +377,7 @@ class BookingBuilder(
         offenderBooking = offenderBooking,
         combinedCase = combinedCase,
         caseStatus = caseStatus,
-        caseType = caseType,
+        legalCaseType = legalCaseType,
         caseSequence = caseSequence,
         beginDate = beginDate,
         caseInfoNumber = caseInfoNumber,

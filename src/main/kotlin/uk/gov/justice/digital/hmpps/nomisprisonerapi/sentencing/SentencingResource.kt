@@ -5,12 +5,17 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -239,6 +244,76 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     bookingId: Long,
   ): SentenceResponse = sentencingService.getOffenderSentence(sequence, bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new Court Case",
+    description = "Required role NOMIS_SENTENCING Creates a new Court Case for the offender and latest booking",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateCourtCaseRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Created Court case",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCourtCase(
+    @Schema(description = "Booking Id", example = "12345", required = true)
+    @PathVariable
+    offenderNo: String,
+    @RequestBody @Valid
+    request: CreateCourtCaseRequest,
+  ): CreateCourtCaseResponse =
+    sentencingService.createCourtCase(offenderNo, request)
 }
 
 @Schema(description = "Court Case")
@@ -250,9 +325,9 @@ data class CourtCaseResponse(
   val caseInfoNumber: String?,
   val caseSequence: Int,
   val caseStatus: CodeDescription,
-  val caseType: CodeDescription,
+  val legalCaseType: CodeDescription,
   val beginDate: LocalDate?,
-  val prisonId: String,
+  val establishmentId: String,
   val combinedCaseId: Long?,
   val statusUpdateStaffId: Long?,
   val statusUpdateDate: LocalDate?,
@@ -437,4 +512,21 @@ data class SentenceTermResponse(
   val startDate: LocalDate,
   val endDate: LocalDate?,
   val lifeSentenceFlag: Boolean?,
+)
+
+@Schema(description = "Court case create request")
+data class CreateCourtCaseRequest(
+  @Schema(description = "Court case start date", required = true)
+  val startDate: LocalDate, // the warrant date in sentencing
+  @Schema(description = "Legal Case type", required = true)
+  val legalCaseType: String, // either A for Adult or sentences to create new type
+  @Schema(description = "Court Id (establishment)", required = true)
+  val court: String, // either A for Adult or sentences to create new type
+  @Schema(description = "Case status", required = true)
+  val status: String, // ACTIVE, INACTIVE, CLOSED
+)
+
+@Schema(description = "Create adjustment response")
+data class CreateCourtCaseResponse(
+  val id: Long,
 )

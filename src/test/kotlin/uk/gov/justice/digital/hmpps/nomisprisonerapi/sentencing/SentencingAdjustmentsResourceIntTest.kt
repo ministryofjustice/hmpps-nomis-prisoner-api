@@ -1892,7 +1892,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(ual)
       repository.delete(anotherPrisoner)
     }
 
