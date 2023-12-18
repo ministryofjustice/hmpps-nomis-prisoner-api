@@ -178,7 +178,8 @@ class VisitService(
     val eventStatus = visit.visitors.first { it.isStatusRecord() }.eventStatus
 
     val existingVisitorsPersonIds = visit.visitors.mapNotNull { it.person?.id }.toSet()
-    val visitorsToRemove = visit.visitors.filter { it.isStatusRecord().not() && it.person?.id !in updateVisitRequest.visitorPersonIds }
+    val visitorsToRemove =
+      visit.visitors.filter { it.isStatusRecord().not() && it.person?.id !in updateVisitRequest.visitorPersonIds }
     val visitorsToAdd = (updateVisitRequest.visitorPersonIds - existingVisitorsPersonIds).map {
       VisitVisitor(
         visit = visit,
@@ -189,6 +190,21 @@ class VisitService(
 
     visit.visitors.removeAll(visitorsToRemove)
     visit.visitors.addAll(visitorsToAdd)
+
+    // copy the visitors to the visit order, ignoring the dummy visitor entry
+    visit.visitOrder?.let { visitOrder ->
+      visitOrder.visitors.clear()
+      visitOrder.visitors.addAll(
+        visit.visitors
+          .filter { it.person != null }.mapIndexed { index, visitor ->
+            VisitOrderVisitor(
+              person = visitor.person!!,
+              groupLeader = index == 0,
+              visitOrder = visitOrder,
+            )
+          },
+      )
+    }
 
     val endDateTime = LocalDateTime.of(LocalDate.from(updateVisitRequest.startDateTime), updateVisitRequest.endTime)
     visit.agencyVisitSlot =
@@ -254,7 +270,7 @@ class VisitService(
               personId,
               groupLeader = index == 0,
             ) // randomly choose first visitor as lead since VSIP has to no concept of a lead visitor but we need it for data integrity
-          }
+          }.toMutableList()
         }
       } else {
         val adjustReasonCode =
@@ -281,14 +297,13 @@ class VisitService(
         ).apply {
           this.visitors = visitDto.visitorPersonIds.mapIndexed { index, personId ->
             this.createVisitor(personId, groupLeader = index == 0)
-          }
+          }.toMutableList()
         }
       }
     }
   }
 
   private fun VisitOrder.createVisitor(personId: Long, groupLeader: Boolean): VisitOrderVisitor = VisitOrderVisitor(
-    id = 0,
     visitOrder = this,
     person = personRepository.findById(personId)
       .orElseThrow(BadDataException("Person with id=$personId does not exist")),
@@ -442,7 +457,8 @@ class VisitService(
     isClosedVisit: Boolean,
   ): AgencyInternalLocation {
     // currently this will return nothing for Isle of Wight and Fosse Way until data is manually fixed
-    val visitsTopLevelLocation = internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(location.id)
+    val visitsTopLevelLocation =
+      internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(location.id)
 
     val locationCode = "VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
     val internalLocationDescription =

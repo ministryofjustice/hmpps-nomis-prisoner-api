@@ -216,6 +216,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
         tuple(threePeople[1].id, false),
         tuple(threePeople[2].id, false),
       )
+
+      assertThat(visit.visitOrder).isNotNull
+      assertThat(visit.visitOrder?.commentText).isEqualTo("VSIP Order Ref: asd-fff-ddd")
+
+      assertThat(visit.visitOrder?.visitors).extracting("person.id", "groupLeader").containsExactly(
+        tuple(threePeople[0].id, true),
+        tuple(threePeople[1].id, false),
+        tuple(threePeople[2].id, false),
+      )
     }
 
     @Test
@@ -955,6 +964,14 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         assertThat(updatedVisit.visitors).extracting<Long>(Visitor::personId)
           .containsExactlyInAnyOrder(neoAyomide.id, KashfAbidi.id)
+
+        // check visit order is updated with visitor changes
+        val visit = repository.getVisit(updatedVisit.visitId)
+        assertThat(visit.visitOrder).isNotNull
+        assertThat(visit.visitOrder?.visitors).extracting("person.id", "groupLeader").containsExactly(
+          tuple(neoAyomide.id, true),
+          tuple(KashfAbidi.id, false),
+        )
       }
 
       @Test
