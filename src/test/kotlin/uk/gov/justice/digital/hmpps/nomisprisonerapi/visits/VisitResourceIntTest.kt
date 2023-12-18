@@ -955,6 +955,14 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
         assertThat(updatedVisit.visitors).extracting<Long>(Visitor::personId)
           .containsExactlyInAnyOrder(neoAyomide.id, KashfAbidi.id)
+
+        // check visit order is updated with visitor changes
+        val visit = repository.getVisit(updatedVisit.visitId)
+        assertThat(visit.visitOrder).isNotNull
+        assertThat(visit.visitOrder?.visitors).extracting("person.id", "groupLeader").containsExactly(
+          tuple(neoAyomide.id, true),
+          tuple(KashfAbidi.id, false),
+        )
       }
 
       @Test

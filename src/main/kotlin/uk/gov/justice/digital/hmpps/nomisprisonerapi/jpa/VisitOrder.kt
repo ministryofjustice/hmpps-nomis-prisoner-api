@@ -73,8 +73,8 @@ data class VisitOrder(
   )
   var status: VisitStatus,
 
-  @OneToMany(mappedBy = "visitOrder", cascade = [CascadeType.ALL])
-  var visitors: List<VisitOrderVisitor> = ArrayList(),
+  @OneToMany(mappedBy = "visitOrder", cascade = [CascadeType.ALL], orphanRemoval = true)
+  var visitors: MutableList<VisitOrderVisitor> = mutableListOf(),
 
   @Column
   val commentText: String? = null,

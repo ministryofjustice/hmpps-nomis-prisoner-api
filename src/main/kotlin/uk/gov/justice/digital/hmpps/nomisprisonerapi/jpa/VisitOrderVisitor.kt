@@ -21,7 +21,7 @@ data class VisitOrderVisitor(
   @GeneratedValue(generator = "OFFENDER_VO_VISITOR_ID")
   @Id
   @Column(name = "OFFENDER_VO_VISITOR_ID", nullable = false)
-  val id: Long,
+  val id: Long = 0,
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "OFFENDER_VISIT_ORDER_ID", nullable = false)
