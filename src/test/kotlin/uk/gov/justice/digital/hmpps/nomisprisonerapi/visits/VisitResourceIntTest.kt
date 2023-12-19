@@ -791,6 +791,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class UpdateVisit {
     private var existingVisitId: Long = 0
+    private var existingVisitNoBalanceId: Long = 0
 
     @BeforeEach
     internal fun setUpData() {
@@ -887,6 +888,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       lateinit var neoAyomide: Person
       lateinit var KashfAbidi: Person
       lateinit var offenderWithVisit: Offender
+      lateinit var offenderWithVisitNoBalance: Offender
       lateinit var updateRequest: UpdateVisitRequest
 
       @BeforeEach
@@ -907,8 +909,33 @@ class VisitResourceIntTest : IntegrationTestBase() {
             ),
         )
 
+        offenderWithVisitNoBalance = repository.save(
+          LegacyOffenderBuilder(nomsId = "A7688JJ")
+            .withBooking(
+              OffenderBookingBuilder()
+                .withContacts(
+                  *listOf(johnSmith, neoAyomide, KashfAbidi).map { OffenderContactBuilder(it) }
+                    .toTypedArray(),
+                ),
+            ),
+        )
+
         existingVisitId = createVisit(
           offenderWithVisit.nomsId,
+          CreateVisitRequest(
+            visitType = "SCON",
+            startDateTime = LocalDateTime.parse("2021-11-04T09:00"),
+            endTime = LocalTime.parse("10:30"),
+            prisonId = prisonId,
+            visitorPersonIds = listOf(johnSmith, neoAyomide).map { it.id },
+            issueDate = LocalDate.parse("2021-11-02"),
+            room = "Main visit room",
+            openClosedStatus = "OPEN",
+          ),
+        )!!
+
+        existingVisitNoBalanceId = createVisit(
+          offenderWithVisitNoBalance.nomsId,
           CreateVisitRequest(
             visitType = "SCON",
             startDateTime = LocalDateTime.parse("2021-11-04T09:00"),
@@ -933,6 +960,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @AfterEach
       internal fun tearDown() {
         repository.delete(offenderWithVisit)
+        repository.delete(offenderWithVisitNoBalance)
         repository.delete(listOf(johnSmith, neoAyomide, KashfAbidi))
       }
 
@@ -963,6 +991,30 @@ class VisitResourceIntTest : IntegrationTestBase() {
           tuple(neoAyomide.id, true),
           tuple(KashfAbidi.id, false),
         )
+      }
+
+      @Test
+      internal fun `can change the people visiting for a visit without a visit order`() {
+        webTestClient.put().uri("/prisoners/${offenderWithVisitNoBalance.nomsId}/visits/$existingVisitNoBalanceId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .body(
+            BodyInserters.fromValue(updateRequest.copy(visitorPersonIds = listOf(neoAyomide.id, KashfAbidi.id))),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        val updatedVisit = webTestClient.get().uri("/visits/$existingVisitNoBalanceId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(updatedVisit.visitors).extracting<Long>(Visitor::personId)
+          .containsExactlyInAnyOrder(neoAyomide.id, KashfAbidi.id)
+
+        // confirm no visit order (and no visit order visitors)
+        assertThat(repository.getVisit(updatedVisit.visitId).visitOrder).isNull()
       }
 
       @Test
