@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -177,7 +177,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
           .jsonPath("caseSequence").isEqualTo(1)
-          .jsonPath("establishmentId").isEqualTo("COURT1")
+          .jsonPath("courtId").isEqualTo("COURT1")
           .jsonPath("caseStatus.code").isEqualTo("A")
           .jsonPath("caseStatus.description").isEqualTo("Active")
           .jsonPath("legalCaseType.code").isEqualTo("A")
@@ -201,7 +201,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
           .jsonPath("courtEvents[0].directionCode.description").isEqualTo("In")
           .jsonPath("courtEvents[0].judgeName").isEqualTo("Mike")
-          .jsonPath("courtEvents[0].prisonId").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
           .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("1046")
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
@@ -274,7 +274,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
           .jsonPath("caseSequence").isEqualTo(2)
-          .jsonPath("establishmentId").isEqualTo("COURT1")
+          .jsonPath("courtId").isEqualTo("COURT1")
           .jsonPath("caseStatus.code").isEqualTo("A")
           .jsonPath("caseStatus.description").isEqualTo("Active")
           .jsonPath("legalCaseType.code").isEqualTo("A")
@@ -298,7 +298,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
           .jsonPath("courtEvents[0].directionCode").doesNotExist()
           .jsonPath("courtEvents[0].judgeName").doesNotExist()
-          .jsonPath("courtEvents[0].prisonId").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
           .jsonPath("courtEvents[0].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").doesNotExist()
@@ -849,7 +849,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               {
               "startDate": "2023-01-01",
               "legalCaseType": "AXXX",
-              "court": "COURT1",
+              "courtId": "COURT1",
               "status": "A"
               }
               """,
@@ -863,7 +863,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class CreateKeyDateAdjustmentSuccess {
+    inner class CreateCourtCaseSuccess {
       @Test
       fun `can create a court case with minimal data`() {
         val courtCaseId = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
@@ -885,7 +885,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(offenderNo)
           .jsonPath("caseSequence").isEqualTo(1)
-          .jsonPath("establishmentId").isEqualTo("COURT1")
+          .jsonPath("courtId").isEqualTo("COURT1")
           .jsonPath("caseStatus.code").isEqualTo("A")
           .jsonPath("caseStatus.description").isEqualTo("Active")
           .jsonPath("legalCaseType.code").isEqualTo("A")
@@ -893,6 +893,56 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("beginDate").isEqualTo("2023-01-01")
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
+      }
+
+      @Test
+      fun `can create a court case with court appearance`() {
+        val courtCaseResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseWithCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(courtCaseResponse.id).isNotNull()
+        assertThat(courtCaseResponse.courtAppearanceIds.size).isEqualTo(1)
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("courtId").isEqualTo("COURT1")
+          .jsonPath("caseStatus.code").isEqualTo("A")
+          .jsonPath("caseStatus.description").isEqualTo("Active")
+          .jsonPath("legalCaseType.code").isEqualTo("A")
+          .jsonPath("legalCaseType.description").isEqualTo("Adult")
+          .jsonPath("beginDate").isEqualTo("2023-01-01")
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[0].startTime").isEqualTo("2023-01-05T09:00:00")
+          .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Court Appearance")
+          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[0].directionCode").doesNotExist()
+          .jsonPath("courtEvents[0].judgeName").doesNotExist()
+          .jsonPath("courtEvents[0].courtId").isEqualTo("ABDRCT")
+          .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("ENT")
+          .jsonPath("courtEvents[0].commentText").doesNotExist()
+          .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].nextEventDate").isEqualTo("2023-01-10")
+          .jsonPath("courtEvents[0].nextEventStartTime").isEqualTo("2023-01-10T09:00:00")
+          .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
       }
 
       @Test
@@ -904,16 +954,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(createBasicCourtCaseRequest()),
           )
           .exchange()
-          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
           .returnResult().responseBody!!.id
 
         verify(telemetryClient).trackEvent(
           eq("court-case-created"),
           org.mockito.kotlin.check {
-            Assertions.assertThat(it).containsEntry("bookingId", latestBookingId.toString())
-            Assertions.assertThat(it).containsEntry("offenderNo", offenderNo)
-            Assertions.assertThat(it).containsEntry("court", "COURT1")
-            Assertions.assertThat(it).containsEntry("legalCaseType", "A")
+            assertThat(it).containsEntry("courtCaseId", courtCaseId.toString())
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("court", "COURT1")
+            assertThat(it).containsEntry("legalCaseType", "A")
           },
           isNull(),
         )
@@ -930,8 +981,29 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               {
               "startDate": "2023-01-01",
               "legalCaseType": "A",
-              "court": "COURT1",
+              "courtId": "COURT1",
               "status": "A"
+              }
+      """.trimIndent()
+
+    fun createCourtCaseWithCourtAppearanceRequest() =
+      """
+              {
+              "startDate": "2023-01-01",
+              "legalCaseType": "A",
+              "courtId": "COURT1",
+              "status": "A",
+              "courtAppearances" : [ {
+                  "eventDate" : "2023-01-05",
+                  "startTime" : "2023-01-05T09:00",
+                  "courtId": "ABDRCT",
+                  "courtEventType" : "CRT",
+                  "eventStatus" : "SCH",
+                  "outcomeReasonCode" : "ENT",
+                  "nextEventDate" : "2023-01-10",
+                  "nextEventStartTime" : "2023-01-10T09:00",
+                  "nextEventRequestFlag" : false
+                } ]
               }
       """.trimIndent()
   }

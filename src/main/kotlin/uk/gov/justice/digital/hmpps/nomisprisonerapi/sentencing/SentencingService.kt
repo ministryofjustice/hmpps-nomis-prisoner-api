@@ -14,7 +14,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -41,6 +43,8 @@ class SentencingService(
   private val legalCaseTypeRepository: ReferenceCodeRepository<LegalCaseType>,
   private val caseStatusRepository: ReferenceCodeRepository<CaseStatus>,
   private val agencyLocationRepository: AgencyLocationRepository,
+  private val eventStatusTypeRepository: ReferenceCodeRepository<EventStatus>,
+  private val movementReasonTypeRepository: ReferenceCodeRepository<MovementReason>,
 ) {
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
     findPrisoner(offenderNo).findLatestBooking()
@@ -70,26 +74,47 @@ class SentencingService(
   @Audit
   fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) =
     findPrisoner(offenderNo).findLatestBooking().let { booking ->
-      val courtCaseId = courtCaseRepository.save(
-        CourtCase(
-          offenderBooking = booking,
-          legalCaseType = lookupLegalCaseType(request.legalCaseType),
-          beginDate = request.startDate,
-          caseStatus = lookupCaseStatus(request.status),
-          court = lookupEstablishment(request.court),
-        ),
-      ).id
-      telemetryClient.trackEvent(
-        "court-case-created",
-        mapOf(
-          "bookingId" to booking.bookingId.toString(),
-          "offenderNo" to offenderNo,
-          "court" to request.court,
-          "legalCaseType" to request.legalCaseType,
-        ),
-        null,
+      val courtCase = CourtCase(
+        offenderBooking = booking,
+        legalCaseType = lookupLegalCaseType(request.legalCaseType),
+        beginDate = request.startDate,
+        caseStatus = lookupCaseStatus(request.status),
+        court = lookupEstablishment(request.courtId),
       )
-      CreateCourtCaseResponse(courtCaseId)
+      courtCase.courtEvents = request.courtAppearances.map { courtAppearanceRequest ->
+        CourtEvent(
+          offenderBooking = booking,
+          courtCase = courtCase,
+          eventDate = courtAppearanceRequest.eventDate,
+          startTime = courtAppearanceRequest.startTime,
+          courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+          eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
+          prison = lookupEstablishment(courtAppearanceRequest.courtId),
+          outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
+          nextEventRequestFlag = courtAppearanceRequest.nextEventRequestFlag,
+          nextEventDate = courtAppearanceRequest.nextEventDate,
+          nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+        )
+      }.toMutableList()
+      courtCaseRepository.save(
+        courtCase,
+      ).let { persistedCourtCase ->
+        telemetryClient.trackEvent(
+          "court-case-created",
+          mapOf(
+            "courtCaseId" to persistedCourtCase.id.toString(),
+            "bookingId" to booking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to request.courtId,
+            "legalCaseType" to request.legalCaseType,
+          ),
+          null,
+        )
+        CreateCourtCaseResponse(
+          id = persistedCourtCase.id,
+          courtAppearanceIds = persistedCourtCase.courtEvents.map { CreateCourtAppearanceResponse(it.id) },
+        )
+      }
     }
 
   fun getOffenderSentence(sentenceSequence: Long, bookingId: Long): SentenceResponse {
@@ -180,10 +205,18 @@ class SentencingService(
     CaseStatus.pk(code),
   ) ?: throw BadDataException("Case status $code not found")
 
-  private fun lookupEstablishment(establishmentId: String): AgencyLocation {
-    return agencyLocationRepository.findByIdOrNull(establishmentId)
-      ?: throw BadDataException("Establishment $establishmentId not found")
+  private fun lookupEstablishment(courtId: String): AgencyLocation {
+    return agencyLocationRepository.findByIdOrNull(courtId)
+      ?: throw BadDataException("Establishment $courtId not found")
   }
+
+  private fun lookupEventStatusType(code: String): EventStatus = eventStatusTypeRepository.findByIdOrNull(
+    EventStatus.pk(code),
+  ) ?: throw BadDataException("EventStatus Type $code not found")
+
+  private fun lookupMovementReasonType(code: String): MovementReason = movementReasonTypeRepository.findByIdOrNull(
+    MovementReason.pk(code),
+  ) ?: throw BadDataException("Movement reason $code not found")
 }
 
 private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseResponse(
@@ -195,7 +228,7 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   caseStatus = this.caseStatus.toCodeDescription(),
   legalCaseType = this.legalCaseType.toCodeDescription(),
   beginDate = this.beginDate,
-  establishmentId = this.court.id,
+  courtId = this.court.id,
   combinedCaseId = this.combinedCase?.id,
   lidsCaseNumber = this.lidsCaseNumber,
   lidsCaseId = this.lidsCaseId,
@@ -266,7 +299,7 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   eventStatus = this.eventStatus.toCodeDescription(),
   directionCode = this.directionCode?.toCodeDescription(),
   judgeName = this.judgeName,
-  prisonId = this.prison.id,
+  courtId = this.prison.id,
   outcomeReasonCode = this.outcomeReasonCode,
   commentText = this.commentText,
   orderRequestedFlag = this.orderRequestedFlag,

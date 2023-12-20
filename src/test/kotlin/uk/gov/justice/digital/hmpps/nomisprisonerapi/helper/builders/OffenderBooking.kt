@@ -130,7 +130,7 @@ interface BookingDsl {
     beginDate: LocalDate = LocalDate.now(),
     caseSequence: Int = 1,
     caseInfoNumber: String? = "AB1",
-    establishmentId: String = "COURT1",
+    courtId: String = "COURT1",
     combinedCase: CourtCase? = null,
     reportingStaff: Staff,
     statusUpdateStaff: Staff? = null,
