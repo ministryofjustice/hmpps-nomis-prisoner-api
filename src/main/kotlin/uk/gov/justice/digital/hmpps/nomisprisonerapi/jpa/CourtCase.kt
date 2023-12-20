@@ -106,7 +106,7 @@ class CourtCase(
   val lidsCombinedCaseId: Int? = null,
 
   @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val courtEvents: MutableList<CourtEvent> = mutableListOf(),
+  var courtEvents: MutableList<CourtEvent> = mutableListOf(),
 
   @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
   val offenderCharges: MutableList<OffenderCharge> = mutableListOf(),

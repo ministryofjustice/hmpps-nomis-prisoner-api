@@ -64,7 +64,7 @@ class CourtEvent(
   val courtEventType: MovementReason,
 
   // only 50 last used in 2009
-  val judgeName: String?,
+  val judgeName: String? = null,
 
   // optional and without referential integrity on DB but no nulls and all reference codes 100% match
   @ManyToOne
@@ -86,19 +86,19 @@ class CourtEvent(
   val prison: AgencyLocation,
 
   // nullable, no reference code match, look like integer codes that do not exist - db comment implies "CANC_RSN" which doesn't exist
-  val outcomeReasonCode: String?,
+  val outcomeReasonCode: String? = null,
 
-  val commentText: String?,
+  val commentText: String? = null,
 
   @Convert(converter = YesNoConverter::class)
   val nextEventRequestFlag: Boolean?, // 1 null in production
 
   @Convert(converter = YesNoConverter::class)
-  val orderRequestedFlag: Boolean?, // No 'Y' in production
+  val orderRequestedFlag: Boolean? = false, // No 'Y' in production
 
-  val nextEventDate: LocalDate?,
+  val nextEventDate: LocalDate? = null,
 
-  val nextEventStartTime: LocalDateTime?,
+  val nextEventStartTime: LocalDateTime? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -112,7 +112,7 @@ class CourtEvent(
       JoinColumnOrFormula(column = JoinColumn(name = "DIRECTION_CODE", referencedColumnName = "code")),
     ],
   )
-  val directionCode: DirectionType?,
+  val directionCode: DirectionType? = null,
 
   @Convert(converter = YesNoConverter::class)
   val holdFlag: Boolean? = false, // nulls exist

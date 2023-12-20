@@ -327,7 +327,7 @@ data class CourtCaseResponse(
   val caseStatus: CodeDescription,
   val legalCaseType: CodeDescription,
   val beginDate: LocalDate?,
-  val establishmentId: String,
+  val courtId: String,
   val combinedCaseId: Long?,
   val statusUpdateStaffId: Long?,
   val statusUpdateDate: LocalDate?,
@@ -353,7 +353,7 @@ data class CourtEventResponse(
   val eventStatus: CodeDescription,
   val directionCode: CodeDescription?,
   val judgeName: String?,
-  val prisonId: String,
+  val courtId: String,
   val outcomeReasonCode: String?,
   val commentText: String?,
   val orderRequestedFlag: Boolean?,
@@ -516,17 +516,59 @@ data class SentenceTermResponse(
 
 @Schema(description = "Court case create request")
 data class CreateCourtCaseRequest(
-  @Schema(description = "Court case start date", required = true)
   val startDate: LocalDate, // the warrant date in sentencing
-  @Schema(description = "Legal Case type", required = true)
   val legalCaseType: String, // either A for Adult or sentences to create new type
-  @Schema(description = "Court Id (establishment)", required = true)
-  val court: String, // either A for Adult or sentences to create new type
-  @Schema(description = "Case status", required = true)
+  val courtId: String, // Court Id (establishment) not in new service will need to use (one of ) appearance values
   val status: String, // ACTIVE, INACTIVE, CLOSED
+  val courtAppearances: List<CourtAppearanceRequest> = listOf(),
+
+    /* not currently provided by sentencing service:
+    caseSequence: Int,
+    caseStatus: String,
+    combinedCase: CourtCase?,
+    statusUpdateReason: String?,
+    statusUpdateComment: String?,
+    statusUpdateDate: LocalDate?,
+    statusUpdateStaff: Staff?,
+    lidsCaseId: Int?,
+    lidsCaseNumber: Int,
+    lidsCombinedCaseId: Int?
+    */
 )
 
 @Schema(description = "Create adjustment response")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateCourtCaseResponse(
   val id: Long,
+  val courtAppearanceIds: List<CreateCourtAppearanceResponse> = listOf(),
+)
+
+@Schema(description = "Create adjustment response")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateCourtAppearanceResponse(
+  val id: Long,
+)
+
+@Schema(description = "Court Event")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtAppearanceRequest(
+  val eventDate: LocalDate,
+  val startTime: LocalDateTime, // not in new service (but next event start time is)
+  val courtEventType: String,
+  val eventStatus: String,
+  val courtId: String, // Court Id (agy_loc_id)
+  val outcomeReasonCode: String?,
+  val nextEventRequestFlag: Boolean?, // will store "to be fixed" from new service if dates not known
+  val nextEventDate: LocalDate?,
+  val nextEventStartTime: LocalDateTime?,
+// val courtEventCharges: List<CourtEventChargeResponse>,
+// val courtOrders: List<CourtOrderResponse>,
+
+  /* not currently provided by sentencing service:
+  val commentText: String?, no sign in new service
+  val orderRequestedFlag: Boolean?,
+  val holdFlag: Boolean?,
+  val directionCode: CodeDescription?,
+  val judgeName: String?,
+   */
 )
