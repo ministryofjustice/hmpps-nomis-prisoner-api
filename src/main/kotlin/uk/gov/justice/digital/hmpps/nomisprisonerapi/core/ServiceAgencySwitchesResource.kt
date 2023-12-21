@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -108,6 +109,52 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       throw NotFoundException("Service $serviceCode not turned on for prison $prisonId")
     }
   }
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PostMapping("/service-prisons/{serviceCode}/prison/{prisonId}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Turn on a service for a prison",
+    description = "Turn on a service for a prison. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Created",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role SYNCHRONISATION_REPORTING",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not Found, the service or prison do not exist",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun createServicePrison(
+    @Schema(description = "The code of the service from the EXTERNAL_SERVICES table", example = "ACTIVITY") @PathVariable serviceCode: String,
+    @Schema(description = "The id of the prison", example = "MDI") @PathVariable prisonId: String,
+  ) = service.createServicePrison(serviceCode, prisonId)
 }
 
 @Schema(description = "A prison")
