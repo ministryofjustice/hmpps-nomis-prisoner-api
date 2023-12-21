@@ -74,6 +74,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 
 internal const val DPS_REFERRAL_PLACEHOLDER_HEARING = "DPS_REFERRAL_PLACEHOLDER"
 
@@ -1151,6 +1152,17 @@ class AdjudicationService(
     )
   }
 
+  private fun AdjudicationHearingResultAward.asDays() = this.sanctionDays + this.sanctionMonths.asDays(this.effectiveDate)
+  private operator fun Int?.plus(second: Int?): Int? = when {
+    this == null && second == null -> null
+    this == null -> second
+    second == null -> this
+    else -> this + second
+  }
+
+  private fun Int?.asDays(effectiveDate: LocalDate): Int? =
+    this?.let { ChronoUnit.DAYS.between(effectiveDate, effectiveDate.plusMonths(this.toLong())).toInt() }
+
   fun getADAHearingResultAwardSummary(bookingId: Long): AdjudicationADAAwardSummaryResponse {
     val booking = offenderBookingRepository.findByIdOrNull(bookingId)
       ?: throw NotFoundException("Prisoner with bookingId $bookingId not found")
@@ -1167,7 +1179,7 @@ class AdjudicationService(
       adaSummaries = awards.map {
         ADASummary(
           adjudicationNumber = it.incidentParty.adjudicationNumber!!,
-          days = it.sanctionDays ?: 0,
+          days = it.asDays() ?: 0,
           effectiveDate = it.effectiveDate,
           sanctionSequence = it.id.sanctionSequence,
           sanctionStatus = it.sanctionStatus?.toCodeDescription() ?: CodeDescription("UNKNOWN", "UNKNOWN"),
