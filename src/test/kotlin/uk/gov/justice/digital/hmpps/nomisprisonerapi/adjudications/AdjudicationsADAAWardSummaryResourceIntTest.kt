@@ -175,6 +175,14 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
                     sanctionDays = 20,
                     effectiveDate = LocalDate.parse("2023-03-04"),
                   )
+                  award(
+                    sanctionIndex = 8,
+                    statusCode = "QUASHED",
+                    sanctionCode = "ADA",
+                    sanctionMonths = 12,
+                    sanctionDays = 10,
+                    effectiveDate = LocalDate.parse("2023-03-04"),
+                  )
                 }
               }
             }
@@ -274,7 +282,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("adaSummaries.size()").isEqualTo("5")
+          .jsonPath("adaSummaries.size()").isEqualTo("6")
       }
 
       @Test
@@ -290,6 +298,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
           .jsonPath("adaSummaries[2].sanctionSequence").isEqualTo("5")
           .jsonPath("adaSummaries[3].sanctionSequence").isEqualTo("6")
           .jsonPath("adaSummaries[4].sanctionSequence").isEqualTo("7")
+          .jsonPath("adaSummaries[5].sanctionSequence").isEqualTo("8")
       }
 
       @Test
@@ -305,6 +314,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
           .jsonPath("adaSummaries[2].sanctionStatus.code").isEqualTo("SUSPENDED")
           .jsonPath("adaSummaries[3].sanctionStatus.code").isEqualTo("PROSPECTIVE")
           .jsonPath("adaSummaries[4].sanctionStatus.code").isEqualTo("QUASHED")
+          .jsonPath("adaSummaries[5].sanctionStatus.code").isEqualTo("QUASHED")
       }
 
       @Test
@@ -321,6 +331,17 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
           .jsonPath("adaSummaries[0].effectiveDate").isEqualTo("2022-01-03")
           .jsonPath("adaSummaries[0].sanctionStatus.code").isEqualTo("IMMEDIATE")
           .jsonPath("adaSummaries[0].sanctionStatus.description").isEqualTo("Immediate")
+      }
+
+      @Test
+      fun `ADA days calculated from months as well as days`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("adaSummaries[5].days").isEqualTo("376") // 1 year (on leap year) + 10 days
       }
     }
 
