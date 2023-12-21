@@ -275,6 +275,8 @@ data class HearingResultAward(
   val adjudicationNumber: Long,
   @Schema(description = "Username of person who created the record in NOMIS", required = true)
   val createdByUsername: String,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
 )
 
 fun Offender.toPrisoner(createUsername: String, dateAddedToIncident: LocalDate, comment: String? = null) =
