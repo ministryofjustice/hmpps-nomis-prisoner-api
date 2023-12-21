@@ -19,6 +19,7 @@ import org.hibernate.annotations.NotFoundAction
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Embeddable
 class AdjudicationHearingResultAwardId(
@@ -145,6 +146,10 @@ class AdjudicationHearingResultAward(
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
+
+  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
+  lateinit var whenCreated: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
