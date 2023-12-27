@@ -52,6 +52,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
@@ -104,6 +105,7 @@ class Repository(
   val offenderSentenceRepository: OffenderSentenceRepository,
   val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
   val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
+  val offenderChargeRepository: OffenderChargeRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -220,6 +222,7 @@ class Repository(
     adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
 
   fun delete(courtCase: CourtCase) = courtCaseRepository.deleteById(courtCase.id)
+  fun deleteOffenderChargeByBooking(bookingId: Long) = offenderChargeRepository.deleteByOffenderBooking_bookingId(bookingId = bookingId)
   fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
 
   // Builder lookups

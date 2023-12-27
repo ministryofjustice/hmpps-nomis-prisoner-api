@@ -402,7 +402,7 @@ data class OffenceResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtEventChargeResponse(
   val eventId: Long,
-  val offenderChargeId: Long,
+  val offenderCharge: OffenderChargeResponse,
   val offencesCount: Int?,
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
@@ -520,7 +520,7 @@ data class CreateCourtCaseRequest(
   val legalCaseType: String, // either A for Adult or sentences to create new type
   val courtId: String, // Court Id (establishment) not in new service will need to use (one of ) appearance values
   val status: String, // ACTIVE, INACTIVE, CLOSED
-  val courtAppearances: List<CourtAppearanceRequest> = listOf(),
+  val courtAppearance: CourtAppearanceRequest, // the prototype implies only 1 appearance can be associated with the case on creation
 
     /* not currently provided by sentencing service:
     caseSequence: Int,
@@ -547,6 +547,13 @@ data class CreateCourtCaseResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateCourtAppearanceResponse(
   val id: Long,
+  val courtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
+)
+
+@Schema(description = "Create adjustment response")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateCourtEventChargesResponse(
+  val offenderChargeId: Long,
 )
 
 @Schema(description = "Court Event")
@@ -561,7 +568,7 @@ data class CourtAppearanceRequest(
   val nextEventRequestFlag: Boolean?, // will store "to be fixed" from new service if dates not known
   val nextEventDate: LocalDate?,
   val nextEventStartTime: LocalDateTime?,
-// val courtEventCharges: List<CourtEventChargeResponse>,
+  val courtEventCharges: List<OffenderChargeRequest>, // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
 // val courtOrders: List<CourtOrderResponse>,
 
   /* not currently provided by sentencing service:
@@ -571,4 +578,30 @@ data class CourtAppearanceRequest(
   val directionCode: CodeDescription?,
   val judgeName: String?,
    */
+)
+
+@Schema(description = "Court Event")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderChargeRequest(
+  val offenceCode: String,
+  val statuteCode: String,
+  val offencesCount: Int?,
+  val offenceDate: LocalDate?,
+  val offenceEndDate: LocalDate?,
+  val resultCode1: String?,
+  val mostSeriousFlag: Boolean,
+
+  /*
+  val plea: String?,
+  val propertyValue: BigDecimal?,
+  val totalPropertyValue: BigDecimal?,
+  val cjitCode1: String?,
+  val cjitCode2: String?,
+  val cjitCode3: String?,
+  val chargeStatus: String?,
+  val resultCode2: String?,
+  val resultCode1Indicator: String?,
+  val resultCode2Indicator: String?,
+  val lidsOffenceNumber: Int?,
+  */
 )

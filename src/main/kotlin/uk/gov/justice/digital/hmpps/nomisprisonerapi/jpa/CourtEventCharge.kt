@@ -42,10 +42,10 @@ class CourtEventCharge(
   @Column(name = "NO_OF_OFFENCES")
   val offencesCount: Int? = 0, // offences taken into consideration button on OCDCCASE
 
-  val offenceDate: LocalDate?,
+  val offenceDate: LocalDate? = null,
 
   @Column(name = "OFFENCE_RANGE_DATE")
-  val offenceEndDate: LocalDate?,
+  val offenceEndDate: LocalDate? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -59,34 +59,34 @@ class CourtEventCharge(
       JoinColumnOrFormula(column = JoinColumn(name = "PLEA_CODE", referencedColumnName = "code")),
     ],
   )
-  val plea: PleaStatusType?,
+  val plea: PleaStatusType? = null,
 
-  val propertyValue: BigDecimal?,
+  val propertyValue: BigDecimal? = null,
 
-  val totalPropertyValue: BigDecimal?, // offences taken into consideration button on OCDCCASE
+  val totalPropertyValue: BigDecimal? = null, // offences taken into consideration button on OCDCCASE
 
   @Column(name = "CJIT_OFFENCE_CODE_1")
-  val cjitCode1: String?,
+  val cjitCode1: String? = null,
 
   @Column(name = "CJIT_OFFENCE_CODE_2")
-  val cjitCode2: String?,
+  val cjitCode2: String? = null,
 
   @Column(name = "CJIT_OFFENCE_CODE_3")
-  val cjitCode3: String?,
+  val cjitCode3: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RESULT_CODE_1")
-  val resultCode1: OffenceResultCode?,
+  val resultCode1: OffenceResultCode? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RESULT_CODE_2")
-  val resultCode2: OffenceResultCode?,
+  val resultCode2: OffenceResultCode? = null,
 
   @Column(name = "RESULT_CODE_1_INDICATOR")
-  val resultCode1Indicator: String?,
+  val resultCode1Indicator: String? = null,
 
   @Column(name = "RESULT_CODE_2_INDICATOR")
-  val resultCode2Indicator: String?,
+  val resultCode2Indicator: String? = null,
 
   @Convert(converter = YesNoConverter::class)
   val mostSeriousFlag: Boolean,

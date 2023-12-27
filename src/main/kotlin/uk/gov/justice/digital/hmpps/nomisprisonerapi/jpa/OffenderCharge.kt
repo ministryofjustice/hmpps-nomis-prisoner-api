@@ -48,7 +48,7 @@ class OffenderCharge(
         referencedColumnName = "OFFENCE_CODE",
       ),
       JoinColumn(
-        name = "STATUTE_CODE",
+        name = "STATUTE_CODE", // statute code
         referencedColumnName = "STATUTE_CODE",
       ),
     ],
@@ -58,10 +58,10 @@ class OffenderCharge(
   @Column(name = "NO_OF_OFFENCES")
   val offencesCount: Int? = 0,
 
-  val offenceDate: LocalDate?,
+  val offenceDate: LocalDate? = null,
 
   @Column(name = "OFFENCE_RANGE_DATE")
-  val offenceEndDate: LocalDate?,
+  val offenceEndDate: LocalDate? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -75,20 +75,20 @@ class OffenderCharge(
       JoinColumnOrFormula(column = JoinColumn(name = "PLEA_CODE", referencedColumnName = "code")),
     ],
   )
-  val plea: PleaStatusType?,
+  val plea: PleaStatusType? = null,
 
-  val propertyValue: BigDecimal?,
+  val propertyValue: BigDecimal? = null,
 
-  val totalPropertyValue: BigDecimal?,
+  val totalPropertyValue: BigDecimal? = null,
 
   @Column(name = "CJIT_OFFENCE_CODE_1")
-  val cjitCode1: String?,
+  val cjitCode1: String? = null,
 
   @Column(name = "CJIT_OFFENCE_CODE_2")
-  val cjitCode2: String?,
+  val cjitCode2: String? = null,
 
   @Column(name = "CJIT_OFFENCE_CODE_3")
-  val cjitCode3: String?,
+  val cjitCode3: String? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -102,21 +102,21 @@ class OffenderCharge(
       JoinColumnOrFormula(column = JoinColumn(name = "CHARGE_STATUS", referencedColumnName = "code")),
     ],
   )
-  val chargeStatus: ChargeStatusType?,
+  val chargeStatus: ChargeStatusType? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RESULT_CODE_1")
-  val resultCode1: OffenceResultCode?,
+  val resultCode1: OffenceResultCode? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RESULT_CODE_2")
-  val resultCode2: OffenceResultCode?,
+  val resultCode2: OffenceResultCode? = null,
 
   @Column(name = "RESULT_CODE_1_INDICATOR")
-  val resultCode1Indicator: String?,
+  val resultCode1Indicator: String? = null,
 
   @Column(name = "RESULT_CODE_2_INDICATOR")
-  val resultCode2Indicator: String?,
+  val resultCode2Indicator: String? = null,
 
   @Convert(converter = YesNoConverter::class)
   val mostSeriousFlag: Boolean = false,
@@ -125,7 +125,7 @@ class OffenderCharge(
   @JoinColumn(name = "CASE_ID")
   val courtCase: CourtCase,
 
-  val lidsOffenceNumber: Int?, // always populated in prod but presumably won't be by DPS
+  val lidsOffenceNumber: Int? = null, // always populated in prod but presumably won't be by DPS
 
   /* COLUMNS NOT MAPPED
     CHARGE_SEQ - not used
