@@ -118,7 +118,7 @@ class CourtEvent(
   val holdFlag: Boolean? = false, // nulls exist
 
   @OneToMany(mappedBy = "id.courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val courtEventCharges: MutableList<CourtEventCharge> = mutableListOf(),
+  var courtEventCharges: MutableList<CourtEventCharge> = mutableListOf(),
 
   @OneToMany(mappedBy = "courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   val courtOrders: MutableList<CourtOrder> = mutableListOf(),

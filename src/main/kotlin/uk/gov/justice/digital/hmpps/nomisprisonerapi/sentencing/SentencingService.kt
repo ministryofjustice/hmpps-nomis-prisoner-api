@@ -13,11 +13,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
@@ -26,7 +28,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -45,6 +49,8 @@ class SentencingService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val eventStatusTypeRepository: ReferenceCodeRepository<EventStatus>,
   private val movementReasonTypeRepository: ReferenceCodeRepository<MovementReason>,
+  private val offenceRepository: OffenceRepository,
+  private val offenderChargeRepository: OffenderChargeRepository,
 ) {
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
     findPrisoner(offenderNo).findLatestBooking()
@@ -74,45 +80,85 @@ class SentencingService(
   @Audit
   fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) =
     findPrisoner(offenderNo).findLatestBooking().let { booking ->
-      val courtCase = CourtCase(
-        offenderBooking = booking,
-        legalCaseType = lookupLegalCaseType(request.legalCaseType),
-        beginDate = request.startDate,
-        caseStatus = lookupCaseStatus(request.status),
-        court = lookupEstablishment(request.courtId),
-      )
-      courtCase.courtEvents = request.courtAppearances.map { courtAppearanceRequest ->
-        CourtEvent(
+
+      val courtCase = courtCaseRepository.saveAndFlush(
+        CourtCase(
           offenderBooking = booking,
-          courtCase = courtCase,
-          eventDate = courtAppearanceRequest.eventDate,
-          startTime = courtAppearanceRequest.startTime,
-          courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-          eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
-          prison = lookupEstablishment(courtAppearanceRequest.courtId),
-          outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
-          nextEventRequestFlag = courtAppearanceRequest.nextEventRequestFlag,
-          nextEventDate = courtAppearanceRequest.nextEventDate,
-          nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
-        )
-      }.toMutableList()
-      courtCaseRepository.save(
-        courtCase,
-      ).let { persistedCourtCase ->
+          legalCaseType = lookupLegalCaseType(request.legalCaseType),
+          beginDate = request.startDate,
+          caseStatus = lookupCaseStatus(request.status),
+          court = lookupEstablishment(request.courtId),
+        ),
+      )
+      courtCase.courtEvents.addAll(
+        request.courtAppearance.let { courtAppearanceRequest ->
+          mutableListOf(
+            CourtEvent(
+              offenderBooking = booking,
+              courtCase = courtCase,
+              eventDate = courtAppearanceRequest.eventDate,
+              startTime = courtAppearanceRequest.startTime,
+              courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+              eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
+              prison = lookupEstablishment(courtAppearanceRequest.courtId),
+              outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
+              nextEventRequestFlag = courtAppearanceRequest.nextEventRequestFlag,
+              nextEventDate = courtAppearanceRequest.nextEventDate,
+              nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+            ).also { courtEvent ->
+              courtAppearanceRequest.courtEventCharges.map { offenderChargeRequest ->
+                // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
+                val offenderCharge = OffenderCharge(
+                  courtCase = courtCase,
+                  offenderBooking = booking,
+                  offence = lookupOffence(offenderChargeRequest.offenceCode, offenderChargeRequest.statuteCode),
+                  offenceDate = offenderChargeRequest.offenceDate,
+                  offenceEndDate = offenderChargeRequest.offenceEndDate,
+                  offencesCount = offenderChargeRequest.offencesCount,
+                )
+                offenderChargeRepository.saveAndFlush(offenderCharge)
+                courtEvent.courtEventCharges.add(
+                  CourtEventCharge(
+                    CourtEventChargeId(
+                      courtEvent = courtEvent,
+                      offenderCharge = offenderCharge,
+                    ),
+                    offenceDate = offenderChargeRequest.offenceDate,
+                    offenceEndDate = offenderChargeRequest.offenceEndDate,
+                    mostSeriousFlag = offenderChargeRequest.mostSeriousFlag,
+                    offencesCount = offenderChargeRequest.offencesCount,
+                  ),
+                )
+              }
+            },
+          )
+        },
+      )
+      CreateCourtCaseResponse(
+        id = courtCase.id,
+        courtAppearanceIds = courtCase.courtEvents.map
+        {
+          CreateCourtAppearanceResponse(
+            id = it.id,
+            courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+              CreateCourtEventChargesResponse(
+                courtEventCharge.id.offenderCharge.id,
+              )
+            },
+          )
+        },
+      ).also {
         telemetryClient.trackEvent(
           "court-case-created",
           mapOf(
-            "courtCaseId" to persistedCourtCase.id.toString(),
+            "courtCaseId" to courtCase.id.toString(),
             "bookingId" to booking.bookingId.toString(),
             "offenderNo" to offenderNo,
             "court" to request.courtId,
             "legalCaseType" to request.legalCaseType,
+            "courtEventId" to it.courtAppearanceIds[0].id.toString(),
           ),
           null,
-        )
-        CreateCourtCaseResponse(
-          id = persistedCourtCase.id,
-          courtAppearanceIds = persistedCourtCase.courtEvents.map { CreateCourtAppearanceResponse(it.id) },
         )
       }
     }
@@ -217,6 +263,10 @@ class SentencingService(
   private fun lookupMovementReasonType(code: String): MovementReason = movementReasonTypeRepository.findByIdOrNull(
     MovementReason.pk(code),
   ) ?: throw BadDataException("Movement reason $code not found")
+
+  private fun lookupOffence(offenceCode: String, statuteCode: String): Offence =
+    offenceRepository.findByIdOrNull(OffenceId(offenceCode = offenceCode, statuteCode = statuteCode))
+      ?: throw BadDataException("Offence with offence code $offenceCode: and statute code: $statuteCode not found")
 }
 
 private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseResponse(
@@ -272,7 +322,7 @@ private fun Offence.toOffence(): OffenceResponse = OffenceResponse(
 
 private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse =
   CourtEventChargeResponse(
-    offenderChargeId = this.id.offenderCharge.id,
+    offenderCharge = this.id.offenderCharge.toOffenderCharge(),
     eventId = this.id.courtEvent.id,
     offencesCount = this.offencesCount,
     offenceDate = this.offenceDate,

@@ -5,4 +5,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 
 @Repository
-interface OffenderChargeRepository : JpaRepository<OffenderCharge, Long>
+interface OffenderChargeRepository : JpaRepository<OffenderCharge, Long> {
+  fun deleteByOffenderBooking_bookingId(bookingId: Long)
+}
