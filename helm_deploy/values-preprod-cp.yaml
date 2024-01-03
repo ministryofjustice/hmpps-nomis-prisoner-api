@@ -1,0 +1,19 @@
+# Per environment values which override defaults in hmpps-nomis-prisoner-api/values.yaml
+
+generic-service:
+  replicaCount: 2
+
+  service:
+    enabled: true
+
+  ingress:
+    host: nomis-prisoner-api-preprod.prison.service.justice.gov.uk
+    dso_enabled: false
+
+  allowlist:
+    groups:
+      - internal
+
+  env:
+    APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
+    API_BASE_URL_OAUTH: https://sign-in-preprod.hmpps.service.justice.gov.uk/auth
