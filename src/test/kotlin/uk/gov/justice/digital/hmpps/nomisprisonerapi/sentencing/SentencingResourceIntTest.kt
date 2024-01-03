@@ -916,8 +916,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         assertThat(courtCaseResponse.id).isNotNull()
-        assertThat(courtCaseResponse.courtAppearanceIds.size).isEqualTo(1)
+        assertThat(courtCaseResponse.courtAppearanceIds.size).isEqualTo(2)
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds.size).isEqualTo(1)
+        assertThat(courtCaseResponse.courtAppearanceIds[1].courtEventChargesIds.size).isEqualTo(1)
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -959,6 +960,28 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-02")
           .jsonPath("offenderCharges[0].offence.description").isEqualTo("Actual bodily harm")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
+          // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
+          .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
+          .jsonPath("courtEvents[1].startTime").isEqualTo("2023-01-10T09:00:00")
+          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
+          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[1].directionCode").doesNotExist()
+          .jsonPath("courtEvents[1].judgeName").doesNotExist()
+          .jsonPath("courtEvents[1].courtId").isEqualTo("COURT1")
+          .jsonPath("courtEvents[1].outcomeReasonCode").doesNotExist()
+          .jsonPath("courtEvents[1].commentText").doesNotExist()
+          .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
+          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[1].nextEventRequestFlag").doesNotExist()
+          .jsonPath("courtEvents[1].nextEventDate").doesNotExist()
+          .jsonPath("courtEvents[1].nextEventStartTime").doesNotExist()
+          .jsonPath("courtEvents[1].createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[1].createdByUsername").isNotEmpty
+          // court charges are copied from originating court appearance
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("M1")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(1)
       }
 
       @Test
@@ -1022,6 +1045,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       nextEventDate: LocalDate = LocalDate.of(2023, 1, 10),
       nextEventStartTime: LocalDateTime = LocalDateTime.of(2023, 1, 10, 9, 0),
       nextEventRequestFlag: Boolean = false,
+      nextCourtId: String = "COURT1",
       courtEventCharges: MutableList<OffenderChargeRequest> = mutableListOf(createOffenderChargeRequest()),
     ) =
       CourtAppearanceRequest(
@@ -1035,6 +1059,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         nextEventRequestFlag = nextEventRequestFlag,
         outcomeReasonCode = outcomeReasonCode,
         courtEventCharges = courtEventCharges,
+        nextCourtId = nextCourtId,
       )
 
     private fun createOffenderChargeRequest(

@@ -91,7 +91,7 @@ class CourtEvent(
   val commentText: String? = null,
 
   @Convert(converter = YesNoConverter::class)
-  val nextEventRequestFlag: Boolean?, // 1 null in production
+  val nextEventRequestFlag: Boolean? = null, // 1 null in production
 
   @Convert(converter = YesNoConverter::class)
   val orderRequestedFlag: Boolean? = false, // No 'Y' in production

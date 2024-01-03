@@ -134,6 +134,33 @@ class SentencingService(
           )
         },
       )
+      request.courtAppearance.nextEventDate?.let {
+        courtCase.courtEvents.add(
+          CourtEvent(
+            offenderBooking = booking,
+            courtCase = courtCase,
+            eventDate = courtCase.courtEvents[0].nextEventDate!!,
+            startTime = courtCase.courtEvents[0].nextEventStartTime!!,
+            courtEventType = courtCase.courtEvents[0].courtEventType,
+            eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm scheduled is always the status for next appearance
+            prison = lookupEstablishment(request.courtAppearance.nextCourtId),
+          ).also { nextCourtEvent ->
+            // copy all charges across to 'next' court appearance
+            nextCourtEvent.courtEventCharges.add(
+              CourtEventCharge(
+                CourtEventChargeId(
+                  courtEvent = nextCourtEvent,
+                  offenderCharge = courtCase.courtEvents[0].courtEventCharges[0].id.offenderCharge,
+                ),
+                offenceDate = courtCase.courtEvents[0].courtEventCharges[0].offenceDate,
+                offenceEndDate = courtCase.courtEvents[0].courtEventCharges[0].offenceEndDate,
+                mostSeriousFlag = courtCase.courtEvents[0].courtEventCharges[0].mostSeriousFlag,
+                offencesCount = courtCase.courtEvents[0].courtEventCharges[0].offencesCount,
+              ),
+            )
+          },
+        )
+      }
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map

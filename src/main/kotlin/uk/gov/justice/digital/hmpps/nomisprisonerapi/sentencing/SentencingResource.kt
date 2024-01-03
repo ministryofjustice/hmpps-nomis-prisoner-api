@@ -569,6 +569,7 @@ data class CourtAppearanceRequest(
   val nextEventDate: LocalDate?,
   val nextEventStartTime: LocalDateTime?,
   val courtEventCharges: List<OffenderChargeRequest>, // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
+  val nextCourtId: String, // nomis UI doesn't allow this during a create but DPS does
 // val courtOrders: List<CourtOrderResponse>,
 
   /* not currently provided by sentencing service:
