@@ -53,6 +53,34 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
   )
   fun findActiveAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageable: Pageable): Page<Long>
 
+  @Query(
+    value = """
+       select 
+         o.nomsId as nomsId, 
+         ca.courseActivityId as courseActivityId, 
+         ca.description as courseActivityDescription
+       from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
+       join Offender o on ob.offender = o
+       join CourseActivity ca on opp.courseActivity.courseActivityId = ca.courseActivityId 
+       join CourseScheduleRule csr on ca = csr.courseActivity
+       where opp.prison.id = :prisonId 
+       and opp.programStatus.code = 'ALLOC'
+       and (opp.endDate is null or opp.endDate > current_date)
+       and opp.suspended = true
+       and ob.active = true
+       and ob.location.id = :prisonId
+       and ca.prison.id = :prisonId
+       and ca.active = true
+       and ca.scheduleStartDate <= current_date
+       and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
+       and ca.program.programCode not in :excludeProgramCodes
+       and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
+       and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
+  """,
+  )
+  fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<SuspendedAllocations>
+
   @Suppress("SqlNoDataSourceInspection")
   @Modifying
   @Query(
@@ -85,4 +113,10 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
     """,
   )
   fun findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId: String, prisonerStatusCode: String, date: LocalDate = LocalDate.now()): List<BookingCount>
+}
+
+interface SuspendedAllocations {
+  fun getNomsId(): String
+  fun getCourseActivityId(): Long
+  fun getCourseActivityDescription(): String
 }

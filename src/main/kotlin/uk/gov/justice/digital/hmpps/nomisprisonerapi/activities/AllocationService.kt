@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AllocationExclusion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AllocationReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetAllocationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationResponse
@@ -70,6 +71,19 @@ class AllocationService(
     return findPrisonOrThrow(prisonId)
       .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, excludePrograms, courseActivityId, pageRequest) }
       .map { FindActiveAllocationIdsResponse(it) }
+  }
+
+  fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindSuspendedAllocationsResponse> {
+    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
+    return findPrisonOrThrow(prisonId)
+      .let { offenderProgramProfileRepository.findSuspendedAllocations(prisonId, excludePrograms, courseActivityId) }
+      .map {
+        FindSuspendedAllocationsResponse(
+          offenderNo = it.getNomsId(),
+          courseActivityId = it.getCourseActivityId(),
+          courseActivityDescription = it.getCourseActivityDescription(),
+        )
+      }
   }
 
   fun getAllocation(allocationId: Long): GetAllocationResponse =
