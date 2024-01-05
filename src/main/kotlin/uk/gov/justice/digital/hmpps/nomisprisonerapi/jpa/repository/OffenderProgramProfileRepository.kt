@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.BookingCount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
@@ -52,6 +53,31 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
   """,
   )
   fun findActiveAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageable: Pageable): Page<Long>
+
+  @Query(
+    value = """
+       select new uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse(o.nomsId, ca.courseActivityId, ca.description)
+       from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
+       join Offender o on ob.offender = o
+       join CourseActivity ca on opp.courseActivity.courseActivityId = ca.courseActivityId 
+       join CourseScheduleRule csr on ca = csr.courseActivity
+       where opp.prison.id = :prisonId 
+       and opp.programStatus.code = 'ALLOC'
+       and (opp.endDate is null or opp.endDate > current_date)
+       and opp.suspended = true
+       and ob.active = true
+       and ob.location.id = :prisonId
+       and ca.prison.id = :prisonId
+       and ca.active = true
+       and ca.scheduleStartDate <= current_date
+       and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
+       and ca.program.programCode not in :excludeProgramCodes
+       and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
+       and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
+  """,
+  )
+  fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageable: Pageable): List<FindSuspendedAllocationsResponse>
 
   @Suppress("SqlNoDataSourceInspection")
   @Modifying
