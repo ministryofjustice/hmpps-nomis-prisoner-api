@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.BookingCount
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
@@ -56,7 +55,10 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
 
   @Query(
     value = """
-       select new uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse(o.nomsId, ca.courseActivityId, ca.description)
+       select 
+         o.nomsId as nomsId, 
+         ca.courseActivityId as courseActivityId, 
+         ca.description as courseActivityDescription
        from OffenderProgramProfile opp
        join OffenderBooking ob on opp.offenderBooking = ob
        join Offender o on ob.offender = o
@@ -77,7 +79,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
   """,
   )
-  fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageable: Pageable): List<FindSuspendedAllocationsResponse>
+  fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<SuspendedAllocations>
 
   @Suppress("SqlNoDataSourceInspection")
   @Modifying
@@ -111,4 +113,10 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
     """,
   )
   fun findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId: String, prisonerStatusCode: String, date: LocalDate = LocalDate.now()): List<BookingCount>
+}
+
+interface SuspendedAllocations {
+  fun getNomsId(): String
+  fun getCourseActivityId(): Long
+  fun getCourseActivityDescription(): String
 }
