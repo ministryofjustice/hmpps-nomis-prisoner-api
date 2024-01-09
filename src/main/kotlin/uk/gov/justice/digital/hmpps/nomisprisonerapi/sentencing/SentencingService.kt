@@ -88,6 +88,7 @@ class SentencingService(
           beginDate = request.startDate,
           caseStatus = lookupCaseStatus(request.status),
           court = lookupEstablishment(request.courtId),
+          caseSequence = courtCaseRepository.getNextCaseSequence(booking),
         ),
       )
       courtCase.courtEvents.addAll(
