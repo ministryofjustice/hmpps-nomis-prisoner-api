@@ -902,6 +902,49 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `can create multiple cases for the same prisoner`() {
+        val firstCourtCaseId = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequestHierarchy(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/$firstCourtCaseId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+
+        val secondCourtCaseId = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequestHierarchy(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/$secondCourtCaseId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(2)
+      }
+
+      @Test
       fun `can create a court case with court appearance`() {
         val courtCaseResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
