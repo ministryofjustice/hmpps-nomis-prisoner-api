@@ -135,6 +135,7 @@ class CourtEventBuilder(
     holdFlag = holdFlag,
     nextEventStartTime = nextEventStartTime,
     nextEventDate = nextEventDate,
+    directionCode = repository.lookupDirectionType(DirectionType.OUT)
   )
     .let { repository.save(it) }
     .also { courtEvent = it }

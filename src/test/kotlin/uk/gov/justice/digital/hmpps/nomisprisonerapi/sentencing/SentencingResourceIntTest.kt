@@ -100,7 +100,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   judgeName = null,
                   nextEventStartTime = null,
                   nextEventDate = null,
-
                   orderRequestedFlag = null,
                   holdFlag = null,
                 )
@@ -200,7 +199,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].startTime").isEqualTo(aDateTimeString)
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Trial")
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[0].directionCode.description").isEqualTo("In")
+          .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").isEqualTo("Mike")
           .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
           .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("1046")
@@ -249,7 +248,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
-          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Actual bodily harm")
+          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1) // what is this?
           .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
           .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
@@ -297,14 +296,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].startTime").isEqualTo(aDateTimeString)
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Trial")
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[0].directionCode").doesNotExist()
+          .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").doesNotExist()
           .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
           .jsonPath("courtEvents[0].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").doesNotExist()
           .jsonPath("courtEvents[0].holdFlag").doesNotExist()
-          .jsonPath("courtEvents[0].nextEventRequestFlag").doesNotExist()
+          .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo("false")
           .jsonPath("courtEvents[0].nextEventDate").doesNotExist()
           .jsonPath("courtEvents[0].nextEventStartTime").doesNotExist()
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
@@ -725,7 +724,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
-          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Actual bodily harm")
+          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
           .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
@@ -986,7 +985,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].startTime").isEqualTo("2023-01-05T09:00:00")
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Court Appearance")
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[0].directionCode").doesNotExist()
+          .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").doesNotExist()
           .jsonPath("courtEvents[0].courtId").isEqualTo("ABDRCT")
           .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("ENT")
@@ -1005,21 +1004,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Actual bodily harm")
+          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
           .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
           .jsonPath("courtEvents[1].startTime").isEqualTo("2023-01-10T09:00:00")
           .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
           .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[1].directionCode").doesNotExist()
+          .jsonPath("courtEvents[1].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[1].judgeName").doesNotExist()
           .jsonPath("courtEvents[1].courtId").isEqualTo("COURT1")
           .jsonPath("courtEvents[1].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].nextEventRequestFlag").doesNotExist()
+          .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventDate").doesNotExist()
           .jsonPath("courtEvents[1].nextEventStartTime").doesNotExist()
           .jsonPath("courtEvents[1].createdDateTime").isNotEmpty
@@ -1228,7 +1227,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].startTime").isEqualTo("2023-01-05T09:00:00")
           .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
           .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[1].directionCode").doesNotExist()
+          .jsonPath("courtEvents[1].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[1].judgeName").doesNotExist()
           .jsonPath("courtEvents[1].courtId").isEqualTo("ABDRCT")
           .jsonPath("courtEvents[1].outcomeReasonCode").isEqualTo("ENT")
@@ -1246,7 +1245,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(1)
           .jsonPath("courtEvents[1].courtEventCharges[1].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[1].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
-          .jsonPath("courtEvents[1].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RC86354")
+          .jsonPath("courtEvents[1].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RR84700")
           .jsonPath("courtEvents[1].courtEventCharges[1].offencesCount").isEqualTo(1)
       }
 
@@ -1311,7 +1310,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     outcomeReasonCode: String = "ENT",
     nextEventDate: LocalDate = LocalDate.of(2023, 1, 10),
     nextEventStartTime: LocalDateTime = LocalDateTime.of(2023, 1, 10, 9, 0),
-    nextEventRequestFlag: Boolean = false,
     nextCourtId: String = "COURT1",
     courtEventCharges: MutableList<OffenderChargeRequest> = mutableListOf(createOffenderChargeRequest()),
   ) =

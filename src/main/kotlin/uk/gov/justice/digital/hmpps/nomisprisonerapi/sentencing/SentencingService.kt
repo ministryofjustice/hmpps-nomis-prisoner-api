@@ -145,6 +145,7 @@ class SentencingService(
             courtEventType = courtCase.courtEvents[0].courtEventType,
             eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm scheduled is always the status for next appearance
             prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
+            directionCode = lookupDirectionType(DirectionType.OUT),
           ).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
           },

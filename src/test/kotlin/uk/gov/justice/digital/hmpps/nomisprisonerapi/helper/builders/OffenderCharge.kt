@@ -64,7 +64,6 @@ class OffenderChargeBuilder(
 
   fun build(
     offenceCode: String,
-    statuteCode: String,
     offencesCount: Int?,
     offenceDate: LocalDate?,
     offenceEndDate: LocalDate?,
@@ -86,7 +85,7 @@ class OffenderChargeBuilder(
   ): OffenderCharge = OffenderCharge(
     offenderBooking = offenderBooking,
     courtCase = courtCase,
-    offence = repository.lookupOffence(offenceCode, statuteCode),
+    offence = repository.lookupOffence(offenceCode, offenceCode.take(4)),
     offencesCount = offencesCount,
     offenceDate = offenceDate,
     offenceEndDate = offenceEndDate,
