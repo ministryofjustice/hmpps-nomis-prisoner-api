@@ -112,14 +112,12 @@ class CourtEventBuilder(
     eventStatusCode: String,
     outcomeReasonCode: String?,
     judgeName: String?,
-    directionCode: String?,
     eventDate: LocalDate,
     startTime: LocalDateTime,
     nextEventStartTime: LocalDateTime?,
     nextEventDate: LocalDate?,
     offenderBooking: OffenderBooking,
     courtCase: CourtCase?,
-    nextEventRequestFlag: Boolean?,
     orderRequestedFlag: Boolean?,
     holdFlag: Boolean?,
   ): CourtEvent = CourtEvent(
@@ -133,12 +131,11 @@ class CourtEventBuilder(
     prison = repository.lookupAgency(prison),
     outcomeReasonCode = outcomeReasonCode,
     commentText = commentText,
-    nextEventRequestFlag = nextEventRequestFlag,
     orderRequestedFlag = orderRequestedFlag,
     holdFlag = holdFlag,
     nextEventStartTime = nextEventStartTime,
     nextEventDate = nextEventDate,
-    directionCode = directionCode?.let { repository.lookupDirectionType(directionCode) },
+    directionCode = repository.lookupDirectionType(DirectionType.OUT),
   )
     .let { repository.save(it) }
     .also { courtEvent = it }

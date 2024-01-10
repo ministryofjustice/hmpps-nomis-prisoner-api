@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
@@ -50,6 +51,7 @@ class SentencingService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val eventStatusTypeRepository: ReferenceCodeRepository<EventStatus>,
   private val movementReasonTypeRepository: ReferenceCodeRepository<MovementReason>,
+  private val directionTypeRepository: ReferenceCodeRepository<DirectionType>,
   private val offenceRepository: OffenceRepository,
   private val offenderChargeRepository: OffenderChargeRepository,
   private val courtEventRepository: CourtEventRepository,
@@ -110,16 +112,16 @@ class SentencingService(
               eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
               prison = lookupEstablishment(courtAppearanceRequest.courtId),
               outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
-              nextEventRequestFlag = courtAppearanceRequest.nextEventRequestFlag,
               nextEventDate = courtAppearanceRequest.nextEventDate,
               nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+              directionCode = lookupDirectionType(DirectionType.OUT),
             ).also { courtEvent ->
               courtAppearanceRequest.courtEventCharges.map { offenderChargeRequest ->
                 // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
                 val offenderCharge = OffenderCharge(
                   courtCase = courtCase,
                   offenderBooking = booking,
-                  offence = lookupOffence(offenderChargeRequest.offenceCode, offenderChargeRequest.statuteCode),
+                  offence = lookupOffence(offenderChargeRequest.offenceCode, offenderChargeRequest.offenceCode.take(4)),
                   offenceDate = offenderChargeRequest.offenceDate,
                   offenceEndDate = offenderChargeRequest.offenceEndDate,
                   offencesCount = offenderChargeRequest.offencesCount, // TODO is this calculated or provided?
@@ -143,6 +145,7 @@ class SentencingService(
             courtEventType = courtCase.courtEvents[0].courtEventType,
             eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm scheduled is always the status for next appearance
             prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
+            directionCode = lookupDirectionType(DirectionType.OUT),
           ).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
           },
@@ -195,9 +198,9 @@ class SentencingService(
         eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
         prison = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
-        nextEventRequestFlag = courtAppearanceRequest.nextEventRequestFlag,
         nextEventDate = courtAppearanceRequest.nextEventDate,
         nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+        directionCode = lookupDirectionType(DirectionType.OUT),
       ).also { courtEvent ->
         request.existingOffenderChargeIds.map { offenderChargeId ->
           getOffenderCharge(offenderChargeId).let { offenderCharge ->
@@ -220,16 +223,15 @@ class SentencingService(
         courtEvent,
       )
       courtEventRepository.saveAndFlush(courtEvent)
-    }.let {
+    }.let { courtEvent ->
       CreateCourtAppearanceResponse(
-        id = it.id,
-        courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+        id = courtEvent.id,
+        courtEventChargesIds = courtEvent.courtEventCharges.map { courtEventCharge ->
           CreateCourtEventChargesResponse(
             courtEventCharge.id.offenderCharge.id,
           )
         },
-
-      ).also {
+      ).also { response ->
         telemetryClient.trackEvent(
           "court-appearance-created",
           mapOf(
@@ -237,7 +239,7 @@ class SentencingService(
             "bookingId" to booking.bookingId.toString(),
             "offenderNo" to offenderNo,
             "court" to courtAppearanceRequest.courtId,
-            "courtEventId" to it.id.toString(),
+            "courtEventId" to response.id.toString(),
           ),
           null,
         )
@@ -350,6 +352,10 @@ class SentencingService(
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(
     LegalCaseType.pk(code),
   ) ?: throw BadDataException("Legal Case Type $code not found")
+
+  private fun lookupDirectionType(code: String): DirectionType = directionTypeRepository.findByIdOrNull(
+    DirectionType.pk(code),
+  ) ?: throw BadDataException("Case status $code not found")
 
   private fun lookupCaseStatus(code: String): CaseStatus = caseStatusRepository.findByIdOrNull(
     CaseStatus.pk(code),

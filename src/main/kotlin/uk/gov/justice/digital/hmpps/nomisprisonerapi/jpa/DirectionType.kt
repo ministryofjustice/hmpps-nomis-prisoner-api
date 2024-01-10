@@ -8,6 +8,7 @@ import jakarta.persistence.Entity
 class DirectionType(code: String, description: String) : ReferenceCode(MOVE_DIRECT, code, description) {
 
   companion object {
+    const val OUT = "OUT"
     const val MOVE_DIRECT = "MOVE_DIRECT"
     fun pk(code: String): Pk = Pk(MOVE_DIRECT, code)
   }
