@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
@@ -51,6 +52,7 @@ class SentencingService(
   private val movementReasonTypeRepository: ReferenceCodeRepository<MovementReason>,
   private val offenceRepository: OffenceRepository,
   private val offenderChargeRepository: OffenderChargeRepository,
+  private val courtEventRepository: CourtEventRepository,
 ) {
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
     findPrisoner(offenderNo).findLatestBooking()
@@ -75,6 +77,11 @@ class SentencingService(
           courtCase.toCourtCaseResponse()
         }
     }
+  }
+
+  fun getOffenderCharge(id: Long): OffenderCharge {
+    return offenderChargeRepository.findByIdOrNull(id)
+      ?: throw NotFoundException("Offender Charge $id not found")
   }
 
   @Audit
@@ -115,26 +122,17 @@ class SentencingService(
                   offence = lookupOffence(offenderChargeRequest.offenceCode, offenderChargeRequest.statuteCode),
                   offenceDate = offenderChargeRequest.offenceDate,
                   offenceEndDate = offenderChargeRequest.offenceEndDate,
-                  offencesCount = offenderChargeRequest.offencesCount,
+                  offencesCount = offenderChargeRequest.offencesCount, // TODO is this calculated or provided?
                 )
-                offenderChargeRepository.saveAndFlush(offenderCharge)
-                courtEvent.courtEventCharges.add(
-                  CourtEventCharge(
-                    CourtEventChargeId(
-                      courtEvent = courtEvent,
-                      offenderCharge = offenderCharge,
-                    ),
-                    offenceDate = offenderChargeRequest.offenceDate,
-                    offenceEndDate = offenderChargeRequest.offenceEndDate,
-                    mostSeriousFlag = offenderChargeRequest.mostSeriousFlag,
-                    offencesCount = offenderChargeRequest.offencesCount,
-                  ),
-                )
+                courtCase.offenderCharges.add(offenderCharge)
+                courtCaseRepository.saveAndFlush(courtCase) // to access the newly created offender charges
+                courtEvent.initialiseCourtEventCharges()
               }
             },
           )
         },
       )
+
       request.courtAppearance.nextEventDate?.let {
         courtCase.courtEvents.add(
           CourtEvent(
@@ -144,24 +142,13 @@ class SentencingService(
             startTime = courtCase.courtEvents[0].nextEventStartTime!!,
             courtEventType = courtCase.courtEvents[0].courtEventType,
             eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm scheduled is always the status for next appearance
-            prison = lookupEstablishment(request.courtAppearance.nextCourtId),
+            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
           ).also { nextCourtEvent ->
-            // copy all charges across to 'next' court appearance
-            nextCourtEvent.courtEventCharges.add(
-              CourtEventCharge(
-                CourtEventChargeId(
-                  courtEvent = nextCourtEvent,
-                  offenderCharge = courtCase.courtEvents[0].courtEventCharges[0].id.offenderCharge,
-                ),
-                offenceDate = courtCase.courtEvents[0].courtEventCharges[0].offenceDate,
-                offenceEndDate = courtCase.courtEvents[0].courtEventCharges[0].offenceEndDate,
-                mostSeriousFlag = courtCase.courtEvents[0].courtEventCharges[0].mostSeriousFlag,
-                offencesCount = courtCase.courtEvents[0].courtEventCharges[0].offencesCount,
-              ),
-            )
+            nextCourtEvent.initialiseCourtEventCharges()
           },
         )
       }
+      courtCaseRepository.saveAndFlush(courtCase)
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
@@ -190,6 +177,73 @@ class SentencingService(
         )
       }
     }
+
+  @Audit
+  fun createCourtAppearance(
+    offenderNo: String,
+    caseId: Long,
+    request: CreateCourtAppearanceRequest,
+  ): CreateCourtAppearanceResponse = findPrisoner(offenderNo).findLatestBooking().let { booking ->
+    val courtAppearanceRequest = request.courtAppearance
+    findCourtCase(caseId, offenderNo).let { courtCase ->
+      val courtEvent = CourtEvent(
+        offenderBooking = booking,
+        courtCase = courtCase,
+        eventDate = courtAppearanceRequest.eventDate,
+        startTime = courtAppearanceRequest.startTime,
+        courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+        eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
+        prison = lookupEstablishment(courtAppearanceRequest.courtId),
+        outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
+        nextEventRequestFlag = courtAppearanceRequest.nextEventRequestFlag,
+        nextEventDate = courtAppearanceRequest.nextEventDate,
+        nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+      ).also { courtEvent ->
+        request.existingOffenderChargeIds.map { offenderChargeId ->
+          getOffenderCharge(offenderChargeId).let { offenderCharge ->
+            courtEvent.courtEventCharges.add(
+              CourtEventCharge(
+                CourtEventChargeId(
+                  courtEvent = courtEvent,
+                  offenderCharge = offenderCharge,
+                ),
+                offenceDate = offenderCharge.offenceDate,
+                offenceEndDate = offenderCharge.offenceEndDate,
+                mostSeriousFlag = offenderCharge.mostSeriousFlag,
+                offencesCount = offenderCharge.offencesCount,
+              ),
+            )
+          }
+        }
+      }
+      courtCase.courtEvents.add(
+        courtEvent,
+      )
+      courtEventRepository.saveAndFlush(courtEvent)
+    }.let {
+      CreateCourtAppearanceResponse(
+        id = it.id,
+        courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+          CreateCourtEventChargesResponse(
+            courtEventCharge.id.offenderCharge.id,
+          )
+        },
+
+      ).also {
+        telemetryClient.trackEvent(
+          "court-appearance-created",
+          mapOf(
+            "courtCaseId" to caseId.toString(),
+            "bookingId" to booking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to courtAppearanceRequest.courtId,
+            "courtEventId" to it.id.toString(),
+          ),
+          null,
+        )
+      }
+    }
+  }
 
   fun getOffenderSentence(sentenceSequence: Long, bookingId: Long): SentenceResponse {
     val offenderBooking = findOffenderBooking(bookingId)
@@ -256,6 +310,23 @@ class SentencingService(
       ?: throw NotFoundException("Offender sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
   }
 
+  private fun CourtEvent.initialiseCourtEventCharges() {
+    this.courtEventCharges.addAll(
+      this.courtCase!!.offenderCharges.map { offenderCharge ->
+        CourtEventCharge(
+          CourtEventChargeId(
+            courtEvent = this,
+            offenderCharge = offenderCharge,
+          ),
+          offenceDate = offenderCharge.offenceDate,
+          offenceEndDate = offenderCharge.offenceEndDate,
+          mostSeriousFlag = offenderCharge.mostSeriousFlag,
+          offencesCount = offenderCharge.offencesCount,
+        )
+      },
+    )
+  }
+
   private fun Offender.findLatestBooking(): OffenderBooking {
     return this.bookings.firstOrNull { it.bookingSequence == 1 }
       ?: throw BadDataException("Prisoner ${this.nomsId} has no bookings")
@@ -269,6 +340,11 @@ class SentencingService(
   private fun findOffenderBooking(id: Long): OffenderBooking {
     return offenderBookingRepository.findByIdOrNull(id)
       ?: throw NotFoundException("Offender booking $id not found")
+  }
+
+  private fun findCourtCase(id: Long, offenderNo: String): CourtCase {
+    return courtCaseRepository.findByIdOrNull(id)
+      ?: throw NotFoundException("Court case $id for $offenderNo not found")
   }
 
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(

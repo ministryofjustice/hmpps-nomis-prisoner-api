@@ -314,6 +314,89 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CreateCourtCaseRequest,
   ): CreateCourtCaseResponse =
     sentencingService.createCourtCase(offenderNo, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new Court Appearance",
+    description = "Required role NOMIS_SENTENCING Creates a new Court Appearance for the offender,latest booking and given Court Case",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CourtAppearanceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Created Court case",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court case does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCourtAppearance(
+    @Schema(description = "Booking Id", example = "12345", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "34565", required = true)
+    @PathVariable
+    caseId: Long,
+    @RequestBody @Valid
+    request: CreateCourtAppearanceRequest,
+  ): CreateCourtAppearanceResponse =
+    sentencingService.createCourtAppearance(offenderNo, caseId, request)
 }
 
 @Schema(description = "Court Case")
@@ -569,7 +652,7 @@ data class CourtAppearanceRequest(
   val nextEventDate: LocalDate?,
   val nextEventStartTime: LocalDateTime?,
   val courtEventCharges: List<OffenderChargeRequest>, // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
-  val nextCourtId: String, // nomis UI doesn't allow this during a create but DPS does
+  val nextCourtId: String?, // nomis UI doesn't allow this during a create but DPS does
 // val courtOrders: List<CourtOrderResponse>,
 
   /* not currently provided by sentencing service:
@@ -579,6 +662,14 @@ data class CourtAppearanceRequest(
   val directionCode: CodeDescription?,
   val judgeName: String?,
    */
+)
+
+@Schema(description = "Court Event")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateCourtAppearanceRequest(
+  val courtAppearance: CourtAppearanceRequest,
+  val existingOffenderChargeIds: List<Long>,
+  // TODO list of new (or ones to remove)
 )
 
 @Schema(description = "Court Event")

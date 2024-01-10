@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -194,7 +195,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("lidsCombinedCaseId").isEqualTo(3)
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("courtEvents[0].id").exists()
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
           .jsonPath("courtEvents[0].eventDate").isEqualTo(aDateString)
           .jsonPath("courtEvents[0].startTime").isEqualTo(aDateTimeString)
@@ -958,10 +959,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
           .returnResult().responseBody!!
 
-        assertThat(courtCaseResponse.id).isNotNull()
+        assertThat(courtCaseResponse.id).isGreaterThan(0)
         assertThat(courtCaseResponse.courtAppearanceIds.size).isEqualTo(2)
+        assertThat(courtCaseResponse.courtAppearanceIds[0].id).isGreaterThan(0)
+        assertThat(courtCaseResponse.courtAppearanceIds[1].id).isGreaterThan(0)
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds.size).isEqualTo(1)
         assertThat(courtCaseResponse.courtAppearanceIds[1].courtEventChargesIds.size).isEqualTo(1)
+        assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds[0].offenderChargeId).isGreaterThan(0)
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -978,6 +982,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("beginDate").isEqualTo("2023-01-01")
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[0].startTime").isEqualTo("2023-01-05T09:00:00")
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Court Appearance")
@@ -1061,67 +1066,289 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       repository.delete(prisonerAtMoorland)
       repository.deleteOffenderChargeByBooking(latestBookingId)
     }
-
-    private fun createCourtCaseRequestHierarchy(
-      courtId: String = "COURT1",
-      legalCaseType: String = "A",
-      startDate: LocalDate = LocalDate.of(2023, 1, 1),
-      status: String = "A",
-      courtAppearance: CourtAppearanceRequest = createCourtAppearanceRequest(),
-    ) =
-
-      CreateCourtCaseRequest(
-        courtId = courtId,
-        legalCaseType = legalCaseType,
-        startDate = startDate,
-        status = status,
-        courtAppearance = courtAppearance,
-      )
-
-    private fun createCourtAppearanceRequest(
-      eventDate: LocalDate = LocalDate.of(2023, 1, 5),
-      startTime: LocalDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
-      courtId: String = "ABDRCT",
-      courtEventType: String = "CRT",
-      eventStatus: String = "SCH",
-      outcomeReasonCode: String = "ENT",
-      nextEventDate: LocalDate = LocalDate.of(2023, 1, 10),
-      nextEventStartTime: LocalDateTime = LocalDateTime.of(2023, 1, 10, 9, 0),
-      nextEventRequestFlag: Boolean = false,
-      nextCourtId: String = "COURT1",
-      courtEventCharges: MutableList<OffenderChargeRequest> = mutableListOf(createOffenderChargeRequest()),
-    ) =
-      CourtAppearanceRequest(
-        eventDate = eventDate,
-        startTime = startTime,
-        courtId = courtId,
-        courtEventType = courtEventType,
-        eventStatus = eventStatus,
-        nextEventDate = nextEventDate,
-        nextEventStartTime = nextEventStartTime,
-        nextEventRequestFlag = nextEventRequestFlag,
-        outcomeReasonCode = outcomeReasonCode,
-        courtEventCharges = courtEventCharges,
-        nextCourtId = nextCourtId,
-      )
-
-    private fun createOffenderChargeRequest(
-      offenceCode: String = "M1",
-      statuteCode: String = "RC86",
-      offencesCount: Int? = 1,
-      offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
-      offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
-      resultCode1: String? = "1002",
-      mostSeriousFlag: Boolean = true,
-    ) =
-      OffenderChargeRequest(
-        offenceCode = offenceCode,
-        statuteCode = statuteCode,
-        offencesCount = offencesCount,
-        offenceDate = offenceDate,
-        offenceEndDate = offenceEndDate,
-        resultCode1 = resultCode1,
-        mostSeriousFlag = mostSeriousFlag,
-      )
   }
+
+  @Nested
+  @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{id}")
+  inner class CreateCourtAppearance {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private var latestBookingId: Long = 0
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var staff: Staff
+    private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndSentence() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland = offender(nomsId = offenderNo) {
+          booking(agencyLocationId = "MDI") {
+            courtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            ) {
+              offenderCharge1 = offenderCharge(offenceCode = "M1", plea = "G")
+              offenderCharge2 = offenderCharge()
+              courtEvent() {
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  plea = "NG", // overrides from the parent offender charge fields
+                )
+                courtEventCharge(
+                  offenderCharge = offenderCharge2,
+                )
+                courtOrder() {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+            }
+          }
+        }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when offender does not exist`() {
+        webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+      }
+
+      @Test
+      internal fun `404 when case does not exist`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/1234")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Court case 1234 for $offenderNo not found")
+      }
+    }
+
+    @Nested
+    inner class CreateCourtAppearanceSuccess {
+
+      @Test
+      fun `can add a new court appearance to a case`() {
+        val courtAppearanceResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtAppearanceRequest(existingOffenderChargeIds = listOf(offenderCharge1.id, offenderCharge2.id)),
+              ),
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateCourtAppearanceResponse::class.java)
+            .returnResult().responseBody!!
+
+        assertThat(courtAppearanceResponse.id).isGreaterThan(0)
+        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(2)
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[1].startTime").isEqualTo("2023-01-05T09:00:00")
+          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
+          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[1].directionCode").doesNotExist()
+          .jsonPath("courtEvents[1].judgeName").doesNotExist()
+          .jsonPath("courtEvents[1].courtId").isEqualTo("ABDRCT")
+          .jsonPath("courtEvents[1].outcomeReasonCode").isEqualTo("ENT")
+          .jsonPath("courtEvents[1].commentText").doesNotExist()
+          .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
+          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("courtEvents[1].nextEventDate").isEqualTo("2023-01-10")
+          .jsonPath("courtEvents[1].nextEventStartTime").isEqualTo("2023-01-10T09:00:00")
+          .jsonPath("courtEvents[1].createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[1].createdByUsername").isNotEmpty
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("M1")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("courtEvents[1].courtEventCharges[1].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[1].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[1].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RC86354")
+          .jsonPath("courtEvents[1].courtEventCharges[1].offencesCount").isEqualTo(1)
+      }
+
+      @Test
+      fun `will track telemetry for the create`() {
+        val createResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        verify(telemetryClient).trackEvent(
+          eq("court-appearance-created"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("court", "ABDRCT")
+            assertThat(it).containsEntry("courtEventId", createResponse.id.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+  }
+
+  private fun createCourtCaseRequestHierarchy(
+    courtId: String = "COURT1",
+    legalCaseType: String = "A",
+    startDate: LocalDate = LocalDate.of(2023, 1, 1),
+    status: String = "A",
+    courtAppearance: CourtAppearanceRequest = createCourtAppearance(),
+  ) =
+
+    CreateCourtCaseRequest(
+      courtId = courtId,
+      legalCaseType = legalCaseType,
+      startDate = startDate,
+      status = status,
+      courtAppearance = courtAppearance,
+    )
+
+  private fun createCourtAppearance(
+    eventDate: LocalDate = LocalDate.of(2023, 1, 5),
+    startTime: LocalDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
+    courtId: String = "ABDRCT",
+    courtEventType: String = "CRT",
+    eventStatus: String = "SCH",
+    outcomeReasonCode: String = "ENT",
+    nextEventDate: LocalDate = LocalDate.of(2023, 1, 10),
+    nextEventStartTime: LocalDateTime = LocalDateTime.of(2023, 1, 10, 9, 0),
+    nextEventRequestFlag: Boolean = false,
+    nextCourtId: String = "COURT1",
+    courtEventCharges: MutableList<OffenderChargeRequest> = mutableListOf(createOffenderChargeRequest()),
+  ) =
+    CourtAppearanceRequest(
+      eventDate = eventDate,
+      startTime = startTime,
+      courtId = courtId,
+      courtEventType = courtEventType,
+      eventStatus = eventStatus,
+      nextEventDate = nextEventDate,
+      nextEventStartTime = nextEventStartTime,
+      nextEventRequestFlag = nextEventRequestFlag,
+      outcomeReasonCode = outcomeReasonCode,
+      courtEventCharges = courtEventCharges,
+      nextCourtId = nextCourtId,
+    )
+
+  private fun createOffenderChargeRequest(
+    offenceCode: String = "M1",
+    statuteCode: String = "RC86",
+    offencesCount: Int? = 1,
+    offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
+    offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
+    resultCode1: String? = "1002",
+    mostSeriousFlag: Boolean = true,
+  ) =
+    OffenderChargeRequest(
+      offenceCode = offenceCode,
+      statuteCode = statuteCode,
+      offencesCount = offencesCount,
+      offenceDate = offenceDate,
+      offenceEndDate = offenceEndDate,
+      resultCode1 = resultCode1,
+      mostSeriousFlag = mostSeriousFlag,
+    )
+
+  private fun createCourtAppearanceRequest(
+    courtAppearance: CourtAppearanceRequest = createCourtAppearance(),
+    existingOffenderChargeIds: List<Long> = listOf(),
+  ) =
+    CreateCourtAppearanceRequest(
+      courtAppearance = courtAppearance,
+      existingOffenderChargeIds = existingOffenderChargeIds,
+    )
 }
