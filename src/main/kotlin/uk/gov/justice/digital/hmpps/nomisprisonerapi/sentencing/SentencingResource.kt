@@ -316,7 +316,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Court Appearance",
@@ -332,7 +332,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Created Court case",
+        description = "Created Court Appearance",
       ),
       ApiResponse(
         responseCode = "400",
@@ -387,7 +387,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     ],
   )
   fun createCourtAppearance(
-    @Schema(description = "Booking Id", example = "12345", required = true)
+    @Schema(description = "Offender no", example = "AB1234A", required = true)
     @PathVariable
     offenderNo: String,
     @Schema(description = "Case Id", example = "34565", required = true)
@@ -648,7 +648,6 @@ data class CourtAppearanceRequest(
   val eventStatus: String,
   val courtId: String, // Court Id (agy_loc_id)
   val outcomeReasonCode: String?,
-  val nextEventRequestFlag: Boolean?, // will store "to be fixed" from new service if dates not known
   val nextEventDate: LocalDate?,
   val nextEventStartTime: LocalDateTime?,
   val courtEventCharges: List<OffenderChargeRequest>, // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
@@ -676,7 +675,6 @@ data class CreateCourtAppearanceRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderChargeRequest(
   val offenceCode: String,
-  val statuteCode: String,
   val offencesCount: Int?,
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,

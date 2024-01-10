@@ -67,7 +67,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateDate = LocalDate.parse(aDateString),
                 statusUpdateStaff = staff,
               ) {
-                offenderCharge1 = offenderCharge(offenceCode = "M1", plea = "G")
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 val offenderCharge2 = offenderCharge()
                 courtEvent() {
                   courtEventCharge(
@@ -98,10 +98,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   commentText = null,
                   outcomeReasonCode = null,
                   judgeName = null,
-                  directionCode = null,
                   nextEventStartTime = null,
                   nextEventDate = null,
-                  nextEventRequestFlag = null,
+
                   orderRequestedFlag = null,
                   holdFlag = null,
                 )
@@ -577,7 +576,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           offender(nomsId = "A1234AB") {
             booking(agencyLocationId = "MDI") {
               courtCase = courtCase(reportingStaff = staff) {
-                offenderCharge = offenderCharge(offenceCode = "M1")
+                offenderCharge = offenderCharge(offenceCode = "RT88074")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
               }
               sentence = sentence(statusUpdateStaff = staff) {
@@ -1001,9 +1000,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
           .jsonPath("courtEvents[0].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[0].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("M1")
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("courtEvents[0].courtEventCharges[0].offencesCount").isEqualTo(1)
-          .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("M1")
+          .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-02")
           .jsonPath("offenderCharges[0].offence.description").isEqualTo("Actual bodily harm")
@@ -1028,7 +1027,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           // court charges are copied from originating court appearance
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("M1")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(1)
       }
 
@@ -1069,7 +1068,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{id}")
+  @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances")
   inner class CreateCourtAppearance {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
@@ -1080,7 +1079,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var offenderCharge2: OffenderCharge
 
     @BeforeEach
-    internal fun createPrisonerAndSentence() {
+    internal fun createPrisonerAndCourtCase() {
       nomisDataBuilder.build {
         staff = staff {
           account {}
@@ -1091,7 +1090,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(offenceCode = "M1", plea = "G")
+              offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge()
               courtEvent() {
                 courtEventCharge(
@@ -1117,7 +1116,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -1131,7 +1130,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -1145,7 +1144,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1161,7 +1160,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       internal fun `404 when offender does not exist`() {
-        webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}")
+        webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/court-appearances")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -1177,7 +1176,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `404 when case does not exist`() {
-        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/1234")
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/1234/court-appearances")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -1198,12 +1197,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can add a new court appearance to a case`() {
         val courtAppearanceResponse =
-          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
-                createCourtAppearanceRequest(existingOffenderChargeIds = listOf(offenderCharge1.id, offenderCharge2.id)),
+                createCourtAppearanceRequest(
+                  existingOffenderChargeIds = listOf(
+                    offenderCharge1.id,
+                    offenderCharge2.id,
+                  ),
+                ),
               ),
             )
             .exchange()
@@ -1238,7 +1242,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].createdByUsername").isNotEmpty
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
-          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("M1")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(1)
           .jsonPath("courtEvents[1].courtEventCharges[1].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[1].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
@@ -1248,17 +1252,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will track telemetry for the create`() {
-        val createResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createCourtAppearanceRequest(),
-            ),
-          )
-          .exchange()
-          .expectStatus().isCreated.expectBody(CreateCourtAppearanceResponse::class.java)
-          .returnResult().responseBody!!
+        val createResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtAppearanceRequest(),
+              ),
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateCourtAppearanceResponse::class.java)
+            .returnResult().responseBody!!
 
         verify(telemetryClient).trackEvent(
           eq("court-appearance-created"),
@@ -1318,15 +1323,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       eventStatus = eventStatus,
       nextEventDate = nextEventDate,
       nextEventStartTime = nextEventStartTime,
-      nextEventRequestFlag = nextEventRequestFlag,
       outcomeReasonCode = outcomeReasonCode,
       courtEventCharges = courtEventCharges,
       nextCourtId = nextCourtId,
     )
 
   private fun createOffenderChargeRequest(
-    offenceCode: String = "M1",
-    statuteCode: String = "RC86",
+    offenceCode: String = "RT88074",
     offencesCount: Int? = 1,
     offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
     offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
@@ -1335,7 +1338,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   ) =
     OffenderChargeRequest(
       offenceCode = offenceCode,
-      statuteCode = statuteCode,
       offencesCount = offencesCount,
       offenceDate = offenceDate,
       offenceEndDate = offenceEndDate,
