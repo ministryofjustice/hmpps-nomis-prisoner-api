@@ -645,7 +645,7 @@ data class CourtAppearanceRequest(
   val eventDate: LocalDate,
   val startTime: LocalDateTime, // not in new service (but next event start time is)
   val courtEventType: String,
-  val eventStatus: String,
+  // val eventStatus: String, // removing as can be initialised
   val courtId: String, // Court Id (agy_loc_id)
   val outcomeReasonCode: String?,
   val nextEventDate: LocalDate?,
