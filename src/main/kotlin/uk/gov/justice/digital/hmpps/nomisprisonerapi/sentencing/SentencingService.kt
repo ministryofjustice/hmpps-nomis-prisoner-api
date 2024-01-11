@@ -109,7 +109,7 @@ class SentencingService(
               eventDate = courtAppearanceRequest.eventDate,
               startTime = courtAppearanceRequest.startTime,
               courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-              eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
+              eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm rules for setting this
               prison = lookupEstablishment(courtAppearanceRequest.courtId),
               outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
               nextEventDate = courtAppearanceRequest.nextEventDate,
@@ -128,8 +128,8 @@ class SentencingService(
                 )
                 courtCase.offenderCharges.add(offenderCharge)
                 courtCaseRepository.saveAndFlush(courtCase) // to access the newly created offender charges
-                courtEvent.initialiseCourtEventCharges()
               }
+              courtEvent.initialiseCourtEventCharges()
             },
           )
         },
@@ -195,7 +195,7 @@ class SentencingService(
         eventDate = courtAppearanceRequest.eventDate,
         startTime = courtAppearanceRequest.startTime,
         courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-        eventStatus = lookupEventStatusType(courtAppearanceRequest.eventStatus),
+        eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm rules for setting this
         prison = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
         nextEventDate = courtAppearanceRequest.nextEventDate,

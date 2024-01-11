@@ -248,7 +248,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
-          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1) // what is this?
           .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
           .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
@@ -724,7 +725,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
-          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
           .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
@@ -961,9 +963,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtCaseResponse.courtAppearanceIds.size).isEqualTo(2)
         assertThat(courtCaseResponse.courtAppearanceIds[0].id).isGreaterThan(0)
         assertThat(courtCaseResponse.courtAppearanceIds[1].id).isGreaterThan(0)
-        assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds.size).isEqualTo(1)
-        assertThat(courtCaseResponse.courtAppearanceIds[1].courtEventChargesIds.size).isEqualTo(1)
+        assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds.size).isEqualTo(2)
+        assertThat(courtCaseResponse.courtAppearanceIds[1].courtEventChargesIds.size).isEqualTo(2)
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds[0].offenderChargeId).isGreaterThan(0)
+        assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds[1].offenderChargeId).isGreaterThan(0)
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -1004,7 +1007,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("offenderCharges[0].offence.description").isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
           .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
@@ -1028,6 +1032,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("courtEvents[1].courtEventCharges[1].offenceDate").isEqualTo("2023-01-02")
+          .jsonPath("courtEvents[1].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-03")
+          .jsonPath("courtEvents[1].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("HP03001")
+          .jsonPath("courtEvents[1].courtEventCharges[1].offencesCount").isEqualTo(1)
       }
 
       @Test
@@ -1306,19 +1314,24 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     startTime: LocalDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
     courtId: String = "ABDRCT",
     courtEventType: String = "CRT",
-    eventStatus: String = "SCH",
     outcomeReasonCode: String = "ENT",
     nextEventDate: LocalDate = LocalDate.of(2023, 1, 10),
     nextEventStartTime: LocalDateTime = LocalDateTime.of(2023, 1, 10, 9, 0),
     nextCourtId: String = "COURT1",
-    courtEventCharges: MutableList<OffenderChargeRequest> = mutableListOf(createOffenderChargeRequest()),
+    courtEventCharges: MutableList<OffenderChargeRequest> = mutableListOf(
+      createOffenderChargeRequest(),
+      createOffenderChargeRequest(
+        offenceDate = LocalDate.of(2023, 1, 2),
+        offenceEndDate = LocalDate.of(2023, 1, 3),
+        offenceCode = "HP03001",
+      ),
+    ),
   ) =
     CourtAppearanceRequest(
       eventDate = eventDate,
       startTime = startTime,
       courtId = courtId,
       courtEventType = courtEventType,
-      eventStatus = eventStatus,
       nextEventDate = nextEventDate,
       nextEventStartTime = nextEventStartTime,
       outcomeReasonCode = outcomeReasonCode,
