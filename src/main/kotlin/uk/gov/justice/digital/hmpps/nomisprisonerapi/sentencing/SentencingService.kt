@@ -109,7 +109,7 @@ class SentencingService(
               eventDate = courtAppearanceRequest.eventDate,
               startTime = courtAppearanceRequest.startTime,
               courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-              eventStatus = lookupEventStatusType(EventStatus.SCHEDULED),
+              eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm rules for setting this
               prison = lookupEstablishment(courtAppearanceRequest.courtId),
               outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
               nextEventDate = courtAppearanceRequest.nextEventDate,
@@ -195,7 +195,7 @@ class SentencingService(
         eventDate = courtAppearanceRequest.eventDate,
         startTime = courtAppearanceRequest.startTime,
         courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-        eventStatus = lookupEventStatusType(EventStatus.SCHEDULED),
+        eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm rules for setting this
         prison = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
         nextEventDate = courtAppearanceRequest.nextEventDate,
