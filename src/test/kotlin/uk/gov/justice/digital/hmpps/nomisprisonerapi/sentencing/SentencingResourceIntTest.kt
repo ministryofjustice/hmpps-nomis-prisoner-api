@@ -757,14 +757,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases")
   inner class CreateCourtCase {
     private val offenderNo: String = "A1234AB"
+    private val offenderLeedsNo: String = "A1234AC"
     private var latestBookingId: Long = 0
     private lateinit var prisonerAtMoorland: Offender
+    private lateinit var prisonerAtLeeds: Offender
 
     @BeforeEach
     internal fun createPrisonerAndSentence() {
       nomisDataBuilder.build {
         prisonerAtMoorland = offender(nomsId = offenderNo) {
-          booking(agencyLocationId = "MDI")
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 1, 15, 30)) { prisonTransfer(date = LocalDateTime.of(2023, 1, 1, 15, 30)) }
+        }
+        prisonerAtLeeds = offender(nomsId = offenderLeedsNo) {
+          booking(agencyLocationId = "LEI", bookingBeginDate = LocalDateTime.of(2022, 1, 1, 15, 30)) {
+            prisonTransfer(date = LocalDateTime.of(2023, 1, 2, 15, 30))
+          }
         }
       }
       latestBookingId = prisonerAtMoorland.latestBooking().bookingId
@@ -1065,6 +1072,117 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           isNull(),
         )
       }
+
+      @Test
+      fun `event status = completed if before or on the Booking start date`() {
+        val courtCaseResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequestHierarchy(
+                courtAppearance = createCourtAppearance(
+                  eventDate = LocalDate.of(
+                    2023,
+                    1,
+                    1,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Completed")
+          // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
+          .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
+          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
+          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
+      }
+
+      @Test
+      fun `event status = scheduled if after the Booking start date`() {
+        val courtCaseResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequestHierarchy(
+                courtAppearance = createCourtAppearance(
+                  eventDate = LocalDate.of(
+                    2023,
+                    1,
+                    2,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-02")
+          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          // next appearance
+          .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
+          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
+          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
+      }
+
+      @Test
+      fun `event status = completed if event date before last movement`() {
+        val courtCaseResponse = webTestClient.post().uri("/prisoners/$offenderLeedsNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequestHierarchy(
+                courtAppearance = createCourtAppearance(
+                  eventDate = LocalDate.of(
+                    2023,
+                    1,
+                    1,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderLeedsNo)
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Completed")
+          // next appearance is after the last movement date, status is scheduled
+          .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
+          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
+          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
+      }
     }
 
     @AfterEach
@@ -1092,7 +1210,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           account {}
         }
         prisonerAtMoorland = offender(nomsId = offenderNo) {
-          booking(agencyLocationId = "MDI") {
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
             courtCase = courtCase(
               reportingStaff = staff,
               statusUpdateStaff = staff,
@@ -1234,7 +1352,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[1].startTime").isEqualTo("2023-01-05T09:00:00")
           .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
-          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Completed")
           .jsonPath("courtEvents[1].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[1].judgeName").doesNotExist()
           .jsonPath("courtEvents[1].courtId").isEqualTo("ABDRCT")

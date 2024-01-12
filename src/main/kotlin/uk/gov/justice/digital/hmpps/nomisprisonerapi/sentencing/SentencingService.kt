@@ -37,6 +37,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -109,7 +110,10 @@ class SentencingService(
               eventDate = courtAppearanceRequest.eventDate,
               startTime = courtAppearanceRequest.startTime,
               courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-              eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm rules for setting this
+              eventStatus = determineEventStatus(
+                courtAppearanceRequest.eventDate,
+                booking,
+              ), // TODO confirm rules for setting this
               prison = lookupEstablishment(courtAppearanceRequest.courtId),
               outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
               nextEventDate = courtAppearanceRequest.nextEventDate,
@@ -143,7 +147,10 @@ class SentencingService(
             eventDate = courtCase.courtEvents[0].nextEventDate!!,
             startTime = courtCase.courtEvents[0].nextEventStartTime!!,
             courtEventType = courtCase.courtEvents[0].courtEventType,
-            eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm scheduled is always the status for next appearance
+            eventStatus = determineEventStatus(
+              courtCase.courtEvents[0].nextEventDate!!,
+              booking,
+            ), // TODO confirm scheduled is always the status for next appearance
             prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
             directionCode = lookupDirectionType(DirectionType.OUT),
           ).also { nextCourtEvent ->
@@ -195,7 +202,10 @@ class SentencingService(
         eventDate = courtAppearanceRequest.eventDate,
         startTime = courtAppearanceRequest.startTime,
         courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-        eventStatus = lookupEventStatusType(EventStatus.SCHEDULED), // TODO confirm rules for setting this
+        eventStatus = determineEventStatus(
+          courtAppearanceRequest.eventDate,
+          booking,
+        ), // TODO confirm rules for setting this
         prison = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
         nextEventDate = courtAppearanceRequest.nextEventDate,
@@ -244,6 +254,26 @@ class SentencingService(
           null,
         )
       }
+    }
+  }
+
+  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus {
+    return if (eventDate < booking.bookingBeginDate.toLocalDate()
+      .plusDays(1)
+    ) {
+      lookupEventStatusType(EventStatus.COMPLETED)
+    } else {
+      booking.externalMovements.sortedBy { it.id.sequence }.lastOrNull()?.let { lastMovement ->
+        if (eventDate < lastMovement.movementDate) {
+          lookupEventStatusType(EventStatus.COMPLETED)
+        } else {
+          lookupEventStatusType(
+            EventStatus.SCHEDULED,
+          )
+        }
+      } ?: lookupEventStatusType(
+        EventStatus.SCHEDULED,
+      )
     }
   }
 
