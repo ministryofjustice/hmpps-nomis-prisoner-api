@@ -115,7 +115,7 @@ class CourtEvent(
   val directionCode: DirectionType? = null,
 
   @Convert(converter = YesNoConverter::class)
-  val holdFlag: Boolean? = false, // nulls exist
+  val holdFlag: Boolean? = null, // nulls exist
 
   @OneToMany(mappedBy = "id.courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   var courtEventCharges: MutableList<CourtEventCharge> = mutableListOf(),

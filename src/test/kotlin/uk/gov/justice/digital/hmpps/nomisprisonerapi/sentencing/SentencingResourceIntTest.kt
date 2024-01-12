@@ -101,7 +101,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   nextEventStartTime = null,
                   nextEventDate = null,
                   orderRequestedFlag = null,
-                  holdFlag = null,
                 )
               }
             }
@@ -205,7 +204,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("1046")
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventDate").isEqualTo(aLaterDateString)
           .jsonPath("courtEvents[0].nextEventStartTime").isEqualTo(aLaterDateTimeString)
@@ -1001,7 +1000,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("ENT")
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventDate").isEqualTo("2023-01-10")
           .jsonPath("courtEvents[0].nextEventStartTime").isEqualTo("2023-01-10T09:00:00")
@@ -1028,7 +1027,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[1].holdFlag").doesNotExist()
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventDate").doesNotExist()
           .jsonPath("courtEvents[1].nextEventStartTime").doesNotExist()
@@ -1359,7 +1358,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].outcomeReasonCode").isEqualTo("ENT")
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[1].holdFlag").doesNotExist()
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventDate").isEqualTo("2023-01-10")
           .jsonPath("courtEvents[1].nextEventStartTime").isEqualTo("2023-01-10T09:00:00")
@@ -1373,6 +1372,29 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[1].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RR84700")
           .jsonPath("courtEvents[1].courtEventCharges[1].offencesCount").isEqualTo(1)
+          // confirm a second appearance has been created from the next event details
+          .jsonPath("courtEvents[2].eventDate").isEqualTo("2023-01-10")
+          .jsonPath("courtEvents[2].startTime").isEqualTo("2023-01-10T09:00:00")
+          .jsonPath("courtEvents[2].courtEventType.description").isEqualTo("Court Appearance")
+          .jsonPath("courtEvents[2].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[2].directionCode.code").isEqualTo("OUT")
+          .jsonPath("courtEvents[2].judgeName").doesNotExist()
+          .jsonPath("courtEvents[2].courtId").isEqualTo("COURT1")
+          .jsonPath("courtEvents[2].outcomeReasonCode").doesNotExist()
+          .jsonPath("courtEvents[2].commentText").doesNotExist()
+          .jsonPath("courtEvents[2].orderRequestedFlag").isEqualTo(false)
+          .jsonPath("courtEvents[2].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[2].nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("courtEvents[2].nextEventDate").doesNotExist()
+          .jsonPath("courtEvents[2].nextEventStartTime").doesNotExist()
+          .jsonPath("courtEvents[2].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[2].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[2].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
+          .jsonPath("courtEvents[2].courtEventCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("courtEvents[2].courtEventCharges[1].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[2].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[2].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RR84700")
+          .jsonPath("courtEvents[2].courtEventCharges[1].offencesCount").isEqualTo(1)
       }
 
       @Test

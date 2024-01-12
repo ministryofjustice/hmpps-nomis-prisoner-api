@@ -119,7 +119,6 @@ class CourtEventBuilder(
     offenderBooking: OffenderBooking,
     courtCase: CourtCase?,
     orderRequestedFlag: Boolean?,
-    holdFlag: Boolean?,
   ): CourtEvent = CourtEvent(
     offenderBooking = offenderBooking,
     courtCase = courtCase,
@@ -132,7 +131,6 @@ class CourtEventBuilder(
     outcomeReasonCode = outcomeReasonCode,
     commentText = commentText,
     orderRequestedFlag = orderRequestedFlag,
-    holdFlag = holdFlag,
     nextEventStartTime = nextEventStartTime,
     nextEventDate = nextEventDate,
     directionCode = repository.lookupDirectionType(DirectionType.OUT),
