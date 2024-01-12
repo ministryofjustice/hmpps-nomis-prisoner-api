@@ -65,8 +65,9 @@ class AdjudicationHearingResult(
   )
   val incidentCharge: AdjudicationIncidentCharge?,
 
+  // having to set this outside the incidentCharge mapping as that has to be insertable = false
   @Column(name = "CHARGE_SEQ", nullable = false)
-  val chargeSequence: Int, // having to set this outside the incidentCharge mapping as that has to be insertable = false
+  val chargeSequence: Int,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGENCY_INCIDENT_ID", nullable = false)

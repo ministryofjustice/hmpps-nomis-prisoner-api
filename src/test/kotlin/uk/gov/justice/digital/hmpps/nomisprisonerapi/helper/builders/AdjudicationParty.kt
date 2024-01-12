@@ -9,15 +9,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCha
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationInvestigation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.FORCE_CONTROLLING_OFFICER_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.REPORTING_OFFICER_ROLE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SUSPECT_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.forceControllingOfficerRole
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.reportingOfficerRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VICTIM_ROLE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WITNESS_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -189,9 +189,9 @@ class AdjudicationPartyBuilder(
 }
 
 enum class PartyRole(val code: String) {
-  WITNESS(witnessRole),
-  VICTIM(victimRole),
-  SUSPECT(suspectRole),
-  STAFF_CONTROL(forceControllingOfficerRole),
-  STAFF_REPORTING_OFFICER(reportingOfficerRole),
+  WITNESS(WITNESS_ROLE),
+  VICTIM(VICTIM_ROLE),
+  SUSPECT(SUSPECT_ROLE),
+  STAFF_CONTROL(FORCE_CONTROLLING_OFFICER_ROLE),
+  STAFF_REPORTING_OFFICER(REPORTING_OFFICER_ROLE),
 }

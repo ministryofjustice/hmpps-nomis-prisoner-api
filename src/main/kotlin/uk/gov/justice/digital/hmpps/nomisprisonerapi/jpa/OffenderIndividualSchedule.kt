@@ -25,7 +25,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 enum class EventClass {
-  EXT_MOV, INT_MOV, COMM
+  EXT_MOV,
+  INT_MOV,
+  COMM,
 }
 
 @Entity

@@ -69,7 +69,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               ) {
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 val offenderCharge2 = offenderCharge()
-                courtEvent() {
+                courtEvent {
                   courtEventCharge(
                     offenderCharge = offenderCharge1,
                     plea = "NG", // overrides from the parent offender charge fields
@@ -77,7 +77,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   courtEventCharge(
                     offenderCharge = offenderCharge2,
                   )
-                  courtOrder() {
+                  courtOrder {
                     sentencePurpose(purposeCode = "REPAIR")
                     sentencePurpose(purposeCode = "PUNISH")
                   }
@@ -1216,7 +1216,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             ) {
               offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge()
-              courtEvent() {
+              courtEvent {
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
                   plea = "NG", // overrides from the parent offender charge fields
@@ -1224,7 +1224,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 courtEventCharge(
                   offenderCharge = offenderCharge2,
                 )
-                courtOrder() {
+                courtOrder {
                   sentencePurpose(purposeCode = "REPAIR")
                   sentencePurpose(purposeCode = "PUNISH")
                 }

@@ -57,7 +57,6 @@ class AdjudicationHearingResultAwardBuilder(
     party: AdjudicationIncidentParty,
     sanctionIndex: Int,
     consecutiveHearingResultAward: AdjudicationHearingResultAward? = null,
-
   ): AdjudicationHearingResultAward = AdjudicationHearingResultAward(
     id = AdjudicationHearingResultAwardId(party.offenderBooking!!.bookingId, sanctionIndex),
     hearingResult = result,

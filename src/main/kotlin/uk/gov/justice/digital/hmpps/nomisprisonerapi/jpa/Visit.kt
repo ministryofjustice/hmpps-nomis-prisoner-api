@@ -161,5 +161,5 @@ data class Visit(
 
      "OVERRIDE_BAN_STAFF_ID" - not used since 2015
      private Long overrideBanStaffId;
-  */
+   */
 }

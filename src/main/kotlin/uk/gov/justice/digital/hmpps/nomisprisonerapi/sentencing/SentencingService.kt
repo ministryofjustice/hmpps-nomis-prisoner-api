@@ -110,10 +110,11 @@ class SentencingService(
               eventDate = courtAppearanceRequest.eventDate,
               startTime = courtAppearanceRequest.startTime,
               courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+              // TODO confirm rules for setting this
               eventStatus = determineEventStatus(
                 courtAppearanceRequest.eventDate,
                 booking,
-              ), // TODO confirm rules for setting this
+              ),
               prison = lookupEstablishment(courtAppearanceRequest.courtId),
               outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
               nextEventDate = courtAppearanceRequest.nextEventDate,
@@ -128,7 +129,8 @@ class SentencingService(
                   offence = lookupOffence(offenderChargeRequest.offenceCode, offenderChargeRequest.offenceCode.take(4)),
                   offenceDate = offenderChargeRequest.offenceDate,
                   offenceEndDate = offenderChargeRequest.offenceEndDate,
-                  offencesCount = offenderChargeRequest.offencesCount, // TODO is this calculated or provided?
+                  // TODO is this calculated or provided?
+                  offencesCount = offenderChargeRequest.offencesCount,
                 )
                 courtCase.offenderCharges.add(offenderCharge)
                 courtCaseRepository.saveAndFlush(courtCase) // to access the newly created offender charges
@@ -147,11 +149,13 @@ class SentencingService(
             eventDate = courtCase.courtEvents[0].nextEventDate!!,
             startTime = courtCase.courtEvents[0].nextEventStartTime!!,
             courtEventType = courtCase.courtEvents[0].courtEventType,
+            // TODO confirm status rules are the same for next appearance
             eventStatus = determineEventStatus(
               courtCase.courtEvents[0].nextEventDate!!,
               booking,
-            ), // TODO confirm status rules are the same for next appearance
-            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
+            ),
+            // if next event, we must have a specified court
+            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!),
             directionCode = lookupDirectionType(DirectionType.OUT),
           ).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
@@ -162,16 +166,16 @@ class SentencingService(
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
-        {
-          CreateCourtAppearanceResponse(
-            id = it.id,
-            courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
-              CreateCourtEventChargesResponse(
-                courtEventCharge.id.offenderCharge.id,
-              )
-            },
-          )
-        },
+          {
+            CreateCourtAppearanceResponse(
+              id = it.id,
+              courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+                CreateCourtEventChargesResponse(
+                  courtEventCharge.id.offenderCharge.id,
+                )
+              },
+            )
+          },
       ).also {
         telemetryClient.trackEvent(
           "court-case-created",
@@ -202,10 +206,11 @@ class SentencingService(
         eventDate = courtAppearanceRequest.eventDate,
         startTime = courtAppearanceRequest.startTime,
         courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+        // TODO confirm rules for setting this
         eventStatus = determineEventStatus(
           courtAppearanceRequest.eventDate,
           booking,
-        ), // TODO confirm rules for setting this
+        ),
         prison = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode,
         nextEventDate = courtAppearanceRequest.nextEventDate,
@@ -278,7 +283,7 @@ class SentencingService(
 
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus {
     return if (eventDate < booking.bookingBeginDate.toLocalDate()
-      .plusDays(1)
+        .plusDays(1)
     ) {
       lookupEventStatusType(EventStatus.COMPLETED)
     } else {

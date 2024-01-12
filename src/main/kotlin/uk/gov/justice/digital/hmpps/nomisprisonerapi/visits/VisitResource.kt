@@ -374,7 +374,6 @@ class VisitResource(private val visitService: VisitService) {
       example = "true",
     )
     futureVisitsOnly: Boolean?,
-
   ): List<VisitRoomCountResponse> =
     visitService.findRoomCountsByFilter(
       VisitFilter(
@@ -383,7 +382,8 @@ class VisitResource(private val visitService: VisitService) {
         toDateTime = toDateTime,
         fromDateTime = fromDateTime,
         futureVisits = futureVisitsOnly ?: true,
-        excludeExtremeFutureDates = futureVisitsOnly ?: true, // apply filtering of bad data if only restricting usage to future dates
+        // apply filtering of bad data if only restricting usage to future dates
+        excludeExtremeFutureDates = futureVisitsOnly ?: true,
       ),
     )
 }

@@ -42,7 +42,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SUSPECT_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VICTIM_ROLE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WITNESS_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForOtherReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isReportingOfficer
@@ -68,9 +71,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.suspectRole
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.victimRole
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.witnessRole
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -141,7 +141,8 @@ class AdjudicationService(
     hearings: List<AdjudicationHearing> = emptyList(),
   ): AdjudicationResponse {
     return AdjudicationResponse(
-      adjudicationNumber = adjudication.adjudicationNumber!!, // must be non-null in this context
+      // must be non-null in this context
+      adjudicationNumber = adjudication.adjudicationNumber!!,
       adjudicationSequence = adjudication.id.partySequence,
       offenderNo = adjudication.prisonerOnReport().offender.nomsId,
       bookingId = adjudication.prisonerOnReport().bookingId,
@@ -316,7 +317,7 @@ class AdjudicationService(
     adjudicationNumber = adjudicationNumber,
     offenderBooking = offenderBooking,
     incident = incident,
-    incidentRole = suspectRole,
+    incidentRole = SUSPECT_ROLE,
     actionDecision = lookupPlacedOnReportIncidentAction(),
   ).apply {
     this.charges += request.charges.mapIndexed { index, charge ->
@@ -339,7 +340,7 @@ class AdjudicationService(
     id = AdjudicationIncidentPartyId(agencyIncidentId = incident.id, partySequence = partySequence),
     staff = findStaffByUsername(username),
     incident = incident,
-    incidentRole = witnessRole,
+    incidentRole = WITNESS_ROLE,
   )
 
   private fun createStaffVictim(
@@ -350,7 +351,7 @@ class AdjudicationService(
     id = AdjudicationIncidentPartyId(agencyIncidentId = incident.id, partySequence = partySequence),
     staff = findStaffByUsername(username),
     incident = incident,
-    incidentRole = victimRole,
+    incidentRole = VICTIM_ROLE,
   )
 
   private fun createPrisonerVictim(
@@ -362,7 +363,7 @@ class AdjudicationService(
     offenderBooking = findPrisoner(offenderNo).findLatestBooking(),
     actionDecision = lookupNoFurtherActionIncidentAction(),
     incident = incident,
-    incidentRole = victimRole,
+    incidentRole = VICTIM_ROLE,
   )
 
   private fun lookupPlacedOnReportIncidentAction(): IncidentDecisionAction =
@@ -1206,7 +1207,8 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
     "Unknown Plea Finding Code",
   ),
   findingType = this.findingType.toCodeDescription(),
-  charge = this.incidentCharge?.toCharge()!!, // this is only called when this is non-null
+  // this is only called when this is non-null
+  charge = this.incidentCharge?.toCharge()!!,
   offence = this.offence.toOffence(),
   resultAwards = this.resultAwards.filter { it.matchesAdjudicationParty() }.map { it.toAward() },
   createdDateTime = this.whenCreated,
@@ -1331,7 +1333,8 @@ private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
 fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward =
   HearingResultAward(
     sequence = this.id.sanctionSequence,
-    chargeSequence = this.hearingResult?.chargeSequence!!, // we must have result for there to be an award
+    // we must have result for there to be an award
+    chargeSequence = this.hearingResult?.chargeSequence!!,
     adjudicationNumber = this.hearingResult.hearing.adjudicationNumber,
     sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
       sanctionCode,

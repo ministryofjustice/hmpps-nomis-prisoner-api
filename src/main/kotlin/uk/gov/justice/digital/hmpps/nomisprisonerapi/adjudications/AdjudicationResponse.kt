@@ -247,7 +247,8 @@ data class HearingNotification(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class HearingResult(
-  val pleaFindingType: CodeDescription?, // may not have a matching description if dodgy data
+  // may not have a matching description if dodgy data
+  val pleaFindingType: CodeDescription?,
   val findingType: CodeDescription?,
   val charge: AdjudicationCharge,
   val offence: AdjudicationOffence,
@@ -262,7 +263,8 @@ data class HearingResult(
 data class HearingResultAward(
   @Schema(description = "Sequence of this sanction for this prisoner's booking", required = true)
   val sequence: Int,
-  val sanctionType: CodeDescription?, // may not have a matching description if dodgy data
+  // may not have a matching description if dodgy data
+  val sanctionType: CodeDescription?,
   val sanctionStatus: CodeDescription?,
   val comment: String?,
   val effectiveDate: LocalDate,

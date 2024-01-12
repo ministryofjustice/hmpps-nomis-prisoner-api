@@ -98,9 +98,10 @@ data class CourseActivity(
   @JoinColumn(name = "INTERNAL_LOCATION_ID")
   var internalLocation: AgencyInternalLocation?,
 
+  // If the course/activity conforms to national holidays
   @Column(name = "HOLIDAY_FLAG")
   @Convert(converter = YesNoConverter::class)
-  var excludeBankHolidays: Boolean = false, // If the course/activity conforms to national holidays
+  var excludeBankHolidays: Boolean = false,
 
   @Column
   @Enumerated(STRING)

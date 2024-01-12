@@ -140,7 +140,9 @@ class OffenderCourseAttendance(
 
   @Column
   var bonusPay = bonusPay?.setScale(3, RoundingMode.HALF_UP)
-    set(value) { field = value?.setScale(3, RoundingMode.HALF_UP) }
+    set(value) {
+      field = value?.setScale(3, RoundingMode.HALF_UP)
+    }
 
   fun isPaid() = paidTransactionId != null
 

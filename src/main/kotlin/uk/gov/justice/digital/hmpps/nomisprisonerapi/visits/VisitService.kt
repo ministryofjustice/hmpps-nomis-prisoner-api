@@ -500,8 +500,8 @@ class VisitService(
         AgencyVisitTimeId(location, weekDay.agencyVisitDayId.weekDay, timeSlotSeq),
         startTime = startDateTime.toLocalTime(),
         endTime = endDateTime.toLocalTime(),
-        effectiveDate = startDateTime.toLocalDate()
-          .minusDays(1), // effective and expiry in the past to avoid the slot being available in pnomis
+        // effective and expiry in the past to avoid the slot being available in pnomis
+        effectiveDate = startDateTime.toLocalDate().minusDays(1),
         expiryDate = startDateTime.toLocalDate().minusDays(1),
       ),
     )
@@ -513,9 +513,9 @@ class VisitService(
   ): AgencyVisitSlot {
     log.info(
       "Creating visit slot for day of week ${visitTime.agencyVisitTimesId.weekDay}, start time: ${
-      visitTime.startTime.format(
-        DateTimeFormatter.ISO_TIME,
-      )
+        visitTime.startTime.format(
+          DateTimeFormatter.ISO_TIME,
+        )
       } at ${vsipRoom.agencyId}",
     )
     return visitSlotRepository.save(
