@@ -150,7 +150,7 @@ class SentencingService(
             eventStatus = determineEventStatus(
               courtCase.courtEvents[0].nextEventDate!!,
               booking,
-            ), // TODO confirm scheduled is always the status for next appearance
+            ), // TODO confirm status rules are the same for next appearance
             prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
             directionCode = lookupDirectionType(DirectionType.OUT),
           ).also { nextCourtEvent ->
@@ -232,6 +232,25 @@ class SentencingService(
       courtCase.courtEvents.add(
         courtEvent,
       )
+      courtEvent.nextEventDate?.let {
+        courtCase.courtEvents.add(
+          CourtEvent(
+            offenderBooking = booking,
+            courtCase = courtCase,
+            eventDate = courtEvent.nextEventDate!!,
+            startTime = courtEvent.nextEventStartTime!!,
+            courtEventType = courtEvent.courtEventType,
+            eventStatus = determineEventStatus(
+              courtEvent.nextEventDate!!,
+              booking,
+            ), // TODO confirm status rules are the same for next appearance
+            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
+            directionCode = lookupDirectionType(DirectionType.OUT),
+          ).also { nextCourtEvent ->
+            nextCourtEvent.initialiseCourtEventCharges()
+          },
+        )
+      }
       courtEventRepository.saveAndFlush(courtEvent)
     }.let { courtEvent ->
       CreateCourtAppearanceResponse(

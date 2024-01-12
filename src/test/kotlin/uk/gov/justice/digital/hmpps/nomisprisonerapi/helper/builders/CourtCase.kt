@@ -35,7 +35,6 @@ interface CourtCaseDsl {
     nextEventStartTime: LocalDateTime? = LocalDateTime.of(2023, 1, 5, 10, 30),
     nextEventDate: LocalDate? = LocalDate.of(2023, 1, 5),
     orderRequestedFlag: Boolean? = false,
-    holdFlag: Boolean? = false,
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
 
@@ -197,7 +196,6 @@ class CourtCaseBuilder(
     nextEventStartTime: LocalDateTime?,
     nextEventDate: LocalDate?,
     orderRequestedFlag: Boolean?,
-    holdFlag: Boolean?,
     dsl: CourtEventDsl.() -> Unit,
   ) =
     courtEventBuilderFactory.builder().let { builder ->
@@ -215,7 +213,6 @@ class CourtCaseBuilder(
         offenderBooking = courtCase.offenderBooking,
         courtCase = courtCase,
         orderRequestedFlag = orderRequestedFlag,
-        holdFlag = holdFlag,
       )
         .also { courtCase.courtEvents += it }
         .also { builder.apply(dsl) }
