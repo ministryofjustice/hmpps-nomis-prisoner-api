@@ -245,11 +245,13 @@ class SentencingService(
             eventDate = courtEvent.nextEventDate!!,
             startTime = courtEvent.nextEventStartTime!!,
             courtEventType = courtEvent.courtEventType,
+            // TODO confirm status rules are the same for next appearance
             eventStatus = determineEventStatus(
               courtEvent.nextEventDate!!,
               booking,
-            ), // TODO confirm status rules are the same for next appearance
-            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!), // if next event, we must have a specified court
+            ),
+            // if next event, we must have a specified court
+            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!),
             directionCode = lookupDirectionType(DirectionType.OUT),
           ).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()

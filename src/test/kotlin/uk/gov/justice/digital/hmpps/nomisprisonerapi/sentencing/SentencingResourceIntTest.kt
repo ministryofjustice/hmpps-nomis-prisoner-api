@@ -72,7 +72,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 courtEvent {
                   courtEventCharge(
                     offenderCharge = offenderCharge1,
-                    plea = "NG", // overrides from the parent offender charge fields
+                    // overrides from the parent offender charge fields
+                    plea = "NG",
                   )
                   courtEventCharge(
                     offenderCharge = offenderCharge2,
@@ -1219,7 +1220,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               courtEvent {
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
-                  plea = "NG", // overrides from the parent offender charge fields
+                  // overrides from the parent offender charge fields
+                  plea = "NG",
                 )
                 courtEventCharge(
                   offenderCharge = offenderCharge2,
