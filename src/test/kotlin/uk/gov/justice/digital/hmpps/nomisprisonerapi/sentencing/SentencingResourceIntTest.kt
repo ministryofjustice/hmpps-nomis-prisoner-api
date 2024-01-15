@@ -1168,7 +1168,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
           .returnResult().responseBody!!
 
-        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
+        webTestClient.get().uri("/prisoners/$offenderLeedsNo/sentencing/court-cases/${courtCaseResponse.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
