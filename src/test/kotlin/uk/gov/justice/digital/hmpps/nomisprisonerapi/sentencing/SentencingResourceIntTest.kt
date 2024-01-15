@@ -765,7 +765,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     internal fun createPrisonerAndSentence() {
       nomisDataBuilder.build {
         prisonerAtMoorland = offender(nomsId = offenderNo) {
-          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 1, 15, 30)) { prisonTransfer(date = LocalDateTime.of(2023, 1, 1, 15, 30)) }
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 1, 15, 30))
         }
         prisonerAtLeeds = offender(nomsId = offenderLeedsNo) {
           booking(agencyLocationId = "LEI", bookingBeginDate = LocalDateTime.of(2022, 1, 1, 15, 30)) {
