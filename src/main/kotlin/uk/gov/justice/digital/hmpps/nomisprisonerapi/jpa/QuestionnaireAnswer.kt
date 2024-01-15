@@ -51,15 +51,14 @@ data class QuestionnaireAnswer(
 
   @Column
   var auditModuleName: String? = null,
-
-  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenCreated: LocalDateTime = LocalDateTime.now(),
-  @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenUpdated: LocalDateTime? = null,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
+
+  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
+  lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

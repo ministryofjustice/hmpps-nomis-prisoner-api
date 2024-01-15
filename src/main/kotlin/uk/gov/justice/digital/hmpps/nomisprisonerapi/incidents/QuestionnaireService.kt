@@ -23,7 +23,7 @@ class QuestionnaireService(
 
   fun getQuestionnaire(questionnaireId: Long): QuestionnaireResponse =
     questionnaireRepository.findByIdOrNull(questionnaireId)?.let {
-      return mapModel(it)
+      return toQuestionnaireResponse(it)
     } ?: throw NotFoundException("Questionnaire with id=$questionnaireId does not exist")
 
   fun findIdsByFilter(pageRequest: Pageable, questionnaireFilter: QuestionnaireFilter): Page<QuestionnaireIdResponse> {
@@ -32,7 +32,7 @@ class QuestionnaireService(
       .map { QuestionnaireIdResponse(it.id) }
   }
 
-  private fun mapModel(entity: Questionnaire): QuestionnaireResponse =
+  private fun toQuestionnaireResponse(entity: Questionnaire): QuestionnaireResponse =
     QuestionnaireResponse(
       id = entity.id,
       description = entity.description,
@@ -40,13 +40,11 @@ class QuestionnaireService(
       active = entity.active,
       listSequence = entity.listSequence,
       createdBy = entity.createUsername,
-      createdDate = entity.createdDate,
-      modifiedBy = entity.modifiedBy,
-      modifiedDate = entity.modifiedDate,
-      questions = entity.questions.map { it.toQuestionnaireQuestionResponse() },
+      createdDate = entity.createDatetime,
+      questions = entity.questions.map { it.toQuestionResponse() },
     )
 
-  private fun QuestionnaireQuestion.toQuestionnaireQuestionResponse(): QuestionResponse =
+  private fun QuestionnaireQuestion.toQuestionResponse(includeNextQuestion:Boolean = true): QuestionResponse =
     QuestionResponse(
       id = id,
       question = question,
@@ -65,7 +63,8 @@ class QuestionnaireService(
           dateRequired = questionnaireAnswer.dateRequired,
         )
           .apply {
-            this.nextQuestion = questionnaireAnswer.nextQuestion?.toQuestionnaireQuestionResponse()
+            if (includeNextQuestion)
+              this.nextQuestion = questionnaireAnswer.nextQuestion?.toQuestionResponse(includeNextQuestion = false)
           }
       },
     )

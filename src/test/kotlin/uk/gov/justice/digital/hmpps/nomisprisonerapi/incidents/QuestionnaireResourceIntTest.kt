@@ -142,10 +142,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will return the questionnaire by Id`() {
-      webTestClient.get().uri {
-        it.path("/questionnaires/${questionnaire1.id}")
-          .build()
-      }
+      webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
@@ -158,10 +155,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will return the questions and answers for a questionnaire`() {
-      val persistedQuestionnaire1 = webTestClient.get().uri {
-        it.path("/questionnaires/${questionnaire1.id}")
-          .build()
-      }
+      val persistedQuestionnaire1 = webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
@@ -178,6 +172,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
         with(answers[0]) {
           assertThat(answer).isEqualTo("Q1A1: Yes")
           assertThat(nextQuestion!!.question).isEqualTo("Q2: Were tools used?")
+          assertThat(nextQuestion!!.answers[0].nextQuestion).isNull() // Avoids recursion (only first level nextQuestion returned)
           assertThat(answerSequence).isEqualTo(1)
           assertThat(listSequence).isEqualTo(1)
           assertThat(active).isEqualTo(true)
@@ -217,10 +212,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `can request an inactive questionnaire by Id`() {
-      webTestClient.get().uri {
-        it.path("/questionnaires/${questionnaire2.id}")
-          .build()
-      }
+      webTestClient.get().uri("/questionnaires/${questionnaire2.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk

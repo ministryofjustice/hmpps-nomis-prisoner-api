@@ -48,21 +48,14 @@ data class QuestionnaireQuestion(
 
   @Column
   var auditModuleName: String? = null,
-
-  @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenUpdated: LocalDateTime? = null,
-  @Column(name = "MODIFY_USER_ID", updatable = false, insertable = false)
-  @LastModifiedBy
-  val modifiedBy: String? = null,
 ) {
-
-  @Column(name = "CREATE_USER_ID", nullable = false, insertable = false, updatable = false)
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
 
-  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
+  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
-  lateinit var whenCreated: LocalDateTime
+  lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
