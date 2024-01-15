@@ -765,7 +765,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     internal fun createPrisonerAndSentence() {
       nomisDataBuilder.build {
         prisonerAtMoorland = offender(nomsId = offenderNo) {
-          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 1, 15, 30)) { prisonTransfer(date = LocalDateTime.of(2023, 1, 1, 15, 30)) }
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 1, 15, 30))
         }
         prisonerAtLeeds = offender(nomsId = offenderLeedsNo) {
           booking(agencyLocationId = "LEI", bookingBeginDate = LocalDateTime.of(2022, 1, 1, 15, 30)) {
@@ -1168,7 +1168,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
           .returnResult().responseBody!!
 
-        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
+        webTestClient.get().uri("/prisoners/$offenderLeedsNo/sentencing/court-cases/${courtCaseResponse.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk

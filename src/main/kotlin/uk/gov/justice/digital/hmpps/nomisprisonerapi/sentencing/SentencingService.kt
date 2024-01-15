@@ -282,7 +282,7 @@ class SentencingService(
     ) {
       lookupEventStatusType(EventStatus.COMPLETED)
     } else {
-      booking.externalMovements.sortedBy { it.id.sequence }.lastOrNull()?.let { lastMovement ->
+      booking.externalMovements.maxByOrNull { it.id.sequence }?.let { lastMovement ->
         if (eventDate < lastMovement.movementDate) {
           lookupEventStatusType(EventStatus.COMPLETED)
         } else {

@@ -6,6 +6,8 @@ import jakarta.persistence.Convert
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -74,6 +76,7 @@ class OffenderExternalMovement(
   val movementReason: MovementReason,
 
   @Column(name = "DIRECTION_CODE")
+  @Enumerated(EnumType.STRING)
   var movementDirection: MovementDirection,
 
   @ManyToOne(fetch = LAZY)
