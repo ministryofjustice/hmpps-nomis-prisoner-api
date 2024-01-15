@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -22,6 +23,7 @@ class NomisDataBuilder(
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
+  private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -31,6 +33,7 @@ class NomisDataBuilder(
     nonAssociationBuilderFactory,
     externalServiceBuilderFactory,
     courtCaseBuilderFactory,
+    questionnaireBuilderFactory,
   ).apply(dsl)
 }
 
@@ -42,6 +45,7 @@ class NomisData(
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
+  private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
@@ -111,6 +115,27 @@ class NomisData(
     programServiceBuilderFactory!!.builder()
       .let { builder ->
         builder.build(programCode, programId, description, active)
+          .also {
+            builder.apply(dsl)
+          }
+      }
+
+  @QuestionnaireDslMarker
+  override fun questionnaire(
+    code: String,
+    description: String,
+    active: Boolean,
+    listSequence: Int,
+    dsl: QuestionnaireDsl.() -> Unit,
+  ): Questionnaire =
+    questionnaireBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          code = code,
+          description = description,
+          active = active,
+          listSequence = listSequence,
+        )
           .also {
             builder.apply(dsl)
           }
@@ -203,6 +228,15 @@ interface NomisDataDsl {
     recipNonAssociationReason: String = "VIC",
     dsl: NonAssociationDsl.() -> Unit = {},
   ): OffenderNonAssociation
+
+  @QuestionnaireDslMarker
+  fun questionnaire(
+    code: String,
+    description: String = "This is a questionnaire",
+    active: Boolean = true,
+    listSequence: Int,
+    dsl: QuestionnaireDsl.() -> Unit = {},
+  ): Questionnaire
 
   @ExternalServiceDslMarker
   fun externalService(
