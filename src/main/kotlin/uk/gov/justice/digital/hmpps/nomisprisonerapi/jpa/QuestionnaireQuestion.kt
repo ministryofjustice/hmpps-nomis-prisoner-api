@@ -13,7 +13,6 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
-import org.springframework.data.annotation.LastModifiedBy
 import java.time.LocalDateTime
 
 @Entity

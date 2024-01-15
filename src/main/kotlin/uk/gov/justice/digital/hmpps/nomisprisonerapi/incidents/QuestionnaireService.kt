@@ -44,7 +44,7 @@ class QuestionnaireService(
       questions = entity.questions.map { it.toQuestionResponse() },
     )
 
-  private fun QuestionnaireQuestion.toQuestionResponse(includeNextQuestion:Boolean = true): QuestionResponse =
+  private fun QuestionnaireQuestion.toQuestionResponse(includeNextQuestion: Boolean = true): QuestionResponse =
     QuestionResponse(
       id = id,
       question = question,
@@ -63,8 +63,9 @@ class QuestionnaireService(
           dateRequired = questionnaireAnswer.dateRequired,
         )
           .apply {
-            if (includeNextQuestion)
+            if (includeNextQuestion) {
               this.nextQuestion = questionnaireAnswer.nextQuestion?.toQuestionResponse(includeNextQuestion = false)
+            }
           }
       },
     )
