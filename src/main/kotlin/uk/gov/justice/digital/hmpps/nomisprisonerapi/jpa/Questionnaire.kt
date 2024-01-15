@@ -13,11 +13,12 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
-import org.springframework.data.annotation.LastModifiedBy
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
+@EntityOpen
 @Table(name = "QUESTIONNAIRES")
 data class Questionnaire(
   @Id
@@ -51,20 +52,14 @@ data class Questionnaire(
 
   @Column(name = "EXPIRY_DATE")
   val expiryDate: LocalDate? = null,
-
-  @Column(name = "CREATE_USER_ID", nullable = false, insertable = false, updatable = false)
-  @Generated
-  val createUsername: String = "CreatedBy",
-  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
-  @Generated
-  val createdDate: LocalDateTime = LocalDateTime.now(),
-
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  @LastModifiedBy
-  val modifiedBy: String? = null,
-  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
-  val modifiedDate: LocalDateTime? = null,
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
+
+  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
+  lateinit var createDatetime: LocalDateTime
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
