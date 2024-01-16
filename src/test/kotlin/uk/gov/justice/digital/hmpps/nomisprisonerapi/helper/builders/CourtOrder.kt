@@ -84,7 +84,8 @@ class CourtOrderBuilder(
     commentText = commentText,
     nonReportFlag = nonReportFlag,
     offenderBooking = courtEvent.offenderBooking,
-    courtCase = courtEvent.courtCase!!, // always a court case in the context of this test data
+    // always a court case in the context of this test data
+    courtCase = courtEvent.courtCase!!,
     courtEvent = courtEvent,
   )
     .let { repository.save(it) }

@@ -158,7 +158,8 @@ class VisitRepositoryTest {
         adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE)
           .orElseThrow(),
         remainingVisitOrders = -1,
-        previousRemainingVisitOrders = seedBalance.remainingVisitOrders, // from offender_visit_balances
+        // from offender_visit_balances
+        previousRemainingVisitOrders = seedBalance.remainingVisitOrders,
         commentText = "test comment",
         authorisedStaffId = 123L,
         endorsedStaffId = 123L,

@@ -49,7 +49,8 @@ class SentencingAdjustmentService(
             adjustmentDate = request.adjustmentDate,
             adjustmentNumberOfDays = request.adjustmentDays,
             fromDate = request.adjustmentFromDate,
-            toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1), // dates are inclusive so a 1-day remand starts and end on dame day
+            // dates are inclusive so a 1-day remand starts and end on dame day
+            toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1),
             comment = request.comment,
             active = request.active,
           ),
@@ -219,7 +220,7 @@ class SentencingAdjustmentService(
 
   fun findAdjustmentIdsByFilter(pageRequest: Pageable, adjustmentFilter: AdjustmentFilter): Page<AdjustmentIdResponse> {
     val adjustedToDate = adjustmentFilter.toDate?.let { adjustmentFilter.toDate.plusDays(1) }
-    return keyDateAdjustmentRepository.adjustmentIdsQuery_named(
+    return keyDateAdjustmentRepository.adjustmentIdsQueryNamed(
       fromDate = adjustmentFilter.fromDate,
       toDate = adjustedToDate,
       pageRequest,

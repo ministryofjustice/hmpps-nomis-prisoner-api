@@ -86,7 +86,7 @@ class IncentivesService(
     )?.let {
       // determine if this incentive is the current IEP for the booking
       val currentIep =
-        it == incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)
+        it == incentiveRepository.findFirstByIdOffenderBookingOrderByIepDateDescIdSequenceDesc(offenderBooking)
       mapIncentiveModel(it, currentIep)
     }
       ?: throw NotFoundException("Incentive not found, booking id $bookingId, sequence $incentiveSequence")
@@ -95,7 +95,7 @@ class IncentivesService(
   fun getCurrentIncentive(bookingId: Long): IncentiveResponse {
     val offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
       ?: throw NotFoundException("Offender booking $bookingId not found")
-    return incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)
+    return incentiveRepository.findFirstByIdOffenderBookingOrderByIepDateDescIdSequenceDesc(offenderBooking)
       ?.let {
         mapIncentiveModel(incentiveEntity = it, currentIep = true)
       } ?: throw NotFoundException("Current Incentive not found, booking id $bookingId")
@@ -501,11 +501,11 @@ class IncentivesService(
       ?: throw NotFoundException("Offender booking $bookingId not found")
 
     // get current IEP based NOMIS algorithm
-    incentiveRepository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(offenderBooking)?.run {
+    incentiveRepository.findFirstByIdOffenderBookingOrderByIepDateDescIdSequenceDesc(offenderBooking)?.run {
       // find all IEPs on same date is current, these potentially may not be in time order since NOMIS previously
       // allowed IEP dates to be amended so the highest sequence on a day is current not the one with latest time
       val allOnSameDateOrderedBySequence =
-        incentiveRepository.findAllById_offenderBookingAndIepDateOrderById_SequenceAsc(offenderBooking, this.iepDate)
+        incentiveRepository.findAllByIdOffenderBookingAndIepDateOrderByIdSequenceAsc(offenderBooking, this.iepDate)
 
       val currentSequenceOrder = allOnSameDateOrderedBySequence.map { it.id.sequence }
       val revisedSequenceOrder = allOnSameDateOrderedBySequence.sortedBy { it.iepTime }.map { it.id.sequence }

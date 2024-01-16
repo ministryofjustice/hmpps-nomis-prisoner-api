@@ -43,8 +43,9 @@ data class OffenderSentence(
   @OneToMany(mappedBy = "sentence", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val adjustments: MutableList<OffenderSentenceAdjustment> = mutableListOf(),
 
+  // 'I' or 'A'
   @Column(name = "SENTENCE_STATUS")
-  val status: String, // 'I' or 'A'
+  val status: String,
 
   @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumns(
@@ -74,8 +75,9 @@ data class OffenderSentence(
 
   val commentText: String? = null,
 
+  // 49 rows in prod last used 2021
   @Column(name = "NO_OF_UNEXCUSED_ABSENCE")
-  val absenceCount: Int? = null, // 49 rows in prod last used 2021
+  val absenceCount: Int? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CASE_ID")
@@ -126,7 +128,8 @@ data class OffenderSentence(
   @Column(name = "AGGREGATE_ADJUST_DAYS")
   val aggAdjustDays: Int? = null,
 
-  val sentenceLevel: String, // 'IND' or 'AGG' in prod - defaults to 'IND'
+  // 'IND' or 'AGG' in prod - defaults to 'IND'
+  val sentenceLevel: String,
 
   val extendedDays: Int? = null,
 

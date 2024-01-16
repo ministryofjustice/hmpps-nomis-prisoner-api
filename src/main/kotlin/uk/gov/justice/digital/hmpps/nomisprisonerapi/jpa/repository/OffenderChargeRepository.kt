@@ -6,5 +6,5 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 
 @Repository
 interface OffenderChargeRepository : JpaRepository<OffenderCharge, Long> {
-  fun deleteByOffenderBooking_bookingId(bookingId: Long)
+  fun deleteByOffenderBookingBookingId(bookingId: Long)
 }

@@ -29,7 +29,8 @@ data class OffenderSentenceTermId(
   @Column(name = "SENTENCE_SEQ", nullable = false)
   val sentenceSequence: Long,
 
-  @Column(name = "TERM_SEQ", nullable = false) // seq boundary is the sentence
+  // seq boundary is the sentence
+  @Column(name = "TERM_SEQ", nullable = false)
   val termSequence: Long,
 ) : Serializable
 
@@ -61,10 +62,12 @@ data class OffenderSentenceTerm(
   val months: Int?,
   val weeks: Int?,
   val days: Int?,
-  val hours: Int?, // all time portions used in prod
+  // all time portions used in prod
+  val hours: Int?,
 
+  // defaults to 'N' used in prod
   @Convert(converter = YesNoConverter::class)
-  val lifeSentenceFlag: Boolean = false, // defaults to 'N' used in prod
+  val lifeSentenceFlag: Boolean = false,
 
   @ManyToOne
   @JoinColumnsOrFormulas(

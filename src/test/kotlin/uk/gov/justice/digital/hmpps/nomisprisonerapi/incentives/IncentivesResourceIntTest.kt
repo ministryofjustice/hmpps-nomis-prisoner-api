@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-private const val offenderBookingId = 98765L
+private const val OFFENDER_BOOKING_ID = 98765L
 
 private val createIncentive: () -> CreateIncentiveRequest = {
   CreateIncentiveRequest(
@@ -67,7 +67,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$OFFENDER_BOOKING_ID/incentives")
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
         .expectStatus().isUnauthorized
@@ -75,7 +75,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$OFFENDER_BOOKING_ID/incentives")
         .headers(setAuthorisation(roles = listOf()))
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
@@ -84,7 +84,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden with wrong role`() {
-      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$OFFENDER_BOOKING_ID/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
@@ -93,7 +93,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `create with booking not found`() {
-      webTestClient.post().uri("/prisoners/booking-id/$offenderBookingId/incentives")
+      webTestClient.post().uri("/prisoners/booking-id/$OFFENDER_BOOKING_ID/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()

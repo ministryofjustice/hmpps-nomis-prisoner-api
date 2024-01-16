@@ -67,7 +67,7 @@ class SentencingService(
   fun getCourtCasesByOffender(offenderNo: String): List<CourtCaseResponse> {
     findPrisoner(offenderNo).findLatestBooking()
 
-    return courtCaseRepository.findByOffenderBooking_offender_nomsIdOrderByCreateDatetimeDesc(offenderNo)
+    return courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
       .map { courtCase ->
         courtCase.toCourtCaseResponse()
       }

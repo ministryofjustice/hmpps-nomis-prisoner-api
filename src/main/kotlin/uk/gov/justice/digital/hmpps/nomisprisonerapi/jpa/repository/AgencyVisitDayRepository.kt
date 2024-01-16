@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDayId
 interface AgencyVisitDayRepository :
   JpaRepository<AgencyVisitDay, AgencyVisitDayId> {
 
-  fun findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(
+  fun findByAgencyVisitDayIdWeekDayAndAgencyVisitDayIdLocationId(
     weekDay: String,
     locationId: String,
   ): AgencyVisitDay?

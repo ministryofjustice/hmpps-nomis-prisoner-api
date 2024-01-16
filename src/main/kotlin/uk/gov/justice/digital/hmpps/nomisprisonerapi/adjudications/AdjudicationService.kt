@@ -652,7 +652,7 @@ class AdjudicationService(
 
     request.adjudicatorUsername?.let { hearing.hearingStaff = findStaffByUsername(request.adjudicatorUsername) }
 
-    val existingResult = adjudicationHearingResultRepository.findFirstOrNullById_OicHearingIdAndChargeSequence(
+    val existingResult = adjudicationHearingResultRepository.findFirstOrNullByIdOicHearingIdAndChargeSequence(
       chargeSequence = chargeSequence,
       hearingId = hearingId,
     )
@@ -693,7 +693,7 @@ class AdjudicationService(
   }
 
   fun getHearingResult(hearingId: Long, chargeSequence: Int): HearingResult =
-    adjudicationHearingResultRepository.findFirstOrNullById_OicHearingIdAndChargeSequence(hearingId, chargeSequence)
+    adjudicationHearingResultRepository.findFirstOrNullByIdOicHearingIdAndChargeSequence(hearingId, chargeSequence)
       ?.toHearingResult()
       ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, charge sequence: $chargeSequence")
 
@@ -702,7 +702,7 @@ class AdjudicationService(
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Hearing with id $hearingId delete failed: Adjudication party with adjudication number $adjudicationNumber not found")
 
-    return adjudicationHearingResultRepository.findFirstOrNullById_OicHearingIdAndChargeSequence(
+    return adjudicationHearingResultRepository.findFirstOrNullByIdOicHearingIdAndChargeSequence(
       hearingId = hearingId,
       chargeSequence = chargeSequence,
     )?.let { result ->
@@ -777,7 +777,7 @@ class AdjudicationService(
 
     // find the latest result on the latest hearing
     val hearingResult =
-      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderByIdOicHearingIdDescIdResultSequenceDesc(
         incidentCharge,
       ) ?: throw BadDataException("Hearing result for adjudication number ${party.adjudicationNumber} not found")
 
@@ -876,7 +876,7 @@ class AdjudicationService(
     sanctionsToKeep: List<Int> = emptyList(),
   ): List<HearingResultAwardResponse> {
     val allAwards =
-      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequenceOrderById_sanctionSequence(
+      adjudicationHearingResultAwardRepository.findByIncidentPartyAdjudicationNumberAndHearingResultChargeSequenceOrderByIdSanctionSequence(
         adjudicationNumber,
         chargeSequence = chargeSequence,
       )
@@ -902,7 +902,7 @@ class AdjudicationService(
     chargeSequence: Int,
   ) {
     val allAwards =
-      adjudicationHearingResultAwardRepository.findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequenceOrderById_sanctionSequence(
+      adjudicationHearingResultAwardRepository.findByIncidentPartyAdjudicationNumberAndHearingResultChargeSequenceOrderByIdSanctionSequence(
         adjudicationNumber,
         chargeSequence = chargeSequence,
       )
@@ -970,7 +970,7 @@ class AdjudicationService(
     chargeSequence: Int,
     sanctionCode: String,
   ): AdjudicationHearingResultAward =
-    adjudicationHearingResultAwardRepository.findFirstOrNullByIncidentParty_adjudicationNumberAndSanctionCodeAndHearingResult_chargeSequence(
+    adjudicationHearingResultAwardRepository.findFirstOrNullByIncidentPartyAdjudicationNumberAndSanctionCodeAndHearingResultChargeSequence(
       adjudicationNumber = adjudicationNumber,
       sanctionCode = sanctionCode,
       chargeSequence = chargeSequence,
@@ -1109,7 +1109,7 @@ class AdjudicationService(
 
     // find the latest result on the latest hearing
     val hearingResult =
-      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderByIdOicHearingIdDescIdResultSequenceDesc(
         incidentCharge,
       ) ?: throw BadDataException("Hearing result for adjudication number ${party.adjudicationNumber} not found")
 
@@ -1141,7 +1141,7 @@ class AdjudicationService(
       ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
 
     val hearingResult =
-      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderById_oicHearingIdDescId_resultSequenceDesc(
+      adjudicationHearingResultRepository.findFirstOrNullByIncidentChargeOrderByIdOicHearingIdDescIdResultSequenceDesc(
         incidentCharge,
       ) ?: throw BadDataException("Hearing result for adjudication number ${party.adjudicationNumber} not found")
 
@@ -1169,7 +1169,7 @@ class AdjudicationService(
       ?: throw NotFoundException("Prisoner with bookingId $bookingId not found")
 
     val prisonIds = offenderExternalMovementRepository.findPrisonsAdmittedIntoByBooking(booking)
-    val awards = adjudicationHearingResultAwardRepository.findById_offenderBookIdAndSanctionCodeOrderById_SanctionSequenceAsc(
+    val awards = adjudicationHearingResultAwardRepository.findByIdOffenderBookIdAndSanctionCodeOrderByIdSanctionSequenceAsc(
       offenderBookId = bookingId,
       sanctionCode = "ADA",
     )

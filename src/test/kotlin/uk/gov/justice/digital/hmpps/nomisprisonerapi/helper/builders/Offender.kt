@@ -82,7 +82,8 @@ class OffenderBuilder(
     .let { builder ->
       builder.build(
         offender = offender,
-        bookingSequence = offender.bookings.size + 1, // if you want multiple bookings then create them with latest booking first so it gets seq 1 like in Nomis
+        // if you want multiple bookings then create them with latest booking first so it gets seq 1 like in Nomis
+        bookingSequence = offender.bookings.size + 1,
         agencyLocationCode = agencyLocationId,
         bookingBeginDate = bookingBeginDate,
         active = active,

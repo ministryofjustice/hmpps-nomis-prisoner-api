@@ -53,12 +53,14 @@ class OffenderIndividualSchedule(
   @Column
   var endTime: LocalDateTime? = null,
 
+  // INT_MOV only for now
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  val eventClass: EventClass = EventClass.INT_MOV, // INT_MOV only for now
+  val eventClass: EventClass = EventClass.INT_MOV,
 
+  // APP for appointment
   @Column(nullable = false)
-  val eventType: String = "APP", // APP for appointment
+  val eventType: String = "APP",
 
   @ManyToOne(optional = false)
   @NotFound(action = NotFoundAction.IGNORE)

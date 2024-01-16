@@ -225,7 +225,7 @@ class Repository(
     adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
 
   fun delete(courtCase: CourtCase) = courtCaseRepository.deleteById(courtCase.id)
-  fun deleteOffenderChargeByBooking(bookingId: Long) = offenderChargeRepository.deleteByOffenderBooking_bookingId(bookingId = bookingId)
+  fun deleteOffenderChargeByBooking(bookingId: Long) = offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
   fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
 
   fun delete(questionnaire: Questionnaire) = questionnaireRepository.deleteById(questionnaire.id)
@@ -317,13 +317,13 @@ class Repository(
   }
 
   fun getAllAgencyVisitSlots(prisonId: String): List<AgencyVisitSlot> =
-    agencyVisitSlotRepository.findByLocation_Id(prisonId)
+    agencyVisitSlotRepository.findByLocationId(prisonId)
 
   fun getAllAgencyVisitTimes(prisonId: String): List<AgencyVisitTime> =
-    agencyVisitTimeRepository.findByAgencyVisitTimesId_Location_Id(prisonId)
+    agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationId(prisonId)
 
   fun getAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
-    agencyVisitDayRepository.findByAgencyVisitDayId_WeekDayAndAgencyVisitDayId_Location_Id(weekDay, prisonId)
+    agencyVisitDayRepository.findByAgencyVisitDayIdWeekDayAndAgencyVisitDayIdLocationId(weekDay, prisonId)
 
   fun getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncident? =
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.incident

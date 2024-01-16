@@ -58,12 +58,12 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Optional
 
-private const val offenderBookingId = -9L
-private const val visitId = 1008L
-private const val offenderNo = "A1234AA"
-private const val prisonId = "SWI"
-private const val eventId = 34L
-private const val visitOrder = 54L
+private const val OFFENDER_BOOKING_ID = -9L
+private const val VISIT_ID = 1008L
+private const val OFFENDER_NO = "A1234AA"
+private const val PRISON_ID = "SWI"
+private const val EVENT_ID = 34L
+private const val VISIT_ORDER = 54L
 
 internal class VisitServiceTest {
 
@@ -110,9 +110,9 @@ internal class VisitServiceTest {
   )
 
   val visitType = VisitType("SCON", "desc")
-  val defaultOffender = Offender(nomsId = offenderNo, lastName = "Smith", gender = Gender("MALE", "Male"))
+  val defaultOffender = Offender(nomsId = OFFENDER_NO, lastName = "Smith", gender = Gender("MALE", "Male"))
   private val defaultOffenderBooking = OffenderBooking(
-    bookingId = offenderBookingId,
+    bookingId = OFFENDER_BOOKING_ID,
     offender = defaultOffender,
     bookingBeginDate = LocalDateTime.now(),
   ).apply { // add circular reference
@@ -123,7 +123,7 @@ internal class VisitServiceTest {
     )
   }
   val defaultVisit = Visit(
-    id = visitId,
+    id = VISIT_ID,
     visitStatus = VisitStatus("SCH", "desc"),
     offenderBooking = defaultOffenderBooking,
     visitOrder = VisitOrder(
@@ -150,7 +150,7 @@ internal class VisitServiceTest {
 
   @BeforeEach
   fun setup() {
-    whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
+    whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(OFFENDER_NO, true)).thenReturn(
       Optional.of(defaultOffenderBooking),
     )
     whenever(personRepository.findById(any())).thenAnswer {
@@ -179,15 +179,15 @@ internal class VisitServiceTest {
       return@thenAnswer Optional.of(AgencyLocation(it.arguments[0] as String, "desc"))
     }
 
-    whenever(visitVisitorRepository.getEventId()).thenReturn(eventId)
-    whenever(visitOrderRepository.getVisitOrderNumber()).thenReturn(visitOrder)
+    whenever(visitVisitorRepository.getEventId()).thenReturn(EVENT_ID)
+    whenever(visitOrderRepository.getVisitOrderNumber()).thenReturn(VISIT_ORDER)
 
     whenever(visitDayRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitDay }
     whenever(visitTimeRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitTime }
     whenever(visitSlotRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitSlot }
     whenever(internalLocationRepository.save(any())).thenAnswer { it.arguments[0] as AgencyInternalLocation }
-    whenever(visitRepository.save(any())).thenAnswer { (it.arguments[0] as Visit).copy(id = visitId) }
-    whenever(internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(eq(prisonId), any(), any())).thenAnswer {
+    whenever(visitRepository.save(any())).thenAnswer { (it.arguments[0] as Visit).copy(id = VISIT_ID) }
+    whenever(internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(eq(PRISON_ID), any(), any())).thenAnswer {
       return@thenAnswer AgencyInternalLocation(locationId = 99, active = true, locationType = "AREA", agencyId = it.arguments[0] as String, description = "${it.arguments[0]}-VISITS", locationCode = "VISITS", userDescription = "VISITS")
     }
   }
@@ -199,7 +199,7 @@ internal class VisitServiceTest {
       visitType = "SCON",
       startDateTime = LocalDateTime.parse("2021-11-04T12:05"),
       endTime = LocalTime.parse("13:04"),
-      prisonId = prisonId,
+      prisonId = PRISON_ID,
       visitorPersonIds = listOf(45L, 46L),
       issueDate = LocalDate.parse("2021-11-02"),
       room = "Main visit room",
@@ -208,7 +208,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data is mapped correctly`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(OFFENDER_NO, createVisitRequest)).isEqualTo(CreateVisitResponse(VISIT_ID))
 
       verify(visitRepository).save(
         check { visit ->
@@ -217,14 +217,14 @@ internal class VisitServiceTest {
           assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2021-11-04T13:04"))
           assertThat(visit.visitType).isEqualTo(visitType)
           assertThat(visit.visitStatus.code).isEqualTo("SCH")
-          assertThat(visit.location.id).isEqualTo(prisonId)
+          assertThat(visit.location.id).isEqualTo(PRISON_ID)
         },
       )
     }
 
     @Test
     fun `visit data room details are mapped correctly for social visits`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(OFFENDER_NO, createVisitRequest)).isEqualTo(CreateVisitResponse(VISIT_ID))
 
       verify(visitDayRepository).save(any())
       verify(visitTimeRepository).save(any())
@@ -232,7 +232,7 @@ internal class VisitServiceTest {
       verify(internalLocationRepository).save(any())
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.location.id).isEqualTo(prisonId)
+          assertThat(visit.location.id).isEqualTo(PRISON_ID)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_SOC")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
@@ -245,7 +245,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data room details are mapped correctly for closed visits`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(openClosedStatus = "CLOSED"))).isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(openClosedStatus = "CLOSED"))).isEqualTo(CreateVisitResponse(VISIT_ID))
 
       verify(visitDayRepository).save(any())
       verify(visitTimeRepository).save(any())
@@ -253,7 +253,7 @@ internal class VisitServiceTest {
       verify(internalLocationRepository).save(any())
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.location.id).isEqualTo(prisonId)
+          assertThat(visit.location.id).isEqualTo(PRISON_ID)
           assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_CLO")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
@@ -266,10 +266,10 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit room will have a parent location when present`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest)).isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(OFFENDER_NO, createVisitRequest)).isEqualTo(CreateVisitResponse(VISIT_ID))
       verify(visitRepository).save(
         check { visit ->
-          assertThat(visit.agencyInternalLocation?.description).isEqualTo("$prisonId-VISITS-VSIP_SOC")
+          assertThat(visit.agencyInternalLocation?.description).isEqualTo("$PRISON_ID-VISITS-VSIP_SOC")
           assertThat(visit.agencyInternalLocation?.parentLocation).isNotNull()
         },
       )
@@ -277,7 +277,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit room will not have a parent location when present`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(prisonId = "WWI"))).isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(prisonId = "WWI"))).isEqualTo(CreateVisitResponse(VISIT_ID))
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("WWI-VISITS-VSIP_SOC")
@@ -288,7 +288,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data room details are always the same regardless of VSIP room`() {
-      assertThat(visitService.createVisit(offenderNo, createVisitRequest.copy(room = "This is a really really extremely long name"))).isEqualTo(CreateVisitResponse(visitId))
+      assertThat(visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(room = "This is a really really extremely long name"))).isEqualTo(CreateVisitResponse(VISIT_ID))
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - SOCIAL")
@@ -298,7 +298,7 @@ internal class VisitServiceTest {
 
     @Test
     internal fun `room description is not used for NOMIS room description`() {
-      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "OPEN"))
+      visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "OPEN"))
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP_SOC")
@@ -309,7 +309,7 @@ internal class VisitServiceTest {
 
     @Test
     internal fun `visit restriction is used for NOMIS room description`() {
-      visitService.createVisit(offenderNo, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "CLOSED"))
+      visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(room = "Main visit room", openClosedStatus = "CLOSED"))
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.agencyInternalLocation?.description).isEqualTo("SWI-VISITS-VSIP_CLO")
@@ -325,7 +325,7 @@ internal class VisitServiceTest {
           remainingVisitOrders = 3,
           remainingPrivilegedVisitOrders = 0,
           offenderBooking = OffenderBooking(
-            bookingId = offenderBookingId,
+            bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
           ),
@@ -333,7 +333,7 @@ internal class VisitServiceTest {
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest)
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -349,7 +349,7 @@ internal class VisitServiceTest {
     fun `privilege balance decrement is saved correctly when available`() {
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest)
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -368,7 +368,7 @@ internal class VisitServiceTest {
           remainingVisitOrders = -1,
           remainingPrivilegedVisitOrders = 0,
           offenderBooking = OffenderBooking(
-            bookingId = offenderBookingId,
+            bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
           ),
@@ -376,7 +376,7 @@ internal class VisitServiceTest {
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest)
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
       verify(offenderVisitBalanceAdjustmentRepository).save(any())
@@ -387,7 +387,7 @@ internal class VisitServiceTest {
       defaultVisit.offenderBooking.visitBalance = null
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest)
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNull() })
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
@@ -397,13 +397,13 @@ internal class VisitServiceTest {
     fun `visitor records are saved correctly`() {
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest)
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
             .containsExactly(
-              Tuple.tuple(offenderBookingId, null, "SCH", eventId),
+              Tuple.tuple(OFFENDER_BOOKING_ID, null, "SCH", EVENT_ID),
               Tuple.tuple(null, 45L, "SCH", null),
               Tuple.tuple(null, 46L, "SCH", null),
             )
@@ -415,13 +415,13 @@ internal class VisitServiceTest {
     fun `agency visit days are created if not found`() {
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
 
-      visitService.createVisit(offenderNo, createVisitRequest)
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.visitors).extracting("offenderBooking.bookingId", "person.id", "eventStatus.code", "eventId")
             .containsExactly(
-              Tuple.tuple(offenderBookingId, null, "SCH", eventId),
+              Tuple.tuple(OFFENDER_BOOKING_ID, null, "SCH", EVENT_ID),
               Tuple.tuple(null, 45L, "SCH", null),
               Tuple.tuple(null, 46L, "SCH", null),
             )
@@ -431,14 +431,14 @@ internal class VisitServiceTest {
 
     @Test
     fun offenderNotFound() {
-      whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(offenderNo, true)).thenReturn(
+      whenever(offenderBookingRepository.findByOffenderNomsIdAndActive(OFFENDER_NO, true)).thenReturn(
         Optional.empty(),
       )
 
       val thrown = assertThrows(NotFoundException::class.java) {
-        visitService.createVisit(offenderNo, createVisitRequest)
+        visitService.createVisit(OFFENDER_NO, createVisitRequest)
       }
-      assertThat(thrown.message).isEqualTo(offenderNo)
+      assertThat(thrown.message).isEqualTo(OFFENDER_NO)
     }
 
     @Test
@@ -446,19 +446,19 @@ internal class VisitServiceTest {
       whenever(personRepository.findById(45L)).thenReturn(Optional.empty())
 
       val thrown = assertThrows(BadDataException::class.java) {
-        visitService.createVisit(offenderNo, createVisitRequest)
+        visitService.createVisit(OFFENDER_NO, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo("Person with id=45 does not exist")
     }
 
     @Test
     fun prisonNotFound() {
-      whenever(agencyLocationRepository.findById(prisonId)).thenReturn(Optional.empty())
+      whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(Optional.empty())
 
       val thrown = assertThrows(BadDataException::class.java) {
-        visitService.createVisit(offenderNo, createVisitRequest)
+        visitService.createVisit(OFFENDER_NO, createVisitRequest)
       }
-      assertThat(thrown.message).isEqualTo("Prison with id=$prisonId does not exist")
+      assertThat(thrown.message).isEqualTo("Prison with id=$PRISON_ID does not exist")
     }
   }
 
@@ -469,9 +469,9 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data is amended correctly`() {
-      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       with(defaultVisit) {
         assertThat(visitStatus.code).isEqualTo("CANC")
@@ -493,9 +493,9 @@ internal class VisitServiceTest {
     fun `balance increment is saved correctly`() {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
-      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -509,9 +509,9 @@ internal class VisitServiceTest {
 
     @Test
     fun `privilege balance increment is saved correctly`() {
-      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
@@ -527,9 +527,9 @@ internal class VisitServiceTest {
     fun `No balance exists`() {
       defaultVisit.offenderBooking.visitBalance = null
 
-      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
@@ -538,9 +538,9 @@ internal class VisitServiceTest {
     fun `No visit order exists`() {
       defaultVisit.visitOrder = null
 
-      whenever(visitRepository.findById(visitId)).thenReturn(Optional.of(defaultVisit))
+      whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
 
-      visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
+      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }

@@ -16,6 +16,6 @@ interface OffenderKeyDateAdjustmentRepository :
   CrudRepository<OffenderKeyDateAdjustment, Long>,
   JpaSpecificationExecutor<OffenderKeyDateAdjustment> {
   @Query(nativeQuery = true)
-  fun adjustmentIdsQuery_named(fromDate: LocalDate? = null, toDate: LocalDate? = null, pageable: Pageable): Page<AdjustmentIdResponse>
+  fun adjustmentIdsQueryNamed(fromDate: LocalDate? = null, toDate: LocalDate? = null, pageable: Pageable): Page<AdjustmentIdResponse>
   fun findByOffenderBookingAndActive(offenderBooking: OffenderBooking, isOffenderActive: Boolean): List<OffenderKeyDateAdjustment>
 }

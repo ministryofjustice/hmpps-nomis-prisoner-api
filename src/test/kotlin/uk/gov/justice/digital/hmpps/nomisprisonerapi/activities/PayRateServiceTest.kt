@@ -467,10 +467,14 @@ class PayRateServiceTest {
           courseActivity {
             newRates.addAll(
               listOf(
-                payRate(endDate = yesterday.toString()), // unchanged
-                payRate(startDate = tomorrow.toString(), halfDayRate = 4.4), // updated
-                payRate(startDate = tomorrow.toString(), payBandCode = "6", halfDayRate = 5.4), // created
-                payRate(endDate = today.toString(), payBandCode = "7", halfDayRate = 8.7), // expired
+                // unchanged
+                payRate(endDate = yesterday.toString()),
+                // updated
+                payRate(startDate = tomorrow.toString(), halfDayRate = 4.4),
+                // created
+                payRate(startDate = tomorrow.toString(), payBandCode = "6", halfDayRate = 5.4),
+                // expired
+                payRate(endDate = today.toString(), payBandCode = "7", halfDayRate = 8.7),
               ),
             )
           }

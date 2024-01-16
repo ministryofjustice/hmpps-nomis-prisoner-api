@@ -789,7 +789,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         """.trimIndent()
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(payRatesJson = payRatesJson), // remove the STD pay rate that is being used by the offender
+          // remove the STD pay rate that is being used by the offender
+          jsonBody = updateActivityRequestJson(payRatesJson = payRatesJson),
         )
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -819,7 +820,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(), // remove the BAS pay rate that is not being used
+          // remove the BAS pay rate that is not being used
+          jsonBody = updateActivityRequestJson(),
         )
           .expectStatus().isOk
       }

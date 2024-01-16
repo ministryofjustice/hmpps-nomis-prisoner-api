@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 
 @Repository
 interface CourtCaseRepository : JpaRepository<CourtCase, Long> {
-  fun findByOffenderBooking_offender_nomsIdOrderByCreateDatetimeDesc(
+  fun findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(
     nomsId: String,
   ): List<CourtCase>
 

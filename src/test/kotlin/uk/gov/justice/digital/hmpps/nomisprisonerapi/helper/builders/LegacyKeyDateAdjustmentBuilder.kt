@@ -9,7 +9,8 @@ import java.time.LocalDateTime
 class LegacyKeyDateAdjustmentBuilder(
   var adjustmentTypeCode: String = "ADA",
   var adjustmentDate: LocalDate = LocalDate.now(),
-  var createdDate: LocalDateTime = LocalDateTime.now(), // used in migration date filtering
+  // used in migration date filtering
+  var createdDate: LocalDateTime = LocalDateTime.now(),
   var adjustmentNumberOfDays: Long = 10,
 ) {
   fun build(offenderBooking: OffenderBooking, adjustmentType: SentenceAdjustment): OffenderKeyDateAdjustment =

@@ -745,7 +745,8 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
           offenderBooking = offenderAtMoorlands.latestBooking(),
           eventSubType = repository.lookupEventSubtype("MEOP"),
           eventStatus = repository.lookupEventStatusCode("SCH"),
-          eventType = "OTHER", // should never find this
+          // should never find this
+          eventType = "OTHER",
         ),
       )
     }

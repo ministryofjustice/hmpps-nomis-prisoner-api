@@ -98,7 +98,8 @@ class AdjudicationHearingBuilder(
       hearingType = repository.lookupHearingType(hearingTypeCode),
       agencyInternalLocation = repository.lookupAgencyInternalLocation(agencyInternalLocationId!!),
       eventStatus = repository.lookupEventStatusCode(eventStatusCode),
-      eventId = 1, // undecided what we are doing with this yet
+      // undecided what we are doing with this yet
+      eventId = 1,
       comment = comment,
       representativeText = representativeText,
     )
