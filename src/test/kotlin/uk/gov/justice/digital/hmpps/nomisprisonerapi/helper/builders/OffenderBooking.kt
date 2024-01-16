@@ -116,7 +116,8 @@ interface BookingDsl {
   fun adjustment(
     adjustmentTypeCode: String = "ADA",
     adjustmentDate: LocalDate = LocalDate.now(),
-    createdDate: LocalDateTime = LocalDateTime.now(), // used in migration date filtering
+    // used in migration date filtering
+    createdDate: LocalDateTime = LocalDateTime.now(),
     adjustmentNumberOfDays: Long = 10,
     active: Boolean = true,
     dsl: OffenderKeyDateAdjustmentDsl.() -> Unit = { },
@@ -320,7 +321,8 @@ class BookingBuilder(
           sequence = offenderBooking.sentences.size.toLong() + 1,
           sentenceLevel = sentenceLevel,
           consecSequence = consecSequence,
-          courtOrder = null, // todo
+          // todo
+          courtOrder = null,
           endDate = endDate,
           commentText = commentText,
           absenceCount = absenceCount,

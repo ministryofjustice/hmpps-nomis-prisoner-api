@@ -62,9 +62,11 @@ class CourtOrder(
   // no reference code match: AUTO, NAR, REM, SEC 10/3, TRL
   val orderType: String,
 
-  val orderStatus: String = "A", // always A in prod
+  // always A in prod
+  val orderStatus: String = "A",
 
-  val dueDate: LocalDate?, // usually less than 10 a year
+  // usually less than 10 a year
+  val dueDate: LocalDate?,
 
   // db comment domain is not correct
   @ManyToOne
@@ -81,12 +83,14 @@ class CourtOrder(
   )
   val seriousnessLevel: SeriousnessLevelType?,
 
-  val requestDate: LocalDate?, // usually less than 10 a year
+  // usually less than 10 a year
+  val requestDate: LocalDate?,
 
   @Convert(converter = YesNoConverter::class)
   val nonReportFlag: Boolean?,
 
-  val commentText: String?, // not used since 2018
+  // not used since 2018
+  val commentText: String?,
 
   @OneToMany(mappedBy = "id.orderId", cascade = [CascadeType.ALL], orphanRemoval = true)
   val sentencePurposes: MutableList<SentencePurpose> = mutableListOf(),

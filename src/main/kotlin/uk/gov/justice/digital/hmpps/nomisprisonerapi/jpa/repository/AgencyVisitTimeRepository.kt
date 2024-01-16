@@ -11,16 +11,16 @@ import java.time.LocalTime
 interface AgencyVisitTimeRepository :
   JpaRepository<AgencyVisitTime, AgencyVisitTimeId> {
 
-  fun findByAgencyVisitTimesId_Location_Id(locationId: String): List<AgencyVisitTime>
+  fun findByAgencyVisitTimesIdLocationId(locationId: String): List<AgencyVisitTime>
 
-  fun findByStartTimeAndAgencyVisitTimesId_WeekDayAndAgencyVisitTimesId_Location(
+  fun findByStartTimeAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
     startTime: LocalTime,
     weekDay: String,
     location: AgencyLocation,
   ): AgencyVisitTime?
 
   // roundabout way of getting the max timeslot sequence for a prison and day
-  fun findFirstByAgencyVisitTimesId_LocationAndAgencyVisitTimesId_WeekDayOrderByAgencyVisitTimesId_TimeSlotSequenceDesc(
+  fun findFirstByAgencyVisitTimesIdLocationAndAgencyVisitTimesIdWeekDayOrderByAgencyVisitTimesIdTimeSlotSequenceDesc(
     agencyId: AgencyLocation,
     weekDay: String,
   ): AgencyVisitTime?

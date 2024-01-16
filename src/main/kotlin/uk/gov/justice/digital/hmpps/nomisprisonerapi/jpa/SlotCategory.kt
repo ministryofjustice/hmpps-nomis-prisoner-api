@@ -7,7 +7,10 @@ import java.time.LocalTime
  */
 enum class SlotCategory {
 
-  AM, PM, ED;
+  AM,
+  PM,
+  ED,
+  ;
 
   companion object {
     fun of(start: LocalTime): SlotCategory =

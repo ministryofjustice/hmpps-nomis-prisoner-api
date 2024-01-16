@@ -28,7 +28,7 @@ class ServiceAgencySwitchesService(
       ?: throw NotFoundException("Service code $serviceCode does not exist")
 
   fun checkServicePrison(serviceCode: String, prisonId: String): Boolean =
-    serviceAgencySwitchesRepository.existsById_ExternalService_ServiceNameAndId_AgencyLocation_Id(serviceCode, prisonId)
+    serviceAgencySwitchesRepository.existsByIdExternalServiceServiceNameAndIdAgencyLocationId(serviceCode, prisonId)
 
   fun createServicePrison(serviceCode: String, prisonId: String) {
     val service = externalServiceRepository.findByIdOrNull(serviceCode) ?: throw NotFoundException("Service $serviceCode does not exist")

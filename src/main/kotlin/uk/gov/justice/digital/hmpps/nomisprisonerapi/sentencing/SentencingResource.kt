@@ -541,7 +541,8 @@ data class SentenceResponse(
   val endDate: LocalDate?,
   val commentText: String?,
   val absenceCount: Int?,
-  val caseId: Long?, // may return object ?
+  // may return object ?
+  val caseId: Long?,
   val etdCalculatedDate: LocalDate?,
   val mtdCalculatedDate: LocalDate?,
   val ltdCalculatedDate: LocalDate?,
@@ -599,11 +600,16 @@ data class SentenceTermResponse(
 
 @Schema(description = "Court case create request")
 data class CreateCourtCaseRequest(
-  val startDate: LocalDate, // the warrant date in sentencing
-  val legalCaseType: String, // either A for Adult or sentences to create new type
-  val courtId: String, // Court Id (establishment) not in new service will need to use (one of ) appearance values
-  val status: String, // ACTIVE, INACTIVE, CLOSED
-  val courtAppearance: CourtAppearanceRequest, // the prototype implies only 1 appearance can be associated with the case on creation
+  // the warrant date in sentencing
+  val startDate: LocalDate,
+  // either A for Adult or sentences to create new type
+  val legalCaseType: String,
+  // Court Id (establishment) not in new service will need to use (one of ) appearance values
+  val courtId: String,
+  // ACTIVE, INACTIVE, CLOSED
+  val status: String,
+  // the prototype implies only 1 appearance can be associated with the case on creation
+  val courtAppearance: CourtAppearanceRequest,
 
     /* not currently provided by sentencing service:
     caseSequence: Int,
@@ -616,7 +622,7 @@ data class CreateCourtCaseRequest(
     lidsCaseId: Int?,
     lidsCaseNumber: Int,
     lidsCombinedCaseId: Int?
-    */
+     */
 )
 
 @Schema(description = "Create adjustment response")
@@ -643,15 +649,20 @@ data class CreateCourtEventChargesResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtAppearanceRequest(
   val eventDate: LocalDate,
-  val startTime: LocalDateTime, // not in new service (but next event start time is)
+  // not in new service (but next event start time is)
+  val startTime: LocalDateTime,
   val courtEventType: String,
-  // val eventStatus: String, // TODO confirm rules for setting this
-  val courtId: String, // Court Id (agy_loc_id)
+  // TODO confirm rules for setting this
+  // val eventStatus: String,
+  // Court Id (agy_loc_id)
+  val courtId: String,
   val outcomeReasonCode: String?,
   val nextEventDate: LocalDate?,
   val nextEventStartTime: LocalDateTime?,
-  val courtEventCharges: List<OffenderChargeRequest>, // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
-  val nextCourtId: String?, // nomis UI doesn't allow this during a create but DPS does
+  // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
+  val courtEventCharges: List<OffenderChargeRequest>,
+  // nomis UI doesn't allow this during a create but DPS does
+  val nextCourtId: String?,
 // val courtOrders: List<CourtOrderResponse>,
 
   /* not currently provided by sentencing service:
@@ -693,5 +704,5 @@ data class OffenderChargeRequest(
   val resultCode1Indicator: String?,
   val resultCode2Indicator: String?,
   val lidsOffenceNumber: Int?,
-  */
+   */
 )

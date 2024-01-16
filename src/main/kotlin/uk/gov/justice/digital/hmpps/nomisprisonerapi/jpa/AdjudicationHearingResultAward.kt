@@ -116,11 +116,12 @@ class AdjudicationHearingResultAward(
   )
   var sanctionStatus: AdjudicationSanctionStatus?,
 
+  // need to map for when type is not one of the reference data codes
   @Column(
     name = "OIC_SANCTION_CODE",
     updatable = false,
     insertable = false,
-  ) // need to map for when type is not one of the reference data codes
+  )
   var sanctionCode: String,
 
   @ManyToOne(fetch = FetchType.LAZY)

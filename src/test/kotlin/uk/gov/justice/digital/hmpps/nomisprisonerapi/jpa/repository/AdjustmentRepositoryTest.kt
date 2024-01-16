@@ -58,7 +58,7 @@ class AdjustmentRepositoryTest {
 
   @Test
   fun findAdjustmentsNoDateFilter() {
-    val persistedVisitList = repository.adjustmentIdsQuery_named(pageable = Pageable.ofSize(10))
+    val persistedVisitList = repository.adjustmentIdsQueryNamed(pageable = Pageable.ofSize(10))
 
     assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactlyInAnyOrder("KEY-DATE", "SENTENCE")
   }
@@ -66,7 +66,7 @@ class AdjustmentRepositoryTest {
   @Test
   fun findAdjustmentsWithFromDate() {
     val persistedVisitList =
-      repository.adjustmentIdsQuery_named(fromDate = dateTimeJan5.toLocalDate(), pageable = Pageable.ofSize(10))
+      repository.adjustmentIdsQueryNamed(fromDate = dateTimeJan5.toLocalDate(), pageable = Pageable.ofSize(10))
 
     assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactly("SENTENCE")
   }
@@ -74,14 +74,14 @@ class AdjustmentRepositoryTest {
   @Test
   fun findAdjustmentsWithToDate() {
     val persistedVisitList =
-      repository.adjustmentIdsQuery_named(toDate = dateTimeJan5.toLocalDate(), pageable = Pageable.ofSize(10))
+      repository.adjustmentIdsQueryNamed(toDate = dateTimeJan5.toLocalDate(), pageable = Pageable.ofSize(10))
 
     assertThat(persistedVisitList).extracting("adjustmentCategory").containsExactly("KEY-DATE")
   }
 
   @Test
   fun findAdjustmentsWithDatesInclusive() {
-    val persistedVisitList = repository.adjustmentIdsQuery_named(
+    val persistedVisitList = repository.adjustmentIdsQueryNamed(
       fromDate = dateTimeJan1.toLocalDate(),
       toDate = dateTimeJan30.toLocalDate().plusDays(1),
       pageable = Pageable.ofSize(10),
@@ -92,15 +92,16 @@ class AdjustmentRepositoryTest {
 
   @Test
   fun findAdjustmentsWithDatesInclusivePaged() {
-    val page1 = repository.adjustmentIdsQuery_named(
+    val page1 = repository.adjustmentIdsQueryNamed(
       fromDate = dateTimeJan1.toLocalDate(),
       toDate = dateTimeJan30.toLocalDate().plusDays(1),
       pageable = Pageable.ofSize(1),
     )
-    val page2 = repository.adjustmentIdsQuery_named(
+    val page2 = repository.adjustmentIdsQueryNamed(
       fromDate = dateTimeJan1.toLocalDate(),
       toDate = dateTimeJan30.toLocalDate().plusDays(1),
-      pageable = Pageable.ofSize(1).withPage(1), // zero indexed
+      // zero indexed
+      pageable = Pageable.ofSize(1).withPage(1),
     )
 
     assertThat(page1.totalPages).isEqualTo(2)

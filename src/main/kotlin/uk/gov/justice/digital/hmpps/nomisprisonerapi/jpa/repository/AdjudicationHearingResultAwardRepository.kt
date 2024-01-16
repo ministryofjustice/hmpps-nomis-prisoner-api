@@ -11,18 +11,18 @@ interface AdjudicationHearingResultAwardRepository : JpaRepository<AdjudicationH
   @Query(value = "SELECT NVL(MAX(SANCTION_SEQ)+1, 1) FROM OFFENDER_OIC_SANCTIONS oos WHERE OFFENDER_BOOK_ID = :offenderBookId", nativeQuery = true)
   fun getNextSanctionSequence(offenderBookId: Long): Int
 
-  fun findFirstOrNullByIncidentParty_adjudicationNumberAndSanctionCodeAndHearingResult_chargeSequence(
+  fun findFirstOrNullByIncidentPartyAdjudicationNumberAndSanctionCodeAndHearingResultChargeSequence(
     adjudicationNumber: Long,
     sanctionCode: String,
     chargeSequence: Int,
   ): AdjudicationHearingResultAward?
 
-  fun findByIncidentParty_adjudicationNumberAndHearingResult_chargeSequenceOrderById_sanctionSequence(
+  fun findByIncidentPartyAdjudicationNumberAndHearingResultChargeSequenceOrderByIdSanctionSequence(
     adjudicationNumber: Long,
     chargeSequence: Int,
   ): List<AdjudicationHearingResultAward>
 
-  fun findById_offenderBookIdAndSanctionCodeOrderById_SanctionSequenceAsc(
+  fun findByIdOffenderBookIdAndSanctionCodeOrderByIdSanctionSequenceAsc(
     offenderBookId: Long,
     sanctionCode: String,
   ): List<AdjudicationHearingResultAward>

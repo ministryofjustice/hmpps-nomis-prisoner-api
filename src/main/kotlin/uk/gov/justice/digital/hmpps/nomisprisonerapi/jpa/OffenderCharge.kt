@@ -48,7 +48,8 @@ class OffenderCharge(
         referencedColumnName = "OFFENCE_CODE",
       ),
       JoinColumn(
-        name = "STATUTE_CODE", // statute code
+        // statute code
+        name = "STATUTE_CODE",
         referencedColumnName = "STATUTE_CODE",
       ),
     ],
@@ -125,7 +126,8 @@ class OffenderCharge(
   @JoinColumn(name = "CASE_ID")
   val courtCase: CourtCase,
 
-  val lidsOffenceNumber: Int? = null, // always populated in prod but presumably won't be by DPS
+  // always populated in prod but presumably won't be by DPS
+  val lidsOffenceNumber: Int? = null,
 
   /* COLUMNS NOT MAPPED
     CHARGE_SEQ - not used

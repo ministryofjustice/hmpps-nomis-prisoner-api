@@ -62,7 +62,7 @@ class IncentiveRepositoryTest {
     repository.save(incentive)
     entityManager.flush()
 
-    val persistedIncentive = repository.findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(seedOffenderBooking)
+    val persistedIncentive = repository.findFirstByIdOffenderBookingOrderByIepDateDescIdSequenceDesc(seedOffenderBooking)
     assertThat(persistedIncentive).isNotNull
 
     assertThat(persistedIncentive?.commentText).isEqualTo("comment text")

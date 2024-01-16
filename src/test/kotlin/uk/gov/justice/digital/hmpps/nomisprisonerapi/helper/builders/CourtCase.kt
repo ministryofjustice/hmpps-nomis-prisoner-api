@@ -116,7 +116,6 @@ class CourtCaseBuilder(
     lidsCaseId: Int?,
     lidsCaseNumber: Int,
     lidsCombinedCaseId: Int?,
-
   ): CourtCase = CourtCase(
     beginDate = beginDate,
     caseInfoNumber = caseInfoNumber,

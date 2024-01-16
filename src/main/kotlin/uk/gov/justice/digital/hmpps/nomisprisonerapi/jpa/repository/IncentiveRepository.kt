@@ -13,11 +13,11 @@ import java.time.LocalDate
 @Repository
 interface IncentiveRepository : CrudRepository<Incentive, IncentiveId>, JpaSpecificationExecutor<Incentive> {
   // current IEP - determined first by IEP date, secondly by IEP sequence - if more than 1 on the same date
-  fun findFirstById_offenderBookingOrderByIepDateDescId_SequenceDesc(
+  fun findFirstByIdOffenderBookingOrderByIepDateDescIdSequenceDesc(
     offenderBooking: OffenderBooking,
   ): Incentive?
 
-  fun findAllById_offenderBookingAndIepDateOrderById_SequenceAsc(offenderBooking: OffenderBooking, iepDate: LocalDate): List<Incentive>
+  fun findAllByIdOffenderBookingAndIepDateOrderByIdSequenceAsc(offenderBooking: OffenderBooking, iepDate: LocalDate): List<Incentive>
 
   @Modifying
   @Query("update Incentive i set i.id.sequence = :newSequence where i.id.offenderBooking = :offenderBooking and i.id.sequence = :oldSequence")

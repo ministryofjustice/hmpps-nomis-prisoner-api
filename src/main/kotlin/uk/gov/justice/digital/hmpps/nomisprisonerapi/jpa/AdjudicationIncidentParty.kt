@@ -22,12 +22,12 @@ import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-const val suspectRole = "S"
-const val witnessRole = "W"
-const val victimRole = "V"
-const val reportingOfficerRole = "RO"
-const val forceControllingOfficerRole = "CR"
-const val otherRole = "OTH"
+const val SUSPECT_ROLE = "S"
+const val WITNESS_ROLE = "W"
+const val VICTIM_ROLE = "V"
+const val REPORTING_OFFICER_ROLE = "RO"
+const val FORCE_CONTROLLING_OFFICER_ROLE = "CR"
+const val OTHER_ROLE = "OTH"
 
 @Embeddable
 class AdjudicationIncidentPartyId(
@@ -143,12 +143,12 @@ class AdjudicationIncidentParty(
 
 fun AdjudicationIncidentParty.prisonerOnReport(): OffenderBooking = offenderBooking.takeIf { this.adjudicationNumber != null }!!
 fun AdjudicationIncidentParty.staffParty(): Staff = staff!!
-fun AdjudicationIncidentParty.isSuspect(): Boolean = incidentRole == suspectRole
-fun AdjudicationIncidentParty.isWitness(): Boolean = incidentRole == witnessRole
-fun AdjudicationIncidentParty.isVictim(): Boolean = incidentRole == victimRole
-fun AdjudicationIncidentParty.isReportingOfficer(): Boolean = incidentRole == reportingOfficerRole
-fun AdjudicationIncidentParty.isInvolvedForForce(): Boolean = incidentRole == forceControllingOfficerRole
-fun AdjudicationIncidentParty.isInvolvedForOtherReason(): Boolean = incidentRole == otherRole
+fun AdjudicationIncidentParty.isSuspect(): Boolean = incidentRole == SUSPECT_ROLE
+fun AdjudicationIncidentParty.isWitness(): Boolean = incidentRole == WITNESS_ROLE
+fun AdjudicationIncidentParty.isVictim(): Boolean = incidentRole == VICTIM_ROLE
+fun AdjudicationIncidentParty.isReportingOfficer(): Boolean = incidentRole == REPORTING_OFFICER_ROLE
+fun AdjudicationIncidentParty.isInvolvedForForce(): Boolean = incidentRole == FORCE_CONTROLLING_OFFICER_ROLE
+fun AdjudicationIncidentParty.isInvolvedForOtherReason(): Boolean = incidentRole == OTHER_ROLE
 fun AdjudicationIncidentParty.prisonerParty(): Offender = offenderBooking!!.offender
 
 fun List<AdjudicationIncidentParty>.findAdjudication(adjudicationNumber: Long): AdjudicationIncidentParty =

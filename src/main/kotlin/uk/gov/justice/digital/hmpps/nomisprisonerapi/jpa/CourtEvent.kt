@@ -90,11 +90,13 @@ class CourtEvent(
 
   val commentText: String? = null,
 
+  // 1 null in production
   @Convert(converter = YesNoConverter::class)
-  val nextEventRequestFlag: Boolean? = false, // 1 null in production
+  val nextEventRequestFlag: Boolean? = false,
 
+  // No 'Y' in production
   @Convert(converter = YesNoConverter::class)
-  val orderRequestedFlag: Boolean? = false, // No 'Y' in production
+  val orderRequestedFlag: Boolean? = false,
 
   val nextEventDate: LocalDate? = null,
 
@@ -114,8 +116,9 @@ class CourtEvent(
   )
   val directionCode: DirectionType? = null,
 
+  // nulls exist
   @Convert(converter = YesNoConverter::class)
-  val holdFlag: Boolean? = null, // nulls exist
+  val holdFlag: Boolean? = null,
 
   @OneToMany(mappedBy = "id.courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   var courtEventCharges: MutableList<CourtEventCharge> = mutableListOf(),

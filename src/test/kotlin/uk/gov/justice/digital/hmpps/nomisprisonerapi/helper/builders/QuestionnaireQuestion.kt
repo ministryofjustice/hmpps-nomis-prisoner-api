@@ -23,7 +23,7 @@ interface QuestionnaireQuestionDsl {
 class QuestionnaireQuestionBuilderFactory(
   private val questionnaireAnswerBuilderFactory: QuestionnaireAnswerBuilderFactory,
 ) {
-  fun builder() = QuestionnaireQuestionBuilder(/*repository,*/ questionnaireAnswerBuilderFactory)
+  fun builder() = QuestionnaireQuestionBuilder(questionnaireAnswerBuilderFactory)
 }
 
 class QuestionnaireQuestionBuilder(

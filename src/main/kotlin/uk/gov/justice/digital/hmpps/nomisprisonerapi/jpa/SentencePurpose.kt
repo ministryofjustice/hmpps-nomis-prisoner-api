@@ -14,7 +14,8 @@ import java.time.LocalDateTime
 @Embeddable
 class SentencePurposeId(
   var orderId: Long,
-  var orderPartyCode: String, // always 'CRT' on prod
+  // always 'CRT' on prod
+  var orderPartyCode: String,
   var purposeCode: String,
 ) : Serializable
 

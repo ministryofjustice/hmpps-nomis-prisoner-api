@@ -31,7 +31,8 @@ data class CourseScheduleRule(
   @JoinColumn(name = "CRS_ACTY_ID", nullable = false)
   val courseActivity: CourseActivity,
 
-  val weekNo: Int? = 1, // always set to 1 in prod
+  // always set to 1 in prod
+  val weekNo: Int? = 1,
 
   @Column(name = "MONDAY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)

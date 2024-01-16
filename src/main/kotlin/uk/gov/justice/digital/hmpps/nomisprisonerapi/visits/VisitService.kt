@@ -410,7 +410,7 @@ class VisitService(
       getOrCreateVisitTime(startDateTime = startDateTime, endDateTime = endDateTime, location = location)
     val vsipVisitRoom =
       getOrCreateVsipVisitRoom(location = location, isClosedVisit = isClosedVisit)
-    return visitSlotRepository.findByAgencyInternalLocation_DescriptionAndAgencyVisitTime_StartTimeAndWeekDay(
+    return visitSlotRepository.findByAgencyInternalLocationDescriptionAndAgencyVisitTimeStartTimeAndWeekDay(
       roomDescription = vsipVisitRoom.description,
       startTime = agencyVisitTime.startTime,
       weekDay = agencyVisitTime.agencyVisitTimesId.weekDay,
@@ -426,7 +426,7 @@ class VisitService(
     endDateTime: LocalDateTime,
   ): AgencyVisitTime {
     val weekDay = getOrCreateVisitDay(startDateTime = startDateTime, location = location)
-    return visitTimeRepository.findByStartTimeAndAgencyVisitTimesId_WeekDayAndAgencyVisitTimesId_Location(
+    return visitTimeRepository.findByStartTimeAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
       startTime = startDateTime.toLocalTime(),
       weekDay = weekDay.agencyVisitDayId.weekDay,
       location = location,
@@ -491,7 +491,7 @@ class VisitService(
     weekDay: AgencyVisitDay,
   ): AgencyVisitTime {
     val timeSlotSeq =
-      visitTimeRepository.findFirstByAgencyVisitTimesId_LocationAndAgencyVisitTimesId_WeekDayOrderByAgencyVisitTimesId_TimeSlotSequenceDesc(
+      visitTimeRepository.findFirstByAgencyVisitTimesIdLocationAndAgencyVisitTimesIdWeekDayOrderByAgencyVisitTimesIdTimeSlotSequenceDesc(
         agencyId = location,
         weekDay = weekDay.agencyVisitDayId.weekDay,
       )?.let { it.agencyVisitTimesId.timeSlotSequence + 1 } ?: 1
@@ -500,8 +500,8 @@ class VisitService(
         AgencyVisitTimeId(location, weekDay.agencyVisitDayId.weekDay, timeSlotSeq),
         startTime = startDateTime.toLocalTime(),
         endTime = endDateTime.toLocalTime(),
-        effectiveDate = startDateTime.toLocalDate()
-          .minusDays(1), // effective and expiry in the past to avoid the slot being available in pnomis
+        // effective and expiry in the past to avoid the slot being available in pnomis
+        effectiveDate = startDateTime.toLocalDate().minusDays(1),
         expiryDate = startDateTime.toLocalDate().minusDays(1),
       ),
     )
@@ -513,9 +513,9 @@ class VisitService(
   ): AgencyVisitSlot {
     log.info(
       "Creating visit slot for day of week ${visitTime.agencyVisitTimesId.weekDay}, start time: ${
-      visitTime.startTime.format(
-        DateTimeFormatter.ISO_TIME,
-      )
+        visitTime.startTime.format(
+          DateTimeFormatter.ISO_TIME,
+        )
       } at ${vsipRoom.agencyId}",
     )
     return visitSlotRepository.save(

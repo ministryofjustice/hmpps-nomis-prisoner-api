@@ -177,9 +177,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
                 // give half of the activities active allocations
                 if (index % 2 == 0) {
                   courseAllocation(courseActivity = activity, startDate = "$today")
-                }
-                // and half of the activities inactive allocations
-                else {
+                } else {
+                  // and half of the activities inactive allocations
                   courseAllocation(courseActivity = activity, startDate = "$yesterday", endDate = "$yesterday")
                 }
               }
