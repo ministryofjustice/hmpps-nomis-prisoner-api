@@ -226,6 +226,7 @@ class SentencingService(
       ).also { courtEvent ->
         request.existingOffenderChargeIds.map { offenderChargeId ->
           getOffenderCharge(offenderChargeId).let { offenderCharge ->
+            val resultCode = offenderCharge.resultCode1?.let { it } ?: courtEvent.outcomeReasonCode
             courtEvent.courtEventCharges.add(
               CourtEventCharge(
                 CourtEventChargeId(
@@ -236,6 +237,8 @@ class SentencingService(
                 offenceEndDate = offenderCharge.offenceEndDate,
                 mostSeriousFlag = offenderCharge.mostSeriousFlag,
                 offencesCount = offenderCharge.offencesCount,
+                resultCode1 = resultCode,
+                resultCode1Indicator = resultCode?.dispositionCode,
               ),
             )
           }

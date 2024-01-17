@@ -259,10 +259,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].cjitCode3").isEqualTo("cj8")
           .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
           .jsonPath("offenderCharges[0].resultCode2.description").isEqualTo("Detention Centre")
-          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("r1")
-          .jsonPath("offenderCharges[0].resultCode2Indicator").isEqualTo("r2")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].resultCode2Indicator").isEqualTo("F")
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
-          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[0].lidsOffenceNumber").isEqualTo(11)
       }
 
@@ -736,10 +736,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].cjitCode3").isEqualTo("cj8")
           .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
           .jsonPath("offenderCharges[0].resultCode2.description").isEqualTo("Detention Centre")
-          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("r1")
-          .jsonPath("offenderCharges[0].resultCode2Indicator").isEqualTo("r2")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].resultCode2Indicator").isEqualTo("F")
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
-          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
       }
     }
@@ -1016,7 +1016,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-02")
           .jsonPath("offenderCharges[0].offence.description")
           .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
-          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1002")
+          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1067")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
           .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
@@ -1290,8 +1290,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
-              offenderCharge2 = offenderCharge()
+              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              offenderCharge2 = offenderCharge(resultCode1 = "1067")
               courtEvent {
                 // overrides from the parent offender charge fields
                 courtEventCharge(
@@ -1468,10 +1468,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[2].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[2].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("courtEvents[2].courtEventCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("courtEvents[2].courtEventCharges[0].resultCode1.code").isEqualTo("1005")
+          .jsonPath("courtEvents[2].courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
           .jsonPath("courtEvents[2].courtEventCharges[1].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[2].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[2].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RR84700")
           .jsonPath("courtEvents[2].courtEventCharges[1].offencesCount").isEqualTo(1)
+          .jsonPath("courtEvents[2].courtEventCharges[1].resultCode1.code").isEqualTo("1067")
+          .jsonPath("courtEvents[2].courtEventCharges[1].resultCode1Indicator").isEqualTo("F")
+          // offender charges not updated for adding a new appearance using existing Offender charges
+          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("offenderCharges[1].resultCode1.description").isEqualTo("Bound Over to Leave the Island within 3 days")
+          .jsonPath("offenderCharges[1].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[1].chargeStatus.description").isEqualTo("Inactive")
       }
 
       @Test
@@ -1561,7 +1572,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     offencesCount: Int? = 1,
     offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
     offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
-    resultCode1: String? = "1002",
+    resultCode1: String? = "1067",
     mostSeriousFlag: Boolean = true,
   ) =
     OffenderChargeRequest(

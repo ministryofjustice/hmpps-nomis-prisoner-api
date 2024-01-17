@@ -73,36 +73,37 @@ class OffenderChargeBuilder(
     cjitCode1: String?,
     cjitCode2: String?,
     cjitCode3: String?,
-    chargeStatus: String?,
     resultCode1: String?,
     resultCode2: String?,
-    resultCode1Indicator: String?,
-    resultCode2Indicator: String?,
     mostSeriousFlag: Boolean,
     offenderBooking: OffenderBooking,
     courtCase: CourtCase,
     lidsOffenceNumber: Int?,
-  ): OffenderCharge = OffenderCharge(
-    offenderBooking = offenderBooking,
-    courtCase = courtCase,
-    offence = repository.lookupOffence(offenceCode, offenceCode.take(4)),
-    offencesCount = offencesCount,
-    offenceDate = offenceDate,
-    offenceEndDate = offenceEndDate,
-    plea = plea?. let { repository.lookupPleaStatus(it) },
-    propertyValue = propertyValue,
-    totalPropertyValue = totalPropertyValue,
-    cjitCode1 = cjitCode1,
-    cjitCode2 = cjitCode2,
-    cjitCode3 = cjitCode3,
-    chargeStatus = chargeStatus?. let { repository.lookupChargeStatus(it) },
-    resultCode1 = resultCode1?. let { repository.lookupOffenceResultCode(it) },
-    resultCode2 = resultCode2?. let { repository.lookupOffenceResultCode(it) },
-    resultCode1Indicator = resultCode1Indicator,
-    resultCode2Indicator = resultCode2Indicator,
-    mostSeriousFlag = mostSeriousFlag,
-    lidsOffenceNumber = lidsOffenceNumber,
-  )
-    .let { repository.save(it) }
-    .also { offenderCharge = it }
+  ): OffenderCharge {
+    val persistedResultCode1 = resultCode1?.let { repository.lookupOffenceResultCode(it) }
+    val persistedResultCode2 = resultCode2?.let { repository.lookupOffenceResultCode(it) }
+    return OffenderCharge(
+      offenderBooking = offenderBooking,
+      courtCase = courtCase,
+      offence = repository.lookupOffence(offenceCode, offenceCode.take(4)),
+      offencesCount = offencesCount,
+      offenceDate = offenceDate,
+      offenceEndDate = offenceEndDate,
+      plea = plea?.let { repository.lookupPleaStatus(it) },
+      propertyValue = propertyValue,
+      totalPropertyValue = totalPropertyValue,
+      cjitCode1 = cjitCode1,
+      cjitCode2 = cjitCode2,
+      cjitCode3 = cjitCode3,
+      chargeStatus = persistedResultCode1?.let { repository.lookupChargeStatus(it.chargeStatus) },
+      resultCode1 = persistedResultCode1,
+      resultCode2 = persistedResultCode2,
+      resultCode1Indicator = persistedResultCode1?.dispositionCode,
+      resultCode2Indicator = persistedResultCode2?.dispositionCode,
+      mostSeriousFlag = mostSeriousFlag,
+      lidsOffenceNumber = lidsOffenceNumber,
+    )
+      .let { repository.save(it) }
+      .also { offenderCharge = it }
+  }
 }
