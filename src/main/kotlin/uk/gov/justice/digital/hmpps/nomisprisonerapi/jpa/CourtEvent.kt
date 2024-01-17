@@ -85,8 +85,9 @@ class CourtEvent(
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val prison: AgencyLocation,
 
-  // nullable, no reference code match, look like integer codes that do not exist - db comment implies "CANC_RSN" which doesn't exist
-  val outcomeReasonCode: String? = null,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "outcome_reason_code")
+  val outcomeReasonCode: OffenceResultCode? = null,
 
   val commentText: String? = null,
 
@@ -116,7 +117,6 @@ class CourtEvent(
   )
   val directionCode: DirectionType? = null,
 
-  // nulls exist
   @Convert(converter = YesNoConverter::class)
   val holdFlag: Boolean? = null,
 

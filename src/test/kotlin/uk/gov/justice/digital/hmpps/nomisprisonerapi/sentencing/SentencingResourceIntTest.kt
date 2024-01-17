@@ -70,9 +70,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 val offenderCharge2 = offenderCharge()
                 courtEvent {
+                  // overrides from the parent offender charge fields
                   courtEventCharge(
                     offenderCharge = offenderCharge1,
-                    // overrides from the parent offender charge fields
                     plea = "NG",
                   )
                   courtEventCharge(
@@ -202,7 +202,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").isEqualTo("Mike")
           .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
-          .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("1046")
+          .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].holdFlag").doesNotExist()
@@ -998,7 +998,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").doesNotExist()
           .jsonPath("courtEvents[0].courtId").isEqualTo("ABDRCT")
-          .jsonPath("courtEvents[0].outcomeReasonCode").isEqualTo("ENT")
+          .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("1004")
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].holdFlag").doesNotExist()
@@ -1016,6 +1016,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-02")
           .jsonPath("offenderCharges[0].offence.description")
           .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1002")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
           .jsonPath("courtEvents[1].eventDate").isEqualTo("2023-01-10")
@@ -1183,6 +1184,80 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
           .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
       }
+
+      @Test
+      fun `outcomes - use court event outcome if none provided for offender charge`() {
+        val courtCaseResponse = webTestClient.post().uri("/prisoners/$offenderLeedsNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequestHierarchy(
+                courtAppearance = createCourtAppearance(
+                  outcomeReasonCode = "1002",
+                  courtEventCharges = mutableListOf(
+                    createOffenderChargeRequest(resultCode1 = null),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/$offenderLeedsNo/sentencing/court-cases/${courtCaseResponse.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderLeedsNo)
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("1002")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1002")
+          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1002")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
+      }
+
+      @Test
+      fun `outcomes - handles offender charge level result that differ from the appearance outcome`() {
+        val courtCaseResponse = webTestClient.post().uri("/prisoners/$offenderLeedsNo/sentencing/court-cases")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequestHierarchy(
+                courtAppearance = createCourtAppearance(
+                  outcomeReasonCode = "1002",
+                  courtEventCharges = mutableListOf(
+                    createOffenderChargeRequest(resultCode1 = "1005"),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateCourtCaseResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/$offenderLeedsNo/sentencing/court-cases/${courtCaseResponse.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderLeedsNo)
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("1002")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1005")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
+          // offender charge has the additional chargeStatus, otherwise should be equal for a new court appearance
+          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1005")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
+      }
     }
 
     @AfterEach
@@ -1218,9 +1293,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge()
               courtEvent {
+                // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
-                  // overrides from the parent offender charge fields
                   plea = "NG",
                 )
                 courtEventCharge(
@@ -1357,7 +1432,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[1].judgeName").doesNotExist()
           .jsonPath("courtEvents[1].courtId").isEqualTo("ABDRCT")
-          .jsonPath("courtEvents[1].outcomeReasonCode").isEqualTo("ENT")
+          .jsonPath("courtEvents[1].outcomeReasonCode.code").isEqualTo("1002")
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].holdFlag").doesNotExist()
@@ -1456,7 +1531,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     startTime: LocalDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
     courtId: String = "ABDRCT",
     courtEventType: String = "CRT",
-    outcomeReasonCode: String = "ENT",
+    outcomeReasonCode: String = "1004",
     nextEventDate: LocalDate = LocalDate.of(2023, 1, 10),
     nextEventStartTime: LocalDateTime = LocalDateTime.of(2023, 1, 10, 9, 0),
     nextCourtId: String = "COURT1",

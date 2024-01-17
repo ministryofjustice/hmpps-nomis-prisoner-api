@@ -10,10 +10,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -82,12 +84,15 @@ class CourtEventBuilderRepository(
   val directionTypeRepository: ReferenceCodeRepository<DirectionType>,
   val courtEventTypeRepository: ReferenceCodeRepository<MovementReason>,
   val agencyLocationRepository: AgencyLocationRepository,
+  val offenceResultCodeRepository: OffenceResultCodeRepository,
 ) {
   fun save(courtEvent: CourtEvent): CourtEvent =
     repository.save(courtEvent)
 
   fun lookupEventStatus(code: String): EventStatus =
     eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
+
+  fun lookupOffenceResultCode(code: String): OffenceResultCode = offenceResultCodeRepository.findByIdOrNull(code)!!
 
   fun lookupDirectionType(code: String): DirectionType =
     directionTypeRepository.findByIdOrNull(DirectionType.pk(code))!!
@@ -128,7 +133,7 @@ class CourtEventBuilder(
     judgeName = judgeName,
     eventStatus = repository.lookupEventStatus(eventStatusCode),
     prison = repository.lookupAgency(prison),
-    outcomeReasonCode = outcomeReasonCode,
+    outcomeReasonCode = outcomeReasonCode?.let { repository.lookupOffenceResultCode(outcomeReasonCode) },
     commentText = commentText,
     orderRequestedFlag = orderRequestedFlag,
     nextEventStartTime = nextEventStartTime,

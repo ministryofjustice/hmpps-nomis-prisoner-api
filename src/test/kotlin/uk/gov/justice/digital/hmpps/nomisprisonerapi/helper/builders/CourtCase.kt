@@ -28,7 +28,7 @@ interface CourtCaseDsl {
     prison: String = "MDI",
     courtEventType: String = "TRIAL",
     eventStatusCode: String = "SCH",
-    outcomeReasonCode: String? = "1046",
+    outcomeReasonCode: String? = "3514",
     judgeName: String? = "Mike",
     eventDate: LocalDate = LocalDate.of(2023, 1, 1),
     startTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
