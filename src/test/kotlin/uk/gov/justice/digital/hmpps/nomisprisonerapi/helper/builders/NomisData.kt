@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -24,6 +25,7 @@ class NomisDataBuilder(
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
+  private val incidentBuilderFactory: IncidentBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -34,6 +36,7 @@ class NomisDataBuilder(
     externalServiceBuilderFactory,
     courtCaseBuilderFactory,
     questionnaireBuilderFactory,
+    incidentBuilderFactory,
   ).apply(dsl)
 }
 
@@ -46,6 +49,7 @@ class NomisData(
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
+  private val incidentBuilderFactory: IncidentBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
@@ -135,6 +139,33 @@ class NomisData(
           description = description,
           active = active,
           listSequence = listSequence,
+        )
+          .also {
+            builder.apply(dsl)
+          }
+      }
+
+  @IncidentDslMarker
+  override fun incident(
+    title: String,
+    description: String,
+    reportingStaff: Staff,
+    reportedDateTime: LocalDateTime,
+    incidentDateTime: LocalDateTime,
+    incidentStatus: String,
+    incidentType: String,
+    dsl: IncidentDsl.() -> Unit,
+  ): Incident =
+    incidentBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          title = title,
+          description = description,
+          reportingStaff = reportingStaff,
+          reportedDateTime = reportedDateTime,
+          incidentDateTime = incidentDateTime,
+          incidentStatus = incidentStatus,
+          incidentType = incidentType,
         )
           .also {
             builder.apply(dsl)
@@ -237,6 +268,18 @@ interface NomisDataDsl {
     listSequence: Int,
     dsl: QuestionnaireDsl.() -> Unit = {},
   ): Questionnaire
+
+  @IncidentDslMarker
+  fun incident(
+    title: String = "An incident occurred",
+    description: String = "Fighting and shouting occurred in the prisoner's cell and a chair was thrown.",
+    reportingStaff: Staff,
+    reportedDateTime: LocalDateTime = LocalDateTime.parse("2024-01-02T09:30"),
+    incidentDateTime: LocalDateTime = LocalDateTime.parse("2023-12-30T13:45"),
+    incidentStatus: String = "AWAN",
+    incidentType: String = "SELF HARM",
+    dsl: IncidentDsl.() -> Unit = {},
+  ): Incident
 
   @ExternalServiceDslMarker
   fun externalService(
