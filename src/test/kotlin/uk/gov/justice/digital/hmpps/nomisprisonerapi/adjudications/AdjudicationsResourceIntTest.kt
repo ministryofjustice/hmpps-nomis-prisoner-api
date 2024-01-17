@@ -592,8 +592,17 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
                   pleaFindingCode = "UNFIT",
                   findingCode = "NOT_PROCEED",
                 )
-                notification(staff = staff, deliveryDate = LocalDate.parse("2023-01-04"), deliveryDateTime = LocalDateTime.parse("2023-01-04T10:00:00"))
-                notification(staff = staffInvestigator, deliveryDate = LocalDate.parse("2023-01-05"), deliveryDateTime = LocalDateTime.parse("2023-01-05T11:30:00"), comment = "You have been issued this hearing")
+                notification(
+                  staff = staff,
+                  deliveryDate = LocalDate.parse("2023-01-04"),
+                  deliveryDateTime = LocalDateTime.parse("2023-01-04T10:00:00"),
+                )
+                notification(
+                  staff = staffInvestigator,
+                  deliveryDate = LocalDate.parse("2023-01-05"),
+                  deliveryDateTime = LocalDateTime.parse("2023-01-05T11:30:00"),
+                  comment = "You have been issued this hearing",
+                )
               }
               investigation(
                 investigator = staffInvestigator,
@@ -884,6 +893,33 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         }
 
         @Test
+        fun `flag to indicate multiple charges is returned`() {
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/1")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("hasMultipleCharges").isEqualTo(true)
+
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/2")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("hasMultipleCharges").isEqualTo(true)
+
+          webTestClient.get()
+            .uri("/adjudications/adjudication-number/$PREVIOUS_ADJUDICATION_NUMBER/charge-sequence/1")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("hasMultipleCharges").isEqualTo(false)
+        }
+
+        @Test
         fun `returns details of damage done during the incident`() {
           getAdjudicationDamageTest("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/$hoochChargeSequence")
         }
@@ -1088,7 +1124,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("incident.staffWitnesses[0].comment").isEqualTo("They saw everything")
         .jsonPath("incident.staffVictims[0].staffId").isEqualTo(staffVictim.id)
         .jsonPath("incident.reportingOfficers[0].staffId").isEqualTo(staffIncidentReportingOfficer.id)
-        .jsonPath("incident.reportingOfficers[0].username").isEqualTo(staffIncidentReportingOfficer.accounts[0].username)
+        .jsonPath("incident.reportingOfficers[0].username")
+        .isEqualTo(staffIncidentReportingOfficer.accounts[0].username)
         .jsonPath("incident.otherStaffInvolved[0].staffId").isEqualTo(staffInvolvedWithForce.id)
         .jsonPath("incident.otherStaffInvolved[0].username").isEqualTo(staffInvolvedWithForce.accounts[0].username)
         .jsonPath("incident.prisonerVictims[0].firstName").isEqualTo("CHARLIE")
@@ -2428,7 +2465,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       private fun Repository.evidenceFor(adjudicationNumber: Long): List<AdjudicationEvidence> =
-        adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.investigations?.flatMap { it.evidence } ?: emptyList()
+        adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.investigations?.flatMap { it.evidence }
+          ?: emptyList()
 
       @Test
       fun `empty list will remove existing evidence`() {

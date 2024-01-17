@@ -47,4 +47,7 @@ data class AdjudicationChargeResponse(
 
   @Schema(description = "hearings associated with this adjudication")
   val hearings: List<Hearing>,
+
+  @Schema(description = "indicates if this charge was part of a larger multi-charge adjudication in NOMIS")
+  val hasMultipleCharges: Boolean = false,
 )

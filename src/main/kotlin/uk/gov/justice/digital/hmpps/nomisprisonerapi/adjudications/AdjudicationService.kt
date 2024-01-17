@@ -130,6 +130,7 @@ class AdjudicationService(
           investigations = adjudication.investigations,
           // only use results for this charge
           hearings = adjudication.hearings.map { hearing -> hearing.copy(hearingResults = hearing.hearingResults.filter { results -> results.charge.chargeSequence == chargeSequence }) },
+          hasMultipleCharges = adjudication.charges.size > 1,
         )
       }
         ?: throw NotFoundException("Adjudication charge not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence")
