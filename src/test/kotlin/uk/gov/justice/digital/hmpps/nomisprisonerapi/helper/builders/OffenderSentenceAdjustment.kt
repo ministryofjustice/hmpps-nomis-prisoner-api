@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -27,8 +28,11 @@ class OffenderSentenceAdjustmentBuilderFactory(
 @Component
 class OffenderSentenceAdjustmentBuilderRepository(
   val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
+  val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
 ) {
   fun lookupSentenceAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
+  fun save(adjustment: OffenderSentenceAdjustment): OffenderSentenceAdjustment =
+    offenderSentenceAdjustmentRepository.save(adjustment)
 }
 
 class OffenderSentenceAdjustmentBuilder(
@@ -55,5 +59,6 @@ class OffenderSentenceAdjustmentBuilder(
     offenderKeyDateAdjustmentId = keyDateAdjustmentId,
     active = active,
   )
+    .let { repository.save(it) }
     .also { offenderSentenceAdjustment = it }
 }

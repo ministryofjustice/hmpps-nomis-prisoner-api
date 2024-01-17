@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.hasBeenReleased
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderKeyDateAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
@@ -253,6 +254,7 @@ private fun OffenderKeyDateAdjustment.toAdjustmentResponse() =
     comment = this.comment,
     active = this.active,
     offenderNo = this.offenderBooking.offender.nomsId,
+    hasBeenReleased = this.offenderBooking.hasBeenReleased(),
   )
 
 private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustmentResponse(
@@ -268,4 +270,5 @@ private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustme
   active = this.active,
   hiddenFromUsers = this.offenderKeyDateAdjustmentId != null,
   offenderNo = this.offenderBooking.offender.nomsId,
+  hasBeenReleased = this.offenderBooking.hasBeenReleased(),
 )
