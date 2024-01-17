@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import java.math.BigDecimal
@@ -60,12 +61,15 @@ interface OffenderSentenceDsl {
 class OffenderSentenceBuilderRepository(
   val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
   val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
+  val offenderSentenceRepository: OffenderSentenceRepository,
 ) {
   fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
     sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
 
   fun lookupSentenceCategoryType(code: String): SentenceCategoryType =
     sentenceCategoryTypeRepository.findByIdOrNull(SentenceCategoryType.pk(code))!!
+
+  fun save(sentence: OffenderSentence): OffenderSentence = offenderSentenceRepository.save(sentence)
 }
 
 @Component
@@ -185,6 +189,7 @@ class OffenderSentenceBuilder(
     sled2Calc = sled2Calc,
     startDate2Calc = startDate2Calc,
   )
+    .let { repository.save(it) }
     .also { offenderSentence = it }
 
   override fun adjustment(

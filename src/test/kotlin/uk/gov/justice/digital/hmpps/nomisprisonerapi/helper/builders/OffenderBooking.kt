@@ -150,6 +150,11 @@ interface BookingDsl {
     to: String = "MDI",
     date: LocalDateTime = LocalDateTime.now(),
   ): Pair<OffenderExternalMovement, OffenderExternalMovement>
+
+  @OffenderExternalMovementDslMarker
+  fun release(
+    date: LocalDateTime = LocalDateTime.now(),
+  ): OffenderExternalMovement
 }
 
 @Component
@@ -424,6 +429,18 @@ class BookingBuilder(
           .also { offenderBooking.externalMovements.forEach { it.active = false } }
           .also { offenderBooking.externalMovements += it.first }
           .also { offenderBooking.externalMovements += it.second }
+      }
+  override fun release(
+    date: LocalDateTime,
+  ): OffenderExternalMovement =
+    offenderExternalMovementBuilderFactory.builder()
+      .let { builder ->
+        builder.buildRelease(
+          offenderBooking = offenderBooking,
+          date = date,
+        )
+          .also { offenderBooking.externalMovements.forEach { it.active = false } }
+          .also { offenderBooking.externalMovements += it }
       }
 
   override fun adjustment(

@@ -14,10 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyKeyDateAdjustmentBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
@@ -63,28 +60,24 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /key-date-adjustments/{adjustmentId}")
   inner class GetKeyDateAdjustment {
     private lateinit var anotherPrisoner: Offender
-    var adjustmentId: Long = 0
+    private var adjustmentIdOnActiveBooking: Long = 0
+    private var adjustmentIdOnInActiveBooking: Long = 0
 
     @BeforeEach
     internal fun createPrisoner() {
-      lateinit var adjustment: OffenderKeyDateAdjustment
-      anotherPrisoner = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TX")
-          .withBooking(
-            OffenderBookingBuilder()
-              .withKeyDateAdjustments(LegacyKeyDateAdjustmentBuilder()),
-          ),
-      )
       nomisDataBuilder.build {
         anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking(bookingBeginDate = LocalDateTime.now().minusDays(2)) {
+            sentence {}
+            adjustmentIdOnInActiveBooking = adjustment {}.id
+            release(date = LocalDateTime.now().minusDays(1))
+          }
           booking {
             sentence {}
-            adjustment = adjustment {}
+            adjustmentIdOnActiveBooking = adjustment {}.id
           }
         }
       }
-
-      adjustmentId = adjustment.id
     }
 
     @AfterEach
@@ -96,7 +89,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+        webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -104,7 +97,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+        webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -112,7 +105,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+        webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -128,13 +121,29 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     internal fun `200 when adjustment does exist`() {
-      webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+      webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(adjustmentId)
+        .jsonPath("id").isEqualTo(adjustmentIdOnActiveBooking)
         .jsonPath("offenderNo").isEqualTo("A1234TX")
+    }
+
+    @Test
+    fun `release flag is populated`() {
+      webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("hasBeenReleased").isEqualTo(false)
+      webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnInActiveBooking")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("hasBeenReleased").isEqualTo(true)
     }
   }
 
@@ -850,8 +859,9 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   inner class GetSentenceAdjustment {
     private lateinit var anotherPrisoner: Offender
     private lateinit var dummyPrisoner: Offender
-    var adjustmentId: Long = 0
-    private var keydateRelatedAdjustmentId: Long = 0
+    private var adjustmentIdOnActiveBooking: Long = 0
+    private var adjustmentIdOnInActiveBooking: Long = 0
+    private var keyDateRelatedAdjustmentId: Long = 0
 
     @BeforeEach
     internal fun createPrisoner() {
@@ -863,27 +873,28 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           }
         }
       }
-      // hack to create a key-date adjustment so I have a valid ID for the next adjustment
+      // hack to create a key-date adjustment, so I have a valid ID for the next adjustment
       val keyDateAdjustmentId = adjustment.id
-
-      lateinit var firstSentenceAdjustment: OffenderSentenceAdjustment
-      lateinit var lastSentenceAdjustment: OffenderSentenceAdjustment
 
       nomisDataBuilder.build {
         anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking(bookingBeginDate = LocalDateTime.now().minusDays(2)) {
+            sentence {
+              adjustmentIdOnInActiveBooking = adjustment {}.id
+            }
+            release(date = LocalDateTime.now().minusDays(1))
+          }
+
           booking {
             sentence {
-              firstSentenceAdjustment = adjustment {}
+              adjustmentIdOnActiveBooking = adjustment {}.id
             }
             sentence {
-              lastSentenceAdjustment = adjustment(keyDateAdjustmentId = keyDateAdjustmentId)
+              keyDateRelatedAdjustmentId = adjustment(keyDateAdjustmentId = keyDateAdjustmentId).id
             }
           }
         }
       }
-
-      adjustmentId = firstSentenceAdjustment.id
-      keydateRelatedAdjustmentId = lastSentenceAdjustment.id
     }
 
     @AfterEach
@@ -896,7 +907,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
+        webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -904,7 +915,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
+        webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -912,7 +923,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
+        webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -928,25 +939,41 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     internal fun `200 when adjustment does exist`() {
-      webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
+      webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(adjustmentId)
+        .jsonPath("id").isEqualTo(adjustmentIdOnActiveBooking)
         .jsonPath("offenderNo").isEqualTo("A1234TX")
         .jsonPath("hiddenFromUsers").isEqualTo(false)
     }
 
     @Test
     internal fun `adjustment has hidden flag set when related to a key date adjustment`() {
-      webTestClient.get().uri("/sentence-adjustments/$keydateRelatedAdjustmentId")
+      webTestClient.get().uri("/sentence-adjustments/$keyDateRelatedAdjustmentId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(keydateRelatedAdjustmentId)
+        .jsonPath("id").isEqualTo(keyDateRelatedAdjustmentId)
         .jsonPath("hiddenFromUsers").isEqualTo(true)
+    }
+
+    @Test
+    fun `release flag is populated`() {
+      webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("hasBeenReleased").isEqualTo(false)
+      webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnInActiveBooking")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("hasBeenReleased").isEqualTo(true)
     }
   }
 

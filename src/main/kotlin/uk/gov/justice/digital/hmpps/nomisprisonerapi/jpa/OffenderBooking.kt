@@ -64,7 +64,7 @@ data class OffenderBooking(
 
   @Column(name = "ACTIVE_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = false,
+  var active: Boolean = false,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "ROOT_OFFENDER_ID", nullable = false)
@@ -92,7 +92,7 @@ data class OffenderBooking(
   val bookingEndDate: LocalDateTime? = null,
 
   @Column(name = "IN_OUT_STATUS", nullable = false)
-  val inOutStatus: String? = null,
+  var inOutStatus: String? = null,
 
   @Column(name = "ADMISSION_REASON")
   val admissionReason: String? = null,
@@ -155,3 +155,5 @@ data class OffenderBooking(
       "active = " + active + ", " +
       "inOutStatus = " + inOutStatus + ")"
 }
+
+fun OffenderBooking.hasBeenReleased() = !this.active && this.inOutStatus == "OUT"
