@@ -437,7 +437,7 @@ data class CourtEventResponse(
   val directionCode: CodeDescription?,
   val judgeName: String?,
   val courtId: String,
-  val outcomeReasonCode: String?,
+  val outcomeReasonCode: CodeDescription?,
   val commentText: String?,
   val orderRequestedFlag: Boolean?,
   val holdFlag: Boolean?,
@@ -541,7 +541,6 @@ data class SentenceResponse(
   val endDate: LocalDate?,
   val commentText: String?,
   val absenceCount: Int?,
-  // may return object ?
   val caseId: Long?,
   val etdCalculatedDate: LocalDate?,
   val mtdCalculatedDate: LocalDate?,
@@ -652,9 +651,6 @@ data class CourtAppearanceRequest(
   // not in new service (but next event start time is)
   val startTime: LocalDateTime,
   val courtEventType: String,
-  // TODO confirm rules for setting this
-  // val eventStatus: String,
-  // Court Id (agy_loc_id)
   val courtId: String,
   val outcomeReasonCode: String?,
   val nextEventDate: LocalDate?,
@@ -700,7 +696,7 @@ data class OffenderChargeRequest(
   val cjitCode2: String?,
   val cjitCode3: String?,
   val chargeStatus: String?,
-  val resultCode2: String?,
+  val resultCode2: String?,  // DPS data model has 1 outcome
   val resultCode1Indicator: String?,
   val resultCode2Indicator: String?,
   val lidsOffenceNumber: Int?,
