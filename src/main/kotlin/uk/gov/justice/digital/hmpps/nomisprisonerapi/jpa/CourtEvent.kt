@@ -44,9 +44,9 @@ class CourtEvent(
   @JoinColumn(name = "CASE_ID")
   val courtCase: CourtCase?,
 
-  val eventDate: LocalDate,
+  var eventDate: LocalDate,
 
-  val startTime: LocalDateTime,
+  var startTime: LocalDateTime,
 
   // db comments state this should be part of EVENT_SUBTYP reference domain - not correct
   @ManyToOne
@@ -61,7 +61,7 @@ class CourtEvent(
       JoinColumnOrFormula(column = JoinColumn(name = "COURT_EVENT_TYPE", referencedColumnName = "code")),
     ],
   )
-  val courtEventType: MovementReason,
+  var courtEventType: MovementReason,
 
   // only 50 last used in 2009
   val judgeName: String? = null,
@@ -79,15 +79,15 @@ class CourtEvent(
       JoinColumnOrFormula(column = JoinColumn(name = "EVENT_STATUS", referencedColumnName = "code")),
     ],
   )
-  val eventStatus: EventStatus,
+  var eventStatus: EventStatus,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  val prison: AgencyLocation,
+  var prison: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "outcome_reason_code")
-  val outcomeReasonCode: OffenceResultCode? = null,
+  var outcomeReasonCode: OffenceResultCode? = null,
 
   val commentText: String? = null,
 
