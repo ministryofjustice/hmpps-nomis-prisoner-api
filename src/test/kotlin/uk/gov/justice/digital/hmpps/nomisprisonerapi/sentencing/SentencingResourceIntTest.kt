@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
@@ -1480,7 +1481,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
           .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
-          .jsonPath("offenderCharges[1].resultCode1.description").isEqualTo("Bound Over to Leave the Island within 3 days")
+          .jsonPath("offenderCharges[1].resultCode1.description")
+          .isEqualTo("Bound Over to Leave the Island within 3 days")
           .jsonPath("offenderCharges[1].resultCode1Indicator").isEqualTo("F")
           .jsonPath("offenderCharges[1].chargeStatus.description").isEqualTo("Inactive")
       }
@@ -1508,6 +1510,219 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("court", "ABDRCT")
             assertThat(it).containsEntry("courtEventId", createResponse.id.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+  }
+
+  @Nested
+  @DisplayName("PUT /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{id}")
+  inner class UpdateCourtAppearance {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private lateinit var courtEvent: CourtEvent
+    private var latestBookingId: Long = 0
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var staff: Staff
+    private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland = offender(nomsId = offenderNo) {
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
+            courtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            ) {
+              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              offenderCharge2 = offenderCharge(resultCode1 = "1067")
+              courtEvent = courtEvent {
+                // overrides from the parent offender charge fields
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  plea = "NG",
+                )
+                courtEventCharge(
+                  offenderCharge = offenderCharge2,
+                )
+                courtOrder {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+            }
+          }
+        }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when offender does not exist`() {
+        webTestClient.put()
+          .uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+      }
+
+      @Test
+      internal fun `404 when case does not exist`() {
+        webTestClient.put().uri("/prisoners/$offenderNo/sentencing/court-cases/1234/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Court case 1234 for $offenderNo not found")
+      }
+    }
+
+    @Nested
+    inner class CreateCourtAppearanceSuccess {
+
+      @Test
+      fun `can update an existing court appearance`() {
+        val courtAppearanceResponse =
+          webTestClient.put()
+            .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtAppearanceRequest(
+                  courtAppearance = createCourtAppearance(
+                    eventDate = LocalDate.of(2023, 1, 20),
+                    startTime = LocalDateTime.of(2023, 1, 20, 14, 0),
+                    courtId = "LEEDYC",
+                    courtEventType = "19",
+                    outcomeReasonCode = "4506",
+                    // TODO nextHearing changes
+                  ),
+                ),
+              ),
+            )
+            .exchange()
+            .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("courtEvents[0].eventDate").isEqualTo("2023-01-20")
+          .jsonPath("courtEvents[0].startTime").isEqualTo("2023-01-20T14:00:00")
+          .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Court Appearance - Police Product Order")
+          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
+          .jsonPath("courtEvents[0].courtId").isEqualTo("LEEDYC")
+          .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("4506")
+          //.jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
+          //.jsonPath("courtEvents[1].nextEventDate").isEqualTo("2023-01-10")
+          // .jsonPath("courtEvents[1].nextEventStartTime").isEqualTo("2023-01-10T09:00:00")
+          .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
+      }
+
+      @Test
+      fun `will track telemetry for the create`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-appearance-updated"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("court", "ABDRCT")
+            assertThat(it).containsEntry("courtEventId", courtEvent.id.toString())
           },
           isNull(),
         )

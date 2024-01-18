@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -397,6 +398,102 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CreateCourtAppearanceRequest,
   ): CreateCourtAppearanceResponse =
     sentencingService.createCourtAppearance(offenderNo, caseId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Updates Court Appearance",
+    description = "Required role NOMIS_SENTENCING Updates a new Court Appearance for the offender,latest booking and given Court Case",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CourtAppearanceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Court Appearance updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court case does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court appearance does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCourtAppearance(
+    @Schema(description = "Offender no", example = "AB1234A", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "34565", required = true)
+    @PathVariable
+    caseId: Long,
+    @Schema(description = "Case appearance Id", example = "34565", required = true)
+    @PathVariable
+    eventId: Long,
+    @RequestBody @Valid
+    request: UpdateCourtAppearanceRequest,
+  ) =
+    sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 }
 
 @Schema(description = "Court Case")
@@ -610,18 +707,18 @@ data class CreateCourtCaseRequest(
   // the prototype implies only 1 appearance can be associated with the case on creation
   val courtAppearance: CourtAppearanceRequest,
 
-    /* not currently provided by sentencing service:
-    caseSequence: Int,
-    caseStatus: String,
-    combinedCase: CourtCase?,
-    statusUpdateReason: String?,
-    statusUpdateComment: String?,
-    statusUpdateDate: LocalDate?,
-    statusUpdateStaff: Staff?,
-    lidsCaseId: Int?,
-    lidsCaseNumber: Int,
-    lidsCombinedCaseId: Int?
-     */
+  /* not currently provided by sentencing service:
+  caseSequence: Int,
+  caseStatus: String,
+  combinedCase: CourtCase?,
+  statusUpdateReason: String?,
+  statusUpdateComment: String?,
+  statusUpdateDate: LocalDate?,
+  statusUpdateStaff: Staff?,
+  lidsCaseId: Int?,
+  lidsCaseNumber: Int,
+  lidsCombinedCaseId: Int?
+   */
 )
 
 @Schema(description = "Create adjustment response")
@@ -675,7 +772,13 @@ data class CourtAppearanceRequest(
 data class CreateCourtAppearanceRequest(
   val courtAppearance: CourtAppearanceRequest,
   val existingOffenderChargeIds: List<Long>,
-  // TODO list of new (or ones to remove)
+)
+
+@Schema(description = "Court Event")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateCourtAppearanceRequest(
+  val courtAppearance: CourtAppearanceRequest,
+  val existingOffenderChargeIds: List<Long>,
 )
 
 @Schema(description = "Court Event")

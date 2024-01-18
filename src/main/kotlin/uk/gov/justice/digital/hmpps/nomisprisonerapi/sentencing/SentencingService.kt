@@ -126,7 +126,8 @@ class SentencingService(
               directionCode = lookupDirectionType(DirectionType.OUT),
             ).also { courtEvent ->
               courtAppearanceRequest.courtEventCharges.map { offenderChargeRequest ->
-                val resultCode = offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) } ?: courtEvent.outcomeReasonCode
+                val resultCode =
+                  offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) } ?: courtEvent.outcomeReasonCode
                 // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
                 val offenderCharge = OffenderCharge(
                   courtCase = courtCase,
@@ -174,16 +175,16 @@ class SentencingService(
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
-          {
-            CreateCourtAppearanceResponse(
-              id = it.id,
-              courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
-                CreateCourtEventChargesResponse(
-                  courtEventCharge.id.offenderCharge.id,
-                )
-              },
-            )
-          },
+        {
+          CreateCourtAppearanceResponse(
+            id = it.id,
+            courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+              CreateCourtEventChargesResponse(
+                courtEventCharge.id.offenderCharge.id,
+              )
+            },
+          )
+        },
       ).also {
         telemetryClient.trackEvent(
           "court-case-created",
@@ -226,7 +227,7 @@ class SentencingService(
       ).also { courtEvent ->
         request.existingOffenderChargeIds.map { offenderChargeId ->
           getOffenderCharge(offenderChargeId).let { offenderCharge ->
-            val resultCode = offenderCharge.resultCode1?.let { it } ?: courtEvent.outcomeReasonCode
+            val resultCode = offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
             courtEvent.courtEventCharges.add(
               CourtEventCharge(
                 CourtEventChargeId(
@@ -289,6 +290,53 @@ class SentencingService(
           ),
           null,
         )
+      }
+    }
+  }
+
+  @Audit
+  fun updateCourtAppearance(
+    offenderNo: String,
+    caseId: Long,
+    eventId: Long,
+    request: UpdateCourtAppearanceRequest,
+  ) {
+    findPrisoner(offenderNo).findLatestBooking().let { booking ->
+      val courtAppearanceRequest = request.courtAppearance
+      findCourtCase(caseId, offenderNo).let { courtCase ->
+        findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
+          courtAppearance.eventDate = courtAppearanceRequest.eventDate
+          courtAppearance.startTime = courtAppearanceRequest.startTime
+          courtAppearance.courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType)
+          courtAppearance.eventStatus = determineEventStatus(
+            courtAppearanceRequest.eventDate,
+            booking,
+          )
+          courtAppearance.prison = lookupEstablishment(courtAppearanceRequest.courtId)
+          courtAppearance.outcomeReasonCode =
+            courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
+
+          // TODO what happens if next hearing date amended - should the generated appearance be updated?
+          /*
+          nextEventDate = courtAppearanceRequest.nextEventDate,
+          nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+
+           */
+        }
+
+
+        telemetryClient.trackEvent(
+          "court-appearance-updated",
+          mapOf(
+            "courtCaseId" to caseId.toString(),
+            "bookingId" to booking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to courtAppearanceRequest.courtId,
+            "courtEventId" to eventId.toString(),
+          ),
+          null,
+        )
+
       }
     }
   }
@@ -418,6 +466,11 @@ class SentencingService(
   private fun findCourtCase(id: Long, offenderNo: String): CourtCase {
     return courtCaseRepository.findByIdOrNull(id)
       ?: throw NotFoundException("Court case $id for $offenderNo not found")
+  }
+
+  private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent {
+    return courtEventRepository.findByIdOrNull(id)
+      ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
   }
 
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(
