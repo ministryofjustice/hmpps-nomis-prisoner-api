@@ -157,9 +157,9 @@ data class QuestionnaireResponse(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QuestionResponse(
-  @Schema(description = "The question id", required = true)
+  @Schema(description = "The question id")
   val id: Long,
-  @Schema(description = "The question text", required = true)
+  @Schema(description = "The question text")
   val question: String,
   @Schema(description = "List of Answers to this question")
   val answers: List<AnswerResponse> = listOf(),
@@ -177,9 +177,9 @@ data class QuestionResponse(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AnswerResponse(
-  @Schema(description = "The answer id", required = true)
+  @Schema(description = "The answer id")
   val id: Long,
-  @Schema(description = "The answer text", required = true)
+  @Schema(description = "The answer text")
   val answer: String,
   @Schema(description = "The answer id used to set the listSequence values", example = "1")
   val answerSequence: Int,

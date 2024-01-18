@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentStatusRepository
@@ -62,7 +63,7 @@ class IncidentBuilder(
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
     incidentStatus: String,
-    incidentType: String,
+    questionnaire: Questionnaire,
   ): Incident {
     val let = Incident(
       title = title,
@@ -73,7 +74,7 @@ class IncidentBuilder(
       incidentDate = incidentDateTime.toLocalDate(),
       incidentTime = incidentDateTime.toLocalTime(),
       status = repository.lookupIncidentStatusCode(incidentStatus),
-      type = repository.lookupIncidentType(incidentType),
+      questionnaire = questionnaire,
     )
       .let { repository.save(it) }
     return let

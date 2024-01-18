@@ -25,7 +25,7 @@ data class Questionnaire(
   @Column(name = "QUESTIONNAIRE_ID")
   @SequenceGenerator(name = "QUESTIONNAIRE_ID", sequenceName = "QUESTIONNAIRE_ID", allocationSize = 1)
   @GeneratedValue(generator = "QUESTIONNAIRE_ID")
-  var id: Long = 0,
+  val id: Long = 0,
 
   @Column(name = "DESCRIPTION")
   val description: String? = null,
@@ -60,6 +60,7 @@ data class Questionnaire(
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
   lateinit var createDatetime: LocalDateTime
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
