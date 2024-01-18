@@ -12,22 +12,21 @@ import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
-import org.hibernate.annotations.JoinColumnOrFormula
-import org.hibernate.annotations.JoinColumnsOrFormulas
-import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Entity
 @Table(name = "INCIDENT_CASES")
+@EntityOpen
 data class Incident(
   @Id
   @Column(name = "INCIDENT_CASE_ID")
   @SequenceGenerator(name = "INCIDENT_CASE_ID", sequenceName = "INCIDENT_CASE_ID", allocationSize = 1)
   @GeneratedValue(generator = "INCIDENT_CASE_ID")
-  var id: Long = 0,
+  val id: Long = 0,
 
   @Column(name = "INCIDENT_TITLE")
   val title: String? = null,
@@ -49,17 +48,8 @@ data class Incident(
   val incidentTime: LocalTime,
 
   @ManyToOne
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + IncidentType.IR_TYPE + "'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "INCIDENT_TYPE", referencedColumnName = "code")),
-    ],
-  )
-  var type: IncidentType,
+  @JoinColumn(name = "INCIDENT_TYPE", referencedColumnName = "CODE", nullable = false)
+  val questionnaire: Questionnaire,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INCIDENT_STATUS", nullable = false)

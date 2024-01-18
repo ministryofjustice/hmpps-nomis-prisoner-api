@@ -22,7 +22,7 @@ data class QuestionnaireAnswer(
   @Column(name = "QUESTIONNAIRE_ANS_ID")
   @SequenceGenerator(name = "QUESTIONNAIRE_ANS_ID", sequenceName = "QUESTIONNAIRE_ANS_ID", allocationSize = 1)
   @GeneratedValue(generator = "QUESTIONNAIRE_ANS_ID")
-  var id: Long = 0,
+  val id: Long = 0,
 
   @Column(name = "DESCRIPTION")
   val answer: String,

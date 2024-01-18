@@ -7,7 +7,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncidentSpecification
@@ -39,7 +38,7 @@ class IncidentService(
       title = this.title,
       description = this.description,
       status = this.status.code,
-      type = this.type.toCodeDescription(),
+      type = this.questionnaire.code,
       lockedResponse = this.lockedResponse,
       incidentDateTime = LocalDateTime.of(this.incidentDate, this.incidentTime),
       reportedStaff = this.reportingStaff.toStaff(),

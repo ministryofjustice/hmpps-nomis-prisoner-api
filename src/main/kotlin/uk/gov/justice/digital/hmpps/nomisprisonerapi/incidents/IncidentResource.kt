@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -141,8 +140,8 @@ data class IncidentResponse(
 
   @Schema(description = "Current status code of the incident")
   val status: String,
-  @Schema(description = "The incident type code and description")
-  val type: CodeDescription,
+  @Schema(description = "The incident questionnaire type")
+  val type: String,
 
   @Schema(description = "If the response is locked ie if the response is completed")
   val lockedResponse: Boolean,
