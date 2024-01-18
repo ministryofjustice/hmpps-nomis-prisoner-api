@@ -1694,8 +1694,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].courtId").isEqualTo("LEEDYC")
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("4506")
-          //.jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
-          //.jsonPath("courtEvents[1].nextEventDate").isEqualTo("2023-01-10")
+          // .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
+          // .jsonPath("courtEvents[1].nextEventDate").isEqualTo("2023-01-10")
           // .jsonPath("courtEvents[1].nextEventStartTime").isEqualTo("2023-01-10T09:00:00")
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
           .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
