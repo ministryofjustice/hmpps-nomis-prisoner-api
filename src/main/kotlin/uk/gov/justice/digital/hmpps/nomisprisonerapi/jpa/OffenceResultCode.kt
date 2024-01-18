@@ -17,6 +17,10 @@ class OffenceResultCode(
   val code: String,
 
   val description: String,
+
+  val dispositionCode: String,
+
+  val chargeStatus: String,
 ) {
 
   override fun equals(other: Any?): Boolean {
