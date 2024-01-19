@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
@@ -8,6 +9,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -33,6 +35,9 @@ data class Incident(
 
   @Column(name = "INCIDENT_DETAILS")
   val description: String? = null,
+
+  @OneToMany(mappedBy = "incident", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val parties: MutableList<IncidentParty> = mutableListOf(),
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REPORTED_STAFF_ID", nullable = false)
