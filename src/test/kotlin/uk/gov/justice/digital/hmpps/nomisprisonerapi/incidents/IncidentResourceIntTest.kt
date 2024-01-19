@@ -203,7 +203,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .consumeWith(System.out::println)
         .jsonPath("id").isEqualTo(incident1.id)
-        .jsonPath("staffParties[0].staffId").isEqualTo(1)
+        .jsonPath("staffParties[0].staffId").isEqualTo(partyStaff1.id)
         .jsonPath("staffParties[0].username").isEqualTo("JIIMPARTYSTAFF")
         .jsonPath("staffParties[0].firstName").isEqualTo("JIM")
         .jsonPath("staffParties[0].lastName").isEqualTo("PARTYSTAFF")
