@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
@@ -20,6 +22,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
+  private lateinit var offenderParty: Offender
+  private lateinit var partyStaff1: Staff
   private lateinit var reportingStaff1: Staff
   private lateinit var reportingStaff2: Staff
   private lateinit var questionnaire1: Questionnaire
@@ -30,6 +34,9 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createIncidents() {
     nomisDataBuilder.build {
+      partyStaff1 = staff(firstName = "JIM", lastName = "PARTYSTAFF") {
+        account(username = "JIIMPARTYSTAFF")
+      }
       reportingStaff1 = staff(firstName = "FRED", lastName = "STAFF") {
         account(username = "FREDSTAFF")
       }
@@ -56,12 +63,18 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         }
       }
 
+      offenderParty = offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
+        booking(agencyLocationId = "MDI")
+      }
       incident1 = incident(
         title = "Fight in the cell",
         description = "Offenders were injured and furniture was damaged.",
         reportingStaff = reportingStaff1,
         questionnaire = questionnaire1,
-      )
+      ) {
+        incidentParty(staff = partyStaff1)
+        incidentParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
+      }
       incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1)
       incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1)
     }
@@ -73,6 +86,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.delete(incident2)
     repository.delete(incident3)
     repository.delete(questionnaire1)
+    repository.delete(partyStaff1)
+    repository.delete(offenderParty)
     repository.delete(reportingStaff1)
     repository.delete(reportingStaff2)
   }
@@ -177,6 +192,34 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("reportedStaff.firstName").isEqualTo("FRED")
         .jsonPath("reportedStaff.lastName").isEqualTo("STAFF")
         .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
+    }
+
+    @Test
+    fun `will return staff party information for an incident by Id`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .consumeWith(System.out::println)
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("staffParties[0].staffId").isEqualTo(partyStaff1.id)
+        .jsonPath("staffParties[0].username").isEqualTo("JIIMPARTYSTAFF")
+        .jsonPath("staffParties[0].firstName").isEqualTo("JIM")
+        .jsonPath("staffParties[0].lastName").isEqualTo("PARTYSTAFF")
+    }
+
+    @Test
+    fun `will return offender party information for an incident by Id`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("offenderParties[0].offenderNo").isEqualTo("A1234TT")
+        .jsonPath("offenderParties[0].firstName").isEqualTo("Bob")
+        .jsonPath("offenderParties[0].lastName").isEqualTo("Smith")
     }
   }
 }

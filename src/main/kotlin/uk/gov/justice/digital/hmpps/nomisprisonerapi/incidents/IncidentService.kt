@@ -8,8 +8,14 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isOffenderParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isStaffParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.offenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncidentSpecification
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import java.time.LocalDateTime
 
 @Service
@@ -43,13 +49,28 @@ class IncidentService(
       incidentDateTime = LocalDateTime.of(this.incidentDate, this.incidentTime),
       reportedStaff = this.reportingStaff.toStaff(),
       reportedDateTime = LocalDateTime.of(this.reportedDate, this.reportedTime),
-    )
-
-  fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
-    Staff(
-      staffId = id,
-      firstName = firstName,
-      lastName = lastName,
-      username = accounts.maxByOrNull { it.type }?.username ?: "unknown",
+      staffParties = this.staffParties().map { it.staffParty().toStaff() },
+      offenderParties = this.offenderParties().map { it.offenderParty().toOffender() },
     )
 }
+
+private fun Incident.staffParties(): List<IncidentParty> =
+  this.parties.filter { it.isStaffParty() }
+
+private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
+  Staff(
+    staffId = id,
+    firstName = firstName,
+    lastName = lastName,
+    username = accounts.maxByOrNull { it.type }?.username ?: "unknown",
+  )
+
+private fun Incident.offenderParties(): List<IncidentParty> =
+  this.parties.filter { it.isOffenderParty() }
+
+private fun Offender.toOffender() =
+  Offender(
+    offenderNo = nomsId,
+    firstName = firstName,
+    lastName = lastName,
+  )

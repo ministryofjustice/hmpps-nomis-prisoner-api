@@ -154,6 +154,11 @@ data class IncidentResponse(
   @Schema(description = "The date and time the incident was reported")
   val reportedDateTime: LocalDateTime,
 
+  @Schema(description = "Staff involved in the incident")
+  val staffParties: List<Staff>,
+
+  @Schema(description = "Offenders involved in the incident")
+  val offenderParties: List<Offender>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -164,6 +169,16 @@ data class Staff(
   val staffId: Long,
   @Schema(description = "First name of staff member")
   val firstName: String,
+  @Schema(description = "Last name of staff member")
+  val lastName: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Offender(
+  @Schema(description = "NOMIS id")
+  val offenderNo: String,
+  @Schema(description = "First name of staff member")
+  val firstName: String?,
   @Schema(description = "Last name of staff member")
   val lastName: String,
 )
