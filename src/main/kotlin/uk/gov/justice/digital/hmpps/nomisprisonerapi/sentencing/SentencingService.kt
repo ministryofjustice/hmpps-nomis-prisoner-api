@@ -175,16 +175,16 @@ class SentencingService(
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
-        {
-          CreateCourtAppearanceResponse(
-            id = it.id,
-            courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
-              CreateCourtEventChargesResponse(
-                courtEventCharge.id.offenderCharge.id,
-              )
-            },
-          )
-        },
+          {
+            CreateCourtAppearanceResponse(
+              id = it.id,
+              courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+                CreateCourtEventChargesResponse(
+                  courtEventCharge.id.offenderCharge.id,
+                )
+              },
+            )
+          },
       ).also {
         telemetryClient.trackEvent(
           "court-case-created",
