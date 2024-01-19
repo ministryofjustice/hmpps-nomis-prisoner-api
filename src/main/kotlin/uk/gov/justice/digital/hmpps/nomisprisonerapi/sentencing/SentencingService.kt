@@ -175,16 +175,16 @@ class SentencingService(
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
-          {
-            CreateCourtAppearanceResponse(
-              id = it.id,
-              courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
-                CreateCourtEventChargesResponse(
-                  courtEventCharge.id.offenderCharge.id,
-                )
-              },
-            )
-          },
+        {
+          CreateCourtAppearanceResponse(
+            id = it.id,
+            courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+              CreateCourtEventChargesResponse(
+                courtEventCharge.id.offenderCharge.id,
+              )
+            },
+          )
+        },
       ).also {
         telemetryClient.trackEvent(
           "court-case-created",
@@ -301,41 +301,40 @@ class SentencingService(
     eventId: Long,
     request: UpdateCourtAppearanceRequest,
   ) {
-    findPrisoner(offenderNo).findLatestBooking().let { booking ->
-      val courtAppearanceRequest = request.courtAppearance
-      findCourtCase(caseId, offenderNo).let { courtCase ->
-        findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
-          courtAppearance.eventDate = courtAppearanceRequest.eventDate
-          courtAppearance.startTime = courtAppearanceRequest.startTime
-          courtAppearance.courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType)
-          courtAppearance.eventStatus = determineEventStatus(
-            courtAppearanceRequest.eventDate,
-            booking,
-          )
-          courtAppearance.prison = lookupEstablishment(courtAppearanceRequest.courtId)
-          courtAppearance.outcomeReasonCode =
-            courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
-
-          // TODO what happens if next hearing date amended - should the generated appearance be updated?
-          /*
-          nextEventDate = courtAppearanceRequest.nextEventDate,
-          nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
-
-           */
-        }
-
-        telemetryClient.trackEvent(
-          "court-appearance-updated",
-          mapOf(
-            "courtCaseId" to caseId.toString(),
-            "bookingId" to booking.bookingId.toString(),
-            "offenderNo" to offenderNo,
-            "court" to courtAppearanceRequest.courtId,
-            "courtEventId" to eventId.toString(),
-          ),
-          null,
+    findPrisoner(offenderNo)
+    val courtAppearanceRequest = request.courtAppearance
+    findCourtCase(caseId, offenderNo).let { courtCase ->
+      findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
+        courtAppearance.eventDate = courtAppearanceRequest.eventDate
+        courtAppearance.startTime = courtAppearanceRequest.startTime
+        courtAppearance.courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType)
+        courtAppearance.eventStatus = determineEventStatus(
+          courtAppearanceRequest.eventDate,
+          courtCase.offenderBooking,
         )
+        courtAppearance.prison = lookupEstablishment(courtAppearanceRequest.courtId)
+        courtAppearance.outcomeReasonCode =
+          courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
+
+        // TODO what happens if next hearing date amended - should the generated appearance be updated?
+        /*
+        nextEventDate = courtAppearanceRequest.nextEventDate,
+        nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+
+         */
       }
+
+      telemetryClient.trackEvent(
+        "court-appearance-updated",
+        mapOf(
+          "courtCaseId" to caseId.toString(),
+          "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+          "court" to courtAppearanceRequest.courtId,
+          "courtEventId" to eventId.toString(),
+        ),
+        null,
+      )
     }
   }
 
