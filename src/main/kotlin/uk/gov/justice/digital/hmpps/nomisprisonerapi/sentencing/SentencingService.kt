@@ -152,21 +152,7 @@ class SentencingService(
 
       request.courtAppearance.nextEventDate?.let {
         courtCase.courtEvents.add(
-          CourtEvent(
-            offenderBooking = booking,
-            courtCase = courtCase,
-            eventDate = courtCase.courtEvents[0].nextEventDate!!,
-            startTime = courtCase.courtEvents[0].nextEventStartTime!!,
-            courtEventType = courtCase.courtEvents[0].courtEventType,
-            // TODO confirm status rules are the same for next appearance
-            eventStatus = determineEventStatus(
-              courtCase.courtEvents[0].nextEventDate!!,
-              booking,
-            ),
-            // if next event, we must have a specified court
-            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!),
-            directionCode = lookupDirectionType(DirectionType.OUT),
-          ).also { nextCourtEvent ->
+          createNextCourtEvent(booking, courtCase.courtEvents[0], request.courtAppearance).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
           },
         )
@@ -248,29 +234,17 @@ class SentencingService(
       courtCase.courtEvents.add(
         courtEvent,
       )
+      courtEventRepository.saveAndFlush(courtEvent)
+    }.let { courtEvent ->
+      var nextAppearanceId: Long? = null
       courtEvent.nextEventDate?.let {
-        courtCase.courtEvents.add(
-          CourtEvent(
-            offenderBooking = booking,
-            courtCase = courtCase,
-            eventDate = courtEvent.nextEventDate!!,
-            startTime = courtEvent.nextEventStartTime!!,
-            courtEventType = courtEvent.courtEventType,
-            // TODO confirm status rules are the same for next appearance
-            eventStatus = determineEventStatus(
-              courtEvent.nextEventDate!!,
-              booking,
-            ),
-            // if next event, we must have a specified court
-            prison = lookupEstablishment(request.courtAppearance.nextCourtId!!),
-            directionCode = lookupDirectionType(DirectionType.OUT),
-          ).also { nextCourtEvent ->
+        courtEvent.courtCase!!.courtEvents.add(
+          createNextCourtEvent(booking, courtEvent, request.courtAppearance).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
+            nextAppearanceId = courtEventRepository.saveAndFlush(nextCourtEvent).id
           },
         )
       }
-      courtEventRepository.saveAndFlush(courtEvent)
-    }.let { courtEvent ->
       CreateCourtAppearanceResponse(
         id = courtEvent.id,
         courtEventChargesIds = courtEvent.courtEventCharges.map { courtEventCharge ->
@@ -278,6 +252,7 @@ class SentencingService(
             courtEventCharge.id.offenderCharge.id,
           )
         },
+        nextCourtAppearanceId = nextAppearanceId,
       ).also { response ->
         telemetryClient.trackEvent(
           "court-appearance-created",
@@ -287,12 +262,33 @@ class SentencingService(
             "offenderNo" to offenderNo,
             "court" to courtAppearanceRequest.courtId,
             "courtEventId" to response.id.toString(),
+            "nextCourtEventId" to response.nextCourtAppearanceId.toString(),
           ),
           null,
         )
       }
     }
   }
+
+  private fun createNextCourtEvent(
+    booking: OffenderBooking,
+    courtEvent: CourtEvent,
+    request: CourtAppearanceRequest,
+  ) = CourtEvent(
+    offenderBooking = booking,
+    courtCase = courtEvent.courtCase,
+    eventDate = courtEvent.nextEventDate!!,
+    startTime = courtEvent.nextEventStartTime!!,
+    courtEventType = courtEvent.courtEventType,
+    // TODO confirm status rules are the same for next appearance
+    eventStatus = determineEventStatus(
+      courtEvent.nextEventDate!!,
+      booking,
+    ),
+    // if next event, we must have a specified court
+    prison = lookupEstablishment(request.nextCourtId!!),
+    directionCode = lookupDirectionType(DirectionType.OUT),
+  )
 
   @Audit
   fun updateCourtAppearance(
@@ -302,26 +298,39 @@ class SentencingService(
     request: UpdateCourtAppearanceRequest,
   ) {
     findPrisoner(offenderNo)
-    val courtAppearanceRequest = request.courtAppearance
     findCourtCase(caseId, offenderNo).let { courtCase ->
       findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
-        courtAppearance.eventDate = courtAppearanceRequest.eventDate
-        courtAppearance.startTime = courtAppearanceRequest.startTime
-        courtAppearance.courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType)
+        courtAppearance.eventDate = request.eventDate
+        courtAppearance.startTime = request.startTime
+        courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
         courtAppearance.eventStatus = determineEventStatus(
-          courtAppearanceRequest.eventDate,
+          request.eventDate,
           courtCase.offenderBooking,
         )
-        courtAppearance.prison = lookupEstablishment(courtAppearanceRequest.courtId)
+        courtAppearance.prison = lookupEstablishment(request.courtId)
         courtAppearance.outcomeReasonCode =
-          courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
+          request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
+        // will get a separate update for a generated next event - so just updating these fields rather than the target appearance
+        courtAppearance.nextEventDate = request.nextEventDate
+        courtAppearance.nextEventStartTime = request.nextEventStartTime
 
-        // TODO what happens if next hearing date amended - should the generated appearance be updated?
-        /*
-        nextEventDate = courtAppearanceRequest.nextEventDate,
-        nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
-
-         */
+        val newChargesMap = request.courtEventChargesToUpdate.map { it.offenderChargeId to it }.toMap()
+        courtAppearance.courtEventCharges.filter { newChargesMap.contains(it.id.offenderCharge.id) }
+          .map { courtEventCharge ->
+            val updateCharge = newChargesMap.getValue(courtEventCharge.id.offenderCharge.id)
+            val resultCode = updateCharge.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
+            courtEventCharge.offenceDate = updateCharge.offenceDate
+            courtEventCharge.offenceEndDate = updateCharge.offenceEndDate
+            courtEventCharge.mostSeriousFlag = updateCharge.mostSeriousFlag
+            courtEventCharge.offencesCount = updateCharge.offencesCount
+            courtEventCharge.resultCode1 = resultCode
+            courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
+            courtEventCharge
+            // TODO update underlying offender charge when court event charge changes
+          }.let {
+            courtAppearance.courtEventCharges.clear()
+            courtAppearance.courtEventCharges.addAll(it)
+          }
       }
 
       telemetryClient.trackEvent(
@@ -330,7 +339,7 @@ class SentencingService(
           "courtCaseId" to caseId.toString(),
           "bookingId" to courtCase.offenderBooking.bookingId.toString(),
           "offenderNo" to offenderNo,
-          "court" to courtAppearanceRequest.courtId,
+          "court" to request.courtId,
           "courtEventId" to eventId.toString(),
         ),
         null,
