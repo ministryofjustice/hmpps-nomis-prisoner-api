@@ -99,9 +99,9 @@ class CourtEvent(
   @Convert(converter = YesNoConverter::class)
   val orderRequestedFlag: Boolean? = false,
 
-  val nextEventDate: LocalDate? = null,
+  var nextEventDate: LocalDate? = null,
 
-  val nextEventStartTime: LocalDateTime? = null,
+  var nextEventStartTime: LocalDateTime? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(

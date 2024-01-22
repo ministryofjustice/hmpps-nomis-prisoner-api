@@ -733,6 +733,8 @@ data class CreateCourtCaseResponse(
 data class CreateCourtAppearanceResponse(
   val id: Long,
   val courtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
+  // if created as an individual appearance, an associated next appearance may also have been created
+  val nextCourtAppearanceId: Long? = null,
 )
 
 @Schema(description = "Create adjustment response")
@@ -769,14 +771,25 @@ data class CourtAppearanceRequest(
 
 @Schema(description = "Court Event")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class CreateCourtAppearanceRequest(
-  val courtAppearance: CourtAppearanceRequest,
-  val existingOffenderChargeIds: List<Long>,
+data class UpdateCourtAppearanceRequest(
+  val eventDate: LocalDate,
+  // not in new service (but next event start time is)
+  val startTime: LocalDateTime,
+  val courtEventType: String,
+  val courtId: String,
+  val outcomeReasonCode: String?,
+  val nextEventDate: LocalDate?,
+  val nextEventStartTime: LocalDateTime?,
+  // update requests will also determine the offences to remove from the appearance
+  val courtEventChargesToUpdate: List<ExistingOffenderChargeRequest>,
+  val courtEventChargesToCreate: List<OffenderChargeRequest>,
+  // nomis UI doesn't allow this during a create but DPS does
+  val nextCourtId: String?,
 )
 
 @Schema(description = "Court Event")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class UpdateCourtAppearanceRequest(
+data class CreateCourtAppearanceRequest(
   val courtAppearance: CourtAppearanceRequest,
   val existingOffenderChargeIds: List<Long>,
 )
@@ -804,4 +817,17 @@ data class OffenderChargeRequest(
   val resultCode2Indicator: String?,
   val lidsOffenceNumber: Int?,
    */
+)
+
+@Schema(description = "Court Event")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ExistingOffenderChargeRequest(
+  val offenderChargeId: Long,
+  val offenceCode: String,
+  val offencesCount: Int?,
+  val offenceDate: LocalDate?,
+  val offenceEndDate: LocalDate?,
+  val resultCode1: String?,
+  val mostSeriousFlag: Boolean,
+
 )
