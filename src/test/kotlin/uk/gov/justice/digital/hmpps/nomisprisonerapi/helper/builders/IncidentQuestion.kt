@@ -4,8 +4,6 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestionId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireAnswer
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
 
 @DslMarker
@@ -13,6 +11,7 @@ annotation class IncidentQuestionDslMarker
 
 @NomisDataDslMarker
 interface IncidentQuestionDsl {
+  /*
   @IncidentResponseDslMarker
   fun response(
     incident: Incident,
@@ -22,18 +21,20 @@ interface IncidentQuestionDsl {
     comment: String? = null,
     dsl: IncidentResponseDsl.() -> Unit = {},
   ): IncidentResponse
+   */
 }
 
 @Component
 class IncidentQuestionBuilderFactory(
-  private val repository: IncidentResponseBuilderFactory,
+  // private val repository: IncidentResponseBuilderFactory,
 ) {
   fun builder() =
-    IncidentQuestionBuilder(repository)
+    IncidentQuestionBuilder()
+  // IncidentQuestionBuilder(repository)
 }
 
 class IncidentQuestionBuilder(
-  private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
+  // private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
 
 ) :
   IncidentQuestionDsl {
@@ -50,6 +51,7 @@ class IncidentQuestionBuilder(
   )
     .also { incidentQuestion = it }
 
+  /*
   override fun response(
     incident: Incident,
     question: QuestionnaireQuestion,
@@ -70,4 +72,6 @@ class IncidentQuestionBuilder(
           // .also { incidentQuestion.responses += it }
           .also { builder.apply(dsl) }
       }
+
+   */
 }
