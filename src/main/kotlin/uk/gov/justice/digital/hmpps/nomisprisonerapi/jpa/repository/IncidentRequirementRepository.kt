@@ -1,0 +1,9 @@
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
+
+import org.springframework.data.repository.CrudRepository
+import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirementId
+
+@Repository
+interface IncidentRequirementRepository : CrudRepository<IncidentRequirement, IncidentRequirementId>

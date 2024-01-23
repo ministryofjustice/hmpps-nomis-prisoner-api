@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireAnswer
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
 class IncidentResourceIntTest : IntegrationTestBase() {
@@ -28,8 +30,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   private lateinit var reportingStaff2: Staff
   private lateinit var questionnaire1: Questionnaire
   private lateinit var incident1: Incident
+
   private lateinit var incident2: Incident
   private lateinit var incident3: Incident
+  private lateinit var requirementRecordingStaff: Staff
 
   @BeforeEach
   internal fun createIncidents() {
@@ -43,7 +47,13 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       reportingStaff2 = staff(firstName = "JANE", lastName = "STAFF") {
         account(username = "JANESTAFF")
       }
+      requirementRecordingStaff = staff(firstName = "PETER", lastName = "STAFF") {
+        account(username = "PETERSTAFF")
+      }
 
+      lateinit var question1: QuestionnaireQuestion
+      lateinit var question1Answer1: QuestionnaireAnswer
+      lateinit var question2: QuestionnaireQuestion
       questionnaire1 = questionnaire(code = "ESCAPE_EST", listSequence = 1, description = "Escape Questionnaire") {
         val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?", questionSequence = 4, listSequence = 4) {
           questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds", answerSequence = 1, listSequence = 1)
@@ -53,12 +63,12 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           questionnaireAnswer(answer = "Q3A2: Spade", listSequence = 2, answerSequence = 2, nextQuestion = question4)
           questionnaireAnswer(answer = "Q3A3: Crow bar", listSequence = 3, answerSequence = 3, nextQuestion = question4)
         }
-        val question2 = questionnaireQuestion(question = "Q2: Were tools used?", questionSequence = 2, listSequence = 2) {
+        question2 = questionnaireQuestion(question = "Q2: Were tools used?", questionSequence = 2, listSequence = 2) {
           questionnaireAnswer(answer = "Q2A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question3)
           questionnaireAnswer(answer = "Q2A2: No", listSequence = 2, answerSequence = 2)
         }
-        questionnaireQuestion(question = "Q1: Were the police informed of the incident?", questionSequence = 1, listSequence = 1) {
-          questionnaireAnswer(answer = "Q1A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question2)
+        question1 = questionnaireQuestion(question = "Q1: Were the police informed of the incident?", questionSequence = 1, listSequence = 1) {
+          question1Answer1 = questionnaireAnswer(answer = "Q1A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question2)
           questionnaireAnswer(answer = "Q1A2: No", listSequence = 2, answerSequence = 2, nextQuestion = question2)
         }
       }
@@ -74,6 +84,15 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       ) {
         incidentParty(staff = partyStaff1)
         incidentParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
+        requirement("Update the name", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
+        requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
+        question(question = question1)
+        question(question = question2) {
+          //  response(
+          //    incident = incident1, question = question1, answer = question1Answer1,
+          //    answerSequence = 1,
+          //  )
+        }
       }
       incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1)
       incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1)
@@ -85,7 +104,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.delete(incident1)
     repository.delete(incident2)
     repository.delete(incident3)
+
     repository.delete(questionnaire1)
+
+    repository.delete(requirementRecordingStaff)
     repository.delete(partyStaff1)
     repository.delete(offenderParty)
     repository.delete(reportingStaff1)
@@ -195,13 +217,12 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return staff party information for an incident by Id`() {
+    fun `will return staff party information for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .consumeWith(System.out::println)
         .jsonPath("id").isEqualTo(incident1.id)
         .jsonPath("staffParties[0].staffId").isEqualTo(partyStaff1.id)
         .jsonPath("staffParties[0].username").isEqualTo("JIIMPARTYSTAFF")
@@ -210,7 +231,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return offender party information for an incident by Id`() {
+    fun `will return offender party information for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
@@ -220,6 +241,34 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("offenderParties[0].offenderNo").isEqualTo("A1234TT")
         .jsonPath("offenderParties[0].firstName").isEqualTo("Bob")
         .jsonPath("offenderParties[0].lastName").isEqualTo("Smith")
+    }
+
+    @Test
+    fun `will return incident requirement details for an incident`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("requirements.length()").isEqualTo(2)
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("requirements[0].comment").isEqualTo("Update the name")
+        .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
+        .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
+        .jsonPath("requirements[0].prisonId").isEqualTo("MDI")
+        .jsonPath("requirements[1].comment").isEqualTo("Ensure all details are added")
+    }
+
+    @Test
+    fun `will return incident questions for an incident`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("questions.length()").isEqualTo(2)
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
     }
   }
 }
