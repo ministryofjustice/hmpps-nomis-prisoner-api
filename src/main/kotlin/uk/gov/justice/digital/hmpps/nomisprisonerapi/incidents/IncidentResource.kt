@@ -203,6 +203,20 @@ data class Requirement(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Question(
+  @Schema(description = "The sequence number of the question for this incident")
+  val sequence: Int,
   @Schema(description = "The Question being asked")
   val question: String,
+  @Schema(description = "List of Responses to this question")
+  val answers: List<Response> = listOf(),
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Response(
+  @Schema(description = "The id of the answer")
+  val id: Long,
+  @Schema(description = "The answer text")
+  val answer: String,
+  @Schema(description = "Comment added to the response by recording staff")
+  val comment: String?,
 )

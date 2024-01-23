@@ -47,7 +47,7 @@ class QuestionnaireService(
   private fun QuestionnaireQuestion.toQuestionResponse(includeNextQuestion: Boolean = true): QuestionResponse =
     QuestionResponse(
       id = id,
-      question = question,
+      question = questionText,
       active = active,
       questionSequence = questionSequence,
       listSequence = listSequence,
@@ -55,7 +55,7 @@ class QuestionnaireService(
       answers = answers.map { questionnaireAnswer ->
         AnswerResponse(
           id = questionnaireAnswer.id,
-          answer = questionnaireAnswer.answer,
+          answer = questionnaireAnswer.answerText,
           active = questionnaireAnswer.active,
           answerSequence = questionnaireAnswer.answerSequence,
           listSequence = questionnaireAnswer.listSequence,

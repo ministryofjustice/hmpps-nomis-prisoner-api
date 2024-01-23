@@ -42,7 +42,7 @@ data class Incident(
   @OneToMany(mappedBy = "incident", cascade = [CascadeType.ALL], orphanRemoval = true)
   val requirements: MutableList<IncidentRequirement> = mutableListOf(),
 
-  @OneToMany(mappedBy = "incident", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "id.incident", cascade = [CascadeType.ALL], orphanRemoval = true)
   val questions: MutableList<IncidentQuestion> = mutableListOf(),
 
   @ManyToOne(fetch = FetchType.LAZY)

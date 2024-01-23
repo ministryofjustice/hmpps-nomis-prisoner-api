@@ -55,7 +55,7 @@ class IncidentService(
       staffParties = this.staffParties().map { it.staffParty().toStaff() },
       offenderParties = this.offenderParties().map { it.offenderParty().toOffender() },
       requirements = this.requirements.map { it.toRequirement() },
-      questions = this.questions.map { it.toQuestion() },
+      questions = this.questions.map { it.toQuestionResponse() },
     )
 }
 
@@ -66,8 +66,18 @@ private fun IncidentRequirement.toRequirement() =
     date = recordedDate,
     prisonId = location.id,
   )
-private fun IncidentQuestion.toQuestion() =
-  Question(question = question.question)
+private fun IncidentQuestion.toQuestionResponse() =
+  Question(
+    sequence = id.questionSequence,
+    question = question.questionText,
+    answers = responses.map { response ->
+      Response(
+        id = response.answer.id,
+        answer = response.answer.answerText,
+        comment = response.comment,
+      )
+    },
+  )
 
 private fun Incident.staffParties(): List<IncidentParty> =
   this.parties.filter { it.isStaffParty() }

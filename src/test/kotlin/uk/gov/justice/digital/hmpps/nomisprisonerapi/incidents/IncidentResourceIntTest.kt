@@ -34,6 +34,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   private lateinit var incident2: Incident
   private lateinit var incident3: Incident
   private lateinit var requirementRecordingStaff: Staff
+  private lateinit var responseRecordingStaff: Staff
 
   @BeforeEach
   internal fun createIncidents() {
@@ -50,25 +51,31 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       requirementRecordingStaff = staff(firstName = "PETER", lastName = "STAFF") {
         account(username = "PETERSTAFF")
       }
+      responseRecordingStaff = staff(firstName = "ALBERT", lastName = "STAFF") {
+        account(username = "ALBERTSTAFF")
+      }
 
       lateinit var question1: QuestionnaireQuestion
-      lateinit var question1Answer1: QuestionnaireAnswer
       lateinit var question2: QuestionnaireQuestion
+      lateinit var question2Answer1: QuestionnaireAnswer
+      lateinit var question3: QuestionnaireQuestion
+      lateinit var question3Answer1: QuestionnaireAnswer
+      lateinit var question3Answer3: QuestionnaireAnswer
       questionnaire1 = questionnaire(code = "ESCAPE_EST", listSequence = 1, description = "Escape Questionnaire") {
         val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?", questionSequence = 4, listSequence = 4) {
           questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds", answerSequence = 1, listSequence = 1)
         }
-        val question3 = questionnaireQuestion(question = "Q3: What tools were used?", questionSequence = 3, listSequence = 3, multipleAnswers = true) {
-          questionnaireAnswer(answer = "Q3A1: Wire cutters", listSequence = 1, answerSequence = 1, nextQuestion = question4)
+        question3 = questionnaireQuestion(question = "Q3: What tools were used?", questionSequence = 3, listSequence = 3, multipleAnswers = true) {
+          question3Answer1 = questionnaireAnswer(answer = "Q3A1: Wire cutters", listSequence = 1, answerSequence = 1, nextQuestion = question4)
           questionnaireAnswer(answer = "Q3A2: Spade", listSequence = 2, answerSequence = 2, nextQuestion = question4)
-          questionnaireAnswer(answer = "Q3A3: Crow bar", listSequence = 3, answerSequence = 3, nextQuestion = question4)
+          question3Answer3 = questionnaireAnswer(answer = "Q3A3: Crow bar", listSequence = 3, answerSequence = 3, nextQuestion = question4)
         }
         question2 = questionnaireQuestion(question = "Q2: Were tools used?", questionSequence = 2, listSequence = 2) {
-          questionnaireAnswer(answer = "Q2A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question3)
+          question2Answer1 = questionnaireAnswer(answer = "Q2A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question3)
           questionnaireAnswer(answer = "Q2A2: No", listSequence = 2, answerSequence = 2)
         }
         question1 = questionnaireQuestion(question = "Q1: Were the police informed of the incident?", questionSequence = 1, listSequence = 1) {
-          question1Answer1 = questionnaireAnswer(answer = "Q1A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question2)
+          questionnaireAnswer(answer = "Q1A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question2)
           questionnaireAnswer(answer = "Q1A2: No", listSequence = 2, answerSequence = 2, nextQuestion = question2)
         }
       }
@@ -88,10 +95,25 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
         question(question = question1)
         question(question = question2) {
-          //  response(
-          //    incident = incident1, question = question1, answer = question1Answer1,
-          //    answerSequence = 1,
-          //  )
+          response(
+            answer = question2Answer1,
+            answerSequence = 1,
+            comment = "Multiple tools were found",
+            recordingStaff = responseRecordingStaff,
+          )
+        }
+        question(question = question3) {
+          response(
+            answer = question3Answer1,
+            answerSequence = 2,
+            recordingStaff = responseRecordingStaff,
+          )
+          response(
+            answer = question3Answer3,
+            answerSequence = 3,
+            comment = "Large Crow bar",
+            recordingStaff = responseRecordingStaff,
+          )
         }
       }
       incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1)
@@ -108,6 +130,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.delete(questionnaire1)
 
     repository.delete(requirementRecordingStaff)
+    repository.delete(responseRecordingStaff)
     repository.delete(partyStaff1)
     repository.delete(offenderParty)
     repository.delete(reportingStaff1)
@@ -266,9 +289,30 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("questions.length()").isEqualTo(2)
+        .jsonPath("questions.length()").isEqualTo(3)
         .jsonPath("id").isEqualTo(incident1.id)
         .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
+    }
+
+    @Test
+    fun `will return incident responses for an incident`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("questions.length()").isEqualTo(3)
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
+        .jsonPath("questions[0].answers").isEmpty
+        .jsonPath("questions[1].question").isEqualTo("Q2: Were tools used?")
+        .jsonPath("questions[1].answers[0].answer").isEqualTo("Q2A1: Yes")
+        .jsonPath("questions[1].answers[0].comment").isEqualTo("Multiple tools were found")
+        .jsonPath("questions[2].question").isEqualTo("Q3: What tools were used?")
+        .jsonPath("questions[2].answers[0].answer").isEqualTo("Q3A1: Wire cutters")
+        .jsonPath("questions[2].answers[0].comment").doesNotExist()
+        .jsonPath("questions[2].answers[1].answer").isEqualTo("Q3A3: Crow bar")
+        .jsonPath("questions[2].answers[1].comment").isEqualTo("Large Crow bar")
     }
   }
 }

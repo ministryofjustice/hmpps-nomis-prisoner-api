@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
@@ -7,6 +8,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
@@ -15,8 +17,9 @@ import java.time.LocalDateTime
 
 @Embeddable
 class IncidentQuestionId(
-  @Column(name = "INCIDENT_CASE_ID", nullable = false)
-  var incidentId: Long,
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "INCIDENT_CASE_ID", insertable = false, updatable = false, nullable = false)
+  var incident: Incident,
 
   @Column(name = "QUESTION_SEQ", nullable = false)
   var questionSequence: Int,
@@ -33,28 +36,8 @@ data class IncidentQuestion(
   @JoinColumn(name = "QUESTIONNAIRE_QUE_ID", updatable = false, nullable = false)
   val question: QuestionnaireQuestion,
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "INCIDENT_CASE_ID", insertable = false, updatable = false, nullable = false)
-  val incident: Incident,
-
-/*
-  @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @JoinColumns(
-    value = [
-      JoinColumn(
-        name = "INCIDENT_CASE_ID",
-        referencedColumnName = "INCIDENT_CASE_ID",
-        nullable = false,
-      ),
-      JoinColumn(
-        name = "QUESTION_SEQ",
-        referencedColumnName = "QUESTION_SEQ",
-        nullable = false,
-      ),
-    ],
-  )
+  @OneToMany(mappedBy = "id.incidentQuestion", cascade = [CascadeType.ALL], orphanRemoval = true)
   val responses: MutableList<IncidentResponse> = mutableListOf(),
- */
 
   @Column
   var auditModuleName: String? = null,
@@ -79,6 +62,6 @@ data class IncidentQuestion(
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(id = $id ), ${question.question})"
+    return this::class.simpleName + "(id = $id ), ${question.questionText})"
   }
 }
