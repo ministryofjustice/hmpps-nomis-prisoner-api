@@ -26,7 +26,7 @@ class QuestionnaireAnswerBuilder() :
     nextQuestion: QuestionnaireQuestion?,
   ): QuestionnaireAnswer =
     QuestionnaireAnswer(
-      answer = answer,
+      answerText = answer,
       answerSequence = answerSequence,
       listSequence = listSequence,
       nextQuestion = nextQuestion,

@@ -4,37 +4,37 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestionId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireAnswer
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
 @DslMarker
 annotation class IncidentQuestionDslMarker
 
 @NomisDataDslMarker
 interface IncidentQuestionDsl {
-  /*
+
   @IncidentResponseDslMarker
   fun response(
-    incident: Incident,
-    question: QuestionnaireQuestion,
     answer: QuestionnaireAnswer,
     answerSequence: Int,
     comment: String? = null,
+    recordingStaff: Staff,
     dsl: IncidentResponseDsl.() -> Unit = {},
   ): IncidentResponse
-   */
 }
 
 @Component
 class IncidentQuestionBuilderFactory(
-  // private val repository: IncidentResponseBuilderFactory,
+  private val repository: IncidentResponseBuilderFactory,
 ) {
   fun builder() =
-    IncidentQuestionBuilder()
-  // IncidentQuestionBuilder(repository)
+    IncidentQuestionBuilder(repository)
 }
 
 class IncidentQuestionBuilder(
-  // private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
+  private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
 
 ) :
   IncidentQuestionDsl {
@@ -45,33 +45,29 @@ class IncidentQuestionBuilder(
     questionSequence: Int,
     question: QuestionnaireQuestion,
   ): IncidentQuestion = IncidentQuestion(
-    id = IncidentQuestionId(incident.id, questionSequence),
-    incident = incident,
+    id = IncidentQuestionId(incident, questionSequence),
     question = question,
   )
     .also { incidentQuestion = it }
 
-  /*
   override fun response(
-    incident: Incident,
-    question: QuestionnaireQuestion,
     answer: QuestionnaireAnswer,
     answerSequence: Int,
     comment: String?,
+    recordingStaff: Staff,
     dsl: IncidentResponseDsl.() -> Unit,
   ): IncidentResponse =
     incidentResponseBuilderFactory.builder()
       .let { builder ->
         builder.build(
-          incident = incident,
-          question = question,
+          incidentQuestion = incidentQuestion,
           answerSequence = answerSequence,
           answer = answer,
           comment = comment,
+          recordingStaff = recordingStaff,
+
         )
-          // .also { incidentQuestion.responses += it }
+          .also { incidentQuestion.responses += it }
           .also { builder.apply(dsl) }
       }
-
-   */
 }

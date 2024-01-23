@@ -25,7 +25,7 @@ data class QuestionnaireAnswer(
   val id: Long = 0,
 
   @Column(name = "DESCRIPTION")
-  val answer: String,
+  val answerText: String,
 
   @ManyToOne(fetch = FetchType.LAZY, optional = true)
   @JoinColumn(name = "NEXT_QUESTIONNAIRE_QUE_ID")
@@ -72,6 +72,6 @@ data class QuestionnaireAnswer(
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(id = $id ), $answer)"
+    return this::class.simpleName + "(id = $id ), $answerText)"
   }
 }

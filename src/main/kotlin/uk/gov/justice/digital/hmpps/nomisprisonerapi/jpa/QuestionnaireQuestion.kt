@@ -36,7 +36,7 @@ data class QuestionnaireQuestion(
   val questionSequence: Int,
 
   @Column(name = "DESCRIPTION")
-  val question: String,
+  val questionText: String,
 
   @Column(name = "MULTIPLE_ANSWER_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
@@ -68,6 +68,6 @@ data class QuestionnaireQuestion(
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(id = $id ), $question)"
+    return this::class.simpleName + "(id = $id ), $questionText)"
   }
 }

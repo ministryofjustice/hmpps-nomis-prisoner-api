@@ -38,7 +38,7 @@ class QuestionnaireQuestionBuilder(
     questionSequence: Int,
     multipleAnswers: Boolean,
   ): QuestionnaireQuestion = QuestionnaireQuestion(
-    question = question,
+    questionText = question,
     listSequence = listSequence,
     questionSequence = questionSequence,
     multipleAnswers = multipleAnswers,
