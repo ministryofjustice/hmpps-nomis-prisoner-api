@@ -41,6 +41,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Service
 @Transactional
@@ -112,17 +114,17 @@ class SentencingService(
             CourtEvent(
               offenderBooking = booking,
               courtCase = courtCase,
-              eventDate = courtAppearanceRequest.eventDate,
-              startTime = courtAppearanceRequest.startTime,
+              eventDate = courtAppearanceRequest.eventDateTime.toLocalDate(),
+              startTime = courtAppearanceRequest.eventDateTime,
               courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
               eventStatus = determineEventStatus(
-                courtAppearanceRequest.eventDate,
+                courtAppearanceRequest.eventDateTime.toLocalDate(),
                 booking,
               ),
               prison = lookupEstablishment(courtAppearanceRequest.courtId),
               outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
-              nextEventDate = courtAppearanceRequest.nextEventDate,
-              nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+              nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
+              nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
               directionCode = lookupDirectionType(DirectionType.OUT),
             ).also { courtEvent ->
               courtAppearanceRequest.courtEventCharges.map { offenderChargeRequest ->
@@ -150,7 +152,7 @@ class SentencingService(
         },
       )
 
-      request.courtAppearance.nextEventDate?.let {
+      request.courtAppearance.nextEventDateTime?.let {
         courtCase.courtEvents.add(
           createNextCourtEvent(booking, courtCase.courtEvents[0], request.courtAppearance).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
@@ -198,17 +200,17 @@ class SentencingService(
       val courtEvent = CourtEvent(
         offenderBooking = booking,
         courtCase = courtCase,
-        eventDate = courtAppearanceRequest.eventDate,
-        startTime = courtAppearanceRequest.startTime,
+        eventDate = courtAppearanceRequest.eventDateTime.toLocalDate(),
+        startTime = courtAppearanceRequest.eventDateTime,
         courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
         eventStatus = determineEventStatus(
-          courtAppearanceRequest.eventDate,
+          courtAppearanceRequest.eventDateTime.toLocalDate(),
           booking,
         ),
         prison = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
-        nextEventDate = courtAppearanceRequest.nextEventDate,
-        nextEventStartTime = courtAppearanceRequest.nextEventStartTime,
+        nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
+        nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
         directionCode = lookupDirectionType(DirectionType.OUT),
       ).also { courtEvent ->
         request.existingOffenderChargeIds.map { offenderChargeId ->
@@ -300,19 +302,19 @@ class SentencingService(
     findPrisoner(offenderNo)
     findCourtCase(caseId, offenderNo).let { courtCase ->
       findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
-        courtAppearance.eventDate = request.eventDate
-        courtAppearance.startTime = request.startTime
+        courtAppearance.eventDate = request.eventDateTime.toLocalDate()
+        courtAppearance.startTime = request.eventDateTime
         courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
         courtAppearance.eventStatus = determineEventStatus(
-          request.eventDate,
+          request.eventDateTime.toLocalDate(),
           courtCase.offenderBooking,
         )
         courtAppearance.prison = lookupEstablishment(request.courtId)
         courtAppearance.outcomeReasonCode =
           request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
         // will get a separate update for a generated next event - so just updating these fields rather than the target appearance
-        courtAppearance.nextEventDate = request.nextEventDate
-        courtAppearance.nextEventStartTime = request.nextEventStartTime
+        courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
+        courtAppearance.nextEventStartTime = request.nextEventDateTime
 
         val newChargesMap = request.courtEventChargesToUpdate.map { it.offenderChargeId to it }.toMap()
         courtAppearance.courtEventCharges.filter { newChargesMap.contains(it.id.offenderCharge.id) }
@@ -592,8 +594,7 @@ private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse =
 private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   id = this.id,
   offenderNo = this.offenderBooking.offender.nomsId,
-  eventDate = this.eventDate,
-  startTime = this.startTime,
+  eventDateTime = LocalDateTime.of(this.eventDate, this.startTime.toLocalTime()),
   courtEventType = this.courtEventType.toCodeDescription(),
   eventStatus = this.eventStatus.toCodeDescription(),
   directionCode = this.directionCode?.toCodeDescription(),
@@ -604,8 +605,14 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   orderRequestedFlag = this.orderRequestedFlag,
   holdFlag = this.holdFlag,
   nextEventRequestFlag = this.nextEventRequestFlag,
-  nextEventDate = this.nextEventDate,
-  nextEventStartTime = this.nextEventStartTime,
+  nextEventDateTime = this.nextEventDate?.let {
+    this.nextEventStartTime.let {
+      LocalDateTime.of(
+        this.nextEventDate,
+        this.nextEventStartTime!!.toLocalTime(),
+      )
+    } ?: LocalDateTime.of(this.nextEventDate, LocalTime.MIDNIGHT)
+  },
   createdDateTime = this.createDatetime,
   createdByUsername = this.createUsername,
   courtEventCharges = this.courtEventCharges.map { it.toCourtEventCharge() },

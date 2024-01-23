@@ -527,8 +527,7 @@ data class CourtCaseResponse(
 data class CourtEventResponse(
   val id: Long,
   val offenderNo: String,
-  val eventDate: LocalDate,
-  val startTime: LocalDateTime,
+  val eventDateTime: LocalDateTime,
   val courtEventType: CodeDescription,
   val eventStatus: CodeDescription,
   val directionCode: CodeDescription?,
@@ -539,8 +538,7 @@ data class CourtEventResponse(
   val orderRequestedFlag: Boolean?,
   val holdFlag: Boolean?,
   val nextEventRequestFlag: Boolean?,
-  val nextEventDate: LocalDate?,
-  val nextEventStartTime: LocalDateTime?,
+  val nextEventDateTime: LocalDateTime?,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
   val courtEventCharges: List<CourtEventChargeResponse>,
@@ -746,14 +744,11 @@ data class CreateCourtEventChargesResponse(
 @Schema(description = "Court Event")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtAppearanceRequest(
-  val eventDate: LocalDate,
-  // not in new service (but next event start time is)
-  val startTime: LocalDateTime,
+  val eventDateTime: LocalDateTime,
   val courtEventType: String,
   val courtId: String,
   val outcomeReasonCode: String?,
-  val nextEventDate: LocalDate?,
-  val nextEventStartTime: LocalDateTime?,
+  val nextEventDateTime: LocalDateTime?,
   // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
   val courtEventCharges: List<OffenderChargeRequest>,
   // nomis UI doesn't allow this during a create but DPS does
@@ -772,14 +767,11 @@ data class CourtAppearanceRequest(
 @Schema(description = "Court Event")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateCourtAppearanceRequest(
-  val eventDate: LocalDate,
-  // not in new service (but next event start time is)
-  val startTime: LocalDateTime,
+  val eventDateTime: LocalDateTime,
   val courtEventType: String,
   val courtId: String,
   val outcomeReasonCode: String?,
-  val nextEventDate: LocalDate?,
-  val nextEventStartTime: LocalDateTime?,
+  val nextEventDateTime: LocalDateTime?,
   // update requests will also determine the offences to remove from the appearance
   val courtEventChargesToUpdate: List<ExistingOffenderChargeRequest>,
   val courtEventChargesToCreate: List<OffenderChargeRequest>,
