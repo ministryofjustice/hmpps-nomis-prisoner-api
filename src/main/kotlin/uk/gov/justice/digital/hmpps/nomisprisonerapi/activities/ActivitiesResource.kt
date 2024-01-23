@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndActivitiesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindAllocationsMissingPayBandsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
@@ -476,6 +477,48 @@ class ActivitiesResource(
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindSuspendedAllocationsResponse> =
     allocationService.findSuspendedAllocations(prisonId, excludeProgramCodes, courseActivityId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/allocations/missing-pay-bands")
+  @Operation(
+    summary = "Find allocations with missing pay bands",
+    description = "Searches for prisoners allocated to a course activity without a pay band assigned. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun findAllocationsWithMissingPayBands(
+    @Schema(description = "Prison id") @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode")
+    @RequestParam(name = "excludeProgramCode")
+    excludeProgramCodes: List<String>?,
+    @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
+  ): List<FindAllocationsMissingPayBandsResponse> =
+    allocationService.findAllocationsMissingPayBands(prisonId, excludeProgramCodes, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/{allocationId}")

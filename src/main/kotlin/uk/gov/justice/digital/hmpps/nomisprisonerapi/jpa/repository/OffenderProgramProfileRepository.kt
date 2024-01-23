@@ -81,6 +81,41 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
   )
   fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<SuspendedAllocations>
 
+  @Query(
+    value = """
+       select 
+         o.nomsId as nomsId,
+         i.iepLevel.code as incentiveLevelCode,
+         ca.courseActivityId as courseActivityId, 
+         ca.description as courseActivityDescription
+       from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
+       join Offender o on ob.offender = o
+       join CourseActivity ca on opp.courseActivity = ca
+       join CourseScheduleRule csr on ca = csr.courseActivity
+       join Incentive i on ob = i.id.offenderBooking
+       join OffenderProgramProfilePayBand oppb on opp = oppb.id.offenderProgramProfile
+       left join CourseActivityPayRate capr on ca = capr.id.courseActivity and capr.payBand.code = oppb.payBand.code and capr.iepLevel.code = i.iepLevel.code and (capr.endDate is null or capr.endDate > current_date)
+       where opp.prison.id = :prisonId 
+       and opp.programStatus.code = 'ALLOC'
+       and (opp.endDate is null or opp.endDate > current_date)
+       and ob.active = true
+       and ob.location.id = :prisonId
+       and ca.prison.id = :prisonId
+       and ca.active = true
+       and ca.scheduleStartDate <= current_date
+       and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
+       and ca.program.programCode not in :excludeProgramCodes
+       and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
+       and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
+       and (oppb.endDate is null or oppb.endDate > current_date)
+       and i.id.sequence = (select max(i2.id.sequence) from Incentive i2 where i2.id.offenderBooking = ob)
+       and capr.payBand.code is null
+       and 0 < (select count(*) from CourseActivityPayRate capr2 where capr2.id.courseActivity = ca)
+  """,
+  )
+  fun findAllocationsMissingPayBands(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<AllocationsMissingPayRates>
+
   @Suppress("SqlNoDataSourceInspection")
   @Modifying
   @Query(
@@ -117,6 +152,13 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
 
 interface SuspendedAllocations {
   fun getNomsId(): String
+  fun getCourseActivityId(): Long
+  fun getCourseActivityDescription(): String
+}
+
+interface AllocationsMissingPayRates {
+  fun getNomsId(): String
+  fun getIncentiveLevelCode(): String
   fun getCourseActivityId(): Long
   fun getCourseActivityDescription(): String
 }
