@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isStaffParty
@@ -17,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncidentSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
 @Service
 @Transactional
@@ -51,13 +54,25 @@ class IncidentService(
       reportedDateTime = LocalDateTime.of(this.reportedDate, this.reportedTime),
       staffParties = this.staffParties().map { it.staffParty().toStaff() },
       offenderParties = this.offenderParties().map { it.offenderParty().toOffender() },
+      requirements = this.requirements.map { it.toRequirement() },
+      questions = this.questions.map { it.toQuestion() },
     )
 }
+
+private fun IncidentRequirement.toRequirement() =
+  Requirement(
+    staff = recordingStaff.toStaff(),
+    comment = comment,
+    date = recordedDate,
+    prisonId = location.id,
+  )
+private fun IncidentQuestion.toQuestion() =
+  Question(question = question.question)
 
 private fun Incident.staffParties(): List<IncidentParty> =
   this.parties.filter { it.isStaffParty() }
 
-private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
+private fun JPAStaff.toStaff() =
   Staff(
     staffId = id,
     firstName = firstName,

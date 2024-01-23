@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
@@ -55,6 +56,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRequirementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
@@ -112,6 +114,7 @@ class Repository(
   val offenderChargeRepository: OffenderChargeRepository,
   val questionnaireRepository: QuestionnaireRepository,
   val incidentRepository: IncidentRepository,
+  val incidentRequirementRepository: IncidentRequirementRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -233,6 +236,7 @@ class Repository(
 
   fun delete(questionnaire: Questionnaire) = questionnaireRepository.deleteById(questionnaire.id)
   fun delete(incident: Incident) = incidentRepository.deleteById(incident.id)
+  fun delete(requirement: IncidentRequirement) = incidentRequirementRepository.deleteById(requirement.id)
 
   // Builder lookups
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
