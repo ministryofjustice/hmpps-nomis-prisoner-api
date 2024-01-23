@@ -159,6 +159,12 @@ data class IncidentResponse(
 
   @Schema(description = "Offenders involved in the incident")
   val offenderParties: List<Offender>,
+
+  @Schema(description = "Requirements for completing the incident report")
+  val requirements: List<Requirement>,
+
+  @Schema(description = "Questions asked for the incident")
+  val questions: List<Question>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -181,4 +187,22 @@ data class Offender(
   val firstName: String?,
   @Schema(description = "Last name of staff member")
   val lastName: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Requirement(
+  @Schema(description = "The update required to the incident report")
+  val comment: String?,
+  @Schema(description = "Date the requirement was recorded")
+  val date: LocalDate,
+  @Schema(description = "The staff member who made the requirement request")
+  val staff: Staff,
+  @Schema(description = "The reporting location of the staff")
+  val prisonId: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Question(
+  @Schema(description = "The Question being asked")
+  val question: String,
 )
