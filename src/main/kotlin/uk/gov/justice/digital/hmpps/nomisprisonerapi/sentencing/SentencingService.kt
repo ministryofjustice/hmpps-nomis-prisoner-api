@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -64,6 +65,10 @@ class SentencingService(
   private val courtEventRepository: CourtEventRepository,
   private val offenceResultCodeRepository: OffenceResultCodeRepository,
 ) {
+  private companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
+
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
     findPrisoner(offenderNo).findLatestBooking()
 
@@ -134,7 +139,7 @@ class SentencingService(
                 val offenderCharge = OffenderCharge(
                   courtCase = courtCase,
                   offenderBooking = booking,
-                  offence = lookupOffence(offenderChargeRequest.offenceCode, offenderChargeRequest.offenceCode.take(4)),
+                  offence = lookupOffence(offenderChargeRequest.offenceCode),
                   offenceDate = offenderChargeRequest.offenceDate,
                   offenceEndDate = offenderChargeRequest.offenceEndDate,
                   // OCDCCASE offences taken into consideration
@@ -299,53 +304,69 @@ class SentencingService(
     eventId: Long,
     request: UpdateCourtAppearanceRequest,
   ) {
-    findPrisoner(offenderNo)
-    findCourtCase(caseId, offenderNo).let { courtCase ->
-      findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
-        courtAppearance.eventDate = request.eventDateTime.toLocalDate()
-        courtAppearance.startTime = request.eventDateTime
-        courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
-        courtAppearance.eventStatus = determineEventStatus(
-          request.eventDateTime.toLocalDate(),
-          courtCase.offenderBooking,
+    findPrisoner(offenderNo).let {
+      findCourtCase(caseId, offenderNo).let { courtCase ->
+        findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
+          courtAppearance.eventDate = request.eventDateTime.toLocalDate()
+          courtAppearance.startTime = request.eventDateTime
+          courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
+          courtAppearance.eventStatus = determineEventStatus(
+            request.eventDateTime.toLocalDate(),
+            courtCase.offenderBooking,
+          )
+          courtAppearance.prison = lookupEstablishment(request.courtId)
+          courtAppearance.outcomeReasonCode =
+            request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
+          // will get a separate update for a generated next event - so just updating these fields rather than the target appearance
+          courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
+          courtAppearance.nextEventStartTime = request.nextEventDateTime
+
+          val chargesToUpdateMap = request.courtEventChargesToUpdate.map { it.offenderChargeId to it }.toMap()
+          courtAppearance.courtEventCharges.filter { chargesToUpdateMap.contains(it.id.offenderCharge.id) }
+            .map { courtEventCharge ->
+              val updateCharge = chargesToUpdateMap.getValue(courtEventCharge.id.offenderCharge.id)
+              val resultCode = updateCharge.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
+              courtEventCharge.offenceDate = updateCharge.offenceDate
+              courtEventCharge.offenceEndDate = updateCharge.offenceEndDate
+              courtEventCharge.mostSeriousFlag = updateCharge.mostSeriousFlag
+              courtEventCharge.offencesCount = updateCharge.offencesCount
+              courtEventCharge.resultCode1 = resultCode
+              courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
+              with(courtEventCharge.id.offenderCharge) {
+                offenceDate = updateCharge.offenceDate
+                offenceEndDate = updateCharge.offenceEndDate
+                offence = lookupOffence(updateCharge.offenceCode)
+                // TODO setting of result code related data is more complex than this - main SP is TAG_LEGAL_CASES.pkg
+                resultCode1 = resultCode?.let { it }
+                resultCode1Indicator = resultCode?.dispositionCode
+                chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
+                mostSeriousFlag = updateCharge.mostSeriousFlag
+                offencesCount = updateCharge.offencesCount
+              }
+              courtEventCharge
+            }.let {
+              courtAppearance.courtEventCharges.clear()
+              courtAppearance.courtEventCharges.addAll(it)
+            }
+        }
+
+        courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().forEach {
+          courtCase.offenderCharges.remove(it)
+          log.debug("Offender charge deleted: ${it.id}")
+        }
+
+        telemetryClient.trackEvent(
+          "court-appearance-updated",
+          mapOf(
+            "courtCaseId" to caseId.toString(),
+            "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to request.courtId,
+            "courtEventId" to eventId.toString(),
+          ),
+          null,
         )
-        courtAppearance.prison = lookupEstablishment(request.courtId)
-        courtAppearance.outcomeReasonCode =
-          request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
-        // will get a separate update for a generated next event - so just updating these fields rather than the target appearance
-        courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
-        courtAppearance.nextEventStartTime = request.nextEventDateTime
-
-        val newChargesMap = request.courtEventChargesToUpdate.map { it.offenderChargeId to it }.toMap()
-        courtAppearance.courtEventCharges.filter { newChargesMap.contains(it.id.offenderCharge.id) }
-          .map { courtEventCharge ->
-            val updateCharge = newChargesMap.getValue(courtEventCharge.id.offenderCharge.id)
-            val resultCode = updateCharge.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
-            courtEventCharge.offenceDate = updateCharge.offenceDate
-            courtEventCharge.offenceEndDate = updateCharge.offenceEndDate
-            courtEventCharge.mostSeriousFlag = updateCharge.mostSeriousFlag
-            courtEventCharge.offencesCount = updateCharge.offencesCount
-            courtEventCharge.resultCode1 = resultCode
-            courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
-            courtEventCharge
-            // TODO update underlying offender charge when court event charge changes
-          }.let {
-            courtAppearance.courtEventCharges.clear()
-            courtAppearance.courtEventCharges.addAll(it)
-          }
       }
-
-      telemetryClient.trackEvent(
-        "court-appearance-updated",
-        mapOf(
-          "courtCaseId" to caseId.toString(),
-          "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-          "offenderNo" to offenderNo,
-          "court" to request.courtId,
-          "courtEventId" to eventId.toString(),
-        ),
-        null,
-      )
     }
   }
 
@@ -448,9 +469,6 @@ class SentencingService(
           offencesCount = offenderCharge.offencesCount,
           resultCode1 = offenderCharge.resultCode1,
           resultCode1Indicator = offenderCharge.resultCode1Indicator,
-          // TODO probably don't need result2
-          resultCode2 = offenderCharge.resultCode2,
-          resultCode2Indicator = offenderCharge.resultCode2Indicator,
         )
       },
     )
@@ -506,9 +524,11 @@ class SentencingService(
     MovementReason.pk(code),
   ) ?: throw BadDataException("Movement reason $code not found")
 
-  private fun lookupOffence(offenceCode: String, statuteCode: String): Offence =
-    offenceRepository.findByIdOrNull(OffenceId(offenceCode = offenceCode, statuteCode = statuteCode))
+  private fun lookupOffence(offenceCode: String): Offence {
+    val statuteCode = offenceCode.take(4)
+    return offenceRepository.findByIdOrNull(OffenceId(offenceCode = offenceCode, statuteCode = statuteCode))
       ?: throw BadDataException("Offence with offence code $offenceCode: and statute code: $statuteCode not found")
+  }
 
   private fun lookupOffenceResultCode(code: String): OffenceResultCode {
     return offenceResultCodeRepository.findByIdOrNull(code)
@@ -518,6 +538,11 @@ class SentencingService(
   private fun lookupChargeStatusType(code: String): ChargeStatusType = chargeStatusTypeRepository.findByIdOrNull(
     ChargeStatusType.pk(code),
   ) ?: throw BadDataException("Charge status Type $code not found")
+}
+
+private fun CourtCase.getOffenderChargesNotAssociatedWithCourtAppearances(): List<OffenderCharge> {
+  val referencedOffenderCharges = this.courtEvents.flatMap { it.courtEventCharges.map { it.id.offenderCharge } }.toSet()
+  return this.offenderCharges.filterNot { oc -> referencedOffenderCharges.contains(oc) }
 }
 
 private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseResponse(
