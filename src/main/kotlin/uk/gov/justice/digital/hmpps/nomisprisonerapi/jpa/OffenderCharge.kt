@@ -54,15 +54,15 @@ class OffenderCharge(
       ),
     ],
   )
-  val offence: Offence,
+  var offence: Offence,
 
   @Column(name = "NO_OF_OFFENCES")
-  val offencesCount: Int? = 0,
+  var offencesCount: Int? = 0,
 
-  val offenceDate: LocalDate? = null,
+  var offenceDate: LocalDate? = null,
 
   @Column(name = "OFFENCE_RANGE_DATE")
-  val offenceEndDate: LocalDate? = null,
+  var offenceEndDate: LocalDate? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -76,7 +76,7 @@ class OffenderCharge(
       JoinColumnOrFormula(column = JoinColumn(name = "PLEA_CODE", referencedColumnName = "code")),
     ],
   )
-  val plea: PleaStatusType? = null,
+  var plea: PleaStatusType? = null,
 
   val propertyValue: BigDecimal? = null,
 
@@ -103,24 +103,24 @@ class OffenderCharge(
       JoinColumnOrFormula(column = JoinColumn(name = "CHARGE_STATUS", referencedColumnName = "code")),
     ],
   )
-  val chargeStatus: ChargeStatusType? = null,
+  var chargeStatus: ChargeStatusType? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RESULT_CODE_1")
-  val resultCode1: OffenceResultCode? = null,
+  var resultCode1: OffenceResultCode? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RESULT_CODE_2")
   val resultCode2: OffenceResultCode? = null,
 
   @Column(name = "RESULT_CODE_1_INDICATOR")
-  val resultCode1Indicator: String? = null,
+  var resultCode1Indicator: String? = null,
 
   @Column(name = "RESULT_CODE_2_INDICATOR")
   val resultCode2Indicator: String? = null,
 
   @Convert(converter = YesNoConverter::class)
-  val mostSeriousFlag: Boolean = false,
+  var mostSeriousFlag: Boolean = false,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CASE_ID")
