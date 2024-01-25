@@ -48,7 +48,6 @@ class IncidentPartyBuilder(
     index: Int,
   ): IncidentParty = IncidentParty(
     id = IncidentPartyId(incident.id, index),
-    incident = incident,
     role = role,
     offenderBooking = offenderBooking,
     outcome = outcome?.let { repository.lookupOutcome(it) },

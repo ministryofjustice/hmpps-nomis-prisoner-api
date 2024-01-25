@@ -93,6 +93,7 @@ class IncidentBuilder(
       incidentTime = incidentDateTime.toLocalTime(),
       status = repository.lookupIncidentStatusCode(incidentStatus),
       questionnaire = questionnaire,
+      incidentType = questionnaire.code,
     )
       .let { repository.save(it) }
       .also { incident = it }

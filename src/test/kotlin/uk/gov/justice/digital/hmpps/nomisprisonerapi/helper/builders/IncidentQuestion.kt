@@ -45,7 +45,7 @@ class IncidentQuestionBuilder(
     questionSequence: Int,
     question: QuestionnaireQuestion,
   ): IncidentQuestion = IncidentQuestion(
-    id = IncidentQuestionId(incident, questionSequence),
+    id = IncidentQuestionId(incident.id, questionSequence),
     question = question,
   )
     .also { incidentQuestion = it }

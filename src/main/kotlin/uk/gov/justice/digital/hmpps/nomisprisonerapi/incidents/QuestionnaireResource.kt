@@ -143,6 +143,8 @@ data class QuestionnaireResponse(
   val listSequence: Int,
   @Schema(description = "List of Questions (and associated Answers) for this Questionnaire")
   val questions: List<QuestionResponse> = listOf(),
+  @Schema(description = "List of Roles allowed for an offender's participation in an incident")
+  val offenderRoles: List<String> = listOf(),
   @Schema(description = "The date the questionnaire is no longer used")
   val expiryDate: LocalDate? = null,
   @Schema(description = "Questionnaire created date", required = true)
@@ -153,6 +155,14 @@ data class QuestionnaireResponse(
   val modifiedDate: LocalDateTime? = null,
   @Schema(description = "Questionnaire modified by")
   val modifiedBy: String? = null,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class NextQuestionResponse(
+  @Schema(description = "The question id")
+  val id: Long,
+  @Schema(description = "The question text")
+  val question: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -190,7 +200,7 @@ data class AnswerResponse(
   @Schema(description = "The date the answer is no longer used")
   val expiryDate: LocalDate? = null,
   @Schema(description = "Question to be asked following this answer")
-  var nextQuestion: QuestionResponse? = null,
+  var nextQuestion: NextQuestionResponse? = null,
   @Schema(description = "If the answer should include a date", example = "true")
   val dateRequired: Boolean,
   @Schema(description = "If the answer should include a comment", example = "true")

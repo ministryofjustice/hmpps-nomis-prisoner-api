@@ -1,42 +1,43 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
+import org.hibernate.type.YesNoConverter
 import java.io.Serializable
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Embeddable
-class IncidentQuestionId(
-  @Column(name = "INCIDENT_CASE_ID", nullable = false)
-  val incidentId: Long,
+data class QuestionnaireOffenderRoleId(
 
-  @Column(name = "QUESTION_SEQ", nullable = false)
-  var questionSequence: Int,
+  @Column(name = "QUESTIONNAIRE_ID", nullable = false)
+  val questionnaireId: Long,
+
+  // Offender Role = IR_OFF_PART in Reference_Codes table
+  @Column(name = "PARTICIPATION_ROLE", nullable = false)
+  val offenderRole: String,
 ) : Serializable
 
 @Entity
-@Table(name = "INCIDENT_CASE_QUESTIONS")
-data class IncidentQuestion(
+@Table(name = "QUESTIONNAIRE_ROLES")
+data class QuestionnaireOffenderRole(
 
   @EmbeddedId
-  val id: IncidentQuestionId,
+  val id: QuestionnaireOffenderRoleId,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "QUESTIONNAIRE_QUE_ID", updatable = false, nullable = false)
-  val question: QuestionnaireQuestion,
+  @Column(name = "SINGLE_ROLE_FLAG", nullable = false)
+  @Convert(converter = YesNoConverter::class)
+  val singleRole: Boolean = false,
 
-  @OneToMany(mappedBy = "id.incidentQuestion", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val responses: MutableList<IncidentResponse> = mutableListOf(),
+  @Column(name = "ACTIVE_FLAG", nullable = false)
+  @Convert(converter = YesNoConverter::class)
+  val active: Boolean = true,
 
   @Column
   var auditModuleName: String? = null,
@@ -49,10 +50,14 @@ data class IncidentQuestion(
   @Generated
   lateinit var createDatetime: LocalDateTime
 
+  @Column(name = "EXPIRY_DATE")
+  @Generated
+  lateinit var expiryDate: LocalDate
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    other as IncidentQuestion
+    other as QuestionnaireOffenderRole
 
     return id == other.id
   }
@@ -61,6 +66,6 @@ data class IncidentQuestion(
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(id = $id ), question = ${question.questionText})"
+    return this::class.simpleName + "(id = ${id.questionnaireId},  ${id.offenderRole} )"
   }
 }

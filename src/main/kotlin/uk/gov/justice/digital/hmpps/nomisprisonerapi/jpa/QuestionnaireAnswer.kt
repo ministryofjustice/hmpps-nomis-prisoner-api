@@ -72,6 +72,6 @@ data class QuestionnaireAnswer(
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(id = $id ), $answerText)"
+    return this::class.simpleName + "(id = $id ), answer = $answerText)"
   }
 }

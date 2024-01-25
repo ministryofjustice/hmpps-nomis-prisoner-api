@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireOffenderRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
 
@@ -18,6 +19,12 @@ interface QuestionnaireDsl {
     multipleAnswers: Boolean = false,
     dsl: QuestionnaireQuestionDsl.() -> Unit = {},
   ): QuestionnaireQuestion
+
+  @QuestionnaireOffenderRoleDslMarker
+  fun offenderRole(
+    role: String,
+    dsl: QuestionnaireOffenderRoleDsl.() -> Unit = {},
+  ): QuestionnaireOffenderRole
 }
 
 @Component
@@ -31,13 +38,15 @@ class QuestionnaireBuilderRepository(
 class QuestionnaireBuilderFactory(
   private val repository: QuestionnaireBuilderRepository,
   private val questionnaireQuestionBuilderFactory: QuestionnaireQuestionBuilderFactory,
+  private val questionnaireOffenderRoleBuilderFactory: QuestionnaireOffenderRoleBuilderFactory,
 ) {
-  fun builder() = QuestionnaireBuilder(repository, questionnaireQuestionBuilderFactory)
+  fun builder() = QuestionnaireBuilder(repository, questionnaireQuestionBuilderFactory, questionnaireOffenderRoleBuilderFactory)
 }
 
 class QuestionnaireBuilder(
   private val repository: QuestionnaireBuilderRepository,
   private val questionnaireQuestionBuilderFactory: QuestionnaireQuestionBuilderFactory,
+  private val questionnaireOffenderRoleBuilderFactory: QuestionnaireOffenderRoleBuilderFactory,
 ) : QuestionnaireDsl {
   private lateinit var questionnaire: Questionnaire
 
@@ -72,5 +81,18 @@ class QuestionnaireBuilder(
         )
           .also { questionnaire.questions += it }
           .also { builder.apply(dsl) }
+      }
+
+  override fun offenderRole(
+    role: String,
+    dsl: QuestionnaireOffenderRoleDsl.() -> Unit,
+  ): QuestionnaireOffenderRole =
+    questionnaireOffenderRoleBuilderFactory.builder()
+      .let { builder ->
+        builder.build(
+          questionnaireId = questionnaire.id,
+          role = role,
+        )
+          .also { questionnaire.offenderRoles += it }
       }
 }

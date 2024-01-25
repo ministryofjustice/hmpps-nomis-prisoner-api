@@ -36,14 +36,22 @@ data class Incident(
   @Column(name = "INCIDENT_DETAILS")
   val description: String? = null,
 
-  @OneToMany(mappedBy = "incident", cascade = [CascadeType.ALL], orphanRemoval = true)
+  // Maps to the code of the questionnaire (so is really just the same mapping as questionnaire)
+  @JoinColumn(nullable = false)
+  val incidentType: String,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "QUESTIONNAIRE_ID", nullable = false)
+  val questionnaire: Questionnaire,
+
+  @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val questions: MutableList<IncidentQuestion> = mutableListOf(),
+
+  @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   val parties: MutableList<IncidentParty> = mutableListOf(),
 
-  @OneToMany(mappedBy = "incident", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   val requirements: MutableList<IncidentRequirement> = mutableListOf(),
-
-  @OneToMany(mappedBy = "id.incident", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val questions: MutableList<IncidentQuestion> = mutableListOf(),
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REPORTED_STAFF_ID", nullable = false)
@@ -57,10 +65,6 @@ data class Incident(
   val incidentDate: LocalDate,
   @Column(name = "INCIDENT_TIME", nullable = false)
   val incidentTime: LocalTime,
-
-  @ManyToOne
-  @JoinColumn(name = "INCIDENT_TYPE", referencedColumnName = "CODE", nullable = false)
-  val questionnaire: Questionnaire,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INCIDENT_STATUS", nullable = false)
