@@ -41,10 +41,11 @@ class QuestionnaireService(
       listSequence = entity.listSequence,
       createdBy = entity.createUsername,
       createdDate = entity.createDatetime,
+      offenderRoles = entity.offenderRoles.map { it.id.offenderRole },
       questions = entity.questions.map { it.toQuestionResponse() },
     )
 
-  private fun QuestionnaireQuestion.toQuestionResponse(includeNextQuestion: Boolean = true): QuestionResponse =
+  private fun QuestionnaireQuestion.toQuestionResponse(): QuestionResponse =
     QuestionResponse(
       id = id,
       question = questionText,
@@ -63,10 +64,14 @@ class QuestionnaireService(
           dateRequired = questionnaireAnswer.dateRequired,
         )
           .apply {
-            if (includeNextQuestion) {
-              this.nextQuestion = questionnaireAnswer.nextQuestion?.toQuestionResponse(includeNextQuestion = false)
-            }
+            this.nextQuestion = questionnaireAnswer.nextQuestion?.toNextQuestionResponse()
           }
       },
+    )
+
+  private fun QuestionnaireQuestion.toNextQuestionResponse(): NextQuestionResponse =
+    NextQuestionResponse(
+      id = id,
+      question = questionText,
     )
 }

@@ -43,12 +43,20 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
           questionnaireAnswer(answer = "Q1A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question2)
           questionnaireAnswer(answer = "Q1A2: No", listSequence = 2, answerSequence = 2, nextQuestion = question2)
         }
+        offenderRole("ABS")
+        offenderRole("ESC")
+        offenderRole("FIGHT")
+        offenderRole("PERP")
       }
       questionnaire2 = questionnaire(code = "FIRE", listSequence = 1, active = false) {
         questionnaireQuestion(question = "Q1A: Were staff involved?", questionSequence = 1, listSequence = 1)
         questionnaireQuestion(question = "Q2A: Were prisoners involved?", questionSequence = 2, listSequence = 2)
+        offenderRole("ESC")
+        offenderRole("FIGHT")
       }
-      questionnaire3 = questionnaire(code = "MISC", listSequence = 1)
+      questionnaire3 = questionnaire(code = "MISC", listSequence = 1) {
+        offenderRole("ESC")
+      }
     }
   }
 
@@ -60,34 +68,35 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class Security {
-    @Test
-    fun `access forbidden when no role`() {
-      webTestClient.get().uri("/questionnaires/ids")
-        .headers(setAuthorisation(roles = listOf()))
-        .exchange()
-        .expectStatus().isForbidden
-    }
-
-    @Test
-    fun `access forbidden with wrong role`() {
-      webTestClient.get().uri("/questionnaires/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-        .exchange()
-        .expectStatus().isForbidden
-    }
-
-    @Test
-    fun `access unauthorised with no auth token`() {
-      webTestClient.get().uri("/questionnaires/ids")
-        .exchange()
-        .expectStatus().isUnauthorized
-    }
-  }
-
-  @Nested
   @DisplayName("GET /questionnaires/ids")
   inner class GetQuestionnaireIds {
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/questionnaires/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/questionnaires/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/questionnaires/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
     @Test
     fun `get all question ids - no filter specified`() {
       webTestClient.get().uri("/questionnaires/ids")
@@ -139,6 +148,43 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /questionnaires/{questionnaireId}")
   inner class GetQuestionnaire {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `unknown questionnaire should return not found`() {
+      webTestClient.get().uri("/questionnaires/999999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Not Found: Questionnaire with id=999999 does not exist")
+        }
+    }
 
     @Test
     fun `will return the questionnaire by Id`() {
@@ -154,13 +200,27 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `will return the offender roles for this questionnaire`() {
+      webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(questionnaire1.id)
+        .jsonPath("offenderRoles.length()").isEqualTo(4)
+        .jsonPath("offenderRoles[0]").isEqualTo("ABS")
+        .jsonPath("offenderRoles[*]").value<List<String>>
+        { assertThat(it).containsExactlyElementsOf(listOf("ABS", "ESC", "FIGHT", "PERP")) }
+    }
+
+    @Test
     fun `will return the questions and answers for a questionnaire`() {
       val persistedQuestionnaire1 = webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
         .expectBody(QuestionnaireResponse::class.java)
-        .returnResult().responseBody
+        .returnResult().responseBody!!
 
       with(persistedQuestionnaire1.questions[3]) {
         assertThat(question).isEqualTo("Q1: Were the police informed of the incident?")
@@ -172,7 +232,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
         with(answers[0]) {
           assertThat(answer).isEqualTo("Q1A1: Yes")
           assertThat(nextQuestion!!.question).isEqualTo("Q2: Were tools used?")
-          assertThat(nextQuestion!!.answers[0].nextQuestion).isNull() // Avoids recursion (only first level nextQuestion returned)
+          assertThat(nextQuestion!!.id).isEqualTo(questionnaire1.questions[2].id)
           assertThat(answerSequence).isEqualTo(1)
           assertThat(listSequence).isEqualTo(1)
           assertThat(active).isEqualTo(true)
@@ -187,6 +247,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
         assertThat(question).isEqualTo("Q2: Were tools used?")
         assertThat(answers[0].answer).isEqualTo("Q2A1: Yes")
         assertThat(answers[0].nextQuestion!!.question).isEqualTo("Q3: What tools were used?")
+        assertThat(answers[0].nextQuestion!!.id).isEqualTo(questionnaire1.questions[1].id)
         assertThat(answers[1].answer).isEqualTo("Q2A2: No")
         assertThat(answers[1].nextQuestion).isNull()
       }

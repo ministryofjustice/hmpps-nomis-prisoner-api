@@ -47,6 +47,9 @@ data class Questionnaire(
   @JoinColumn(name = "QUESTIONNAIRE_ID", nullable = false)
   val questions: MutableList<QuestionnaireQuestion> = mutableListOf(),
 
+  @OneToMany(mappedBy = "id.questionnaireId", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val offenderRoles: MutableList<QuestionnaireOffenderRole> = mutableListOf(),
+
   @Column
   var auditModuleName: String? = null,
 

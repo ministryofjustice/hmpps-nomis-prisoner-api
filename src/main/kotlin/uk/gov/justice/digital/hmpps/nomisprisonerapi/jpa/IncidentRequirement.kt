@@ -30,10 +30,6 @@ class IncidentRequirement(
   @EmbeddedId
   val id: IncidentRequirementId,
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "INCIDENT_CASE_ID", insertable = false, updatable = false, nullable = false)
-  val incident: Incident,
-
   @Column(name = "COMMENT_TEXT")
   val comment: String? = null,
 

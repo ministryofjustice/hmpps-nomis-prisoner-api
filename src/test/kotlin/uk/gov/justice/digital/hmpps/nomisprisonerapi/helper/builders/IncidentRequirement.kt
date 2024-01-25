@@ -45,7 +45,6 @@ class IncidentRequirementBuilder(
     requirementSequence: Int,
   ): IncidentRequirement = IncidentRequirement(
     id = IncidentRequirementId(incident.id, requirementSequence),
-    incident = incident,
     comment = comment,
     recordingStaff = recordingStaff,
     location = repository.lookupAgency(prisonId),

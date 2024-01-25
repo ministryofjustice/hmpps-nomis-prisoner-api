@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents
 
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -138,34 +139,34 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class Security {
-    @Test
-    fun `access forbidden when no role`() {
-      webTestClient.get().uri("/incidents/ids")
-        .headers(setAuthorisation(roles = listOf()))
-        .exchange()
-        .expectStatus().isForbidden
-    }
-
-    @Test
-    fun `access forbidden with wrong role`() {
-      webTestClient.get().uri("/incidents/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-        .exchange()
-        .expectStatus().isForbidden
-    }
-
-    @Test
-    fun `access unauthorised with no auth token`() {
-      webTestClient.get().uri("/incidents/ids")
-        .exchange()
-        .expectStatus().isUnauthorized
-    }
-  }
-
-  @Nested
   @DisplayName("GET /incidents/ids")
   inner class GetQuestionnaireIds {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/incidents/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/incidents/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/incidents/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
     @Test
     fun `get all question ids - no filter specified`() {
       webTestClient.get().uri("/incidents/ids")
@@ -217,6 +218,44 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /incidents/{incidentId}")
   inner class GetIncident {
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `unknown incident should return not found`() {
+      webTestClient.get().uri("/incidents/999999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          Assertions.assertThat(it).contains("Not Found: Incident with id=999999 does not exist")
+        }
+    }
 
     @Test
     fun `will return an incident by Id`() {

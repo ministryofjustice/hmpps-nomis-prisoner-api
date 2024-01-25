@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 @Embeddable
 class IncidentPartyId(
   @Column(name = "INCIDENT_CASE_ID", nullable = false)
-  var incidentCaseId: Long,
+  var incidentId: Long,
 
   @Column(name = "PARTY_SEQ", nullable = false)
   var partySequence: Int,
@@ -32,11 +32,9 @@ class IncidentParty(
   @EmbeddedId
   val id: IncidentPartyId,
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "INCIDENT_CASE_ID", insertable = false, updatable = false)
-  val incident: Incident,
-
-  // Combination of Reference Codes: Staff role code=IR_STF_PART and Offender role code = IR_OFF_PART
+  // Combination of :
+  // Staff roles - Reference Codes code=IR_STF_PART
+  // Offender roles - from questionnaireOffenderRole QUESTIONNAIRE_ROLES table
   @Column(name = "PARTICIPATION_ROLE")
   val role: String,
 
