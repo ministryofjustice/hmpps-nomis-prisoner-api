@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndActivitie
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindAllocationsMissingPayBandsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindPayRateWithUnknownIncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAllocationRequest
@@ -340,6 +341,46 @@ class ActivitiesResource(
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> =
     activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/activities/rates-with-unknown-incentives")
+  @Operation(
+    summary = "Find activities with pay rates with unknown incentive level",
+    description = "Searches for course activities that have an active pay rate with an unknown incentive level. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun findRatesWithUnknownIncentiveLevel(
+    @Schema(description = "Prison id") @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode") @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
+    @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
+  ): List<FindPayRateWithUnknownIncentiveResponse> =
+    activityService.findPayRatesWithUnknownIncentive(prisonId, excludeProgramCodes, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/{courseActivityId}")

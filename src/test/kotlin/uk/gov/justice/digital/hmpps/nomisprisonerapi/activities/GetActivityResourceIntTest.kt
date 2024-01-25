@@ -504,6 +504,100 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /activities/rates-with-unknown-incentives")
+  inner class GetPayRatesWithUnknownIncentives {
+    private lateinit var courseActivity: CourseActivity
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.get().uri("/activities/rates-with-unknown-incentives?prisonId=ANY")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.get().uri("/activities/rates-with-unknown-incentives?prisonId=ANY")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.get().uri("/activities/rates-with-unknown-incentives?prisonId=ANY")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return activities with a pay rate for an inactive incentive level`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(iepLevelCode = "ENT", payBandCode = "5") // incentive level not active
+          }
+        }
+        offender {
+          booking {
+            courseAllocation(courseActivity = courseActivity)
+          }
+        }
+      }
+
+      webTestClient.getPayRatesWithUnknownIncentives()
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(1)
+        .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].payBandCode").isEqualTo("5")
+        .jsonPath("$[0].incentiveLevelCode").isEqualTo("ENT")
+    }
+
+    @Test
+    fun `should ignore activities where the bad pay rate has expired`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(iepLevelCode = "ENT", endDate = "$yesterday") // inactive incentive level on expired pay rate
+            payRate(iepLevelCode = "BAS", startDate = "$today")
+          }
+        }
+        offender {
+          booking {
+            courseAllocation(courseActivity = courseActivity)
+          }
+        }
+      }
+
+      webTestClient.getPayRatesWithUnknownIncentives()
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(0)
+    }
+
+    private fun WebTestClient.getPayRatesWithUnknownIncentives(
+      prison: String = "BXI",
+      excludeProgramCodes: List<String> = listOf(),
+      courseActivityId: Long? = null,
+    ): WebTestClient.ResponseSpec =
+      get().uri {
+        it.path("/activities/rates-with-unknown-incentives")
+          .queryParam("prisonId", prison)
+          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
+          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+  }
+
+  @Nested
   @DisplayName("GET /activities/{courseActivityId}")
   inner class GetActivity {
 
