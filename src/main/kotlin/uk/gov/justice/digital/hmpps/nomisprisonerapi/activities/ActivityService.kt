@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindPayRateWithUnknownIncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -114,6 +115,20 @@ class ActivityService(
     return findPrisonOrThrow(prisonId)
       .let { courseActivityRepository.findActiveActivities(prisonId, excludePrograms, courseActivityId, pageRequest) }
       .map { FindActiveActivityIdsResponse(it) }
+  }
+
+  fun findPayRatesWithUnknownIncentive(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindPayRateWithUnknownIncentiveResponse> {
+    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
+    return findPrisonOrThrow(prisonId)
+      .let { courseActivityRepository.findPayRatesWithUnknownIncentive(prisonId, excludePrograms, courseActivityId) }
+      .map {
+        FindPayRateWithUnknownIncentiveResponse(
+          courseActivityId = it.getCourseActivityId(),
+          courseActivityDescription = it.getCourseActivityDescription(),
+          payBandCode = it.getPayBandCode(),
+          incentiveLevelCode = it.getIncentiveLevelCode(),
+        )
+      }
   }
 
   fun getActivity(courseActivityId: Long): GetActivityResponse? =

@@ -213,12 +213,13 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     }
 
     /*
-     * Note that each test in this class also checks the endpoint `/activities/ids`, `/allocations/suspended`,
-     * `/allocations/missing-pay-bands` as well as the allocation ids endpoint.
+     * Note that each test in this class also checks the endpoint `/activities/ids`, `/activities/rates-with-unknown-incentives`,
+     *  `/allocations/suspended`, `/allocations/missing-pay-bands` as well as the allocation ids endpoint.
      *
      * This is to test that the same rules are being applied to the activities, suspended allocations, allocations with
      * missing pay rates and allocation ids selection and effectively tests that the following custom queries are aligned:
      * - CourseActivityRepository.findActiveActivities
+     * - CourseActivityRepository.findRatesWithUnknownIncentive
      * - OffenderProgramProfilesRepository.findActiveAllocations
      * - OffenderProgramProfilesRepository.findSuspendedAllocations
      * - OffenderProgramProfilesRepository.findMissingPayBands
@@ -227,16 +228,33 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     inner class AllocationSelection {
 
       private lateinit var courseActivity: CourseActivity
+      private lateinit var courseActivityUnknownIncentive: CourseActivity
+      lateinit var courseAllocation: OffenderProgramProfile
+      lateinit var courseAllocationUnknownIncentive: OffenderProgramProfile
+      lateinit var courseAllocationSuspended: OffenderProgramProfile
+      lateinit var courseAllocationMissingPayBand: OffenderProgramProfile
+      val nomsIdUnknownIncentive = "U1234UU"
+      val nomsIdSuspended = "S1234SS"
+      val nomsIdMissingPayBand = "P1234PP"
 
       @Test
       fun `should not include future course activities`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$tomorrow")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$tomorrow") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
@@ -259,6 +277,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
 
         webTestClient.getSuspendedAllocations()
           .expectBody()
@@ -274,10 +296,19 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday", endDate = "$yesterday") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
@@ -301,6 +332,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+
         webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
@@ -315,6 +350,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
         }
 
@@ -325,6 +364,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
 
         webTestClient.getSuspendedAllocations()
           .expectBody()
@@ -340,10 +383,19 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today", programStatusCode = "END")
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today", programStatusCode = "END")
             }
           }
           offender {
@@ -367,6 +419,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+
         webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
@@ -381,10 +437,19 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$yesterday", endDate = "$yesterday")
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$yesterday", endDate = "$yesterday")
             }
           }
           offender {
@@ -408,6 +473,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+
         webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
@@ -419,52 +488,60 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should include if prisoner allocation in future`() {
-        lateinit var courseAllocation: OffenderProgramProfile
-        lateinit var courseAllocation2: OffenderProgramProfile
-        lateinit var courseAllocation3: OffenderProgramProfile
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation = courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow")
             }
           }
-          offender(nomsId = "B1234BB") {
+          offender(nomsId = nomsIdUnknownIncentive) {
             booking {
-              courseAllocation2 = courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow", suspended = true)
+              courseAllocationUnknownIncentive = courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$tomorrow")
             }
           }
-          offender(nomsId = "C1234CC") {
+          offender(nomsId = nomsIdSuspended) {
+            booking {
+              courseAllocationSuspended = courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow", suspended = true)
+            }
+          }
+          offender(nomsId = nomsIdMissingPayBand) {
             booking {
               incentive(iepLevelCode = "BAS")
-              courseAllocation3 = courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow")
+              courseAllocationMissingPayBand = courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow")
             }
           }
         }
 
         webTestClient.getActiveAllocations()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(3)
-          .jsonPath("content[0].allocationId").isEqualTo(courseAllocation.offenderProgramReferenceId)
-          .jsonPath("content[1].allocationId").isEqualTo(courseAllocation2.offenderProgramReferenceId)
-          .jsonPath("content[2].allocationId").isEqualTo(courseAllocation3.offenderProgramReferenceId)
+          .jsonPath("content.size()").isEqualTo(4)
 
         webTestClient.getActiveActivities()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content.size()").isEqualTo(2)
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].courseActivityId").isEqualTo(courseActivityUnknownIncentive.courseActivityId)
 
         webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdSuspended)
 
         webTestClient.getAllocationsWithMissingPayBands()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("C1234CC")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdMissingPayBand)
       }
 
       @Test
@@ -472,10 +549,19 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(prisonId = "BXI", startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking(agencyLocationId = "LEI") {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+          offender {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
@@ -498,6 +584,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
 
         webTestClient.getSuspendedAllocations()
           .expectBody()
@@ -513,10 +603,19 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking(active = false) {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+          offender {
+            booking(active = false) {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
@@ -540,6 +639,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+
         webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
@@ -551,51 +654,59 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should include if prisoner is ACTIVE OUT`() {
-        lateinit var courseAllocation: OffenderProgramProfile
-        lateinit var courseAllocation2: OffenderProgramProfile
-        lateinit var courseAllocation3: OffenderProgramProfile
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking(active = true, inOutStatus = "OUT") {
               courseAllocation = courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
-          offender(nomsId = "B1234BB") {
+          offender(nomsId = nomsIdUnknownIncentive) {
             booking(active = true, inOutStatus = "OUT") {
-              courseAllocation2 = courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
+              courseAllocationUnknownIncentive = courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
-          offender(nomsId = "C1234CC") {
+          offender(nomsId = nomsIdSuspended) {
+            booking(active = true, inOutStatus = "OUT") {
+              courseAllocationSuspended = courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
+            }
+          }
+          offender(nomsId = nomsIdMissingPayBand) {
             booking(active = true, inOutStatus = "OUT") {
               incentive(iepLevelCode = "BAS")
-              courseAllocation3 = courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocationMissingPayBand = courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
 
         webTestClient.getActiveAllocations()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(3)
-          .jsonPath("content[0].allocationId").isEqualTo(courseAllocation.offenderProgramReferenceId)
-          .jsonPath("content[1].allocationId").isEqualTo(courseAllocation2.offenderProgramReferenceId)
-          .jsonPath("content[2].allocationId").isEqualTo(courseAllocation3.offenderProgramReferenceId)
+          .jsonPath("content.size()").isEqualTo(4)
 
         webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
 
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].courseActivityId").isEqualTo(courseActivityUnknownIncentive.courseActivityId)
+
         webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdSuspended)
 
         webTestClient.getAllocationsWithMissingPayBands()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("C1234CC")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdMissingPayBand)
       }
 
       @Test
@@ -603,10 +714,19 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService("INTTEST") {
             courseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
@@ -649,6 +769,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
+        webTestClient.getPayRatesWithUnknownIncentives(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+
         webTestClient.getSuspendedAllocations(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
@@ -663,10 +787,18 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$yesterday") {} // no schedule rules
+            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday") {
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
@@ -689,6 +821,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
 
         webTestClient.getSuspendedAllocations()
           .expectBody()
@@ -708,18 +844,28 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
               courseScheduleRule(startTimeHours = 13, startTimeMinutes = 30, endTimeHours = 15, endTimeMinutes = 30)
               payRate()
             }
+            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday") {
+              courseScheduleRule(startTimeHours = 9, startTimeMinutes = 30, endTimeHours = 11, endTimeMinutes = 30)
+              courseScheduleRule(startTimeHours = 13, startTimeMinutes = 30, endTimeHours = 15, endTimeMinutes = 30)
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
-          offender(nomsId = "B1234BB") {
+          offender(nomsId = nomsIdUnknownIncentive) {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
+            }
+          }
+          offender(nomsId = nomsIdSuspended) {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
             }
           }
-          offender(nomsId = "C1234CC") {
+          offender(nomsId = nomsIdMissingPayBand) {
             booking {
               incentive(iepLevelCode = "BAS")
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
@@ -729,51 +875,69 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActiveAllocations()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(3)
+          .jsonPath("content.size()").isEqualTo(4)
 
         webTestClient.getActiveActivities()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content.size()").isEqualTo(2)
+
+        webTestClient.getPayRatesWithUnknownIncentives()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].courseActivityId").isEqualTo(courseActivityUnknownIncentive.courseActivityId)
 
         webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdSuspended)
 
         webTestClient.getAllocationsWithMissingPayBands()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("C1234CC")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdMissingPayBand)
       }
 
       @Test
       fun `should only include the course activity requested`() {
         lateinit var otherCourseActivity: CourseActivity
-        lateinit var otherCourseAllocation: OffenderProgramProfile
-        lateinit var otherCourseAllocation2: OffenderProgramProfile
-        lateinit var otherCourseAllocation3: OffenderProgramProfile
+        lateinit var otherCourseActivityUnknownIncentive: CourseActivity
+
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
             otherCourseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
+            otherCourseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
-              otherCourseAllocation = courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
             }
           }
-          offender(nomsId = "B1234BB") {
+          offender(nomsId = nomsIdUnknownIncentive) {
+            booking {
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivityUnknownIncentive, startDate = "$today")
+            }
+          }
+          offender(nomsId = nomsIdSuspended) {
             booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
-              otherCourseAllocation2 = courseAllocation(courseActivity = otherCourseActivity, startDate = "$today", suspended = true)
+              courseAllocation(courseActivity = otherCourseActivity, startDate = "$today", suspended = true)
             }
           }
-          offender(nomsId = "C1234CC") {
+          offender(nomsId = nomsIdMissingPayBand) {
             booking {
               incentive(iepLevelCode = "BAS")
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
-              otherCourseAllocation3 = courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
             }
           }
         }
@@ -781,40 +945,58 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         webTestClient.getActiveAllocations(courseActivityId = otherCourseActivity.courseActivityId)
           .expectBody()
           .jsonPath("content.size()").isEqualTo(3)
-          .jsonPath("content[0].allocationId").isEqualTo(otherCourseAllocation.offenderProgramReferenceId)
-          .jsonPath("content[1].allocationId").isEqualTo(otherCourseAllocation2.offenderProgramReferenceId)
-          .jsonPath("content[2].allocationId").isEqualTo(otherCourseAllocation3.offenderProgramReferenceId)
 
         webTestClient.getActiveActivities(courseActivityId = otherCourseActivity.courseActivityId)
           .expectBody()
           .jsonPath("content.size()").isEqualTo(1)
           .jsonPath("content[0].courseActivityId").isEqualTo(otherCourseActivity.courseActivityId)
 
+        webTestClient.getPayRatesWithUnknownIncentives(courseActivityId = otherCourseActivityUnknownIncentive.courseActivityId)
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].courseActivityId").isEqualTo(otherCourseActivityUnknownIncentive.courseActivityId)
+
         webTestClient.getSuspendedAllocations(courseActivityId = otherCourseActivity.courseActivityId)
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdSuspended)
           .jsonPath("$[0].courseActivityId").isEqualTo(otherCourseActivity.courseActivityId)
 
         webTestClient.getAllocationsWithMissingPayBands(courseActivityId = otherCourseActivity.courseActivityId)
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("$[0].offenderNo").isEqualTo("C1234CC")
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdMissingPayBand)
           .jsonPath("$[0].courseActivityId").isEqualTo(otherCourseActivity.courseActivityId)
       }
 
       @Test
       fun `should ignore the course activity requested if it doesn't respect other filters`() {
         lateinit var otherCourseActivity: CourseActivity
+        lateinit var otherCourseActivityUnknownIncentive: CourseActivity
+
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$today")
             otherCourseActivity = courseActivity(startDate = "$today")
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
+            otherCourseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+              courseScheduleRule()
+              payRate(iepLevelCode = "ENT")
+            }
           }
           offender {
             booking(agencyLocationId = "LEI") { // wrong prison
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
               courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
+            }
+          }
+          offender {
+            booking(agencyLocationId = "LEI") { // wrong prison
+              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
@@ -837,6 +1019,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .jsonPath("content.size()").isEqualTo(0)
 
         webTestClient.getActiveActivities(courseActivityId = otherCourseActivity.courseActivityId)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getActiveActivities(courseActivityId = courseActivityUnknownIncentive.courseActivityId)
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
@@ -882,6 +1068,22 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
+          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
+          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+
+    private fun WebTestClient.getPayRatesWithUnknownIncentives(
+      prison: String = "BXI",
+      excludeProgramCodes: List<String> = listOf(),
+      courseActivityId: Long? = null,
+    ): WebTestClient.ResponseSpec =
+      get().uri {
+        it.path("/activities/rates-with-unknown-incentives")
+          .queryParam("prisonId", prison)
           .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
