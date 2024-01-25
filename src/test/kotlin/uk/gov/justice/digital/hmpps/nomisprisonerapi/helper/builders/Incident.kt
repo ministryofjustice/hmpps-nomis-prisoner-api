@@ -3,9 +3,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
@@ -21,14 +22,22 @@ annotation class IncidentDslMarker
 @NomisDataDslMarker
 interface IncidentDsl {
   @IncidentPartyDslMarker
-  fun incidentParty(
+  fun incidentStaffParty(
     role: String = "VICT",
-    offenderBooking: OffenderBooking? = null,
-    staff: Staff? = null,
+    staff: Staff,
     comment: String = "They witnessed everything",
     outcome: String? = null,
     dsl: IncidentPartyDsl.() -> Unit = {},
-  ): IncidentParty
+  ): IncidentStaffParty
+
+  @IncidentPartyDslMarker
+  fun incidentOffenderParty(
+    role: String = "VICT",
+    offenderBooking: OffenderBooking,
+    comment: String = "They witnessed everything",
+    outcome: String? = null,
+    dsl: IncidentPartyDsl.() -> Unit = {},
+  ): IncidentOffenderParty
 
   @IncidentRequirementDslMarker
   fun requirement(
@@ -98,28 +107,47 @@ class IncidentBuilder(
       .let { repository.save(it) }
       .also { incident = it }
 
-  override fun incidentParty(
+  override fun incidentStaffParty(
     role: String,
-    offenderBooking: OffenderBooking?,
-    staff: Staff?,
+    staff: Staff,
     comment: String,
     outcome: String?,
     dsl: IncidentPartyDsl.() -> Unit,
-  ): IncidentParty =
-    incidentPartyBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          role = role,
-          outcome = outcome,
-          offenderBooking = offenderBooking,
-          staff = staff,
-          comment = comment,
-          incident = incident,
-          index = incident.parties.size + 1,
-        )
-          .also { incident.parties += it }
-          .also { builder.apply(dsl) }
-      }
+  ): IncidentStaffParty = incidentPartyBuilderFactory.builder()
+    .let { builder ->
+      builder.buildStaff(
+        role = role,
+        outcome = outcome,
+        staff = staff,
+        comment = comment,
+        incident = incident,
+        partySequence = incident.partyCount() + 1,
+      )
+        .also { incident.staffParties += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun incidentOffenderParty(
+    role: String,
+    offenderBooking: OffenderBooking,
+    comment: String,
+    outcome: String?,
+    dsl: IncidentPartyDsl.() -> Unit,
+  ): IncidentOffenderParty = incidentPartyBuilderFactory.builder()
+    .let { builder ->
+      builder.buildOffender(
+        role = role,
+        outcome = outcome,
+        offenderBooking = offenderBooking,
+        comment = comment,
+        incident = incident,
+        index = incident.partyCount() + 1,
+      )
+        .also { incident.offenderParties += it }
+        .also { builder.apply(dsl) }
+    }
+
+  private fun Incident.partyCount() = staffParties.size + offenderParties.size
 
   override fun requirement(
     comment: String,

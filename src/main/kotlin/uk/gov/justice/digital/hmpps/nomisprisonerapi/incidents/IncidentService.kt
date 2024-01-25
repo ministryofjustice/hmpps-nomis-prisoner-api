@@ -8,16 +8,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isOffenderParty
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isStaffParty
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.offenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncidentSpecification
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
@@ -52,8 +47,8 @@ class IncidentService(
       incidentDateTime = LocalDateTime.of(this.incidentDate, this.incidentTime),
       reportedStaff = this.reportingStaff.toStaff(),
       reportedDateTime = LocalDateTime.of(this.reportedDate, this.reportedTime),
-      staffParties = this.staffParties().map { it.staffParty().toStaff() },
-      offenderParties = this.offenderParties().map { it.offenderParty().toOffender() },
+      staffParties = this.staffParties.map { it.staff.toStaff() },
+      offenderParties = this.offenderParties.map { it.offenderBooking.offender.toOffender() },
       requirements = this.requirements.map { it.toRequirement() },
       questions = this.questions.map { it.toQuestionResponse() },
     )
@@ -66,6 +61,7 @@ private fun IncidentRequirement.toRequirement() =
     date = recordedDate,
     prisonId = location.id,
   )
+
 private fun IncidentQuestion.toQuestionResponse() =
   Question(
     sequence = id.questionSequence,
@@ -79,9 +75,6 @@ private fun IncidentQuestion.toQuestionResponse() =
     },
   )
 
-private fun Incident.staffParties(): List<IncidentParty> =
-  this.parties.filter { it.isStaffParty() }
-
 private fun JPAStaff.toStaff() =
   Staff(
     staffId = id,
@@ -89,9 +82,6 @@ private fun JPAStaff.toStaff() =
     lastName = lastName,
     username = accounts.maxByOrNull { it.type }?.username ?: "unknown",
   )
-
-private fun Incident.offenderParties(): List<IncidentParty> =
-  this.parties.filter { it.isOffenderParty() }
 
 private fun Offender.toOffender() =
   Offender(

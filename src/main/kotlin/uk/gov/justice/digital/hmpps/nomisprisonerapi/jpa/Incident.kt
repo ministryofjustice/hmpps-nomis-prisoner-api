@@ -48,7 +48,10 @@ data class Incident(
   val questions: MutableList<IncidentQuestion> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val parties: MutableList<IncidentParty> = mutableListOf(),
+  var offenderParties: MutableList<IncidentOffenderParty> = mutableListOf(),
+
+  @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
+  var staffParties: MutableList<IncidentStaffParty> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   val requirements: MutableList<IncidentRequirement> = mutableListOf(),

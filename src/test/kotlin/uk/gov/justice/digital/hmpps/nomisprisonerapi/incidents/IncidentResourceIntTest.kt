@@ -90,8 +90,9 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         reportingStaff = reportingStaff1,
         questionnaire = questionnaire1,
       ) {
-        incidentParty(staff = partyStaff1)
-        incidentParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
+        incidentStaffParty(staff = partyStaff1)
+        incidentStaffParty(staff = reportingStaff2)
+        incidentOffenderParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
         requirement("Update the name", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
         requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
         question(question = question1)

@@ -4,11 +4,13 @@ import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
+import jakarta.persistence.Inheritance
+import jakarta.persistence.InheritanceType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
@@ -26,8 +28,10 @@ class IncidentPartyId(
 ) : Serializable
 
 @Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorFormula("case when staff_id is null then 'offender' else 'staff' end")
 @Table(name = "INCIDENT_CASE_PARTIES")
-class IncidentParty(
+open class IncidentParty(
 
   @EmbeddedId
   val id: IncidentPartyId,
@@ -37,14 +41,6 @@ class IncidentParty(
   // Offender roles - from questionnaireOffenderRole QUESTIONNAIRE_ROLES table
   @Column(name = "PARTICIPATION_ROLE")
   val role: String,
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_BOOK_ID")
-  val offenderBooking: OffenderBooking? = null,
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "STAFF_ID")
-  val staff: Staff? = null,
 
   @Column(name = "COMMENT_TEXT")
   val comment: String? = null,
@@ -79,8 +75,3 @@ class IncidentParty(
 
   override fun hashCode(): Int = javaClass.hashCode()
 }
-fun IncidentParty.isStaffParty(): Boolean = staff != null
-fun IncidentParty.isOffenderParty(): Boolean = offenderBooking != null
-
-fun IncidentParty.staffParty(): Staff = staff!!
-fun IncidentParty.offenderParty(): Offender = offenderBooking!!.offender
