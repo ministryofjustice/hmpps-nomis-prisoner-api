@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -155,10 +156,10 @@ data class IncidentResponse(
   val reportedDateTime: LocalDateTime,
 
   @Schema(description = "Staff involved in the incident")
-  val staffParties: List<Staff>,
+  val staffParties: List<StaffParty>,
 
   @Schema(description = "Offenders involved in the incident")
-  val offenderParties: List<Offender>,
+  val offenderParties: List<OffenderParty>,
 
   @Schema(description = "Requirements for completing the incident report")
   val requirements: List<Requirement>,
@@ -180,6 +181,16 @@ data class Staff(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+data class StaffParty(
+  @Schema(description = "Staff involved in the incident")
+  val staff: Staff,
+  @Schema(description = "Staff role in the incident")
+  val role: CodeDescription,
+  @Schema(description = "General information about the incident")
+  val comment: String?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Offender(
   @Schema(description = "NOMIS id")
   val offenderNo: String,
@@ -187,6 +198,18 @@ data class Offender(
   val firstName: String?,
   @Schema(description = "Last name of staff member")
   val lastName: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderParty(
+  @Schema(description = "Offender involved in the incident")
+  val offender: Offender,
+  @Schema(description = "Offender role in the incident")
+  val role: CodeDescription,
+  @Schema(description = "The outcome of the incident")
+  val outcome: CodeDescription?,
+  @Schema(description = "General information about the incident")
+  val comment: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -62,22 +62,22 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       lateinit var question3: QuestionnaireQuestion
       lateinit var question3Answer1: QuestionnaireAnswer
       lateinit var question3Answer3: QuestionnaireAnswer
-      questionnaire1 = questionnaire(code = "ESCAPE_EST", listSequence = 1, description = "Escape Questionnaire") {
-        val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?", questionSequence = 4, listSequence = 4) {
-          questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds", answerSequence = 1, listSequence = 1)
+      questionnaire1 = questionnaire(code = "ESCAPE_EST", description = "Escape Questionnaire") {
+        val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?") {
+          questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds")
         }
-        question3 = questionnaireQuestion(question = "Q3: What tools were used?", questionSequence = 3, listSequence = 3, multipleAnswers = true) {
-          question3Answer1 = questionnaireAnswer(answer = "Q3A1: Wire cutters", listSequence = 1, answerSequence = 1, nextQuestion = question4)
-          questionnaireAnswer(answer = "Q3A2: Spade", listSequence = 2, answerSequence = 2, nextQuestion = question4)
-          question3Answer3 = questionnaireAnswer(answer = "Q3A3: Crow bar", listSequence = 3, answerSequence = 3, nextQuestion = question4)
+        question3 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
+          question3Answer1 = questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question4)
+          questionnaireAnswer(answer = "Q3A2: Spade", nextQuestion = question4)
+          question3Answer3 = questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question4)
         }
-        question2 = questionnaireQuestion(question = "Q2: Were tools used?", questionSequence = 2, listSequence = 2) {
-          question2Answer1 = questionnaireAnswer(answer = "Q2A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question3)
-          questionnaireAnswer(answer = "Q2A2: No", listSequence = 2, answerSequence = 2)
+        question2 = questionnaireQuestion(question = "Q2: Were tools used?") {
+          question2Answer1 = questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question3)
+          questionnaireAnswer(answer = "Q2A2: No")
         }
-        question1 = questionnaireQuestion(question = "Q1: Were the police informed of the incident?", questionSequence = 1, listSequence = 1) {
-          questionnaireAnswer(answer = "Q1A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question2)
-          questionnaireAnswer(answer = "Q1A2: No", listSequence = 2, answerSequence = 2, nextQuestion = question2)
+        question1 = questionnaireQuestion(question = "Q1: Were the police informed of the incident?") {
+          questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question2)
+          questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question2)
         }
       }
 
@@ -90,7 +90,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         reportingStaff = reportingStaff1,
         questionnaire = questionnaire1,
       ) {
-        incidentStaffParty(staff = partyStaff1)
+        incidentStaffParty(staff = partyStaff1, role = "WIT")
         incidentStaffParty(staff = reportingStaff2)
         incidentOffenderParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
         requirement("Update the name", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
@@ -99,7 +99,6 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         question(question = question2) {
           response(
             answer = question2Answer1,
-            answerSequence = 1,
             comment = "Multiple tools were found",
             recordingStaff = responseRecordingStaff,
           )
@@ -107,12 +106,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         question(question = question3) {
           response(
             answer = question3Answer1,
-            answerSequence = 2,
             recordingStaff = responseRecordingStaff,
           )
           response(
             answer = question3Answer3,
-            answerSequence = 3,
             comment = "Large Crow bar",
             recordingStaff = responseRecordingStaff,
           )
@@ -287,10 +284,15 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(incident1.id)
-        .jsonPath("staffParties[0].staffId").isEqualTo(partyStaff1.id)
-        .jsonPath("staffParties[0].username").isEqualTo("JIIMPARTYSTAFF")
-        .jsonPath("staffParties[0].firstName").isEqualTo("JIM")
-        .jsonPath("staffParties[0].lastName").isEqualTo("PARTYSTAFF")
+        .jsonPath("staffParties[0].staff.staffId").isEqualTo(partyStaff1.id)
+        .jsonPath("staffParties[0].staff.username").isEqualTo("JIIMPARTYSTAFF")
+        .jsonPath("staffParties[0].staff.firstName").isEqualTo("JIM")
+        .jsonPath("staffParties[0].staff.lastName").isEqualTo("PARTYSTAFF")
+        .jsonPath("staffParties[0].role.code").isEqualTo("WIT")
+        .jsonPath("staffParties[0].role.description").isEqualTo("Witness")
+        .jsonPath("staffParties[1].staff.username").isEqualTo("JANESTAFF")
+        .jsonPath("staffParties[1].role.code").isEqualTo("VICT")
+        .jsonPath("staffParties[1].role.description").isEqualTo("Victim")
     }
 
     @Test
@@ -301,9 +303,13 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(incident1.id)
-        .jsonPath("offenderParties[0].offenderNo").isEqualTo("A1234TT")
-        .jsonPath("offenderParties[0].firstName").isEqualTo("Bob")
-        .jsonPath("offenderParties[0].lastName").isEqualTo("Smith")
+        .jsonPath("offenderParties[0].offender.offenderNo").isEqualTo("A1234TT")
+        .jsonPath("offenderParties[0].offender.firstName").isEqualTo("Bob")
+        .jsonPath("offenderParties[0].offender.lastName").isEqualTo("Smith")
+        .jsonPath("offenderParties[0].outcome.code").isEqualTo("POR")
+        .jsonPath("offenderParties[0].outcome.description").isEqualTo("Placed on Report")
+        .jsonPath("offenderParties[0].role.code").isEqualTo("VICT")
+        .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
     }
 
     @Test

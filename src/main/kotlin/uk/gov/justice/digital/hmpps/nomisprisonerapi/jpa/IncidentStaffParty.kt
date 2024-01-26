@@ -5,17 +5,31 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 
 @Entity
 @DiscriminatorValue("staff")
 class IncidentStaffParty(
   id: IncidentPartyId,
-  role: String,
   comment: String?,
-  outcome: Outcome?,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + IncidentStaffPartyRole.IR_STF_PART + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PARTICIPATION_ROLE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val role: IncidentStaffPartyRole,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "STAFF_ID")
   val staff: Staff,
 ) :
-  IncidentParty(id, role, comment, outcome)
+  IncidentParty(id, comment)

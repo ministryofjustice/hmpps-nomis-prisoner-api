@@ -14,11 +14,15 @@ interface QuestionnaireDsl {
   @QuestionnaireQuestionDslMarker
   fun questionnaireQuestion(
     question: String,
-    questionSequence: Int,
-    listSequence: Int,
     multipleAnswers: Boolean = false,
     dsl: QuestionnaireQuestionDsl.() -> Unit = {},
   ): QuestionnaireQuestion
+
+  @QuestionnaireOffenderRoleDslMarker
+  fun offenderRoles(
+    roles: List<String>,
+    dsl: QuestionnaireOffenderRoleDsl.() -> Unit = {},
+  ): QuestionnaireOffenderRole
 
   @QuestionnaireOffenderRoleDslMarker
   fun offenderRole(
@@ -31,7 +35,7 @@ interface QuestionnaireDsl {
 class QuestionnaireBuilderRepository(
   private val repository: QuestionnaireRepository,
 ) {
-  fun save(incidentQuestionnaire: Questionnaire): Questionnaire = repository.save(incidentQuestionnaire)
+  fun save(questionnaire: Questionnaire): Questionnaire = repository.save(questionnaire)
 }
 
 @Component
@@ -66,8 +70,6 @@ class QuestionnaireBuilder(
 
   override fun questionnaireQuestion(
     question: String,
-    questionSequence: Int,
-    listSequence: Int,
     multipleAnswers: Boolean,
     dsl: QuestionnaireQuestionDsl.() -> Unit,
   ): QuestionnaireQuestion =
@@ -75,12 +77,25 @@ class QuestionnaireBuilder(
       .let { builder ->
         builder.build(
           question = question,
-          questionSequence = questionSequence,
-          listSequence = listSequence,
+          questionSequence = questionnaire.questions.size + 1,
+          listSequence = questionnaire.questions.size + 1,
           multipleAnswers = multipleAnswers,
         )
           .also { questionnaire.questions += it }
           .also { builder.apply(dsl) }
+      }
+
+  override fun offenderRoles(
+    roles: List<String>,
+    dsl: QuestionnaireOffenderRoleDsl.() -> Unit,
+  ): QuestionnaireOffenderRole =
+    questionnaireOffenderRoleBuilderFactory.builder()
+      .let { builder ->
+        builder.build(
+          questionnaireId = questionnaire.id,
+          role = roles[0],
+        )
+          .also { questionnaire.offenderRoles += it }
       }
 
   override fun offenderRole(

@@ -5,16 +5,44 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 
 @Entity
 @DiscriminatorValue("offender")
 class IncidentOffenderParty(
   id: IncidentPartyId,
-  role: String,
   comment: String?,
-  outcome: Outcome?,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking,
-) : IncidentParty(id, role, comment, outcome)
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + IncidentOffenderPartyRole.IR_OFF_PART + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PARTICIPATION_ROLE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val role: IncidentOffenderPartyRole,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + Outcome.IR_OUTCOME + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_CODE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val outcome: Outcome? = null,
+
+) : IncidentParty(id, comment)

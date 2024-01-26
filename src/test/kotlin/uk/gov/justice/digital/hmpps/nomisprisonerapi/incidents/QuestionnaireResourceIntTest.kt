@@ -26,35 +26,35 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createQuestionnaires() {
     nomisDataBuilder.build {
-      questionnaire1 = questionnaire(code = "ESCAPE_EST", listSequence = 1, description = "Escape Questionnaire") {
-        val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?", questionSequence = 4, listSequence = 4) {
-          questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds", answerSequence = 1, listSequence = 1)
+      questionnaire1 = questionnaire(code = "ESCAPE_EST", description = "Escape Questionnaire") {
+        val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?") {
+          questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds")
         }
-        val question3 = questionnaireQuestion(question = "Q3: What tools were used?", questionSequence = 3, listSequence = 3, multipleAnswers = true) {
-          questionnaireAnswer(answer = "Q3A1: Wire cutters", listSequence = 1, answerSequence = 1, nextQuestion = question4)
-          questionnaireAnswer(answer = "Q3A2: Spade", listSequence = 2, answerSequence = 2, nextQuestion = question4)
-          questionnaireAnswer(answer = "Q3A3: Crow bar", listSequence = 3, answerSequence = 3, nextQuestion = question4)
+        val question3 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
+          questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question4)
+          questionnaireAnswer(answer = "Q3A2: Spade", nextQuestion = question4)
+          questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question4)
         }
-        val question2 = questionnaireQuestion(question = "Q2: Were tools used?", questionSequence = 2, listSequence = 2) {
-          questionnaireAnswer(answer = "Q2A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question3)
-          questionnaireAnswer(answer = "Q2A2: No", listSequence = 2, answerSequence = 2)
+        val question2 = questionnaireQuestion(question = "Q2: Were tools used?") {
+          questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question3)
+          questionnaireAnswer(answer = "Q2A2: No")
         }
-        questionnaireQuestion(question = "Q1: Were the police informed of the incident?", questionSequence = 1, listSequence = 1) {
-          questionnaireAnswer(answer = "Q1A1: Yes", listSequence = 1, answerSequence = 1, nextQuestion = question2)
-          questionnaireAnswer(answer = "Q1A2: No", listSequence = 2, answerSequence = 2, nextQuestion = question2)
+        questionnaireQuestion(question = "Q1: Were the police informed of the incident?") {
+          questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question2)
+          questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question2)
         }
         offenderRole("ABS")
         offenderRole("ESC")
         offenderRole("FIGHT")
         offenderRole("PERP")
       }
-      questionnaire2 = questionnaire(code = "FIRE", listSequence = 1, active = false) {
-        questionnaireQuestion(question = "Q1A: Were staff involved?", questionSequence = 1, listSequence = 1)
-        questionnaireQuestion(question = "Q2A: Were prisoners involved?", questionSequence = 2, listSequence = 2)
+      questionnaire2 = questionnaire(code = "FIRE", active = false, listSequence = 2) {
+        questionnaireQuestion(question = "Q1A: Were staff involved?")
+        questionnaireQuestion(question = "Q2A: Were prisoners involved?")
         offenderRole("ESC")
         offenderRole("FIGHT")
       }
-      questionnaire3 = questionnaire(code = "MISC", listSequence = 1) {
+      questionnaire3 = questionnaire(code = "MISC", listSequence = 3) {
         offenderRole("ESC")
       }
     }
@@ -224,8 +224,8 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
 
       with(persistedQuestionnaire1.questions[3]) {
         assertThat(question).isEqualTo("Q1: Were the police informed of the incident?")
-        assertThat(questionSequence).isEqualTo(1)
-        assertThat(listSequence).isEqualTo(1)
+        assertThat(questionSequence).isEqualTo(questionnaire1.questions[3].questionSequence)
+        assertThat(listSequence).isEqualTo(questionnaire1.questions[3].listSequence)
         assertThat(multipleAnswers).isEqualTo(false)
         assertThat(active).isEqualTo(true)
         assertThat(answers.size).isEqualTo(2)
@@ -233,8 +233,8 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
           assertThat(answer).isEqualTo("Q1A1: Yes")
           assertThat(nextQuestion!!.question).isEqualTo("Q2: Were tools used?")
           assertThat(nextQuestion!!.id).isEqualTo(questionnaire1.questions[2].id)
-          assertThat(answerSequence).isEqualTo(1)
-          assertThat(listSequence).isEqualTo(1)
+          assertThat(answerSequence).isEqualTo(questionnaire1.questions[3].answers[0].answerSequence)
+          assertThat(listSequence).isEqualTo(questionnaire1.questions[3].answers[0].listSequence)
           assertThat(active).isEqualTo(true)
           assertThat(commentRequired).isEqualTo(false)
           assertThat(dateRequired).isEqualTo(false)

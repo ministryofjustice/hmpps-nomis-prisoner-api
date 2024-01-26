@@ -26,7 +26,6 @@ interface IncidentDsl {
     role: String = "VICT",
     staff: Staff,
     comment: String = "They witnessed everything",
-    outcome: String? = null,
     dsl: IncidentPartyDsl.() -> Unit = {},
   ): IncidentStaffParty
 
@@ -111,13 +110,11 @@ class IncidentBuilder(
     role: String,
     staff: Staff,
     comment: String,
-    outcome: String?,
     dsl: IncidentPartyDsl.() -> Unit,
   ): IncidentStaffParty = incidentPartyBuilderFactory.builder()
     .let { builder ->
       builder.buildStaff(
         role = role,
-        outcome = outcome,
         staff = staff,
         comment = comment,
         incident = incident,

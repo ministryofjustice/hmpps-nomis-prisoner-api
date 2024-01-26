@@ -12,8 +12,6 @@ interface QuestionnaireQuestionDsl {
   @QuestionnaireAnswerDslMarker
   fun questionnaireAnswer(
     answer: String,
-    answerSequence: Int,
-    listSequence: Int,
     nextQuestion: QuestionnaireQuestion? = null,
     dsl: QuestionnaireAnswerDsl.() -> Unit = {},
   ): QuestionnaireAnswer
@@ -34,8 +32,8 @@ class QuestionnaireQuestionBuilder(
 
   fun build(
     question: String,
-    listSequence: Int,
     questionSequence: Int,
+    listSequence: Int,
     multipleAnswers: Boolean,
   ): QuestionnaireQuestion = QuestionnaireQuestion(
     questionText = question,
@@ -47,8 +45,6 @@ class QuestionnaireQuestionBuilder(
 
   override fun questionnaireAnswer(
     answer: String,
-    answerSequence: Int,
-    listSequence: Int,
     nextQuestion: QuestionnaireQuestion?,
     dsl: QuestionnaireAnswerDsl.() -> Unit,
   ): QuestionnaireAnswer =
@@ -56,8 +52,8 @@ class QuestionnaireQuestionBuilder(
       .let { builder ->
         builder.build(
           answer = answer,
-          answerSequence = answerSequence,
-          listSequence = listSequence,
+          answerSequence = questionnaireQuestion.answers.size,
+          listSequence = questionnaireQuestion.answers.size,
           nextQuestion = nextQuestion,
         )
           .also { questionnaireQuestion.answers += it }
