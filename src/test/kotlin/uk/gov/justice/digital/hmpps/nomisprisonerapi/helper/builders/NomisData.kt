@@ -265,7 +265,7 @@ interface NomisDataDsl {
     code: String,
     description: String = "This is a questionnaire",
     active: Boolean = true,
-    listSequence: Int,
+    listSequence: Int = 1,
     dsl: QuestionnaireDsl.() -> Unit = {},
   ): Questionnaire
 
