@@ -1498,6 +1498,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
     private lateinit var courtEvent: CourtEvent
+    private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
     private lateinit var prisonerAtMoorland: Offender
     private lateinit var staff: Staff
@@ -1518,7 +1519,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             ) {
               offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
-              courtEvent = courtEvent {
+              courtEvent = courtEvent(eventDate = LocalDateTime.of(2023, 1, 1, 10, 30)) {
+                // overrides from the parent offender charge fields
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  plea = "NG",
+                )
+                courtEventCharge(
+                  offenderCharge = offenderCharge2,
+                )
+                courtOrder {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+              courtEvent2 = courtEvent(eventDate = LocalDateTime.of(2023, 2, 1, 10, 30)) {
                 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
@@ -1721,15 +1736,15 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(offenderNo)
-          // should be 1 original appearance and the 2 just created
-          .jsonPath("courtEvents.size()").isEqualTo(3)
-          .jsonPath("courtEvents[1].id").isEqualTo(appearanceResponse.id)
-          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-01-20T14:00:00")
-          .jsonPath("courtEvents[1].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
+          // should be 2 original appearance2 and the 2 just created
+          .jsonPath("courtEvents.size()").isEqualTo(4)
+          .jsonPath("courtEvents[2].id").isEqualTo(appearanceResponse.id)
+          .jsonPath("courtEvents[2].eventDateTime").isEqualTo("2023-01-20T14:00:00")
+          .jsonPath("courtEvents[2].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
           // check the appearance generated for the old dates is still there
-          .jsonPath("courtEvents[2].id").isEqualTo(appearanceResponse.nextCourtAppearanceId!!)
-          .jsonPath("courtEvents[2].eventDateTime").isEqualTo("2023-01-10T09:00:00")
-          .jsonPath("courtEvents[2].nextEventDateTime").doesNotExist()
+          .jsonPath("courtEvents[3].id").isEqualTo(appearanceResponse.nextCourtAppearanceId!!)
+          .jsonPath("courtEvents[3].eventDateTime").isEqualTo("2023-01-10T09:00:00")
+          .jsonPath("courtEvents[3].nextEventDateTime").doesNotExist()
       }
 
       @Test
@@ -1768,8 +1783,56 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-05T09:00:00")
           .jsonPath("courtEvents[0].courtEventCharges[0].offenceDate").isEqualTo("2022-11-05")
           .jsonPath("courtEvents[0].courtEventCharges[0].offenceEndDate").isEqualTo("2022-11-05")
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RI64003")
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("courtEvents[0].courtEventCharges[0].offencesCount").isEqualTo(2)
+          // as this is not the latest appearance, the underlying Offender Charge is not updated
+          .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RT88074")
+          .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-05")
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1005")
+          .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
+      }
+
+      @Test
+      fun `can refresh offender charge with court event charge if updating the latest appearance`() {
+        val courtAppearanceResponse =
+          webTestClient.put()
+            .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent2.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                updateCourtAppearanceRequest(
+                  courtEventChargesToUpdate = mutableListOf(
+                    createExistingOffenderChargeRequest(
+                      offenderChargeId = offenderCharge1.id,
+                      offenceDate = LocalDate.of(2022, 11, 5),
+                      offenceEndDate = LocalDate.of(2022, 11, 5),
+                      offenceCode = "RI64003",
+                      resultCode1 = "4508",
+                      offencesCount = 2,
+                    ),
+                  ),
+                ),
+              ),
+
+            )
+            .exchange()
+            .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-01-05T09:00:00")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2022-11-05")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2022-11-05")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RI64003")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(2)
           // updates underlying Offender charge including change of offence
           .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RI64003")
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2022-11-05")
