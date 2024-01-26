@@ -6,15 +6,10 @@ import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.Inheritance
 import jakarta.persistence.InheritanceType
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.Generated
-import org.hibernate.annotations.JoinColumnOrFormula
-import org.hibernate.annotations.JoinColumnsOrFormulas
-import org.hibernate.annotations.JoinFormula
 import java.io.Serializable
 import java.time.LocalDateTime
 
@@ -36,27 +31,9 @@ open class IncidentParty(
   @EmbeddedId
   val id: IncidentPartyId,
 
-  // Combination of :
-  // Staff roles - Reference Codes code=IR_STF_PART
-  // Offender roles - from questionnaireOffenderRole QUESTIONNAIRE_ROLES table
-  @Column(name = "PARTICIPATION_ROLE")
-  val role: String,
-
   @Column(name = "COMMENT_TEXT")
   val comment: String? = null,
 
-  @ManyToOne
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + Outcome.IR_OUTCOME + "'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_CODE", referencedColumnName = "code", nullable = true)),
-    ],
-  )
-  val outcome: Outcome? = null,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

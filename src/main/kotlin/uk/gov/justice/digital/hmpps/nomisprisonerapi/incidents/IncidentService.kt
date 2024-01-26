@@ -7,9 +7,12 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncidentSpecification
@@ -38,19 +41,19 @@ class IncidentService(
 
   private fun Incident.toIncidentResponse(): IncidentResponse =
     IncidentResponse(
-      id = this.id,
-      title = this.title,
-      description = this.description,
-      status = this.status.code,
-      type = this.questionnaire.code,
-      lockedResponse = this.lockedResponse,
-      incidentDateTime = LocalDateTime.of(this.incidentDate, this.incidentTime),
-      reportedStaff = this.reportingStaff.toStaff(),
-      reportedDateTime = LocalDateTime.of(this.reportedDate, this.reportedTime),
-      staffParties = this.staffParties.map { it.staff.toStaff() },
-      offenderParties = this.offenderParties.map { it.offenderBooking.offender.toOffender() },
-      requirements = this.requirements.map { it.toRequirement() },
-      questions = this.questions.map { it.toQuestionResponse() },
+      id = id,
+      title = title,
+      description = description,
+      status = status.code,
+      type = questionnaire.code,
+      lockedResponse = lockedResponse,
+      incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
+      reportedStaff = reportingStaff.toStaff(),
+      reportedDateTime = LocalDateTime.of(reportedDate, reportedTime),
+      staffParties = staffParties.map { it.toStaffParty() },
+      offenderParties = offenderParties.map { it.toOffenderParty() },
+      requirements = requirements.map { it.toRequirement() },
+      questions = questions.map { it.toQuestionResponse() },
     )
 }
 
@@ -75,12 +78,27 @@ private fun IncidentQuestion.toQuestionResponse() =
     },
   )
 
+private fun IncidentStaffParty.toStaffParty() =
+  StaffParty(
+    staff = staff.toStaff(),
+    role = role.toCodeDescription(),
+    comment = comment,
+  )
+
 private fun JPAStaff.toStaff() =
   Staff(
     staffId = id,
     firstName = firstName,
     lastName = lastName,
     username = accounts.maxByOrNull { it.type }?.username ?: "unknown",
+  )
+
+private fun IncidentOffenderParty.toOffenderParty() =
+  OffenderParty(
+    offender = offenderBooking.offender.toOffender(),
+    role = role.toCodeDescription(),
+    outcome = outcome?.toCodeDescription(),
+    comment = comment,
   )
 
 private fun Offender.toOffender() =

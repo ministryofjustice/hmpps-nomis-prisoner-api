@@ -4,9 +4,11 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderPartyRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffPartyRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Outcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -29,8 +31,12 @@ class IncidentPartyBuilderFactory(
 @Component
 class IncidentPartyBuilderRepository(
   val outcomeRepository: ReferenceCodeRepository<Outcome>,
+  val staffRoleRepository: ReferenceCodeRepository<IncidentStaffPartyRole>,
+  val offenderRoleRepository: ReferenceCodeRepository<IncidentOffenderPartyRole>,
 ) {
   fun lookupOutcome(code: String) = outcomeRepository.findByIdOrNull(Outcome.pk(code))!!
+  fun lookupStaffRole(code: String) = staffRoleRepository.findByIdOrNull(IncidentStaffPartyRole.pk(code))!!
+  fun lookupOffenderRole(code: String) = offenderRoleRepository.findByIdOrNull(IncidentOffenderPartyRole.pk(code))!!
 }
 
 class IncidentPartyBuilder(
@@ -50,7 +56,7 @@ class IncidentPartyBuilder(
   ): IncidentOffenderParty =
     IncidentOffenderParty(
       id = IncidentPartyId(incident.id, index),
-      role = role,
+      role = repository.lookupOffenderRole(role),
       outcome = outcome?.let { repository.lookupOutcome(it) },
       offenderBooking = offenderBooking,
       comment = comment,
@@ -62,13 +68,11 @@ class IncidentPartyBuilder(
     incident: Incident,
     staff: Staff,
     comment: String?,
-    outcome: String?,
     partySequence: Int,
   ): IncidentStaffParty =
     IncidentStaffParty(
       id = IncidentPartyId(incident.id, partySequence),
-      role = role,
-      outcome = outcome?.let { repository.lookupOutcome(it) },
+      role = repository.lookupStaffRole(role),
       staff = staff,
       comment = comment,
     )

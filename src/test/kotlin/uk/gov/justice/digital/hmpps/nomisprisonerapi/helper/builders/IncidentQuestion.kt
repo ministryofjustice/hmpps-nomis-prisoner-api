@@ -18,7 +18,6 @@ interface IncidentQuestionDsl {
   @IncidentResponseDslMarker
   fun response(
     answer: QuestionnaireAnswer,
-    answerSequence: Int,
     comment: String? = null,
     recordingStaff: Staff,
     dsl: IncidentResponseDsl.() -> Unit = {},
@@ -52,7 +51,6 @@ class IncidentQuestionBuilder(
 
   override fun response(
     answer: QuestionnaireAnswer,
-    answerSequence: Int,
     comment: String?,
     recordingStaff: Staff,
     dsl: IncidentResponseDsl.() -> Unit,
@@ -61,7 +59,7 @@ class IncidentQuestionBuilder(
       .let { builder ->
         builder.build(
           incidentQuestion = incidentQuestion,
-          answerSequence = answerSequence,
+          answerSequence = incidentQuestion.responses.size + 1,
           answer = answer,
           comment = comment,
           recordingStaff = recordingStaff,
