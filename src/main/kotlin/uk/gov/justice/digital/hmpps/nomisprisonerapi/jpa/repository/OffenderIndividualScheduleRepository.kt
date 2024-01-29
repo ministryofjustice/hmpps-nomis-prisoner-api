@@ -56,7 +56,7 @@ interface OffenderIndividualScheduleRepository :
           event_sub_type as eventSubType, 
           CASE 
             WHEN EVENT_DATE > CURRENT_DATE THEN 'FUTURE' 
-            WHEN event_date <= CURRENT_DATE THEN 'PAST' 
+            ELSE 'PAST' 
           END AS pastOrFuture
          FROM offender_ind_schedules ois 
          WHERE ois.event_type = 'APP'
