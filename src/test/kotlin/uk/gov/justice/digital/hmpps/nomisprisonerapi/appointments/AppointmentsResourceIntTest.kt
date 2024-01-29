@@ -913,4 +913,311 @@ ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
       )
     }
   }
+
+  @Nested
+  inner class GetAppointmentCounts {
+
+    private lateinit var appointment1: OffenderIndividualSchedule
+    private lateinit var appointment2: OffenderIndividualSchedule
+    private lateinit var appointment3: OffenderIndividualSchedule
+    private lateinit var appointment4: OffenderIndividualSchedule
+    private val today = LocalDate.now()
+    private val yesterday = today.minusDays(1)
+    private val tomorrow = today.plusDays(1)
+
+    @BeforeEach
+    internal fun createAppointments() {
+      appointment1 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = today,
+          eventSubType = repository.lookupEventSubtype("MEDE"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+        ),
+      )
+      appointment2 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtOtherPrison.latestBooking(),
+          eventDate = tomorrow,
+          eventSubType = repository.lookupEventSubtype("MEDE"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("BXI"),
+        ),
+      )
+      appointment3 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = yesterday,
+          eventSubType = repository.lookupEventSubtype("MEOP"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+        ),
+      )
+      appointment4 = repository.save(
+        OffenderIndividualSchedule(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = tomorrow,
+          eventSubType = repository.lookupEventSubtype("MEOP"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+        ),
+      )
+    }
+
+    @AfterEach
+    internal fun deleteAppointments() {
+      repository.delete(appointment1)
+      repository.delete(appointment2)
+      repository.delete(appointment3)
+      repository.delete(appointment4)
+    }
+
+    @Nested
+    inner class Errors {
+      @Test
+      fun `should return unauthorized without a token`() {
+        assertThat(
+          webTestClient.get().uri("/appointments/counts")
+            .exchange()
+            .expectStatus().isUnauthorized,
+        )
+      }
+
+      @Test
+      fun `should return forbidden without a role`() {
+        assertThat(
+          webTestClient.get()
+            .uri {
+              it.path("/appointments/counts")
+                .queryParam("prisonIds", "MDI")
+                .build()
+            }
+            .headers(setAuthorisation(roles = listOf("")))
+            .exchange()
+            .expectStatus().isUnauthorized,
+        )
+      }
+
+      @Test
+      fun `should return forbidden with wrong role`() {
+        assertThat(
+          webTestClient.get()
+            .uri {
+              it.path("/appointments/counts")
+                .queryParam("prisonIds", "MDI")
+                .build()
+            }
+            .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+            .exchange()
+            .expectStatus().isForbidden,
+        )
+      }
+
+      @Test
+      fun `should return bad request if no prisons`() {
+        webTestClient.get().uri("/appointments/counts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Missing request parameter")
+          }
+      }
+
+      @Test
+      fun `should return bad request if invalid from date format`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI")
+              .queryParam("fromDate", "1/2/2024")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("1/2/2024")
+          }
+      }
+
+      @Test
+      fun `should return bad request if invalid to date format`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI")
+              .queryParam("toDate", "1/2/2024")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("1/2/2024")
+          }
+      }
+
+      @Test
+      fun `should return bad request if invalid from date`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI")
+              .queryParam("fromDate", "2024-02-31")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("2024-02-31")
+          }
+      }
+
+      @Test
+      fun `should return bad request if invalid to date`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI")
+              .queryParam("toDate", "2024-02-31")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("2024-02-31")
+          }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should return correct counts`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI, BXI")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(4)
+          .jsonPath("$[0].prisonId").isEqualTo("BXI")
+          .jsonPath("$[0].eventSubType").isEqualTo("MEDE")
+          .jsonPath("$[0].future").isEqualTo(true)
+          .jsonPath("$[0].count").isEqualTo(1)
+          .jsonPath("$[1].prisonId").isEqualTo("MDI")
+          .jsonPath("$[1].eventSubType").isEqualTo("MEDE")
+          .jsonPath("$[1].future").isEqualTo(false)
+          .jsonPath("$[1].count").isEqualTo(1)
+          .jsonPath("$[2].prisonId").isEqualTo("MDI")
+          .jsonPath("$[2].eventSubType").isEqualTo("MEOP")
+          .jsonPath("$[2].future").isEqualTo(false)
+          .jsonPath("$[2].count").isEqualTo(1)
+          .jsonPath("$[3].prisonId").isEqualTo("MDI")
+          .jsonPath("$[3].eventSubType").isEqualTo("MEOP")
+          .jsonPath("$[3].future").isEqualTo(true)
+          .jsonPath("$[3].count").isEqualTo(1)
+      }
+
+      @Test
+      fun `should filter by prison`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "BXI")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].prisonId").isEqualTo("BXI")
+          .jsonPath("$[0].eventSubType").isEqualTo("MEDE")
+          .jsonPath("$[0].future").isEqualTo(true)
+          .jsonPath("$[0].count").isEqualTo(1)
+      }
+
+      @Test
+      fun `should filter by from date`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI, BXI")
+              .queryParam("fromDate", "$tomorrow")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(2)
+          .jsonPath("$[0].prisonId").isEqualTo("BXI")
+          .jsonPath("$[0].eventSubType").isEqualTo("MEDE")
+          .jsonPath("$[0].future").isEqualTo(true)
+          .jsonPath("$[0].count").isEqualTo(1)
+          .jsonPath("$[1].prisonId").isEqualTo("MDI")
+          .jsonPath("$[1].eventSubType").isEqualTo("MEOP")
+          .jsonPath("$[1].future").isEqualTo(true)
+          .jsonPath("$[1].count").isEqualTo(1)
+      }
+
+      @Test
+      fun `should filter by to date`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI, BXI")
+              .queryParam("toDate", "$today")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(2)
+          .jsonPath("$[0].prisonId").isEqualTo("MDI")
+          .jsonPath("$[0].eventSubType").isEqualTo("MEDE")
+          .jsonPath("$[0].future").isEqualTo(false)
+          .jsonPath("$[0].count").isEqualTo(1)
+          .jsonPath("$[1].prisonId").isEqualTo("MDI")
+          .jsonPath("$[1].eventSubType").isEqualTo("MEOP")
+          .jsonPath("$[1].future").isEqualTo(false)
+          .jsonPath("$[1].count").isEqualTo(1)
+      }
+
+      @Test
+      fun `should filter by prison, from date and to date`() {
+        webTestClient.get()
+          .uri {
+            it.path("/appointments/counts")
+              .queryParam("prisonIds", "MDI")
+              .queryParam("fromDate", "$today")
+              .queryParam("toDate", "$tomorrow")
+              .build()
+          }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(2)
+          .jsonPath("$[0].prisonId").isEqualTo("MDI")
+          .jsonPath("$[0].eventSubType").isEqualTo("MEDE")
+          .jsonPath("$[0].future").isEqualTo(false)
+          .jsonPath("$[0].count").isEqualTo(1)
+          .jsonPath("$[1].prisonId").isEqualTo("MDI")
+          .jsonPath("$[1].eventSubType").isEqualTo("MEOP")
+          .jsonPath("$[1].future").isEqualTo(true)
+          .jsonPath("$[1].count").isEqualTo(1)
+      }
+    }
+  }
 }

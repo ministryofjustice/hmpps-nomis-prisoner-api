@@ -198,6 +198,21 @@ class AppointmentService(
       .let { content -> PageImpl(content, pageRequest, totalElements) }
       .map { AppointmentIdResponse(eventId = it) }
   }
+
+  fun findCountsByFilter(appointmentFilter: AppointmentFilter): List<AppointmentCountsResponse> =
+    offenderIndividualScheduleRepository.findCountsByFilter(
+      appointmentFilter.prisonIds,
+      appointmentFilter.fromDate ?: LocalDate.now().plusYears(-100),
+      appointmentFilter.toDate ?: LocalDate.now().plusYears(100),
+    )
+      .map {
+        AppointmentCountsResponse(
+          prisonId = it.getPrisonId(),
+          eventSubType = it.getEventSubType(),
+          future = it.getPastOrFuture() == "FUTURE",
+          count = it.getAppointmentCount(),
+        )
+      }
 }
 
 private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse =
