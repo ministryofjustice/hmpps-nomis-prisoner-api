@@ -324,24 +324,16 @@ class SentencingService(
           val chargesToUpdateMap = request.courtEventChargesToUpdate.map { it.offenderChargeId to it }.toMap()
           courtAppearance.courtEventCharges.filter { chargesToUpdateMap.contains(it.id.offenderCharge.id) }
             .map { courtEventCharge ->
-              val updateCharge = chargesToUpdateMap.getValue(courtEventCharge.id.offenderCharge.id)
-              val resultCode = updateCharge.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
-              courtEventCharge.offenceDate = updateCharge.offenceDate
-              courtEventCharge.offenceEndDate = updateCharge.offenceEndDate
-              courtEventCharge.mostSeriousFlag = updateCharge.mostSeriousFlag
-              courtEventCharge.offencesCount = updateCharge.offencesCount
+              val offenderChargeRequest = chargesToUpdateMap.getValue(courtEventCharge.id.offenderCharge.id)
+              val resultCode = offenderChargeRequest.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
+              courtEventCharge.offenceDate = offenderChargeRequest.offenceDate
+              courtEventCharge.offenceEndDate = offenderChargeRequest.offenceEndDate
+              courtEventCharge.mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
+              courtEventCharge.offencesCount = offenderChargeRequest.offencesCount
               courtEventCharge.resultCode1 = resultCode
               courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
-              with(courtEventCharge.id.offenderCharge) {
-                offenceDate = updateCharge.offenceDate
-                offenceEndDate = updateCharge.offenceEndDate
-                offence = lookupOffence(updateCharge.offenceCode)
-                // TODO setting of result code related data is more complex than this - main SP is TAG_LEGAL_CASES.pkg
-                resultCode1 = resultCode?.let { it }
-                resultCode1Indicator = resultCode?.dispositionCode
-                chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
-                mostSeriousFlag = updateCharge.mostSeriousFlag
-                offencesCount = updateCharge.offencesCount
+              if (courtAppearance.isLatestAppearance()) {
+                refreshOffenderCharge(courtEventCharge, offenderChargeRequest, resultCode)
               }
               courtEventCharge
             }.let {
@@ -367,6 +359,23 @@ class SentencingService(
           null,
         )
       }
+    }
+  }
+
+  private fun SentencingService.refreshOffenderCharge(
+    courtEventCharge: CourtEventCharge,
+    offenderChargeRequest: ExistingOffenderChargeRequest,
+    resultCode: OffenceResultCode?,
+  ) {
+    with(courtEventCharge.id.offenderCharge) {
+      offenceDate = offenderChargeRequest.offenceDate
+      offenceEndDate = offenderChargeRequest.offenceEndDate
+      offence = lookupOffence(offenderChargeRequest.offenceCode)
+      resultCode1 = resultCode?.let { it }
+      resultCode1Indicator = resultCode?.dispositionCode
+      chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
+      mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
+      offencesCount = offenderChargeRequest.offencesCount
     }
   }
 

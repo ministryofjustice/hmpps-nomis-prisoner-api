@@ -150,5 +150,16 @@ class CourtEvent(
     return id == other.id
   }
 
+  fun isLatestAppearance(): Boolean {
+    return courtCase?.let {
+      this == courtCase!!.courtEvents!!.sortedBy { event ->
+        LocalDateTime.of(
+          event.eventDate,
+          event.startTime.toLocalTime(),
+        )
+      }.last()
+    } ?: false
+  }
+
   override fun hashCode(): Int = javaClass.hashCode()
 }
