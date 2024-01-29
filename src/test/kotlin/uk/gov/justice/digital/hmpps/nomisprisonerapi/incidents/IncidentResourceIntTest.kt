@@ -30,6 +30,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   private lateinit var reportingStaff1: Staff
   private lateinit var reportingStaff2: Staff
   private lateinit var questionnaire1: Questionnaire
+  private lateinit var questionnaire2: Questionnaire
   private lateinit var incident1: Incident
 
   private lateinit var incident2: Incident
@@ -39,6 +40,19 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   internal fun createIncidents() {
+    lateinit var question11: QuestionnaireQuestion
+    lateinit var question12: QuestionnaireQuestion
+    lateinit var question12Answer1: QuestionnaireAnswer
+    lateinit var question13: QuestionnaireQuestion
+    lateinit var question13Answer1: QuestionnaireAnswer
+    lateinit var question13Answer3: QuestionnaireAnswer
+
+    lateinit var question21: QuestionnaireQuestion
+    lateinit var question22: QuestionnaireQuestion
+    lateinit var question21Answer1: QuestionnaireAnswer
+    lateinit var question22Answer1: QuestionnaireAnswer
+    lateinit var question22Answer3: QuestionnaireAnswer
+
     nomisDataBuilder.build {
       partyStaff1 = staff(firstName = "JIM", lastName = "PARTYSTAFF") {
         account(username = "JIIMPARTYSTAFF")
@@ -55,29 +69,37 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       responseRecordingStaff = staff(firstName = "ALBERT", lastName = "STAFF") {
         account(username = "ALBERTSTAFF")
       }
-
-      lateinit var question1: QuestionnaireQuestion
-      lateinit var question2: QuestionnaireQuestion
-      lateinit var question2Answer1: QuestionnaireAnswer
-      lateinit var question3: QuestionnaireQuestion
-      lateinit var question3Answer1: QuestionnaireAnswer
-      lateinit var question3Answer3: QuestionnaireAnswer
       questionnaire1 = questionnaire(code = "ESCAPE_EST", description = "Escape Questionnaire") {
         val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?") {
           questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds")
         }
-        question3 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
-          question3Answer1 = questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question4)
+        question13 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
+          question13Answer1 = questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question4)
           questionnaireAnswer(answer = "Q3A2: Spade", nextQuestion = question4)
-          question3Answer3 = questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question4)
+          question13Answer3 = questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question4)
         }
-        question2 = questionnaireQuestion(question = "Q2: Were tools used?") {
-          question2Answer1 = questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question3)
+        question12 = questionnaireQuestion(question = "Q2: Were tools used?") {
+          question12Answer1 = questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question13)
           questionnaireAnswer(answer = "Q2A2: No")
         }
-        question1 = questionnaireQuestion(question = "Q1: Were the police informed of the incident?") {
-          questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question2)
-          questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question2)
+        question11 = questionnaireQuestion(question = "Q1: Were the police informed of the incident?") {
+          questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question12)
+          questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question12)
+        }
+      }
+
+      questionnaire2 = questionnaire(code = "FIRE", description = "Questionnaire for fire", active = false, listSequence = 2) {
+        val question23 = questionnaireQuestion(question = "Q23: Were prisoners involved?")
+        offenderRole("ESC")
+        offenderRole("FIGHT")
+        question22 = questionnaireQuestion(question = "Q22: Body parts injured") {
+          question22Answer1 = questionnaireAnswer(answer = "Q22A1: Arm", nextQuestion = question23)
+          questionnaireAnswer(answer = "Q22A2: Leg")
+          question22Answer3 = questionnaireAnswer(answer = "Q22A2: Head")
+        }
+        question21 = questionnaireQuestion(question = "Q21: Were staff involved?") {
+          question21Answer1 = questionnaireAnswer(answer = "Q21A1: Yes", nextQuestion = question22)
+          questionnaireAnswer(answer = "Q21A2: No")
         }
       }
 
@@ -90,26 +112,37 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         reportingStaff = reportingStaff1,
         questionnaire = questionnaire1,
       ) {
-        incidentStaffParty(staff = partyStaff1, role = "WIT")
-        incidentStaffParty(staff = reportingStaff2)
-        incidentOffenderParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
+        staffParty(staff = partyStaff1, role = "WIT")
+        staffParty(staff = reportingStaff2)
+        offenderParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
         requirement("Update the name", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
         requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
-        question(question = question1)
-        question(question = question2) {
+
+        history(questionnaire = questionnaire2, changeStaff = reportingStaff1) {
+          historyQuestion(question = question21) {
+            historyResponse(answer = question21Answer1, comment = "Lots of staff", recordingStaff = reportingStaff2)
+          }
+          historyQuestion(question = question22) {
+            historyResponse(answer = question22Answer1, comment = "A1 - Hurt Arm", recordingStaff = reportingStaff2)
+            historyResponse(answer = question22Answer3, comment = "A3 - Hurt Head", recordingStaff = reportingStaff2)
+          }
+        }
+
+        question(question = question11)
+        question(question = question12) {
           response(
-            answer = question2Answer1,
+            answer = question12Answer1,
             comment = "Multiple tools were found",
             recordingStaff = responseRecordingStaff,
           )
         }
-        question(question = question3) {
+        question(question = question13) {
           response(
-            answer = question3Answer1,
+            answer = question13Answer1,
             recordingStaff = responseRecordingStaff,
           )
           response(
-            answer = question3Answer3,
+            answer = question13Answer3,
             comment = "Large Crow bar",
             recordingStaff = responseRecordingStaff,
           )
@@ -127,6 +160,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.delete(incident3)
 
     repository.delete(questionnaire1)
+    repository.delete(questionnaire2)
 
     repository.delete(requirementRecordingStaff)
     repository.delete(responseRecordingStaff)
@@ -359,6 +393,51 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("questions[2].answers[0].comment").doesNotExist()
         .jsonPath("questions[2].answers[1].answer").isEqualTo("Q3A3: Crow bar")
         .jsonPath("questions[2].answers[1].comment").isEqualTo("Large Crow bar")
+    }
+
+    @Test
+    fun `will return incident history for an incident`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("history[0].questionnaireId").isEqualTo(questionnaire2.id)
+        .jsonPath("history[0].questionnaire").isEqualTo("FIRE")
+        .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
+    }
+
+    @Test
+    fun `will return incident history questions for an incident`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("history[0].questions.length()").isEqualTo(2)
+        .jsonPath("history[0].questions[0].question").isEqualTo("Q21: Were staff involved?")
+    }
+
+    @Test
+    fun `will return incident history responses for an incident`() {
+      webTestClient.get().uri("/incidents/${incident1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("history[0].questionnaire").isEqualTo("FIRE")
+        .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
+        .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
+        .jsonPath("history[0].questions[0].answers[0].answer").isEqualTo("Q21A1: Yes")
+        .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("Lots of staff")
+        .jsonPath("history[0].questions[1].answers.length()").isEqualTo(2)
+        .jsonPath("history[0].questions[1].answers[0].answer").isEqualTo("Q22A1: Arm")
+        .jsonPath("history[0].questions[1].answers[0].comment").isEqualTo("A1 - Hurt Arm")
+        .jsonPath("history[0].questions[1].answers[1].answer").isEqualTo("Q22A2: Head")
+        .jsonPath("history[0].questions[1].answers[1].comment").isEqualTo("A3 - Hurt Head")
     }
   }
 }

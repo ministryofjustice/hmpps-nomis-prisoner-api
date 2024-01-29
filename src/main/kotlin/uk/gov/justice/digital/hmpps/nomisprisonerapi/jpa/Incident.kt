@@ -50,6 +50,10 @@ data class Incident(
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderParties: MutableList<IncidentOffenderParty> = mutableListOf(),
 
+  @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+  @JoinColumn(name = "INCIDENT_CASE_ID", nullable = false)
+  var incidentHistory: MutableList<IncidentHistory> = mutableListOf(),
+
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   var staffParties: MutableList<IncidentStaffParty> = mutableListOf(),
 

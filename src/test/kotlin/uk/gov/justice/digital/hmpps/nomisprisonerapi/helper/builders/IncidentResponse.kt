@@ -18,9 +18,8 @@ class IncidentResponseBuilderFactory {
   fun builder() = IncidentResponseBuilder()
 }
 
-class IncidentResponseBuilder() :
+class IncidentResponseBuilder :
   IncidentResponseDsl {
-  private lateinit var incidentResponse: IncidentResponse
 
   fun build(
     incidentQuestion: IncidentQuestion,
@@ -35,5 +34,4 @@ class IncidentResponseBuilder() :
       comment = comment,
       recordingStaff = recordingStaff,
     )
-      .also { incidentResponse = it }
 }

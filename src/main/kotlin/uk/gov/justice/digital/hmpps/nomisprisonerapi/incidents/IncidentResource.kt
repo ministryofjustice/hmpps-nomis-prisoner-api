@@ -166,6 +166,9 @@ data class IncidentResponse(
 
   @Schema(description = "Questions asked for the incident")
   val questions: List<Question>,
+
+  @Schema(description = "Historical questionnaire details for the incident")
+  val history: List<History>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -238,6 +241,38 @@ data class Question(
 data class Response(
   @Schema(description = "The id of the answer")
   val id: Long,
+  @Schema(description = "The answer text")
+  val answer: String,
+  @Schema(description = "Comment added to the response by recording staff")
+  val comment: String?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class History(
+  @Schema(description = "The historical incident questionnaire id")
+  val questionnaireId: Long,
+  @Schema(description = "The historical incident questionnaire code")
+  val questionnaire: String,
+  @Schema(description = "The historical incident questionnaire description")
+  val description: String?,
+  @Schema(description = "Questions asked for the historical incident questionnaire")
+  val questions: List<HistoryQuestion>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class HistoryQuestion(
+  @Schema(description = "The sequence number of the historical question for this incident")
+  val sequence: Int,
+  @Schema(description = "The Question being asked")
+  val question: String,
+  @Schema(description = "Historical list of Responses to this question")
+  val answers: List<HistoryResponse> = listOf(),
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class HistoryResponse(
+  @Schema(description = "The sequence number of the answer")
+  val sequence: Int,
   @Schema(description = "The answer text")
   val answer: String,
   @Schema(description = "Comment added to the response by recording staff")

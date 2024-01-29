@@ -27,21 +27,21 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
   internal fun createQuestionnaires() {
     nomisDataBuilder.build {
       questionnaire1 = questionnaire(code = "ESCAPE_EST", description = "Escape Questionnaire") {
-        val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?") {
+        val question14 = questionnaireQuestion(question = "Q4: Any Damage amount?") {
           questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds")
         }
-        val question3 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
-          questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question4)
-          questionnaireAnswer(answer = "Q3A2: Spade", nextQuestion = question4)
-          questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question4)
+        val question13 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
+          questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question14)
+          questionnaireAnswer(answer = "Q3A2: Spade", nextQuestion = question14)
+          questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question14)
         }
-        val question2 = questionnaireQuestion(question = "Q2: Were tools used?") {
-          questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question3)
+        val question12 = questionnaireQuestion(question = "Q2: Were tools used?") {
+          questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question13)
           questionnaireAnswer(answer = "Q2A2: No")
         }
         questionnaireQuestion(question = "Q1: Were the police informed of the incident?") {
-          questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question2)
-          questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question2)
+          questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question12)
+          questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question12)
         }
         offenderRole("ABS")
         offenderRole("ESC")
