@@ -14,7 +14,6 @@ annotation class IncidentQuestionDslMarker
 
 @NomisDataDslMarker
 interface IncidentQuestionDsl {
-
   @IncidentResponseDslMarker
   fun response(
     answer: QuestionnaireAnswer,
@@ -26,15 +25,14 @@ interface IncidentQuestionDsl {
 
 @Component
 class IncidentQuestionBuilderFactory(
-  private val repository: IncidentResponseBuilderFactory,
+  private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
 ) {
   fun builder() =
-    IncidentQuestionBuilder(repository)
+    IncidentQuestionBuilder(incidentResponseBuilderFactory)
 }
 
 class IncidentQuestionBuilder(
   private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
-
 ) :
   IncidentQuestionDsl {
   private lateinit var incidentQuestion: IncidentQuestion
@@ -63,7 +61,6 @@ class IncidentQuestionBuilder(
           answer = answer,
           comment = comment,
           recordingStaff = recordingStaff,
-
         )
           .also { incidentQuestion.responses += it }
           .also { builder.apply(dsl) }

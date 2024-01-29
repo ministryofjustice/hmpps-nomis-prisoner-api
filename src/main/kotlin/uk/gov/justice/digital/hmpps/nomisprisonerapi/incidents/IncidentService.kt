@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
@@ -54,6 +55,7 @@ class IncidentService(
       offenderParties = offenderParties.map { it.toOffenderParty() },
       requirements = requirements.map { it.toRequirement() },
       questions = questions.map { it.toQuestionResponse() },
+      history = incidentHistory.map { it.toHistoryResponse() },
     )
 }
 
@@ -74,6 +76,26 @@ private fun IncidentQuestion.toQuestionResponse() =
         id = response.answer.id,
         answer = response.answer.answerText,
         comment = response.comment,
+      )
+    },
+  )
+
+private fun IncidentHistory.toHistoryResponse() =
+  History(
+    questionnaireId = this.questionnaire.id,
+    questionnaire = this.questionnaire.code,
+    description = this.questionnaire.description,
+    questions = questions.map { question ->
+      HistoryQuestion(
+        sequence = question.id.questionHistorySequence,
+        question = question.question.questionText,
+        answers = question.responses.map { response ->
+          HistoryResponse(
+            response.id.responseHistorySequence,
+            response.answer.answerText,
+            response.comment,
+          )
+        },
       )
     },
   )

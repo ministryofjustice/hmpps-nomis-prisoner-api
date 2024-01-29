@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
@@ -22,7 +23,7 @@ annotation class IncidentDslMarker
 @NomisDataDslMarker
 interface IncidentDsl {
   @IncidentPartyDslMarker
-  fun incidentStaffParty(
+  fun staffParty(
     role: String = "VICT",
     staff: Staff,
     comment: String = "They witnessed everything",
@@ -30,7 +31,7 @@ interface IncidentDsl {
   ): IncidentStaffParty
 
   @IncidentPartyDslMarker
-  fun incidentOffenderParty(
+  fun offenderParty(
     role: String = "VICT",
     offenderBooking: OffenderBooking,
     comment: String = "They witnessed everything",
@@ -51,6 +52,13 @@ interface IncidentDsl {
     question: QuestionnaireQuestion,
     dsl: IncidentQuestionDsl.() -> Unit = {},
   ): IncidentQuestion
+
+  @IncidentHistoryDslMarker
+  fun history(
+    questionnaire: Questionnaire,
+    changeStaff: Staff,
+    dsl: IncidentHistoryDsl.() -> Unit = {},
+  ): IncidentHistory
 }
 
 @Component
@@ -59,9 +67,16 @@ class IncidentBuilderFactory(
   private val incidentPartyBuilderFactory: IncidentPartyBuilderFactory,
   private val incidentRequirementBuilderFactory: IncidentRequirementBuilderFactory,
   private val incidentQuestionBuilderFactory: IncidentQuestionBuilderFactory,
+  private val incidentHistoryBuilderFactory: IncidentHistoryBuilderFactory,
 ) {
   fun builder(): IncidentBuilder {
-    return IncidentBuilder(repository, incidentPartyBuilderFactory, incidentRequirementBuilderFactory, incidentQuestionBuilderFactory)
+    return IncidentBuilder(
+      repository,
+      incidentPartyBuilderFactory,
+      incidentRequirementBuilderFactory,
+      incidentQuestionBuilderFactory,
+      incidentHistoryBuilderFactory,
+    )
   }
 }
 
@@ -79,6 +94,7 @@ class IncidentBuilder(
   private val incidentPartyBuilderFactory: IncidentPartyBuilderFactory,
   private val incidentRequirementBuilderFactory: IncidentRequirementBuilderFactory,
   private val incidentQuestionBuilderFactory: IncidentQuestionBuilderFactory,
+  private val incidentHistoryBuilderFactory: IncidentHistoryBuilderFactory,
 ) : IncidentDsl {
   private lateinit var incident: Incident
 
@@ -106,7 +122,7 @@ class IncidentBuilder(
       .let { repository.save(it) }
       .also { incident = it }
 
-  override fun incidentStaffParty(
+  override fun staffParty(
     role: String,
     staff: Staff,
     comment: String,
@@ -124,7 +140,7 @@ class IncidentBuilder(
         .also { builder.apply(dsl) }
     }
 
-  override fun incidentOffenderParty(
+  override fun offenderParty(
     role: String,
     offenderBooking: OffenderBooking,
     comment: String,
@@ -177,6 +193,21 @@ class IncidentBuilder(
           questionSequence = incident.questions.size + 1,
         )
           .also { incident.questions += it }
+          .also { builder.apply(dsl) }
+      }
+
+  override fun history(
+    questionnaire: Questionnaire,
+    changeStaff: Staff,
+    dsl: IncidentHistoryDsl.() -> Unit,
+  ): IncidentHistory =
+    incidentHistoryBuilderFactory.builder()
+      .let { builder ->
+        builder.build(
+          questionnaire = questionnaire,
+          changeStaff = changeStaff,
+        )
+          .also { incident.incidentHistory += it }
           .also { builder.apply(dsl) }
       }
 }
