@@ -62,7 +62,7 @@ interface OffenderIndividualScheduleRepository :
          WHERE ois.event_type = 'APP'
          AND ois.agy_loc_id IN (:prisons)
          AND ois.event_date between :fromDate and :toDate
-       ) as appointments
+       ) appointments
        GROUP BY prisonId, eventSubType, pastOrFuture
        ORDER BY prisonId, eventSubType, pastOrFuture desc
     """,
