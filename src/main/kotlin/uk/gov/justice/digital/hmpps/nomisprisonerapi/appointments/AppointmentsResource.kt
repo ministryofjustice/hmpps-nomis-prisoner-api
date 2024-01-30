@@ -359,4 +359,52 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       pageRequest = pageRequest,
       AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
     )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @GetMapping("/appointments/counts")
+  @Operation(
+    summary = "Get appointment counts by prison, event sub type and future / past. Note that the 'future' is everything from tomorrow onwards.",
+    description = "Retrieves counts of appointments for the migration preview. Requires ROLE_NOMIS_APPOINTMENTS.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Appointment counts returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAppointmentCounts(
+    @RequestParam(value = "prisonIds", required = true)
+    @Parameter(
+      description = "Filter results by prison ids",
+      example = "['MDI','LEI']",
+    )
+    prisonIds: List<String>,
+    @RequestParam(value = "fromDate", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by appointments that were created on or after the given date",
+      example = "2021-11-03",
+    )
+    fromDate: LocalDate?,
+    @RequestParam(value = "toDate", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by appointments that were created on or before the given date",
+      example = "2022-04-11",
+    )
+    toDate: LocalDate?,
+  ): List<AppointmentCountsResponse> =
+    appointmentService.findCountsByFilter(
+      AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
+    )
 }

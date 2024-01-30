@@ -50,6 +50,31 @@ interface OffenderIndividualScheduleRepository :
   ): List<Long>
 
   @Query(
+    """SELECT prisonId, eventSubType, pastOrFuture, COUNT(*) as appointmentCount FROM
+        (SELECT  /*+ index(offender_ind_schedules OFFENDER_IND_SCHEDULES_X03) */ 
+          agy_loc_id as prisonId, 
+          event_sub_type as eventSubType, 
+          CASE 
+            WHEN EVENT_DATE > CURRENT_DATE THEN 'FUTURE' 
+            ELSE 'PAST' 
+          END AS pastOrFuture
+         FROM offender_ind_schedules ois 
+         WHERE ois.event_type = 'APP'
+         AND ois.agy_loc_id IN (:prisons)
+         AND ois.event_date between :fromDate and :toDate
+       ) as appointments
+       GROUP BY prisonId, eventSubType, pastOrFuture
+       ORDER BY prisonId, eventSubType, pastOrFuture desc
+    """,
+    nativeQuery = true,
+  )
+  fun findCountsByFilter(
+    prisons: List<String>,
+    fromDate: LocalDate,
+    toDate: LocalDate,
+  ): List<AppointmentCounts>
+
+  @Query(
     """SELECT /*+ index(offender_ind_schedules OFFENDER_IND_SCHEDULES_X03) */ 
             count(1) 
        FROM
@@ -66,4 +91,11 @@ interface OffenderIndividualScheduleRepository :
     fromDate: LocalDate,
     toDate: LocalDate,
   ): Long
+}
+
+interface AppointmentCounts {
+  fun getPrisonId(): String
+  fun getEventSubType(): String
+  fun getPastOrFuture(): String
+  fun getAppointmentCount(): Long
 }
