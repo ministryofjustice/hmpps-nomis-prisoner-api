@@ -284,6 +284,44 @@ class AdjudicationResource(
   ): AdjudicationResponse? = adjudicationService.createAdjudication(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @DeleteMapping("/incident/adjudication-number/{adjudicationNumber}")
+  @Operation(
+    summary = "**** Used to recover from a duplicate incident creation only ***** Deletes an incident by adjudication number.",
+    description = "Deletes an incident by adjudication number. Supports the removal of a duplicate incident without a DPS mapping. Requires ROLE_NOMIS_ADJUDICATIONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Incident deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteIncident(
+    @Schema(description = "Adjudication number", example = "12345")
+    @PathVariable
+    adjudicationNumber: Long,
+  ) = adjudicationService.deleteIncident(adjudicationNumber)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings")
   @Operation(
     summary = "creates a hearing for a given adjudication",

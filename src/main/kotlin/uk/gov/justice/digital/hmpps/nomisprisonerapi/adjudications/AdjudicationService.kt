@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -105,6 +106,10 @@ class AdjudicationService(
   private val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   private val telemetryClient: TelemetryClient,
 ) {
+
+  private companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {
@@ -286,6 +291,28 @@ class AdjudicationService(
         }
       }
       .let { getAdjudication(adjudicationNumber) }
+  }
+
+  fun deleteIncident(adjudicationNumber: Long) {
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let { party ->
+      adjudicationIncidentRepository.deleteById(party.incident.id)
+      telemetryClient.trackEvent(
+        "incident-delete-success",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "incidentId" to party.incident.id.toString(),
+        ),
+        null,
+      )
+    } ?: let {
+      telemetryClient.trackEvent(
+        "incident-delete-failed",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+        ),
+        null,
+      )
+    }
   }
 
   private fun createRepairForAdjudicationIncident(
@@ -1154,7 +1181,9 @@ class AdjudicationService(
     )
   }
 
-  private fun AdjudicationHearingResultAward.asDays() = this.sanctionDays + this.sanctionMonths.asDays(this.effectiveDate)
+  private fun AdjudicationHearingResultAward.asDays() =
+    this.sanctionDays + this.sanctionMonths.asDays(this.effectiveDate)
+
   private operator fun Int?.plus(second: Int?): Int? = when {
     this == null && second == null -> null
     this == null -> second
@@ -1170,10 +1199,11 @@ class AdjudicationService(
       ?: throw NotFoundException("Prisoner with bookingId $bookingId not found")
 
     val prisonIds = offenderExternalMovementRepository.findPrisonsAdmittedIntoByBooking(booking)
-    val awards = adjudicationHearingResultAwardRepository.findByIdOffenderBookIdAndSanctionCodeOrderByIdSanctionSequenceAsc(
-      offenderBookId = bookingId,
-      sanctionCode = "ADA",
-    )
+    val awards =
+      adjudicationHearingResultAwardRepository.findByIdOffenderBookIdAndSanctionCodeOrderByIdSanctionSequenceAsc(
+        offenderBookId = bookingId,
+        sanctionCode = "ADA",
+      )
     return AdjudicationADAAwardSummaryResponse(
       bookingId,
       offenderNo = booking.offender.nomsId,

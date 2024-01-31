@@ -152,7 +152,7 @@ class CourtEvent(
 
   fun isLatestAppearance(): Boolean {
     return courtCase?.let {
-      this == courtCase!!.courtEvents!!.sortedBy { event ->
+      this == courtCase!!.courtEvents.sortedBy { event ->
         LocalDateTime.of(
           event.eventDate,
           event.startTime.toLocalTime(),

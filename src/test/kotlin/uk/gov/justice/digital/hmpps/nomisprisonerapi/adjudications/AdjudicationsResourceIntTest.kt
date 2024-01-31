@@ -6,6 +6,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
@@ -2665,6 +2668,142 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           assertThat(charges[0].offenceId).isEqualTo("$existingAdjudicationNumber/1")
           assertThat(charges[1].offenceId).isEqualTo("$existingAdjudicationNumber/2")
         }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /incident/adjudication-number/{adjudicationNumber}")
+  @Nested
+  inner class DeleteIncident {
+    private val offenderNo = "A1965NM"
+    private lateinit var prisoner: Offender
+    private lateinit var reportingStaff: Staff
+    private lateinit var existingIncident: AdjudicationIncident
+    private val existingAdjudicationNumber = 123456L
+
+    @BeforeEach
+    fun createPrisonerAndAdjudication() {
+      nomisDataBuilder.build {
+        reportingStaff = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {
+          repair(repairType = "CLEA")
+        }
+        prisoner = offender(nomsId = offenderNo) {
+          booking {
+            adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
+              charge(offenceCode = "51:1B")
+              investigation(
+                investigator = reportingStaff,
+                comment = "Isla comment for investigation",
+                assignedDate = LocalDate.parse("2023-01-02"),
+              ) {
+                evidence(
+                  date = LocalDate.parse("2023-01-03"),
+                  detail = "smashed light bulb",
+                  type = "PHOTO",
+                )
+                evidence(
+                  date = LocalDate.parse("2023-01-04"),
+                  detail = "syringe",
+                  type = "DRUGTEST",
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+      repository.delete(reportingStaff)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete()
+          .uri("/incident/adjudication-number/$existingAdjudicationNumber")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete()
+          .uri("/incident/adjudication-number/$existingAdjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete()
+          .uri("/incident/adjudication-number/$existingAdjudicationNumber")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisonerWithNoBookings: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          prisonerWithNoBookings = offender(nomsId = "A9876AK")
+        }
+      }
+
+      @Test
+      fun `will not throw error and will track event if adjudication not found`() {
+        webTestClient.delete().uri("/incident/adjudication-number/333")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk()
+
+        verify(telemetryClient).trackEvent(
+          eq("incident-delete-failed"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("adjudicationNumber", "333")
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `delete an adjudication hearing`() {
+        webTestClient.delete()
+          .uri("/incident/adjudication-number/$existingAdjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/adjudications//adjudication-number/$existingAdjudicationNumber")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Adjudication not found")
+
+        verify(telemetryClient).trackEvent(
+          eq("incident-delete-success"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("adjudicationNumber", existingAdjudicationNumber.toString())
+          },
+          isNull(),
+        )
       }
     }
   }
