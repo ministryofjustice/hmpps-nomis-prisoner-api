@@ -288,6 +288,28 @@ class AdjudicationService(
       .let { getAdjudication(adjudicationNumber) }
   }
 
+  fun deleteIncident(adjudicationNumber: Long) {
+    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let { party ->
+      adjudicationIncidentRepository.deleteById(party.incident.id)
+      telemetryClient.trackEvent(
+        "incident-delete-success",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+          "incidentId" to party.incident.id.toString(),
+        ),
+        null,
+      )
+    } ?: let {
+      telemetryClient.trackEvent(
+        "incident-delete-failed",
+        mapOf(
+          "adjudicationNumber" to adjudicationNumber.toString(),
+        ),
+        null,
+      )
+    }
+  }
+
   private fun createRepairForAdjudicationIncident(
     incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
     repairSequence: Int,
@@ -1154,7 +1176,9 @@ class AdjudicationService(
     )
   }
 
-  private fun AdjudicationHearingResultAward.asDays() = this.sanctionDays + this.sanctionMonths.asDays(this.effectiveDate)
+  private fun AdjudicationHearingResultAward.asDays() =
+    this.sanctionDays + this.sanctionMonths.asDays(this.effectiveDate)
+
   private operator fun Int?.plus(second: Int?): Int? = when {
     this == null && second == null -> null
     this == null -> second
@@ -1170,10 +1194,11 @@ class AdjudicationService(
       ?: throw NotFoundException("Prisoner with bookingId $bookingId not found")
 
     val prisonIds = offenderExternalMovementRepository.findPrisonsAdmittedIntoByBooking(booking)
-    val awards = adjudicationHearingResultAwardRepository.findByIdOffenderBookIdAndSanctionCodeOrderByIdSanctionSequenceAsc(
-      offenderBookId = bookingId,
-      sanctionCode = "ADA",
-    )
+    val awards =
+      adjudicationHearingResultAwardRepository.findByIdOffenderBookIdAndSanctionCodeOrderByIdSanctionSequenceAsc(
+        offenderBookId = bookingId,
+        sanctionCode = "ADA",
+      )
     return AdjudicationADAAwardSummaryResponse(
       bookingId,
       offenderNo = booking.offender.nomsId,
