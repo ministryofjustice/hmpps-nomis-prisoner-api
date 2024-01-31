@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import com.microsoft.applicationinsights.TelemetryClient
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -106,10 +105,6 @@ class AdjudicationService(
   private val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   private val telemetryClient: TelemetryClient,
 ) {
-
-  private companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {

@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
@@ -9,7 +8,6 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import java.io.Serializable
@@ -75,9 +73,6 @@ class AdjudicationIncidentCharge(
   // adjudication number / charge index at incident level eg 4577667/1
   @Column(name = "OIC_CHARGE_ID")
   var offenceId: String? = null,
-
-  @OneToMany(mappedBy = "incidentCharge", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val hearingResults: MutableList<AdjudicationHearingResult> = mutableListOf(),
 
   @Column(name = "CREATE_DATETIME", nullable = false)
   var whenCreated: LocalDateTime = LocalDateTime.now(),
