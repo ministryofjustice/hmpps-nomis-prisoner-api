@@ -94,9 +94,6 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
             }
           }
           bookingId = booking(agencyLocationId = "BXI", bookingBeginDate = LocalDateTime.parse("2022-01-01T10:00")) {
-            prisonTransfer(from = "BXI", to = "MDI", date = LocalDateTime.parse("2022-01-02T10:00"))
-            prisonTransfer(from = "MDI", to = "BXI", date = LocalDateTime.parse("2022-01-03T10:00"))
-            prisonTransfer(from = "BXI", to = "BMI", date = LocalDateTime.parse("2022-01-03T10:00"))
             adjudicationParty(incident = previousIncident, adjudicationNumber = previousAdjudicationNumber) {
               val charge = charge(offenceCode = "51:1A")
               hearing(
@@ -261,20 +258,6 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will list all prisons for this booking`() {
-        webTestClient.get()
-          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("prisonIds.size()").isEqualTo("3")
-          .jsonPath("prisonIds[0]").isEqualTo("BMI")
-          .jsonPath("prisonIds[1]").isEqualTo("BXI")
-          .jsonPath("prisonIds[2]").isEqualTo("MDI")
-      }
-
-      @Test
       fun `there will be a summary for each ADA award across all adjudications for this booking`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
@@ -369,18 +352,6 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(noAdjudicationsPrisoner.nomsId)
-      }
-
-      @Test
-      fun `will list all prisons for this booking`() {
-        webTestClient.get()
-          .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", noAdjudicationsBookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("prisonIds.size()").isEqualTo("1")
-          .jsonPath("prisonIds[0]").isEqualTo("BXI")
       }
 
       @Test
