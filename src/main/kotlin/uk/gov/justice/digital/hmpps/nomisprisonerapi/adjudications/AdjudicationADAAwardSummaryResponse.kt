@@ -19,11 +19,6 @@ data class AdjudicationADAAwardSummaryResponse(
   )
   val offenderNo: String,
   @Schema(
-    description = "List of prisons this person attended during this booking",
-    required = true,
-  )
-  val prisonIds: List<String>,
-  @Schema(
     description = "List of ADAs awarded during this booking period",
     required = true,
   )
