@@ -1031,7 +1031,7 @@ class AdjudicationService(
       ?: throw NotFoundException("Charge not found for adjudication number $adjudicationNumber and charge sequence $chargeSequence")
 
     val adjudicationRoom =
-      agencyInternalLocationRepository.findAgencyInternalLocationsByAgencyIdAndLocationTypeAndActive(
+      agencyInternalLocationRepository.findAgencyInternalLocationsByAgencyIdAndLocationType_CodeAndActive(
         agencyId = incidentCharge.incident.prison.id,
         locationType = "ADJU",
       ).firstOrNull()

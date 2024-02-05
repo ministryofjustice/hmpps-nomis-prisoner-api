@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuild
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
@@ -26,6 +27,7 @@ import java.time.LocalDateTime
 internal class VisitResponseTest {
   lateinit var visitor: VisitVisitor
   lateinit var outcomeVisitorRecord: VisitVisitor
+  val agency = AgencyLocation(id = "LEI", description = "Leeds HMP")
   val visit = Visit(
     id = 99L,
     offenderBooking = anOffenderBooking("A1234LK"),
@@ -35,16 +37,16 @@ internal class VisitResponseTest {
     visitType = VisitType(code = "SCON", description = "Social Visit"),
     commentText = "Contact Jane 0978 5652727",
     visitorConcernText = "None",
-    location = AgencyLocation(id = "LEI", description = "Leeds HMP"),
+    location = agency,
     createUserId = "djones",
     modifyUserId = "bsmith",
     whenCreated = LocalDateTime.parse("2020-01-01T10:00:00"),
     whenUpdated = LocalDateTime.parse("2020-01-01T11:00:00"),
     agencyInternalLocation = AgencyInternalLocation(
-      agencyId = "LEI",
+      agency = agency,
       description = "LEI-VIS-01",
       locationCode = "VIS-01",
-      locationType = "VIS",
+      locationType = InternalLocationType("VIS", "Visit Room"),
     ),
     visitStatus = VisitStatus(code = "SCH", description = "Scheduled"),
     visitors = mutableListOf(),

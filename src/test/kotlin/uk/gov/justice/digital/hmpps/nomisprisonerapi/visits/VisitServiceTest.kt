@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
@@ -81,6 +82,7 @@ internal class VisitServiceTest {
   private val visitTimeRepository: AgencyVisitTimeRepository = mock()
   private val visitSlotRepository: AgencyVisitSlotRepository = mock()
   private val internalLocationRepository: AgencyInternalLocationRepository = mock()
+  private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType> = mock()
   private val visitOutcomeRepository: ReferenceCodeRepository<VisitOutcomeReason> = mock()
   private val eventOutcomeRepository: ReferenceCodeRepository<EventOutcome> = mock()
   private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason> = mock()
@@ -107,6 +109,7 @@ internal class VisitServiceTest {
     visitTimeRepository,
     visitSlotRepository,
     internalLocationRepository,
+    internalLocationTypeRepository,
   )
 
   val visitType = VisitType("SCON", "desc")
@@ -178,6 +181,9 @@ internal class VisitServiceTest {
     whenever(agencyLocationRepository.findById(any())).thenAnswer {
       return@thenAnswer Optional.of(AgencyLocation(it.arguments[0] as String, "desc"))
     }
+    whenever(internalLocationTypeRepository.findById(any())).thenAnswer {
+      return@thenAnswer Optional.of(InternalLocationType((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
+    }
 
     whenever(visitVisitorRepository.getEventId()).thenReturn(EVENT_ID)
     whenever(visitOrderRepository.getVisitOrderNumber()).thenReturn(VISIT_ORDER)
@@ -187,8 +193,22 @@ internal class VisitServiceTest {
     whenever(visitSlotRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitSlot }
     whenever(internalLocationRepository.save(any())).thenAnswer { it.arguments[0] as AgencyInternalLocation }
     whenever(visitRepository.save(any())).thenAnswer { (it.arguments[0] as Visit).copy(id = VISIT_ID) }
-    whenever(internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(eq(PRISON_ID), any(), any())).thenAnswer {
-      return@thenAnswer AgencyInternalLocation(locationId = 99, active = true, locationType = "AREA", agencyId = it.arguments[0] as String, description = "${it.arguments[0]}-VISITS", locationCode = "VISITS", userDescription = "VISITS")
+    whenever(
+      internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(
+        eq(PRISON_ID),
+        any(),
+        any(),
+      ),
+    ).thenAnswer {
+      return@thenAnswer AgencyInternalLocation(
+        locationId = 99,
+        active = true,
+        locationType = InternalLocationType("AREA", description = "Area"),
+        agency = AgencyLocation(it.arguments[0] as String, "desc"),
+        description = "${it.arguments[0]}-VISITS",
+        locationCode = "VISITS",
+        userDescription = "VISITS",
+      )
     }
   }
 
@@ -233,7 +253,7 @@ internal class VisitServiceTest {
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.location.id).isEqualTo(PRISON_ID)
-          assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
+          assertThat(visit.agencyInternalLocation?.locationType?.code).isEqualTo("VISIT")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_SOC")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
           assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - SOCIAL")
@@ -254,7 +274,7 @@ internal class VisitServiceTest {
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.location.id).isEqualTo(PRISON_ID)
-          assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
+          assertThat(visit.agencyInternalLocation?.locationType?.code).isEqualTo("VISIT")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_CLO")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
           assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - CLOSED")

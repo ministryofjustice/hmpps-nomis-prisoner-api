@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -58,9 +59,9 @@ class PayRateServiceTest {
     active = true,
   )
   private val defaultRoom = AgencyInternalLocation(
-    agencyId = PRISON_ID,
+    agency = defaultPrison,
     description = PRISON_DESCRIPTION,
-    locationType = "ROOM",
+    locationType = InternalLocationType("ROOM", "Room"),
     locationCode = "ROOM-1",
     locationId = ROOM_ID,
   )

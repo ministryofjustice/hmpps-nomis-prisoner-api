@@ -137,8 +137,8 @@ class AppointmentService(
     val location = agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
       ?: throw BadDataException("Room with id=${dto.internalLocationId} does not exist")
 
-    if (location.agencyId != offenderBooking.location?.id) {
-      throw BadDataException("Room with id=${dto.internalLocationId} is in ${location.agencyId}, not in the offender's prison: ${offenderBooking.location?.id}")
+    if (location.agency.id != offenderBooking.location?.id) {
+      throw BadDataException("Room with id=${dto.internalLocationId} is in ${location.agency.id}, not in the offender's prison: ${offenderBooking.location?.id}")
     }
 
     if (dto.endTime != null && dto.endTime < dto.startTime) {

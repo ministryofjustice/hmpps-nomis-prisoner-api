@@ -104,7 +104,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A4578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
     @Parameter(description = "Sequence number. Amend this specific detail record", example = "1", required = true)
@@ -149,7 +149,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A4578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
     @Parameter(description = "Sequence number. Close this specific detail record", example = "2", required = true)
@@ -187,7 +187,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A4578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
     @Parameter(description = "Sequence number. Close this specific detail record", example = "2", required = true)
@@ -225,7 +225,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A4578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
     @Parameter(description = "Sequence number. If present, get this detail record, otherwise get the open record if there is one.", example = "2")
@@ -266,7 +266,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Offender", example = "A3456GH", required = true)
     @PathVariable
     offenderNo: String,
-    @Parameter(description = "Non-association offender", example = "A34578ED", required = true)
+    @Parameter(description = "Non-association offender", example = "A4578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
   ): List<NonAssociationResponse> =

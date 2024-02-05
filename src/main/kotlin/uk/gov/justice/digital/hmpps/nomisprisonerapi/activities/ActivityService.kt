@@ -211,7 +211,7 @@ class ActivityService(
       agencyInternalLocationRepository.findByIdOrNull(it)
         ?: throw BadDataException("Location with id=$it does not exist")
     }?.also {
-      if (it.agencyId != prisonId) {
+      if (it.agency.id != prisonId) {
         throw BadDataException("Location with id=$internalLocationId not found in prison $prisonId")
       }
     }

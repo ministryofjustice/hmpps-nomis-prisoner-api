@@ -354,4 +354,6 @@ class Repository(
 
   fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
   fun delete(adjustment: OffenderSentenceAdjustment) = offenderSentenceAdjustmentRepository.delete(adjustment)
+
+  fun delete(agencyInternalLocation: AgencyInternalLocation) = agencyInternalLocationRepository.delete(agencyInternalLocation)
 }

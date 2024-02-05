@@ -30,8 +30,8 @@ interface CourtCaseDsl {
     eventStatusCode: String = "SCH",
     outcomeReasonCode: String? = "3514",
     judgeName: String? = "Mike",
-    eventDate: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
-    nextEventDate: LocalDateTime? = LocalDateTime.of(2023, 1, 5, 10, 30),
+    eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
+    nextEventDateTime: LocalDateTime? = LocalDateTime.of(2023, 1, 5, 10, 30),
     orderRequestedFlag: Boolean? = false,
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
