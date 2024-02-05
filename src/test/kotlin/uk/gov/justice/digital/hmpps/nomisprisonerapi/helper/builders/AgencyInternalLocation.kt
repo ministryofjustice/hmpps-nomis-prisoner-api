@@ -14,9 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 annotation class AgencyInternalLocationDslMarker
 
 @NomisDataDslMarker
-interface AgencyInternalLocationDsl {
-
-}
+interface AgencyInternalLocationDsl
 
 @Component
 class AgencyInternalLocationBuilderRepository(

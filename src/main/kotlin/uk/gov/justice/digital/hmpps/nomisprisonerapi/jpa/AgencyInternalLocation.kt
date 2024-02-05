@@ -58,7 +58,7 @@ data class AgencyInternalLocation(
   val agency: AgencyLocation,
 
   // calculated by trigger in Nomis
-  @Column(name = "DESCRIPTION") // , updatable = false, nullable = false)
+  @Column(name = "DESCRIPTION")
   val description: String,
 
   @ManyToOne(fetch = FetchType.LAZY)

@@ -6,9 +6,11 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -20,14 +22,21 @@ class LocationService(
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>,
+  private val housingUnitTypeRepository: ReferenceCodeRepository<HousingUnitType>,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
+  @Audit
   fun createLocation(locationDto: CreateLocationRequest): LocationIdResponse {
     val locationType = internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(locationDto.locationType))
       ?: throw BadDataException("Location type with id=${locationDto.locationType} does not exist")
+
+    val housingUnitType = locationDto.unitType?.let {
+      housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(it))
+        ?: throw BadDataException("Housing unit type with id=${locationDto.unitType} does not exist")
+    }
 
     val agency = agencyLocationRepository.findByIdOrNull(locationDto.prisonId)
       ?: throw BadDataException("Agency with id=${locationDto.prisonId} does not exist")
@@ -39,7 +48,7 @@ class LocationService(
 
     return LocationIdResponse(
       agencyInternalLocationRepository.save(
-        locationDto.toAgencyInternalLocation(locationType, agency, parent),
+        locationDto.toAgencyInternalLocation(locationType, housingUnitType, agency, parent),
       ).locationId,
     )
   }

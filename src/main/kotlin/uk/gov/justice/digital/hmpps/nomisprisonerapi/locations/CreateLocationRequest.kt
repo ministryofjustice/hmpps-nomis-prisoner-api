@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -14,7 +15,11 @@ data class CreateLocationRequest(
   @Schema(description = "Whether certified for use", required = false, example = "true", defaultValue = "false")
   val certified: Boolean = false,
 
-  @Schema(description = "Whether a CELL, VISIT room, Kitchen etc (Ref type ILOC_TYPE)", required = true, example = "LAND")
+  @Schema(
+    description = "Whether a CELL, VISIT room, Kitchen etc (Ref type ILOC_TYPE)",
+    required = true,
+    example = "LAND",
+  )
   val locationType: String,
 
   @Schema(description = "Prison code of the location", required = true, example = "LEI")
@@ -33,8 +38,18 @@ data class CreateLocationRequest(
   @field:Size(max = 40, message = "userDescription is too long (max allowed 40 characters)")
   val userDescription: String? = null,
 
-  @Schema(description = "Usually a number for a cell, a letter for a wing or landing. Used to calculate description", required = true, example = "xxxx")
+  @Schema(
+    description = "Usually a number for a cell, a letter for a wing or landing. Used to calculate description",
+    required = true,
+    example = "005",
+  )
   val locationCode: String,
+
+  @Schema(
+    description = "Housing Unit type, Reference code (HOU_UN_TYPE)",
+    allowableValues = ["HC", "HOLC", "NA", "OU", "REC", "SEG", "SPLC"],
+  )
+  val unitType: String? = null,
 
   @Schema(description = "Physical maximum capacity", example = "45")
   val capacity: Int? = null,
@@ -46,12 +61,18 @@ data class CreateLocationRequest(
   @field:Size(max = 240, message = "Comment is too long (max allowed 240 characters)")
   val comment: String? = null,
 ) {
-  fun toAgencyInternalLocation(locationType: InternalLocationType, agency: AgencyLocation, parent: AgencyInternalLocation?): AgencyInternalLocation =
+  fun toAgencyInternalLocation(
+    locationType: InternalLocationType,
+    housingUnitType: HousingUnitType?,
+    agency: AgencyLocation,
+    parent: AgencyInternalLocation?,
+  ): AgencyInternalLocation =
     AgencyInternalLocation(
       active = true,
       certified = certified,
       tracking = true,
       locationType = locationType,
+      unitType = housingUnitType,
       agency = agency,
       parentLocation = parent,
       currentOccupancy = 0,

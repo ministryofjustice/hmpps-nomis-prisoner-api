@@ -21,9 +21,10 @@ class LocationsResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
-
   @Nested
   inner class CreateLocation {
+
+    private var createdLocation: AgencyInternalLocation? = null
 
     private val createLocationRequest: () -> CreateLocationRequest = {
       CreateLocationRequest(
@@ -33,6 +34,11 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         locationCode = "5",
         parentLocationId = -1L,
       )
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      createdLocation?.apply { repository.delete(this) }
     }
 
     @Test
@@ -86,7 +92,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `invalid type`() {
+    fun `invalid location type`() {
       webTestClient.post().uri("/locations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(locationType = "invalid")))
@@ -94,6 +100,18 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("Location type with id=invalid does not exist")
+        }
+    }
+
+    @Test
+    fun `invalid housing unit type`() {
+      webTestClient.post().uri("/locations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .body(BodyInserters.fromValue(createLocationRequest().copy(unitType = "invalid")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Housing unit type with id=invalid does not exist")
         }
     }
 
@@ -149,7 +167,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .returnResult().responseBody!!
 
       // Check the database
-      repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
+      createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
         assertThat(locationCode).isEqualTo("CLASS7")
         assertThat(description).isEqualTo("CLASS7")
         assertThat(locationType.code).isEqualTo("CLAS")
@@ -161,8 +179,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(userDescription).isEqualTo("user description")
         assertThat(listSequence).isEqualTo(1)
         assertThat(certified).isTrue
-
-        repository.delete(this)
       }
     }
 
@@ -176,6 +192,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
             """{
                 "locationCode"     : "005",
                 "locationType"     : "CELL",
+                "unitType"         : "NA",
                 "prisonId"         : "BXI",
                 "parentLocationId" : -3008,
                 "comment"          : "this is a cell!",
@@ -193,10 +210,11 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .returnResult().responseBody!!
 
       // Check the database
-      repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
+      createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
         assertThat(locationCode).isEqualTo("005")
         assertThat(description).isEqualTo("BXI-A-1-005")
         assertThat(locationType.code).isEqualTo("CELL")
+        assertThat(unitType?.code).isEqualTo("NA")
         assertThat(agency.id).isEqualTo("BXI")
         assertThat(comment).isEqualTo("this is a cell!")
         assertThat(capacity).isEqualTo(1)
@@ -205,8 +223,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(userDescription).isEqualTo("user description")
         assertThat(listSequence).isEqualTo(5)
         assertThat(certified).isTrue
-
-        repository.delete(this)
       }
     }
   }
