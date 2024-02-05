@@ -115,7 +115,7 @@ class LocationResource(private val locationService: LocationService) {
     ],
   )
   fun getLocationsByFilter(
-    @PageableDefault(sort = ["id.offenderId", "id.nsOffenderId"], direction = Sort.Direction.ASC)
+    @PageableDefault(sort = ["locationId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
   ): Page<LocationIdResponse> = locationService.findIdsByFilter(pageRequest = pageRequest)
 }

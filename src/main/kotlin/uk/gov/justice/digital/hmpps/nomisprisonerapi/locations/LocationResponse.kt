@@ -2,9 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.locations
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Location request returned data")
@@ -48,21 +45,4 @@ data class LocationResponse(
 
   @Schema(description = "Comment", example = "Some comment")
   val comment: String? = null,
-) {
-  fun toAgencyInternalLocation(locationType: InternalLocationType, agency: AgencyLocation, parent: AgencyInternalLocation?): AgencyInternalLocation =
-    AgencyInternalLocation(
-      active = true,
-      certified = certified,
-      tracking = true,
-      locationType = locationType,
-      agency = agency,
-      parentLocation = parent,
-      currentOccupancy = 0,
-      operationalCapacity = operationalCapacity,
-      userDescription = userDescription,
-      locationCode = locationCode,
-      capacity = capacity,
-      listSequence = listSequence,
-      cnaCapacity = cnaCapacity,
-    )
-}
+)

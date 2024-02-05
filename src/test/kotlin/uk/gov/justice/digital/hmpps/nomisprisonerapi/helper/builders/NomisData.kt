@@ -220,22 +220,34 @@ class NomisData(
   override fun agencyInternalLocation(
     locationCode: String,
     locationType: String,
-    prisonId : String,
+    prisonId: String,
     parentAgencyInternalLocationId: Long?,
+    capacity: Int?,
+    operationalCapacity: Int?,
+    cnaCapacity: Int?,
+    userDescription: String?,
+    listSequence: Int?,
+    comment: String?,
     dsl: AgencyInternalLocationDsl.() -> Unit,
   ): AgencyInternalLocation =
-  agencyInternalLocationBuilderFactory!!.builder()
-  .let { builder ->
-    builder.build(
-      locationCode = locationCode,
-      locationType = locationType,
-      prisonId = prisonId,
-      parentAgencyInternalLocationId = parentAgencyInternalLocationId,
-    )
-      .also {
-        builder.apply(dsl)
+    agencyInternalLocationBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          locationCode = locationCode,
+          locationType = locationType,
+          prisonId = prisonId,
+          parentAgencyInternalLocationId = parentAgencyInternalLocationId,
+          capacity = capacity,
+          operationalCapacity = operationalCapacity,
+          cnaCapacity = cnaCapacity,
+          userDescription = userDescription,
+          listSequence = listSequence,
+          comment = comment,
+        )
+          .also {
+            builder.apply(dsl)
+          }
       }
-  }
 }
 
 @NomisDataDslMarker
@@ -317,8 +329,14 @@ interface NomisDataDsl {
   fun agencyInternalLocation(
     locationCode: String,
     locationType: String,
-    prisonId : String,
+    prisonId: String,
     parentAgencyInternalLocationId: Long? = null,
+    capacity: Int? = 1,
+    operationalCapacity: Int? = null,
+    cnaCapacity: Int? = null,
+    userDescription: String? = null,
+    listSequence: Int? = null,
+    comment: String? = "comment",
     dsl: AgencyInternalLocationDsl.() -> Unit = {},
   ): AgencyInternalLocation
 }

@@ -61,5 +61,7 @@ data class CreateLocationRequest(
       capacity = capacity,
       listSequence = listSequence,
       cnaCapacity = cnaCapacity,
+      comment = comment,
+      description = parent?.let { "${it.description}-$locationCode" } ?: locationCode,
     )
 }

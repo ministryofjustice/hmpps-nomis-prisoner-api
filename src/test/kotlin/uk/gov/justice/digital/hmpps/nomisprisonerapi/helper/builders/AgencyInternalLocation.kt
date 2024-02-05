@@ -33,20 +33,19 @@ class AgencyInternalLocationBuilderRepository(
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 
-  fun lookupInternalLocationType(code: String): InternalLocationType = internalLocationTypeRepository.findByIdOrNull(pk(code))!!
+  fun lookupInternalLocationType(code: String): InternalLocationType =
+    internalLocationTypeRepository.findByIdOrNull(pk(code))!!
 }
 
 @Component
 class AgencyInternalLocationBuilderFactory(
   private val repository: AgencyInternalLocationBuilderRepository,
-  private val serviceAgencySwitchBuilderFactory: ServiceAgencySwitchBuilderFactory,
 ) {
-  fun builder() = AgencyInternalLocationBuilder(repository, serviceAgencySwitchBuilderFactory)
+  fun builder() = AgencyInternalLocationBuilder(repository)
 }
 
 class AgencyInternalLocationBuilder(
   private val repository: AgencyInternalLocationBuilderRepository,
-  private val serviceAgencySwitchBuilderFactory: ServiceAgencySwitchBuilderFactory,
 ) : AgencyInternalLocationDsl {
   private lateinit var agencyInternalLocation: AgencyInternalLocation
 
@@ -55,25 +54,33 @@ class AgencyInternalLocationBuilder(
     locationType: String,
     prisonId: String = "LEI",
     parentAgencyInternalLocationId: Long? = null,
-  ): AgencyInternalLocation = AgencyInternalLocation(
-    active = true,
-    certified = true,
-    tracking = false,
-    locationType = repository.lookupInternalLocationType(locationType),
-    agency = repository.lookupAgency(prisonId),
-    description = "Description",
-    parentLocation = parentAgencyInternalLocationId?.let { repository.lookupAgencyInternalLocation(it) },
-    currentOccupancy = null,
-    operationalCapacity = null,
-    userDescription = null,
-    comment = null,
-    locationCode = locationCode,
-    unitType = null,
-    capacity = null,
-    listSequence = null,
-    cnaCapacity = null,
-  )
-    .let { repository.save(it) }
-    .also { agencyInternalLocation = it }
-
+    capacity: Int?,
+    operationalCapacity: Int?,
+    cnaCapacity: Int?,
+    userDescription: String?,
+    listSequence: Int?,
+    comment: String?,
+  ): AgencyInternalLocation {
+    val parentLocation = parentAgencyInternalLocationId?.let { repository.lookupAgencyInternalLocation(it) }
+    return AgencyInternalLocation(
+      active = true,
+      certified = true,
+      tracking = false,
+      locationType = repository.lookupInternalLocationType(locationType),
+      agency = repository.lookupAgency(prisonId),
+      description = parentLocation?.let { "${it.description}-$locationCode" } ?: locationCode,
+      parentLocation = parentLocation,
+      currentOccupancy = null,
+      operationalCapacity = operationalCapacity,
+      userDescription = userDescription,
+      comment = comment,
+      locationCode = locationCode,
+      unitType = null,
+      capacity = capacity,
+      listSequence = listSequence,
+      cnaCapacity = cnaCapacity,
+    )
+      .let { repository.save(it) }
+      .also { agencyInternalLocation = it }
+  }
 }

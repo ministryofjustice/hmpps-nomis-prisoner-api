@@ -30,14 +30,8 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         certified = true,
         locationType = "LAND",
         prisonId = "MDI",
-        parentLocationId = -1L,
-        operationalCapacity = 25,
-        cnaCapacity = 20,
-        userDescription = "A new landing on 'A' Wing",
         locationCode = "5",
-        capacity = 30,
-        listSequence = 1,
-        comment = "this is a test!",
+        parentLocationId = -1L,
       )
     }
 
@@ -107,7 +101,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     fun `userDescription too long`() {
       webTestClient.post().uri("/locations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .body(BodyInserters.fromValue(createLocationRequest().copy(comment = "x".repeat(41))))
+        .body(BodyInserters.fromValue(createLocationRequest().copy(userDescription = "x".repeat(41))))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
@@ -135,10 +129,16 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .body(
           BodyInserters.fromValue(
             """{
-                "locationCode" : "099",
-                "locationType" : "CELL",
-                "prisonId"     : "MDI",
-                "comment"      : "this is a test!"
+                "locationCode"        : "CLASS7",
+                "locationType"        : "CLAS",
+                "prisonId"            : "MDI",
+                "comment"             : "this is a test!",
+                "capacity"            : 30,
+                "operationalCapacity" : 25,
+                "cnaCapacity"         : 20,
+                "userDescription"     : "user description",
+                "listSequence"        : 1,
+                "certified"           : true
                }
             """.trimIndent(),
           ),
@@ -150,10 +150,63 @@ class LocationsResourceIntTest : IntegrationTestBase() {
 
       // Check the database
       repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
-        assertThat(locationCode).isEqualTo("099")
-        assertThat(locationType.code).isEqualTo("CELL")
+        assertThat(locationCode).isEqualTo("CLASS7")
+        assertThat(description).isEqualTo("CLASS7")
+        assertThat(locationType.code).isEqualTo("CLAS")
         assertThat(agency.id).isEqualTo("MDI")
         assertThat(comment).isEqualTo("this is a test!")
+        assertThat(capacity).isEqualTo(30)
+        assertThat(operationalCapacity).isEqualTo(25)
+        assertThat(cnaCapacity).isEqualTo(20)
+        assertThat(userDescription).isEqualTo("user description")
+        assertThat(listSequence).isEqualTo(1)
+        assertThat(certified).isTrue
+
+        repository.delete(this)
+      }
+    }
+
+    @Test
+    fun `will create location with parent`() {
+      val result = webTestClient.post().uri("/locations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                "locationCode"     : "005",
+                "locationType"     : "CELL",
+                "prisonId"         : "BXI",
+                "parentLocationId" : -3008,
+                "comment"          : "this is a cell!",
+                "capacity"         : 1,
+                "userDescription"  : "user description",
+                "listSequence"     : 5,
+                "certified"        : true
+               }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(LocationIdResponse::class.java)
+        .returnResult().responseBody!!
+
+      // Check the database
+      repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
+        assertThat(locationCode).isEqualTo("005")
+        assertThat(description).isEqualTo("BXI-A-1-005")
+        assertThat(locationType.code).isEqualTo("CELL")
+        assertThat(agency.id).isEqualTo("BXI")
+        assertThat(comment).isEqualTo("this is a cell!")
+        assertThat(capacity).isEqualTo(1)
+        assertThat(operationalCapacity).isNull()
+        assertThat(cnaCapacity).isNull()
+        assertThat(userDescription).isEqualTo("user description")
+        assertThat(listSequence).isEqualTo(5)
+        assertThat(certified).isTrue
+
+        repository.delete(this)
       }
     }
   }
@@ -163,12 +216,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
 
     lateinit var location1: AgencyInternalLocation
 
-
-    @AfterEach
-    internal fun deleteData() {
-      repository.delete(location1)
-    }
-
     @BeforeEach
     internal fun createLocations() {
       nomisDataBuilder.build {
@@ -177,14 +224,19 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           locationType = "CELL",
           prisonId = "MDI",
           parentAgencyInternalLocationId = -2L,
-//          capacity = 30,
-//          operationalCapacity = 25,
-//          cnaCapacity = 20,
-//          userDescription = "A-1-1",
-//          listSequence = 1,
-//          comment = "this is a test!",
+          capacity = 30,
+          operationalCapacity = 25,
+          cnaCapacity = 20,
+          userDescription = "user description",
+          listSequence = 100,
+          comment = "this is a GET test!",
         )
       }
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      repository.delete(location1)
     }
 
     @Test
@@ -201,19 +253,18 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.parentLocationId").isEqualTo(-2L)
         .jsonPath("$.operationalCapacity").isEqualTo(25)
         .jsonPath("$.cnaCapacity").isEqualTo(20)
-        .jsonPath("$.userDescription").isEqualTo("A-1-1")
+        .jsonPath("$.description").isEqualTo("LEI-A-1-100")
+        .jsonPath("$.userDescription").isEqualTo("user description")
         .jsonPath("$.locationCode").isEqualTo("100")
         .jsonPath("$.capacity").isEqualTo(30)
-        .jsonPath("$.listSequence").isEqualTo(1)
+        .jsonPath("$.listSequence").isEqualTo(100)
         .jsonPath("$.comment").isEqualTo("this is a GET test!")
     }
 
     @Test
     fun `get location by id not found`() {
       webTestClient
-        .get().uri(
-              "/locations/-9999",
-          )
+        .get().uri("/locations/-9999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
         .exchange()
         .expectStatus().isNotFound
@@ -232,14 +283,14 @@ class LocationsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `access forbidden when no authority`() {
-      webTestClient.post().uri("/locations/{id}", location1.locationId)
+      webTestClient.get().uri("/locations/{id}", location1.locationId)
         .exchange()
         .expectStatus().isUnauthorized
     }
 
     @Test
     fun `access forbidden when no role`() {
-      webTestClient.post().uri("/locations/{id}", location1.locationId)
+      webTestClient.get().uri("/locations/{id}", location1.locationId)
         .headers(setAuthorisation(roles = listOf()))
         .exchange()
         .expectStatus().isForbidden
@@ -249,31 +300,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetLocationIdsByFilterRequest {
 
-    lateinit var location1: AgencyInternalLocation
-    lateinit var location2: AgencyInternalLocation
-    lateinit var location3: AgencyInternalLocation
-
-    @BeforeEach
-    internal fun createLocations() {
-      nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "X",
-          locationType = "WING",
-          prisonId = "MDI",
-        )
-        location2 = agencyInternalLocation(
-          locationCode = "Y",
-          locationType = "WING",
-          prisonId = "MDI",
-        )
-        location3 = agencyInternalLocation(
-          locationCode = "Z",
-          locationType = "WING",
-          prisonId = "MDI",
-        )
-      }
-    }
-
     @Test
     fun `get all ids`() {
       webTestClient.get().uri("/locations/ids")
@@ -281,35 +307,40 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.numberOfElements").isEqualTo(3)
-        .jsonPath("$.content[0].locationId").isEqualTo(location1)
-        .jsonPath("$.content[1].locationId").isEqualTo(location2)
-        .jsonPath("$.content[2].locationId").isEqualTo(location3)
+        .jsonPath("$.numberOfElements").isEqualTo(10)
+        .jsonPath("$.content[0].locationId").isEqualTo(-3010)
+        .jsonPath("$.content[1].locationId").isEqualTo(-3009)
+        .jsonPath("$.content[2].locationId").isEqualTo(-3008)
     }
 
     @Test
     fun `can request a different page size`() {
       webTestClient.get().uri {
         it.path("/locations/ids")
-          .queryParam("size", "2")
+          .queryParam("size", "5")
           .build()
       }
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(3)
-        .jsonPath("numberOfElements").isEqualTo(2)
+        .jsonPath("totalElements").isEqualTo(309)
+        .jsonPath("numberOfElements").isEqualTo(5)
         .jsonPath("number").isEqualTo(0)
-        .jsonPath("totalPages").isEqualTo(2)
-        .jsonPath("size").isEqualTo(2)
+        .jsonPath("totalPages").isEqualTo(310 / 5)
+        .jsonPath("size").isEqualTo(5)
+        .jsonPath("$.content[0].locationId").isEqualTo(-3010)
+        .jsonPath("$.content[1].locationId").isEqualTo(-3009)
+        .jsonPath("$.content[2].locationId").isEqualTo(-3008)
+        .jsonPath("$.content[3].locationId").isEqualTo(-3007)
+        .jsonPath("$.content[4].locationId").isEqualTo(-3006)
     }
 
     @Test
     fun `can request a different page`() {
       webTestClient.get().uri {
         it.path("/locations/ids")
-          .queryParam("size", "2")
+          .queryParam("size", "5")
           .queryParam("page", "1")
           .build()
       }
@@ -317,11 +348,16 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(3)
-        .jsonPath("numberOfElements").isEqualTo(1)
+        .jsonPath("totalElements").isEqualTo(309)
+        .jsonPath("numberOfElements").isEqualTo(5)
         .jsonPath("number").isEqualTo(1)
-        .jsonPath("totalPages").isEqualTo(2)
-        .jsonPath("size").isEqualTo(2)
+        .jsonPath("totalPages").isEqualTo(310 / 5)
+        .jsonPath("size").isEqualTo(5)
+        .jsonPath("$.content[0].locationId").isEqualTo(-3005)
+        .jsonPath("$.content[1].locationId").isEqualTo(-3004)
+        .jsonPath("$.content[2].locationId").isEqualTo(-3003)
+        .jsonPath("$.content[3].locationId").isEqualTo(-3002)
+        .jsonPath("$.content[4].locationId").isEqualTo(-3001)
     }
 
     @Test
