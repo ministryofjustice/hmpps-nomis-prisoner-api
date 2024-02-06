@@ -18,7 +18,13 @@ data class CreateLocationRequest(
   @Schema(
     description = "Whether a CELL, VISIT room, Kitchen etc (Ref type ILOC_TYPE)",
     required = true,
-    example = "LAND",
+    allowableValues = [
+      "ADJU", "ADMI", "APP", "AREA", "ASSO", "BOOT", "BOX", "CELL",
+      "CLAS", "EXER", "EXTE", "FAIT", "GROU", "HCEL", "HOLD", "IGRO",
+      "INSI", "INTE", "LAND", "LOCA", "MEDI", "MOVE", "OFFI", "OUTS",
+      "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "STOR", "TABL",
+      "TRAI", "TRRM", "VIDE", "VISIT", "WING", "WORK",
+    ],
   )
   val locationType: String,
 
