@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -23,6 +24,7 @@ class NomisDataBuilder(
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
+  private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
@@ -34,6 +36,7 @@ class NomisDataBuilder(
     adjudicationIncidentBuilderFactory,
     nonAssociationBuilderFactory,
     externalServiceBuilderFactory,
+    agencyInternalLocationBuilderFactory,
     courtCaseBuilderFactory,
     questionnaireBuilderFactory,
     incidentBuilderFactory,
@@ -47,6 +50,7 @@ class NomisData(
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
+  private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
@@ -211,6 +215,39 @@ class NomisData(
             builder.apply(dsl)
           }
       }
+
+  @AgencyInternalLocationDslMarker
+  override fun agencyInternalLocation(
+    locationCode: String,
+    locationType: String,
+    prisonId: String,
+    parentAgencyInternalLocationId: Long?,
+    capacity: Int?,
+    operationalCapacity: Int?,
+    cnaCapacity: Int?,
+    userDescription: String?,
+    listSequence: Int?,
+    comment: String?,
+    dsl: AgencyInternalLocationDsl.() -> Unit,
+  ): AgencyInternalLocation =
+    agencyInternalLocationBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          locationCode = locationCode,
+          locationType = locationType,
+          prisonId = prisonId,
+          parentAgencyInternalLocationId = parentAgencyInternalLocationId,
+          capacity = capacity,
+          operationalCapacity = operationalCapacity,
+          cnaCapacity = cnaCapacity,
+          userDescription = userDescription,
+          listSequence = listSequence,
+          comment = comment,
+        )
+          .also {
+            builder.apply(dsl)
+          }
+      }
 }
 
 @NomisDataDslMarker
@@ -287,6 +324,21 @@ interface NomisDataDsl {
     description: String = serviceName,
     dsl: ExternalServiceDsl.() -> Unit = {},
   ): ExternalService
+
+  @AgencyInternalLocationDslMarker
+  fun agencyInternalLocation(
+    locationCode: String,
+    locationType: String,
+    prisonId: String,
+    parentAgencyInternalLocationId: Long? = null,
+    capacity: Int? = 1,
+    operationalCapacity: Int? = null,
+    cnaCapacity: Int? = null,
+    userDescription: String? = null,
+    listSequence: Int? = null,
+    comment: String? = "comment",
+    dsl: AgencyInternalLocationDsl.() -> Unit = {},
+  ): AgencyInternalLocation
 }
 
 @DslMarker

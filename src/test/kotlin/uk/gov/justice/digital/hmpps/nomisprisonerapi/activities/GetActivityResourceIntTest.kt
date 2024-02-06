@@ -552,7 +552,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.size()").isEqualTo(1)
         .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
         .jsonPath("$[0].payBandCode").isEqualTo("5")
         .jsonPath("$[0].incentiveLevelCode").isEqualTo("ENT")
     }

@@ -10,7 +10,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.Where
+import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.util.stream.Collectors
 
@@ -36,15 +36,15 @@ data class Person(
   val birthDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  @Where(clause = "OWNER_CLASS = '${PersonAddress.ADDR_TYPE}'")
+  @SQLRestriction("OWNER_CLASS = '${PersonAddress.ADDR_TYPE}'")
   val addresses: MutableList<PersonAddress> = mutableListOf(),
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  @Where(clause = "OWNER_CLASS = '${PersonPhone.PHONE_TYPE}'")
+  @SQLRestriction("OWNER_CLASS = '${PersonPhone.PHONE_TYPE}'")
   val phones: MutableList<PersonPhone> = mutableListOf(),
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  @Where(clause = "OWNER_CLASS = '${PersonInternetAddress.TYPE}'")
+  @SQLRestriction("OWNER_CLASS = '${PersonInternetAddress.TYPE}'")
   val internetAddresses: List<PersonInternetAddress> = ArrayList(),
 ) {
   fun getEmails(): List<PersonInternetAddress> {

@@ -100,7 +100,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   commentText = null,
                   outcomeReasonCode = null,
                   judgeName = null,
-                  nextEventDate = null,
+                  nextEventDateTime = null,
                   orderRequestedFlag = null,
                 )
               }
@@ -1519,7 +1519,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             ) {
               offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
-              courtEvent = courtEvent(eventDate = LocalDateTime.of(2023, 1, 1, 10, 30)) {
+              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
                 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
@@ -1533,7 +1533,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   sentencePurpose(purposeCode = "PUNISH")
                 }
               }
-              courtEvent2 = courtEvent(eventDate = LocalDateTime.of(2023, 2, 1, 10, 30)) {
+              courtEvent2 = courtEvent(eventDateTime = LocalDateTime.of(2023, 2, 1, 10, 30)) {
                 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,

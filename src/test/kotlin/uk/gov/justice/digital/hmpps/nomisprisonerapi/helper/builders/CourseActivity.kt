@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
@@ -65,12 +66,17 @@ class CourseActivityBuilderRepository(
   private val agencyLocationRepository: AgencyLocationRepository? = null,
   private val iepLevelRepository: ReferenceCodeRepository<IEPLevel>? = null,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository? = null,
+  private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>? = null,
 ) {
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository?.findByIdOrNull(id)!!
   fun lookupIepLevel(code: String): IEPLevel =
     iepLevelRepository?.findByIdOrNull(ReferenceCode.Pk(IEPLevel.IEP_LEVEL, code))!!
+
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
     agencyInternalLocationRepository?.findByIdOrNull(locationId)
+
+  fun lookupInternalLocationType(code: String): InternalLocationType =
+    internalLocationTypeRepository?.findByIdOrNull(ReferenceCode.Pk(InternalLocationType.ILOC_TYPE, code))!!
 }
 
 @Component
@@ -125,7 +131,13 @@ class CourseActivityBuilder(
       active = active,
       scheduleStartDate = LocalDate.parse(startDate),
       scheduleEndDate = endDate?.let { LocalDate.parse(it) },
-      internalLocation = internalLocationId?.let { lookupAgencyInternalLocation(it, prisonId) },
+      internalLocation = internalLocationId?.let {
+        lookupAgencyInternalLocation(
+          it,
+          lookupLocationType("CLAS"),
+          lookupAgency(prisonId),
+        )
+      },
       excludeBankHolidays = excludeBankHolidays,
       payPerSession = payPerSession,
       outsideWork = outsideWork,
@@ -201,15 +213,24 @@ class CourseActivityBuilder(
       courseActivity.courseScheduleRules += it
     }
 
+  private fun lookupLocationType(code: String) =
+    repository?.lookupInternalLocationType(code) ?: InternalLocationType(code, "Classroom")
+
   private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
-  private fun lookupAgencyInternalLocation(internalLocationId: Long, prisonId: String) = repository?.lookupAgencyInternalLocation(internalLocationId)
-    ?: AgencyInternalLocation(
-      locationId = internalLocationId,
-      active = true,
-      locationType = "CLAS",
-      agencyId = prisonId,
-      description = "Classroom 1",
-      locationCode = internalLocationId.toString(),
-    )
+
+  private fun lookupAgencyInternalLocation(
+    internalLocationId: Long,
+    locationType: InternalLocationType,
+    prison: AgencyLocation,
+  ) =
+    repository?.lookupAgencyInternalLocation(internalLocationId)
+      ?: AgencyInternalLocation(
+        locationId = internalLocationId,
+        active = true,
+        locationType = locationType,
+        agency = prison,
+        description = "Classroom 1",
+        locationCode = internalLocationId.toString(),
+      )
 }

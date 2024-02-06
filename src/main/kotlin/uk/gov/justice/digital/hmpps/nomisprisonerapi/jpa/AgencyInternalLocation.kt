@@ -11,6 +11,9 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.util.Objects
@@ -31,18 +34,30 @@ data class AgencyInternalLocation(
 
   @Column(name = "CERTIFIED_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val certifiedFlag: Boolean = false,
+  val certified: Boolean = false,
 
   @Column(name = "TRACKING_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val trackingFlag: Boolean = false,
+  val tracking: Boolean = false,
 
-  @Column(name = "INTERNAL_LOCATION_TYPE")
-  val locationType: String,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(value = "'${InternalLocationType.ILOC_TYPE}'", referencedColumnName = "domain"),
+      ),
+      JoinColumnOrFormula(
+        column = JoinColumn(name = "INTERNAL_LOCATION_TYPE", referencedColumnName = "code", nullable = false),
+      ),
+    ],
+  )
+  val locationType: InternalLocationType,
 
-  @Column(name = "AGY_LOC_ID")
-  val agencyId: String,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "AGY_LOC_ID", nullable = false)
+  val agency: AgencyLocation,
 
+  // calculated by trigger in Nomis
   @Column(name = "DESCRIPTION")
   val description: String,
 
@@ -59,14 +74,32 @@ data class AgencyInternalLocation(
   @Column(name = "USER_DESC")
   val userDescription: String? = null,
 
+  @Column(name = "COMMENT_TEXT")
+  val comment: String? = null,
+
   @Column(name = "INTERNAL_LOCATION_CODE")
   val locationCode: String,
 
-  @Column(name = "CAPACITY")
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(value = "'${HousingUnitType.HOU_UN_TYPE}'", referencedColumnName = "domain"),
+      ),
+      JoinColumnOrFormula(
+        column = JoinColumn(name = "UNIT_TYPE", referencedColumnName = "code", nullable = false),
+      ),
+    ],
+  )
+  val unitType: HousingUnitType? = null,
+
   val capacity: Int? = null,
 
   @Column(name = "LIST_SEQ")
   val listSequence: Int? = null,
+
+  @Column(name = "CNA_NO")
+  val cnaCapacity: Int? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {

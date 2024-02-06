@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
@@ -79,15 +80,16 @@ class ActivityServiceTest {
   )
 
   private val defaultPrison = AgencyLocation(PRISON_ID, PRISON_DESCRIPTION)
+  private val wrongPrison = AgencyLocation("WRONG_PRISON", PRISON_DESCRIPTION)
   private val defaultProgramService = ProgramService(
     programCode = PROGRAM_CODE,
     description = "desc",
     active = true,
   )
   private val defaultRoom = AgencyInternalLocation(
-    agencyId = PRISON_ID,
+    agency = defaultPrison,
     description = PRISON_DESCRIPTION,
-    locationType = "ROOM",
+    locationType = InternalLocationType("ROOM", "Room"),
     locationCode = "ROOM-1",
     locationId = ROOM_ID,
   )
@@ -267,7 +269,7 @@ class ActivityServiceTest {
 
     @Test
     fun `should throw if location in different prison`() {
-      whenever(agencyInternalLocationRepository.findById(anyLong())).thenReturn(Optional.of(defaultRoom.copy(agencyId = "WRONG_PRISON")))
+      whenever(agencyInternalLocationRepository.findById(anyLong())).thenReturn(Optional.of(defaultRoom.copy(agency = wrongPrison)))
 
       assertThatThrownBy {
         activityService.updateActivity(courseActivity.courseActivityId, updateRequest)

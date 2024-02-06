@@ -19,7 +19,7 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
-import org.hibernate.annotations.Where
+import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 
 @Entity
@@ -35,7 +35,7 @@ abstract class Address(
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
   open val noFixedAddressFlag: String = "N",
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-  @Where(clause = "OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
+  @SQLRestriction("OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
   open val phones: MutableList<AddressPhone> = ArrayList(),
 ) {
   @Id

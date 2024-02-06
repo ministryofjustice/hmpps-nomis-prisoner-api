@@ -1153,10 +1153,10 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.size()").isEqualTo(2)
         .jsonPath("$[0].offenderNo").isEqualTo("A1234AA")
         .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
         .jsonPath("$[1].offenderNo").isEqualTo("B1234BB")
         .jsonPath("$[1].courseActivityId").isEqualTo(courseActivity2.courseActivityId)
-        .jsonPath("$[1].courseActivityDescription").isEqualTo(courseActivity2.description)
+        .jsonPath("$[1].courseActivityDescription").isEqualTo(courseActivity2.description!!)
     }
   }
 
@@ -1243,7 +1243,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
         .jsonPath("$[0].incentiveLevel").isEqualTo("STD")
         .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
     }
 
     @Test
@@ -1280,7 +1280,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
         .jsonPath("$[0].incentiveLevel").isEqualTo("BAS")
         .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
     }
 
     @Test
@@ -1318,7 +1318,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
         .jsonPath("$[0].incentiveLevel").isEqualTo("STD")
         .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
     }
 
     @Test
@@ -1356,7 +1356,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
         .jsonPath("$[0].incentiveLevel").isEqualTo("STD")
         .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
     }
 
     @Test
@@ -1416,7 +1416,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].offenderNo").isEqualTo("B1234BB")
         .jsonPath("$[0].incentiveLevel").isEqualTo("BAS")
         .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
     }
   }
 

@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.SCHEDULED_APPROVED
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
@@ -70,6 +71,7 @@ class VisitService(
   private val visitTimeRepository: AgencyVisitTimeRepository,
   private val visitSlotRepository: AgencyVisitSlotRepository,
   private val internalLocationRepository: AgencyInternalLocationRepository,
+  private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -516,7 +518,7 @@ class VisitService(
         visitTime.startTime.format(
           DateTimeFormatter.ISO_TIME,
         )
-      } at ${vsipRoom.agencyId}",
+      } at ${vsipRoom.agency.id}",
     )
     return visitSlotRepository.save(
       AgencyVisitSlot(
@@ -539,20 +541,24 @@ class VisitService(
     userDescription: String,
   ): AgencyInternalLocation {
     log.info("Creating VSIP visit room: $roomDescription ($roomCode)")
+
+    val visitInternalLocationType = internalLocationTypeRepository.findByIdOrNull(InternalLocationType.VISIT)
+      ?: throw RuntimeException("VISIT location type not found")
+
     return internalLocationRepository.save(
       AgencyInternalLocation(
-        agencyId = location.id,
+        agency = location,
         parentLocation = parentLocation,
         description = roomDescription,
-        locationType = "VISIT",
+        locationType = visitInternalLocationType,
         locationCode = roomCode,
         active = true,
         userDescription = userDescription.uppercase(),
         capacity = 99,
         listSequence = 99,
-        trackingFlag = true,
+        tracking = true,
         currentOccupancy = 0,
-        certifiedFlag = false,
+        certified = false,
       ),
     )
   }
