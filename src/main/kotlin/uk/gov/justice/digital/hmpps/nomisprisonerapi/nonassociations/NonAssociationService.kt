@@ -161,6 +161,14 @@ class NonAssociationService(
       comment = dto.comment
     }
 
+    // Setting the expiry date is only a convenience for manual calling of the endpoint for data correction purposes,
+    // it is not a feature of synchronisation to NOMIS
+    dto.expiryDate?.also {
+      val expiryDate = if (it > LocalDate.parse("2999-01-01")) null else it
+      existing.expiryDate = expiryDate
+      otherExisting.expiryDate = expiryDate
+    }
+
     otherExisting.nonAssociation.nonAssociationReason = recipReason
     otherExisting.nonAssociation.recipNonAssociationReason = reason
 

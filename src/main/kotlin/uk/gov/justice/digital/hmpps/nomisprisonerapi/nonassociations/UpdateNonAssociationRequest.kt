@@ -27,4 +27,7 @@ data class UpdateNonAssociationRequest(
   @Schema(description = "Comment", example = "Some comment")
   @field:Size(max = 240, message = "Comment is too long (max allowed 240 characters)")
   val comment: String? = null,
+
+  @Schema(description = "Expiry date", example = "2024-08-12")
+  val expiryDate: LocalDate? = null,
 )

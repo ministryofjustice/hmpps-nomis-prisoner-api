@@ -718,6 +718,117 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         assertThat(nd.nonAssociation).isEqualTo(this)
       }
     }
+
+    @Test
+    fun `will update non-association expiry when required`() {
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                  "reason"        : "BUL",
+                  "recipReason"   : "VIC",
+                  "type"          : "LAND",
+                  "effectiveDate" : "2023-02-28",
+                  "expiryDate"    : "2024-01-01"
+                }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      // Check the database
+      repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.parse("2024-01-01"))
+      }
+      repository.getNonAssociation(offenderAtLeeds.id, offenderAtMoorlands.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.parse("2024-01-01"))
+      }
+
+      // Ensure it is unchanged if not provided in the dto
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                  "reason"        : "BUL",
+                  "recipReason"   : "VIC",
+                  "type"          : "LAND",
+                  "effectiveDate" : "2023-02-28"
+                }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      // Check the database
+      repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.parse("2024-01-01"))
+      }
+      repository.getNonAssociation(offenderAtLeeds.id, offenderAtMoorlands.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.parse("2024-01-01"))
+      }
+
+      // Now set back to null
+      webTestClient.put()
+        .uri(
+          "/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}",
+          offenderAtMoorlands.nomsId,
+          offenderAtLeeds.nomsId,
+          1,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                  "reason"        : "BUL",
+                  "recipReason"   : "VIC",
+                  "type"          : "LAND",
+                  "effectiveDate" : "2023-02-28",
+                  "expiryDate"    : "3000-01-01"
+                }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(offenderNonAssociationDetails.first().expiryDate).isNull()
+      }
+      repository.getNonAssociation(offenderAtLeeds.id, offenderAtMoorlands.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(offenderNonAssociationDetails.first().expiryDate).isNull()
+      }
+    }
   }
 
   @Nested
