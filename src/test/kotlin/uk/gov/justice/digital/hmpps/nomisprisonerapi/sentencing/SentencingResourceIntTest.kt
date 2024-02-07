@@ -1796,6 +1796,54 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `can refresh offender charge with court event charge if updating the latest appearance`() {
+        val courtAppearanceResponse =
+          webTestClient.put()
+            .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent2.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                updateCourtAppearanceRequest(
+                  courtEventChargesToUpdate = mutableListOf(
+                    createExistingOffenderChargeRequest(
+                      offenderChargeId = offenderCharge1.id,
+                      offenceDate = LocalDate.of(2022, 11, 5),
+                      offenceEndDate = LocalDate.of(2022, 11, 5),
+                      offenceCode = "RI64003",
+                      resultCode1 = "4508",
+                      offencesCount = 2,
+                    ),
+                  ),
+                ),
+              ),
+
+            )
+            .exchange()
+            .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-01-05T09:00:00")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2022-11-05")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2022-11-05")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RI64003")
+          .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").isEqualTo(2)
+          // updates underlying Offender charge including change of offence
+          .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RI64003")
+          .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2022-11-05")
+          .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2022-11-05")
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Using or letting out for riding or associated purposes horse etc likely to suffer thereby")
+          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("4508")
+          .jsonPath("offenderCharges[0].offencesCount").isEqualTo(2)
+      }
+
+      @Test
       fun `will track telemetry for the update`() {
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
