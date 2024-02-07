@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -64,6 +65,7 @@ class SentencingService(
   private val offenderChargeRepository: OffenderChargeRepository,
   private val courtEventRepository: CourtEventRepository,
   private val offenceResultCodeRepository: OffenceResultCodeRepository,
+  private val courtOrderRepository: CourtOrderRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -340,6 +342,7 @@ class SentencingService(
               courtAppearance.courtEventCharges.clear()
               courtAppearance.courtEventCharges.addAll(it)
             }
+          refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
         }
 
         courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().forEach {
@@ -378,6 +381,59 @@ class SentencingService(
       offencesCount = offenderChargeRequest.offencesCount
     }
   }
+
+  private fun refreshCourtOrder(
+    courtEvent: CourtEvent,
+    offenderNo: String,
+  ) {
+    courtEvent.courtEventCharges.find { charge -> charge.resultCode1?.resultRequiresACourtOrder() ?: false }?.let {
+      existingCourtOrder(courtEvent.offenderBooking, courtEvent) ?: let {
+        courtOrderRepository.save(
+          CourtOrder(
+            offenderBooking = courtEvent.offenderBooking,
+            courtCase = courtEvent.courtCase!!,
+            courtEvent = courtEvent,
+            orderType = "AUTO",
+            courtDate = courtEvent.eventDate,
+            issuingCourt = courtEvent.prison,
+          ),
+        )
+        telemetryClient.trackEvent(
+          "court-order-created",
+          mapOf(
+            "courtCaseId" to courtEvent.courtCase!!.id.toString(),
+            "bookingId" to courtEvent.offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to courtEvent.prison.id,
+            "courtEventId" to courtEvent.id.toString(),
+          ),
+          null,
+        )
+      }
+    } ?: let {
+      existingCourtOrder(courtEvent.offenderBooking, courtEvent)?.let { courtOrder ->
+        courtOrderRepository.delete(courtOrder)
+        telemetryClient.trackEvent(
+          "court-order-deleted",
+          mapOf(
+            "courtCaseId" to courtEvent.courtCase!!.id.toString(),
+            "bookingId" to courtEvent.offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to courtEvent.prison.id,
+            "courtEventId" to courtEvent.id.toString(),
+            "courtOrderId" to courtOrder.id.toString(),
+          ),
+          null,
+        )
+      }
+    }
+  }
+
+  fun OffenceResultCode.resultRequiresACourtOrder() =
+    this.chargeStatus == "A" && (this.dispositionCode == "P" || this.dispositionCode == "F")
+
+  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
+    courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
 
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus {
     return if (eventDate < booking.bookingBeginDate.toLocalDate()
