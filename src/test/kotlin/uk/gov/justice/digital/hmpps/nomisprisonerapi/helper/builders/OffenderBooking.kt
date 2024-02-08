@@ -7,11 +7,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
@@ -144,6 +146,20 @@ interface BookingDsl {
     dsl: CourtCaseDsl.() -> Unit = { },
   ): CourtCase
 
+  @OffenderAlertDslMarker
+  fun alert(
+    sequence: Long? = null,
+    alertCode: String = "XA",
+    typeCode: String = "X",
+    date: LocalDate = LocalDate.now(),
+    expiryDate: LocalDate? = null,
+    authorizePersonText: String? = null,
+    status: AlertStatus = AlertStatus.ACTIVE,
+    commentText: String? = null,
+    verifiedFlag: Boolean = false,
+    dsl: OffenderAlertDsl.() -> Unit = { },
+  ): OffenderAlert
+
   @OffenderExternalMovementDslMarker
   fun prisonTransfer(
     from: String = "BXI",
@@ -179,6 +195,7 @@ class BookingBuilderFactory(
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
+  private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -189,6 +206,7 @@ class BookingBuilderFactory(
     courtCaseBuilderFactory,
     offenderKeyDateAdjustmentBuilderFactory,
     offenderExternalMovementBuilderFactory,
+    offenderAlertBuilderFactory,
   )
 }
 
@@ -201,6 +219,7 @@ class BookingBuilder(
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
+  private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -411,6 +430,35 @@ class BookingBuilder(
         .also {
           builder.apply(dsl)
         }
+    }
+
+  override fun alert(
+    sequence: Long?,
+    alertCode: String,
+    typeCode: String,
+    date: LocalDate,
+    expiryDate: LocalDate?,
+    authorizePersonText: String?,
+    status: AlertStatus,
+    commentText: String?,
+    verifiedFlag: Boolean,
+    dsl: OffenderAlertDsl.() -> Unit,
+  ): OffenderAlert = offenderAlertBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking,
+        sequence,
+        alertCode,
+        typeCode,
+        date,
+        expiryDate,
+        authorizePersonText,
+        status,
+        commentText,
+        verifiedFlag,
+      ).also {
+        builder.apply(dsl)
+      }
     }
 
   override fun prisonTransfer(
