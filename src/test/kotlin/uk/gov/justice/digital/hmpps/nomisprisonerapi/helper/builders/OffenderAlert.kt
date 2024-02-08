@@ -85,7 +85,7 @@ class OffenderAlertBuilder(
       this.logs.add(
         WorkFlowLog(
           id = WorkFlowLogId(this, 1),
-          workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DataEntry),
+          workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DATA_ENTRY),
           workFlowStatus = DONE,
         ),
       )

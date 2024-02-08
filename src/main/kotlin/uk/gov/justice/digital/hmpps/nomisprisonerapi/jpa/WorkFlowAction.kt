@@ -9,9 +9,9 @@ class WorkFlowAction(code: String, description: String) : ReferenceCode(DOMAIN, 
 
   companion object {
     const val DOMAIN = "WRK_FLW_ACT"
-    const val DataEntry = "ENT"
-    const val Verification = "VER"
-    const val Modified = "MOD"
+    const val DATA_ENTRY = "ENT"
+    const val VERIFICATION = "VER"
+    const val MODIFIED = "MOD"
     fun pk(code: String): Pk = Pk(DOMAIN, code)
   }
 }
