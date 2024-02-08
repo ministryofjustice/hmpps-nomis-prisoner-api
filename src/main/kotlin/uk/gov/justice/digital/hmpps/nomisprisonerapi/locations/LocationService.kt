@@ -53,10 +53,13 @@ class LocationService(
     )
   }
 
-  fun getLocation(id: Long): LocationResponse {
-    return agencyInternalLocationRepository.findByIdOrNull(id)?.toLocationResponse()
+  fun getLocation(id: Long): LocationResponse =
+    agencyInternalLocationRepository.findByIdOrNull(id)?.toLocationResponse()
       ?: throw NotFoundException("Location with id=$id does not exist")
-  }
+
+  fun getLocationByKey(key: String): LocationResponse = agencyInternalLocationRepository.findOneByDescription(key)
+    .orElseThrow(NotFoundException("Location with business key=$key does not exist"))
+    .toLocationResponse()
 
   fun findIdsByFilter(pageRequest: Pageable): Page<LocationIdResponse> {
     log.info("Location Id request with page request $pageRequest")

@@ -228,7 +228,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class GetSpecificLocationById {
+  inner class GetLocationById {
 
     lateinit var location1: AgencyInternalLocation
 
@@ -308,6 +308,92 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     fun `access forbidden when no role`() {
       webTestClient.get().uri("/locations/{id}", location1.locationId)
         .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+  }
+
+  @Nested
+  inner class GetLocationByBusinessKey {
+
+    lateinit var location1: AgencyInternalLocation
+
+    @BeforeEach
+    internal fun createLocations() {
+      nomisDataBuilder.build {
+        location1 = agencyInternalLocation(
+          locationCode = "100",
+          locationType = "CELL",
+          prisonId = "MDI",
+          parentAgencyInternalLocationId = -2L,
+          capacity = 30,
+          operationalCapacity = 25,
+          cnaCapacity = 20,
+          userDescription = "user description",
+          listSequence = 100,
+          comment = "this is a key GET test!",
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      repository.delete(location1)
+    }
+
+    @Test
+    fun `get location by id`() {
+      webTestClient
+        .get().uri("/locations/key/{key}", location1.description)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.certified").isEqualTo(false)
+        .jsonPath("$.locationType").isEqualTo("CELL")
+        .jsonPath("$.prisonId").isEqualTo("MDI")
+        .jsonPath("$.parentLocationId").isEqualTo(-2L)
+        .jsonPath("$.operationalCapacity").isEqualTo(25)
+        .jsonPath("$.cnaCapacity").isEqualTo(20)
+        .jsonPath("$.description").isEqualTo("LEI-A-1-100")
+        .jsonPath("$.userDescription").isEqualTo("user description")
+        .jsonPath("$.locationCode").isEqualTo("100")
+        .jsonPath("$.capacity").isEqualTo(30)
+        .jsonPath("$.listSequence").isEqualTo(100)
+        .jsonPath("$.comment").isEqualTo("this is a key GET test!")
+    }
+
+    @Test
+    fun `get location by id not found`() {
+      webTestClient
+        .get().uri("/locations/key/doesnt-exist")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get locations prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get()
+          .uri("/locations/key/{key}", location1.description)
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.get().uri("/locations/key/{key}", location1.description)
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.get().uri("/locations/key/{key}", location1.description)
+        .headers(setAuthorisation(roles = emptyList()))
         .exchange()
         .expectStatus().isForbidden
     }
