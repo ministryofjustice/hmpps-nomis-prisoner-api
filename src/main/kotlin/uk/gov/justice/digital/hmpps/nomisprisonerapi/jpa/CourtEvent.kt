@@ -83,7 +83,7 @@ class CourtEvent(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  var prison: AgencyLocation,
+  var court: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "outcome_reason_code")

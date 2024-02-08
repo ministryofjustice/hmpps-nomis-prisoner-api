@@ -31,19 +31,19 @@ class IncidentPartyId(
 class IncidentParty(
 
   @EmbeddedId
-  val id: IncidentPartyId,
+  open val id: IncidentPartyId,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  open val comment: String? = null,
 
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
-  lateinit var createUsername: String
+  open lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
-  lateinit var createDatetime: LocalDateTime
+  open lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
