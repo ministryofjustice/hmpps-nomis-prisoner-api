@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -64,9 +65,13 @@ class SentencingService(
   private val offenderChargeRepository: OffenderChargeRepository,
   private val courtEventRepository: CourtEventRepository,
   private val offenceResultCodeRepository: OffenceResultCodeRepository,
+  private val courtOrderRepository: CourtOrderRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
+    private const val ACTIVE_CHARGE_STATUS = "A"
+    private const val PARTIAL_RESULT_CODE_INDICATOR = "P"
+    private const val FINAL_RESULT_CODE_INDICATOR = "F"
   }
 
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
@@ -126,7 +131,7 @@ class SentencingService(
                 courtAppearanceRequest.eventDateTime.toLocalDate(),
                 booking,
               ),
-              prison = lookupEstablishment(courtAppearanceRequest.courtId),
+              court = lookupEstablishment(courtAppearanceRequest.courtId),
               outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
               nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
               nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
@@ -212,7 +217,7 @@ class SentencingService(
           courtAppearanceRequest.eventDateTime.toLocalDate(),
           booking,
         ),
-        prison = lookupEstablishment(courtAppearanceRequest.courtId),
+        court = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
         nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
         nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
@@ -293,7 +298,7 @@ class SentencingService(
       booking,
     ),
     // if next event, we must have a specified court
-    prison = lookupEstablishment(request.nextCourtId!!),
+    court = lookupEstablishment(request.nextCourtId!!),
     directionCode = lookupDirectionType(DirectionType.OUT),
   )
 
@@ -304,7 +309,7 @@ class SentencingService(
     eventId: Long,
     request: UpdateCourtAppearanceRequest,
   ) {
-    findPrisoner(offenderNo).let {
+    findPrisoner(offenderNo).let { offender ->
       findCourtCase(caseId, offenderNo).let { courtCase ->
         findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
           courtAppearance.eventDate = request.eventDateTime.toLocalDate()
@@ -314,32 +319,16 @@ class SentencingService(
             request.eventDateTime.toLocalDate(),
             courtCase.offenderBooking,
           )
-          courtAppearance.prison = lookupEstablishment(request.courtId)
+          courtAppearance.court = lookupEstablishment(request.courtId)
           courtAppearance.outcomeReasonCode =
             request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
           // will get a separate update for a generated next event - so just updating these fields rather than the target appearance
           courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
           courtAppearance.nextEventStartTime = request.nextEventDateTime
 
-          val chargesToUpdateMap = request.courtEventChargesToUpdate.map { it.offenderChargeId to it }.toMap()
-          courtAppearance.courtEventCharges.filter { chargesToUpdateMap.contains(it.id.offenderCharge.id) }
-            .map { courtEventCharge ->
-              val offenderChargeRequest = chargesToUpdateMap.getValue(courtEventCharge.id.offenderCharge.id)
-              val resultCode = offenderChargeRequest.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
-              courtEventCharge.offenceDate = offenderChargeRequest.offenceDate
-              courtEventCharge.offenceEndDate = offenderChargeRequest.offenceEndDate
-              courtEventCharge.mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
-              courtEventCharge.offencesCount = offenderChargeRequest.offencesCount
-              courtEventCharge.resultCode1 = resultCode
-              courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
-              if (courtAppearance.isLatestAppearance()) {
-                refreshOffenderCharge(courtEventCharge, offenderChargeRequest, resultCode)
-              }
-              courtEventCharge
-            }.let {
-              courtAppearance.courtEventCharges.clear()
-              courtAppearance.courtEventCharges.addAll(it)
-            }
+          updateExistingCharges(chargesToUpdate = request.courtEventChargesToUpdate, courtAppearance)
+          createNewCharges(newCharges = request.courtEventChargesToCreate, offender, courtCase, courtAppearance)
+          refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
         }
 
         courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().forEach {
@@ -362,6 +351,68 @@ class SentencingService(
     }
   }
 
+  private fun updateExistingCharges(
+    chargesToUpdate: List<ExistingOffenderChargeRequest>,
+    courtAppearance: CourtEvent,
+  ) {
+    val chargesToUpdateMap = chargesToUpdate.map { it.offenderChargeId to it }.toMap()
+    courtAppearance.courtEventCharges.filter { chargesToUpdateMap.contains(it.id.offenderCharge.id) }
+      .map { courtEventCharge ->
+        val offenderChargeRequest = chargesToUpdateMap.getValue(courtEventCharge.id.offenderCharge.id)
+        val resultCode = offenderChargeRequest.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
+        courtEventCharge.offenceDate = offenderChargeRequest.offenceDate
+        courtEventCharge.offenceEndDate = offenderChargeRequest.offenceEndDate
+        courtEventCharge.mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
+        courtEventCharge.offencesCount = offenderChargeRequest.offencesCount
+        courtEventCharge.resultCode1 = resultCode
+        courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
+        if (courtAppearance.isLatestAppearance()) {
+          refreshOffenderCharge(courtEventCharge, offenderChargeRequest, resultCode)
+        }
+        courtEventCharge
+      }.let {
+        courtAppearance.courtEventCharges.clear()
+        courtAppearance.courtEventCharges.addAll(it)
+      }
+  }
+
+  private fun createNewCharges(
+    newCharges: List<OffenderChargeRequest>,
+    offender: Offender,
+    courtCase: CourtCase,
+    courtAppearance: CourtEvent,
+  ) {
+    newCharges.forEach { newCharge ->
+      val resultCode = newCharge.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
+      offenderChargeRepository.saveAndFlush(
+        OffenderCharge(
+          offenceDate = newCharge.offenceDate,
+          offenceEndDate = newCharge.offenceEndDate,
+          mostSeriousFlag = newCharge.mostSeriousFlag,
+          offencesCount = newCharge.offencesCount,
+          offenderBooking = offender.findLatestBooking(),
+          resultCode1 = resultCode,
+          resultCode1Indicator = resultCode?.dispositionCode,
+          chargeStatus = resultCode?.let { lookupChargeStatusType(it.chargeStatus) },
+          courtCase = courtCase,
+          offence = lookupOffence(newCharge.offenceCode),
+        ),
+      ).let { offenderCharge ->
+        CourtEventCharge(
+          id = CourtEventChargeId(offenderCharge = offenderCharge, courtEvent = courtAppearance),
+          offenceDate = newCharge.offenceDate,
+          offenceEndDate = newCharge.offenceEndDate,
+          mostSeriousFlag = newCharge.mostSeriousFlag,
+          offencesCount = newCharge.offencesCount,
+          resultCode1 = resultCode,
+          resultCode1Indicator = resultCode?.dispositionCode,
+        ).let {
+          courtAppearance.courtEventCharges.add(it)
+        }
+      }
+    }
+  }
+
   private fun SentencingService.refreshOffenderCharge(
     courtEventCharge: CourtEventCharge,
     offenderChargeRequest: ExistingOffenderChargeRequest,
@@ -371,13 +422,66 @@ class SentencingService(
       offenceDate = offenderChargeRequest.offenceDate
       offenceEndDate = offenderChargeRequest.offenceEndDate
       offence = lookupOffence(offenderChargeRequest.offenceCode)
-      resultCode1 = resultCode?.let { it }
+      resultCode1 = resultCode
       resultCode1Indicator = resultCode?.dispositionCode
       chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
       mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
       offencesCount = offenderChargeRequest.offencesCount
     }
   }
+
+  private fun refreshCourtOrder(
+    courtEvent: CourtEvent,
+    offenderNo: String,
+  ) {
+    if (courtEvent.courtEventCharges.any { charge -> charge.resultCode1?.resultRequiresACourtOrder() == true }) {
+      existingCourtOrder(courtEvent.offenderBooking, courtEvent) ?: let {
+        courtOrderRepository.save(
+          CourtOrder(
+            offenderBooking = courtEvent.offenderBooking,
+            courtCase = courtEvent.courtCase!!,
+            courtEvent = courtEvent,
+            orderType = "AUTO",
+            courtDate = courtEvent.eventDate,
+            issuingCourt = courtEvent.court,
+          ),
+        )
+        telemetryClient.trackEvent(
+          "court-order-created",
+          mapOf(
+            "courtCaseId" to courtEvent.courtCase!!.id.toString(),
+            "bookingId" to courtEvent.offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to courtEvent.court.id,
+            "courtEventId" to courtEvent.id.toString(),
+          ),
+          null,
+        )
+      }
+    } else {
+      existingCourtOrder(courtEvent.offenderBooking, courtEvent)?.let { courtOrder ->
+        courtOrderRepository.delete(courtOrder)
+        telemetryClient.trackEvent(
+          "court-order-deleted",
+          mapOf(
+            "courtCaseId" to courtEvent.courtCase!!.id.toString(),
+            "bookingId" to courtEvent.offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to courtEvent.court.id,
+            "courtEventId" to courtEvent.id.toString(),
+            "courtOrderId" to courtOrder.id.toString(),
+          ),
+          null,
+        )
+      }
+    }
+  }
+
+  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean =
+    this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
+
+  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
+    courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
 
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus {
     return if (eventDate < booking.bookingBeginDate.toLocalDate()
@@ -633,14 +737,14 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   eventStatus = this.eventStatus.toCodeDescription(),
   directionCode = this.directionCode?.toCodeDescription(),
   judgeName = this.judgeName,
-  courtId = this.prison.id,
+  courtId = this.court.id,
   outcomeReasonCode = this.outcomeReasonCode?.toCodeDescription(),
   commentText = this.commentText,
   orderRequestedFlag = this.orderRequestedFlag,
   holdFlag = this.holdFlag,
   nextEventRequestFlag = this.nextEventRequestFlag,
   nextEventDateTime = this.nextEventDate?.let {
-    this.nextEventStartTime.let {
+    this.nextEventStartTime?.let {
       LocalDateTime.of(
         this.nextEventDate,
         this.nextEventStartTime!!.toLocalTime(),
