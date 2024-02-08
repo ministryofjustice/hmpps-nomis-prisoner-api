@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -13,6 +14,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -32,11 +35,12 @@ class AlertsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class TestJPA {
     var bookingId = 0L
+    private lateinit var prisoner: Offender
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        offender(nomsId = "A1234AB") {
+        prisoner = offender(nomsId = "A1234AB") {
           bookingId = booking {
             alert { }
             alert(
@@ -55,8 +59,13 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+    }
+
     @Test
-    fun `can insert and read alerts`() {
+    fun `can insert and read alerts and associated workflow logs`() {
       repository.runInTransaction {
         val booking = offenderBookingRepository.findByIdOrNull(bookingId)
 
@@ -74,7 +83,19 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isNull()
           assertThat(verifiedFlag).isFalse()
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(createUserId).isEqualTo("SA")
+          assertThat(createUsername).isEqualTo("SA")
+
+          assertThat(workFlow).isNotNull
+          assertThat(workFlow?.logs).hasSize(1)
+          val log = workFlow?.logs?.first()!!
+          assertThat(log.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(log.createDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(log.workActionCode.code).isEqualTo("ENT")
+          assertThat(log.workActionCode.description).isEqualTo("Data Entry")
+          assertThat(log.workFlowStatus).isEqualTo(DONE)
+          assertThat(log.locateAgyLoc).isNull()
+          assertThat(log.workActionDate).isNull()
+          assertThat(log.createUsername).isEqualTo("SA")
         }
         with(booking.alerts.firstOrNull { it.id.sequence == 2L }!!) {
           assertThat(alertDate).isEqualTo(LocalDate.parse("2020-07-19"))
@@ -89,7 +110,10 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isEqualTo(LocalDate.parse("2025-07-19"))
           assertThat(verifiedFlag).isTrue()
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(createUserId).isEqualTo("SA")
+          assertThat(createUsername).isEqualTo("SA")
+
+          assertThat(workFlow).isNotNull
+          assertThat(workFlow?.logs).hasSize(1)
         }
       }
     }

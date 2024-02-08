@@ -10,6 +10,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.Generated
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDateTime
 
@@ -23,10 +24,11 @@ class IncidentPartyId(
 ) : Serializable
 
 @Entity
+@EntityOpen
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorFormula("case when staff_id is null then 'offender' else 'staff' end")
 @Table(name = "INCIDENT_CASE_PARTIES")
-open class IncidentParty(
+class IncidentParty(
 
   @EmbeddedId
   val id: IncidentPartyId,
