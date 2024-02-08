@@ -1796,6 +1796,49 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `can create new court event charges`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              updateCourtAppearanceRequest(
+                courtEventChargesToCreate = mutableListOf(
+                  createOffenderChargeRequest(offenceCode = "VM08085"),
+                ),
+              ),
+            ),
+
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-05T09:00:00")
+          .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(1)
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1067")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("VM08085")
+          // 2 from other court appearance and 1 new one
+          .jsonPath("offenderCharges.size()").isEqualTo(3)
+          .jsonPath("offenderCharges[2].offence.offenceCode").isEqualTo("VM08085")
+          .jsonPath("offenderCharges[2].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("offenderCharges[2].offenceEndDate").isEqualTo("2023-01-02")
+          .jsonPath("offenderCharges[2].resultCode1.code").isEqualTo("1067")
+          .jsonPath("offenderCharges[2].chargeStatus.code").isEqualTo("I")
+          .jsonPath("offenderCharges[2].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[2].offencesCount").isEqualTo(1)
+      }
+
+      @Test
       fun `can refresh offender charge with court event charge if updating the latest appearance`() {
         val courtAppearanceResponse =
           webTestClient.put()
@@ -2094,7 +2137,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class UpdateCourtAppearanceCourtEventChargeDeletionsSuccess {
+    inner class CortOrderCreationAndDeletionSuccess {
 
       @Test
       fun `changing a result to Final and Active will create a Court Order when none exists for the court appearance`() {

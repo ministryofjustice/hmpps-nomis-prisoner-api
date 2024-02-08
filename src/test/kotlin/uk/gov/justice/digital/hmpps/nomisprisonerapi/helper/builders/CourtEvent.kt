@@ -130,7 +130,7 @@ class CourtEventBuilder(
     courtEventType = repository.lookupCourtEventType(courtEventType),
     judgeName = judgeName,
     eventStatus = repository.lookupEventStatus(eventStatusCode),
-    prison = repository.lookupAgency(prison),
+    court = repository.lookupAgency(prison),
     outcomeReasonCode = outcomeReasonCode?.let { repository.lookupOffenceResultCode(outcomeReasonCode) },
     commentText = commentText,
     orderRequestedFlag = orderRequestedFlag,
