@@ -477,7 +477,7 @@ class SentencingService(
     }
   }
 
-  fun OffenceResultCode.resultRequiresACourtOrder() =
+  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean =
     this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
 
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
@@ -744,7 +744,7 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   holdFlag = this.holdFlag,
   nextEventRequestFlag = this.nextEventRequestFlag,
   nextEventDateTime = this.nextEventDate?.let {
-    this.nextEventStartTime.let {
+    this.nextEventStartTime?.let {
       LocalDateTime.of(
         this.nextEventDate,
         this.nextEventStartTime!!.toLocalTime(),
