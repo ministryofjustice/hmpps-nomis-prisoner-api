@@ -4,14 +4,14 @@ import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
-import jakarta.persistence.OneToOne
+import jakarta.persistence.ManyToOne
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 
 @Entity
 @EntityOpen
 @DiscriminatorValue(AlertWorkFlow.WORKFLOW_TYPE)
 class AlertWorkFlow(
-  @OneToOne
+  @ManyToOne
   @JoinColumns(
     value = [
       JoinColumn(

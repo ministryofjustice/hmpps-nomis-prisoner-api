@@ -11,7 +11,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -19,6 +19,7 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDate
@@ -92,8 +93,10 @@ class OffenderAlert(
   @Column(name = "CASELOAD_TYPE")
   val caseloadType: String = "INST",
 
-  @OneToOne(mappedBy = "alert", cascade = [CascadeType.ALL])
-  var workFlow: AlertWorkFlow? = null,
+  // this is more or less a one to one but there are handful alerts with
+  // no workflows and some with multiple workflows
+  @OneToMany(mappedBy = "alert", fetch = LAZY, cascade = [CascadeType.ALL])
+  var workFlows: MutableList<AlertWorkFlow> = mutableListOf(),
 
   // @Column(name = "CASELOAD_ID")  not used, always null
   // @Column(name = "CREATE_DATE") always null not used
@@ -138,6 +141,19 @@ class OffenderAlert(
   @Column(name = "AUDIT_ADDITIONAL_INFO", insertable = false, updatable = false)
   @Generated
   var auditAdditionalInfo: String? = null
+
+  fun addWorkFlowLog(workActionCode: WorkFlowAction, workFlowStatus: WorkFlowStatus = DONE): WorkFlow {
+    if (this.workFlows.isEmpty()) this.workFlows.add(AlertWorkFlow(this))
+    val workFlow = this.workFlows.first()
+    workFlow.logs.add(
+      WorkFlowLog(
+        id = WorkFlowLogId(workFlow, workFlow.nextSequence()),
+        workActionCode = workActionCode,
+        workFlowStatus = workFlowStatus,
+      ),
+    )
+    return workFlow
+  }
 }
 
 enum class AlertStatus {
