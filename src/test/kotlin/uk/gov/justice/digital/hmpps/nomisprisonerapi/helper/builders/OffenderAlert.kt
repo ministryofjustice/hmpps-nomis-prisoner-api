@@ -5,14 +5,13 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertWorkFlow
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlertId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlow
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowLog
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowLogId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAlertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -21,14 +20,22 @@ import java.time.LocalDate
 annotation class OffenderAlertDslMarker
 
 @NomisDataDslMarker
-interface OffenderAlertDsl
+interface OffenderAlertDsl {
+  @WorkFlowLogDslMarker
+  fun workFlowLog(
+    workActionCode: String,
+    workFlowStatus: WorkFlowStatus,
+    dsl: WorkFlowLogDsl.() -> Unit = {},
+  ): WorkFlowLog
+}
 
 @Component
 class OffenderAlertBuilderFactory(
   private val repository: OffenderAlertBuilderRepository,
+  private val workFlowLogBuilderFactory: WorkFlowLogBuilderFactory,
 ) {
   fun builder(): OffenderAlertBuilder {
-    return OffenderAlertBuilder(repository)
+    return OffenderAlertBuilder(repository, workFlowLogBuilderFactory)
   }
 }
 
@@ -54,7 +61,10 @@ class OffenderAlertBuilderRepository(
 
 class OffenderAlertBuilder(
   private val repository: OffenderAlertBuilderRepository,
+  private val workFlowLogBuilderFactory: WorkFlowLogBuilderFactory,
 ) : OffenderAlertDsl {
+  private lateinit var workFlow: WorkFlow
+  private lateinit var alert: OffenderAlert
 
   fun build(
     offenderBooking: OffenderBooking,
@@ -81,15 +91,22 @@ class OffenderAlertBuilder(
     commentText = commentText,
     verifiedFlag = verifiedFlag,
   ).apply {
-    workFlow = AlertWorkFlow(this).apply {
-      this.logs.add(
-        WorkFlowLog(
-          id = WorkFlowLogId(this, 1),
-          workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DATA_ENTRY),
-          workFlowStatus = DONE,
-        ),
-      )
-    }
+    workFlow = addWorkFlowLog(workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DATA_ENTRY))
   }
     .let { repository.save(it) }
+    .also { alert = it }
+
+  override fun workFlowLog(
+    workActionCode: String,
+    workFlowStatus: WorkFlowStatus,
+    dsl: WorkFlowLogDsl.() -> Unit,
+  ): WorkFlowLog = workFlowLogBuilderFactory.builder().let { builder ->
+    builder.build(
+      workFlow = workFlow,
+      workActionCode = workActionCode,
+      workFlowStatus = workFlowStatus,
+    )
+      .also { workFlow.logs += it }
+      .also { builder.apply(dsl) }
+  }
 }

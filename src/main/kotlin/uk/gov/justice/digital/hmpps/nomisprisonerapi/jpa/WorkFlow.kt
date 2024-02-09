@@ -12,9 +12,11 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
 
 @Entity(name = "WORK_FLOWS")
+@EntityOpen
 @DiscriminatorColumn(name = "OBJECT_CODE")
 @Inheritance
 abstract class WorkFlow(
@@ -47,4 +49,7 @@ abstract class WorkFlow(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+
+  fun highestSequence() = this.logs.maxOfOrNull { it.id.workFlowSeq } ?: 0
+  fun nextSequence() = this.highestSequence() + 1
 }

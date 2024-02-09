@@ -15,6 +15,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.COMP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDate
@@ -53,7 +55,10 @@ class AlertsResourceIntTest : IntegrationTestBase() {
               verifiedFlag = true,
               status = INACTIVE,
               commentText = "At risk",
-            ) { }
+            ) {
+              workFlowLog(workActionCode = WorkFlowAction.MODIFIED, workFlowStatus = DONE)
+              workFlowLog(workActionCode = WorkFlowAction.VERIFICATION, workFlowStatus = COMP)
+            }
           }.bookingId
         }
       }
@@ -85,9 +90,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(createUsername).isEqualTo("SA")
 
-          assertThat(workFlow).isNotNull
-          assertThat(workFlow?.logs).hasSize(1)
-          val log = workFlow?.logs?.first()!!
+          assertThat(workFlows).hasSize(1)
+          assertThat(workFlows[0].logs).hasSize(1)
+          val log = workFlows[0].logs.first()
           assertThat(log.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(log.createDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(log.workActionCode.code).isEqualTo("ENT")
@@ -112,8 +117,15 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(createUsername).isEqualTo("SA")
 
-          assertThat(workFlow).isNotNull
-          assertThat(workFlow?.logs).hasSize(1)
+          assertThat(workFlows).hasSize(1)
+          assertThat(workFlows[0].logs).hasSize(3)
+
+          assertThat(workFlows[0].logs[0].workActionCode.code).isEqualTo("ENT")
+          assertThat(workFlows[0].logs[0].workFlowStatus).isEqualTo(DONE)
+          assertThat(workFlows[0].logs[1].workActionCode.code).isEqualTo("MOD")
+          assertThat(workFlows[0].logs[1].workFlowStatus).isEqualTo(DONE)
+          assertThat(workFlows[0].logs[2].workActionCode.code).isEqualTo("VER")
+          assertThat(workFlows[0].logs[2].workFlowStatus).isEqualTo(COMP)
         }
       }
     }
