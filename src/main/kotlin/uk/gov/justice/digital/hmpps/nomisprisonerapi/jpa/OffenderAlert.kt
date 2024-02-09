@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Embeddable
@@ -10,6 +11,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -90,6 +92,9 @@ class OffenderAlert(
   @Column(name = "CASELOAD_TYPE")
   val caseloadType: String = "INST",
 
+  @OneToOne(mappedBy = "alert", cascade = [CascadeType.ALL])
+  var workFlow: AlertWorkFlow? = null,
+
   // @Column(name = "CASELOAD_ID")  not used, always null
   // @Column(name = "CREATE_DATE") always null not used
 ) {
@@ -104,7 +109,7 @@ class OffenderAlert(
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
-  lateinit var createUserId: String
+  lateinit var createUsername: String
 
   @Column(name = "AUDIT_TIMESTAMP", insertable = false, updatable = false)
   @Generated
