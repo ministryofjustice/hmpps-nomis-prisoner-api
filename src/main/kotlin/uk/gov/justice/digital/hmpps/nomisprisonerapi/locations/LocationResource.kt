@@ -68,7 +68,7 @@ class LocationResource(private val locationService: LocationService) {
     summary = "Get a location",
     description = "Get the location given the id. Requires role ROLE_NOMIS_LOCATIONS",
     responses = [
-      ApiResponse(responseCode = "200", description = "Non-association information"),
+      ApiResponse(responseCode = "200", description = "Location information"),
       ApiResponse(
         responseCode = "404",
         description = "No location exists for this id",
@@ -91,6 +91,36 @@ class LocationResource(private val locationService: LocationService) {
     @PathVariable
     id: Long,
   ): LocationResponse = locationService.getLocation(id)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @GetMapping("/locations/key/{key}")
+  @Operation(
+    summary = "Get a location",
+    description = "Get the location given the business key. Requires role ROLE_NOMIS_LOCATIONS",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Location information"),
+      ApiResponse(
+        responseCode = "404",
+        description = "No location exists for this id",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role ROLE_NOMIS_LOCATIONS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getLocationByKey(
+    @Parameter(description = "Location id", example = "LEI-B-3-014", required = true)
+    @PathVariable
+    key: String,
+  ): LocationResponse = locationService.getLocationByKey(key)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
   @GetMapping("/locations/ids")
