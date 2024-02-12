@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
@@ -13,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentStatusRepository
 import java.time.LocalDateTime
@@ -84,7 +86,9 @@ class IncidentBuilderFactory(
 class IncidentBuilderRepository(
   private val repository: IncidentRepository,
   val incidentStatusRepository: IncidentStatusRepository,
+  val agencyLocationRepository: AgencyLocationRepository,
 ) {
+  fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupIncidentStatusCode(code: String): IncidentStatus = incidentStatusRepository.findByIdOrNull(code)!!
   fun save(incident: Incident): Incident = repository.save(incident)
 }
@@ -101,6 +105,7 @@ class IncidentBuilder(
   fun build(
     title: String,
     description: String,
+    prisonId: String,
     reportingStaff: Staff,
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
@@ -110,6 +115,7 @@ class IncidentBuilder(
     Incident(
       title = title,
       description = description,
+      prison = repository.lookupAgency(prisonId),
       reportingStaff = reportingStaff,
       reportedDate = reportedDateTime.toLocalDate(),
       reportedTime = reportedDateTime.toLocalTime(),

@@ -40,6 +40,10 @@ data class Incident(
   @JoinColumn(nullable = false)
   val incidentType: String,
 
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "AGY_LOC_ID", nullable = false)
+  var prison: AgencyLocation,
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "QUESTIONNAIRE_ID", nullable = false)
   val questionnaire: Questionnaire,
