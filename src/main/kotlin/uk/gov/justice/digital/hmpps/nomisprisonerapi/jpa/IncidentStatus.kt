@@ -29,6 +29,9 @@ class IncidentStatus(
   @Column(name = "ENHANCED_USER_FLAG")
   @Convert(converter = YesNoConverter::class)
   val enhancedUser: Boolean = false,
+
+  // active flag - did not map as all Y = true
+  // expiry date - did not map as all null
 ) {
 
   override fun equals(other: Any?): Boolean {

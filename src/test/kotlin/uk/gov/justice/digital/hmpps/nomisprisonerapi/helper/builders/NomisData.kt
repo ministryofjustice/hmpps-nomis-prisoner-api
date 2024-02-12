@@ -153,6 +153,7 @@ class NomisData(
   override fun incident(
     title: String,
     description: String,
+    prisonId: String,
     reportingStaff: Staff,
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
@@ -165,6 +166,7 @@ class NomisData(
         builder.build(
           title = title,
           description = description,
+          prisonId = prisonId,
           reportingStaff = reportingStaff,
           reportedDateTime = reportedDateTime,
           incidentDateTime = incidentDateTime,
@@ -310,6 +312,7 @@ interface NomisDataDsl {
   fun incident(
     title: String = "An incident occurred",
     description: String = "Fighting and shouting occurred in the prisoner's cell and a chair was thrown.",
+    prisonId: String = "BXI",
     reportingStaff: Staff,
     reportedDateTime: LocalDateTime = LocalDateTime.parse("2024-01-02T09:30"),
     incidentDateTime: LocalDateTime = LocalDateTime.parse("2023-12-30T13:45"),

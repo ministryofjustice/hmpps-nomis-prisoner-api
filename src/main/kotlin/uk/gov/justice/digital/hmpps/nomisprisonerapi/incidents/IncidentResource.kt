@@ -138,6 +138,8 @@ data class IncidentResponse(
   val title: String?,
   @Schema(description = "The incident details")
   val description: String?,
+  @Schema(description = "Prison where the incident occurred")
+  val prison: CodeDescription,
 
   @Schema(description = "Current status code of the incident")
   val status: String,

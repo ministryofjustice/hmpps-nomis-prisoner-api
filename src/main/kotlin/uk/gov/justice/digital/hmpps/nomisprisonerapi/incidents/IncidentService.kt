@@ -47,6 +47,7 @@ class IncidentService(
       description = description,
       status = status.code,
       type = questionnaire.code,
+      prison = prison.toCodeDescription(),
       lockedResponse = lockedResponse,
       incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
       reportedStaff = reportingStaff.toStaff(),

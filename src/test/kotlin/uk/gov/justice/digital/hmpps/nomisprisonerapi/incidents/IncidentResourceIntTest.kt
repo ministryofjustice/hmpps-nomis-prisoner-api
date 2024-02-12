@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -14,8 +15,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireAnswer
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
 class IncidentResourceIntTest : IntegrationTestBase() {
@@ -40,72 +39,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   internal fun createIncidents() {
-    lateinit var question11: QuestionnaireQuestion
-    lateinit var question12: QuestionnaireQuestion
-    lateinit var question12Answer1: QuestionnaireAnswer
-    lateinit var question13: QuestionnaireQuestion
-    lateinit var question13Answer1: QuestionnaireAnswer
-    lateinit var question13Answer3: QuestionnaireAnswer
-
-    lateinit var question21: QuestionnaireQuestion
-    lateinit var question22: QuestionnaireQuestion
-    lateinit var question21Answer1: QuestionnaireAnswer
-    lateinit var question22Answer1: QuestionnaireAnswer
-    lateinit var question22Answer3: QuestionnaireAnswer
-
     nomisDataBuilder.build {
-      partyStaff1 = staff(firstName = "JIM", lastName = "PARTYSTAFF") {
-        account(username = "JIIMPARTYSTAFF")
-      }
-      reportingStaff1 = staff(firstName = "FRED", lastName = "STAFF") {
-        account(username = "FREDSTAFF")
-      }
-      reportingStaff2 = staff(firstName = "JANE", lastName = "STAFF") {
-        account(username = "JANESTAFF")
-      }
-      requirementRecordingStaff = staff(firstName = "PETER", lastName = "STAFF") {
-        account(username = "PETERSTAFF")
-      }
-      responseRecordingStaff = staff(firstName = "ALBERT", lastName = "STAFF") {
-        account(username = "ALBERTSTAFF")
-      }
-      questionnaire1 = questionnaire(code = "ESCAPE_EST", description = "Escape Questionnaire") {
-        val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?") {
-          questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds")
-        }
-        question13 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
-          question13Answer1 = questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question4)
-          questionnaireAnswer(answer = "Q3A2: Spade", nextQuestion = question4)
-          question13Answer3 = questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question4)
-        }
-        question12 = questionnaireQuestion(question = "Q2: Were tools used?") {
-          question12Answer1 = questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question13)
-          questionnaireAnswer(answer = "Q2A2: No")
-        }
-        question11 = questionnaireQuestion(question = "Q1: Were the police informed of the incident?") {
-          questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question12)
-          questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question12)
-        }
-      }
+      setUpStaffAndOffenders()
+      setUpQuestionnaires()
 
-      questionnaire2 = questionnaire(code = "FIRE", description = "Questionnaire for fire", active = false, listSequence = 2) {
-        val question23 = questionnaireQuestion(question = "Q23: Were prisoners involved?")
-        offenderRole("ESC")
-        offenderRole("FIGHT")
-        question22 = questionnaireQuestion(question = "Q22: Body parts injured") {
-          question22Answer1 = questionnaireAnswer(answer = "Q22A1: Arm", nextQuestion = question23)
-          questionnaireAnswer(answer = "Q22A2: Leg")
-          question22Answer3 = questionnaireAnswer(answer = "Q22A2: Head")
-        }
-        question21 = questionnaireQuestion(question = "Q21: Were staff involved?") {
-          question21Answer1 = questionnaireAnswer(answer = "Q21A1: Yes", nextQuestion = question22)
-          questionnaireAnswer(answer = "Q21A2: No")
-        }
-      }
-
-      offenderParty = offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
-        booking(agencyLocationId = "MDI")
-      }
       incident1 = incident(
         title = "Fight in the cell",
         description = "Offenders were injured and furniture was damaged.",
@@ -115,41 +52,88 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         staffParty(staff = partyStaff1, role = "WIT")
         staffParty(staff = reportingStaff2)
         offenderParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
+
         requirement("Update the name", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
         requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
 
-        history(questionnaire = questionnaire2, changeStaff = reportingStaff1) {
-          historyQuestion(question = question21) {
-            historyResponse(answer = question21Answer1, comment = "Lots of staff", recordingStaff = reportingStaff2)
-          }
-          historyQuestion(question = question22) {
-            historyResponse(answer = question22Answer1, comment = "A1 - Hurt Arm", recordingStaff = reportingStaff2)
-            historyResponse(answer = question22Answer3, comment = "A3 - Hurt Head", recordingStaff = reportingStaff2)
-          }
+        question(question = questionnaire1.questions[3])
+        question(question = questionnaire1.questions[2]) {
+          response(answer = questionnaire1.questions[2].answers[0], comment = "Multiple tools were found", recordingStaff = responseRecordingStaff)
+        }
+        question(question = questionnaire1.questions[1]) {
+          response(answer = questionnaire1.questions[1].answers[0], recordingStaff = responseRecordingStaff)
+          response(answer = questionnaire1.questions[1].answers[2], comment = "Large Crow bar", recordingStaff = responseRecordingStaff)
         }
 
-        question(question = question11)
-        question(question = question12) {
-          response(
-            answer = question12Answer1,
-            comment = "Multiple tools were found",
-            recordingStaff = responseRecordingStaff,
-          )
-        }
-        question(question = question13) {
-          response(
-            answer = question13Answer1,
-            recordingStaff = responseRecordingStaff,
-          )
-          response(
-            answer = question13Answer3,
-            comment = "Large Crow bar",
-            recordingStaff = responseRecordingStaff,
-          )
+        history(questionnaire = questionnaire2, changeStaff = reportingStaff1) {
+          historyQuestion(question = questionnaire2.questions[2]) {
+            historyResponse(answer = questionnaire2.questions[2].answers[0], comment = "Lots of staff", recordingStaff = reportingStaff2)
+          }
+          historyQuestion(question = questionnaire2.questions[1]) {
+            historyResponse(answer = questionnaire2.questions[1].answers[0], comment = "A1 - Hurt Arm", recordingStaff = reportingStaff2)
+            historyResponse(answer = questionnaire2.questions[1].answers[2], comment = "A3 - Hurt Head", recordingStaff = reportingStaff2)
+          }
         }
       }
       incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1)
       incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1)
+    }
+  }
+
+  fun NomisData.setUpStaffAndOffenders() {
+    partyStaff1 = staff(firstName = "JIM", lastName = "PARTYSTAFF") {
+      account(username = "JIIMPARTYSTAFF")
+    }
+    reportingStaff1 = staff(firstName = "FRED", lastName = "STAFF") {
+      account(username = "FREDSTAFF")
+    }
+    reportingStaff2 = staff(firstName = "JANE", lastName = "STAFF") {
+      account(username = "JANESTAFF")
+    }
+    requirementRecordingStaff = staff(firstName = "PETER", lastName = "STAFF") {
+      account(username = "PETERSTAFF")
+    }
+    responseRecordingStaff = staff(firstName = "ALBERT", lastName = "STAFF") {
+      account(username = "ALBERTSTAFF")
+    }
+    offenderParty = offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
+      booking(agencyLocationId = "MDI")
+    }
+  }
+
+  fun NomisData.setUpQuestionnaires() {
+    questionnaire1 = questionnaire(code = "ESCAPE_EST", description = "Escape Questionnaire") {
+      val question4 = questionnaireQuestion(question = "Q4: Any Damage amount?") {
+        questionnaireAnswer(answer = "Q4A1: Enter Damage Amount in Pounds")
+      }
+      val question13 = questionnaireQuestion(question = "Q3: What tools were used?", multipleAnswers = true) {
+        questionnaireAnswer(answer = "Q3A1: Wire cutters", nextQuestion = question4)
+        questionnaireAnswer(answer = "Q3A2: Spade", nextQuestion = question4)
+        questionnaireAnswer(answer = "Q3A3: Crow bar", nextQuestion = question4)
+      }
+      val question12 = questionnaireQuestion(question = "Q2: Were tools used?") {
+        questionnaireAnswer(answer = "Q2A1: Yes", nextQuestion = question13)
+        questionnaireAnswer(answer = "Q2A2: No")
+      }
+      questionnaireQuestion(question = "Q1: Were the police informed of the incident?") {
+        questionnaireAnswer(answer = "Q1A1: Yes", nextQuestion = question12)
+        questionnaireAnswer(answer = "Q1A2: No", nextQuestion = question12)
+      }
+    }
+
+    questionnaire2 = questionnaire(code = "FIRE", description = "Questionnaire for fire", active = false, listSequence = 2) {
+      val question23 = questionnaireQuestion(question = "Q23: Were prisoners involved?")
+      offenderRole("ESC")
+      offenderRole("FIGHT")
+      val question22 = questionnaireQuestion(question = "Q22: Body parts injured") {
+        questionnaireAnswer(answer = "Q22A1: Arm", nextQuestion = question23)
+        questionnaireAnswer(answer = "Q22A2: Leg")
+        questionnaireAnswer(answer = "Q22A2: Head")
+      }
+      questionnaireQuestion(question = "Q21: Were staff involved?") {
+        questionnaireAnswer(answer = "Q21A1: Yes", nextQuestion = question22)
+        questionnaireAnswer(answer = "Q21A2: No")
+      }
     }
   }
 
@@ -301,6 +285,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("description").isEqualTo("Offenders were injured and furniture was damaged.")
         .jsonPath("status").isEqualTo("AWAN")
         .jsonPath("type").isEqualTo("ESCAPE_EST")
+        .jsonPath("prison.code").isEqualTo("BXI")
+        .jsonPath("prison.description").isEqualTo("BRIXTON")
         .jsonPath("lockedResponse").isEqualTo(false)
         .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
         .jsonPath("reportedStaff.staffId").isEqualTo(reportingStaff1.id)
