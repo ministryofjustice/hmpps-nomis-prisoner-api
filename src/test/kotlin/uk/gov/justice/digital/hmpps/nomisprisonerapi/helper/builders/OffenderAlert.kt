@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
@@ -15,9 +16,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAlertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class OffenderAlertDslMarker
+
+@DslMarker
+annotation class OffenderAlertAuditDslMarker
 
 @NomisDataDslMarker
 interface OffenderAlertDsl {
@@ -27,6 +32,21 @@ interface OffenderAlertDsl {
     workFlowStatus: WorkFlowStatus,
     dsl: WorkFlowLogDsl.() -> Unit = {},
   ): WorkFlowLog
+
+  @OffenderAlertAuditDslMarker
+  fun audit(
+    createDatetime: LocalDateTime = LocalDateTime.now(),
+    createUsername: String = "SARAH.BEEKS",
+    modifyUserId: String? = null,
+    modifyDatetime: LocalDateTime? = null,
+    auditTimestamp: LocalDateTime? = LocalDateTime.now(),
+    auditUserId: String? = "SARAH.BEEKS",
+    auditModuleName: String? = "OCDALERT",
+    auditClientUserId: String? = "sarah.beeks",
+    auditClientIpAddress: String? = "10.1.1.23",
+    auditClientWorkstationName: String? = "APP",
+    auditAdditionalInfo: String? = null,
+  )
 }
 
 @Component
@@ -45,9 +65,60 @@ class OffenderAlertBuilderRepository(
   private val alertCodeRepository: ReferenceCodeRepository<AlertCode>,
   private val alertTypeRepository: ReferenceCodeRepository<AlertType>,
   private val workFlowActionRepository: ReferenceCodeRepository<WorkFlowAction>,
+  private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) {
   fun save(alert: OffenderAlert): OffenderAlert =
-    repository.save(alert)
+    repository.saveAndFlush(alert)
+
+  fun updateAudit(
+    id: OffenderAlertId,
+    createDatetime: LocalDateTime,
+    createUsername: String,
+    modifyUserId: String?,
+    modifyDatetime: LocalDateTime?,
+    auditTimestamp: LocalDateTime?,
+    auditUserId: String?,
+    auditModuleName: String?,
+    auditClientUserId: String?,
+    auditClientIpAddress: String?,
+    auditClientWorkstationName: String?,
+    auditAdditionalInfo: String?,
+  ) {
+    jdbcTemplate.update(
+      """
+      UPDATE OFFENDER_ALERTS 
+      SET 
+        CREATE_USER_ID = :createUsername, 
+        CREATE_DATETIME = :createDatetime,
+        MODIFY_USER_ID = :modifyUserId,
+        MODIFY_DATETIME = :modifyDatetime,
+        AUDIT_TIMESTAMP = :auditTimestamp,
+        AUDIT_USER_ID = :auditUserId,
+        AUDIT_MODULE_NAME = :auditModuleName,
+        AUDIT_CLIENT_USER_ID = :auditClientUserId,
+        AUDIT_CLIENT_IP_ADDRESS = :auditClientIpAddress,
+        AUDIT_CLIENT_WORKSTATION_NAME = :auditClientWorkstationName,
+        AUDIT_ADDITIONAL_INFO = :auditAdditionalInfo
+      WHERE OFFENDER_BOOK_ID = :bookingId 
+      AND ALERT_SEQ = :alertSequence
+      """,
+      mapOf(
+        "createUsername" to createUsername,
+        "createDatetime" to createDatetime,
+        "modifyUserId" to modifyUserId,
+        "modifyDatetime" to modifyDatetime,
+        "auditTimestamp" to auditTimestamp,
+        "auditUserId" to auditUserId,
+        "auditModuleName" to auditModuleName,
+        "auditClientUserId" to auditClientUserId,
+        "auditClientIpAddress" to auditClientIpAddress,
+        "auditClientWorkstationName" to auditClientWorkstationName,
+        "auditAdditionalInfo" to auditAdditionalInfo,
+        "bookingId" to id.offenderBooking.bookingId,
+        "alertSequence" to id.sequence,
+      ),
+    )
+  }
 
   fun lookupAlertCode(code: String): AlertCode =
     alertCodeRepository.findByIdOrNull(AlertCode.pk(code))!!
@@ -109,4 +180,31 @@ class OffenderAlertBuilder(
       .also { workFlow.logs += it }
       .also { builder.apply(dsl) }
   }
+
+  override fun audit(
+    createDatetime: LocalDateTime,
+    createUsername: String,
+    modifyUserId: String?,
+    modifyDatetime: LocalDateTime?,
+    auditTimestamp: LocalDateTime?,
+    auditUserId: String?,
+    auditModuleName: String?,
+    auditClientUserId: String?,
+    auditClientIpAddress: String?,
+    auditClientWorkstationName: String?,
+    auditAdditionalInfo: String?,
+  ) = repository.updateAudit(
+    id = alert.id,
+    createDatetime = createDatetime,
+    createUsername = createUsername,
+    modifyUserId = modifyUserId,
+    modifyDatetime = modifyDatetime,
+    auditTimestamp = auditTimestamp,
+    auditUserId = auditUserId,
+    auditModuleName = auditModuleName,
+    auditClientUserId = auditClientUserId,
+    auditClientIpAddress = auditClientIpAddress,
+    auditClientWorkstationName = auditClientWorkstationName,
+    auditAdditionalInfo = auditAdditionalInfo,
+  )
 }
