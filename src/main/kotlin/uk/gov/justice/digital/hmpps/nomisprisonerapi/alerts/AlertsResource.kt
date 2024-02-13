@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -84,6 +85,7 @@ class AlertsResource(
 }
 
 @Schema(description = "The data held in NOMIS about an alert associated with a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AlertResponse(
   @Schema(description = "The prisoner's bookingId related to this alert")
   val bookingId: Long,
@@ -110,6 +112,7 @@ data class AlertResponse(
 )
 
 @Schema(description = "The data held in NOMIS the person or system that created this record")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class NomisAudit(
   @Schema(description = "Date time record was created")
   val createDatetime: LocalDateTime,
