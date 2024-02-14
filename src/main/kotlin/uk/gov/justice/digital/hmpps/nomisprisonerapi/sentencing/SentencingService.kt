@@ -137,7 +137,7 @@ class SentencingService(
               nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
               directionCode = lookupDirectionType(DirectionType.OUT),
             ).also { courtEvent ->
-              courtAppearanceRequest.courtEventCharges.map { offenderChargeRequest ->
+              courtAppearanceRequest.courtEventChargesToCreate.map { offenderChargeRequest ->
                 val resultCode =
                   offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) } ?: courtEvent.outcomeReasonCode
                 // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
@@ -203,9 +203,8 @@ class SentencingService(
   fun createCourtAppearance(
     offenderNo: String,
     caseId: Long,
-    request: CreateCourtAppearanceRequest,
+    courtAppearanceRequest: CourtAppearanceRequest,
   ): CreateCourtAppearanceResponse = findPrisoner(offenderNo).findLatestBooking().let { booking ->
-    val courtAppearanceRequest = request.courtAppearance
     findCourtCase(caseId, offenderNo).let { courtCase ->
       val courtEvent = CourtEvent(
         offenderBooking = booking,
@@ -223,8 +222,9 @@ class SentencingService(
         nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
         directionCode = lookupDirectionType(DirectionType.OUT),
       ).also { courtEvent ->
-        request.existingOffenderChargeIds.map { offenderChargeId ->
-          getOffenderCharge(offenderChargeId).let { offenderCharge ->
+        // 'to update' in this context of a new appearance means that the offender charges exist (not the court event charges)
+        courtAppearanceRequest.courtEventChargesToUpdate.map { it ->
+          getOffenderCharge(it.offenderChargeId).let { offenderCharge ->
             val resultCode = offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
             courtEvent.courtEventCharges.add(
               CourtEventCharge(
@@ -242,6 +242,7 @@ class SentencingService(
             )
           }
         }
+        createNewCharges(newCharges = courtAppearanceRequest.courtEventChargesToCreate, booking, courtCase, courtEvent)
       }
       courtCase.courtEvents.add(
         courtEvent,
@@ -251,7 +252,7 @@ class SentencingService(
       var nextAppearanceId: Long? = null
       courtEvent.nextEventDate?.let {
         courtEvent.courtCase!!.courtEvents.add(
-          createNextCourtEvent(booking, courtEvent, request.courtAppearance).also { nextCourtEvent ->
+          createNextCourtEvent(booking, courtEvent, courtAppearanceRequest).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
             nextAppearanceId = courtEventRepository.saveAndFlush(nextCourtEvent).id
           },
@@ -307,7 +308,7 @@ class SentencingService(
     offenderNo: String,
     caseId: Long,
     eventId: Long,
-    request: UpdateCourtAppearanceRequest,
+    request: CourtAppearanceRequest,
   ) {
     findPrisoner(offenderNo).let { offender ->
       findCourtCase(caseId, offenderNo).let { courtCase ->
@@ -327,7 +328,7 @@ class SentencingService(
           courtAppearance.nextEventStartTime = request.nextEventDateTime
 
           updateExistingCharges(chargesToUpdate = request.courtEventChargesToUpdate, courtAppearance)
-          createNewCharges(newCharges = request.courtEventChargesToCreate, offender, courtCase, courtAppearance)
+          createNewCharges(newCharges = request.courtEventChargesToCreate, offender.findLatestBooking(), courtCase, courtAppearance)
           refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
         }
 
@@ -378,7 +379,7 @@ class SentencingService(
 
   private fun createNewCharges(
     newCharges: List<OffenderChargeRequest>,
-    offender: Offender,
+    offenderBooking: OffenderBooking,
     courtCase: CourtCase,
     courtAppearance: CourtEvent,
   ) {
@@ -390,7 +391,7 @@ class SentencingService(
           offenceEndDate = newCharge.offenceEndDate,
           mostSeriousFlag = newCharge.mostSeriousFlag,
           offencesCount = newCharge.offencesCount,
-          offenderBooking = offender.findLatestBooking(),
+          offenderBooking = offenderBooking,
           resultCode1 = resultCode,
           resultCode1Indicator = resultCode?.dispositionCode,
           chargeStatus = resultCode?.let { lookupChargeStatusType(it.chargeStatus) },
