@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.1"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.2"
   kotlin("plugin.spring") version "1.9.22"
   kotlin("plugin.jpa") version "1.9.22"
   idea
@@ -10,7 +10,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:0.0.5")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:0.0.6")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
@@ -22,13 +22,13 @@ dependencies {
 
   implementation("com.zaxxer:HikariCP:5.1.0")
   implementation("com.h2database:h2:2.2.224")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.21.0.0")
+  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.22.0.0")
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
 
   testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
-  testImplementation("io.jsonwebtoken:jjwt-impl:0.12.3")
-  testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.3")
+  testImplementation("io.jsonwebtoken:jjwt-impl:0.12.5")
+  testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.20") {
     exclude(group = "io.swagger.core.v3")
