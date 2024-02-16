@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -105,6 +106,9 @@ class AdjudicationService(
   private val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   private val telemetryClient: TelemetryClient,
 ) {
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
     adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {
@@ -1034,7 +1038,14 @@ class AdjudicationService(
       agencyInternalLocationRepository.findAgencyInternalLocationsByAgencyIdAndLocationType_CodeAndActive(
         agencyId = incidentCharge.incident.prison.id,
         locationType = "ADJU",
+        active = true,
       ).firstOrNull()
+        ?: agencyInternalLocationRepository.findAgencyInternalLocationsByAgencyIdAndLocationType_CodeAndActive(
+          agencyId = incidentCharge.incident.prison.id,
+          locationType = "ADJU",
+          active = false,
+        ).firstOrNull()
+          .also { log.warn("An active adjudication room (location type ADJU) not found at prison ${incidentCharge.incident.prison.id} so checking for any inactive rooms, assuming this prison is now closed") }
         ?: throw NotFoundException("Adjudication room (location type ADJU) not found at prison ${incidentCharge.incident.prison.id}")
 
     val dummyHearingIdentifier = "$DPS_REFERRAL_PLACEHOLDER_HEARING-$chargeSequence"
