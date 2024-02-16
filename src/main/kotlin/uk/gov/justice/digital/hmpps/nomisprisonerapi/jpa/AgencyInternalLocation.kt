@@ -16,6 +16,7 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
+import java.time.LocalDate
 import java.util.Objects
 
 @Entity
@@ -34,7 +35,7 @@ data class AgencyInternalLocation(
 
   @Column(name = "CERTIFIED_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val certified: Boolean = false,
+  var certified: Boolean = false,
 
   @Column(name = "TRACKING_FLAG")
   @Convert(converter = YesNoConverter::class)
@@ -51,7 +52,7 @@ data class AgencyInternalLocation(
       ),
     ],
   )
-  val locationType: InternalLocationType,
+  var locationType: InternalLocationType,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
@@ -59,26 +60,26 @@ data class AgencyInternalLocation(
 
   // calculated by trigger in Nomis
   @Column(name = "DESCRIPTION")
-  val description: String,
+  var description: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PARENT_INTERNAL_LOCATION_ID")
-  val parentLocation: AgencyInternalLocation? = null,
+  var parentLocation: AgencyInternalLocation? = null,
 
   @Column(name = "NO_OF_OCCUPANT")
   var currentOccupancy: Int? = null,
 
   @Column(name = "OPERATION_CAPACITY")
-  val operationalCapacity: Int? = null,
+  var operationalCapacity: Int? = null,
 
   @Column(name = "USER_DESC")
-  val userDescription: String? = null,
+  var userDescription: String? = null,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @Column(name = "INTERNAL_LOCATION_CODE")
-  val locationCode: String,
+  var locationCode: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumnsOrFormulas(
@@ -87,19 +88,35 @@ data class AgencyInternalLocation(
         formula = JoinFormula(value = "'${HousingUnitType.HOU_UN_TYPE}'", referencedColumnName = "domain"),
       ),
       JoinColumnOrFormula(
-        column = JoinColumn(name = "UNIT_TYPE", referencedColumnName = "code", nullable = false),
+        column = JoinColumn(name = "UNIT_TYPE", referencedColumnName = "code", nullable = true),
       ),
     ],
   )
-  val unitType: HousingUnitType? = null,
+  var unitType: HousingUnitType? = null,
 
-  val capacity: Int? = null,
+  var capacity: Int? = null,
 
   @Column(name = "LIST_SEQ")
-  val listSequence: Int? = null,
+  var listSequence: Int? = null,
 
   @Column(name = "CNA_NO")
-  val cnaCapacity: Int? = null,
+  var cnaCapacity: Int? = null,
+
+  var deactivateDate: LocalDate? = null,
+  var reactivateDate: LocalDate? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(value = "'${LivingUnitReason.LIV_UN_RSN}'", referencedColumnName = "domain"),
+      ),
+      JoinColumnOrFormula(
+        column = JoinColumn(name = "DEACTIVATE_REASON_CODE", referencedColumnName = "code", nullable = true),
+      ),
+    ],
+  )
+  var deactivateReason: LivingUnitReason? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {

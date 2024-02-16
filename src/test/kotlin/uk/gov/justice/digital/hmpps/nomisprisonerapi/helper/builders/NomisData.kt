@@ -230,6 +230,8 @@ class NomisData(
     userDescription: String?,
     listSequence: Int?,
     comment: String?,
+    deactivationDate: LocalDate?,
+    reactivationDate: LocalDate?,
     dsl: AgencyInternalLocationDsl.() -> Unit,
   ): AgencyInternalLocation =
     agencyInternalLocationBuilderFactory!!.builder()
@@ -245,6 +247,8 @@ class NomisData(
           userDescription = userDescription,
           listSequence = listSequence,
           comment = comment,
+          deactivationDate = deactivationDate,
+          reactivationDate = reactivationDate,
         )
           .also {
             builder.apply(dsl)
@@ -340,6 +344,8 @@ interface NomisDataDsl {
     userDescription: String? = null,
     listSequence: Int? = null,
     comment: String? = "comment",
+    deactivationDate: LocalDate? = null,
+    reactivationDate: LocalDate? = null,
     dsl: AgencyInternalLocationDsl.() -> Unit = {},
   ): AgencyInternalLocation
 }

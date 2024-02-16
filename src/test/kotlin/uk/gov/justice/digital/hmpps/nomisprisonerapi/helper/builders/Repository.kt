@@ -228,7 +228,9 @@ class Repository(
     adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
 
   fun delete(courtCase: CourtCase) = courtCaseRepository.deleteById(courtCase.id)
-  fun deleteOffenderChargeByBooking(bookingId: Long) = offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
+  fun deleteOffenderChargeByBooking(bookingId: Long) =
+    offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
+
   fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
 
   fun delete(questionnaire: Questionnaire) = questionnaireRepository.deleteById(questionnaire.id)
@@ -246,7 +248,8 @@ class Repository(
   fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
     sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
 
-  fun lookupSentenceCategory(code: String): SentenceCategoryType = sentenceCategoryTypeRepository.findByIdOrNull(Pk(SentenceCategoryType.CATEGORY, code))!!
+  fun lookupSentenceCategory(code: String): SentenceCategoryType =
+    sentenceCategoryTypeRepository.findByIdOrNull(Pk(SentenceCategoryType.CATEGORY, code))!!
 
   fun lookupSentenceAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
 
@@ -355,5 +358,6 @@ class Repository(
   fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
   fun delete(adjustment: OffenderSentenceAdjustment) = offenderSentenceAdjustmentRepository.delete(adjustment)
 
-  fun delete(agencyInternalLocation: AgencyInternalLocation) = agencyInternalLocationRepository.delete(agencyInternalLocation)
+  fun delete(agencyInternalLocation: AgencyInternalLocation) =
+    agencyInternalLocationRepository.delete(agencyInternalLocation)
 }

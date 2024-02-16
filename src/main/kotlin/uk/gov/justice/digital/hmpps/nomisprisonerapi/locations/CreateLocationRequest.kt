@@ -51,6 +51,10 @@ data class CreateLocationRequest(
   )
   val locationCode: String,
 
+  @Schema(description = "Full code hierarchy", example = "MDI-C-3-015")
+  @field:Size(max = 240, message = "description is too long (max allowed 240 characters)")
+  val description: String,
+
   @Schema(
     description = "Housing Unit type, Reference code (HOU_UN_TYPE)",
     allowableValues = ["HC", "HOLC", "NA", "OU", "REC", "SEG", "SPLC"],
@@ -89,6 +93,6 @@ data class CreateLocationRequest(
       listSequence = listSequence,
       cnaCapacity = cnaCapacity,
       comment = comment,
-      description = parent?.let { "${it.description}-$locationCode" } ?: locationCode,
+      description = description,
     )
 }

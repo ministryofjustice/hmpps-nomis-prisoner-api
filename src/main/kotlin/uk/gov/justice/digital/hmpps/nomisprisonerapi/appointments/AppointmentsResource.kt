@@ -49,7 +49,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
         responseCode = "201",
         description = "Appointment information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentResponse::class)),
         ],
       ),
       ApiResponse(
@@ -82,17 +82,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     description = "Updates an existing appointment. Requires role NOMIS_APPOINTMENTS",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
-        Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+        Content(mediaType = "application/json", schema = Schema(implementation = UpdateAppointmentRequest::class)),
       ],
     ),
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Success",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
-        ],
-      ),
+      ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
         responseCode = "404",
         description = "Event id does not exist",
@@ -129,13 +123,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     summary = "Cancels an existing appointment",
     description = "Cancels an existing appointment. Requires role NOMIS_APPOINTMENTS",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Success",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
-        ],
-      ),
+      ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
         responseCode = "404",
         description = "Event id does not exist",
@@ -165,13 +153,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     summary = "Undoes an appointment cancellation",
     description = "Undoes an appointment cancellation. Requires role NOMIS_APPOINTMENTS",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Success",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
-        ],
-      ),
+      ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
         responseCode = "404",
         description = "Event id does not exist",
@@ -202,10 +184,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     summary = "Deletes an existing appointment",
     description = "Deletes an existing appointment by actually deleting from the table. Intended for appointments created in error. Requires role NOMIS_APPOINTMENTS",
     responses = [
-      ApiResponse(
-        responseCode = "204",
-        description = "Success",
-      ),
+      ApiResponse(responseCode = "204", description = "Success"),
       ApiResponse(
         responseCode = "404",
         description = "Event id does not exist",
@@ -239,7 +218,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
         responseCode = "200",
         description = "Appointment information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = AppointmentResponse::class)),
         ],
       ),
       ApiResponse(
@@ -282,7 +261,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
         responseCode = "200",
         description = "Appointment information with created id",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = AppointmentResponse::class)),
         ],
       ),
       ApiResponse(
