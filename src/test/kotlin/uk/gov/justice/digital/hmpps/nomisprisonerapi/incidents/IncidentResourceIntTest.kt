@@ -156,7 +156,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /incidents/ids")
-  inner class GetQuestionnaireIds {
+  inner class GetIncidentIds {
     @Nested
     inner class Security {
       @Test
@@ -184,7 +184,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `get all question ids - no filter specified`() {
+    fun `get all incident ids - no filter specified`() {
       webTestClient.get().uri("/incidents/ids")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
