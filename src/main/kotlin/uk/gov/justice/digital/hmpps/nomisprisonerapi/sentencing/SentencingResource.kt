@@ -395,7 +395,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     caseId: Long,
     @RequestBody @Valid
-    request: CreateCourtAppearanceRequest,
+    request: CourtAppearanceRequest,
   ): CreateCourtAppearanceResponse =
     sentencingService.createCourtAppearance(offenderNo, caseId, request)
 
@@ -491,7 +491,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     eventId: Long,
     @RequestBody @Valid
-    request: UpdateCourtAppearanceRequest,
+    request: CourtAppearanceRequest,
   ) =
     sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 }
@@ -749,11 +749,11 @@ data class CourtAppearanceRequest(
   val courtId: String,
   val outcomeReasonCode: String?,
   val nextEventDateTime: LocalDateTime?,
-  // this will be used to populate OFFENDER_CHARGES and the link table COURT_EVENT_CHARGES
-  val courtEventCharges: List<OffenderChargeRequest>,
+  // update requests will also determine the offences to remove from the appearance
+  val courtEventChargesToUpdate: List<ExistingOffenderChargeRequest>,
+  val courtEventChargesToCreate: List<OffenderChargeRequest>,
   // nomis UI doesn't allow this during a create but DPS does
   val nextCourtId: String?,
-// val courtOrders: List<CourtOrderResponse>,
 
   /* not currently provided by sentencing service:
   val commentText: String?, no sign in new service
@@ -762,21 +762,6 @@ data class CourtAppearanceRequest(
   val directionCode: CodeDescription?,
   val judgeName: String?,
    */
-)
-
-@Schema(description = "Court Event")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class UpdateCourtAppearanceRequest(
-  val eventDateTime: LocalDateTime,
-  val courtEventType: String,
-  val courtId: String,
-  val outcomeReasonCode: String?,
-  val nextEventDateTime: LocalDateTime?,
-  // update requests will also determine the offences to remove from the appearance
-  val courtEventChargesToUpdate: List<ExistingOffenderChargeRequest>,
-  val courtEventChargesToCreate: List<OffenderChargeRequest>,
-  // nomis UI doesn't allow this during a create but DPS does
-  val nextCourtId: String?,
 )
 
 @Schema(description = "Court Event")

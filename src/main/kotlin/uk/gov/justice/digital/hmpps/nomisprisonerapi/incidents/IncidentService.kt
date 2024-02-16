@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncidentSpecification
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
@@ -36,9 +35,25 @@ class IncidentService(
 
   fun findIdsByFilter(pageRequest: Pageable, incidentFilter: IncidentFilter): Page<IncidentIdResponse> {
     log.info("Incident Id filter request : $incidentFilter with page request $pageRequest")
-    return incidentRepository.findAll(IncidentSpecification(incidentFilter), pageRequest)
-      .map { IncidentIdResponse(it.id) }
+    return findAllIds(
+      fromDate = incidentFilter.fromDate?.atStartOfDay(),
+      toDate = incidentFilter.toDate?.plusDays(1)?.atStartOfDay(),
+      pageRequest,
+    ).map { IncidentIdResponse(it) }
   }
+
+  fun findAllIds(
+    fromDate: LocalDateTime?,
+    toDate: LocalDateTime?,
+    pageRequest: Pageable,
+  ): Page<Long> =
+    if (fromDate == null && toDate == null) {
+      incidentRepository.findAllIncidentIds(pageRequest)
+    } else {
+      // optimisation: only do the complex SQL if we have a filter
+      // typically we won't when run in production
+      incidentRepository.findAllIncidentIds(fromDate, toDate, pageRequest)
+    }
 
   private fun Incident.toIncidentResponse(): IncidentResponse =
     IncidentResponse(
