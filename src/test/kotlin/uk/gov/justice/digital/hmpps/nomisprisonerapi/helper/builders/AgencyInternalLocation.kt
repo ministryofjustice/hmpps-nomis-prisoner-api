@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType.Co
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @DslMarker
 annotation class AgencyInternalLocationDslMarker
@@ -58,6 +59,8 @@ class AgencyInternalLocationBuilder(
     userDescription: String?,
     listSequence: Int?,
     comment: String?,
+    deactivationDate: LocalDate?,
+    reactivationDate: LocalDate?,
   ): AgencyInternalLocation {
     val parentLocation = parentAgencyInternalLocationId?.let { repository.lookupAgencyInternalLocation(it) }
     return AgencyInternalLocation(
@@ -66,7 +69,7 @@ class AgencyInternalLocationBuilder(
       tracking = false,
       locationType = repository.lookupInternalLocationType(locationType),
       agency = repository.lookupAgency(prisonId),
-      description = parentLocation?.let { "${it.description}-$locationCode" } ?: locationCode,
+      description = parentLocation?.let { "${it.description}-$locationCode" } ?: "$prisonId-$locationCode",
       parentLocation = parentLocation,
       currentOccupancy = null,
       operationalCapacity = operationalCapacity,
@@ -77,6 +80,8 @@ class AgencyInternalLocationBuilder(
       capacity = capacity,
       listSequence = listSequence,
       cnaCapacity = cnaCapacity,
+      deactivateDate = deactivationDate,
+      reactivateDate = reactivationDate,
     )
       .let { repository.save(it) }
       .also { agencyInternalLocation = it }
