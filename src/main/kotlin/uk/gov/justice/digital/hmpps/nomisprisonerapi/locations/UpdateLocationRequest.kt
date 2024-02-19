@@ -15,7 +15,7 @@ data class UpdateLocationRequest(
       "ADJU", "ADMI", "APP", "AREA", "ASSO", "BOOT", "BOX", "CELL",
       "CLAS", "EXER", "EXTE", "FAIT", "GROU", "HCEL", "HOLD", "IGRO",
       "INSI", "INTE", "LAND", "LOCA", "MEDI", "MOVE", "OFFI", "OUTS",
-      "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "STOR", "TABL",
+      "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "SPUR", "STOR", "TABL",
       "TRAI", "TRRM", "VIDE", "VISIT", "WING", "WORK",
     ],
   )
