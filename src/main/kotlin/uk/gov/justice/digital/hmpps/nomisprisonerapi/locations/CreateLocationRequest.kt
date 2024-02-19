@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 @Schema(description = "Location creation request")
 data class CreateLocationRequest(
 
-  @Schema(description = "Whether certified for use", required = false, example = "true", defaultValue = "false")
+  @Schema(description = "Whether certified for use", example = "true", defaultValue = "false")
   val certified: Boolean = false,
 
   @Schema(
@@ -22,7 +22,7 @@ data class CreateLocationRequest(
       "ADJU", "ADMI", "APP", "AREA", "ASSO", "BOOT", "BOX", "CELL",
       "CLAS", "EXER", "EXTE", "FAIT", "GROU", "HCEL", "HOLD", "IGRO",
       "INSI", "INTE", "LAND", "LOCA", "MEDI", "MOVE", "OFFI", "OUTS",
-      "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "STOR", "TABL",
+      "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "SPUR", "STOR", "TABL",
       "TRAI", "TRRM", "VIDE", "VISIT", "WING", "WORK",
     ],
   )
@@ -31,7 +31,7 @@ data class CreateLocationRequest(
   @Schema(description = "Prison code of the location", required = true, example = "LEI")
   val prisonId: String,
 
-  @Schema(description = "The containing location id", required = true, example = "1234567")
+  @Schema(description = "The containing location id", example = "1234567")
   val parentLocationId: Long? = null,
 
   @Schema(description = "Max capacity subject to resources", example = "43")
@@ -51,7 +51,7 @@ data class CreateLocationRequest(
   )
   val locationCode: String,
 
-  @Schema(description = "Full code hierarchy", example = "MDI-C-3-015")
+  @Schema(description = "Full code hierarchy", required = true, example = "MDI-C-3-015")
   @field:Size(max = 240, message = "description is too long (max allowed 240 characters)")
   val description: String,
 

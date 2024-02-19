@@ -15,13 +15,13 @@ data class UpdateLocationRequest(
       "ADJU", "ADMI", "APP", "AREA", "ASSO", "BOOT", "BOX", "CELL",
       "CLAS", "EXER", "EXTE", "FAIT", "GROU", "HCEL", "HOLD", "IGRO",
       "INSI", "INTE", "LAND", "LOCA", "MEDI", "MOVE", "OFFI", "OUTS",
-      "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "STOR", "TABL",
+      "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "SPUR", "STOR", "TABL",
       "TRAI", "TRRM", "VIDE", "VISIT", "WING", "WORK",
     ],
   )
   val locationType: String,
 
-  @Schema(description = "Full code hierarchy", example = "MDI-C-3-015")
+  @Schema(description = "Full code hierarchy", required = true, example = "MDI-C-3-015")
   @field:Size(max = 240, message = "description is too long (max allowed 240 characters)")
   val description: String,
 
