@@ -16,7 +16,7 @@ annotation class IncidentQuestionHistoryDslMarker
 interface IncidentQuestionHistoryDsl {
   @IncidentResponseHistoryDslMarker
   fun historyResponse(
-    answer: QuestionnaireAnswer,
+    answer: QuestionnaireAnswer? = null,
     comment: String? = null,
     recordingStaff: Staff,
     dsl: IncidentResponseHistoryDsl.() -> Unit = {},
@@ -47,7 +47,7 @@ class IncidentQuestionHistoryBuilder(
     .also { incidentQuestionHistory = it }
 
   override fun historyResponse(
-    answer: QuestionnaireAnswer,
+    answer: QuestionnaireAnswer?,
     comment: String?,
     recordingStaff: Staff,
     dsl: IncidentResponseHistoryDsl.() -> Unit,
