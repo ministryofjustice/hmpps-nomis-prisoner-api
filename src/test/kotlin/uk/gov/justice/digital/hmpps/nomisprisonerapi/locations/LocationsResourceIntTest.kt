@@ -464,6 +464,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           locationType = "MEDI",
           prisonId = "MDI",
           listSequence = 100,
+          active = false,
           deactivationDate = LocalDate.parse("2024-01-01"),
         )
       }
@@ -474,30 +475,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Location with id=${location1!!.locationId} is already deactivated")
-        }
-    }
-
-    @Test
-    fun `already deactivated but previously reactivated`() {
-      nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "MEDI",
-          locationType = "MEDI",
-          prisonId = "MDI",
-          listSequence = 100,
-          deactivationDate = LocalDate.parse("2024-02-01"),
-          reactivationDate = LocalDate.parse("2024-01-01"),
-        )
-      }
-      webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue("{}"))
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Location with id=${location1!!.locationId} is already deactivated")
+          assertThat(it).contains("Location with id=${location1!!.locationId} is already inactive")
         }
     }
 
@@ -543,61 +521,12 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
         assertThat(deactivateDate).isEqualTo(LocalDate.now())
         assertThat(deactivateReason).isNull()
+        assertThat(active).isFalse()
       }
     }
 
     @Test
-    fun `will deactivate location successfully when previously reactivated`() {
-      nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "MEDI",
-          locationType = "MEDI",
-          prisonId = "MDI",
-          listSequence = 100,
-          deactivationDate = LocalDate.parse("2024-02-01"),
-          reactivationDate = LocalDate.parse("2024-03-01"),
-        )
-      }
-      webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue("{}"))
-        .exchange()
-        .expectStatus().isOk
-
-      // Check the database
-      repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
-        assertThat(deactivateDate).isEqualTo(LocalDate.now())
-      }
-    }
-
-    @Test
-    fun `will deactivate location successfully when previously reactivated same day`() {
-      nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "MEDI",
-          locationType = "MEDI",
-          prisonId = "MDI",
-          listSequence = 100,
-          deactivationDate = LocalDate.parse("2024-03-01"),
-          reactivationDate = LocalDate.parse("2024-03-01"),
-        )
-      }
-      webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue("{}"))
-        .exchange()
-        .expectStatus().isOk
-
-      // Check the database
-      repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
-        assertThat(deactivateDate).isEqualTo(LocalDate.now())
-      }
-    }
-
-    @Test
-    fun `will deactivate location with reason`() {
+    fun `will deactivate location with reason and reactivate date`() {
       nomisDataBuilder.build {
         location1 = agencyInternalLocation(
           locationCode = "MEDI",
@@ -609,13 +538,14 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue("""{ "reasonCode" : "C" }"""))
+        .body(BodyInserters.fromValue("""{ "reasonCode" : "C", "reactivateDate" : "2024-02-27"}"""))
         .exchange()
         .expectStatus().isOk
 
       // Check the database
       repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
         assertThat(deactivateDate).isEqualTo(LocalDate.now())
+        assertThat(reactivateDate).isEqualTo(LocalDate.parse("2024-02-27"))
         assertThat(deactivateReason?.code).isEqualTo("C")
       }
     }
@@ -655,52 +585,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `already active but previously deactivated`() {
-      nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "MEDI",
-          locationType = "MEDI",
-          prisonId = "MDI",
-          listSequence = 100,
-          deactivationDate = LocalDate.parse("2024-02-01"),
-          reactivationDate = LocalDate.parse("2024-03-01"),
-        )
-      }
-      webTestClient.put().uri("/locations/{locationId}/reactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue("{}"))
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Location with id=${location1!!.locationId} is already active")
-        }
-    }
-
-    @Test
-    fun `already active but previously deactivated same day`() {
-      nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "MEDI",
-          locationType = "MEDI",
-          prisonId = "MDI",
-          listSequence = 100,
-          deactivationDate = LocalDate.parse("2024-02-01"),
-          reactivationDate = LocalDate.parse("2024-02-01"),
-        )
-      }
-      webTestClient.put().uri("/locations/{locationId}/reactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue("{}"))
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Location with id=${location1!!.locationId} is already active")
-        }
-    }
-
-    @Test
     fun `will reactivate location successfully`() {
       nomisDataBuilder.build {
         location1 = agencyInternalLocation(
@@ -708,6 +592,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           locationType = "MEDI",
           prisonId = "MDI",
           listSequence = 100,
+          active = false,
           deactivationDate = LocalDate.parse("2024-02-01"),
         )
       }
@@ -720,7 +605,10 @@ class LocationsResourceIntTest : IntegrationTestBase() {
 
       // Check the database
       repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
-        assertThat(reactivateDate).isEqualTo(LocalDate.now())
+        assertThat(reactivateDate).isNull()
+        assertThat(deactivateDate).isNull()
+        assertThat(deactivateReason).isNull()
+        assertThat(active).isTrue()
       }
     }
   }

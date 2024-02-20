@@ -10,7 +10,6 @@ data class UpdateLocationRequest(
 
   @Schema(
     description = "Whether a CELL, VISIT room, Kitchen etc (Ref type ILOC_TYPE)",
-    required = true,
     allowableValues = [
       "ADJU", "ADMI", "APP", "AREA", "ASSO", "BOOT", "BOX", "CELL",
       "CLAS", "EXER", "EXTE", "FAIT", "GROU", "HCEL", "HOLD", "IGRO",
@@ -21,7 +20,7 @@ data class UpdateLocationRequest(
   )
   val locationType: String,
 
-  @Schema(description = "Full code hierarchy", required = true, example = "MDI-C-3-015")
+  @Schema(description = "Full code hierarchy", example = "MDI-C-3-015")
   @field:Size(max = 240, message = "description is too long (max allowed 240 characters)")
   val description: String,
 
@@ -31,7 +30,6 @@ data class UpdateLocationRequest(
 
   @Schema(
     description = "Usually a number for a cell, a letter for a wing or landing. Used to calculate description",
-    required = true,
     example = "005",
   )
   val locationCode: String,
