@@ -230,6 +230,7 @@ class NomisData(
     userDescription: String?,
     listSequence: Int?,
     comment: String?,
+    active: Boolean,
     deactivationDate: LocalDate?,
     reactivationDate: LocalDate?,
     dsl: AgencyInternalLocationDsl.() -> Unit,
@@ -247,6 +248,7 @@ class NomisData(
           userDescription = userDescription,
           listSequence = listSequence,
           comment = comment,
+          active = active,
           deactivationDate = deactivationDate,
           reactivationDate = reactivationDate,
         )
@@ -344,6 +346,7 @@ interface NomisDataDsl {
     userDescription: String? = null,
     listSequence: Int? = null,
     comment: String? = "comment",
+    active: Boolean = true,
     deactivationDate: LocalDate? = null,
     reactivationDate: LocalDate? = null,
     dsl: AgencyInternalLocationDsl.() -> Unit = {},

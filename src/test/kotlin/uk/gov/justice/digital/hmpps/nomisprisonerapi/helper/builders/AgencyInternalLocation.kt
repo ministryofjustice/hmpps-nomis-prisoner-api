@@ -59,12 +59,13 @@ class AgencyInternalLocationBuilder(
     userDescription: String?,
     listSequence: Int?,
     comment: String?,
+    active: Boolean,
     deactivationDate: LocalDate?,
     reactivationDate: LocalDate?,
   ): AgencyInternalLocation {
     val parentLocation = parentAgencyInternalLocationId?.let { repository.lookupAgencyInternalLocation(it) }
     return AgencyInternalLocation(
-      active = true,
+      active = active,
       certified = true,
       tracking = false,
       locationType = repository.lookupInternalLocationType(locationType),

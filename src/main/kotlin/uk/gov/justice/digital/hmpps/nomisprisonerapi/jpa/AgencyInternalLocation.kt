@@ -31,7 +31,7 @@ data class AgencyInternalLocation(
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = false,
+  var active: Boolean = false,
 
   @Column(name = "CERTIFIED_FLAG")
   @Convert(converter = YesNoConverter::class)
