@@ -16,7 +16,7 @@ annotation class IncidentQuestionDslMarker
 interface IncidentQuestionDsl {
   @IncidentResponseDslMarker
   fun response(
-    answer: QuestionnaireAnswer,
+    answer: QuestionnaireAnswer? = null,
     comment: String? = null,
     recordingStaff: Staff,
     dsl: IncidentResponseDsl.() -> Unit = {},
@@ -48,7 +48,7 @@ class IncidentQuestionBuilder(
     .also { incidentQuestion = it }
 
   override fun response(
-    answer: QuestionnaireAnswer,
+    answer: QuestionnaireAnswer?,
     comment: String?,
     recordingStaff: Staff,
     dsl: IncidentResponseDsl.() -> Unit,

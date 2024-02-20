@@ -75,7 +75,18 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           }
         }
       }
-      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1)
+      // Incident and incident history with missing questionnaire answer - to mimic Nomis data
+      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1) {
+        question(question = questionnaire1.questions[1]) {
+          response(recordingStaff = responseRecordingStaff, comment = "Hammer")
+          response(answer = questionnaire1.questions[1].answers[2], comment = "Large Crow bar", recordingStaff = responseRecordingStaff)
+        }
+        history(questionnaire = questionnaire2, changeStaff = reportingStaff1) {
+          historyQuestion(question = questionnaire2.questions[2]) {
+            historyResponse(comment = "one staff", recordingStaff = reportingStaff2)
+          }
+        }
+      }
       incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1)
     }
   }
@@ -382,6 +393,22 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `will return incident responses for an incident with missing questionnaire answers - Nomis missing data test`() {
+      webTestClient.get().uri("/incidents/${incident2.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("questions.length()").isEqualTo(1)
+        .jsonPath("id").isEqualTo(incident2.id)
+        .jsonPath("questions[0].question").isEqualTo("Q3: What tools were used?")
+        .jsonPath("questions[0].answers[0].answer").doesNotExist()
+        .jsonPath("questions[0].answers[0].comment").isEqualTo("Hammer")
+        .jsonPath("questions[0].answers[1].answer").isEqualTo("Q3A3: Crow bar")
+        .jsonPath("questions[0].answers[1].comment").isEqualTo("Large Crow bar")
+    }
+
+    @Test
     fun `will return incident history for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
@@ -424,6 +451,21 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("history[0].questions[1].answers[0].comment").isEqualTo("A1 - Hurt Arm")
         .jsonPath("history[0].questions[1].answers[1].answer").isEqualTo("Q22A2: Head")
         .jsonPath("history[0].questions[1].answers[1].comment").isEqualTo("A3 - Hurt Head")
+    }
+
+    @Test
+    fun `will return incident history responses with missing questionnaire answers - Nomis missing data test`() {
+      webTestClient.get().uri("/incidents/${incident2.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(incident2.id)
+        .jsonPath("history[0].questionnaire").isEqualTo("FIRE")
+        .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
+        .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
+        .jsonPath("history[0].questions[0].answers[0].answer").doesNotExist()
+        .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("one staff")
     }
   }
 }

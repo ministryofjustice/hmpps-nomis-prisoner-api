@@ -23,7 +23,7 @@ class IncidentResponseBuilder :
 
   fun build(
     incidentQuestion: IncidentQuestion,
-    answer: QuestionnaireAnswer,
+    answer: QuestionnaireAnswer?,
     answerSequence: Int,
     comment: String?,
     recordingStaff: Staff,

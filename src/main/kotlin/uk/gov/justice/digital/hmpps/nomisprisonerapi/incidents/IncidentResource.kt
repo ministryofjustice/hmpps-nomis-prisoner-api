@@ -242,9 +242,9 @@ data class Question(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Response(
   @Schema(description = "The id of the answer")
-  val id: Long,
+  val id: Long?,
   @Schema(description = "The answer text")
-  val answer: String,
+  val answer: String?,
   @Schema(description = "Comment added to the response by recording staff")
   val comment: String?,
 )
@@ -276,7 +276,7 @@ data class HistoryResponse(
   @Schema(description = "The sequence number of the answer")
   val sequence: Int,
   @Schema(description = "The answer text")
-  val answer: String,
+  val answer: String?,
   @Schema(description = "Comment added to the response by recording staff")
   val comment: String?,
 )
