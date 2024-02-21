@@ -48,7 +48,7 @@ data class IncidentResponseHistory(
   @EmbeddedId
   val id: IncidentResponseHistoryId,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "QUESTIONNAIRE_ANS_ID", updatable = false)
   val answer: QuestionnaireAnswer?,
 
