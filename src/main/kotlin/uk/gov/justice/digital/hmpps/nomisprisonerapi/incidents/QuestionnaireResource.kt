@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(value = ["/questionnaires"], produces = [MediaType.APPLICATION_JSON_VALUE])
-class IncidentQuestionnaireResource(private val incidentQuestionnaireService: QuestionnaireService) {
+class QuestionnaireResource(private val questionnaireService: QuestionnaireService) {
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/ids")
@@ -75,7 +75,7 @@ class IncidentQuestionnaireResource(private val incidentQuestionnaireService: Qu
     )
     toDate: LocalDate?,
   ): Page<QuestionnaireIdResponse> =
-    incidentQuestionnaireService.findIdsByFilter(
+    questionnaireService.findIdsByFilter(
       pageRequest = pageRequest,
       QuestionnaireFilter(
         toDate = toDate,
@@ -125,7 +125,7 @@ class IncidentQuestionnaireResource(private val incidentQuestionnaireService: Qu
   )
   fun getQuestionnaire(
     @Schema(description = "Incident Questionnaire id") @PathVariable questionnaireId: Long,
-  ) = incidentQuestionnaireService.getQuestionnaire(questionnaireId)
+  ) = questionnaireService.getQuestionnaire(questionnaireId)
 }
 
 @Schema(description = "Questionnaire")

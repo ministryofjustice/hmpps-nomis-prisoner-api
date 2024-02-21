@@ -46,8 +46,8 @@ data class IncidentResponse(
   val id: IncidentResponseId,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "QUESTIONNAIRE_ANS_ID", updatable = false, nullable = false)
-  val answer: QuestionnaireAnswer,
+  @JoinColumn(name = "QUESTIONNAIRE_ANS_ID", updatable = false)
+  val answer: QuestionnaireAnswer?,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RECORD_STAFF_ID", updatable = false, nullable = false)
@@ -86,6 +86,6 @@ data class IncidentResponse(
 
   @Override
   override fun toString(): String {
-    return this::class.simpleName + "(id = $id ), ${answer.answerText})"
+    return this::class.simpleName + "(id = $id ), ${answer?.answerText})"
   }
 }

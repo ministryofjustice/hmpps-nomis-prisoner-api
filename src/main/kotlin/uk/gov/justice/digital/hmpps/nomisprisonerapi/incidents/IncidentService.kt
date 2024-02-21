@@ -89,8 +89,8 @@ private fun IncidentQuestion.toQuestionResponse() =
     question = question.questionText,
     answers = responses.map { response ->
       Response(
-        id = response.answer.id,
-        answer = response.answer.answerText,
+        id = response.answer?.id,
+        answer = response.answer?.answerText,
         comment = response.comment,
       )
     },
@@ -108,7 +108,7 @@ private fun IncidentHistory.toHistoryResponse() =
         answers = question.responses.map { response ->
           HistoryResponse(
             response.id.responseHistorySequence,
-            response.answer.answerText,
+            response.answer?.answerText,
             response.comment,
           )
         },

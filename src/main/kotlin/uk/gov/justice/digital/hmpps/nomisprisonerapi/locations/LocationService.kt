@@ -115,10 +115,8 @@ class LocationService(
     val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
-    if (location.deactivateDate != null) {
-      if (location.reactivateDate == null || location.reactivateDate!!.isBefore(location.deactivateDate)) {
-        throw BadDataException("Location with id=$locationId is already deactivated")
-      }
+    if (!location.active) {
+      throw BadDataException("Location with id=$locationId is already inactive")
     }
 
     location.deactivateDate = LocalDate.now()
@@ -126,6 +124,8 @@ class LocationService(
       livingUnitReasonRepository.findByIdOrNull(LivingUnitReason.pk(it))
         ?: throw BadDataException("Deactivate Reason code=$it does not exist")
     }
+    location.reactivateDate = deactivateRequest.reactivateDate
+    location.active = false
 
     telemetryClient.trackEvent(
       "location-deactivated",
@@ -142,12 +142,13 @@ class LocationService(
     val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
-    if (location.deactivateDate == null ||
-      (location.reactivateDate != null && !location.reactivateDate!!.isBefore(location.deactivateDate))
-    ) {
+    if (location.active) {
       throw BadDataException("Location with id=$locationId is already active")
     }
-    location.reactivateDate = LocalDate.now()
+    location.deactivateDate = null
+    location.deactivateReason = null
+    location.reactivateDate = null
+    location.active = true
 
     telemetryClient.trackEvent(
       "location-reactivated",

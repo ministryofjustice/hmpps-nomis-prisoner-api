@@ -50,7 +50,7 @@ data class IncidentResponseHistory(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "QUESTIONNAIRE_ANS_ID", updatable = false)
-  val answer: QuestionnaireAnswer,
+  val answer: QuestionnaireAnswer?,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RECORD_STAFF_ID", updatable = false, nullable = false)
