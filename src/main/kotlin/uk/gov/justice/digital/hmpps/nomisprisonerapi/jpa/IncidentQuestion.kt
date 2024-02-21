@@ -5,12 +5,13 @@ import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Generated
 import java.io.Serializable
 import java.time.LocalDateTime
@@ -31,11 +32,12 @@ data class IncidentQuestion(
   @EmbeddedId
   val id: IncidentQuestionId,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "QUESTIONNAIRE_QUE_ID", updatable = false, nullable = false)
   val question: QuestionnaireQuestion,
 
   @OneToMany(mappedBy = "id.incidentQuestion", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
   val responses: MutableList<IncidentResponse> = mutableListOf(),
 
   @Column

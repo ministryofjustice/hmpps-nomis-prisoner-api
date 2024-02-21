@@ -11,6 +11,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
@@ -33,11 +35,12 @@ data class IncidentQuestionHistory(
   @EmbeddedId
   val id: IncidentQuestionHistoryId,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "QUESTIONNAIRE_QUE_ID", updatable = false, nullable = false)
   val question: QuestionnaireQuestion,
 
   @OneToMany(mappedBy = "id.incidentQuestion", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
   val responses: MutableList<IncidentResponseHistory> = mutableListOf(),
 
   @Column
