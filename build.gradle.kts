@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.2"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.3"
   kotlin("plugin.spring") version "1.9.22"
   kotlin("plugin.jpa") version "1.9.22"
   idea
@@ -9,8 +9,10 @@ configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
 }
 
+ext["hibernate.version"] = "6.4.2.Final"
+
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:0.1.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:0.1.2")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
