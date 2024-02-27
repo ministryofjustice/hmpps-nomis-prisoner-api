@@ -11,11 +11,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsageLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LivingUnitReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.InternalLocationUsageRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -27,6 +31,7 @@ class LocationService(
   private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>,
   private val housingUnitTypeRepository: ReferenceCodeRepository<HousingUnitType>,
   private val livingUnitReasonRepository: ReferenceCodeRepository<LivingUnitReason>,
+  private val internalLocationUsageRepository: InternalLocationUsageRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -44,7 +49,7 @@ class LocationService(
     }
 
     val agency = agencyLocationRepository.findByIdOrNull(locationDto.prisonId)
-      ?: throw BadDataException("Agency with id=${locationDto.prisonId} does not exist")
+      ?: throw BadDataException("Prison with id=${locationDto.prisonId} does not exist")
 
     val parent = locationDto.parentLocationId?.let {
       agencyInternalLocationRepository.findByIdOrNull(it)
@@ -55,6 +60,9 @@ class LocationService(
       agencyInternalLocationRepository.save(
         locationDto.toAgencyInternalLocation(locationType, housingUnitType, agency, parent),
       ).also {
+        saveProfiles(it, locationDto.profiles)
+        saveUsages(it, locationDto.usages)
+
         telemetryClient.trackEvent(
           "location-created",
           mapOf(
@@ -87,9 +95,6 @@ class LocationService(
     }
 
     location.apply {
-      description =
-        location.parentLocation?.let { "${location.parentLocation!!.description}-${locationDto.locationCode}" }
-          ?: locationDto.locationCode
       locationType = internalLocationType
       description = locationDto.description
       userDescription = locationDto.userDescription
@@ -98,6 +103,9 @@ class LocationService(
       listSequence = locationDto.listSequence
       comment = locationDto.comment
       unitType = housingUnitType
+
+      saveProfiles(this, locationDto.profiles)
+      saveUsages(this, locationDto.usages)
     }.also {
       telemetryClient.trackEvent(
         "location-updated",
@@ -119,7 +127,7 @@ class LocationService(
       throw BadDataException("Location with id=$locationId is already inactive")
     }
 
-    location.deactivateDate = LocalDate.now()
+    location.deactivateDate = deactivateRequest.deactivateDate ?: LocalDate.now()
     location.deactivateReason = deactivateRequest.reasonCode?.let {
       livingUnitReasonRepository.findByIdOrNull(LivingUnitReason.pk(it))
         ?: throw BadDataException("Deactivate Reason code=$it does not exist")
@@ -216,6 +224,86 @@ class LocationService(
     log.info("Location Id request with page request $pageRequest")
     return agencyInternalLocationRepository.findAll(pageRequest)
       .map { LocationIdResponse(it.locationId) }
+  }
+
+  private fun saveProfiles(
+    agencyInternalLocation: AgencyInternalLocation,
+    profiles: List<ProfileRequest>?,
+  ) {
+    agencyInternalLocation.profiles.removeIf { profile ->
+      profiles == null || profiles.none { it.profileType == profile.id.profileType && it.profileCode == profile.id.profileCode }
+    }
+    profiles?.forEach { profileRequest ->
+      // TODO: How to validate profileType and profileCode ? Enum?
+      val profile = findExistingProfile(agencyInternalLocation, profileRequest)
+      if (profile == null) {
+        agencyInternalLocation.profiles.add(
+          AgencyInternalLocationProfile(
+            AgencyInternalLocationProfileId(
+              locationId = agencyInternalLocation.locationId,
+              profileType = profileRequest.profileType,
+              profileCode = profileRequest.profileCode,
+            ),
+            agencyInternalLocation = agencyInternalLocation,
+          ),
+        )
+      }
+    }
+  }
+
+  private fun saveUsages(
+    agencyInternalLocation: AgencyInternalLocation,
+    usages: List<UsageRequest>?,
+  ) {
+    agencyInternalLocation.usages.removeIf { usage ->
+      usages == null || usages.none {
+        it.internalLocationUsageType == usage.internalLocationUsage.internalLocationUsage &&
+          it.usageLocationType == usage.usageLocationType?.code
+      }
+    }
+    usages?.forEach { usageRequest ->
+      val usage = findExistingUsage(agencyInternalLocation, usageRequest)
+      if (usage == null) {
+        agencyInternalLocation.usages.add(
+          InternalLocationUsageLocation(
+            internalLocationUsage = internalLocationUsageRepository.findOneByAgency_IdAndInternalLocationUsage(
+              agencyInternalLocation.agency.id, usageRequest.internalLocationUsageType,
+            )
+              ?: throw BadDataException("Internal location usage with code=${usageRequest.internalLocationUsageType} at prison ${agencyInternalLocation.agency.id} does not exist"),
+            capacity = usageRequest.capacity,
+            usageLocationType = usageRequest.usageLocationType?.let {
+              internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(it))
+                ?: throw BadDataException("Internal location type with id=${usageRequest.usageLocationType} does not exist")
+            },
+            listSequence = usageRequest.sequence,
+            agencyInternalLocation = agencyInternalLocation,
+            // TODO parentUsage = ??
+          ),
+        )
+      } else {
+        usage.capacity = usageRequest.capacity
+        usage.listSequence = usageRequest.sequence
+      }
+    }
+  }
+
+  private fun findExistingProfile(
+    agencyInternalLocation: AgencyInternalLocation,
+    profileRequest: ProfileRequest,
+  ): AgencyInternalLocationProfile? {
+    return agencyInternalLocation.profiles.find {
+      it.id.profileType == profileRequest.profileType && it.id.profileCode == profileRequest.profileCode
+    }
+  }
+
+  private fun findExistingUsage(
+    agencyInternalLocation: AgencyInternalLocation,
+    usageRequest: UsageRequest,
+  ): InternalLocationUsageLocation? {
+    return agencyInternalLocation.usages.find {
+      it.usageLocationType?.code == usageRequest.usageLocationType &&
+        it.internalLocationUsage.internalLocationUsage == usageRequest.internalLocationUsageType
+    }
   }
 
   private fun AgencyInternalLocation.toLocationResponse(): LocationResponse =

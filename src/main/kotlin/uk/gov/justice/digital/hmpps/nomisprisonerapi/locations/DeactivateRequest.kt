@@ -8,6 +8,9 @@ import java.time.LocalDate
 @Schema(description = "Location deactivate request")
 data class DeactivateRequest(
 
+  @Schema(description = "The deactivation date, defaults to today", example = "2024-12-31")
+  val deactivateDate: LocalDate? = null,
+
   @Schema(
     description = "The reason code for deactivation, reference data 'LIV_UN_RSN'",
     allowableValues = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
