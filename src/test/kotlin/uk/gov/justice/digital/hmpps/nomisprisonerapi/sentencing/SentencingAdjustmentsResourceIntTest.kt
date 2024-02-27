@@ -1363,6 +1363,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     private lateinit var anotherPrisoner: Offender
     var sentenceAdjustmentId: Long = 0
     var bookingId: Long = 0
+    var sentenceSequence = 0L
+    var anotherSentenceSequence = 0L
 
     @BeforeEach
     internal fun createPrisoner() {
@@ -1371,9 +1373,11 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       nomisDataBuilder.build {
         anotherPrisoner = offender(nomsId = "A1239TX") {
           booking = booking {
-            sentence {
+            sentenceSequence = sentence {
               adjustment = adjustment {}
-            }
+            }.id.sequence
+            anotherSentenceSequence = sentence {
+            }.id.sequence
           }
         }
       }
@@ -1394,7 +1398,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()))
+          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -1404,7 +1408,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()))
+          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -1413,7 +1417,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       fun `access unauthorised with no auth token`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()))
+          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)))
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -1426,11 +1430,23 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         webTestClient.put().uri("/sentence-adjustments/999")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()))
+          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage").isEqualTo("Sentence adjustment with id 999 not found")
+      }
+
+      @Test
+      internal fun `404 when sentence sequence does not exist`() {
+        webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = 99)))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence with sequence 99 not found")
       }
 
       @Test
@@ -1442,7 +1458,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """
               {
-              "adjustmentTypeCode": "RX"
+              "adjustmentTypeCode": "RX",
+              "sentenceSequence": $sentenceSequence
               }
               """,
             ),
@@ -1451,6 +1468,27 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isBadRequest
           .expectBody()
           .jsonPath("developerMessage").isEqualTo("adjustmentDays must be greater than or equal to 0")
+      }
+
+      @Test
+      internal fun `400 when sentence sequence not present in request`() {
+        webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+              {
+              "adjustmentTypeCode": "RX",
+              "adjustmentDays": 10
+              }
+              """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("sentenceSequence must be greater than or equal to 0")
       }
 
       @Test
@@ -1463,6 +1501,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
               {
               "adjustmentDays": 10,
+              "sentenceSequence": $sentenceSequence,
               "adjustmentTypeCode": "BANANAS"
               }
               """,
@@ -1484,6 +1523,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               """
               {
               "adjustmentDays": 10,
+              "sentenceSequence": $sentenceSequence,
               "adjustmentTypeCode": "ADA"
               }
               """,
@@ -1504,6 +1544,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """
               {
+              "sentenceSequence": $sentenceSequence,
               "adjustmentDays": 10
               }
               """,
@@ -1527,6 +1568,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """
               {
+              "sentenceSequence": $sentenceSequence,
               "adjustmentDays": 10,
               "adjustmentTypeCode": "RX"
               }
@@ -1543,7 +1585,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("id").isEqualTo(sentenceAdjustmentId)
           .jsonPath("bookingId").isEqualTo(bookingId)
-          .jsonPath("sentenceSequence").isEqualTo(1)
+          .jsonPath("sentenceSequence").isEqualTo(sentenceSequence)
           .jsonPath("adjustmentType.code").isEqualTo("RX")
           .jsonPath("adjustmentType.description").isEqualTo("Remand")
           .jsonPath("adjustmentDays").isEqualTo(10)
@@ -1563,6 +1605,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               """
               {
+              "sentenceSequence": $anotherSentenceSequence,
               "adjustmentDays": 12,
               "adjustmentTypeCode": "RST",
               "adjustmentDate": "2023-01-18",
@@ -1583,7 +1626,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("id").isEqualTo(sentenceAdjustmentId)
           .jsonPath("bookingId").isEqualTo(bookingId)
-          .jsonPath("sentenceSequence").isEqualTo(1)
+          .jsonPath("sentenceSequence").isEqualTo(anotherSentenceSequence)
           .jsonPath("adjustmentType.code").isEqualTo("RST")
           .jsonPath("adjustmentType.description").isEqualTo("Recall Sentence Tagged Bail")
           .jsonPath("adjustmentDate").isEqualTo("2023-01-18")
@@ -1600,7 +1643,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()),
+            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)),
           )
           .exchange()
           .expectStatus().isOk
@@ -1610,7 +1653,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           check {
             assertThat(it).containsEntry("adjustmentId", sentenceAdjustmentId.toString())
             assertThat(it).containsEntry("bookingId", bookingId.toString())
-            assertThat(it).containsEntry("sentenceSequence", "1")
+            assertThat(it).containsEntry("sentenceSequence", "$sentenceSequence")
             assertThat(it).containsEntry("offenderNo", "A1239TX")
             assertThat(it).containsEntry("adjustmentType", "RX")
           },
@@ -1624,7 +1667,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
-            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest()),
+            BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)),
           )
           .exchange()
           .expectStatus().isOk
@@ -1633,10 +1676,11 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    fun createBasicSentenceAdjustmentUpdateRequest() = """
+    fun createBasicSentenceAdjustmentUpdateRequest(sentenceSequence: Long) = """
     {
     "adjustmentDays": 10,
-    "adjustmentTypeCode": "RX"
+    "adjustmentTypeCode": "RX",
+    "sentenceSequence": $sentenceSequence
     }
     """.trimIndent()
   }
