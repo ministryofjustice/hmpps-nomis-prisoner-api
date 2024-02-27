@@ -142,7 +142,7 @@ class OffenderAlert(
   @Generated
   var auditAdditionalInfo: String? = null
 
-  fun addWorkFlowLog(workActionCode: WorkFlowAction, workFlowStatus: WorkFlowStatus = DONE): WorkFlow {
+  fun addWorkFlowLog(workActionCode: WorkFlowAction, workFlowStatus: WorkFlowStatus = DONE) {
     if (this.workFlows.isEmpty()) this.workFlows.add(AlertWorkFlow(this))
     val workFlow = this.workFlows.first()
     workFlow.logs.add(
@@ -152,7 +152,6 @@ class OffenderAlert(
         workFlowStatus = workFlowStatus,
       ),
     )
-    return workFlow
   }
 }
 

@@ -162,9 +162,10 @@ class OffenderAlertBuilder(
     commentText = commentText,
     verifiedFlag = verifiedFlag,
   ).apply {
-    workFlow = addWorkFlowLog(workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DATA_ENTRY))
+    addWorkFlowLog(workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DATA_ENTRY))
   }
     .let { repository.save(it) }
+    .also { workFlow = it.workFlows.first() }
     .also { alert = it }
 
   override fun workFlowLog(
