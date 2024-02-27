@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
@@ -8,6 +9,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -117,8 +119,14 @@ data class AgencyInternalLocation(
     ],
   )
   var deactivateReason: LivingUnitReason? = null,
-) {
 
+  @OneToMany(mappedBy = "agencyInternalLocation", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val profiles: MutableList<AgencyInternalLocationProfile> = mutableListOf(),
+
+  @OneToMany(mappedBy = "agencyInternalLocation", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val usages: MutableList<InternalLocationUsageLocation> = mutableListOf(),
+
+) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -126,7 +134,5 @@ data class AgencyInternalLocation(
     return locationId == other.locationId
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(locationId)
-  }
+  override fun hashCode(): Int = Objects.hashCode(locationId)
 }

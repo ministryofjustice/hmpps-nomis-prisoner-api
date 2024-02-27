@@ -131,7 +131,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Agency with id=XXX does not exist")
+          assertThat(it).contains("Prison with id=XXX does not exist")
         }
     }
 
@@ -206,14 +206,38 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "locationCode"        : "CLASS7",
                 "description"        :  "LEI-CLASS7",
                 "locationType"        : "CLAS",
-                "prisonId"            : "MDI",
+                "prisonId"            : "LEI",
                 "comment"             : "this is a test!",
                 "capacity"            : 30,
                 "operationalCapacity" : 25,
                 "cnaCapacity"         : 20,
                 "userDescription"     : "user description",
                 "listSequence"        : 1,
-                "certified"           : true
+                "certified"           : true,
+                "profiles"            : [
+                  {
+                    "profileType"     : "HOU_UNIT_ATT",
+                    "profileCode"     : "NSMC"
+                  },
+                  {
+                    "profileType"     : "SUP_LVL_TYPE",
+                    "profileCode"     : "EL"
+                  }
+                ],
+                "usages"              : [
+                  {
+                    "internalLocationUsageType" : "APP",
+                    "usageLocationType" : "INSI",
+                    "capacity"   : 41,
+                    "sequence"   : 2
+                  },
+                  {
+                    "internalLocationUsageType" : "OTH",
+                    "usageLocationType" : "BOX",
+                    "capacity"   : 42,
+                    "sequence"   : 3
+                  }
+                ]
                }
             """.trimIndent(),
           ),
@@ -228,7 +252,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(locationCode).isEqualTo("CLASS7")
         assertThat(description).isEqualTo("LEI-CLASS7")
         assertThat(locationType.code).isEqualTo("CLAS")
-        assertThat(agency.id).isEqualTo("MDI")
+        assertThat(agency.id).isEqualTo("LEI")
         assertThat(comment).isEqualTo("this is a test!")
         assertThat(capacity).isEqualTo(30)
         assertThat(operationalCapacity).isEqualTo(25)
@@ -236,6 +260,24 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(userDescription).isEqualTo("user description")
         assertThat(listSequence).isEqualTo(1)
         assertThat(certified).isTrue
+        with(profiles) {
+          assertThat(this).hasSize(2)
+          assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
+          assertThat(this[0].id.profileCode).isEqualTo("NSMC")
+          assertThat(this[1].id.profileType).isEqualTo("SUP_LVL_TYPE")
+          assertThat(this[1].id.profileCode).isEqualTo("EL")
+        }
+        with(usages) {
+          assertThat(this).hasSize(2)
+          assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
+          assertThat(this[0].usageLocationType?.code).isEqualTo("INSI")
+          assertThat(this[0].capacity).isEqualTo(41)
+          assertThat(this[0].listSequence).isEqualTo(2)
+          assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
+          assertThat(this[1].usageLocationType?.code).isEqualTo("BOX")
+          assertThat(this[1].capacity).isEqualTo(42)
+          assertThat(this[1].listSequence).isEqualTo(3)
+        }
       }
     }
 
@@ -296,7 +338,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         location1 = agencyInternalLocation(
           locationCode = "100",
           locationType = "CELL",
-          prisonId = "MDI",
+          prisonId = "LEI",
           parentAgencyInternalLocationId = -2L,
           capacity = 3,
           operationalCapacity = 1,
@@ -304,13 +346,16 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           userDescription = "user description",
           listSequence = 100,
           comment = "this is an UPDATE test!",
-        )
+        ) {
+          attributes("HOU_UNIT_ATT", "OTH")
+          usages(-3L, 41, "APP")
+        }
       }
     }
 
     @AfterEach
     internal fun deleteData() {
-      repository.delete(location1)
+      repository.deleteAgencyInternalLocationById(location1.locationId)
     }
 
     @Test
@@ -387,7 +432,31 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "comment"             : "this is a test!",
                 "userDescription"     : "new description",
                 "listSequence"        : 1,
-                "unitType"            : "NA"
+                "unitType"            : "NA",
+                "profiles"            : [
+                  {
+                    "profileType"     : "HOU_UNIT_ATT",
+                    "profileCode"     : "NSMC"
+                  },
+                  {
+                    "profileType"     : "SUP_LVL_TYPE",
+                    "profileCode"     : "EL"
+                  }
+                ],
+                "usages"              : [
+                  {
+                    "internalLocationUsageType" : "APP",
+                    "usageLocationType" : "INSI",
+                    "capacity"   : 41,
+                    "sequence"   : 2
+                  },
+                  {
+                    "internalLocationUsageType" : "OTH",
+                    "usageLocationType" : "BOX",
+                    "capacity"   : 42,
+                    "sequence"   : 3
+                  }
+                ]
                }
             """.trimIndent(),
           ),
@@ -404,6 +473,24 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(userDescription).isEqualTo("new description")
         assertThat(listSequence).isEqualTo(1)
         assertThat(unitType?.code).isEqualTo("NA")
+        with(profiles) {
+          assertThat(this).hasSize(2)
+          assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
+          assertThat(this[0].id.profileCode).isEqualTo("NSMC")
+          assertThat(this[1].id.profileType).isEqualTo("SUP_LVL_TYPE")
+          assertThat(this[1].id.profileCode).isEqualTo("EL")
+        }
+        with(usages) {
+          assertThat(this).hasSize(2)
+          assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
+          assertThat(this[0].usageLocationType?.code).isEqualTo("INSI")
+          assertThat(this[0].capacity).isEqualTo(41)
+          assertThat(this[0].listSequence).isEqualTo(2)
+          assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
+          assertThat(this[1].usageLocationType?.code).isEqualTo("BOX")
+          assertThat(this[1].capacity).isEqualTo(42)
+          assertThat(this[1].listSequence).isEqualTo(3)
+        }
       }
     }
 
@@ -526,7 +613,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will deactivate location with reason and reactivate date`() {
+    fun `will deactivate location with reason and dates given`() {
       nomisDataBuilder.build {
         location1 = agencyInternalLocation(
           locationCode = "MEDI",
@@ -538,13 +625,13 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue("""{ "reasonCode" : "C", "reactivateDate" : "2024-02-27"}"""))
+        .body(BodyInserters.fromValue("""{ "deactivateDate" : "2024-02-15", "reasonCode" : "C", "reactivateDate" : "2024-02-27"}"""))
         .exchange()
         .expectStatus().isOk
 
       // Check the database
       repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
-        assertThat(deactivateDate).isEqualTo(LocalDate.now())
+        assertThat(deactivateDate).isEqualTo(LocalDate.parse("2024-02-15"))
         assertThat(reactivateDate).isEqualTo(LocalDate.parse("2024-02-27"))
         assertThat(deactivateReason?.code).isEqualTo("C")
       }

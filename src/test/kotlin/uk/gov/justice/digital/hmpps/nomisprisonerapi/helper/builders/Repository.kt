@@ -264,7 +264,10 @@ class Repository(
     agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
 
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
-    agencyInternalLocationRepository.findByIdOrNull(locationId)
+    agencyInternalLocationRepository.findByIdOrNull(locationId).also {
+      it?.profiles?.size // hydrate
+      it?.usages?.map { m -> m.toString() }
+    }
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
@@ -356,8 +359,11 @@ class Repository(
       }
 
   fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
+
   fun delete(adjustment: OffenderSentenceAdjustment) = offenderSentenceAdjustmentRepository.delete(adjustment)
 
   fun delete(agencyInternalLocation: AgencyInternalLocation) =
     agencyInternalLocationRepository.delete(agencyInternalLocation)
+
+  fun deleteAgencyInternalLocationById(id: Long) = agencyInternalLocationRepository.deleteById(id)
 }

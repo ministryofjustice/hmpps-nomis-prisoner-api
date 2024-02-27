@@ -24,6 +24,8 @@ data class CreateLocationRequest(
       "POSI", "RESI", "ROOM", "RTU", "SHEL", "SPOR", "SPUR", "STOR", "TABL",
       "TRAI", "TRRM", "VIDE", "VISIT", "WING", "WORK",
     ],
+    // TODO it would be nice to define these values in one place, possibly something like this:
+    // ref = "#/components/schemas/LocationUsageRequest.usageLocationType",
   )
   val locationType: String,
 
@@ -68,6 +70,12 @@ data class CreateLocationRequest(
   @Schema(description = "Comment", example = "Some comment")
   @field:Size(max = 240, message = "Comment is too long (max allowed 240 characters)")
   val comment: String? = null,
+
+  @Schema(description = "Profiles")
+  val profiles: List<ProfileRequest>? = null,
+
+  @Schema(description = "Usages")
+  val usages: List<UsageRequest>? = null,
 ) {
   fun toAgencyInternalLocation(
     locationType: InternalLocationType,
@@ -79,18 +87,60 @@ data class CreateLocationRequest(
       active = true,
       certified = certified,
       tracking = true,
+      locationCode = locationCode,
       locationType = locationType,
+      description = description,
       unitType = housingUnitType,
       agency = agency,
       parentLocation = parent,
       currentOccupancy = 0,
       operationalCapacity = operationalCapacity,
       userDescription = userDescription,
-      locationCode = locationCode,
       capacity = capacity,
       listSequence = listSequence,
       cnaCapacity = cnaCapacity,
       comment = comment,
-      description = description,
     )
 }
+
+@Schema(description = "Location profile or attribute")
+data class ProfileRequest(
+  @Schema(
+    description = "Reference Domain for the attribute",
+    allowableValues = ["HOU_SANI_FIT", "HOU_UNIT_ATT", "HOU_USED_FOR", "SUP_LVL_TYPE"],
+    examples = ["Housing Unit Fittings", "Housing Unit Attribute", "Housing Unit Usage", "Supervision Level"],
+  )
+  val profileType: String,
+
+  @Schema(
+    description = "Reference Code within the domain for the attribute",
+  )
+  val profileCode: String,
+)
+
+@Schema(description = "Location usage")
+data class UsageRequest(
+  @Schema(
+    description = "Types of location that the usage applies to",
+    allowableValues = ["APP", "MOVEMENT", "OCCUR", "OIC", "OTHER", "PROG", "PROP", "VISIT"],
+    examples = [
+      "Appointment Location", "Prisoner Movement Location", "Occurrence Location", "Adjudication Hearing Location",
+      "Other Internal Location", "Programmes & Activities Location", "Property Location", "Visit Location",
+    ],
+  )
+  val internalLocationUsageType: String,
+
+  @Schema(
+    description = "Non-residential usage type",
+    allowableValues = [
+      "ADJU", "ADMI", "APP", "AREA", "ASSO", "BOOT", "BOX", "CELL", "CLAS", "EXER", "EXTE", "FAIT", "GROU",
+      "HCEL", "HOLD", "IGRO", "INSI", "INTE", "LAND", "LOCA", "MEDI", "MOVE", "OFFI", "OUTS", "POSI", "RESI",
+      "ROOM", "RTU", "SHEL", "SPOR", "SPUR", "STOR", "TABL", "TRAI", "TRRM", "VIDE", "VISIT", "WING", "WORK",
+    ],
+  )
+  val usageLocationType: String? = null,
+
+  val capacity: Int? = null,
+
+  val sequence: kotlin.Int? = null,
+)

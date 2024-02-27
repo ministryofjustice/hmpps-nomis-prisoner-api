@@ -49,4 +49,10 @@ data class UpdateLocationRequest(
   @Schema(description = "Comment", example = "Some comment")
   @field:Size(max = 240, message = "Comment is too long (max allowed 240 characters)")
   val comment: String? = null,
+
+  @Schema(description = "Profiles")
+  val profiles: List<ProfileRequest>? = null,
+
+  @Schema(description = "Usages")
+  val usages: List<UsageRequest>? = null,
 )
