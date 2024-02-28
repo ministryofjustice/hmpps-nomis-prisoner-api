@@ -9,7 +9,7 @@ management.endpoint:
 api:
   base:
     url:
-      oauth: http://localhost:9090/auth
+      hmpps-auth: http://localhost:9090/auth
 
 spring:
   flyway:
