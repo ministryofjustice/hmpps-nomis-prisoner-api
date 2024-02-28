@@ -75,24 +75,28 @@ class SentencingAdjustmentService(
   @Audit
   fun updateSentenceAdjustment(adjustmentId: Long, request: UpdateSentenceAdjustmentRequest): Unit =
     offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
-      this.sentenceAdjustment = findValidSentenceAdjustmentType(request.adjustmentTypeCode)
-      this.adjustmentDate = request.adjustmentDate
-      this.adjustmentNumberOfDays = request.adjustmentDays
-      this.fromDate = request.adjustmentFromDate
-      this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
-      this.comment = request.comment
-      this.active = request.active
-      telemetryClient.trackEvent(
-        "sentence-adjustment-updated",
-        mapOf(
-          "bookingId" to this.offenderBooking.bookingId.toString(),
-          "offenderNo" to this.offenderBooking.offender.nomsId,
-          "sentenceSequence" to this.sentenceSequence.toString(),
-          "adjustmentId" to adjustmentId.toString(),
-          "adjustmentType" to this.sentenceAdjustment.id,
-        ),
-        null,
-      )
+      offenderSentenceRepository.findByIdOrNull(SentenceId(this.offenderBooking, request.sentenceSequence))?.let { sentence ->
+        this.sentenceAdjustment = findValidSentenceAdjustmentType(request.adjustmentTypeCode)
+        this.adjustmentDate = request.adjustmentDate
+        this.adjustmentNumberOfDays = request.adjustmentDays
+        this.fromDate = request.adjustmentFromDate
+        this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
+        this.comment = request.comment
+        this.active = request.active
+        this.sentenceSequence = sentence.id.sequence
+        telemetryClient.trackEvent(
+          "sentence-adjustment-updated",
+          mapOf(
+            "bookingId" to this.offenderBooking.bookingId.toString(),
+            "offenderNo" to this.offenderBooking.offender.nomsId,
+            "sentenceSequence" to request.sentenceSequence.toString(),
+            "adjustmentId" to adjustmentId.toString(),
+            "adjustmentType" to this.sentenceAdjustment.id,
+          ),
+          null,
+        )
+      }
+        ?: throw NotFoundException("Sentence with sequence ${request.sentenceSequence} not found")
     } ?: throw NotFoundException("Sentence adjustment with id $adjustmentId not found")
 
   @Audit

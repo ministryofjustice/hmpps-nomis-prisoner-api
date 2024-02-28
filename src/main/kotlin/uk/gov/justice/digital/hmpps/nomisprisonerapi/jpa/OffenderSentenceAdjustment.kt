@@ -53,7 +53,7 @@ class OffenderSentenceAdjustment(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "SENTENCE_SEQ", nullable = false)
-  val sentenceSequence: Long,
+  var sentenceSequence: Long,
 
   @Column(name = "OFFENDER_KEY_DATE_ADJUST_ID", nullable = true)
   val offenderKeyDateAdjustmentId: Long? = null,

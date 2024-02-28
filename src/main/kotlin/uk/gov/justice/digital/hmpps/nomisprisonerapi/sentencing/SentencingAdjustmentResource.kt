@@ -639,6 +639,9 @@ data class UpdateSentenceAdjustmentRequest(
   val comment: String?,
   @Schema(description = "Flag to indicate if the adjustment is being applied", required = false, defaultValue = "true")
   val active: Boolean = true,
+  @Schema(description = "Sentence sequence", required = true)
+  @field:Min(0)
+  val sentenceSequence: Long = -1,
 )
 
 @Schema(description = "Key date adjustment create request")
