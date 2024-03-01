@@ -103,6 +103,7 @@ data class CreateLocationRequest(
     )
 }
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Location profile or attribute")
 data class ProfileRequest(
   @Schema(
@@ -118,6 +119,7 @@ data class ProfileRequest(
   val profileCode: String,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Location usage")
 data class UsageRequest(
   @Schema(
@@ -142,5 +144,5 @@ data class UsageRequest(
 
   val capacity: Int? = null,
 
-  val sequence: kotlin.Int? = null,
+  val sequence: Int? = null,
 )

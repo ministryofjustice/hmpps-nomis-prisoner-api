@@ -320,5 +320,28 @@ class LocationService(
       capacity = capacity,
       listSequence = listSequence,
       comment = comment,
+      unitType = unitType?.code,
+      certified = certified,
+      active = active,
+      deactivateDate = deactivateDate,
+      reactivateDate = reactivateDate,
+      reasonCode = deactivateReason?.code,
+      profiles = profiles.map { toProfileResponse(it.id) },
+      usages = usages.map { toUsageResponse(it) },
+      createDatetime = createDatetime,
+      createUsername = createUsername,
+      modifyUsername = modifyUsername,
     )
+
+  private fun toProfileResponse(id: AgencyInternalLocationProfileId) = ProfileRequest(
+    profileType = id.profileType,
+    profileCode = id.profileCode,
+  )
+
+  private fun toUsageResponse(it: InternalLocationUsageLocation) = UsageRequest(
+    internalLocationUsageType = it.internalLocationUsage.internalLocationUsage,
+    capacity = it.capacity,
+    usageLocationType = it.usageLocationType?.code,
+    sequence = it.listSequence,
+  )
 }

@@ -5,10 +5,11 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType.Companion.pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsageLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LivingUnitReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.InternalLocationUsageRepository
@@ -41,6 +42,8 @@ class AgencyInternalLocationBuilderRepository(
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>,
+  private val housingUnitTypeRepository: ReferenceCodeRepository<HousingUnitType>,
+  private val livingUnitReasonRepository: ReferenceCodeRepository<LivingUnitReason>,
   private val internalLocationUsageRepository: InternalLocationUsageRepository,
 ) {
   fun save(agencyInternalLocation: AgencyInternalLocation): AgencyInternalLocation =
@@ -53,7 +56,13 @@ class AgencyInternalLocationBuilderRepository(
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 
   fun lookupInternalLocationType(code: String): InternalLocationType =
-    internalLocationTypeRepository.findByIdOrNull(pk(code))!!
+    internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(code))!!
+
+  fun lookupHousingUnitType(code: String): HousingUnitType =
+    housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(code))!!
+
+  fun lookupLivingUnitReason(code: String): LivingUnitReason =
+    livingUnitReasonRepository.findByIdOrNull(LivingUnitReason.pk(code))!!
 
   fun lookupInternalLocationUsage(id: Long): InternalLocationUsage =
     internalLocationUsageRepository.findByIdOrNull(id)!!
@@ -108,12 +117,13 @@ class AgencyInternalLocationBuilder(
       userDescription = userDescription,
       comment = comment,
       locationCode = locationCode,
-      unitType = null,
+      unitType = repository.lookupHousingUnitType("NA"),
       capacity = capacity,
       listSequence = listSequence,
       cnaCapacity = cnaCapacity,
       deactivateDate = deactivationDate,
       reactivateDate = reactivationDate,
+      deactivateReason = repository.lookupLivingUnitReason("A"),
     )
       .let { repository.save(it) }
       .also { agencyInternalLocation = it }
