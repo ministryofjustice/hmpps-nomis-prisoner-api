@@ -287,7 +287,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       val offenderIndividualSchedule = repository.getAppointment(id)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
-      assertThat(offenderIndividualSchedule.internalLocation).isNull()
+      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009) // cell
     }
   }
 
@@ -471,7 +471,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       val offenderIndividualSchedule = repository.getAppointment(eventId)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-      assertThat(offenderIndividualSchedule.internalLocation).isNull()
+      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009)
     }
 
     private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean, inCell: Boolean = false) {

@@ -51,6 +51,8 @@ class AppointmentService(
           agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
             ?: throw BadDataException("Room with id=${dto.internalLocationId} does not exist")
         }
+          ?: offenderBooking.assignedLivingUnit
+          ?: throw BadDataException("No location found for bookingId ${offenderBooking.bookingId}, appointment event=$eventId")
 
         val subType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
           ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
@@ -139,11 +141,13 @@ class AppointmentService(
     val location = dto.internalLocationId?.let {
       agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
         ?: throw BadDataException("Room with id=${dto.internalLocationId} does not exist")
-    }?.also {
-      if (it.agency.id != offenderBooking.location?.id) {
-        throw BadDataException("Room with id=${dto.internalLocationId} is in ${it.agency.id}, not in the offender's prison: ${offenderBooking.location?.id}")
-      }
     }
+      ?.also {
+        if (it.agency.id != offenderBooking.location?.id) {
+          throw BadDataException("Room with id=${dto.internalLocationId} is in ${it.agency.id}, not in the offender's prison: ${offenderBooking.location?.id}")
+        }
+      }
+      ?: offenderBooking.assignedLivingUnit
 
     if (dto.endTime != null && dto.endTime < dto.startTime) {
       throw BadDataException("End time must be after start time")

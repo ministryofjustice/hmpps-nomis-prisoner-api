@@ -314,6 +314,10 @@ class Repository(
     }
 
   fun getAppointment(id: Long): OffenderIndividualSchedule? = offenderIndividualScheduleRepository.findByIdOrNull(id)
+    ?.also {
+      it.toString() // hydrate
+      it.internalLocation?.toString()
+    }
 
   fun updateVisitStatus(visitId: Long?) {
     val visit = visitRepository.findById(visitId!!).orElseThrow()
