@@ -13,12 +13,14 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.Objects
 
 @Entity
@@ -127,6 +129,18 @@ data class AgencyInternalLocation(
   val usages: MutableList<InternalLocationUsageLocation> = mutableListOf(),
 
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
+
+  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
+  lateinit var createDatetime: LocalDateTime
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  val modifyUsername: String? = null
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
