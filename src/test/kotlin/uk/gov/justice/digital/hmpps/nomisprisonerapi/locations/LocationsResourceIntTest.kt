@@ -791,7 +791,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     lateinit var location1: AgencyInternalLocation
 
     @BeforeEach
-    internal fun createLocations() {
+    internal fun setupLocations() {
       nomisDataBuilder.build {
         location1 = agencyInternalLocation(
           locationCode = "100",
@@ -804,7 +804,12 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           userDescription = "user description",
           listSequence = 100,
           comment = "this is a GET test!",
-        )
+          deactivationDate = LocalDate.parse("2024-01-01"),
+          reactivationDate = LocalDate.parse("2024-01-02"),
+        ) {
+          attributes("HOU_UNIT_ATT", "OTH")
+          usages(-3L, 41, "MEDI", 2)
+        }
       }
     }
 
@@ -821,7 +826,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.certified").isEqualTo(false)
+        .jsonPath("$.certified").isEqualTo(true)
         .jsonPath("$.locationType").isEqualTo("CELL")
         .jsonPath("$.prisonId").isEqualTo("MDI")
         .jsonPath("$.parentLocationId").isEqualTo(-2L)
@@ -833,6 +838,20 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.capacity").isEqualTo(30)
         .jsonPath("$.listSequence").isEqualTo(100)
         .jsonPath("$.comment").isEqualTo("this is a GET test!")
+        .jsonPath("$.unitType").isEqualTo("NA")
+        .jsonPath("$.active").isEqualTo(true)
+        .jsonPath("$.deactivateDate").isEqualTo("2024-01-01")
+        .jsonPath("$.reasonCode").isEqualTo("A")
+        .jsonPath("$.reactivateDate").isEqualTo("2024-01-02")
+        .jsonPath("$.profiles[0].profileType").isEqualTo("HOU_UNIT_ATT")
+        .jsonPath("$.profiles[0].profileCode").isEqualTo("OTH")
+        .jsonPath("$.usages[0].capacity").isEqualTo(41)
+        .jsonPath("$.usages[0].sequence").isEqualTo(2)
+        .jsonPath("$.usages[0].internalLocationUsageType").isEqualTo("MOVEMENT")
+        .jsonPath("$.usages[0].usageLocationType").isEqualTo("MEDI")
+        // .jsonPath("$.createDatetime").isEqualTo("2024-01-02")
+        .jsonPath("$.createUsername").isEqualTo("SA")
+        .jsonPath("$.modifyUsername").doesNotExist()
     }
   }
 
@@ -872,7 +891,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.certified").isEqualTo(false)
+        .jsonPath("$.certified").isEqualTo(true)
         .jsonPath("$.locationType").isEqualTo("CELL")
         .jsonPath("$.prisonId").isEqualTo("MDI")
         .jsonPath("$.parentLocationId").isEqualTo(-2L)
