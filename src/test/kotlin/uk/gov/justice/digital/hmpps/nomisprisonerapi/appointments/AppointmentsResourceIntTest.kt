@@ -34,11 +34,11 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
 
-  private fun callCreateEndpoint(hasEndTime: Boolean): Long {
+  private fun callCreateEndpoint(hasEndTime: Boolean, inCell: Boolean = false): Long {
     val response = webTestClient.post().uri("/appointments")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
       .contentType(MediaType.APPLICATION_JSON)
-      .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime)))
+      .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime, inCell)))
       .exchange()
       .expectStatus().isCreated
       .expectBody(CreateAppointmentResponse::class.java)
@@ -47,12 +47,12 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
     return response!!.eventId
   }
 
-  private fun validCreateJsonRequest(hasEndTime: Boolean) = """{
+  private fun validCreateJsonRequest(hasEndTime: Boolean, inCell: Boolean) = """{
             "bookingId"          : ${offenderAtMoorlands.latestBooking().bookingId},
             "eventDate"          : "2023-02-27",
             "startTime"          : "10:40",
-${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
-            "internalLocationId" : $MDI_ROOM_ID,
+${if (hasEndTime) """ "endTime"   : "12:10",""" else ""}
+${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
             "eventSubType"       : "ACTI"
           }
   """.trimIndent()
@@ -206,7 +206,7 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
     @Test
     fun `invalid start time should return bad request`() {
       val invalidSchedule =
-        validCreateJsonRequest(false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
+        validCreateJsonRequest(false, false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -220,7 +220,7 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid end time should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(true).replace(""""endTime"   : "12:10"""", """"endTime": "12:65"""")
+      val invalidSchedule = validCreateJsonRequest(true, false).replace(""""endTime"   : "12:10"""", """"endTime": "12:65"""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -234,7 +234,7 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(false).replace(
+      val invalidSchedule = validCreateJsonRequest(false, false).replace(
         """"eventDate"          : "2023-02-27"""",
         """"eventDate": "2022-13-31",""",
       )
@@ -251,7 +251,7 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `will create appointment with correct details`() {
-      val id = callCreateEndpoint(true)
+      val id = callCreateEndpoint(true, false)
 
       // Check the database
       val offenderIndividualSchedule = repository.getAppointment(id)!!
@@ -271,14 +271,23 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
 
     @Test
     fun `will create appointment with correct details - no end time`() {
-      val id = callCreateEndpoint(false)
+      val id = callCreateEndpoint(false, false)
 
-      // Check the database
       val offenderIndividualSchedule = repository.getAppointment(id)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
       assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
       assertThat(offenderIndividualSchedule.endTime).isNull()
+    }
+
+    @Test
+    fun `will create appointment with correct details - in cell`() {
+      val id = callCreateEndpoint(false, true)
+
+      val offenderIndividualSchedule = repository.getAppointment(id)!!
+
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
+      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009) // cell
     }
   }
 
@@ -453,20 +462,32 @@ ${if (hasEndTime) """"endTime"   : "12:10",""" else ""}
       assertThat(offenderIndividualSchedule.endTime).isNull()
     }
 
-    private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean) {
+    @Test
+    fun `will update appointment with correct details - in cell`() {
+      val eventId = callCreateEndpoint(true, false)
+      callUpdateEndpoint(eventId, false, true)
+
+      // Check the database
+      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
+
+      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
+      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009)
+    }
+
+    private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean, inCell: Boolean = false) {
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validUpdateJsonRequest(hasEndTime)))
+        .body(BodyInserters.fromValue(validUpdateJsonRequest(hasEndTime, inCell)))
         .exchange()
         .expectStatus().isOk
     }
 
-    private fun validUpdateJsonRequest(hasEndTime: Boolean) = """{
+    private fun validUpdateJsonRequest(hasEndTime: Boolean, inCell: Boolean = false) = """{
             "eventDate"          : "2023-02-28",
             "startTime"          : "10:50",
 ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
-            "internalLocationId" : $MDI_ROOM_ID_2,
+${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
             "comment"            : "Some comment",
             "eventSubType"       : "CABA"
           }
