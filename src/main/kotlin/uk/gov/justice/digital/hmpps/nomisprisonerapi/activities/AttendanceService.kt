@@ -164,7 +164,10 @@ class AttendanceService(
     bookingId: Long,
   ) =
     offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseSchedule.courseActivity, offenderBooking)
-      .maxByOrNull { it.startDate }
+      .maxByOrNull {
+        it.startDate
+        it.endDate ?: LocalDate.MAX
+      }
       ?: throw BadDataException("Offender program profile for offender booking with id=$bookingId and course activity id=${courseSchedule.courseActivity.courseActivityId} not found")
 
   private fun findOffenderBookingOrThrow(bookingId: Long) = offenderBookingRepository.findByIdOrNull(bookingId)

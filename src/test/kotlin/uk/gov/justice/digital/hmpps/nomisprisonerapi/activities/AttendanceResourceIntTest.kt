@@ -424,6 +424,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class CreateAttendance {
+      val today = LocalDate.now()
+      val yesterday = today.minusDays(1)
 
       @Test
       fun `should return OK if created new attendance`() {
@@ -479,6 +481,39 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           assertThat(eventDate).isEqualTo("2022-11-01")
           assertThat(startTime).isEqualTo("2022-11-01T08:00")
           assertThat(endTime).isEqualTo("2022-11-01T11:00")
+        }
+      }
+
+      @Test
+      fun `should return OK if the prisoner was previously deallocated then reallocated with same start date`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity {
+              courseSchedule = courseSchedule(scheduleDate = "$today")
+              courseScheduleRule()
+              payRate()
+            }
+          }
+          offender {
+            offenderBooking = booking {
+              courseAllocation(courseActivity, startDate = "$today", endDate = "$yesterday", programStatusCode = "END")
+              courseAllocation(courseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, validJsonRequest.withScheduleDate("$today"))
+          .expectStatus().isOk
+          .expectBody(UpsertAttendanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
+        assertThat(response.created).isTrue()
+
+        val saved = repository.getAttendance(response.eventId)
+        with(saved) {
+          assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
+          assertThat(eventDate).isEqualTo("$today")
         }
       }
 
