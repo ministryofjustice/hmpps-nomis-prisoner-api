@@ -98,6 +98,9 @@ class OffenderAlert(
   @OneToMany(mappedBy = "alert", fetch = LAZY, cascade = [CascadeType.ALL])
   var workFlows: MutableList<AlertWorkFlow> = mutableListOf(),
 
+  @Column(name = "CREATE_USER_ID")
+  var createUsername: String,
+
   // @Column(name = "CASELOAD_ID")  not used, always null
   // @Column(name = "CREATE_DATE") always null not used
 ) {
@@ -109,10 +112,6 @@ class OffenderAlert(
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   lateinit var createDatetime: LocalDateTime
-
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
 
   @Column(name = "AUDIT_TIMESTAMP", insertable = false, updatable = false)
   @Generated

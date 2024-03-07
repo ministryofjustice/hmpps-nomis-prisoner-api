@@ -25,7 +25,7 @@ class AlertWorkFlow(
     ],
   )
   val alert: OffenderAlert,
-) : WorkFlow() {
+) : WorkFlow(createUsername = alert.createUsername) {
   companion object {
     const val WORKFLOW_TYPE = "ALERT"
   }

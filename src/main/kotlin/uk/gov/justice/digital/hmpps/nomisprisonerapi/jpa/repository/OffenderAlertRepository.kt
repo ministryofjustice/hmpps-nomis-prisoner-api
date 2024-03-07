@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 @Repository
 interface OffenderAlertRepository : JpaRepository<OffenderAlert, OffenderAlertId> {
   @Query("select coalesce(max(id.sequence), 0) + 1 from OffenderAlert where id.offenderBooking = :offenderBooking")
-  fun getNextSequence(offenderBooking: OffenderBooking): Int
+  fun getNextSequence(offenderBooking: OffenderBooking): Long
 
   @Suppress("ktlint:standard:function-naming")
   fun findById_OffenderBookingAndId_Sequence(offenderBooking: OffenderBooking, alertSequence: Long): OffenderAlert?
