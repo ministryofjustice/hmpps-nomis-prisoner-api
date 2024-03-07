@@ -161,6 +161,7 @@ class OffenderAlertBuilder(
     alertStatus = status,
     commentText = commentText,
     verifiedFlag = verifiedFlag,
+    createUsername = "SA",
   ).apply {
     addWorkFlowLog(workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DATA_ENTRY))
   }
