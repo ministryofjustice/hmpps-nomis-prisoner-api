@@ -1408,6 +1408,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       offenceDate = LocalDate.of(2023, 1, 3),
                       offenceEndDate = LocalDate.of(2023, 1, 5),
                     ),
+                    createOffenderChargeRequest(
+                      offenceCode = "RT88083B",
+                      offenceDate = LocalDate.of(2023, 2, 3),
+                      offenceEndDate = LocalDate.of(2023, 2, 5),
+                    ),
                   ),
                 ),
               ),
@@ -1417,7 +1422,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .returnResult().responseBody!!
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
-        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(3)
+        // only newly created Offender charges are returned - for mapping purposes
+        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(2)
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -1473,13 +1479,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[2].courtEventCharges[1].offencesCount").isEqualTo(1)
           .jsonPath("courtEvents[2].courtEventCharges[1].resultCode1.code").isEqualTo("1067")
           .jsonPath("courtEvents[2].courtEventCharges[1].resultCode1Indicator").isEqualTo("F")
-          // the new offender charge
+          // the new offender charges
           .jsonPath("courtEvents[2].courtEventCharges[2].offenceDate").isEqualTo("2023-01-03")
           .jsonPath("courtEvents[2].courtEventCharges[2].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[2].courtEventCharges[2].offenderCharge.offence.offenceCode").isEqualTo("RT88077B")
           .jsonPath("courtEvents[2].courtEventCharges[2].offencesCount").isEqualTo(1)
           .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1.code").isEqualTo("1067")
           .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("courtEvents[2].courtEventCharges[3].offenceDate").isEqualTo("2023-02-03")
+          .jsonPath("courtEvents[2].courtEventCharges[3].offenceEndDate").isEqualTo("2023-02-05")
+          .jsonPath("courtEvents[2].courtEventCharges[3].offenderCharge.offence.offenceCode").isEqualTo("RT88083B")
           // offender charges not updated for adding a new appearance using existing Offender charges
           .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
           .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
