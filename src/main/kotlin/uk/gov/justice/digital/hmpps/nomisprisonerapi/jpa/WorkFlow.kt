@@ -32,10 +32,9 @@ abstract class WorkFlow(
 
   @OneToMany(mappedBy = "id.workFlow", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val logs: MutableList<WorkFlowLog> = mutableListOf(),
+  @Column(name = "CREATE_USER_ID")
+  val createUsername: String,
 ) {
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated

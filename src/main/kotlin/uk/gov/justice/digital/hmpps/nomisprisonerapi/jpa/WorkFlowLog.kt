@@ -56,11 +56,11 @@ class WorkFlowLog(
   @JoinColumn(name = "LOCATE_AGY_LOC_ID")
   var locateAgyLoc: AgencyLocation? = null,
 
+  @Column(name = "CREATE_USER_ID")
+  val createUsername: String = id.workFlow.createUsername,
+
   // @Column(name = "ACTION_USER_ID") - always null not used
 ) {
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
