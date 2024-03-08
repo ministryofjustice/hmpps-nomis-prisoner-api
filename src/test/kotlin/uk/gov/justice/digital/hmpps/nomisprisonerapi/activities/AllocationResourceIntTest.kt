@@ -926,6 +926,16 @@ class AllocationResourceIntTest : IntegrationTestBase() {
             PayBandTestParameter("5", yesterday, yesterday),
             null,
           ),
+          Arguments.of(
+            "An expired pay band will be ignored if the allocation is expired",
+            listOf(
+              PayBandTestParameter("5", yesterday.minusDays(1), yesterday),
+              PayBandTestParameter("6", today, yesterday),
+            ),
+            PayBandTestParameter("6", today, yesterday),
+            PayBandTestParameter("5", yesterday.minusDays(1), yesterday),
+            PayBandTestParameter("6", today, yesterday),
+          ),
         )
       }
     }
