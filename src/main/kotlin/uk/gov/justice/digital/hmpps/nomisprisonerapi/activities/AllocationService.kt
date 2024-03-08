@@ -206,7 +206,14 @@ class AllocationService(
     val expiredPayBand = payBands.filter { it.endDate != null }.filter { it.endDate!! < today }.maxByOrNull { it.id.startDate }
     val activePayBand = payBands.firstOrNull { it.id.startDate <= today && (it.endDate == null || it.endDate!! >= today) }
     val futurePayBand = payBands.firstOrNull { it.id.startDate > today }
+    val allocationExpired = request.endDate?.let { it < today } ?: false
     when {
+      // if the requested pay band is already expired then just make sure the end dates match
+      allocationExpired && activePayBand == null && futurePayBand == null -> {
+        expiredPayBand?.let {
+          it.endDate == request.endDate
+        }
+      }
       // if no active pay band then add a new pay band from today (or the date requested if in the future)
       activePayBand == null && futurePayBand == null -> {
         requestedPayBand?.also {
