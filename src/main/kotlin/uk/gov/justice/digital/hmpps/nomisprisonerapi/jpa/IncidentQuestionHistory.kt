@@ -25,7 +25,7 @@ class IncidentQuestionHistoryId(
   val incidentHistory: IncidentHistory,
 
   @Column(name = "QUESTION_SEQ", nullable = false)
-  var questionHistorySequence: Int,
+  var questionSequence: Int,
 ) : Serializable
 
 @Entity

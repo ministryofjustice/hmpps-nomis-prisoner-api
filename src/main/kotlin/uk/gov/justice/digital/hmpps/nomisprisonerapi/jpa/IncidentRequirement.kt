@@ -40,6 +40,9 @@ class IncidentRequirement(
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RECORD_STAFF_ID", updatable = false, nullable = false)
   val recordingStaff: Staff,
+
+  @Column
+  var auditModuleName: String? = null,
 ) {
   @Column(name = "RECORD_DATE", insertable = false, updatable = false)
   @Generated

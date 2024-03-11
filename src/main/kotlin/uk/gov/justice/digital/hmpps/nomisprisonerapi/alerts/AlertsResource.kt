@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -105,6 +106,16 @@ class AlertsResource(
         ],
       ),
       ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
         content = [
@@ -153,6 +164,75 @@ class AlertsResource(
     @RequestBody @Valid
     request: CreateAlertRequest,
   ): CreateAlertResponse = alertsService.createAlert(offenderNo, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PutMapping("/prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
+  @Operation(
+    summary = "Updates an alert on a prisoner",
+    description = "Updates an alert on the specified prisoner's booking which should be the latest booking. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Alert Updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AlertResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alert does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateAlert(
+    @Schema(description = "Booking id", example = "1234567")
+    @PathVariable
+    bookingId: Long,
+    @Schema(description = "Alert sequence", example = "3")
+    @PathVariable
+    alertSequence: Long,
+    @RequestBody @Valid
+    request: UpdateAlertRequest,
+  ): AlertResponse = alertsService.updateAlert(bookingId, alertSequence, request)
 }
 
 @Schema(description = "The data held in NOMIS about an alert associated with a prisoner")
@@ -240,4 +320,24 @@ data class CreateAlertResponse(
   val alertCode: CodeDescription,
   @Schema(description = "The alert type")
   val type: CodeDescription,
+)
+
+@Schema(description = "A request to update an alert in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateAlertRequest(
+  // TODO: not sure this can be updated in DPS
+  @Schema(description = "Date alert started")
+  val date: LocalDate,
+  @Schema(description = "Date alert expired")
+  val expiryDate: LocalDate? = null,
+  @Schema(description = "true if alert is active and has not expired")
+  val isActive: Boolean = true,
+  // TODO: DPS might have a notion of appending comments
+  @Schema(description = "Free format comment")
+  val comment: String? = null,
+  @Schema(description = "Username of person that update the record (might also be a system) ")
+  val updateUsername: String,
+  // TODO: not sure this can be updated in DPS
+  @Schema(description = "Free format text of person or department that authorised the alert", example = "security")
+  val authorisedBy: String? = null,
 )

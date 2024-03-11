@@ -50,6 +50,7 @@ class WorkFlowLogBuilder(
     id = WorkFlowLogId(workFlow, workFlow.nextSequence()),
     workActionCode = repository.lookupWorkFlowAction(workActionCode),
     workFlowStatus = workFlowStatus,
+    createUsername = workFlow.createUsername,
   )
     .let { repository.save(it) }
     .also { workFlowLog = it }

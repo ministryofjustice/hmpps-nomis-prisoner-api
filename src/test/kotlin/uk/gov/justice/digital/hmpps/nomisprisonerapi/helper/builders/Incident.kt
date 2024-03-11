@@ -28,7 +28,7 @@ interface IncidentDsl {
   fun staffParty(
     role: String = "VICT",
     staff: Staff,
-    comment: String = "They witnessed everything",
+    comment: String = "Staff said they witnessed everything",
     dsl: IncidentPartyDsl.() -> Unit = {},
   ): IncidentStaffParty
 
@@ -36,7 +36,7 @@ interface IncidentDsl {
   fun offenderParty(
     role: String = "VICT",
     offenderBooking: OffenderBooking,
-    comment: String = "They witnessed everything",
+    comment: String = "Offender said they witnessed everything",
     outcome: String? = null,
     dsl: IncidentPartyDsl.() -> Unit = {},
   ): IncidentOffenderParty
