@@ -74,6 +74,7 @@ class AlertsService(
     )
   }
 
+  @Audit
   fun updateAlert(bookingId: Long, alertSequence: Long, request: UpdateAlertRequest): AlertResponse {
     val offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
       ?: throw NotFoundException("Booking $bookingId not found")
