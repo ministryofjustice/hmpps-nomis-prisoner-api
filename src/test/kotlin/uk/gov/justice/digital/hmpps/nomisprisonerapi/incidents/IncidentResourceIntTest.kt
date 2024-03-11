@@ -415,7 +415,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("questions[0].answers[0].answer").doesNotExist()
         .jsonPath("questions[0].answers[0].comment").isEqualTo("Hammer")
         .jsonPath("questions[0].answers[1].questionResponseId").isEqualTo(questionnaire1.questions[1].answers[2].id)
-        .jsonPath("questions[0].answers[1].responseSequence").isEqualTo(questionnaire1.questions[1].answers[2].answerSequence)
+        .jsonPath("questions[0].answers[1].sequence").isEqualTo(questionnaire1.questions[1].answers[2].answerSequence)
         .jsonPath("questions[0].answers[1].answer").isEqualTo(questionnaire1.questions[1].answers[2].answerText)
         .jsonPath("questions[0].answers[1].answer").isEqualTo("Q3A3: Crow bar")
         .jsonPath("questions[0].answers[1].comment").isEqualTo("Large Crow bar")
