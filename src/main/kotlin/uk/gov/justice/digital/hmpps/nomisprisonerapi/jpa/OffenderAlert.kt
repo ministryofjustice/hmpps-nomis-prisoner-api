@@ -149,6 +149,7 @@ class OffenderAlert(
         id = WorkFlowLogId(workFlow, workFlow.nextSequence()),
         workActionCode = workActionCode,
         workFlowStatus = workFlowStatus,
+        workActionDate = LocalDateTime.now(),
       ),
     )
   }
