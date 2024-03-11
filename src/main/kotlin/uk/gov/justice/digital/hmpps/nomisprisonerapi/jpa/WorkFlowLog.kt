@@ -57,7 +57,7 @@ class WorkFlowLog(
   var locateAgyLoc: AgencyLocation? = null,
 
   @Column(name = "CREATE_USER_ID")
-  val createUsername: String = id.workFlow.createUsername,
+  val createUsername: String,
 
   // @Column(name = "ACTION_USER_ID") - always null not used
 ) {

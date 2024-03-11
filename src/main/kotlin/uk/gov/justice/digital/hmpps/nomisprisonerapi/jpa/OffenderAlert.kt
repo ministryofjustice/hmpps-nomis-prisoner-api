@@ -43,7 +43,7 @@ class OffenderAlert(
   val id: OffenderAlertId,
 
   @Column(name = "ALERT_DATE", nullable = false)
-  val alertDate: LocalDate,
+  var alertDate: LocalDate,
 
   @Column(name = "EXPIRY_DATE")
   var expiryDate: LocalDate? = null,
@@ -101,16 +101,17 @@ class OffenderAlert(
   @Column(name = "CREATE_USER_ID")
   var createUsername: String,
 
+  @Column(name = "MODIFY_USER_ID")
+  var modifyUserId: String? = null,
+
+  @Column(name = "MODIFY_DATETIME")
+  var modifyDatetime: LocalDateTime? = null,
   // @Column(name = "CASELOAD_ID")  not used, always null
   // @Column(name = "CREATE_DATE") always null not used
 ) {
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  var modifyUserId: String? = null
-
-  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
-  var modifyDatetime: LocalDateTime? = null
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
   lateinit var createDatetime: LocalDateTime
 
   @Column(name = "AUDIT_TIMESTAMP", insertable = false, updatable = false)
@@ -141,7 +142,7 @@ class OffenderAlert(
   @Generated
   var auditAdditionalInfo: String? = null
 
-  fun addWorkFlowLog(workActionCode: WorkFlowAction, workFlowStatus: WorkFlowStatus = DONE) {
+  fun addWorkFlowLog(workActionCode: WorkFlowAction, workFlowStatus: WorkFlowStatus = DONE, createUsername: String? = null) {
     if (this.workFlows.isEmpty()) this.workFlows.add(AlertWorkFlow(this))
     val workFlow = this.workFlows.first()
     workFlow.logs.add(
@@ -150,6 +151,7 @@ class OffenderAlert(
         workActionCode = workActionCode,
         workFlowStatus = workFlowStatus,
         workActionDate = LocalDateTime.now(),
+        createUsername = createUsername ?: workFlow.createUsername,
       ),
     )
   }
