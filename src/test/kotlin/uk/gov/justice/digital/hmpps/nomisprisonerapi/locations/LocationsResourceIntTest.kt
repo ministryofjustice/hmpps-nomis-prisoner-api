@@ -9,6 +9,8 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.doCallRealMethod
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.SpyBean
@@ -200,6 +202,26 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("Comment is too long (max allowed 240 characters)")
         }
+    }
+
+    @Test
+    fun `Audit sync fails`() {
+      try {
+        whenever(storedProcedureRepository.audit("DPS_SYNCHRONISATION")).thenThrow(RuntimeException("Test exception thrown by spybean"))
+
+        val requestBody = createLocationRequest()
+        webTestClient.post().uri("/locations")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+          .body(BodyInserters.fromValue(requestBody))
+          .exchange()
+          .expectStatus().is5xxServerError
+
+        // Ensure the location was not created, i.e. the insert never happened
+        assertThat(repository.lookupAgencyInternalLocationByDescription(requestBody.description)).isNull()
+        verify(storedProcedureRepository, never()).clearAudit()
+      } finally {
+        doCallRealMethod().whenever(storedProcedureRepository).audit("DPS_SYNCHRONISATION")
+      }
     }
 
     @Test
