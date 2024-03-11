@@ -91,7 +91,7 @@ class StoredProcedureRepositoryH2() : StoredProcedureRepository {
   }
 
   override fun audit(name: String) {
-    log.info("calling H2 version of StoreProcedure audit")
+    log.info("calling H2 version of StoreProcedure audit with value $name")
   }
 
   override fun clearAudit() {
