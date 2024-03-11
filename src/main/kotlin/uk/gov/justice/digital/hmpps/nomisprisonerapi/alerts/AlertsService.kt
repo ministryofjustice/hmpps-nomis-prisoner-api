@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAlertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -31,33 +32,8 @@ class AlertsService(
 ) {
   fun getAlert(bookingId: Long, alertSequence: Long): AlertResponse =
     offenderBookingRepository.findByIdOrNull(bookingId)?.let { booking ->
-      offenderAlertRepository.findById_OffenderBookingAndId_Sequence(booking, alertSequence)?.let {
-        AlertResponse(
-          bookingId = bookingId,
-          alertSequence = alertSequence,
-          alertCode = it.alertCode.toCodeDescription(),
-          type = it.alertType.toCodeDescription(),
-          date = it.alertDate,
-          expiryDate = it.expiryDate,
-          isActive = it.alertStatus == ACTIVE,
-          isVerified = it.verifiedFlag,
-          authorisedBy = it.authorizePersonText,
-          comment = it.commentText,
-          audit = NomisAudit(
-            createDatetime = it.createDatetime,
-            createUsername = it.createUsername,
-            modifyDatetime = it.modifyDatetime,
-            modifyUserId = it.modifyUserId,
-            auditUserId = it.auditUserId,
-            auditTimestamp = it.auditTimestamp,
-            auditModuleName = it.auditModuleName,
-            auditAdditionalInfo = it.auditAdditionalInfo,
-            auditClientIpAddress = it.auditClientIpAddress,
-            auditClientUserId = it.auditClientUserId,
-            auditClientWorkstationName = it.auditClientWorkstationName,
-          ),
-        )
-      } ?: throw NotFoundException("Prisoner alert not found for alertSequence=$alertSequence")
+      offenderAlertRepository.findById_OffenderBookingAndId_Sequence(booking, alertSequence)?.toAlertResponse()
+        ?: throw NotFoundException("Prisoner alert not found for alertSequence=$alertSequence")
     } ?: throw NotFoundException("Prisoner booking not found for bookingId=$bookingId")
 
   @Audit
@@ -97,6 +73,53 @@ class AlertsService(
       type = alert.alertType.toCodeDescription(),
     )
   }
+
+  fun updateAlert(bookingId: Long, alertSequence: Long, request: UpdateAlertRequest): AlertResponse {
+    val offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Booking $bookingId not found")
+    val alert = offenderAlertRepository.findByIdOrNull(OffenderAlertId(offenderBooking, alertSequence))
+      ?: throw NotFoundException("Alert $alertSequence on $bookingId not found")
+    val workActionCode = workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(WorkFlowAction.MODIFIED))!!
+
+    alert.expiryDate = request.expiryDate
+    alert.alertStatus = if (request.isActive) ACTIVE else INACTIVE
+    alert.commentText = request.comment
+    alert.modifyUserId = request.updateUsername
+    alert.modifyDatetime = LocalDateTime.now()
+    // TODO I suspect DPS won't update these
+    alert.alertDate = request.date
+    alert.authorizePersonText = request.authorisedBy
+
+    alert.addWorkFlowLog(workActionCode = workActionCode, createUsername = request.updateUsername)
+
+    return offenderAlertRepository.save(alert).toAlertResponse()
+  }
+
+  private fun OffenderAlert.toAlertResponse() = AlertResponse(
+    bookingId = id.offenderBooking.bookingId,
+    alertSequence = id.sequence,
+    alertCode = alertCode.toCodeDescription(),
+    type = alertType.toCodeDescription(),
+    date = alertDate,
+    expiryDate = expiryDate,
+    isActive = alertStatus == ACTIVE,
+    isVerified = verifiedFlag,
+    authorisedBy = authorizePersonText,
+    comment = commentText,
+    audit = NomisAudit(
+      createDatetime = createDatetime,
+      createUsername = createUsername,
+      modifyDatetime = modifyDatetime,
+      modifyUserId = modifyUserId,
+      auditUserId = auditUserId,
+      auditTimestamp = auditTimestamp,
+      auditModuleName = auditModuleName,
+      auditAdditionalInfo = auditAdditionalInfo,
+      auditClientIpAddress = auditClientIpAddress,
+      auditClientUserId = auditClientUserId,
+      auditClientWorkstationName = auditClientWorkstationName,
+    ),
+  )
 }
 
 private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) =

@@ -16,8 +16,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.DATA_ENTRY
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.MODIFIED
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.VERIFICATION
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.COMP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -58,8 +59,8 @@ class AlertsResourceIntTest : IntegrationTestBase() {
               status = INACTIVE,
               commentText = "At risk",
             ) {
-              workFlowLog(workActionCode = WorkFlowAction.MODIFIED, workFlowStatus = DONE)
-              workFlowLog(workActionCode = WorkFlowAction.VERIFICATION, workFlowStatus = COMP)
+              workFlowLog(workActionCode = MODIFIED, workFlowStatus = DONE)
+              workFlowLog(workActionCode = VERIFICATION, workFlowStatus = COMP)
             }
           }.bookingId
         }
@@ -741,6 +742,287 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(newAlert.commentText).isEqualTo("Risky")
           assertThat(newAlert.expiryDate).isEqualTo("2021-01-01")
         }
+      }
+    }
+  }
+
+  @DisplayName("PUT /prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
+  @Nested
+  inner class UpdateAlert {
+    private var activeBookingId = 0L
+    private var inactiveBookingId = 0L
+    private lateinit var prisoner: Offender
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1234AB") {
+          activeBookingId = booking {
+            alert(
+              sequence = 1,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2023-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+              createUsername = "BOBBY.BEANS",
+            )
+            alert(
+              sequence = 2,
+              alertCode = "SC",
+              typeCode = "S",
+              date = LocalDate.parse("2020-07-19"),
+              expiryDate = LocalDate.parse("2025-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = INACTIVE,
+              commentText = "At risk",
+            )
+          }.bookingId
+          inactiveBookingId = booking(bookingBeginDate = LocalDateTime.parse("2021-07-18T10:00:00")) {
+            alert(
+              sequence = 1,
+              alertCode = "SA",
+              typeCode = "X",
+              date = LocalDate.parse("2021-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            release(date = LocalDateTime.parse("2021-07-19T10:00:00"))
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+    }
+
+    @Nested
+    inner class Security {
+      private val validUpdate = UpdateAlertRequest(
+        expiryDate = LocalDate.now().plusYears(1),
+        date = LocalDate.now(),
+        isActive = true,
+        updateUsername = "JANE.PEEL",
+      )
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validUpdate)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private val validUpdate = UpdateAlertRequest(
+        expiryDate = LocalDate.now().plusYears(1),
+        date = LocalDate.now(),
+        isActive = true,
+        updateUsername = "JANE.PEEL",
+      )
+
+      @Test
+      fun `validation fails when booking or alert sequence does not exist`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/99")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validUpdate)
+          .exchange()
+          .expectStatus().isNotFound
+        webTestClient.put().uri("/prisoners/booking-id/999999/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validUpdate)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `validation fails when update username is not present`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "date": "2020-01-01",
+                "expiryDate": "2030-01-01",
+                "isActive": false
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `validation fails when alert date is not present`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "expiryDate": "2030-01-01",
+                "isActive": false,
+                "updateUsername": "JANE.PEEL"
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `Can update the alert expiry date and status`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            UpdateAlertRequest(
+              expiryDate = LocalDate.parse("2024-02-28"),
+              date = LocalDate.parse("2023-07-19"),
+              isActive = false,
+              updateUsername = "JANE.PEEL",
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody()
+          .jsonPath("expiryDate").isEqualTo("2024-02-28")
+          .jsonPath("isActive").isEqualTo(false)
+          .jsonPath("bookingId").isEqualTo(activeBookingId)
+          .jsonPath("alertSequence").isEqualTo(1)
+          .jsonPath("alertCode.code").isEqualTo("HPI")
+          .jsonPath("type.code").isEqualTo("X")
+      }
+
+      @Test
+      fun `Can update the alert and retrieve those alert updates`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            UpdateAlertRequest(
+              expiryDate = LocalDate.parse("2024-02-28"),
+              date = LocalDate.parse("2023-07-19"),
+              isActive = false,
+              updateUsername = "JANE.PEEL",
+              comment = "Updated for good reason",
+              authorisedBy = "Rasheed in security",
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(200)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          assertThat(booking?.alerts).hasSize(2)
+          val newAlert = booking?.alerts?.first { it.id.sequence == 1L }!!
+
+          assertThat(newAlert.commentText).isEqualTo("Updated for good reason")
+          assertThat(newAlert.authorizePersonText).isEqualTo("Rasheed in security")
+          assertThat(newAlert.expiryDate).isEqualTo(LocalDate.parse("2024-02-28"))
+          assertThat(newAlert.alertDate).isEqualTo("2023-07-19")
+          assertThat(newAlert.modifyUserId).isEqualTo("JANE.PEEL")
+          assertThat(newAlert.modifyDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+
+          // unchanged
+          assertThat(newAlert.alertCode.code).isEqualTo("HPI")
+          assertThat(newAlert.alertType.code).isEqualTo("X")
+          assertThat(newAlert.alertStatus).isEqualTo(INACTIVE)
+          assertThat(newAlert.createUsername).isEqualTo("BOBBY.BEANS")
+          assertThat(newAlert.verifiedFlag).isFalse()
+        }
+      }
+
+      @Test
+      fun `Update will create a new workflow log modification record`() {
+        webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            UpdateAlertRequest(
+              expiryDate = LocalDate.parse("2024-02-28"),
+              date = LocalDate.parse("2023-07-19"),
+              isActive = false,
+              updateUsername = "JANE.PEEL",
+              comment = "Updated for good reason",
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(200)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          assertThat(booking?.alerts).hasSize(2)
+          val newAlert = booking?.alerts?.first { it.id.sequence == 1L }!!
+
+          assertThat(newAlert.workFlows).hasSize(1)
+          assertThat(newAlert.workFlows.first().createUsername).isEqualTo("BOBBY.BEANS")
+          assertThat(newAlert.workFlows.first().logs).hasSize(2)
+          assertThat(newAlert.workFlows.first().logs[1].createUsername).isEqualTo("JANE.PEEL")
+          assertThat(newAlert.workFlows.first().logs[1].createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newAlert.workFlows.first().logs[1].workActionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newAlert.workFlows.first().logs[1].workFlowStatus).isEqualTo(DONE)
+          assertThat(newAlert.workFlows.first().logs[1].workActionCode.code).isEqualTo(MODIFIED)
+        }
+      }
+
+      @Test
+      fun `Can update the alert on previous booking though this is not expected to ever happen in DPS`() {
+        webTestClient.put().uri("/prisoners/booking-id/$inactiveBookingId/alerts/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            UpdateAlertRequest(
+              expiryDate = LocalDate.parse("2024-02-28"),
+              date = LocalDate.parse("2023-07-19"),
+              isActive = false,
+              updateUsername = "JANE.PEEL",
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(200)
       }
     }
   }

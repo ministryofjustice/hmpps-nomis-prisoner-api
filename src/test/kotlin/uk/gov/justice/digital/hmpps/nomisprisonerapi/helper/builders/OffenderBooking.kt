@@ -157,6 +157,7 @@ interface BookingDsl {
     status: AlertStatus = AlertStatus.ACTIVE,
     commentText: String? = null,
     verifiedFlag: Boolean = false,
+    createUsername: String = "SA",
     dsl: OffenderAlertDsl.() -> Unit = { },
   ): OffenderAlert
 
@@ -442,6 +443,7 @@ class BookingBuilder(
     status: AlertStatus,
     commentText: String?,
     verifiedFlag: Boolean,
+    createUsername: String,
     dsl: OffenderAlertDsl.() -> Unit,
   ): OffenderAlert = offenderAlertBuilderFactory.builder()
     .let { builder ->
@@ -456,6 +458,7 @@ class BookingBuilder(
         status,
         commentText,
         verifiedFlag,
+        createUsername,
       ).also {
         builder.apply(dsl)
       }
