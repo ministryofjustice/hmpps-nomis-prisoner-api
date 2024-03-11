@@ -101,7 +101,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(log.workActionCode.description).isEqualTo("Data Entry")
           assertThat(log.workFlowStatus).isEqualTo(DONE)
           assertThat(log.locateAgyLoc).isNull()
-          assertThat(log.workActionDate).isNull()
+          assertThat(log.workActionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(log.createUsername).isEqualTo("SA")
         }
         with(booking.alerts.firstOrNull { it.id.sequence == 2L }!!) {
@@ -695,6 +695,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(newAlert.workFlows.first().logs).hasSize(1)
           assertThat(newAlert.workFlows.first().logs.first().createUsername).isEqualTo("JANE.PEEL")
           assertThat(newAlert.workFlows.first().logs.first().createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newAlert.workFlows.first().logs.first().workActionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(newAlert.workFlows.first().logs.first().workFlowStatus).isEqualTo(DONE)
           assertThat(newAlert.workFlows.first().logs.first().workActionCode.code).isEqualTo(DATA_ENTRY)
           assertThat(newAlert.createUsername).isEqualTo("JANE.PEEL")
