@@ -291,19 +291,24 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
+        .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
         .jsonPath("title").isEqualTo("Fight in the cell")
         .jsonPath("description").isEqualTo("Offenders were injured and furniture was damaged.")
-        .jsonPath("status").isEqualTo("AWAN")
+        .jsonPath("status.code").isEqualTo("AWAN")
+        .jsonPath("status.description").isEqualTo("Awaiting Analysis")
+        .jsonPath("status.listSequence").isEqualTo(1)
+        .jsonPath("status.standardUser").isEqualTo(true)
+        .jsonPath("status.enhancedUser").isEqualTo(true)
         .jsonPath("type").isEqualTo("ESCAPE_EST")
         .jsonPath("prison.code").isEqualTo("BXI")
         .jsonPath("prison.description").isEqualTo("BRIXTON")
         .jsonPath("lockedResponse").isEqualTo(false)
         .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
-        .jsonPath("reportedStaff.staffId").isEqualTo(reportingStaff1.id)
-        .jsonPath("reportedStaff.username").isEqualTo("FREDSTAFF")
-        .jsonPath("reportedStaff.firstName").isEqualTo("FRED")
-        .jsonPath("reportedStaff.lastName").isEqualTo("STAFF")
+        .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
+        .jsonPath("reportingStaff.username").isEqualTo("FREDSTAFF")
+        .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
+        .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
         .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
     }
 
@@ -314,7 +319,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("staffParties[0].staff.staffId").isEqualTo(partyStaff1.id)
         .jsonPath("staffParties[0].staff.username").isEqualTo("JIIMPARTYSTAFF")
         .jsonPath("staffParties[0].staff.firstName").isEqualTo("JIM")
@@ -324,6 +329,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("staffParties[1].staff.username").isEqualTo("JANESTAFF")
         .jsonPath("staffParties[1].role.code").isEqualTo("VICT")
         .jsonPath("staffParties[1].role.description").isEqualTo("Victim")
+        .jsonPath("staffParties[1].comment").isEqualTo("Staff said they witnessed everything")
     }
 
     @Test
@@ -333,7 +339,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("offenderParties[0].offender.offenderNo").isEqualTo("A1234TT")
         .jsonPath("offenderParties[0].offender.firstName").isEqualTo("Bob")
         .jsonPath("offenderParties[0].offender.lastName").isEqualTo("Smith")
@@ -341,6 +347,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("offenderParties[0].outcome.description").isEqualTo("Placed on Report")
         .jsonPath("offenderParties[0].role.code").isEqualTo("VICT")
         .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
+        .jsonPath("offenderParties[0].comment").isEqualTo("Offender said they witnessed everything")
     }
 
     @Test
@@ -351,7 +358,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("requirements.length()").isEqualTo(2)
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("requirements[0].comment").isEqualTo("Update the name")
         .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
         .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
@@ -367,7 +374,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("questions.length()").isEqualTo(3)
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
+        .jsonPath("questions[0].questionId").isEqualTo(questionnaire1.questions[3].id)
+        .jsonPath("questions[0].sequence").isEqualTo(incident1.questions[0].id.questionSequence)
+        .jsonPath("questions[0].question").isEqualTo(questionnaire1.questions[3].questionText)
         .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
     }
 
@@ -379,7 +389,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("questions.length()").isEqualTo(3)
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
         .jsonPath("questions[0].answers").isEmpty
         .jsonPath("questions[1].question").isEqualTo("Q2: Were tools used?")
@@ -400,12 +410,19 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("questions.length()").isEqualTo(1)
-        .jsonPath("id").isEqualTo(incident2.id)
+        .jsonPath("incidentId").isEqualTo(incident2.id)
         .jsonPath("questions[0].question").isEqualTo("Q3: What tools were used?")
         .jsonPath("questions[0].answers[0].answer").doesNotExist()
         .jsonPath("questions[0].answers[0].comment").isEqualTo("Hammer")
+        .jsonPath("questions[0].answers[1].questionResponseId").isEqualTo(questionnaire1.questions[1].answers[2].id)
+        .jsonPath("questions[0].answers[1].sequence").isEqualTo(questionnaire1.questions[1].answers[2].answerSequence)
+        .jsonPath("questions[0].answers[1].answer").isEqualTo(questionnaire1.questions[1].answers[2].answerText)
         .jsonPath("questions[0].answers[1].answer").isEqualTo("Q3A3: Crow bar")
         .jsonPath("questions[0].answers[1].comment").isEqualTo("Large Crow bar")
+        .jsonPath("questions[0].answers[1].recordingStaff.username").isEqualTo("ALBERTSTAFF")
+        .jsonPath("questions[0].answers[1].recordingStaff.staffId").isEqualTo(responseRecordingStaff.id)
+        .jsonPath("questions[0].answers[1].recordingStaff.firstName").isEqualTo("ALBERT")
+        .jsonPath("questions[0].answers[1].recordingStaff.lastName").isEqualTo("STAFF")
     }
 
     @Test
@@ -415,9 +432,9 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("history[0].questionnaireId").isEqualTo(questionnaire2.id)
-        .jsonPath("history[0].questionnaire").isEqualTo("FIRE")
+        .jsonPath("history[0].type").isEqualTo("FIRE")
         .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
     }
 
@@ -428,7 +445,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(incident1.id)
+        .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("history[0].questions.length()").isEqualTo(2)
         .jsonPath("history[0].questions[0].question").isEqualTo("Q21: Were staff involved?")
     }
@@ -440,12 +457,18 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(incident1.id)
-        .jsonPath("history[0].questionnaire").isEqualTo("FIRE")
+        .jsonPath("incidentId").isEqualTo(incident1.id)
+        .jsonPath("history[0].type").isEqualTo("FIRE")
         .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
         .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
         .jsonPath("history[0].questions[0].answers[0].answer").isEqualTo("Q21A1: Yes")
+        .jsonPath("history[0].questions[0].answers[0].questionResponseId").isEqualTo(questionnaire2.questions[2].answers[0].id)
+        .jsonPath("history[0].questions[0].answers[0].answer").isEqualTo("Q21A1: Yes")
         .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("Lots of staff")
+        .jsonPath("history[0].questions[0].answers[0].recordingStaff.username").isEqualTo("JANESTAFF")
+        .jsonPath("history[0].questions[0].answers[0].recordingStaff.staffId").isEqualTo(reportingStaff2.id)
+        .jsonPath("history[0].questions[0].answers[0].recordingStaff.firstName").isEqualTo("JANE")
+        .jsonPath("history[0].questions[0].answers[0].recordingStaff.lastName").isEqualTo("STAFF")
         .jsonPath("history[0].questions[1].answers.length()").isEqualTo(2)
         .jsonPath("history[0].questions[1].answers[0].answer").isEqualTo("Q22A1: Arm")
         .jsonPath("history[0].questions[1].answers[0].comment").isEqualTo("A1 - Hurt Arm")
@@ -460,8 +483,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(incident2.id)
-        .jsonPath("history[0].questionnaire").isEqualTo("FIRE")
+        .jsonPath("incidentId").isEqualTo(incident2.id)
+        .jsonPath("history[0].type").isEqualTo("FIRE")
         .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
         .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
         .jsonPath("history[0].questions[0].answers[0].answer").doesNotExist()
