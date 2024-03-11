@@ -7,12 +7,10 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.util.Objects
 
 @Entity
 @Table(name = "INCIDENT_STATUSES")
-@EntityOpen
 class IncidentStatus(
   @Id
   val code: String,

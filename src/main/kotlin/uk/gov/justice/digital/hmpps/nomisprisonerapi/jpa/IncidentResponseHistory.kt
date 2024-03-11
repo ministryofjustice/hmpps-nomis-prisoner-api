@@ -36,7 +36,7 @@ class IncidentResponseHistoryId(
   val incidentQuestion: IncidentQuestionHistory,
 
   @Column(name = "RESPONSE_SEQ", nullable = false)
-  val responseHistorySequence: Int,
+  val responseSequence: Int,
 
 ) : Serializable
 
