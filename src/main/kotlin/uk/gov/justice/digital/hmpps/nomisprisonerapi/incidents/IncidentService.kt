@@ -57,15 +57,16 @@ class IncidentService(
 
   private fun Incident.toIncidentResponse(): IncidentResponse =
     IncidentResponse(
-      id = id,
+      incidentId = id,
+      questionnaireId = questionnaire.id,
       title = title,
       description = description,
-      status = status.code,
+      status = status,
       type = questionnaire.code,
       prison = prison.toCodeDescription(),
       lockedResponse = lockedResponse,
       incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
-      reportedStaff = reportingStaff.toStaff(),
+      reportingStaff = reportingStaff.toStaff(),
       reportedDateTime = LocalDateTime.of(reportedDate, reportedTime),
       staffParties = staffParties.map { it.toStaffParty() },
       offenderParties = offenderParties.map { it.toOffenderParty() },
@@ -85,31 +86,39 @@ private fun IncidentRequirement.toRequirement() =
 
 private fun IncidentQuestion.toQuestionResponse() =
   Question(
+    questionId = question.id,
     sequence = id.questionSequence,
     question = question.questionText,
     answers = responses.map { response ->
       Response(
-        id = response.answer?.id,
+        questionResponseId = response.answer?.id,
+        sequence = response.id.responseSequence,
         answer = response.answer?.answerText,
         comment = response.comment,
+        recordingStaff = response.recordingStaff.toStaff(),
       )
     },
   )
 
 private fun IncidentHistory.toHistoryResponse() =
   History(
-    questionnaireId = this.questionnaire.id,
-    questionnaire = this.questionnaire.code,
-    description = this.questionnaire.description,
-    questions = questions.map { question ->
+    questionnaireId = questionnaire.id,
+    type = questionnaire.code,
+    description = questionnaire.description,
+    incidentChangeDate = incidentChangeDate,
+    incidentChangeStaff = incidentChangeStaff.toStaff(),
+    questions = questions.map { historyQuestion ->
       HistoryQuestion(
-        sequence = question.id.questionHistorySequence,
-        question = question.question.questionText,
-        answers = question.responses.map { response ->
+        questionId = historyQuestion.question.id,
+        sequence = historyQuestion.id.questionSequence,
+        question = historyQuestion.question.questionText,
+        answers = historyQuestion.responses.map { response ->
           HistoryResponse(
-            response.id.responseHistorySequence,
-            response.answer?.answerText,
-            response.comment,
+            questionResponseId = response.answer?.id,
+            responseSequence = response.id.responseSequence,
+            answer = response.answer?.answerText,
+            comment = response.comment,
+            recordingStaff = response.recordingStaff.toStaff(),
           )
         },
       )
