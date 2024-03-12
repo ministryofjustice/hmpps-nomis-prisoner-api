@@ -99,7 +99,7 @@ class PayRatesService(
 
   private fun MutableList<CourseActivityPayRate>.findExistingPayRate(requested: PayRateRequest) =
     firstOrNull { existing ->
-      !existing.hasExpiryDate() &&
+      (existing.endDate == null || existing.endDate!! >= LocalDate.now()) &&
         requested.payBand == existing.id.payBandCode &&
         requested.incentiveLevel == existing.id.iepLevelCode
     }

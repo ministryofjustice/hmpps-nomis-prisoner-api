@@ -409,6 +409,36 @@ class PayRateServiceTest {
     }
 
     @Test
+    fun `should be able to change a future ended pay rate`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(iepLevelCode = "STD", payBandCode = "5", endDate = tomorrow.toString(), halfDayRate = 1.41)
+          }
+        }
+      }
+      val request = listOf(
+        PayRateRequest("STD", "5", BigDecimal(0.1)),
+      )
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+
+      assertThat(newPayRates.size).isEqualTo(2)
+      // old rate should now expire today
+      with(newPayRates.findRate("STD", "5", expired = true)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(1.41), within(BigDecimal(0.001)))
+        assertThat(endDate).isEqualTo(today)
+      }
+      // new rate should begin from tomorrow
+      with(newPayRates.findRate("STD", "5", expired = false)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(0.1), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(tomorrow)
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
     fun invalidPayBandIEP() {
       whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIdAndActive(any(), eq("BAS"), any())).thenReturn(null)
       val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = BigDecimal(3.2)))
