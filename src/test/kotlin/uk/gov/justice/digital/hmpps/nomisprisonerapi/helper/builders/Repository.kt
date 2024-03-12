@@ -71,6 +71,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdju
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import kotlin.jvm.optionals.getOrNull
 
 @Repository
 @Transactional
@@ -260,8 +261,9 @@ class Repository(
     relationshipTypeRepository.findByIdOrNull(Pk(RelationshipType.RELATIONSHIP, code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
-  fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation =
-    agencyInternalLocationRepository.findOneByDescription(description).map { it }.orElse(null)
+  fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation? =
+    agencyInternalLocationRepository.findOneByDescription(description).getOrNull()
+      ?.also { it.toString() } // hydrate
 
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
     agencyInternalLocationRepository.findByIdOrNull(locationId).also {
