@@ -62,7 +62,7 @@ data class AgencyInternalLocation(
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val agency: AgencyLocation,
 
-  // calculated by trigger in Nomis
+  // calculated using code and parent location
   @Column(name = "DESCRIPTION")
   var description: String,
 
