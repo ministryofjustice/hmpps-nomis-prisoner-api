@@ -492,7 +492,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     eventId: Long,
     @RequestBody @Valid
     request: CourtAppearanceRequest,
-  ) =
+  ): CreateCourtAppearanceResponse =
     sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 }
 

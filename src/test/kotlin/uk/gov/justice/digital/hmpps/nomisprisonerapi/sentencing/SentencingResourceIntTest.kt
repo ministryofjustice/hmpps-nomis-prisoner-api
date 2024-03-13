@@ -1705,7 +1705,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can update a court appearance`() {
-        webTestClient.put()
+        val courtAppearanceResponse = webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1722,7 +1722,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isOk.expectBody(CreateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -1737,6 +1738,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].courtId").isEqualTo("LEEDYC")
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("4506")
+
+        assertThat(courtAppearanceResponse.id).isEqualTo(courtEvent.id)
+        // no new offender charges created
+        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(0)
       }
 
       @Test
@@ -1796,7 +1801,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can update existing court event charges`() {
-        webTestClient.put()
+        val courtAppearanceResponse = webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1818,7 +1823,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isOk.expectBody(CreateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -1839,11 +1845,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1005")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
+
+        // offender charges were updated here - no new ones
+        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(0)
       }
 
       @Test
       fun `can create new court event charges`() {
-        webTestClient.put()
+        val courtAppearanceResponse = webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1852,36 +1861,55 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               createCourtAppearanceRequest(
                 courtEventChargesToCreate = mutableListOf(
                   createOffenderChargeRequest(offenceCode = "VM08085"),
+                  createOffenderChargeRequest(offenceCode = "BL19011"),
+                ),
+                // if we don't update the existing they will be removed
+                courtEventChargesToUpdate = mutableListOf(
+                  createExistingOffenderChargeRequest(
+                    offenderChargeId = offenderCharge1.id,
+                  ),
+                  createExistingOffenderChargeRequest(
+                    offenderChargeId = offenderCharge2.id,
+                  ),
                 ),
               ),
             ),
 
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isOk.expectBody(CreateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
 
-        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+        val getResponse = webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
-          .expectBody()
-          .jsonPath("offenderNo").isEqualTo(offenderNo)
-          .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-05T09:00:00")
-          .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(1)
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1067")
-          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("VM08085")
-          // 2 from other court appearance and 1 new one
-          .jsonPath("offenderCharges.size()").isEqualTo(3)
-          .jsonPath("offenderCharges[2].offence.offenceCode").isEqualTo("VM08085")
-          .jsonPath("offenderCharges[2].offenceDate").isEqualTo("2023-01-01")
-          .jsonPath("offenderCharges[2].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("offenderCharges[2].resultCode1.code").isEqualTo("1067")
-          .jsonPath("offenderCharges[2].chargeStatus.code").isEqualTo("I")
-          .jsonPath("offenderCharges[2].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("offenderCharges[2].offencesCount").isEqualTo(1)
+          .expectStatus().isOk.expectBody(CourtCaseResponse::class.java)
+          .returnResult().responseBody!!
+
+        val updatedCourtAppearance = getResponse.courtEvents[0]
+        assertThat(updatedCourtAppearance.eventDateTime).isEqualTo(LocalDateTime.of(2023, 1, 5, 9, 0))
+        assertThat(updatedCourtAppearance.courtEventCharges[2].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
+        assertThat(updatedCourtAppearance.courtEventCharges[2].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
+        assertThat(updatedCourtAppearance.courtEventCharges[2].resultCode1!!.code).isEqualTo("1067")
+        assertThat(updatedCourtAppearance.courtEventCharges[2].resultCode1Indicator).isEqualTo("F")
+        assertThat(updatedCourtAppearance.courtEventCharges[2].offenderCharge.offence.offenceCode).isEqualTo("VM08085")
+
+        assertThat(updatedCourtAppearance.courtEventCharges[3].offenderCharge.offence.offenceCode).isEqualTo("BL19011")
+
+        assertThat(getResponse.offenderCharges[2].offence.offenceCode).isEqualTo("VM08085")
+        assertThat(getResponse.offenderCharges[2].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
+        assertThat(getResponse.offenderCharges[2].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
+        assertThat(getResponse.offenderCharges[2].resultCode1!!.code).isEqualTo("1067")
+        assertThat(getResponse.offenderCharges[2].chargeStatus!!.code).isEqualTo("I")
+        assertThat(getResponse.offenderCharges[2].resultCode1Indicator).isEqualTo("F")
+
+        assertThat(getResponse.offenderCharges[3].offence.offenceCode).isEqualTo("BL19011")
+
+        // only newly created Offender charges are returned - for mapping purposes
+        // order of ids is important - must match the request order
+        assertThat(courtAppearanceResponse.courtEventChargesIds[0].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[2].offenderCharge.id)
+        assertThat(courtAppearanceResponse.courtEventChargesIds[1].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[3].offenderCharge.id)
       }
 
       @Test
