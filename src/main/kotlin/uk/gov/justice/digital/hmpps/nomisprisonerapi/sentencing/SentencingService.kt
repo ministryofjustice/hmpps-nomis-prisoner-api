@@ -326,7 +326,7 @@ class SentencingService(
     caseId: Long,
     eventId: Long,
     request: CourtAppearanceRequest,
-  ) {
+  ): CreateCourtAppearanceResponse {
     findPrisoner(offenderNo).let { offender ->
       findCourtCase(caseId, offenderNo).let { courtCase ->
         findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
@@ -341,35 +341,58 @@ class SentencingService(
           courtAppearance.outcomeReasonCode =
             request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
           // will get a separate update for a generated next event - so just updating these fields rather than the target appearance
+          // todo confirm this is how updating next event dates will work
           courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
           courtAppearance.nextEventStartTime = request.nextEventDateTime
 
           updateExistingCharges(chargesToUpdate = request.courtEventChargesToUpdate, courtAppearance)
-          createNewCharges(
+          val createdOffenderCharges = createNewCharges(
             newCharges = request.courtEventChargesToCreate,
             offender.findLatestBooking(),
             courtCase,
             courtAppearance,
           )
           refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
-        }
 
-        courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().forEach {
-          courtCase.offenderCharges.remove(it)
-          log.debug("Offender charge deleted: ${it.id}")
+          courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().forEach {
+            courtCase.offenderCharges.remove(it)
+            log.debug("Offender charge deleted: ${it.id}")
+            telemetryClient.trackEvent(
+              "offender-charge-deleted",
+              mapOf(
+                "courtCaseId" to caseId.toString(),
+                "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+                "offenderNo" to offenderNo,
+                "offenderChargeId" to it.id.toString(),
+                "courtEventId" to eventId.toString(),
+              ),
+              null,
+            )
+          }
+          return CreateCourtAppearanceResponse(
+            id = eventId,
+            courtEventChargesIds = courtAppearance.courtEventCharges
+              .filter { it.id.offenderCharge.id in createdOffenderCharges }
+              .map { courtEventCharge ->
+                CreateCourtEventChargesResponse(
+                  courtEventCharge.id.offenderCharge.id,
+                )
+              },
+          ).also {
+            telemetryClient.trackEvent(
+              "court-appearance-updated",
+              mapOf(
+                "courtCaseId" to caseId.toString(),
+                "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+                "offenderNo" to offenderNo,
+                "court" to request.courtId,
+                "courtEventId" to eventId.toString(),
+                "createdOffenderCharges" to createdOffenderCharges.toString(),
+              ),
+              null,
+            )
+          }
         }
-
-        telemetryClient.trackEvent(
-          "court-appearance-updated",
-          mapOf(
-            "courtCaseId" to caseId.toString(),
-            "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-            "offenderNo" to offenderNo,
-            "court" to request.courtId,
-            "courtEventId" to eventId.toString(),
-          ),
-          null,
-        )
       }
     }
   }
