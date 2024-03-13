@@ -1887,26 +1887,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk.expectBody(CourtCaseResponse::class.java)
           .returnResult().responseBody!!
 
-/*
-          .jsonPath("offenderNo").isEqualTo(offenderNo)
-          .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-05T09:00:00")
-          .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(1)
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1067")
-          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("VM08085")
-          // 2 from other court appearance and 1 new one
-          .jsonPath("offenderCharges.size()").isEqualTo(3)
-          .jsonPath("offenderCharges[2].offence.offenceCode").isEqualTo("VM08085")
-          .jsonPath("offenderCharges[2].offenceDate").isEqualTo("2023-01-01")
-          .jsonPath("offenderCharges[2].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("offenderCharges[2].resultCode1.code").isEqualTo("1067")
-          .jsonPath("offenderCharges[2].chargeStatus.code").isEqualTo("I")
-          .jsonPath("offenderCharges[2].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("offenderCharges[2].offencesCount").isEqualTo(1)
-
- */
         val updatedCourtAppearance = getResponse.courtEvents[0]
         assertThat(updatedCourtAppearance.eventDateTime).isEqualTo(LocalDateTime.of(2023, 1, 5, 9, 0))
         assertThat(updatedCourtAppearance.courtEventCharges[2].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
