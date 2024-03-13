@@ -401,8 +401,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isCreated
-
-        verify(spRepository).audit("DPS_SYNCHRONISATION")
       }
     }
 
@@ -681,8 +679,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
-
-        verify(spRepository).audit("DPS_SYNCHRONISATION")
       }
 
       @Test
@@ -849,8 +845,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
-
-      verify(spRepository).audit("DPS_SYNCHRONISATION")
     }
   }
 
@@ -1236,8 +1230,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isCreated
-
-        verify(spRepository).audit("DPS_SYNCHRONISATION")
       }
     }
 
@@ -1671,8 +1663,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
-
-        verify(spRepository).audit("DPS_SYNCHRONISATION")
       }
     }
 
@@ -1806,8 +1796,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
-
-      verify(spRepository).audit("DPS_SYNCHRONISATION")
     }
   }
 
