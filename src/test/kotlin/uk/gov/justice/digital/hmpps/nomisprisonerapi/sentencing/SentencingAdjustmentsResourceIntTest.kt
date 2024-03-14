@@ -1982,7 +1982,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `get all active adjustments ignoring linked key date adjustments`() {
+    fun `get all active adjustments ignoring linked key date adjustments by default`() {
       webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments", bookingId)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
@@ -1994,6 +1994,29 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.sentenceAdjustments.size()").isEqualTo(2)
         .jsonPath("$.sentenceAdjustments[0].adjustmentType.code").isEqualTo("RSR")
         .jsonPath("$.sentenceAdjustments[1].adjustmentType.code").isEqualTo("S240A")
+    }
+
+    @Test
+    fun `can get all adjustments regardless of active status`() {
+      webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments?active-only=false", bookingId)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.keyDateAdjustments.size()").isEqualTo(3)
+        .jsonPath("$.keyDateAdjustments[0].adjustmentType.code").isEqualTo("LAL")
+        .jsonPath("$.keyDateAdjustments[0].active").isEqualTo(false)
+        .jsonPath("$.keyDateAdjustments[1].adjustmentType.code").isEqualTo("UAL")
+        .jsonPath("$.keyDateAdjustments[1].active").isEqualTo(true)
+        .jsonPath("$.keyDateAdjustments[2].adjustmentType.code").isEqualTo("ADA")
+        .jsonPath("$.keyDateAdjustments[2].active").isEqualTo(true)
+        .jsonPath("$.sentenceAdjustments.size()").isEqualTo(3)
+        .jsonPath("$.sentenceAdjustments[0].adjustmentType.code").isEqualTo("RSR")
+        .jsonPath("$.sentenceAdjustments[0].active").isEqualTo(true)
+        .jsonPath("$.sentenceAdjustments[1].adjustmentType.code").isEqualTo("S240A")
+        .jsonPath("$.sentenceAdjustments[1].active").isEqualTo(true)
+        .jsonPath("$.sentenceAdjustments[2].adjustmentType.code").isEqualTo("RX")
+        .jsonPath("$.sentenceAdjustments[2].active").isEqualTo(false)
     }
   }
 }
