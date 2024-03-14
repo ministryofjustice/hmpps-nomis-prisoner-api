@@ -11,4 +11,5 @@ interface OffenderSentenceAdjustmentRepository :
   CrudRepository<OffenderSentenceAdjustment, Long>,
   JpaSpecificationExecutor<OffenderSentenceAdjustment> {
   fun findByOffenderBookingAndActiveAndOffenderKeyDateAdjustmentIdIsNull(offenderBooking: OffenderBooking, isOffenderActive: Boolean): List<OffenderSentenceAdjustment>
+  fun findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(offenderBooking: OffenderBooking): List<OffenderSentenceAdjustment>
 }

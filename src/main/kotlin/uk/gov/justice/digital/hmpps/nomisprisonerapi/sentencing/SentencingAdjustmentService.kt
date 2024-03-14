@@ -244,6 +244,18 @@ class SentencingAdjustmentService(
           .map { it.toAdjustmentResponse() },
       )
     } ?: throw NotFoundException("Booking $bookingId not found")
+
+  fun getAllSentencingAdjustments(bookingId: Long) =
+    offenderBookingRepository.findByIdOrNull(bookingId)?.let { offenderBooking ->
+      SentencingAdjustmentsResponse(
+        keyDateAdjustments = keyDateAdjustmentRepository.findByOffenderBooking(offenderBooking)
+          .map { it.toAdjustmentResponse() },
+        sentenceAdjustments = offenderSentenceAdjustmentRepository.findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(
+          offenderBooking,
+        )
+          .map { it.toAdjustmentResponse() },
+      )
+    } ?: throw NotFoundException("Booking $bookingId not found")
 }
 
 private fun OffenderKeyDateAdjustment.toAdjustmentResponse() =

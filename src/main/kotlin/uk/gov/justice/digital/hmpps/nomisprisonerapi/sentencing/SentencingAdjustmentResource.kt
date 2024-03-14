@@ -553,8 +553,15 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     @Schema(description = "NOMIS booking Id", example = "12345", required = true)
     @PathVariable
     bookingId: Long,
+    @Schema(description = "Indicate if should return just active adjustments", required = true)
+    @RequestParam(value = "active-only", required = false, defaultValue = "true")
+    activeOnly: Boolean,
   ): SentencingAdjustmentsResponse =
-    sentencingAdjustmentService.getActiveSentencingAdjustments(bookingId = bookingId)
+    if (activeOnly) {
+      sentencingAdjustmentService.getActiveSentencingAdjustments(bookingId = bookingId)
+    } else {
+      sentencingAdjustmentService.getAllSentencingAdjustments(bookingId = bookingId)
+    }
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -18,4 +18,5 @@ interface OffenderKeyDateAdjustmentRepository :
   @Query(nativeQuery = true)
   fun adjustmentIdsQueryNamed(fromDate: LocalDate? = null, toDate: LocalDate? = null, pageable: Pageable): Page<AdjustmentIdResponse>
   fun findByOffenderBookingAndActive(offenderBooking: OffenderBooking, isOffenderActive: Boolean): List<OffenderKeyDateAdjustment>
+  fun findByOffenderBooking(offenderBooking: OffenderBooking): List<OffenderKeyDateAdjustment>
 }
