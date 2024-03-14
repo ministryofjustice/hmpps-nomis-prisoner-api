@@ -492,7 +492,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     eventId: Long,
     @RequestBody @Valid
     request: CourtAppearanceRequest,
-  ): CreateCourtAppearanceResponse =
+  ): UpdateCourtAppearanceResponse =
     sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 }
 
@@ -731,6 +731,15 @@ data class CreateCourtCaseResponse(
 data class CreateCourtAppearanceResponse(
   val id: Long,
   val courtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
+  // if created as an individual appearance, an associated next appearance may also have been created
+  val nextCourtAppearanceId: Long? = null,
+)
+
+@Schema(description = "Create adjustment response")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateCourtAppearanceResponse(
+  val createdCourtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
+  val deletedOffenderChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
   // if created as an individual appearance, an associated next appearance may also have been created
   val nextCourtAppearanceId: Long? = null,
 )

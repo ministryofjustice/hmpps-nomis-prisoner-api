@@ -1551,6 +1551,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
+    private lateinit var offenderCharge3: OffenderCharge
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -1566,6 +1567,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             ) {
               offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
+              offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
               courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
                 // overrides from the parent offender charge fields
                 courtEventCharge(
@@ -1574,6 +1576,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 )
                 courtEventCharge(
                   offenderCharge = offenderCharge2,
+                )
+                courtEventCharge(
+                  offenderCharge = offenderCharge3,
                 )
                 courtOrder {
                   sentencePurpose(purposeCode = "REPAIR")
@@ -1739,7 +1744,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].courtId").isEqualTo("LEEDYC")
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("4506")
 
-        assertThat(courtAppearanceResponse.id).isEqualTo(courtEvent.id)
         // no new offender charges created
         assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(0)
       }
@@ -1823,7 +1827,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           )
           .exchange()
-          .expectStatus().isOk.expectBody(CreateCourtAppearanceResponse::class.java)
+          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
           .returnResult().responseBody!!
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
@@ -1838,6 +1842,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("courtEvents[0].courtEventCharges[0].offencesCount").isEqualTo(2)
           // as this is not the latest appearance, the underlying Offender Charge is not updated
+          // 2 court event charges have been removed from the court appearance
+          // 1 offender charge has been deleted as it is not referenced by other court appearance
           .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RT88074")
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-01-05")
@@ -1847,7 +1853,50 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
 
         // offender charges were updated here - no new ones
-        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(0)
+        assertThat(courtAppearanceResponse.createdCourtEventChargesIds.size).isEqualTo(0)
+      }
+
+      @Test
+      fun `can delete existing court event charges and offender charges`() {
+        // updating 1 out of 3 court event charges. Two are removed as court event charges, 1 offender charge is also removed as it is no longer referenced
+        // by any court appearance in this case
+
+        val courtAppearanceResponse = webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtEventChargesToUpdate = mutableListOf(
+                  createExistingOffenderChargeRequest(
+                    offenderChargeId = offenderCharge1.id,
+                    offenceDate = LocalDate.of(2022, 11, 5),
+                    offenceEndDate = LocalDate.of(2022, 11, 5),
+                    offenceCode = "RI64003",
+                    resultCode1 = "4508",
+                    offencesCount = 2,
+                  ),
+                ),
+              ),
+            ),
+
+          )
+          .exchange()
+          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(1)
+
+        assertThat(courtAppearanceResponse.createdCourtEventChargesIds.size).isEqualTo(0)
+        assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(1)
+        // no longer referenced by any court appearance in this case
+        assertThat(courtAppearanceResponse.deletedOffenderChargesIds[0].offenderChargeId).isEqualTo(offenderCharge3.id)
       }
 
       @Test
@@ -1863,7 +1912,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   createOffenderChargeRequest(offenceCode = "VM08085"),
                   createOffenderChargeRequest(offenceCode = "BL19011"),
                 ),
-                // if we don't update the existing they will be removed
                 courtEventChargesToUpdate = mutableListOf(
                   createExistingOffenderChargeRequest(
                     offenderChargeId = offenderCharge1.id,
@@ -1871,13 +1919,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   createExistingOffenderChargeRequest(
                     offenderChargeId = offenderCharge2.id,
                   ),
+                  createExistingOffenderChargeRequest(
+                    offenderChargeId = offenderCharge3.id,
+                  ),
                 ),
               ),
             ),
 
           )
           .exchange()
-          .expectStatus().isOk.expectBody(CreateCourtAppearanceResponse::class.java)
+          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
           .returnResult().responseBody!!
 
         val getResponse = webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
@@ -1889,27 +1940,30 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         val updatedCourtAppearance = getResponse.courtEvents[0]
         assertThat(updatedCourtAppearance.eventDateTime).isEqualTo(LocalDateTime.of(2023, 1, 5, 9, 0))
-        assertThat(updatedCourtAppearance.courtEventCharges[2].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
-        assertThat(updatedCourtAppearance.courtEventCharges[2].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
-        assertThat(updatedCourtAppearance.courtEventCharges[2].resultCode1!!.code).isEqualTo("1067")
-        assertThat(updatedCourtAppearance.courtEventCharges[2].resultCode1Indicator).isEqualTo("F")
-        assertThat(updatedCourtAppearance.courtEventCharges[2].offenderCharge.offence.offenceCode).isEqualTo("VM08085")
+        assertThat(updatedCourtAppearance.courtEventCharges[3].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
+        assertThat(updatedCourtAppearance.courtEventCharges[3].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
+        assertThat(updatedCourtAppearance.courtEventCharges[3].resultCode1!!.code).isEqualTo("1067")
+        assertThat(updatedCourtAppearance.courtEventCharges[3].resultCode1Indicator).isEqualTo("F")
+        assertThat(updatedCourtAppearance.courtEventCharges[3].offenderCharge.offence.offenceCode).isEqualTo("VM08085")
 
-        assertThat(updatedCourtAppearance.courtEventCharges[3].offenderCharge.offence.offenceCode).isEqualTo("BL19011")
+        assertThat(updatedCourtAppearance.courtEventCharges[4].offenderCharge.offence.offenceCode).isEqualTo("BL19011")
 
-        assertThat(getResponse.offenderCharges[2].offence.offenceCode).isEqualTo("VM08085")
-        assertThat(getResponse.offenderCharges[2].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
-        assertThat(getResponse.offenderCharges[2].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
-        assertThat(getResponse.offenderCharges[2].resultCode1!!.code).isEqualTo("1067")
-        assertThat(getResponse.offenderCharges[2].chargeStatus!!.code).isEqualTo("I")
-        assertThat(getResponse.offenderCharges[2].resultCode1Indicator).isEqualTo("F")
+        assertThat(getResponse.offenderCharges[3].offence.offenceCode).isEqualTo("VM08085")
+        assertThat(getResponse.offenderCharges[3].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
+        assertThat(getResponse.offenderCharges[3].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
+        assertThat(getResponse.offenderCharges[3].resultCode1!!.code).isEqualTo("1067")
+        assertThat(getResponse.offenderCharges[3].chargeStatus!!.code).isEqualTo("I")
+        assertThat(getResponse.offenderCharges[3].resultCode1Indicator).isEqualTo("F")
 
-        assertThat(getResponse.offenderCharges[3].offence.offenceCode).isEqualTo("BL19011")
+        assertThat(getResponse.offenderCharges[4].offence.offenceCode).isEqualTo("BL19011")
 
-        // only newly created Offender charges are returned - for mapping purposes
+        // 3 original charges updated, 2 new ones created
         // order of ids is important - must match the request order
-        assertThat(courtAppearanceResponse.courtEventChargesIds[0].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[2].offenderCharge.id)
-        assertThat(courtAppearanceResponse.courtEventChargesIds[1].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[3].offenderCharge.id)
+        assertThat(offenderCharge1.id).isEqualTo(updatedCourtAppearance.courtEventCharges[0].offenderCharge.id)
+        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[0].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[3].offenderCharge.id)
+        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[1].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[4].offenderCharge.id)
+
+        assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(0)
       }
 
       @Test

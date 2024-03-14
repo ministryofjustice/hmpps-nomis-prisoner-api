@@ -326,7 +326,7 @@ class SentencingService(
     caseId: Long,
     eventId: Long,
     request: CourtAppearanceRequest,
-  ): CreateCourtAppearanceResponse {
+  ): UpdateCourtAppearanceResponse {
     findPrisoner(offenderNo).let { offender ->
       findCourtCase(caseId, offenderNo).let { courtCase ->
         findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
@@ -354,30 +354,36 @@ class SentencingService(
           )
           refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
 
-          courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().forEach {
-            courtCase.offenderCharges.remove(it)
-            log.debug("Offender charge deleted: ${it.id}")
-            telemetryClient.trackEvent(
-              "offender-charge-deleted",
-              mapOf(
-                "courtCaseId" to caseId.toString(),
-                "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-                "offenderNo" to offenderNo,
-                "offenderChargeId" to it.id.toString(),
-                "courtEventId" to eventId.toString(),
-              ),
-              null,
-            )
+          val deletedOffenderCharges = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also {
+            it.forEach {
+              courtCase.offenderCharges.remove(it)
+              log.debug("Offender charge deleted: ${it.id}")
+              telemetryClient.trackEvent(
+                "offender-charge-deleted",
+                mapOf(
+                  "courtCaseId" to caseId.toString(),
+                  "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+                  "offenderNo" to offenderNo,
+                  "offenderChargeId" to it.id.toString(),
+                  "courtEventId" to eventId.toString(),
+                ),
+                null,
+              )
+            }
           }
-          return CreateCourtAppearanceResponse(
-            id = eventId,
-            courtEventChargesIds = courtAppearance.courtEventCharges
+          return UpdateCourtAppearanceResponse(
+            createdCourtEventChargesIds = courtAppearance.courtEventCharges
               .filter { it.id.offenderCharge.id in createdOffenderCharges }
               .map { courtEventCharge ->
                 CreateCourtEventChargesResponse(
                   courtEventCharge.id.offenderCharge.id,
                 )
               },
+            deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
+              CreateCourtEventChargesResponse(
+                offenderChargeId = offenderCharge.id,
+              )
+            },
           ).also {
             telemetryClient.trackEvent(
               "court-appearance-updated",
@@ -387,7 +393,8 @@ class SentencingService(
                 "offenderNo" to offenderNo,
                 "court" to request.courtId,
                 "courtEventId" to eventId.toString(),
-                "createdOffenderCharges" to createdOffenderCharges.toString(),
+                "createdOffenderCharges" to it.createdCourtEventChargesIds.toString(),
+                "deletedOffenderCharges" to it.deletedOffenderChargesIds.toString(),
               ),
               null,
             )
