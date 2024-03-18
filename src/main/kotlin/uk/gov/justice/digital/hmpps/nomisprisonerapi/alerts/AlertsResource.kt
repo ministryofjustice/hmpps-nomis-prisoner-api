@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -31,7 +32,10 @@ class AlertsResource(
   private val alertsService: AlertsService,
 ) {
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
-  @GetMapping("/prisoner/booking-id/{bookingId}/alerts/{alertSequence}", "/prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
+  @GetMapping(
+    "/prisoner/booking-id/{bookingId}/alerts/{alertSequence}",
+    "/prisoners/booking-id/{bookingId}/alerts/{alertSequence}",
+  )
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get an alert by bookingId and alert sequence",
@@ -233,6 +237,48 @@ class AlertsResource(
     @RequestBody @Valid
     request: UpdateAlertRequest,
   ): AlertResponse = alertsService.updateAlert(bookingId, alertSequence, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @DeleteMapping("/prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Deletes an alert by bookingId and alert sequence",
+    description = "Deletes an prisoner alert. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Alert Deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteAlert(
+    @Schema(description = "Booking Id", example = "12345")
+    @PathVariable
+    bookingId: Long,
+    @Schema(description = "Alert sequence", example = "3")
+    @PathVariable
+    alertSequence: Long,
+  ): Unit = alertsService.deleteAlert(bookingId, alertSequence)
 }
 
 @Schema(description = "The data held in NOMIS about an alert associated with a prisoner")

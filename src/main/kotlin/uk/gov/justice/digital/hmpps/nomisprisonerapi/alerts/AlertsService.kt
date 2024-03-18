@@ -121,6 +121,12 @@ class AlertsService(
       auditClientWorkstationName = auditClientWorkstationName,
     ),
   )
+
+  fun deleteAlert(bookingId: Long, alertSequence: Long) {
+    offenderBookingRepository.findByIdOrNull(bookingId)?.also {
+      offenderAlertRepository.deleteById(OffenderAlertId(it, alertSequence))
+    }
+  }
 }
 
 private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) =
