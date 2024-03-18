@@ -355,6 +355,107 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("DELETE /prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
+  @Nested
+  inner class DeleteAlert {
+    var bookingId = 0L
+    private val activeAlertSequence = 1L
+    private lateinit var prisoner: Offender
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1234AB") {
+          bookingId = booking {
+            alert(
+              sequence = activeAlertSequence,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2023-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class NoValidation {
+      @Test
+      fun `return 204 when prisoner's booking not found`() {
+        webTestClient.delete().uri("/prisoners/booking-id/9999/alerts/$activeAlertSequence")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+
+      @Test
+      fun `return 204 when prisoner's alert not found`() {
+        webTestClient.delete().uri("/prisoners/booking-id/$bookingId/alerts/9999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the alert`() {
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+        webTestClient.delete().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus()
+          .isNotFound
+      }
+    }
+  }
+
   @DisplayName("POST /prisoners/{offenderNo}/alerts")
   @Nested
   inner class CreateAlert {
