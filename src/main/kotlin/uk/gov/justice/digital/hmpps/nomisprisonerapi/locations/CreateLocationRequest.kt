@@ -108,7 +108,7 @@ data class CreateLocationRequest(
 data class ProfileRequest(
   @Schema(
     description = "Reference Domain for the attribute",
-    allowableValues = ["HOU_SANI_FIT", "HOU_UNIT_ATT", "HOU_USED_FOR", "SUP_LVL_TYPE"],
+    allowableValues = ["HOU_SANI_FIT", "HOU_UNIT_ATT", "HOU_USED_FOR", "SUP_LVL_TYPE", "NON_ASSO_TYP"],
     examples = ["Housing Unit Fittings", "Housing Unit Attribute", "Housing Unit Usage", "Supervision Level"],
   )
   val profileType: String,
@@ -124,7 +124,7 @@ data class ProfileRequest(
 data class UsageRequest(
   @Schema(
     description = "Types of location that the usage applies to",
-    allowableValues = ["APP", "MOVEMENT", "OCCUR", "OIC", "OTHER", "PROG", "PROP", "VISIT"],
+    allowableValues = ["APP", "MOVEMENT", "OCCUR", "OIC", "OTHER", "OTH", "PROG", "PROP", "VISIT"],
     examples = [
       "Appointment Location", "Prisoner Movement Location", "Occurrence Location", "Adjudication Hearing Location",
       "Other Internal Location", "Programmes & Activities Location", "Property Location", "Visit Location",
