@@ -16,8 +16,7 @@ interface AgencyInternalLocationRepository : JpaRepository<AgencyInternalLocatio
     locationCodes: List<String> = listOf("VISIT", "VISITS"),
   ): AgencyInternalLocation?
 
-  @Suppress("FunctionName")
-  fun findAgencyInternalLocationsByAgencyIdAndLocationType_CodeAndActive(
+  fun findAgencyInternalLocationsByAgencyIdAndLocationTypeAndActive(
     agencyId: String,
     locationType: String,
     active: Boolean = true,

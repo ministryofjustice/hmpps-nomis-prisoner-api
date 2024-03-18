@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -69,14 +68,9 @@ class CourseActivityBuilderRepository(
   private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>? = null,
 ) {
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository?.findByIdOrNull(id)!!
-  fun lookupIepLevel(code: String): IEPLevel =
-    iepLevelRepository?.findByIdOrNull(ReferenceCode.Pk(IEPLevel.IEP_LEVEL, code))!!
 
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
     agencyInternalLocationRepository?.findByIdOrNull(locationId)
-
-  fun lookupInternalLocationType(code: String): InternalLocationType =
-    internalLocationTypeRepository?.findByIdOrNull(ReferenceCode.Pk(InternalLocationType.ILOC_TYPE, code))!!
 }
 
 @Component
@@ -134,7 +128,7 @@ class CourseActivityBuilder(
       internalLocation = internalLocationId?.let {
         lookupAgencyInternalLocation(
           it,
-          lookupLocationType("CLAS"),
+          "CLAS",
           lookupAgency(prisonId),
         )
       },
@@ -213,15 +207,12 @@ class CourseActivityBuilder(
       courseActivity.courseScheduleRules += it
     }
 
-  private fun lookupLocationType(code: String) =
-    repository?.lookupInternalLocationType(code) ?: InternalLocationType(code, "Classroom")
-
   private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
 
   private fun lookupAgencyInternalLocation(
     internalLocationId: Long,
-    locationType: InternalLocationType,
+    locationType: String,
     prison: AgencyLocation,
   ) =
     repository?.lookupAgencyInternalLocation(internalLocationId)

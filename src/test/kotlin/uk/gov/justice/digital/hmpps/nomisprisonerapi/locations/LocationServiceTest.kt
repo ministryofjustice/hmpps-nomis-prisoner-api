@@ -120,7 +120,7 @@ internal class LocationServiceTest {
           assertThat(it.description).isEqualTo("A-1-001")
           assertThat(it.certified).isTrue
           assertThat(it.tracking).isTrue
-          assertThat(it.locationType.code).isEqualTo("CELL")
+          assertThat(it.locationType).isEqualTo("CELL")
           assertThat(it.unitType?.code).isEqualTo("HC")
           assertThat(it.agency.id).isEqualTo(PRISON_ID)
           assertThat(it.parentLocation).isNull()
@@ -187,7 +187,7 @@ internal class LocationServiceTest {
       description = "A-1-001",
       certified = false,
       tracking = false,
-      locationType = InternalLocationType("CELL", "desc"),
+      locationType = "CELL",
       agency = AgencyLocation(PRISON_ID, PRISON_DESCRIPTION),
       userDescription = "User description",
       listSequence = 1,
@@ -234,7 +234,7 @@ internal class LocationServiceTest {
 
       assertThat(agencyInternalLocation.locationCode).isEqualTo("002")
       assertThat(agencyInternalLocation.description).isEqualTo("NEW-LOC")
-      assertThat(agencyInternalLocation.locationType.code).isEqualTo("CELL")
+      assertThat(agencyInternalLocation.locationType).isEqualTo("CELL")
       assertThat(agencyInternalLocation.unitType?.code).isEqualTo("HC")
       assertThat(agencyInternalLocation.userDescription).isEqualTo("New description")
       assertThat(agencyInternalLocation.listSequence).isEqualTo(2)

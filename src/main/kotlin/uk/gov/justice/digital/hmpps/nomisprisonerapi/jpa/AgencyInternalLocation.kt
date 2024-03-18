@@ -45,18 +45,8 @@ data class AgencyInternalLocation(
   @Convert(converter = YesNoConverter::class)
   val tracking: Boolean = false,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(value = "'${InternalLocationType.ILOC_TYPE}'", referencedColumnName = "domain"),
-      ),
-      JoinColumnOrFormula(
-        column = JoinColumn(name = "INTERNAL_LOCATION_TYPE", referencedColumnName = "code", nullable = false),
-      ),
-    ],
-  )
-  var locationType: InternalLocationType,
+  @Column(name = "INTERNAL_LOCATION_TYPE")
+  var locationType: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)

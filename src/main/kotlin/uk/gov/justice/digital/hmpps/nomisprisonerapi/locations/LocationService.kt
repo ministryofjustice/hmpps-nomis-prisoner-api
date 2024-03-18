@@ -40,9 +40,6 @@ class LocationService(
 
   @Audit
   fun createLocation(locationDto: CreateLocationRequest): LocationIdResponse {
-    val locationType = internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(locationDto.locationType))
-      ?: throw BadDataException("Location type with id=${locationDto.locationType} does not exist")
-
     val housingUnitType = locationDto.unitType?.let {
       housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(it))
         ?: throw BadDataException("Housing unit type with id=${locationDto.unitType} does not exist")
@@ -58,7 +55,7 @@ class LocationService(
 
     return LocationIdResponse(
       agencyInternalLocationRepository.save(
-        locationDto.toAgencyInternalLocation(locationType, housingUnitType, agency, parent),
+        locationDto.toAgencyInternalLocation(locationDto.locationType, housingUnitType, agency, parent),
       ).also {
         saveProfiles(it, locationDto.profiles)
         saveUsages(it, locationDto.usages)
@@ -80,10 +77,6 @@ class LocationService(
     val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
-    val internalLocationType =
-      internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(locationDto.locationType))
-        ?: throw BadDataException("Location type with id=${locationDto.locationType} does not exist")
-
     val housingUnitType = locationDto.unitType?.let {
       housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(it))
         ?: throw BadDataException("Housing unit type with id=${locationDto.unitType} does not exist")
@@ -95,7 +88,7 @@ class LocationService(
     }
 
     location.apply {
-      locationType = internalLocationType
+      locationType = locationDto.locationType
       description = locationDto.description
       userDescription = locationDto.userDescription
       locationCode = locationDto.locationCode
@@ -310,7 +303,7 @@ class LocationService(
     LocationResponse(
       locationId = locationId,
       description = description,
-      locationType = locationType.code,
+      locationType = locationType,
       prisonId = agency.id,
       parentLocationId = parentLocation?.locationId,
       operationalCapacity = operationalCapacity,

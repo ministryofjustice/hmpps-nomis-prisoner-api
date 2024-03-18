@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
@@ -89,7 +88,7 @@ class ActivityServiceTest {
   private val defaultRoom = AgencyInternalLocation(
     agency = defaultPrison,
     description = PRISON_DESCRIPTION,
-    locationType = InternalLocationType("ROOM", "Room"),
+    locationType = "ROOM",
     locationCode = "ROOM-1",
     locationId = ROOM_ID,
   )
