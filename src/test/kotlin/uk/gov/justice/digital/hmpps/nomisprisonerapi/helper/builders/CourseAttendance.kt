@@ -11,7 +11,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -34,8 +33,6 @@ class CourseAttendanceBuilderRepository(
   fun agencyInternalLocation(locationId: Long) = agencyInternalLocationRepository.findByIdOrNull(locationId)
   fun eventStatus(code: String) = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
   fun attendanceOutcome(code: String) = attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(code))!!
-  fun lookupInternalLocationType(code: String): InternalLocationType =
-    internalLocationTypeRepository?.findByIdOrNull(ReferenceCode.Pk(InternalLocationType.ILOC_TYPE, code))!!
 }
 
 @Component
@@ -67,7 +64,7 @@ class CourseAttendanceBuilder(
       toInternalLocation = toInternalLocationId?.let {
         agencyInternalLocation(
           toInternalLocationId,
-          lookupLocationType("CLAS"),
+          "CLAS",
           lookupAgency("LEI"),
         )
       },
@@ -83,9 +80,6 @@ class CourseAttendanceBuilder(
       paidTransactionId = paidTransactionId,
     )
 
-  private fun lookupLocationType(code: String) =
-    repository?.lookupInternalLocationType(code) ?: InternalLocationType(code, "Classroom")
-
   private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
 
@@ -94,7 +88,7 @@ class CourseAttendanceBuilder(
 
   private fun agencyInternalLocation(
     id: Long,
-    locationType: InternalLocationType,
+    locationType: String,
     prison: AgencyLocation,
   ) = repository?.agencyInternalLocation(id)
     ?: AgencyInternalLocation(

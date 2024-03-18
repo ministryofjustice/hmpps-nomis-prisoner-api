@@ -108,7 +108,7 @@ class AgencyInternalLocationBuilder(
       active = active,
       certified = true,
       tracking = false,
-      locationType = repository.lookupInternalLocationType(locationType),
+      locationType = locationType,
       agency = repository.lookupAgency(prisonId),
       description = parentLocation?.let { "${it.description}-$locationCode" } ?: "$prisonId-$locationCode",
       parentLocation = parentLocation,

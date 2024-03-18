@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuild
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
@@ -46,7 +45,7 @@ internal class VisitResponseTest {
       agency = agency,
       description = "LEI-VIS-01",
       locationCode = "VIS-01",
-      locationType = InternalLocationType("VIS", "Visit Room"),
+      locationType = "VIS",
     ),
     visitStatus = VisitStatus(code = "SCH", description = "Scheduled"),
     visitors = mutableListOf(),

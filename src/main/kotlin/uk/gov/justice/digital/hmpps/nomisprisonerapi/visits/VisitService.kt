@@ -542,15 +542,15 @@ class VisitService(
   ): AgencyInternalLocation {
     log.info("Creating VSIP visit room: $roomDescription ($roomCode)")
 
-    val visitInternalLocationType = internalLocationTypeRepository.findByIdOrNull(InternalLocationType.VISIT)
-      ?: throw RuntimeException("VISIT location type not found")
+//    val visitInternalLocationType = internalLocationTypeRepository.findByIdOrNull(InternalLocationType.VISIT)
+//      ?: throw RuntimeException("VISIT location type not found")
 
     return internalLocationRepository.save(
       AgencyInternalLocation(
         agency = location,
         parentLocation = parentLocation,
         description = roomDescription,
-        locationType = visitInternalLocationType,
+        locationType = InternalLocationType.VISIT.code,
         locationCode = roomCode,
         active = true,
         userDescription = userDescription.uppercase(),

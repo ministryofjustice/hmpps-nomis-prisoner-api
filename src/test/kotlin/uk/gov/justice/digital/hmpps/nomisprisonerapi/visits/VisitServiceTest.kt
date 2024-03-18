@@ -203,7 +203,7 @@ internal class VisitServiceTest {
       return@thenAnswer AgencyInternalLocation(
         locationId = 99,
         active = true,
-        locationType = InternalLocationType("AREA", description = "Area"),
+        locationType = "AREA",
         agency = AgencyLocation(it.arguments[0] as String, "desc"),
         description = "${it.arguments[0]}-VISITS",
         locationCode = "VISITS",
@@ -253,7 +253,7 @@ internal class VisitServiceTest {
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.location.id).isEqualTo(PRISON_ID)
-          assertThat(visit.agencyInternalLocation?.locationType?.code).isEqualTo("VISIT")
+          assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_SOC")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
           assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - SOCIAL")
@@ -274,7 +274,7 @@ internal class VisitServiceTest {
       verify(visitRepository).save(
         check { visit ->
           assertThat(visit.location.id).isEqualTo(PRISON_ID)
-          assertThat(visit.agencyInternalLocation?.locationType?.code).isEqualTo("VISIT")
+          assertThat(visit.agencyInternalLocation?.locationType).isEqualTo("VISIT")
           assertThat(visit.agencyInternalLocation?.locationCode).isEqualTo("VSIP_CLO")
           assertThat(visit.agencyInternalLocation?.active).isTrue()
           assertThat(visit.agencyInternalLocation?.userDescription).isEqualTo("VISITS - CLOSED")

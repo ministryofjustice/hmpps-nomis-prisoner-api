@@ -148,18 +148,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `invalid location type`() {
-      webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .body(BodyInserters.fromValue(createLocationRequest().copy(locationType = "invalid")))
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Location type with id=invalid does not exist")
-        }
-    }
-
-    @Test
     fun `invalid housing unit type`() {
       webTestClient.post().uri("/locations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
@@ -251,7 +239,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
         assertThat(locationCode).isEqualTo("CLASS7")
         assertThat(description).isEqualTo("LEI-CLASS7")
-        assertThat(locationType.code).isEqualTo("CLAS")
+        assertThat(locationType).isEqualTo("CLAS")
         assertThat(agency.id).isEqualTo("LEI")
         assertThat(comment).isEqualTo("this is a test!")
         assertThat(capacity).isEqualTo(30)
@@ -313,7 +301,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
         assertThat(locationCode).isEqualTo("005")
         assertThat(description).isEqualTo("BXI-A-1-005")
-        assertThat(locationType.code).isEqualTo("CELL")
+        assertThat(locationType).isEqualTo("CELL")
         assertThat(unitType?.code).isEqualTo("NA")
         assertThat(agency.id).isEqualTo("BXI")
         assertThat(comment).isEqualTo("this is a cell!")
@@ -330,7 +318,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class UpdateLocation {
 
-    lateinit var location1: AgencyInternalLocation
+    private lateinit var location1: AgencyInternalLocation
 
     @BeforeEach
     internal fun setupLocations() {
@@ -367,18 +355,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("Parent location with id=-9999 does not exist")
-        }
-    }
-
-    @Test
-    fun `invalid location type`() {
-      webTestClient.put().uri("/locations/{locationId}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
-        .body(BodyInserters.fromValue(createLocationRequest().copy(locationType = "invalid")))
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Location type with id=invalid does not exist")
         }
     }
 
@@ -468,7 +444,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       repository.lookupAgencyInternalLocation(location1.locationId)!!.apply {
         assertThat(locationCode).isEqualTo("CLASS7")
         assertThat(description).isEqualTo("LEI-CLASS7")
-        assertThat(locationType.code).isEqualTo("CLAS")
+        assertThat(locationType).isEqualTo("CLAS")
         assertThat(comment).isEqualTo("this is a test!")
         assertThat(userDescription).isEqualTo("new description")
         assertThat(listSequence).isEqualTo(1)
@@ -521,7 +497,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       repository.lookupAgencyInternalLocation(location1.locationId)!!.apply {
         assertThat(locationCode).isEqualTo("005")
         assertThat(description).isEqualTo("MDI-A-1-005")
-        assertThat(locationType.code).isEqualTo("CELL")
+        assertThat(locationType).isEqualTo("CELL")
         assertThat(unitType?.code).isEqualTo("NA")
         assertThat(parentLocation?.locationId).isEqualTo(-3008)
         assertThat(comment).isEqualTo("this is a cell!")
@@ -788,7 +764,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetLocationById {
 
-    lateinit var location1: AgencyInternalLocation
+    private lateinit var location1: AgencyInternalLocation
 
     @BeforeEach
     internal fun setupLocations() {
@@ -858,7 +834,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetLocationByBusinessKey {
 
-    lateinit var location1: AgencyInternalLocation
+    private lateinit var location1: AgencyInternalLocation
 
     @BeforeEach
     internal fun createLocations() {

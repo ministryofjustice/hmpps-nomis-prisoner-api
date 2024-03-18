@@ -66,7 +66,7 @@ class LocationRepositoryTest {
 
     with(agencyInternalLocation) {
       assertThat(locationCode).isEqualTo("MEDI")
-      assertThat(locationType.code).isEqualTo("MEDI")
+      assertThat(locationType).isEqualTo("MEDI")
       assertThat(agency.id).isEqualTo("MDI")
       assertThat(listSequence).isEqualTo(100)
       assertThat(active).isFalse

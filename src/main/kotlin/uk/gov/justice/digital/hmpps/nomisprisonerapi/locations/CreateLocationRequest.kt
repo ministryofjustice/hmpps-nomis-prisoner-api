@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Location creation request")
@@ -78,7 +77,7 @@ data class CreateLocationRequest(
   val usages: List<UsageRequest>? = null,
 ) {
   fun toAgencyInternalLocation(
-    locationType: InternalLocationType,
+    locationType: String,
     housingUnitType: HousingUnitType?,
     agency: AgencyLocation,
     parent: AgencyInternalLocation?,
