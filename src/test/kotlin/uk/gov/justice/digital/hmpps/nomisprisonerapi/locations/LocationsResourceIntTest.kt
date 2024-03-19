@@ -772,7 +772,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         location1 = agencyInternalLocation(
           locationCode = "100",
           locationType = "CELL",
-          prisonId = "MDI",
+          prisonId = "LEI",
           parentAgencyInternalLocationId = -2L,
           capacity = 30,
           operationalCapacity = 25,
@@ -804,8 +804,9 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.certified").isEqualTo(true)
         .jsonPath("$.locationType").isEqualTo("CELL")
-        .jsonPath("$.prisonId").isEqualTo("MDI")
+        .jsonPath("$.prisonId").isEqualTo("LEI")
         .jsonPath("$.parentLocationId").isEqualTo(-2L)
+        .jsonPath("$.parentKey").isEqualTo("LEI-A-1")
         .jsonPath("$.operationalCapacity").isEqualTo(25)
         .jsonPath("$.cnaCapacity").isEqualTo(20)
         .jsonPath("$.description").isEqualTo("LEI-A-1-100")
@@ -842,8 +843,8 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         location1 = agencyInternalLocation(
           locationCode = "100",
           locationType = "CELL",
-          prisonId = "MDI",
-          parentAgencyInternalLocationId = -2L,
+          prisonId = "LEI",
+          parentAgencyInternalLocationId = -32L,
           capacity = 30,
           operationalCapacity = 25,
           cnaCapacity = 20,
@@ -869,11 +870,12 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("$.certified").isEqualTo(true)
         .jsonPath("$.locationType").isEqualTo("CELL")
-        .jsonPath("$.prisonId").isEqualTo("MDI")
-        .jsonPath("$.parentLocationId").isEqualTo(-2L)
+        .jsonPath("$.prisonId").isEqualTo("LEI")
+        .jsonPath("$.parentLocationId").isEqualTo(-32L)
+        .jsonPath("$.parentKey").isEqualTo("LEI-A-2")
         .jsonPath("$.operationalCapacity").isEqualTo(25)
         .jsonPath("$.cnaCapacity").isEqualTo(20)
-        .jsonPath("$.description").isEqualTo("LEI-A-1-100")
+        .jsonPath("$.description").isEqualTo("LEI-A-2-100")
         .jsonPath("$.userDescription").isEqualTo("user description")
         .jsonPath("$.locationCode").isEqualTo("100")
         .jsonPath("$.capacity").isEqualTo(30)

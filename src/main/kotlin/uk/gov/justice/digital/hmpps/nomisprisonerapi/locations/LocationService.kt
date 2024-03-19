@@ -306,6 +306,7 @@ class LocationService(
       locationType = locationType,
       prisonId = agency.id,
       parentLocationId = parentLocation?.locationId,
+      parentKey = parentLocation?.description,
       operationalCapacity = operationalCapacity,
       cnaCapacity = cnaCapacity,
       userDescription = userDescription,

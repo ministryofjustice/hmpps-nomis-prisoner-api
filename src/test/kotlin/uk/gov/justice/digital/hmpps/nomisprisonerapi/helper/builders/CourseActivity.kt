@@ -9,14 +9,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseScheduleRule
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
 @DslMarker
@@ -63,9 +60,7 @@ interface CourseActivityDsl {
 @Component
 class CourseActivityBuilderRepository(
   private val agencyLocationRepository: AgencyLocationRepository? = null,
-  private val iepLevelRepository: ReferenceCodeRepository<IEPLevel>? = null,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository? = null,
-  private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>? = null,
 ) {
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository?.findByIdOrNull(id)!!
 
