@@ -71,7 +71,6 @@ class VisitService(
   private val visitTimeRepository: AgencyVisitTimeRepository,
   private val visitSlotRepository: AgencyVisitSlotRepository,
   private val internalLocationRepository: AgencyInternalLocationRepository,
-  private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)

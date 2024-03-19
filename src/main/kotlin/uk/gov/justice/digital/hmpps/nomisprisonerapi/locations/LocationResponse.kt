@@ -24,6 +24,9 @@ data class LocationResponse(
   @Schema(description = "The containing location id", example = "1234567")
   val parentLocationId: Long? = null,
 
+  @Schema(description = "The containing location id's key (Nomis description field)", example = "WWI-B-2")
+  val parentKey: String? = null,
+
   @Schema(description = "Max capacity subject to resources", example = "43")
   val operationalCapacity: Int? = null,
 
