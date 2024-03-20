@@ -15,6 +15,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
+import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -22,73 +23,59 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 @RestControllerAdvice
 class NomisPrisonerApiExceptionHandler {
   @ExceptionHandler(AccessDeniedException::class)
-  fun handleAccessDeniedException(e: AccessDeniedException): ResponseEntity<ErrorResponse> {
-    log.debug("Forbidden (403) returned with message {}", e.message)
-    return ResponseEntity
-      .status(HttpStatus.FORBIDDEN)
-      .body(ErrorResponse(status = (HttpStatus.FORBIDDEN.value())))
-  }
+  fun handleAccessDeniedException(e: AccessDeniedException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.FORBIDDEN)
+    .body(ErrorResponse(status = (HttpStatus.FORBIDDEN.value()))).also {
+      log.debug("Forbidden (403) returned with message {}", e.message)
+    }
 
   @ExceptionHandler(ValidationException::class)
-  fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
-    log.info("Validation exception: {}", e.message)
-    return ResponseEntity
-      .status(BAD_REQUEST)
-      .body(
-        ErrorResponse(
-          status = BAD_REQUEST,
-          userMessage = "Validation failure: ${e.message}",
-          developerMessage = e.message,
-        ),
-      )
-  }
+  fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = BAD_REQUEST,
+        userMessage = "Validation failure: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("Validation exception: {}", e.message) }
 
   @ExceptionHandler(NotFoundException::class)
-  fun handleNotFoundException(e: Exception): ResponseEntity<ErrorResponse?>? {
-    log.info("Not Found: {}", e.message)
-    return ResponseEntity
-      .status(NOT_FOUND)
-      .body(
-        ErrorResponse(
-          status = NOT_FOUND,
-          userMessage = "Not Found: ${e.message}",
-          developerMessage = e.message,
-        ),
-      )
-  }
+  fun handleNotFoundException(e: Exception): ResponseEntity<ErrorResponse?>? = ResponseEntity
+    .status(NOT_FOUND)
+    .body(
+      ErrorResponse(
+        status = NOT_FOUND,
+        userMessage = "Not Found: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("Not Found: {}", e.message) }
 
   @ExceptionHandler(BadDataException::class)
-  fun handleBadRequestException(e: BadDataException): ResponseEntity<ErrorResponse?>? {
-    log.info("Bad request: {}", e.message)
-    return ResponseEntity
-      .status(BAD_REQUEST)
-      .body(
-        ErrorResponse(
-          status = BAD_REQUEST,
-          userMessage = "Bad request: ${e.message}",
-          developerMessage = e.message,
-          errorCode = e.error?.errorCode,
-        ),
-      )
-  }
+  fun handleBadRequestException(e: BadDataException): ResponseEntity<ErrorResponse?>? = ResponseEntity
+    .status(BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = BAD_REQUEST,
+        userMessage = "Bad request: ${e.message}",
+        developerMessage = e.message,
+        errorCode = e.error?.errorCode,
+      ),
+    ).also { log.info("Bad request: {}", e.message) }
 
   @ExceptionHandler(HttpMessageNotReadableException::class)
-  fun handleHttpMessageNotReadablException(e: Exception): ResponseEntity<ErrorResponse?>? {
-    log.info("Bad request: {}", e.message)
-    return ResponseEntity
-      .status(BAD_REQUEST)
-      .body(
-        ErrorResponse(
-          status = BAD_REQUEST,
-          userMessage = "Bad request: ${e.message}",
-          developerMessage = e.message,
-        ),
-      )
-  }
+  fun handleHttpMessageNotReadablException(e: Exception): ResponseEntity<ErrorResponse?>? = ResponseEntity
+    .status(BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = BAD_REQUEST,
+        userMessage = "Bad request: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("Bad request: {}", e.message) }
 
   @ExceptionHandler(MethodArgumentNotValidException::class)
   fun handleValidationErrorException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse?>? {
-    log.info("Bad request: {}", e.message)
     val message = if (e.hasFieldErrors()) {
       "${e.fieldError?.field} ${e.fieldError?.defaultMessage}"
     } else {
@@ -102,64 +89,63 @@ class NomisPrisonerApiExceptionHandler {
           userMessage = "Bad request: ${e.message}",
           developerMessage = message,
         ),
-      )
+      ).also { log.info("Bad request: {}", e.message) }
   }
 
   @ExceptionHandler(ConflictException::class)
-  fun handleConflictException(e: Exception): ResponseEntity<ErrorResponse?>? {
-    log.info("Conflict http error: {}", e.message)
-    return ResponseEntity
-      .status(CONFLICT)
-      .body(
-        ErrorResponse(
-          status = CONFLICT,
-          userMessage = e.message,
-          developerMessage = e.message,
-        ),
-      )
-  }
+  fun handleConflictException(e: Exception): ResponseEntity<ErrorResponse?>? = ResponseEntity
+    .status(CONFLICT)
+    .body(
+      ErrorResponse(
+        status = CONFLICT,
+        userMessage = e.message,
+        developerMessage = e.message,
+      ),
+    ).also { log.info("Conflict http error: {}", e.message) }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException::class)
-  fun handleMethodArgumentTypeMismatchException(e: Exception): ResponseEntity<ErrorResponse> {
-    log.info("Validation exception: {}", e.message)
-    return ResponseEntity
-      .status(BAD_REQUEST)
-      .body(
-        ErrorResponse(
-          status = BAD_REQUEST,
-          userMessage = "Invalid Argument: ${e.cause?.message}",
-          developerMessage = e.message,
-        ),
-      )
-  }
+  fun handleMethodArgumentTypeMismatchException(e: Exception): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = BAD_REQUEST,
+        userMessage = "Invalid Argument: ${e.cause?.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("Validation exception: {}", e.message) }
 
   @ExceptionHandler(MissingServletRequestParameterException::class)
-  fun handleMissingServletRequestParameterException(e: Exception): ResponseEntity<ErrorResponse> {
-    log.info("Missing requests parameter exception: {}", e.message)
-    return ResponseEntity
-      .status(BAD_REQUEST)
-      .body(
-        ErrorResponse(
-          status = BAD_REQUEST,
-          userMessage = "Missing request parameter: ${e.cause?.message}",
-          developerMessage = e.message,
-        ),
-      )
-  }
+  fun handleMissingServletRequestParameterException(e: Exception): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = BAD_REQUEST,
+        userMessage = "Missing request parameter: ${e.cause?.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("Missing requests parameter exception: {}", e.message) }
 
-  @ExceptionHandler(java.lang.Exception::class)
-  fun handleException(e: java.lang.Exception): ResponseEntity<ErrorResponse?>? {
-    log.error("Unexpected exception", e)
-    return ResponseEntity
-      .status(INTERNAL_SERVER_ERROR)
-      .body(
-        ErrorResponse(
-          status = INTERNAL_SERVER_ERROR,
-          userMessage = "Unexpected error: ${e.message}",
-          developerMessage = e.message,
-        ),
-      )
-  }
+  @ExceptionHandler(NoResourceFoundException::class)
+  fun handleNoResourceFoundException(e: NoResourceFoundException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(NOT_FOUND)
+    .body(
+      ErrorResponse(
+        status = NOT_FOUND,
+        userMessage = "No resource found failure: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.info("No resource found exception: {}", e.message) }
+
+  @ExceptionHandler(Exception::class)
+  fun handleException(e: Exception): ResponseEntity<ErrorResponse?>? = ResponseEntity
+    .status(INTERNAL_SERVER_ERROR)
+    .body(
+      ErrorResponse(
+        status = INTERNAL_SERVER_ERROR,
+        userMessage = "Unexpected error: ${e.message}",
+        developerMessage = e.message,
+      ),
+    ).also { log.error("Unexpected exception", e) }
 
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
