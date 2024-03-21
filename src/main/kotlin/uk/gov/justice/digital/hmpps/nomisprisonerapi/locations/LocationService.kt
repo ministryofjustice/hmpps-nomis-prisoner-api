@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationAmendment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
@@ -322,6 +323,7 @@ class LocationService(
       reasonCode = deactivateReason?.code,
       profiles = profiles.map { toProfileResponse(it.id) },
       usages = usages.map { toUsageResponse(it) },
+      amendments = amendments.map { toAmendmentResponse(it) },
       createDatetime = createDatetime,
       createUsername = createUsername,
       modifyUsername = modifyUsername,
@@ -332,10 +334,18 @@ class LocationService(
     profileCode = id.profileCode,
   )
 
-  private fun toUsageResponse(it: InternalLocationUsageLocation) = UsageRequest(
-    internalLocationUsageType = it.internalLocationUsage.internalLocationUsage,
-    capacity = it.capacity,
-    usageLocationType = it.usageLocationType?.code,
-    sequence = it.listSequence,
+  private fun toUsageResponse(usage: InternalLocationUsageLocation) = UsageRequest(
+    internalLocationUsageType = usage.internalLocationUsage.internalLocationUsage,
+    capacity = usage.capacity,
+    usageLocationType = usage.usageLocationType?.code,
+    sequence = usage.listSequence,
+  )
+
+  private fun toAmendmentResponse(it: AgencyInternalLocationAmendment) = AmendmentResponse(
+    amendDateTime = it.amendDateTime,
+    columnName = it.columnName,
+    oldValue = it.oldValue,
+    newValue = it.newValue,
+    amendedBy = it.amendUserId,
   )
 }
