@@ -2,11 +2,16 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -18,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -31,6 +37,64 @@ import java.time.LocalDateTime
 class AlertsResource(
   private val alertsService: AlertsService,
 ) {
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @GetMapping("/alerts/ids")
+  @Operation(
+    summary = "Get alert IDs by filter",
+    description = "Retrieves a paged list of alert ids by filter. Requires ROLE_NOMIS_ALERTS.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Pageable list of ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role ROLE_NOMIS_ALERTS not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAlertIdsByFilter(
+    @PageableDefault(size = 20)
+    pageRequest: Pageable,
+    @RequestParam(value = "fromDate")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by alerts that were created on or after the given date",
+      example = "2021-11-03",
+    )
+    fromDate: LocalDate?,
+    @RequestParam(value = "toDate")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by alerts that were created on or before the given date",
+      example = "2021-11-03",
+    )
+    toDate: LocalDate?,
+  ): Page<AlertIdResponse> =
+    alertsService.findAlertIdsByFilter(
+      pageable = pageRequest,
+      AlertsFilter(
+        toDate = toDate,
+        fromDate = fromDate,
+      ),
+    )
+
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @GetMapping(
     "/prisoner/booking-id/{bookingId}/alerts/{alertSequence}",
@@ -378,7 +442,6 @@ data class UpdateAlertRequest(
   val expiryDate: LocalDate? = null,
   @Schema(description = "true if alert is active and has not expired")
   val isActive: Boolean = true,
-  // TODO: DPS might have a notion of appending comments
   @Schema(description = "Free format comment")
   val comment: String? = null,
   @Schema(description = "Username of person that update the record (might also be a system) ")
@@ -386,4 +449,14 @@ data class UpdateAlertRequest(
   // TODO: not sure this can be updated in DPS
   @Schema(description = "Free format text of person or department that authorised the alert", example = "security")
   val authorisedBy: String? = null,
+)
+
+@Schema(description = "Alert id")
+data class AlertIdResponse(
+  @Schema(description = "The booking id")
+  val bookingId: Long,
+  @Schema(description = "The alert sequence")
+  val alertSequence: Long,
+  @Schema(description = "The prisoner number")
+  val offenderNo: String,
 )
