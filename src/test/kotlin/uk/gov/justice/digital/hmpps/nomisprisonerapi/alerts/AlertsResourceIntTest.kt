@@ -45,9 +45,19 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staff(firstName = "JANE", lastName = "SMITH") {
+          account(username = "JSMITH_GEN", type = "GENERAL")
+          account(username = "JSMITH_ADM", type = "ADMIN")
+        }
+        staff(firstName = "ANALA", lastName = "KASHVI") {
+          account(username = "AKASHVI")
+        }
         prisoner = offender(nomsId = "A1234AB") {
           bookingId = booking {
-            alert { }
+            alert(
+              createUsername = "SYS",
+              modifyUsername = "AKASHVI",
+            )
             alert(
               sequence = 2,
               alertCode = "SC",
@@ -58,6 +68,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
               verifiedFlag = true,
               status = INACTIVE,
               commentText = "At risk",
+              createUsername = "JSMITH_ADM",
             ) {
               workFlowLog(workActionCode = MODIFIED, workFlowStatus = DONE)
               workFlowLog(workActionCode = VERIFICATION, workFlowStatus = COMP)
@@ -91,7 +102,11 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isNull()
           assertThat(verifiedFlag).isFalse()
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(createUsername).isEqualTo("SA")
+          assertThat(createUsername).isEqualTo("SYS")
+          assertThat(createStaffUserAccount).isNull()
+          assertThat(modifyUserId).isEqualTo("AKASHVI")
+          assertThat(modifyStaffUserAccount?.staff?.lastName).isEqualTo("KASHVI")
+          assertThat(modifyStaffUserAccount?.staff?.firstName).isEqualTo("ANALA")
 
           assertThat(workFlows).hasSize(1)
           assertThat(workFlows[0].logs).hasSize(1)
@@ -103,7 +118,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(log.workFlowStatus).isEqualTo(DONE)
           assertThat(log.locateAgyLoc).isNull()
           assertThat(log.workActionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(log.createUsername).isEqualTo("SA")
+          assertThat(log.createUsername).isEqualTo("SYS")
         }
         with(booking.alerts.firstOrNull { it.id.sequence == 2L }!!) {
           assertThat(alertDate).isEqualTo(LocalDate.parse("2020-07-19"))
@@ -118,7 +133,11 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isEqualTo(LocalDate.parse("2025-07-19"))
           assertThat(verifiedFlag).isTrue()
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(createUsername).isEqualTo("SA")
+          assertThat(createUsername).isEqualTo("JSMITH_ADM")
+          assertThat(createStaffUserAccount?.staff?.firstName).isEqualTo("JANE")
+          assertThat(createStaffUserAccount?.staff?.lastName).isEqualTo("SMITH")
+          assertThat(modifyUserId).isNull()
+          assertThat(modifyStaffUserAccount).isNull()
 
           assertThat(workFlows).hasSize(1)
           assertThat(workFlows[0].logs).hasSize(3)
@@ -147,6 +166,13 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staff(firstName = "JANE", lastName = "NARK") {
+          account(username = "JANE.NARK")
+        }
+        staff(firstName = "TREVOR", lastName = "NACK") {
+          account(username = "TREV.NACK")
+        }
+
         prisoner = offender(nomsId = "A1234AB") {
           bookingId = booking {
             alert(
@@ -327,7 +353,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("alertSequence").isEqualTo(alertSequenceWithAudit)
           .jsonPath("audit.createDatetime").isEqualTo("2020-01-23T10:23:00")
           .jsonPath("audit.createUsername").isEqualTo("JANE.NARK")
+          .jsonPath("audit.createDisplayName").isEqualTo("JANE NARK")
           .jsonPath("audit.modifyUserId").isEqualTo("TREV.NACK")
+          .jsonPath("audit.modifyDisplayName").isEqualTo("TREVOR NACK")
           .jsonPath("audit.modifyDatetime").isEqualTo("2022-02-23T10:23:12")
           .jsonPath("audit.auditTimestamp").isEqualTo("2022-02-23T10:23:13")
           .jsonPath("audit.auditUserId").isEqualTo("TREV.MACK")

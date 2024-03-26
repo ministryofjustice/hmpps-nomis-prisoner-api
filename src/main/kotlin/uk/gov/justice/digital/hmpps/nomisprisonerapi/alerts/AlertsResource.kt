@@ -379,8 +379,12 @@ data class NomisAudit(
   val createDatetime: LocalDateTime,
   @Schema(description = "Username of person that created the record (might also be a system) ")
   val createUsername: String,
+  @Schema(description = "Real name of person that created the record (might by null for system users)")
+  val createDisplayName: String?,
   @Schema(description = "Username of person that last modified the record (might also be a system)")
   val modifyUserId: String? = null,
+  @Schema(description = "Real name of person that modified the record (might by null for system users)")
+  val modifyDisplayName: String?,
   @Schema(description = "Date time record was last modified")
   val modifyDatetime: LocalDateTime? = null,
   @Schema(description = "Audit Date time")
