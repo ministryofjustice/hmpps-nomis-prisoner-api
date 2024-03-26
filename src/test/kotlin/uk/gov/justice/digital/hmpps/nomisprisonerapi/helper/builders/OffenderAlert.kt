@@ -149,6 +149,7 @@ class OffenderAlertBuilder(
     commentText: String?,
     verifiedFlag: Boolean,
     createUsername: String,
+    modifyUsername: String?,
   ): OffenderAlert = OffenderAlert(
     id = OffenderAlertId(
       offenderBooking = offenderBooking,
@@ -163,6 +164,7 @@ class OffenderAlertBuilder(
     commentText = commentText,
     verifiedFlag = verifiedFlag,
     createUsername = createUsername,
+    modifyUserId = modifyUsername,
   ).apply {
     addWorkFlowLog(workActionCode = repository.lookupWorkFLowAction(WorkFlowAction.DATA_ENTRY))
   }

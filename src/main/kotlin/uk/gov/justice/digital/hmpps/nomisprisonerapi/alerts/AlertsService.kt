@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlertId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAlertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -113,8 +114,10 @@ class AlertsService(
     audit = NomisAudit(
       createDatetime = createDatetime,
       createUsername = createUsername,
+      createDisplayName = this.createStaffUserAccount?.staff.asDisplayName(),
       modifyDatetime = modifyDatetime,
       modifyUserId = modifyUserId,
+      modifyDisplayName = this.modifyStaffUserAccount?.staff.asDisplayName(),
       auditUserId = auditUserId,
       auditTimestamp = auditTimestamp,
       auditModuleName = auditModuleName,
@@ -149,6 +152,8 @@ class AlertsService(
       )
     }
 }
+
+private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }
 
 private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) =
   this.alerts.firstOrNull { it.alertCode.code == alertCode && it.alertStatus == ACTIVE } != null

@@ -101,8 +101,16 @@ class OffenderAlert(
   @Column(name = "CREATE_USER_ID")
   var createUsername: String,
 
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  val createStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "MODIFY_USER_ID")
   var modifyUserId: String? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  val modifyStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "MODIFY_DATETIME")
   var modifyDatetime: LocalDateTime? = null,
