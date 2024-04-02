@@ -55,6 +55,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
@@ -113,6 +114,7 @@ class Repository(
   val offenderChargeRepository: OffenderChargeRepository,
   val questionnaireRepository: QuestionnaireRepository,
   val incidentRepository: IncidentRepository,
+  val mergeTransactionRepository: MergeTransactionRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -204,6 +206,7 @@ class Repository(
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun delete(vararg offender: Offender) = offender.forEach { offenderRepository.deleteById(it.id) }
   fun deleteOffenders() = offenderRepository.deleteAll()
+  fun deleteMergeTransactions() = mergeTransactionRepository.deleteAll()
 
   fun save(personBuilder: PersonBuilder): Person = personRepository.save(personBuilder.build())
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })

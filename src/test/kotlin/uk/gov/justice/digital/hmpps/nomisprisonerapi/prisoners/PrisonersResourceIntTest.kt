@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import java.time.LocalDateTime
 
 class PrisonersResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -52,9 +53,9 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      lateinit var activePrisoner1: Offender
-      lateinit var activePrisoner2: Offender
-      lateinit var inactivePrisoner1: Offender
+      private lateinit var activePrisoner1: Offender
+      private lateinit var activePrisoner2: Offender
+      private lateinit var inactivePrisoner1: Offender
 
       @BeforeEach
       internal fun createPrisoners() {
@@ -214,6 +215,134 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[1].location").isEqualTo("TRN")
         .jsonPath("$[1].bookingId").isEqualTo(bookingTrn.bookingId)
         .jsonPath("$[1].offenderNo").isEqualTo("A1234XX")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /prisoners/{offenderNo}/merges")
+  inner class GetPrisonersMerges {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AK/merges")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AK/merges")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A1234AK/merges")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      internal fun createMergeTransactions() {
+        deletePrisoners()
+
+        nomisDataBuilder.build {
+          mergeTransaction(
+            requestDate = LocalDateTime.parse("2002-01-01T12:00:00"),
+            nomsId1 = "A1234AK",
+            rootOffenderId1 = 1,
+            offenderBookId1 = 101,
+            nomsId2 = "A1234AL",
+            rootOffenderId2 = 2,
+            offenderBookId2 = 102,
+          )
+          mergeTransaction(
+            requestDate = LocalDateTime.parse("2024-01-01T12:00:00"),
+            nomsId1 = "A1234AK",
+            rootOffenderId1 = 3,
+            offenderBookId1 = 103,
+            nomsId2 = "A1234TL",
+            rootOffenderId2 = 4,
+            offenderBookId2 = 104,
+          )
+          mergeTransaction(
+            requestDate = LocalDateTime.parse("2024-01-01T12:00:00"),
+            nomsId1 = "A1234ZK",
+            rootOffenderId1 = 4,
+            offenderBookId1 = 104,
+            nomsId2 = "A1234ZL",
+            rootOffenderId2 = 5,
+            offenderBookId2 = 105,
+          )
+        }
+      }
+
+      @AfterEach
+      fun deletePrisoners() {
+        repository.deleteMergeTransactions()
+      }
+
+      @Test
+      fun `will return old merge and new merge with no filter`() {
+        webTestClient.get().uri("/prisoners/A1234AK/merges")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(2)
+          .jsonPath("[0].fromOffenderNo").isEqualTo("A1234AL")
+          .jsonPath("[0].fromBookingId").isEqualTo(102)
+          .jsonPath("[0].toOffenderNo").isEqualTo("A1234AK")
+          .jsonPath("[0].toBookingId").isEqualTo(101)
+          .jsonPath("[0].dateTime").isEqualTo("2002-01-01T12:00:00")
+          .jsonPath("[1].fromOffenderNo").isEqualTo("A1234TL")
+          .jsonPath("[1].fromBookingId").isEqualTo(104)
+          .jsonPath("[1].toOffenderNo").isEqualTo("A1234AK")
+          .jsonPath("[1].toBookingId").isEqualTo(103)
+          .jsonPath("[1].dateTime").isEqualTo("2024-01-01T12:00:00")
+      }
+
+      @Test
+      fun `will return merges after filter date`() {
+        webTestClient.get().uri("/prisoners/A1234AK/merges?fromDate=2023-01-01")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("[0].fromOffenderNo").isEqualTo("A1234TL")
+          .jsonPath("[0].fromBookingId").isEqualTo(104)
+          .jsonPath("[0].toOffenderNo").isEqualTo("A1234AK")
+          .jsonPath("[0].toBookingId").isEqualTo(103)
+          .jsonPath("[0].dateTime").isEqualTo("2024-01-01T12:00:00")
+      }
+
+      @Test
+      fun `will return empty list when there are no merges`() {
+        webTestClient.get().uri("/prisoners/A1234AK/merges?fromDate=2024-04-01")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `will return empty list when prisoner not found`() {
+        webTestClient.get().uri("/prisoners/A9898AK/merges?fromDate=2024-04-01")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+      }
     }
   }
 }

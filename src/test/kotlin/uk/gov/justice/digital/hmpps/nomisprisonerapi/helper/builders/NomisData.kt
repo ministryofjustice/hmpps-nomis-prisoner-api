@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MergeTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -28,6 +29,7 @@ class NomisDataBuilder(
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
+  private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -40,6 +42,7 @@ class NomisDataBuilder(
     courtCaseBuilderFactory,
     questionnaireBuilderFactory,
     incidentBuilderFactory,
+    mergeTransactionBuilderFactory,
   ).apply(dsl)
 }
 
@@ -54,6 +57,7 @@ class NomisData(
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
+  private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
@@ -256,6 +260,47 @@ class NomisData(
             builder.apply(dsl)
           }
       }
+
+  override fun mergeTransaction(
+    requestDate: LocalDateTime,
+    requestStatusCode: String,
+    transactionSource: String,
+    offenderBookId1: Long,
+    rootOffenderId1: Long,
+    offenderId1: Long,
+    nomsId1: String,
+    lastName1: String,
+    firstName1: String,
+    offenderBookId2: Long,
+    rootOffenderId2: Long,
+    offenderId2: Long,
+    nomsId2: String,
+    lastName2: String,
+    firstName2: String,
+    dsl: MergeTransactionDsl.() -> Unit,
+  ): MergeTransaction = mergeTransactionBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        requestDate = requestDate,
+        requestStatusCode = requestStatusCode,
+        transactionSource = transactionSource,
+        offenderBookId1 = offenderBookId1,
+        rootOffenderId1 = rootOffenderId1,
+        offenderId1 = offenderId1,
+        nomsId1 = nomsId1,
+        lastName1 = lastName1,
+        firstName1 = firstName1,
+        offenderBookId2 = offenderBookId2,
+        rootOffenderId2 = rootOffenderId2,
+        offenderId2 = offenderId2,
+        nomsId2 = nomsId2,
+        lastName2 = lastName2,
+        firstName2 = firstName2,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 }
 
 @NomisDataDslMarker
@@ -351,6 +396,26 @@ interface NomisDataDsl {
     reactivationDate: LocalDate? = null,
     dsl: AgencyInternalLocationDsl.() -> Unit = {},
   ): AgencyInternalLocation
+
+  @MergeTransactionDslMarker
+  fun mergeTransaction(
+    requestDate: LocalDateTime = LocalDateTime.now(),
+    requestStatusCode: String = "COMPLETED",
+    transactionSource: String = "MANUAL",
+    offenderBookId1: Long,
+    rootOffenderId1: Long,
+    offenderId1: Long = rootOffenderId1,
+    nomsId1: String,
+    lastName1: String = "DOYLEY",
+    firstName1: String = "DEREK",
+    offenderBookId2: Long,
+    rootOffenderId2: Long,
+    offenderId2: Long = rootOffenderId2,
+    nomsId2: String,
+    lastName2: String = "DOYLEY",
+    firstName2: String = "DEREK",
+    dsl: MergeTransactionDsl.() -> Unit = {},
+  ): MergeTransaction
 }
 
 @DslMarker
