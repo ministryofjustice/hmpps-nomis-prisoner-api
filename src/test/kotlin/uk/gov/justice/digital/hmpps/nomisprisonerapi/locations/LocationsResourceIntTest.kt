@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class LocationsResourceIntTest : IntegrationTestBase() {
 
@@ -785,6 +786,20 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         ) {
           attributes("HOU_UNIT_ATT", "OTH")
           usages(-3L, 41, "MEDI", 2)
+          amendments(
+            amendDateTime = LocalDateTime.parse("2024-01-02T10:15:30"),
+            columnName = "CAPACITY",
+            oldValue = "4",
+            newValue = "5",
+            amendUserId = "QQQ99X",
+          )
+          amendments(
+            amendDateTime = LocalDateTime.parse("2023-01-02T10:15:30"),
+            columnName = "COMMENT",
+            oldValue = "old",
+            newValue = "new",
+            amendUserId = "QQQ99Y",
+          )
         }
       }
     }
@@ -826,7 +841,16 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.usages[0].sequence").isEqualTo(2)
         .jsonPath("$.usages[0].internalLocationUsageType").isEqualTo("MOVEMENT")
         .jsonPath("$.usages[0].usageLocationType").isEqualTo("MEDI")
-        // .jsonPath("$.createDatetime").isEqualTo("2024-01-02")
+        .jsonPath("$.amendments[0].amendDateTime").isEqualTo("2024-01-02T10:15:30")
+        .jsonPath("$.amendments[0].columnName").isEqualTo("CAPACITY")
+        .jsonPath("$.amendments[0].oldValue").isEqualTo("4")
+        .jsonPath("$.amendments[0].newValue").isEqualTo("5")
+        .jsonPath("$.amendments[0].amendedBy").isEqualTo("QQQ99X")
+        .jsonPath("$.amendments[1].amendDateTime").isEqualTo("2023-01-02T10:15:30")
+        .jsonPath("$.amendments[1].columnName").isEqualTo("COMMENT")
+        .jsonPath("$.amendments[1].oldValue").isEqualTo("old")
+        .jsonPath("$.amendments[1].newValue").isEqualTo("new")
+        .jsonPath("$.amendments[1].amendedBy").isEqualTo("QQQ99Y")
         .jsonPath("$.createUsername").isEqualTo("SA")
         .jsonPath("$.modifyUsername").doesNotExist()
     }

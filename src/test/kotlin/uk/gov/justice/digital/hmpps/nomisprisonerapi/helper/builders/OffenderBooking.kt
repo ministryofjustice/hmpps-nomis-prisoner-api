@@ -158,6 +158,7 @@ interface BookingDsl {
     commentText: String? = null,
     verifiedFlag: Boolean = false,
     createUsername: String = "SA",
+    modifyUsername: String? = null,
     dsl: OffenderAlertDsl.() -> Unit = { },
   ): OffenderAlert
 
@@ -444,6 +445,7 @@ class BookingBuilder(
     commentText: String?,
     verifiedFlag: Boolean,
     createUsername: String,
+    modifyUsername: String?,
     dsl: OffenderAlertDsl.() -> Unit,
   ): OffenderAlert = offenderAlertBuilderFactory.builder()
     .let { builder ->
@@ -459,6 +461,7 @@ class BookingBuilder(
         commentText,
         verifiedFlag,
         createUsername,
+        modifyUsername,
       ).also {
         builder.apply(dsl)
       }

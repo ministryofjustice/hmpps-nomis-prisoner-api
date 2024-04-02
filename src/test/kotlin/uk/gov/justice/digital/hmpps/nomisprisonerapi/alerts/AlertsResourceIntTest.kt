@@ -45,9 +45,19 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staff(firstName = "JANE", lastName = "SMITH") {
+          account(username = "JSMITH_GEN", type = "GENERAL")
+          account(username = "JSMITH_ADM", type = "ADMIN")
+        }
+        staff(firstName = "ANALA", lastName = "KASHVI") {
+          account(username = "AKASHVI")
+        }
         prisoner = offender(nomsId = "A1234AB") {
           bookingId = booking {
-            alert { }
+            alert(
+              createUsername = "SYS",
+              modifyUsername = "AKASHVI",
+            )
             alert(
               sequence = 2,
               alertCode = "SC",
@@ -58,6 +68,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
               verifiedFlag = true,
               status = INACTIVE,
               commentText = "At risk",
+              createUsername = "JSMITH_ADM",
             ) {
               workFlowLog(workActionCode = MODIFIED, workFlowStatus = DONE)
               workFlowLog(workActionCode = VERIFICATION, workFlowStatus = COMP)
@@ -91,7 +102,11 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isNull()
           assertThat(verifiedFlag).isFalse()
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(createUsername).isEqualTo("SA")
+          assertThat(createUsername).isEqualTo("SYS")
+          assertThat(createStaffUserAccount).isNull()
+          assertThat(modifyUserId).isEqualTo("AKASHVI")
+          assertThat(modifyStaffUserAccount?.staff?.lastName).isEqualTo("KASHVI")
+          assertThat(modifyStaffUserAccount?.staff?.firstName).isEqualTo("ANALA")
 
           assertThat(workFlows).hasSize(1)
           assertThat(workFlows[0].logs).hasSize(1)
@@ -103,7 +118,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(log.workFlowStatus).isEqualTo(DONE)
           assertThat(log.locateAgyLoc).isNull()
           assertThat(log.workActionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(log.createUsername).isEqualTo("SA")
+          assertThat(log.createUsername).isEqualTo("SYS")
         }
         with(booking.alerts.firstOrNull { it.id.sequence == 2L }!!) {
           assertThat(alertDate).isEqualTo(LocalDate.parse("2020-07-19"))
@@ -118,7 +133,11 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isEqualTo(LocalDate.parse("2025-07-19"))
           assertThat(verifiedFlag).isTrue()
           assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(createUsername).isEqualTo("SA")
+          assertThat(createUsername).isEqualTo("JSMITH_ADM")
+          assertThat(createStaffUserAccount?.staff?.firstName).isEqualTo("JANE")
+          assertThat(createStaffUserAccount?.staff?.lastName).isEqualTo("SMITH")
+          assertThat(modifyUserId).isNull()
+          assertThat(modifyStaffUserAccount).isNull()
 
           assertThat(workFlows).hasSize(1)
           assertThat(workFlows[0].logs).hasSize(3)
@@ -147,6 +166,13 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staff(firstName = "JANE", lastName = "NARK") {
+          account(username = "JANE.NARK")
+        }
+        staff(firstName = "TREVOR", lastName = "NACK") {
+          account(username = "TREV.NACK")
+        }
+
         prisoner = offender(nomsId = "A1234AB") {
           bookingId = booking {
             alert(
@@ -327,7 +353,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("alertSequence").isEqualTo(alertSequenceWithAudit)
           .jsonPath("audit.createDatetime").isEqualTo("2020-01-23T10:23:00")
           .jsonPath("audit.createUsername").isEqualTo("JANE.NARK")
+          .jsonPath("audit.createDisplayName").isEqualTo("JANE NARK")
           .jsonPath("audit.modifyUserId").isEqualTo("TREV.NACK")
+          .jsonPath("audit.modifyDisplayName").isEqualTo("TREVOR NACK")
           .jsonPath("audit.modifyDatetime").isEqualTo("2022-02-23T10:23:12")
           .jsonPath("audit.auditTimestamp").isEqualTo("2022-02-23T10:23:13")
           .jsonPath("audit.auditUserId").isEqualTo("TREV.MACK")
@@ -351,6 +379,260 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus()
           .isOk
+      }
+    }
+  }
+
+  @DisplayName("GET /alerts/ids")
+  @Nested
+  inner class GetAlertIds {
+    var bookingId1 = 0L
+    var bookingId2 = 0L
+    private val alertSequenceFromJuly2020 = 1L
+    private val inactiveAlertSequenceFromJuly2020 = 2L
+    private val alertSequenceFromToday = 3L
+    private val alertSequenceFromJan2020 = 4L
+    private val alertSequenceFromFeb2020 = 4L
+    private lateinit var prisoner1: Offender
+    private lateinit var prisoner2: Offender
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prisoner1 = offender(nomsId = "A1234AB") {
+          bookingId1 = booking {
+            alert(
+              sequence = alertSequenceFromJuly2020,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2023-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = inactiveAlertSequenceFromJuly2020,
+              alertCode = "SC",
+              typeCode = "S",
+              date = LocalDate.parse("2020-07-19"),
+              expiryDate = LocalDate.parse("2025-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = INACTIVE,
+              commentText = "At risk",
+            )
+            alert(
+              sequence = alertSequenceFromToday,
+              alertCode = "HPI",
+              typeCode = "X",
+            ) {
+              audit()
+            }
+            alert(
+              sequence = alertSequenceFromJan2020,
+              alertCode = "HPI",
+              typeCode = "X",
+            ) {
+              audit(
+                createUsername = "JANE.NARK",
+                createDatetime = LocalDateTime.parse("2020-01-23T10:23"),
+                modifyUserId = "TREV.NACK",
+                modifyDatetime = LocalDateTime.parse("2022-02-23T10:23:12"),
+                auditTimestamp = LocalDateTime.parse("2022-02-23T10:23:13"),
+                auditUserId = "TREV.MACK",
+                auditModuleName = "OCDALERT",
+                auditClientUserId = "trev.nack",
+                auditClientIpAddress = "10.1.1.23",
+                auditClientWorkstationName = "MMD1234J",
+                auditAdditionalInfo = "POST /api/bookings/2904199/alert",
+              )
+            }
+          }.bookingId
+        }
+        prisoner2 = offender(nomsId = "A1234BC") {
+          bookingId2 = booking {
+            alert(
+              sequence = alertSequenceFromJuly2020,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2023-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = inactiveAlertSequenceFromJuly2020,
+              alertCode = "SC",
+              typeCode = "S",
+              date = LocalDate.parse("2020-07-19"),
+              expiryDate = LocalDate.parse("2025-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = INACTIVE,
+              commentText = "At risk",
+            )
+            alert(
+              sequence = alertSequenceFromToday,
+              alertCode = "HPI",
+              typeCode = "X",
+            ) {
+              audit()
+            }
+            alert(
+              sequence = alertSequenceFromFeb2020,
+              alertCode = "HPI",
+              typeCode = "X",
+            ) {
+              audit(
+                createUsername = "JANE.NARK",
+                createDatetime = LocalDateTime.parse("2020-02-23T10:23"),
+                modifyUserId = "TREV.NACK",
+                modifyDatetime = LocalDateTime.parse("2022-03-23T10:23:12"),
+                auditTimestamp = LocalDateTime.parse("2022-03-23T10:23:13"),
+                auditUserId = "TREV.MACK",
+                auditModuleName = "OCDALERT",
+                auditClientUserId = "trev.nack",
+                auditClientIpAddress = "10.1.1.23",
+                auditClientWorkstationName = "MMD1234J",
+                auditAdditionalInfo = "POST /api/bookings/2904199/alert",
+              )
+            }
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/alerts/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/alerts/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/alerts/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return offender no, bookingId and alert sequence`() {
+        webTestClient.get().uri {
+          it.path("/alerts/ids")
+            .queryParam("fromDate", "2020-01-23")
+            .queryParam("toDate", "2020-01-23")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.numberOfElements").isEqualTo(1)
+          .jsonPath("$.content[0].bookingId").isEqualTo(bookingId1)
+          .jsonPath("$.content[0].alertSequence").isEqualTo(alertSequenceFromJan2020)
+          .jsonPath("$.content[0].offenderNo").isEqualTo("A1234AB")
+      }
+
+      @Test
+      fun `can filter by just from date`() {
+        webTestClient.get().uri {
+          it.path("/alerts/ids")
+            .queryParam("fromDate", "2020-01-24")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.numberOfElements").isEqualTo(7)
+      }
+
+      @Test
+      fun `can filter by just to date`() {
+        webTestClient.get().uri {
+          it.path("/alerts/ids")
+            .queryParam("toDate", "2020-01-24")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.numberOfElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `will get all alerts when there is no filter`() {
+        webTestClient.get().uri {
+          it.path("/alerts/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.numberOfElements").isEqualTo(8)
+      }
+
+      @Test
+      fun `will order by booking id, sequence ascending`() {
+        webTestClient.get().uri {
+          it.path("/alerts/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.numberOfElements").isEqualTo(8)
+          .jsonPath("$.content[0].bookingId").isEqualTo(bookingId1)
+          .jsonPath("$.content[0].alertSequence").isEqualTo(1)
+          .jsonPath("$.content[0].offenderNo").isEqualTo("A1234AB")
+          .jsonPath("$.content[1].bookingId").isEqualTo(bookingId1)
+          .jsonPath("$.content[1].alertSequence").isEqualTo(2)
+          .jsonPath("$.content[1].offenderNo").isEqualTo("A1234AB")
+          .jsonPath("$.content[2].bookingId").isEqualTo(bookingId1)
+          .jsonPath("$.content[2].alertSequence").isEqualTo(3)
+          .jsonPath("$.content[2].offenderNo").isEqualTo("A1234AB")
+          .jsonPath("$.content[3].bookingId").isEqualTo(bookingId1)
+          .jsonPath("$.content[3].alertSequence").isEqualTo(4)
+          .jsonPath("$.content[3].offenderNo").isEqualTo("A1234AB")
+          .jsonPath("$.content[4].bookingId").isEqualTo(bookingId2)
+          .jsonPath("$.content[4].alertSequence").isEqualTo(1)
+          .jsonPath("$.content[4].offenderNo").isEqualTo("A1234BC")
+          .jsonPath("$.content[5].bookingId").isEqualTo(bookingId2)
+          .jsonPath("$.content[5].alertSequence").isEqualTo(2)
+          .jsonPath("$.content[5].offenderNo").isEqualTo("A1234BC")
+          .jsonPath("$.content[6].bookingId").isEqualTo(bookingId2)
+          .jsonPath("$.content[6].alertSequence").isEqualTo(3)
+          .jsonPath("$.content[6].offenderNo").isEqualTo("A1234BC")
+          .jsonPath("$.content[7].bookingId").isEqualTo(bookingId2)
+          .jsonPath("$.content[7].alertSequence").isEqualTo(4)
+          .jsonPath("$.content[7].offenderNo").isEqualTo("A1234BC")
       }
     }
   }

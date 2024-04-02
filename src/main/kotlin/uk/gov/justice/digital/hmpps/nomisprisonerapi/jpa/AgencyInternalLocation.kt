@@ -118,6 +118,9 @@ data class AgencyInternalLocation(
   @OneToMany(mappedBy = "agencyInternalLocation", cascade = [CascadeType.ALL], orphanRemoval = true)
   val usages: MutableList<InternalLocationUsageLocation> = mutableListOf(),
 
+  @OneToMany(mappedBy = "agencyInternalLocation", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val amendments: MutableList<AgencyInternalLocationAmendment> = mutableListOf(),
+
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

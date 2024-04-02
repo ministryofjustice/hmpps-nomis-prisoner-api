@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationAmendment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.InternalLocationUsageRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class AgencyInternalLocationDslMarker
@@ -35,6 +37,15 @@ interface AgencyInternalLocationDsl {
     listSequence: Int? = 1,
     parentUsage: InternalLocationUsageLocation? = null,
   ): InternalLocationUsageLocation
+
+  @AgencyInternalLocationAmendmentDslMarker
+  fun amendments(
+    amendDateTime: LocalDateTime,
+    columnName: String?,
+    oldValue: String? = "old",
+    newValue: String? = "new",
+    amendUserId: String = "me",
+  ): AgencyInternalLocationAmendment
 }
 
 @Component
@@ -73,11 +84,13 @@ class AgencyInternalLocationBuilderFactory(
   private val repository: AgencyInternalLocationBuilderRepository,
   private val agencyInternalLocationProfileBuilderFactory: AgencyInternalLocationProfileBuilderFactory = AgencyInternalLocationProfileBuilderFactory(),
   private val internalLocationUsageLocationBuilderFactory: InternalLocationUsageLocationBuilderFactory = InternalLocationUsageLocationBuilderFactory(),
+  private val agencyInternalLocationAmendmentBuilderFactory: AgencyInternalLocationAmendmentBuilderFactory = AgencyInternalLocationAmendmentBuilderFactory(),
 ) {
   fun builder() = AgencyInternalLocationBuilder(
     repository,
     agencyInternalLocationProfileBuilderFactory,
     internalLocationUsageLocationBuilderFactory,
+    agencyInternalLocationAmendmentBuilderFactory,
   )
 }
 
@@ -85,6 +98,7 @@ class AgencyInternalLocationBuilder(
   private val repository: AgencyInternalLocationBuilderRepository,
   private val agencyInternalLocationProfileBuilderFactory: AgencyInternalLocationProfileBuilderFactory,
   private val internalLocationUsageLocationBuilderFactory: InternalLocationUsageLocationBuilderFactory,
+  private val agencyInternalLocationAmendmentBuilderFactory: AgencyInternalLocationAmendmentBuilderFactory,
 ) : AgencyInternalLocationDsl {
   private lateinit var agencyInternalLocation: AgencyInternalLocation
 
@@ -146,5 +160,21 @@ class AgencyInternalLocationBuilder(
       usageLocationType?.let { repository.lookupInternalLocationType(usageLocationType) },
       listSequence,
       parentUsage,
+    )
+
+  override fun amendments(
+    amendDateTime: LocalDateTime,
+    columnName: String?,
+    oldValue: String?,
+    newValue: String?,
+    amendUserId: String,
+  ): AgencyInternalLocationAmendment =
+    agencyInternalLocationAmendmentBuilderFactory.builder().build(
+      agencyInternalLocation,
+      amendDateTime,
+      columnName,
+      oldValue,
+      newValue,
+      amendUserId,
     )
 }

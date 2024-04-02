@@ -81,6 +81,9 @@ data class LocationResponse(
   @Schema(description = "Usages")
   val usages: List<UsageRequest>? = null,
 
+  @Schema(description = "History")
+  val amendments: List<AmendmentResponse>? = null,
+
   @Schema(description = "Record created date")
   val createDatetime: LocalDateTime,
 
@@ -89,4 +92,23 @@ data class LocationResponse(
 
   @Schema(description = "Record modified by")
   val modifyUsername: String? = null,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AmendmentResponse(
+
+  @Schema(description = "Amended timestamp", example = "2024-12-31T23:59:59")
+  val amendDateTime: LocalDateTime,
+
+  @Schema(description = "Which value was changed", example = "Sequence")
+  val columnName: String? = null,
+
+  @Schema(description = "Original value")
+  val oldValue: String? = null,
+
+  @Schema(description = "New value")
+  val newValue: String? = null,
+
+  @Schema(description = "Username of the person who made the change", example = "NQP44X")
+  val amendedBy: String,
 )
