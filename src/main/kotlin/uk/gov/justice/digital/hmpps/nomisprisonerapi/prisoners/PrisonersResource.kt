@@ -178,7 +178,7 @@ data class PrisonerDetails(
 
 @Schema(description = "Details of a prisoner merge")
 data class MergeDetail(
-  @Schema(description = "The NOMIS reference of the that record was merged to and was then removed", example = "A1234AA")
+  @Schema(description = "The NOMIS reference of the record that was merged to and was then removed", example = "A1234AA")
   val deletedOffenderNo: String,
   @Schema(description = "The booking that was merged to and which then became active", example = "12345678")
   val activeBookingId: Long,
