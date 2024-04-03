@@ -202,9 +202,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .consumeWith(System.out::println)
         .jsonPath("id").isEqualTo(csip1.id)
-        .jsonPath("plans[0].id").isEqualTo(1)
+        .jsonPath("plans[0].id").isEqualTo(csip1.plans[0].id)
         .jsonPath("plans[0].identifiedNeed").isEqualTo("They need help")
         .jsonPath("plans[0].intervention").isEqualTo("Support their work")
     }
