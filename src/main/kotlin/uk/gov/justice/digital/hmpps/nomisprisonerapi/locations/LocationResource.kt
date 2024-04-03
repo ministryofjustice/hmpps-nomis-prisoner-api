@@ -59,7 +59,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role ROLE_NOMIS_LOCATIONS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -98,12 +98,12 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )
-  fun updateAppointment(
+  fun updateLocation(
     @Schema(description = "NOMIS location Id", example = "1234567", required = true)
     @PathVariable
     locationId: Long,
@@ -138,7 +138,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -175,7 +175,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -210,7 +210,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -247,7 +247,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -283,7 +283,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role ROLE_NOMIS_LOCATIONS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -317,7 +317,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role ROLE_NOMIS_LOCATIONS",
+        description = "Forbidden, correct role not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],

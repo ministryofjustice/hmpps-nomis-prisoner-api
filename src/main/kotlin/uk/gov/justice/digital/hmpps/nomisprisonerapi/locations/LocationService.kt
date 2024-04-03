@@ -251,8 +251,7 @@ class LocationService(
   ) {
     agencyInternalLocation.usages.removeIf { usage ->
       usages == null || usages.none {
-        it.internalLocationUsageType == usage.internalLocationUsage.internalLocationUsage &&
-          it.usageLocationType == usage.usageLocationType?.code
+        it.internalLocationUsageType == usage.internalLocationUsage.internalLocationUsage
       }
     }
     usages?.forEach { usageRequest ->
@@ -265,13 +264,8 @@ class LocationService(
             )
               ?: throw BadDataException("Internal location usage with code=${usageRequest.internalLocationUsageType} at prison ${agencyInternalLocation.agency.id} does not exist"),
             capacity = usageRequest.capacity,
-            usageLocationType = usageRequest.usageLocationType?.let {
-              internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(it))
-                ?: throw BadDataException("Internal location type with id=${usageRequest.usageLocationType} does not exist")
-            },
             listSequence = usageRequest.sequence,
             agencyInternalLocation = agencyInternalLocation,
-            // TODO parentUsage = ??
           ),
         )
       } else {
@@ -295,8 +289,7 @@ class LocationService(
     usageRequest: UsageRequest,
   ): InternalLocationUsageLocation? {
     return agencyInternalLocation.usages.find {
-      it.usageLocationType?.code == usageRequest.usageLocationType &&
-        it.internalLocationUsage.internalLocationUsage == usageRequest.internalLocationUsageType
+      it.internalLocationUsage.internalLocationUsage == usageRequest.internalLocationUsageType
     }
   }
 
@@ -337,7 +330,6 @@ class LocationService(
   private fun toUsageResponse(usage: InternalLocationUsageLocation) = UsageRequest(
     internalLocationUsageType = usage.internalLocationUsage.internalLocationUsage,
     capacity = usage.capacity,
-    usageLocationType = usage.usageLocationType?.code,
     sequence = usage.listSequence,
   )
 
