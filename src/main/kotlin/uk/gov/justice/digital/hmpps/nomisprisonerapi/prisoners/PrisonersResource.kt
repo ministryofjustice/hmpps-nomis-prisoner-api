@@ -178,14 +178,14 @@ data class PrisonerDetails(
 
 @Schema(description = "Details of a prisoner merge")
 data class MergeDetail(
-  @Schema(description = "The NOMIS reference of record was merged from", example = "A1234AA")
-  val fromOffenderNo: String,
-  @Schema(description = "The booking that was merged from", example = "12345678")
-  val fromBookingId: Long,
-  @Schema(description = "The NOMIS reference of record was merged to", example = "A1234AA")
-  val toOffenderNo: String,
-  @Schema(description = "The booking that was merged to", example = "12345678")
-  val toBookingId: Long,
+  @Schema(description = "The NOMIS reference of the record that was merged to and was then removed", example = "A1234AA")
+  val deletedOffenderNo: String,
+  @Schema(description = "The booking that was merged to and which then became active", example = "12345678")
+  val activeBookingId: Long,
+  @Schema(description = "The NOMIS reference of the record that was merged from and was retained", example = "A1234AA")
+  val retainedOffenderNo: String,
+  @Schema(description = "The booking that was merged from and was retained as inactive", example = "12345678")
+  val previousBookingId: Long,
   @Schema(description = "When the merge happened", example = "2021-01-01T12:34:56")
-  val dateTime: LocalDateTime,
+  val requestDateTime: LocalDateTime,
 )

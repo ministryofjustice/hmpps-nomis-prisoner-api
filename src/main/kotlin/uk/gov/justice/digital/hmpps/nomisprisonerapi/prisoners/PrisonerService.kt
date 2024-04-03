@@ -31,11 +31,11 @@ class PrisonerService(
       )
       .map {
         MergeDetail(
-          toOffenderNo = it.nomsId1,
-          toBookingId = it.offenderBookId1,
-          fromOffenderNo = it.nomsId2,
-          fromBookingId = it.offenderBookId2,
-          dateTime = it.requestDate,
+          retainedOffenderNo = it.nomsId1,
+          previousBookingId = it.offenderBookId1,
+          deletedOffenderNo = it.nomsId2,
+          activeBookingId = it.offenderBookId2,
+          requestDateTime = it.requestDate,
         )
       }
   }

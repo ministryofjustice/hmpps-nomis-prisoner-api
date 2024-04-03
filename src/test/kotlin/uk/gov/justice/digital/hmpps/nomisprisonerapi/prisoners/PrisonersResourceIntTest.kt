@@ -297,16 +297,16 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.size()").isEqualTo(2)
-          .jsonPath("[0].fromOffenderNo").isEqualTo("A1234AL")
-          .jsonPath("[0].fromBookingId").isEqualTo(102)
-          .jsonPath("[0].toOffenderNo").isEqualTo("A1234AK")
-          .jsonPath("[0].toBookingId").isEqualTo(101)
-          .jsonPath("[0].dateTime").isEqualTo("2002-01-01T12:00:00")
-          .jsonPath("[1].fromOffenderNo").isEqualTo("A1234TL")
-          .jsonPath("[1].fromBookingId").isEqualTo(104)
-          .jsonPath("[1].toOffenderNo").isEqualTo("A1234AK")
-          .jsonPath("[1].toBookingId").isEqualTo(103)
-          .jsonPath("[1].dateTime").isEqualTo("2024-01-01T12:00:00")
+          .jsonPath("[0].deletedOffenderNo").isEqualTo("A1234AL")
+          .jsonPath("[0].activeBookingId").isEqualTo(102)
+          .jsonPath("[0].retainedOffenderNo").isEqualTo("A1234AK")
+          .jsonPath("[0].previousBookingId").isEqualTo(101)
+          .jsonPath("[0].requestDateTime").isEqualTo("2002-01-01T12:00:00")
+          .jsonPath("[1].deletedOffenderNo").isEqualTo("A1234TL")
+          .jsonPath("[1].activeBookingId").isEqualTo(104)
+          .jsonPath("[1].retainedOffenderNo").isEqualTo("A1234AK")
+          .jsonPath("[1].previousBookingId").isEqualTo(103)
+          .jsonPath("[1].requestDateTime").isEqualTo("2024-01-01T12:00:00")
       }
 
       @Test
@@ -317,11 +317,11 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.size()").isEqualTo(1)
-          .jsonPath("[0].fromOffenderNo").isEqualTo("A1234TL")
-          .jsonPath("[0].fromBookingId").isEqualTo(104)
-          .jsonPath("[0].toOffenderNo").isEqualTo("A1234AK")
-          .jsonPath("[0].toBookingId").isEqualTo(103)
-          .jsonPath("[0].dateTime").isEqualTo("2024-01-01T12:00:00")
+          .jsonPath("[0].deletedOffenderNo").isEqualTo("A1234TL")
+          .jsonPath("[0].activeBookingId").isEqualTo(104)
+          .jsonPath("[0].retainedOffenderNo").isEqualTo("A1234AK")
+          .jsonPath("[0].previousBookingId").isEqualTo(103)
+          .jsonPath("[0].requestDateTime").isEqualTo("2024-01-01T12:00:00")
       }
 
       @Test
