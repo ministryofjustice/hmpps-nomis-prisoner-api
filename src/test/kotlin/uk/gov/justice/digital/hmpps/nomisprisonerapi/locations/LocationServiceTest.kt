@@ -98,7 +98,7 @@ internal class LocationServiceTest {
         ProfileRequest(profileType = "HOU_SANI_FIT", profileCode = "MOB"),
       ),
       usages = listOf(
-        UsageRequest(usageLocationType = "CELL", capacity = 12, sequence = 1, internalLocationUsageType = "GENERAL"),
+        UsageRequest(capacity = 12, sequence = 1, internalLocationUsageType = "GENERAL"),
       ),
     )
 
@@ -138,12 +138,11 @@ internal class LocationServiceTest {
             tuple("HOU_SANI_FIT", "MOB"),
           )
           assertThat(it.usages).extracting(
-            "usageLocationType.code",
             "capacity",
             "internalLocationUsage.internalLocationUsage",
             "listSequence",
           ).containsExactly(
-            tuple("CELL", 12, "GENERAL", 1),
+            tuple(12, "GENERAL", 1),
           )
         },
       )
@@ -175,8 +174,8 @@ internal class LocationServiceTest {
         ProfileRequest(profileType = "HOU_SANI_ATT", profileCode = "NEW"),
       ),
       usages = listOf(
-        UsageRequest(usageLocationType = "CELL", capacity = 14, sequence = 2, internalLocationUsageType = "GENERAL"),
-        UsageRequest(usageLocationType = "CELL", capacity = 15, sequence = 3, internalLocationUsageType = "NEW"),
+        UsageRequest(capacity = 14, sequence = 2, internalLocationUsageType = "GENERAL"),
+        UsageRequest(capacity = 15, sequence = 3, internalLocationUsageType = "NEW"),
       ),
     )
 
@@ -243,13 +242,12 @@ internal class LocationServiceTest {
         tuple("HOU_SANI_ATT", "NEW"),
       )
       assertThat(agencyInternalLocation.usages).extracting(
-        "usageLocationType.code",
         "capacity",
         "internalLocationUsage.internalLocationUsage",
         "listSequence",
       ).containsExactly(
-        tuple("CELL", 14, "GENERAL", 2),
-        tuple("CELL", 15, "NEW", 3),
+        tuple(14, "GENERAL", 2),
+        tuple(15, "NEW", 3),
       )
     }
 
@@ -262,6 +260,35 @@ internal class LocationServiceTest {
       assertThat(
         assertThrows<BadDataException> { locationService.updateLocation(LOCATION_ID, updateRequest) }.message,
       ).isEqualTo("Internal location usage with code=NEW at prison $PRISON_ID does not exist")
+    }
+
+    @Test
+    fun `addition to lists`() {
+      agencyInternalLocation.profiles.clear()
+      agencyInternalLocation.usages.clear()
+
+      locationService.updateLocation(LOCATION_ID, updateRequest)
+
+      assertThat(agencyInternalLocation.profiles).extracting("id.profileType", "id.profileCode").containsExactly(
+        tuple("HOU_SANI_FIT", "MOB"),
+        tuple("HOU_SANI_ATT", "NEW"),
+      )
+      assertThat(agencyInternalLocation.usages).extracting(
+        "capacity",
+        "internalLocationUsage.internalLocationUsage",
+        "listSequence",
+      ).containsExactly(
+        tuple(14, "GENERAL", 2),
+        tuple(15, "NEW", 3),
+      )
+    }
+
+    @Test
+    fun `removal from lists`() {
+      locationService.updateLocation(LOCATION_ID, updateRequest.copy(profiles = null, usages = null))
+
+      assertThat(agencyInternalLocation.profiles).isEmpty()
+      assertThat(agencyInternalLocation.usages).isEmpty()
     }
   }
 }

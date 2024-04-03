@@ -216,13 +216,11 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "usages"              : [
                   {
                     "internalLocationUsageType" : "APP",
-                    "usageLocationType" : "INSI",
                     "capacity"   : 41,
                     "sequence"   : 2
                   },
                   {
                     "internalLocationUsageType" : "OTH",
-                    "usageLocationType" : "BOX",
                     "capacity"   : 42,
                     "sequence"   : 3
                   }
@@ -259,11 +257,9 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         with(usages) {
           assertThat(this).hasSize(2)
           assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
-          assertThat(this[0].usageLocationType?.code).isEqualTo("INSI")
           assertThat(this[0].capacity).isEqualTo(41)
           assertThat(this[0].listSequence).isEqualTo(2)
           assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
-          assertThat(this[1].usageLocationType?.code).isEqualTo("BOX")
           assertThat(this[1].capacity).isEqualTo(42)
           assertThat(this[1].listSequence).isEqualTo(3)
         }
@@ -423,13 +419,11 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "usages"              : [
                   {
                     "internalLocationUsageType" : "APP",
-                    "usageLocationType" : "INSI",
                     "capacity"   : 41,
                     "sequence"   : 2
                   },
                   {
                     "internalLocationUsageType" : "OTH",
-                    "usageLocationType" : "BOX",
                     "capacity"   : 42,
                     "sequence"   : 3
                   }
@@ -460,11 +454,9 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         with(usages) {
           assertThat(this).hasSize(2)
           assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
-          assertThat(this[0].usageLocationType?.code).isEqualTo("INSI")
           assertThat(this[0].capacity).isEqualTo(41)
           assertThat(this[0].listSequence).isEqualTo(2)
           assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
-          assertThat(this[1].usageLocationType?.code).isEqualTo("BOX")
           assertThat(this[1].capacity).isEqualTo(42)
           assertThat(this[1].listSequence).isEqualTo(3)
         }
@@ -840,7 +832,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.usages[0].capacity").isEqualTo(41)
         .jsonPath("$.usages[0].sequence").isEqualTo(2)
         .jsonPath("$.usages[0].internalLocationUsageType").isEqualTo("MOVEMENT")
-        .jsonPath("$.usages[0].usageLocationType").isEqualTo("MEDI")
         .jsonPath("$.amendments[0].amendDateTime").isEqualTo("2024-01-02T10:15:30")
         .jsonPath("$.amendments[0].columnName").isEqualTo("CAPACITY")
         .jsonPath("$.amendments[0].oldValue").isEqualTo("4")

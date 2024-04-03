@@ -112,9 +112,7 @@ data class ProfileRequest(
   )
   val profileType: String,
 
-  @Schema(
-    description = "Reference Code within the domain for the attribute",
-  )
+  @Schema(description = "Reference Code within the domain for the attribute")
   val profileCode: String,
 )
 
@@ -130,16 +128,6 @@ data class UsageRequest(
     ],
   )
   val internalLocationUsageType: String,
-
-  @Schema(
-    description = "Non-residential usage type",
-    allowableValues = [
-      "ADJU", "ADMI", "APP", "AREA", "ASSO", "BOOT", "BOX", "CELL", "CLAS", "EXER", "EXTE", "FAIT", "GROU",
-      "HCEL", "HOLD", "IGRO", "INSI", "INTE", "LAND", "LOCA", "MEDI", "MOVE", "OFFI", "OUTS", "POSI", "RESI",
-      "ROOM", "RTU", "SHEL", "SPOR", "SPUR", "STOR", "TABL", "TRAI", "TRRM", "VIDE", "VISIT", "WING", "WORK",
-    ],
-  )
-  val usageLocationType: String? = null,
 
   val capacity: Int? = null,
 
