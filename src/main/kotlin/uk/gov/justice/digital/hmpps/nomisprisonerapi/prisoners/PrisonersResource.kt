@@ -182,7 +182,7 @@ data class MergeDetail(
   val deletedOffenderNo: String,
   @Schema(description = "The booking that was merged to and which then became active", example = "12345678")
   val activeBookingId: Long,
-  @Schema(description = "The NOMIS reference of record that was merged from and was retained", example = "A1234AA")
+  @Schema(description = "The NOMIS reference of the record that was merged from and was retained", example = "A1234AA")
   val retainedOffenderNo: String,
   @Schema(description = "The booking that was merged from and was retained as inactive", example = "12345678")
   val previousBookingId: Long,
