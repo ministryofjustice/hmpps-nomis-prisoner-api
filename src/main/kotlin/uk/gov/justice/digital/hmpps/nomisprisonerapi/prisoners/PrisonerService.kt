@@ -5,12 +5,15 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.ActiveBookingsSpecification
 import java.time.LocalDate
 
 @Service
 class PrisonerService(
   private val bookingRepository: OffenderBookingRepository,
+  private val offenderRepository: OffenderRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
 ) {
   fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerId> {
@@ -24,16 +27,13 @@ class PrisonerService(
   }
 
   fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> {
-    return (
-      fromDate
-        ?.let { mergeTransactionRepository.findByNomsId1AndRequestDateGreaterThanEqual(offenderNo, it.atStartOfDay()) }
-        ?: mergeTransactionRepository.findByNomsId1(offenderNo)
-      )
+    return mergeTransactionRepository.findByNomsIdAndRequestDateGreaterThanEqual(offenderNo, fromDate?.atStartOfDay())
       .map {
+        val offender2Retained = offenderRepository.findRootByNomisId(it.nomsId2) != null
         MergeDetail(
-          retainedOffenderNo = it.nomsId1,
+          retainedOffenderNo = if (offender2Retained) it.nomsId2 else it.nomsId1,
           previousBookingId = it.offenderBookId1,
-          deletedOffenderNo = it.nomsId2,
+          deletedOffenderNo = if (offender2Retained) it.nomsId1 else it.nomsId2,
           activeBookingId = it.offenderBookId2,
           requestDateTime = it.requestDate,
         )
