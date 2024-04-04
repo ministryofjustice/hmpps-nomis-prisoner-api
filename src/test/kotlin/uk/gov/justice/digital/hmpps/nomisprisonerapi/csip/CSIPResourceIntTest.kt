@@ -7,13 +7,10 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
 class CSIPResourceIntTest : IntegrationTestBase() {
@@ -23,8 +20,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
-  private lateinit var reportingStaff: Staff
-  private lateinit var offender: Offender
+  private lateinit var reportingStaff1: Staff
+  private lateinit var reportingStaff2: Staff
   private lateinit var csip1: CSIPReport
   private lateinit var csip2: CSIPReport
   private lateinit var csip3: CSIPReport
@@ -32,22 +29,22 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createCSIPReports() {
     nomisDataBuilder.build {
-      setUpStaffAndOffender()
-      csip1 = csipReport(offender = offender, offenderBooking = offender.latestBooking()) {
-        plan(reportingStaff = reportingStaff)
+      reportingStaff1 = staff(firstName = "FRED", lastName = "STAFF") {
+        account(username = "FREDSTAFF")
       }
-      csip2 = csipReport(offender = offender, offenderBooking = offender.latestBooking())
-      csip3 = csipReport(offender = offender, offenderBooking = offender.latestBooking())
-    }
-  }
+      reportingStaff2 = staff(firstName = "JANE", lastName = "STAFF") {
+        account(username = "JANESTAFF")
+      }
 
-  fun NomisData.setUpStaffAndOffender() {
-    reportingStaff = staff(firstName = "FRED", lastName = "STAFF") {
-      account(username = "FREDSTAFF")
-    }
-
-    offender = offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
-      booking(agencyLocationId = "MDI")
+      offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
+        booking(agencyLocationId = "MDI") {
+          csip1 = csipReport(reportingStaff = reportingStaff1) {
+            plan(reportingStaff = reportingStaff2)
+          }
+          csip2 = csipReport(reportingStaff = reportingStaff1) {}
+          csip3 = csipReport(reportingStaff = reportingStaff1) {}
+        }
+      }
     }
   }
 
@@ -57,7 +54,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     repository.delete(csip2)
     repository.delete(csip3)
     repository.deleteOffenders()
-    repository.delete(reportingStaff)
+    repository.delete(reportingStaff1)
+    repository.delete(reportingStaff2)
   }
 
   @Nested
@@ -187,12 +185,18 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
+        .jsonPath("offender.firstName").isEqualTo("Bob")
+        .jsonPath("offender.lastName").isEqualTo("Smith")
         .jsonPath("type.code").isEqualTo("INT")
         .jsonPath("type.description").isEqualTo("Intimidation")
         .jsonPath("location.code").isEqualTo("LIB")
         .jsonPath("location.description").isEqualTo("Library")
         .jsonPath("areaOfWork.code").isEqualTo("EDU")
         .jsonPath("areaOfWork.description").isEqualTo("Education")
+        .jsonPath("reportedBy.username").isEqualTo("FREDSTAFF")
+        .jsonPath("reportedBy.firstName").isEqualTo("FRED")
+        .jsonPath("reportedBy.lastName").isEqualTo("STAFF")
     }
 
     @Test
@@ -206,6 +210,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].id").isEqualTo(csip1.plans[0].id)
         .jsonPath("plans[0].identifiedNeed").isEqualTo("They need help")
         .jsonPath("plans[0].intervention").isEqualTo("Support their work")
+        .jsonPath("plans[0].referredBy.username").isEqualTo("JANESTAFF")
+        .jsonPath("plans[0].referredBy.firstName").isEqualTo("JANE")
+        .jsonPath("plans[0].referredBy.lastName").isEqualTo("STAFF")
     }
   }
 }

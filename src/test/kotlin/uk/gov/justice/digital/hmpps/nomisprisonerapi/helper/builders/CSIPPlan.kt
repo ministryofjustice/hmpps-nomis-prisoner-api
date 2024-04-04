@@ -35,13 +35,13 @@ class CSIPPlanBuilder(
     csipReport: CSIPReport,
     identifiedNeed: String,
     intervention: String,
-    reportingStaff: Staff,
+    referredBy: Staff,
   ): CSIPPlan =
     CSIPPlan(
       csipReport = csipReport,
       identifiedNeed = identifiedNeed,
       intervention = intervention,
-      reportingStaff = reportingStaff,
+      referredBy = referredBy,
     )
       .also { csipPlan = it }
 }

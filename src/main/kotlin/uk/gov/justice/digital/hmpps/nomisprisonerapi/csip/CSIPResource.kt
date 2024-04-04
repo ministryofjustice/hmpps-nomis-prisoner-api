@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -161,20 +162,42 @@ class CSIPResource(private val csipService: CSIPService) {
 data class CSIPResponse(
   @Schema(description = "The csip id")
   val id: Long,
-  @Schema(description = "The id of the offender")
-  val offenderNo: String,
+  @Schema(description = "The offender")
+  val offender: Offender,
   @Schema(description = "The booking id associated with the CSIP")
   val bookingId: Long?,
 
+  @Schema(description = "Log number")
+  val logNumber: String?,
+
+  @Schema(description = "Date/Time incident occurred")
+  val incidentDateTime: LocalDateTime,
   @Schema(description = "Type of incident")
   val type: CodeDescription,
   @Schema(description = "Location of the incident")
   val location: CodeDescription,
-  @Schema(description = "The Area of work where the incident took place aka function")
+
+  @Schema(description = "The Area of work, aka function")
   val areaOfWork: CodeDescription,
+  @Schema(description = "The Staff reporting the incident")
+  val reportedBy: Staff?,
+  @Schema(description = "Date reported")
+  val reportedDate: LocalDate,
 
   @Schema(description = "CSIP Plans")
   val plans: List<Plan>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Plan(
+  @Schema(description = "Plan Id")
+  val id: Long,
+  @Schema(description = "Details of the need")
+  val identifiedNeed: String,
+  @Schema(description = "Intervention plan")
+  val intervention: String,
+  @Schema(description = "The Staff reporting ")
+  val referredBy: Staff?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -197,15 +220,4 @@ data class Offender(
   val firstName: String?,
   @Schema(description = "Last name of staff member")
   val lastName: String,
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class Plan(
-  @Schema(description = "Plan Id")
-  val id: Long,
-  @Schema(description = "Details of the need")
-  val identifiedNeed: String,
-  @Schema(description = "Intervention plan")
-  val intervention: String,
-
 )

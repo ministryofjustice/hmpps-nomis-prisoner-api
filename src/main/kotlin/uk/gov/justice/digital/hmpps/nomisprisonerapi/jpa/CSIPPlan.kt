@@ -43,7 +43,7 @@ data class CSIPPlan(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "BY_WHOM", nullable = false)
-  val reportingStaff: Staff,
+  val referredBy: Staff,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

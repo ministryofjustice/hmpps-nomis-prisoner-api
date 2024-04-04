@@ -30,14 +30,18 @@ data class CSIPReport(
   @GeneratedValue(generator = "CSIP_ID")
   val id: Long = 0,
 
+  @Column(name = "CSIP_SEQ")
+  val sequence: String? = null,
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID")
-  val offenderBooking: OffenderBooking?,
+  val offenderBooking: OffenderBooking,
 
-  // We have to map both as offender booking can be null
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "ROOT_OFFENDER_ID", nullable = false)
-  val offender: Offender,
+  @Column(name = "ROOT_OFFENDER_ID", nullable = false)
+  val rootOffenderId: Long,
+
+  @Column(name = "RFR_INCIDENT_DATE", nullable = false)
+  val incidentDateTime: LocalDateTime = LocalDateTime.now(),
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -78,8 +82,12 @@ data class CSIPReport(
   )
   val areaOfWork: CSIPAreaOfWork,
 
-  @Column(name = "RFR_INCIDENT_DATE", nullable = false)
-  val incidentDate: LocalDate = LocalDate.now(),
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "RFR_REPORTED_BY")
+  val reportedBy: Staff? = null,
+
+  @Column(name = "RFR_DATE_REPORTED", nullable = false)
+  val reportedDate: LocalDate = LocalDate.now(),
 
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   var plans: MutableList<CSIPPlan> = mutableListOf(),

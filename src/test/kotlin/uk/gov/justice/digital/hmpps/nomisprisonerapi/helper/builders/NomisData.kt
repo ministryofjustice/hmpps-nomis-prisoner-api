@@ -5,12 +5,10 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MergeTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
@@ -181,29 +179,6 @@ class NomisData(
           incidentDateTime = incidentDateTime,
           incidentStatus = incidentStatus,
           questionnaire = questionnaire,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
-
-  @CSIPReportDslMarker
-  override fun csipReport(
-    offender: Offender,
-    offenderBooking: OffenderBooking,
-    type: String,
-    location: String,
-    areaOfWork: String,
-    dsl: CSIPReportDsl.() -> Unit,
-  ): CSIPReport =
-    csipReportBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          offender = offender,
-          offenderBooking = offenderBooking,
-          type = type,
-          location = location,
-          areaOfWork = areaOfWork,
         )
           .also {
             builder.apply(dsl)
@@ -399,16 +374,6 @@ interface NomisDataDsl {
     questionnaire: Questionnaire,
     dsl: IncidentDsl.() -> Unit = {},
   ): Incident
-
-  @CSIPReportDslMarker
-  fun csipReport(
-    offender: Offender,
-    offenderBooking: OffenderBooking,
-    type: String = "INT",
-    location: String = "LIB",
-    areaOfWork: String = "EDU",
-    dsl: CSIPReportDsl.() -> Unit = {},
-  ): CSIPReport
 
   @ExternalServiceDslMarker
   fun externalService(
