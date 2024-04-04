@@ -251,9 +251,13 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @BeforeEach
       internal fun createMergeTransactions() {
-        deletePrisoners()
-
         nomisDataBuilder.build {
+          offender(nomsId = "A1234AK") {
+            booking()
+          }
+          offender(nomsId = "A1234ZG") {
+            booking()
+          }
           mergeTransaction(
             requestDate = LocalDateTime.parse("2002-01-01T12:00:00"),
             nomsId1 = "A1234AK",
@@ -280,6 +284,14 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
             nomsId2 = "A1234ZL",
             rootOffenderId2 = 5,
             offenderBookId2 = 105,
+          )
+          mergeTransaction(
+            nomsId1 = "A1234ZZ",
+            rootOffenderId1 = 6,
+            offenderBookId1 = 106,
+            nomsId2 = "A1234ZG",
+            rootOffenderId2 = 7,
+            offenderBookId2 = 107,
           )
         }
       }
@@ -325,8 +337,8 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return empty list when there are no merges`() {
-        webTestClient.get().uri("/prisoners/A1234AK/merges?fromDate=2024-04-01")
+      fun `will return empty list when prisoner not found with a merge transaction`() {
+        webTestClient.get().uri("/prisoners/A9898AK/merges?fromDate=2024-04-01")
           .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
           .exchange()
           .expectStatus().isOk
@@ -335,13 +347,17 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return empty list when prisoner not found`() {
-        webTestClient.get().uri("/prisoners/A9898AK/merges?fromDate=2024-04-01")
+      fun `will return merge when retained ID is in the number 2 field`() {
+        webTestClient.get().uri("/prisoners/A1234ZG/merges")
           .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("$.size()").isEqualTo(0)
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("[0].deletedOffenderNo").isEqualTo("A1234ZZ")
+          .jsonPath("[0].activeBookingId").isEqualTo(107)
+          .jsonPath("[0].retainedOffenderNo").isEqualTo("A1234ZG")
+          .jsonPath("[0].previousBookingId").isEqualTo(106)
       }
     }
   }

@@ -113,7 +113,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
   @GetMapping("/prisoners/{offenderNo}/merges")
   @Operation(
-    summary = "Gets prisoner's list of merge details since a given date",
+    summary = "Gets prisoner's list of merge details since a given date. Either the current offenderNo or the previous offenderNo can be used to search for merges.",
     description = "Requires role SYNCHRONISATION_REPORTING.",
     responses = [
       ApiResponse(
