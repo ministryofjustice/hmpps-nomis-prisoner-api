@@ -27,7 +27,7 @@ class PrisonerService(
   }
 
   fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> {
-    return mergeTransactionRepository.findByNomsIdAndRequestDateGreaterThanEqual(offenderNo, fromDate?.atStartOfDay())
+    return mergeTransactionRepository.findByNomsIdAndAfterRequestDate(offenderNo, fromDate?.atStartOfDay())
       .map {
         val offender2Retained = offenderRepository.findRootByNomisId(it.nomsId2) != null
         MergeDetail(
