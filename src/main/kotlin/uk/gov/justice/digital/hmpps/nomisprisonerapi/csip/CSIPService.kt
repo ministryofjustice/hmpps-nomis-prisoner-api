@@ -58,13 +58,16 @@ class CSIPService(
 private fun CSIPReport.toCSIPResponse(): CSIPResponse =
   CSIPResponse(
     id = id,
-    offenderNo = offender.nomsId,
-    bookingId = offenderBooking?.bookingId,
+    offender = offenderBooking.offender.toOffender(),
+    bookingId = offenderBooking.bookingId,
+    incidentDateTime = incidentDateTime,
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
     areaOfWork = areaOfWork.toCodeDescription(),
+    reportedBy = reportedBy?.toStaff(),
+    reportedDate = reportedDate,
+    logNumber = sequence,
     plans = plans.map { it.toPlanResponse() },
-
   )
 
 private fun JPAStaff.toStaff() =
@@ -87,4 +90,5 @@ private fun CSIPPlan.toPlanResponse() =
     id = id,
     identifiedNeed = identifiedNeed,
     intervention = intervention,
+    referredBy = referredBy.toStaff(),
   )

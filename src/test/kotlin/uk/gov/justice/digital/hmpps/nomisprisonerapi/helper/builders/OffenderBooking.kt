@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentPar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
@@ -65,6 +66,15 @@ interface BookingDsl {
     suspended: Boolean = false,
     dsl: CourseAllocationDsl.() -> Unit = { payBand() },
   ): OffenderProgramProfile
+
+  @CSIPReportDslMarker
+  fun csipReport(
+    type: String = "INT",
+    location: String = "LIB",
+    areaOfWork: String = "EDU",
+    reportingStaff: Staff,
+    dsl: CSIPReportDsl.() -> Unit = {},
+  ): CSIPReport
 
   @OffenderSentenceDslMarker
   fun sentence(
@@ -198,6 +208,7 @@ class BookingBuilderFactory(
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
+  private val csipReportBuilderFactory: CSIPReportBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -209,6 +220,7 @@ class BookingBuilderFactory(
     offenderKeyDateAdjustmentBuilderFactory,
     offenderExternalMovementBuilderFactory,
     offenderAlertBuilderFactory,
+    csipReportBuilderFactory,
   )
 }
 
@@ -222,6 +234,7 @@ class BookingBuilder(
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
+  private val csipReportBuilderFactory: CSIPReportBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -388,6 +401,27 @@ class BookingBuilder(
         )
           .also { offenderBooking.sentences += it }
           .also { builder.apply(dsl) }
+      }
+
+  override fun csipReport(
+    type: String,
+    location: String,
+    areaOfWork: String,
+    reportedBy: Staff,
+    dsl: CSIPReportDsl.() -> Unit,
+  ): CSIPReport =
+    csipReportBuilderFactory.builder()
+      .let { builder ->
+        builder.build(
+          offenderBooking = offenderBooking,
+          type = type,
+          location = location,
+          areaOfWork = areaOfWork,
+          reportedBy = reportedBy,
+        )
+          .also {
+            builder.apply(dsl)
+          }
       }
 
   @CourtCaseDslMarker
