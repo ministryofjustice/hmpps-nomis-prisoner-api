@@ -275,6 +275,11 @@ class SentencingService(
     }
   }
 
+  fun getCourtAppearance(id: Long, offenderNo: String): CourtEventResponse {
+    findPrisoner(offenderNo).findLatestBooking()
+    return findCourtAppearance(offenderNo = offenderNo, id = id).toCourtEvent()
+  }
+
   private fun updateCharges(
     courtEventChargesToUpdate: List<ExistingOffenderChargeRequest>,
     courtEvent: CourtEvent,
@@ -787,6 +792,7 @@ private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse =
 
 private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   id = this.id,
+  caseId = this.courtCase?.id,
   offenderNo = this.offenderBooking.offender.nomsId,
   eventDateTime = LocalDateTime.of(this.eventDate, this.startTime.toLocalTime()),
   courtEventType = this.courtEventType.toCodeDescription(),

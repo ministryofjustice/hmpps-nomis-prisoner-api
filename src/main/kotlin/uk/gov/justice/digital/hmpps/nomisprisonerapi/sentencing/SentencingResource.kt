@@ -494,6 +494,67 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CourtAppearanceRequest,
   ): UpdateCourtAppearanceResponse =
     sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{id}")
+  @Operation(
+    summary = "get a court case",
+    description = "Requires role NOMIS_SENTENCING. Retrieves a court appearance by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the court appearance details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court appearance not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtAppearance(
+    @Schema(description = "Court appearance id", example = "12345")
+    @PathVariable
+    id: Long,
+    @Schema(description = "Offender No", example = "12345")
+    @PathVariable
+    offenderNo: String,
+  ): CourtEventResponse = sentencingService.getCourtAppearance(id, offenderNo)
 }
 
 @Schema(description = "Court Case")
@@ -526,6 +587,7 @@ data class CourtCaseResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtEventResponse(
   val id: Long,
+  val caseId: Long?,
   val offenderNo: String,
   val eventDateTime: LocalDateTime,
   val courtEventType: CodeDescription,

@@ -2048,6 +2048,170 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-appearances/{id}")
+  @Nested
+  inner class GetCourtAppearance {
+    private lateinit var staff: Staff
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var courtAppearance: CourtEvent
+    private lateinit var offenderCharge1: OffenderCharge
+    private val aDateString = "2023-01-01"
+    private val aDateTimeString = "2023-01-01T10:30:00"
+    private val aLaterDateString = "2023-01-05"
+    private val aLaterDateTimeString = "2023-01-05T10:30:00"
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase(reportingStaff = staff) {
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
+                val offenderCharge2 = offenderCharge()
+                courtAppearance = courtEvent {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                  courtEventCharge(
+                    offenderCharge = offenderCharge2,
+                  )
+                }
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if court case not found`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Court appearance 11 for ${prisonerAtMoorland.nomsId} not found")
+      }
+
+      @Test
+      fun `will return 404 if offender not found`() {
+        webTestClient.get().uri("/prisoners/XXXX/sentencing/court-appearances/${courtAppearance.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the court appearance`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").value(Matchers.greaterThan(0))
+          .jsonPath("caseId").value(Matchers.greaterThan(0))
+          .jsonPath("offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
+          .jsonPath("eventDateTime").isEqualTo(aDateTimeString)
+          .jsonPath("courtEventType.description").isEqualTo("Trial")
+          .jsonPath("eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("directionCode.code").isEqualTo("OUT")
+          .jsonPath("judgeName").isEqualTo("Mike")
+          .jsonPath("courtId").isEqualTo("MDI")
+          .jsonPath("outcomeReasonCode.code").isEqualTo("3514")
+          .jsonPath("commentText").isEqualTo("Court event comment")
+          .jsonPath("orderRequestedFlag").isEqualTo(false)
+          .jsonPath("holdFlag").doesNotExist()
+          .jsonPath("nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("nextEventDateTime").isEqualTo(aLaterDateTimeString)
+          .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("courtEventCharges[0].eventId").exists()
+          .jsonPath("courtEventCharges[0].offenderCharge.id").isEqualTo(offenderCharge1.id)
+          .jsonPath("courtEventCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("courtEventCharges[0].offenceDate").isEqualTo(aDateString)
+          .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("courtEventCharges[0].plea.description").isEqualTo("Not Guilty")
+          .jsonPath("courtEventCharges[0].propertyValue").isEqualTo(3.2)
+          .jsonPath("courtEventCharges[0].totalPropertyValue").isEqualTo(10)
+          .jsonPath("courtEventCharges[0].cjitCode1").isEqualTo("cj1")
+          .jsonPath("courtEventCharges[0].cjitCode2").isEqualTo("cj2")
+          .jsonPath("courtEventCharges[0].cjitCode3").isEqualTo("cj3")
+          .jsonPath("courtEventCharges[0].resultCode1.description").isEqualTo("Imprisonment")
+          .jsonPath("courtEventCharges[0].resultCode1Indicator").isEqualTo("rci1")
+          .jsonPath("courtEventCharges[0].mostSeriousFlag").isEqualTo(false)
+          .jsonPath("courtEventCharges[0].offenderCharge.id").isEqualTo(offenderCharge1.id)
+          .jsonPath("courtEventCharges[0].offenderCharge.offenceDate").isEqualTo(aDateString)
+          .jsonPath("courtEventCharges[0].offenderCharge.offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("courtEventCharges[0].offenderCharge.offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("courtEventCharges[0].offenderCharge.offencesCount").isEqualTo(1) // what is this?
+          .jsonPath("courtEventCharges[0].offenderCharge.plea.description").isEqualTo("Guilty")
+          .jsonPath("courtEventCharges[0].offenderCharge.propertyValue").isEqualTo(8.3)
+          .jsonPath("courtEventCharges[0].offenderCharge.totalPropertyValue").isEqualTo(11)
+          .jsonPath("courtEventCharges[0].offenderCharge.cjitCode1").isEqualTo("cj6")
+          .jsonPath("courtEventCharges[0].offenderCharge.cjitCode2").isEqualTo("cj7")
+          .jsonPath("courtEventCharges[0].offenderCharge.cjitCode3").isEqualTo("cj8")
+          .jsonPath("courtEventCharges[0].offenderCharge.resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("courtEventCharges[0].offenderCharge.resultCode1Indicator").isEqualTo("F")
+          .jsonPath("courtEventCharges[0].offenderCharge.mostSeriousFlag").isEqualTo(true)
+          .jsonPath("courtEventCharges[0].offenderCharge.chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("courtEventCharges[0].offenderCharge.lidsOffenceNumber").isEqualTo(11)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(courtAppearance)
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
   @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{id}")
   inner class UpdateCourtAppearanceDeleteCourtEventCharges {

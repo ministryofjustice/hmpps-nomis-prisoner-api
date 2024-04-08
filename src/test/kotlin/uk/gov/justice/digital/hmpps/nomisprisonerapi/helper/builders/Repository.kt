@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -56,6 +57,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
@@ -110,6 +112,7 @@ class Repository(
   val adjudicationHearingRepository: AdjudicationHearingRepository,
   val offenderNonAssociationRepository: OffenderNonAssociationRepository,
   val courtCaseRepository: CourtCaseRepository,
+  val courtEventRepository: CourtEventRepository,
   val offenderSentenceRepository: OffenderSentenceRepository,
   val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
   val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
@@ -235,6 +238,8 @@ class Repository(
     adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
 
   fun delete(courtCase: CourtCase) = courtCaseRepository.deleteById(courtCase.id)
+  fun delete(courtEvent: CourtEvent) = courtEventRepository.deleteById(courtEvent.id)
+
   fun deleteOffenderChargeByBooking(bookingId: Long) =
     offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
 
