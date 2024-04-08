@@ -212,10 +212,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("id").isEqualTo(csip1.id)
         .jsonPath("investigation.interviews[0].interviewee").isEqualTo("Jim the Interviewee")
-        .jsonPath("investigation.interview[0].date").isNotEmpty
-        .jsonPath("investigation.interview[0].role.code").isEqualTo("WITNESS")
-        .jsonPath("investigation.interview[0].role.description").isEqualTo("Witness")
-        .jsonPath("investigation.interview[0].comments").isEqualTo("Helping with behaviour")
+        .jsonPath("investigation.interviews[0].date").isNotEmpty
+        .jsonPath("investigation.interviews[0].role.code").isEqualTo("WITNESS")
+        .jsonPath("investigation.interviews[0].role.description").isEqualTo("Witness")
+        .jsonPath("investigation.interviews[0].comments").isEqualTo("Helping with behaviour")
     }
   }
 }
