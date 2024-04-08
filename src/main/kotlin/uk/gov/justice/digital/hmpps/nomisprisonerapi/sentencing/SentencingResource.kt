@@ -498,7 +498,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{id}")
   @Operation(
-    summary = "get a court case",
+    summary = "get a court appearance",
     description = "Requires role NOMIS_SENTENCING. Retrieves a court appearance by id",
     responses = [
       ApiResponse(
