@@ -5,17 +5,29 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @DslMarker
 annotation class CSIPReportDslMarker
 
 @NomisDataDslMarker
 interface CSIPReportDsl {
+
+  @CSIPInterviewDslMarker
+  fun interview(
+    interviewee: String = "Jim the Interviewee",
+    interviewDate: LocalDate = LocalDate.now(),
+    role: String = "WITNESS",
+    comment: String? = null,
+    dsl: CSIPInterviewDsl.() -> Unit = {},
+  ): CSIPInterview
+
   @CSIPPlanDslMarker
   fun plan(
     identifiedNeed: String = "They need help",
@@ -29,11 +41,13 @@ interface CSIPReportDsl {
 @Component
 class CSIPReportBuilderFactory(
   private val repository: CSIPReportBuilderRepository,
+  private val csipInterviewBuilderFactory: CSIPInterviewBuilderFactory,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
 ) {
   fun builder(): CSIPReportBuilder {
     return CSIPReportBuilder(
       repository,
+      csipInterviewBuilderFactory,
       csipPlanBuilderFactory,
     )
   }
@@ -54,6 +68,7 @@ class CSIPReportBuilderRepository(
 
 class CSIPReportBuilder(
   private val repository: CSIPReportBuilderRepository,
+  private val csipInterviewBuilderFactory: CSIPInterviewBuilderFactory,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
 
 ) : CSIPReportDsl {
@@ -76,6 +91,25 @@ class CSIPReportBuilder(
     )
       .let { repository.save(it) }
       .also { csipReport = it }
+
+  override fun interview(
+    interviewee: String,
+    interviewDate: LocalDate,
+    role: String,
+    comments: String?,
+    dsl: CSIPInterviewDsl.() -> Unit,
+  ): CSIPInterview = csipInterviewBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        csipReport = csipReport,
+        interviewee = interviewee,
+        interviewDate = interviewDate,
+        role = role,
+        comments = comments,
+      )
+        .also { csipReport.interviews += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun plan(
     identifiedNeed: String,

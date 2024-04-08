@@ -186,6 +186,9 @@ data class CSIPResponse(
 
   @Schema(description = "CSIP Plans")
   val plans: List<Plan>,
+
+  @Schema(description = "Investigation of the incident")
+  val investigation: InvestigationDetails,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -240,9 +243,10 @@ data class ContributoryFactorResponse(
   @Schema(description = "What contributed towards this incident")
   val factor: CodeDescription,
 )
-
+*/
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InvestigationDetails(
+  /*
   @Schema(description = "Staff involved in the incident")
   val staffInvolved: String?,
   @Schema(description = "Whether any evidence was secured")
@@ -255,6 +259,7 @@ data class InvestigationDetails(
   val trigger: String? = null,
   @Schema(description = "Protective factors")
   val protectiveFactors: String? = null,
+   */
   @Schema(description = "Interview")
   val interviews: List<InterviewDetails>?,
 )
@@ -268,6 +273,5 @@ data class InterviewDetails(
   @Schema(description = "Why the incident occurred")
   val role: CodeDescription,
   @Schema(description = "Additional data regarding the interview")
-  val comment: String? = null,
+  val comments: String? = null,
 )
- */

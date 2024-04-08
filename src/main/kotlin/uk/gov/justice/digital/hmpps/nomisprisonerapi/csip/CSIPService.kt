@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -66,6 +67,7 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     reportedBy = reportedBy,
     reportedDate = reportedDate,
     logNumber = logNumber,
+    investigation = toInvestigationResponse(),
     plans = plans.map { it.toPlanResponse() },
   )
 
@@ -74,6 +76,18 @@ private fun Offender.toOffender() =
     offenderNo = nomsId,
     firstName = firstName,
     lastName = lastName,
+  )
+
+private fun CSIPReport.toInvestigationResponse() =
+  InvestigationDetails(
+    interviews = interviews.map { it.toInterviewResponse() },
+  )
+private fun CSIPInterview.toInterviewResponse() =
+  InterviewDetails(
+    interviewee = interviewee,
+    date = interviewDate,
+    role = role.toCodeDescription(),
+    comments = comments,
   )
 
 private fun CSIPPlan.toPlanResponse() =

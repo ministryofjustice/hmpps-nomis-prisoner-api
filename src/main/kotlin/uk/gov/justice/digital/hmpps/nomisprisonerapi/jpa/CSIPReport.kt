@@ -140,13 +140,11 @@ data class CSIPReport(
 
   @Column(name = "INV_PROTECTIVE_FACTORS")
   val protectiveFactors: String? = null,
-
-  @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-  @JoinColumn(name = "CSIP_ID", nullable = false)
-  val interviewDetails: List<CSIPInterview>? = null,
-
-
  */
+
+  @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val interviews: MutableList<CSIPInterview> = mutableListOf(),
+
   // --------------------------- Decision -------------------------------//
   // TODO
 

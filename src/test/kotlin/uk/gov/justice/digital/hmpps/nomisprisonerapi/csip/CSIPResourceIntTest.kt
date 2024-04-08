@@ -30,6 +30,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         booking(agencyLocationId = "MDI") {
           csip1 = csipReport {
             plan(progression = "Behaviour improved")
+            interview(comment = "Helping with behaviour")
           }
           csip2 = csipReport {}
           csip3 = csipReport {}
@@ -200,6 +201,21 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
         .jsonPath("plans[0].createdDate").isNotEmpty()
         .jsonPath("plans[0].targetDate").isEqualTo("2024-04-08")
+    }
+
+    @Test
+    fun `will return csip investigation interview data`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("investigation.interviews[0].interviewee").isEqualTo("Jim the Interviewee")
+        .jsonPath("investigation.interview[0].date").isNotEmpty
+        .jsonPath("investigation.interview[0].role.code").isEqualTo("WITNESS")
+        .jsonPath("investigation.interview[0].role.description").isEqualTo("Witness")
+        .jsonPath("investigation.interview[0].comments").isEqualTo("Helping with behaviour")
     }
   }
 }
