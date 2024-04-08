@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
@@ -21,7 +20,8 @@ interface CSIPReportDsl {
   fun plan(
     identifiedNeed: String = "They need help",
     intervention: String = "Support their work",
-    reportingStaff: Staff,
+    progression: String? = null,
+    referredBy: String = "Fred Bloggs",
     dsl: CSIPPlanDsl.() -> Unit = {},
   ): CSIPPlan
 }
@@ -30,7 +30,6 @@ interface CSIPReportDsl {
 class CSIPReportBuilderFactory(
   private val repository: CSIPReportBuilderRepository,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
-
 ) {
   fun builder(): CSIPReportBuilder {
     return CSIPReportBuilder(
@@ -65,7 +64,7 @@ class CSIPReportBuilder(
     type: String,
     location: String,
     areaOfWork: String,
-    reportedBy: Staff,
+    reportedBy: String,
   ): CSIPReport =
     CSIPReport(
       offenderBooking = offenderBooking,
@@ -81,7 +80,8 @@ class CSIPReportBuilder(
   override fun plan(
     identifiedNeed: String,
     intervention: String,
-    referredBy: Staff,
+    progression: String?,
+    referredBy: String,
     dsl: CSIPPlanDsl.() -> Unit,
   ): CSIPPlan = csipPlanBuilderFactory.builder()
     .let { builder ->
@@ -89,6 +89,7 @@ class CSIPReportBuilder(
         csipReport = csipReport,
         identifiedNeed = identifiedNeed,
         intervention = intervention,
+        progression = progression,
         referredBy = referredBy,
       )
         .also { csipReport.plans += it }

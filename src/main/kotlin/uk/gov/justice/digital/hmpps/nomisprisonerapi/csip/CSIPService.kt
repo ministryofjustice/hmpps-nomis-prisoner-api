@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
 @Service
 @Transactional
@@ -64,18 +63,10 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
     areaOfWork = areaOfWork.toCodeDescription(),
-    reportedBy = reportedBy?.toStaff(),
+    reportedBy = reportedBy,
     reportedDate = reportedDate,
-    logNumber = sequence,
+    logNumber = logNumber,
     plans = plans.map { it.toPlanResponse() },
-  )
-
-private fun JPAStaff.toStaff() =
-  Staff(
-    staffId = id,
-    firstName = firstName,
-    lastName = lastName,
-    username = accounts.maxByOrNull { it.type }?.username ?: "unknown",
   )
 
 private fun Offender.toOffender() =
@@ -90,5 +81,9 @@ private fun CSIPPlan.toPlanResponse() =
     id = id,
     identifiedNeed = identifiedNeed,
     intervention = intervention,
-    referredBy = referredBy.toStaff(),
+    referredBy = referredBy,
+    progression = progression,
+    createdDate = createDate,
+    targetDate = targetDate,
+    closedDate = closedDate,
   )
