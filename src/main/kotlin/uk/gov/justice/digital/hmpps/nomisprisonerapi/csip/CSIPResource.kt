@@ -179,8 +179,8 @@ data class CSIPResponse(
 
   @Schema(description = "The Area of work, aka function")
   val areaOfWork: CodeDescription,
-  @Schema(description = "The Staff reporting the incident")
-  val reportedBy: Staff?,
+  @Schema(description = "The person reporting the incident - free text")
+  val reportedBy: String?,
   @Schema(description = "Date reported")
   val reportedDate: LocalDate,
 
@@ -196,8 +196,16 @@ data class Plan(
   val identifiedNeed: String,
   @Schema(description = "Intervention plan")
   val intervention: String,
-  @Schema(description = "The Staff reporting ")
-  val referredBy: Staff?,
+  @Schema(description = "Information regarding progression of plan")
+  val progression: String?,
+  @Schema(description = "The person reporting - free text")
+  val referredBy: String?,
+  @Schema(description = "When created")
+  val createdDate: LocalDate,
+  @Schema(description = "Target date of plan")
+  val targetDate: LocalDate,
+  @Schema(description = "Plan closed date")
+  val closedDate: LocalDate?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -216,8 +224,50 @@ data class Staff(
 data class Offender(
   @Schema(description = "NOMIS id")
   val offenderNo: String,
-  @Schema(description = "First name of staff member")
+  @Schema(description = "First name of offender")
   val firstName: String?,
-  @Schema(description = "Last name of staff member")
+  @Schema(description = "Last name of offender")
   val lastName: String,
 )
+
+/*
+ TODO
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ContributoryFactorResponse(
+  @Schema(description = "Comments regarding this contributory factor")
+  val comment: String?,
+  @Schema(description = "What contributed towards this incident")
+  val factor: CodeDescription,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class InvestigationDetails(
+  @Schema(description = "Staff involved in the incident")
+  val staffInvolved: String?,
+  @Schema(description = "Whether any evidence was secured")
+  val evidenceSecured: String? = null,
+  @Schema(description = "Why the incident occurred")
+  val reasonOccurred: String? = null,
+  @Schema(description = "Normal behaviour of the offender")
+  val usualBehaviour: String? = null,
+  @Schema(description = "Offender's trigger")
+  val trigger: String? = null,
+  @Schema(description = "Protective factors")
+  val protectiveFactors: String? = null,
+  @Schema(description = "Interview")
+  val interviews: List<InterviewDetails>?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class InterviewDetails(
+  @Schema(description = "Person being interviewed")
+  val interviewee: String,
+  @Schema(description = "date of interview")
+  val date: LocalDate,
+  @Schema(description = "Why the incident occurred")
+  val role: CodeDescription,
+  @Schema(description = "Additional data regarding the interview")
+  val comment: String? = null,
+)
+ */

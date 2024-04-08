@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
 @DslMarker
 annotation class CSIPPlanDslMarker
@@ -12,36 +11,23 @@ annotation class CSIPPlanDslMarker
 interface CSIPPlanDsl
 
 @Component
-class CSIPPlanBuilderFactory(
-  private val repository: CSIPPlanBuilderRepository,
-
-) {
-  fun builder(): CSIPPlanBuilder {
-    return CSIPPlanBuilder(
-      repository,
-    )
-  }
+class CSIPPlanBuilderFactory {
+  fun builder() = CSIPPlanBuilder()
 }
 
-@Component
-class CSIPPlanBuilderRepository()
-
-class CSIPPlanBuilder(
-  private val repository: CSIPPlanBuilderRepository,
-) : CSIPPlanDsl {
-  private lateinit var csipPlan: CSIPPlan
-
+class CSIPPlanBuilder : CSIPPlanDsl {
   fun build(
     csipReport: CSIPReport,
     identifiedNeed: String,
     intervention: String,
-    referredBy: Staff,
+    progression: String?,
+    referredBy: String,
   ): CSIPPlan =
     CSIPPlan(
       csipReport = csipReport,
       identifiedNeed = identifiedNeed,
       intervention = intervention,
+      progression = progression,
       referredBy = referredBy,
     )
-      .also { csipPlan = it }
 }

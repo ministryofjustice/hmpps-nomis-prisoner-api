@@ -72,7 +72,7 @@ interface BookingDsl {
     type: String = "INT",
     location: String = "LIB",
     areaOfWork: String = "EDU",
-    reportingStaff: Staff,
+    reportedBy: String = "Jane Reporter",
     dsl: CSIPReportDsl.() -> Unit = {},
   ): CSIPReport
 
@@ -407,7 +407,7 @@ class BookingBuilder(
     type: String,
     location: String,
     areaOfWork: String,
-    reportedBy: Staff,
+    reportedBy: String,
     dsl: CSIPReportDsl.() -> Unit,
   ): CSIPReport =
     csipReportBuilderFactory.builder()

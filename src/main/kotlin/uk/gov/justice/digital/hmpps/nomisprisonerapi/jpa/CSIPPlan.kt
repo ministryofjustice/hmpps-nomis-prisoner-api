@@ -29,21 +29,27 @@ data class CSIPPlan(
   @JoinColumn(name = "CSIP_ID")
   val csipReport: CSIPReport,
 
+  @Column(name = "IDENTIFIED_NEED", nullable = false)
+  val identifiedNeed: String,
+
+  @Column(name = "BY_WHOM", nullable = false)
+  val referredBy: String,
+
   @Column(name = "CREATE_DATE", nullable = false)
   val createDate: LocalDate = LocalDate.now(),
 
   @Column(name = "TARGET_DATE", nullable = false)
   val targetDate: LocalDate = LocalDate.now(),
 
-  @Column(name = "IDENTIFIED_NEED", nullable = false)
-  val identifiedNeed: String,
+  @Column(name = "CLOSED_DATE")
+  val closedDate: LocalDate = LocalDate.now(),
 
   @Column(name = "INTERVENTION", nullable = false)
   val intervention: String,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "BY_WHOM", nullable = false)
-  val referredBy: Staff,
+  @Column(name = "PROGRESSION")
+  val progression: String?,
+
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
