@@ -122,7 +122,7 @@ data class CSIPReport(
   val outcomeCreateDate: LocalDate? = null,
    */
   // --------------------------- Investigation --------------------------//
-/* TODO
+
   @Column(name = "INV_STAFF_INVOLVED")
   val staffInvolved: String? = null,
 
@@ -140,7 +140,6 @@ data class CSIPReport(
 
   @Column(name = "INV_PROTECTIVE_FACTORS")
   val protectiveFactors: String? = null,
- */
 
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val interviews: MutableList<CSIPInterview> = mutableListOf(),

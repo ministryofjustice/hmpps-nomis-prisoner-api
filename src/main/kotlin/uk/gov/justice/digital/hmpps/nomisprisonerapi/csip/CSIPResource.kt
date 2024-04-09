@@ -246,7 +246,6 @@ data class ContributoryFactorResponse(
 */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InvestigationDetails(
-  /*
   @Schema(description = "Staff involved in the incident")
   val staffInvolved: String?,
   @Schema(description = "Whether any evidence was secured")
@@ -259,7 +258,6 @@ data class InvestigationDetails(
   val trigger: String? = null,
   @Schema(description = "Protective factors")
   val protectiveFactors: String? = null,
-   */
   @Schema(description = "Interview")
   val interviews: List<InterviewDetails>?,
 )

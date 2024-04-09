@@ -80,6 +80,12 @@ private fun Offender.toOffender() =
 
 private fun CSIPReport.toInvestigationResponse() =
   InvestigationDetails(
+    staffInvolved = staffInvolved,
+    evidenceSecured = evidenceSecured,
+    reasonOccurred = reasonOccurred,
+    usualBehaviour = usualBehaviour,
+    trigger = trigger,
+    protectiveFactors = protectiveFactors,
     interviews = interviews.map { it.toInterviewResponse() },
   )
 private fun CSIPInterview.toInterviewResponse() =
