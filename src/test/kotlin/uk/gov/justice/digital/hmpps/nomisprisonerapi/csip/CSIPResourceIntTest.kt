@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import java.time.LocalDate
 
 class CSIPResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -30,6 +31,14 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         booking(agencyLocationId = "MDI") {
           csip1 = csipReport {
             plan(progression = "Behaviour improved")
+            investigation(
+              staffInvolved = "There were numerous staff involved",
+              evidenceSecured = "Account by Prisoner Officer",
+              reasonOccurred = "Unsure why",
+              usualBehaviour = "Helpful and polite",
+              trigger = "Mental Health",
+              protectiveFactors = "Supported by staff",
+            )
             interview(comment = "Helping with behaviour")
           }
           csip2 = csipReport {}
@@ -200,7 +209,23 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].progression").isEqualTo("Behaviour improved")
         .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
         .jsonPath("plans[0].createdDate").isNotEmpty()
-        .jsonPath("plans[0].targetDate").isEqualTo("2024-04-08")
+        .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
+    }
+
+    @Test
+    fun `will return csip investigation data`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("investigation.staffInvolved").isEqualTo("There were numerous staff involved")
+        .jsonPath("investigation.evidenceSecured").isEqualTo("Account by Prisoner Officer")
+        .jsonPath("investigation.reasonOccurred").isEqualTo("Unsure why")
+        .jsonPath("investigation.usualBehaviour").isEqualTo("Helpful and polite")
+        .jsonPath("investigation.trigger").isEqualTo("Mental Health")
+        .jsonPath("investigation.protectiveFactors").isEqualTo("Supported by staff")
     }
 
     @Test

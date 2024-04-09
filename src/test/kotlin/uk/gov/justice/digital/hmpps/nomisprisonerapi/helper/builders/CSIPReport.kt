@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
@@ -16,8 +17,21 @@ import java.time.LocalDate
 @DslMarker
 annotation class CSIPReportDslMarker
 
+@DslMarker
+annotation class CSIPInvestigationDslMarker
+
 @NomisDataDslMarker
 interface CSIPReportDsl {
+
+  @CSIPInvestigationDslMarker
+  fun investigation(
+    staffInvolved: String? = null,
+    evidenceSecured: String? = null,
+    reasonOccurred: String? = null,
+    usualBehaviour: String? = null,
+    trigger: String? = null,
+    protectiveFactors: String? = null,
+  )
 
   @CSIPInterviewDslMarker
   fun interview(
@@ -59,18 +73,53 @@ class CSIPReportBuilderRepository(
   val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
   val locationRepository: ReferenceCodeRepository<CSIPIncidentLocation>,
   val areaOfWorkRepository: ReferenceCodeRepository<CSIPAreaOfWork>,
+  private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) {
-  fun save(csipReport: CSIPReport): CSIPReport = repository.save(csipReport)
+  fun save(csipReport: CSIPReport): CSIPReport = repository.saveAndFlush(csipReport) //  repository.save(csipReport)
   fun lookupType(code: String) = typeRepository.findByIdOrNull(CSIPIncidentType.pk(code))!!
   fun lookupLocation(code: String) = locationRepository.findByIdOrNull(CSIPIncidentLocation.pk(code))!!
   fun lookupAreaOfWork(code: String) = areaOfWorkRepository.findByIdOrNull(CSIPAreaOfWork.pk(code))!!
+
+  fun updateInvestigation(
+    csipReportId: Long,
+    staffInvolved: String?,
+    evidenceSecured: String?,
+    reasonOccurred: String?,
+    usualBehaviour: String?,
+    trigger: String?,
+    protectiveFactors: String?,
+  ) {
+    jdbcTemplate.update(
+      """
+      UPDATE OFFENDER_CSIP_REPORTS 
+      SET 
+        INV_STAFF_INVOLVED = :staffInvolved,
+        INV_EVIDENCE_SECURED = :evidenceSecured,
+        INV_OCCURRENCE_REASON = :reasonOccurred,
+        INV_USUAL_BEHAVIOUR = :usualBehaviour,
+        INV_PERSONS_TRIGGER = :trigger,
+        INV_PROTECTIVE_FACTORS = :protectiveFactors
+      WHERE CSIP_ID = :csipReportId 
+      
+      """,
+      mapOf(
+        "staffInvolved" to staffInvolved,
+        "evidenceSecured" to evidenceSecured,
+        "reasonOccurred" to reasonOccurred,
+        "usualBehaviour" to usualBehaviour,
+        "trigger" to trigger,
+        "protectiveFactors" to protectiveFactors,
+        "csipReportId" to csipReportId,
+
+      ),
+    )
+  }
 }
 
 class CSIPReportBuilder(
   private val repository: CSIPReportBuilderRepository,
   private val csipInterviewBuilderFactory: CSIPInterviewBuilderFactory,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
-
 ) : CSIPReportDsl {
   private lateinit var csipReport: CSIPReport
 
@@ -91,6 +140,23 @@ class CSIPReportBuilder(
     )
       .let { repository.save(it) }
       .also { csipReport = it }
+
+  override fun investigation(
+    staffInvolved: String?,
+    evidenceSecured: String?,
+    reasonOccurred: String?,
+    usualBehaviour: String?,
+    trigger: String?,
+    protectiveFactors: String?,
+  ) = repository.updateInvestigation(
+    csipReport.id,
+    staffInvolved,
+    evidenceSecured,
+    reasonOccurred,
+    usualBehaviour,
+    trigger,
+    protectiveFactors,
+  )
 
   override fun interview(
     interviewee: String,
