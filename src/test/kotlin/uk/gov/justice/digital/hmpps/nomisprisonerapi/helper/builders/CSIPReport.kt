@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
@@ -73,15 +72,14 @@ class CSIPReportBuilderRepository(
   val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
   val locationRepository: ReferenceCodeRepository<CSIPIncidentLocation>,
   val areaOfWorkRepository: ReferenceCodeRepository<CSIPAreaOfWork>,
-  private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) {
-  fun save(csipReport: CSIPReport): CSIPReport = repository.saveAndFlush(csipReport) //  repository.save(csipReport)
+  fun save(csipReport: CSIPReport): CSIPReport = repository.save(csipReport)
   fun lookupType(code: String) = typeRepository.findByIdOrNull(CSIPIncidentType.pk(code))!!
   fun lookupLocation(code: String) = locationRepository.findByIdOrNull(CSIPIncidentLocation.pk(code))!!
   fun lookupAreaOfWork(code: String) = areaOfWorkRepository.findByIdOrNull(CSIPAreaOfWork.pk(code))!!
 
   fun updateInvestigation(
-    csipReportId: Long,
+    csipReport: CSIPReport,
     staffInvolved: String?,
     evidenceSecured: String?,
     reasonOccurred: String?,
@@ -89,30 +87,14 @@ class CSIPReportBuilderRepository(
     trigger: String?,
     protectiveFactors: String?,
   ) {
-    jdbcTemplate.update(
-      """
-      UPDATE OFFENDER_CSIP_REPORTS 
-      SET 
-        INV_STAFF_INVOLVED = :staffInvolved,
-        INV_EVIDENCE_SECURED = :evidenceSecured,
-        INV_OCCURRENCE_REASON = :reasonOccurred,
-        INV_USUAL_BEHAVIOUR = :usualBehaviour,
-        INV_PERSONS_TRIGGER = :trigger,
-        INV_PROTECTIVE_FACTORS = :protectiveFactors
-      WHERE CSIP_ID = :csipReportId 
-      
-      """,
-      mapOf(
-        "staffInvolved" to staffInvolved,
-        "evidenceSecured" to evidenceSecured,
-        "reasonOccurred" to reasonOccurred,
-        "usualBehaviour" to usualBehaviour,
-        "trigger" to trigger,
-        "protectiveFactors" to protectiveFactors,
-        "csipReportId" to csipReportId,
+    csipReport.staffInvolved = staffInvolved
+    csipReport.evidenceSecured = evidenceSecured
+    csipReport.reasonOccurred = reasonOccurred
+    csipReport.usualBehaviour = usualBehaviour
+    csipReport.trigger = trigger
+    csipReport.protectiveFactors = protectiveFactors
 
-      ),
-    )
+    repository.save(csipReport)
   }
 }
 
@@ -149,7 +131,7 @@ class CSIPReportBuilder(
     trigger: String?,
     protectiveFactors: String?,
   ) = repository.updateInvestigation(
-    csipReport.id,
+    csipReport,
     staffInvolved,
     evidenceSecured,
     reasonOccurred,

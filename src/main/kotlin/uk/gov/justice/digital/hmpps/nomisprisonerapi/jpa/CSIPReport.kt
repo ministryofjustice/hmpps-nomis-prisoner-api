@@ -124,22 +124,22 @@ data class CSIPReport(
   // --------------------------- Investigation --------------------------//
 
   @Column(name = "INV_STAFF_INVOLVED")
-  val staffInvolved: String? = null,
+  var staffInvolved: String? = null,
 
   @Column(name = "INV_EVIDENCE_SECURED")
-  val evidenceSecured: String? = null,
+  var evidenceSecured: String? = null,
 
   @Column(name = "INV_OCCURRENCE_REASON")
-  val reasonOccurred: String? = null,
+  var reasonOccurred: String? = null,
 
   @Column(name = "INV_USUAL_BEHAVIOUR")
-  val usualBehaviour: String? = null,
+  var usualBehaviour: String? = null,
 
   @Column(name = "INV_PERSONS_TRIGGER")
-  val trigger: String? = null,
+  var trigger: String? = null,
 
   @Column(name = "INV_PROTECTIVE_FACTORS")
-  val protectiveFactors: String? = null,
+  var protectiveFactors: String? = null,
 
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val interviews: MutableList<CSIPInterview> = mutableListOf(),
