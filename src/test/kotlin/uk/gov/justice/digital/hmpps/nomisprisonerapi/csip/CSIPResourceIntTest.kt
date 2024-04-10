@@ -30,6 +30,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
         booking(agencyLocationId = "MDI") {
           csip1 = csipReport {
+            scs(
+              "ACC", reasonForDecision = "Further help needed", outcomeCreateUsername = "JAMES",
+              outcomeCreateDate = LocalDate.now(),
+            )
             plan(progression = "Behaviour improved")
             investigation(
               staffInvolved = "There were numerous staff involved",
@@ -210,6 +214,21 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
         .jsonPath("plans[0].createdDate").isNotEmpty()
         .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
+    }
+
+    @Test
+    fun `will return csip safer custody screening data`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("saferCustodyScreening.outcome.code").isEqualTo("ACC")
+        .jsonPath("saferCustodyScreening.outcome.description").isEqualTo("ACCT Supporting")
+        .jsonPath("saferCustodyScreening.recordedBy").isEqualTo("JAMES")
+        .jsonPath("saferCustodyScreening.recordedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("saferCustodyScreening.reasonForDecision").isEqualTo("Further help needed")
     }
 
     @Test

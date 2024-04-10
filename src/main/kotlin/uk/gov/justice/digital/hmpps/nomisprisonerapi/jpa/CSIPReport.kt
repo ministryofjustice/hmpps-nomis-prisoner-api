@@ -42,7 +42,10 @@ data class CSIPReport(
   val logNumber: String? = null,
 
   @Column(name = "RFR_INCIDENT_DATE", nullable = false)
-  val incidentDateTime: LocalDateTime = LocalDateTime.now(),
+  val incidentDate: LocalDate = LocalDate.now(),
+
+  @Column(name = "RFR_INCIDENT_TIME", nullable = false)
+  val incidentTime: LocalDateTime = LocalDateTime.now(),
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -89,8 +92,8 @@ data class CSIPReport(
   @Column(name = "RFR_DATE_REPORTED", nullable = false)
   val reportedDate: LocalDate = LocalDate.now(),
 
-  // ---------------------- SaferCustodyScreening ------------------------------//
-  /* TODO
+  // -------------------- Safer Custody Screening -----------------------//
+
   @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
@@ -108,19 +111,17 @@ data class CSIPReport(
       ),
     ],
   )
-  val outcome: CSIPOutcome? = null,
+  var outcome: CSIPOutcome? = null,
 
   @Column(name = "CDR_DECISION_REASON")
-  val reasonForDecision: String? = null,
+  var reasonForDecision: String? = null,
 
   @Column(name = "CDR_OUTCOME_RECORDED_BY")
-  @Generated
-  val outcomeCreateUsername: String? = null,
+  var outcomeCreateUsername: String? = null,
 
   @Column(name = "CDR_OUTCOME_DATE")
-  @Generated
-  val outcomeCreateDate: LocalDate? = null,
-   */
+  var outcomeCreateDate: LocalDate? = null,
+
   // --------------------------- Investigation --------------------------//
 
   @Column(name = "INV_STAFF_INVOLVED")

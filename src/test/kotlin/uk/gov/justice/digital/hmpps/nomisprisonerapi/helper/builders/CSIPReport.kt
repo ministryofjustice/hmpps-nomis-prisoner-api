@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -19,8 +20,19 @@ annotation class CSIPReportDslMarker
 @DslMarker
 annotation class CSIPInvestigationDslMarker
 
+@DslMarker
+annotation class CSIPSaferCustodyScreeningDslMarker
+
 @NomisDataDslMarker
 interface CSIPReportDsl {
+
+  @CSIPSaferCustodyScreeningDslMarker
+  fun scs(
+    outcome: String,
+    reasonForDecision: String,
+    outcomeCreateUsername: String,
+    outcomeCreateDate: LocalDate,
+  )
 
   @CSIPInvestigationDslMarker
   fun investigation(
@@ -72,30 +84,13 @@ class CSIPReportBuilderRepository(
   val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
   val locationRepository: ReferenceCodeRepository<CSIPIncidentLocation>,
   val areaOfWorkRepository: ReferenceCodeRepository<CSIPAreaOfWork>,
+  val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
 ) {
   fun save(csipReport: CSIPReport): CSIPReport = repository.save(csipReport)
   fun lookupType(code: String) = typeRepository.findByIdOrNull(CSIPIncidentType.pk(code))!!
   fun lookupLocation(code: String) = locationRepository.findByIdOrNull(CSIPIncidentLocation.pk(code))!!
   fun lookupAreaOfWork(code: String) = areaOfWorkRepository.findByIdOrNull(CSIPAreaOfWork.pk(code))!!
-
-  fun updateInvestigation(
-    csipReport: CSIPReport,
-    staffInvolved: String?,
-    evidenceSecured: String?,
-    reasonOccurred: String?,
-    usualBehaviour: String?,
-    trigger: String?,
-    protectiveFactors: String?,
-  ) {
-    csipReport.staffInvolved = staffInvolved
-    csipReport.evidenceSecured = evidenceSecured
-    csipReport.reasonOccurred = reasonOccurred
-    csipReport.usualBehaviour = usualBehaviour
-    csipReport.trigger = trigger
-    csipReport.protectiveFactors = protectiveFactors
-
-    repository.save(csipReport)
-  }
+  fun lookupOutcome(code: String) = outcomeRepository.findByIdOrNull(CSIPOutcome.pk(code))!!
 }
 
 class CSIPReportBuilder(
@@ -123,6 +118,21 @@ class CSIPReportBuilder(
       .let { repository.save(it) }
       .also { csipReport = it }
 
+  override fun scs(
+    outcome: String,
+    reasonForDecision: String,
+    outcomeCreateUsername: String,
+    outcomeCreateDate: LocalDate,
+  ) {
+    csipReport = csipReport
+    csipReport.outcome = repository.lookupOutcome(outcome)
+    csipReport.reasonForDecision = reasonForDecision
+    csipReport.outcomeCreateUsername = outcomeCreateUsername
+    csipReport.outcomeCreateDate = outcomeCreateDate
+
+    repository.save(csipReport)
+  }
+
   override fun investigation(
     staffInvolved: String?,
     evidenceSecured: String?,
@@ -130,15 +140,16 @@ class CSIPReportBuilder(
     usualBehaviour: String?,
     trigger: String?,
     protectiveFactors: String?,
-  ) = repository.updateInvestigation(
-    csipReport,
-    staffInvolved,
-    evidenceSecured,
-    reasonOccurred,
-    usualBehaviour,
-    trigger,
-    protectiveFactors,
-  )
+  ) {
+    csipReport.staffInvolved = staffInvolved
+    csipReport.evidenceSecured = evidenceSecured
+    csipReport.reasonOccurred = reasonOccurred
+    csipReport.usualBehaviour = usualBehaviour
+    csipReport.trigger = trigger
+    csipReport.protectiveFactors = protectiveFactors
+
+    repository.save(csipReport)
+  }
 
   override fun interview(
     interviewee: String,
