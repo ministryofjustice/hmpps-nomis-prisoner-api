@@ -157,11 +157,11 @@ class AlertsResource(
   ): AlertResponse = alertsService.getAlert(bookingId, alertSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
-  @GetMapping("/prisoners/{offenderNo}/alerts")
+  @GetMapping("/prisoners/{offenderNo}/alerts/to-migrate")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Get unique list of alerts for a prisoner",
-    description = "Retrieves alerts for a prisoner across all bookings. The list will contain at most one alert per alert code type ordered by alert with latest alert taken. Requires ROLE_NOMIS_ALERTS",
+    summary = "Gets alert for latest booking plus unique list of alerts from previous bookings for a prisoner",
+    description = "Retrieves alerts for a prisoner across all bookings. The latest booking all alerts will be returned, from the previous bookings the list will contain at most one alert per alert code type ordered by alert date with latest alert taken. Requires ROLE_NOMIS_ALERTS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -205,7 +205,7 @@ class AlertsResource(
       ),
     ],
   )
-  fun getAlerts(
+  fun getAlertsToMigrate(
     @Schema(description = "Offender No AKA prisoner number", example = "A1234AK")
     @PathVariable
     offenderNo: String,

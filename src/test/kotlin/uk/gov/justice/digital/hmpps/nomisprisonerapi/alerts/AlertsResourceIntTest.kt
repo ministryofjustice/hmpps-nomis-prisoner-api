@@ -383,7 +383,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/alerts")
+  @DisplayName("GET /prisoners/{offenderNo}/alerts/to-migrate")
   @Nested
   inner class GetAlerts {
     private var latestBookingIdA1234AB = 0L
@@ -577,7 +577,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoners/A1234AB/alerts")
+        webTestClient.get().uri("/prisoners/A1234AB/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -585,7 +585,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoners/A1234AB/alerts")
+        webTestClient.get().uri("/prisoners/A1234AB/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -593,7 +593,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/prisoners/A1234AB/alerts")
+        webTestClient.get().uri("/prisoners/A1234AB/alerts/to-migrate")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -603,7 +603,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when prisoner not found`() {
-        webTestClient.get().uri("/prisoners/A9999ZZ/alerts")
+        webTestClient.get().uri("/prisoners/A9999ZZ/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus().isNotFound
@@ -611,7 +611,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `return 404 when prisoner with no bookings not found`() {
-        webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/alerts")
+        webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus().isNotFound
@@ -619,7 +619,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `return 200 when prisoner found with no alerts`() {
-        webTestClient.get().uri("/prisoners/${prisonerNoAlerts.nomsId}/alerts")
+        webTestClient.get().uri("/prisoners/${prisonerNoAlerts.nomsId}/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus().isOk
@@ -633,7 +633,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `returns all alerts for current booking`() {
-        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts")
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
@@ -652,7 +652,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `returns one of each alert type from previous bookings that is not in the current booking`() {
-        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts")
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
@@ -671,7 +671,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `only one alert from previous booking of same type on same date is taken`() {
-        webTestClient.get().uri("/prisoners/${prisonerWithIdenticalAlerts.nomsId}/alerts")
+        webTestClient.get().uri("/prisoners/${prisonerWithIdenticalAlerts.nomsId}/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
