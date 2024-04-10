@@ -14,6 +14,9 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderDslMarker
 
+@DslMarker
+annotation class AliasDslMarker
+
 @NomisDataDslMarker
 interface OffenderDsl {
   @BookingDslMarker
@@ -26,6 +29,15 @@ interface OffenderDsl {
     livingUnitId: Long = -3009,
     dsl: BookingDsl.() -> Unit = {},
   ): OffenderBooking
+
+  @AliasDslMarker
+  fun alias(
+    lastName: String = "NTHANDA",
+    firstName: String = "LEKAN",
+    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
+    genderCode: String = "M",
+    dsl: OffenderDsl.() -> Unit = {},
+  ): Offender
 }
 
 @Component
@@ -71,6 +83,22 @@ class OffenderBuilder(
     .also { it.rootOffenderId = it.id }
     .also { offender = it }
 
+  private fun buildAlias(
+    lastName: String,
+    firstName: String,
+    birthDate: LocalDate,
+    genderCode: String,
+  ): Offender = Offender(
+    nomsId = offender.nomsId,
+    lastName = lastName,
+    firstName = firstName,
+    birthDate = birthDate,
+    gender = repository.gender(genderCode),
+    lastNameKey = lastName.uppercase(),
+    rootOffenderId = offender.rootOffenderId,
+  )
+    .let { repository.save(it) }
+
   override fun booking(
     bookingBeginDate: LocalDateTime,
     active: Boolean,
@@ -95,4 +123,14 @@ class OffenderBuilder(
         .also { offender.bookings += it }
         .also { builder.apply(dsl) }
     }
+
+  override fun alias(
+    lastName: String,
+    firstName: String,
+    birthDate: LocalDate,
+    genderCode: String,
+    dsl: OffenderDsl.() -> Unit,
+  ): Offender =
+    buildAlias(lastName, firstName, birthDate, genderCode)
+      .also { apply(dsl) }
 }

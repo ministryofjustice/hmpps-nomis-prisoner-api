@@ -33,7 +33,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
   @GetMapping("/prisoners/ids")
   @Operation(
-    summary = "Gets the identifiers for all prisoners. Currently only active prisoners are supported",
+    summary = "Gets the identifiers for all prisoners. By default only active prisoners will be return unless active=false",
     description = "Requires role SYNCHRONISATION_REPORTING.",
     responses = [
       ApiResponse(
@@ -67,10 +67,10 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     pageRequest: Pageable,
     @RequestParam(value = "active", required = false, defaultValue = "true")
     @Parameter(
-      description = "Only return active prisoners currently in prison",
+      description = "When true only return active prisoners currently in prison else all prisoners that at some point has been in prison are returned",
     )
     active: Boolean = false,
-  ): Page<PrisonerId> = if (active) prisonerService.findAllActivePrisoners(pageRequest) else throw UnsupportedOperationException("Not implemented - only active prisoners can be found")
+  ): Page<PrisonerId> = if (active) prisonerService.findAllActivePrisoners(pageRequest) else prisonerService.findAllPrisonersWithBookings(pageRequest)
 
   @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
   @PostMapping("/prisoners/bookings")
@@ -161,9 +161,14 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   ): List<MergeDetail> = prisonerService.findPrisonerMerges(offenderNo, fromDate)
 }
 
+@Schema(description = "Prisoner identifier")
 data class PrisonerId(
+  @Schema(description = "Latest booking id", example = "12345")
   val bookingId: Long,
+  @Schema(description = "The NOMIS reference AKA prisoner number", example = "A1234AA")
   val offenderNo: String,
+  @Schema(description = "The prisoner's current status", example = "ACTIVE IN")
+  val status: String,
 )
 
 @Schema(description = "Details of a prisoner booking")

@@ -1,12 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 
 @Repository
-interface OffenderRepository : JpaRepository<Offender, Long> {
+interface OffenderRepository : JpaRepository<Offender, Long>, JpaSpecificationExecutor<Offender> {
   fun findByNomsId(nomsId: String): List<Offender>
 
   @Query("select o from Offender o left join fetch o.bookings b WHERE o.nomsId = :nomsId order by b.bookingSequence asc")
