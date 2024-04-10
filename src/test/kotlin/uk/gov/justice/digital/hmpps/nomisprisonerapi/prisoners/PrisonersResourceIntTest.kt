@@ -24,7 +24,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /prisoners/ids")
-  inner class GetPrisoners {
+  inner class GetPrisonersActiveOnly {
     @Nested
     inner class Security {
       @Test
@@ -106,13 +106,105 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .jsonPath("$.content[1].bookingId").isNumber
           .jsonPath("$.content[1].offenderNo").isEqualTo("A1234SS")
       }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /prisoners/ids?active=false")
+  inner class GetPrisonersAll {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/ids?active=false")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
 
       @Test
-      fun `finding all prisoners (including inactive ones) is not supported currently`() {
-        webTestClient.get().uri("/prisoners/ids?size=1&page=0&active=false")
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/ids?active=false")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/ids?active=false")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private var activePrisoner1: Long = 0
+      private var activePrisoner2: Long = 0
+      private var inactivePrisoner1: Long = 0
+
+      @BeforeEach
+      internal fun createPrisoners() {
+        deletePrisoners()
+
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234TT") {
+            activePrisoner1 = booking {}.bookingId
+            booking {
+              release()
+            }
+          }
+          offender(nomsId = "A1234SS") {
+            alias(lastName = "SMITH")
+            alias {
+              activePrisoner2 = booking {}.bookingId
+            }
+          }
+          offender(nomsId = "A1234WW") {
+            alias()
+            inactivePrisoner1 = booking {
+              release()
+            }.bookingId
+          }
+          offender(nomsId = "A1234YY")
+        }
+      }
+
+      @AfterEach
+      fun deletePrisoners() {
+        repository.deleteOffenders()
+      }
+
+      @Test
+      fun `will return count of all prisoners with bookings`() {
+        webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
           .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
           .exchange()
-          .expectStatus().is5xxServerError
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.totalElements").isEqualTo(3)
+          .jsonPath("$.numberOfElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `will return a page of prisoners ordered by rootOffenderId ASC`() {
+        webTestClient.get().uri("/prisoners/ids?active=false&page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.totalElements").isEqualTo(3)
+          .jsonPath("$.numberOfElements").isEqualTo(3)
+          .jsonPath("$.content[0].bookingId").isEqualTo(activePrisoner1)
+          .jsonPath("$.content[0].offenderNo").isEqualTo("A1234TT")
+          .jsonPath("$.content[0].status").isEqualTo("ACTIVE IN")
+          .jsonPath("$.content[1].bookingId").isEqualTo(activePrisoner2)
+          .jsonPath("$.content[1].offenderNo").isEqualTo("A1234SS")
+          .jsonPath("$.content[1].status").isEqualTo("ACTIVE IN")
+          .jsonPath("$.content[2].bookingId").isEqualTo(inactivePrisoner1)
+          .jsonPath("$.content[2].offenderNo").isEqualTo("A1234WW")
+          .jsonPath("$.content[2].status").isEqualTo("INACTIVE OUT")
       }
     }
   }

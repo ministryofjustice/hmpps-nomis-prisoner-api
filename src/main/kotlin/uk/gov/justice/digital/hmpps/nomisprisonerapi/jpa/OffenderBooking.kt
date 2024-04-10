@@ -160,3 +160,4 @@ data class OffenderBooking(
 }
 
 fun OffenderBooking.hasBeenReleased() = !this.active && this.inOutStatus == "OUT"
+fun OffenderBooking.status() = "${if (this.active) "ACTIVE" else "INACTIVE"} $inOutStatus"
