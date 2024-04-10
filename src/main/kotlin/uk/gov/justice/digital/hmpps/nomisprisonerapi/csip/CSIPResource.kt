@@ -187,8 +187,11 @@ data class CSIPResponse(
   @Schema(description = "CSIP Plans")
   val plans: List<Plan>,
 
-  @Schema(description = "Investigation of the incident")
-  val investigation: InvestigationDetails,
+  @Schema(description = "Safer custody screening")
+  val saferCustodyScreening: SaferCustodyScreening,
+
+  @Schema(description = "Investigation details of the incident")
+  val investigation: Investigation,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -235,7 +238,6 @@ data class Offender(
 
 /*
  TODO
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ContributoryFactorResponse(
   @Schema(description = "Comments regarding this contributory factor")
@@ -244,8 +246,21 @@ data class ContributoryFactorResponse(
   val factor: CodeDescription,
 )
 */
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class InvestigationDetails(
+data class SaferCustodyScreening(
+  @Schema(description = "Result of the Safer Custody Screening")
+  val outcome: CodeDescription?,
+  @Schema(description = "Who recorded the data")
+  val recordedBy: String?,
+  @Schema(description = "When the the SCS occurred")
+  val recordedDate: LocalDate?,
+  @Schema(description = "Why the decision was made")
+  val reasonForDecision: String?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Investigation(
   @Schema(description = "Staff involved in the incident")
   val staffInvolved: String?,
   @Schema(description = "Whether any evidence was secured")
