@@ -68,6 +68,7 @@ class OffenderBuilder(
     lastNameKey = lastName.uppercase(),
   )
     .let { repository.save(it) }
+    .also { it.rootOffenderId = it.id }
     .also { offender = it }
 
   override fun booking(
