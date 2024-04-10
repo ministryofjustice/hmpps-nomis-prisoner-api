@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
 @Service
 @Transactional
@@ -64,18 +64,11 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
     areaOfWork = areaOfWork.toCodeDescription(),
-    reportedBy = reportedBy?.toStaff(),
+    reportedBy = reportedBy,
     reportedDate = reportedDate,
-    logNumber = sequence,
+    logNumber = logNumber,
+    investigation = toInvestigationResponse(),
     plans = plans.map { it.toPlanResponse() },
-  )
-
-private fun JPAStaff.toStaff() =
-  Staff(
-    staffId = id,
-    firstName = firstName,
-    lastName = lastName,
-    username = accounts.maxByOrNull { it.type }?.username ?: "unknown",
   )
 
 private fun Offender.toOffender() =
@@ -85,10 +78,32 @@ private fun Offender.toOffender() =
     lastName = lastName,
   )
 
+private fun CSIPReport.toInvestigationResponse() =
+  InvestigationDetails(
+    staffInvolved = staffInvolved,
+    evidenceSecured = evidenceSecured,
+    reasonOccurred = reasonOccurred,
+    usualBehaviour = usualBehaviour,
+    trigger = trigger,
+    protectiveFactors = protectiveFactors,
+    interviews = interviews.map { it.toInterviewResponse() },
+  )
+private fun CSIPInterview.toInterviewResponse() =
+  InterviewDetails(
+    interviewee = interviewee,
+    date = interviewDate,
+    role = role.toCodeDescription(),
+    comments = comments,
+  )
+
 private fun CSIPPlan.toPlanResponse() =
   Plan(
     id = id,
     identifiedNeed = identifiedNeed,
     intervention = intervention,
-    referredBy = referredBy.toStaff(),
+    referredBy = referredBy,
+    progression = progression,
+    createdDate = createDate,
+    targetDate = targetDate,
+    closedDate = closedDate,
   )

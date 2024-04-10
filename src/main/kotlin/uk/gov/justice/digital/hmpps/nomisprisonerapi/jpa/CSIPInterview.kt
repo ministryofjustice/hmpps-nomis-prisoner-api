@@ -11,45 +11,48 @@ import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "OFFENDER_CSIP_PLANS")
+@Table(name = "OFFENDER_CSIP_INTVW")
 @EntityOpen
-data class CSIPPlan(
+data class CSIPInterview(
   @Id
-  @Column(name = "PLAN_ID")
-  @SequenceGenerator(name = "PLAN_ID", sequenceName = "PLAN_ID", allocationSize = 1)
-  @GeneratedValue(generator = "PLAN_ID")
+  @Column(name = "CSIP_INTVW_ID")
+  @SequenceGenerator(name = "CSIP_INTVW_ID", sequenceName = "CSIP_INTVW_ID", allocationSize = 1)
+  @GeneratedValue(generator = "CSIP_INTVW_ID")
   val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CSIP_ID")
   val csipReport: CSIPReport,
 
-  @Column(name = "IDENTIFIED_NEED", nullable = false)
-  val identifiedNeed: String,
+  @Column(name = "CSIP_INTERVIEWEE", nullable = false)
+  val interviewee: String,
 
-  @Column(name = "BY_WHOM", nullable = false)
-  val referredBy: String,
+  @Column(name = "INTVW_DATE", nullable = false)
+  val interviewDate: LocalDate,
 
-  @Column(name = "CREATE_DATE", nullable = false)
-  val createDate: LocalDate = LocalDate.now(),
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + CSIPInterviewRole.CSIP_INTVROL + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "INTVW_ROLE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val role: CSIPInterviewRole,
 
-  @Column(name = "TARGET_DATE", nullable = false)
-  val targetDate: LocalDate = LocalDate.now(),
-
-  @Column(name = "CLOSED_DATE")
-  val closedDate: LocalDate = LocalDate.now(),
-
-  @Column(name = "INTERVENTION", nullable = false)
-  val intervention: String,
-
-  @Column(name = "PROGRESSION")
-  val progression: String?,
-
+  @Column(name = "COMMENTS", nullable = false)
+  val comments: String? = null,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

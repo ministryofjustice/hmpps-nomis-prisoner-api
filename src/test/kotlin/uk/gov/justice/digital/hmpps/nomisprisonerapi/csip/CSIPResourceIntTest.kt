@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.csip
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.time.LocalDate
 
 class CSIPResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -20,8 +20,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
-  private lateinit var reportingStaff1: Staff
-  private lateinit var reportingStaff2: Staff
   private lateinit var csip1: CSIPReport
   private lateinit var csip2: CSIPReport
   private lateinit var csip3: CSIPReport
@@ -29,20 +27,22 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createCSIPReports() {
     nomisDataBuilder.build {
-      reportingStaff1 = staff(firstName = "FRED", lastName = "STAFF") {
-        account(username = "FREDSTAFF")
-      }
-      reportingStaff2 = staff(firstName = "JANE", lastName = "STAFF") {
-        account(username = "JANESTAFF")
-      }
-
       offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
         booking(agencyLocationId = "MDI") {
-          csip1 = csipReport(reportingStaff = reportingStaff1) {
-            plan(reportingStaff = reportingStaff2)
+          csip1 = csipReport {
+            plan(progression = "Behaviour improved")
+            investigation(
+              staffInvolved = "There were numerous staff involved",
+              evidenceSecured = "Account by Prisoner Officer",
+              reasonOccurred = "Unsure why",
+              usualBehaviour = "Helpful and polite",
+              trigger = "Mental Health",
+              protectiveFactors = "Supported by staff",
+            )
+            interview(comment = "Helping with behaviour")
           }
-          csip2 = csipReport(reportingStaff = reportingStaff1) {}
-          csip3 = csipReport(reportingStaff = reportingStaff1) {}
+          csip2 = csipReport {}
+          csip3 = csipReport {}
         }
       }
     }
@@ -54,8 +54,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     repository.delete(csip2)
     repository.delete(csip3)
     repository.deleteOffenders()
-    repository.delete(reportingStaff1)
-    repository.delete(reportingStaff2)
   }
 
   @Nested
@@ -173,7 +171,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .expectStatus().isNotFound
         .expectBody()
         .jsonPath("userMessage").value<String> {
-          Assertions.assertThat(it).contains("Not Found: CSIP with id=999999 does not exist")
+          assertThat(it).contains("Not Found: CSIP with id=999999 does not exist")
         }
     }
 
@@ -194,9 +192,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("location.description").isEqualTo("Library")
         .jsonPath("areaOfWork.code").isEqualTo("EDU")
         .jsonPath("areaOfWork.description").isEqualTo("Education")
-        .jsonPath("reportedBy.username").isEqualTo("FREDSTAFF")
-        .jsonPath("reportedBy.firstName").isEqualTo("FRED")
-        .jsonPath("reportedBy.lastName").isEqualTo("STAFF")
+        .jsonPath("reportedBy").isEqualTo("Jane Reporter")
     }
 
     @Test
@@ -210,9 +206,41 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].id").isEqualTo(csip1.plans[0].id)
         .jsonPath("plans[0].identifiedNeed").isEqualTo("They need help")
         .jsonPath("plans[0].intervention").isEqualTo("Support their work")
-        .jsonPath("plans[0].referredBy.username").isEqualTo("JANESTAFF")
-        .jsonPath("plans[0].referredBy.firstName").isEqualTo("JANE")
-        .jsonPath("plans[0].referredBy.lastName").isEqualTo("STAFF")
+        .jsonPath("plans[0].progression").isEqualTo("Behaviour improved")
+        .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
+        .jsonPath("plans[0].createdDate").isNotEmpty()
+        .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
+    }
+
+    @Test
+    fun `will return csip investigation data`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("investigation.staffInvolved").isEqualTo("There were numerous staff involved")
+        .jsonPath("investigation.evidenceSecured").isEqualTo("Account by Prisoner Officer")
+        .jsonPath("investigation.reasonOccurred").isEqualTo("Unsure why")
+        .jsonPath("investigation.usualBehaviour").isEqualTo("Helpful and polite")
+        .jsonPath("investigation.trigger").isEqualTo("Mental Health")
+        .jsonPath("investigation.protectiveFactors").isEqualTo("Supported by staff")
+    }
+
+    @Test
+    fun `will return csip investigation interview data`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("investigation.interviews[0].interviewee").isEqualTo("Jim the Interviewee")
+        .jsonPath("investigation.interviews[0].date").isNotEmpty
+        .jsonPath("investigation.interviews[0].role.code").isEqualTo("WITNESS")
+        .jsonPath("investigation.interviews[0].role.description").isEqualTo("Witness")
+        .jsonPath("investigation.interviews[0].comments").isEqualTo("Helping with behaviour")
     }
   }
 }
