@@ -157,6 +157,61 @@ class AlertsResource(
   ): AlertResponse = alertsService.getAlert(bookingId, alertSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @GetMapping("/prisoners/{offenderNo}/alerts")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get unique list of alerts for a prisoner",
+    description = "Retrieves alerts for a prisoner across all bookings. The list will contain at most one alert per alert code type ordered by alert with latest alert taken. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Alerts Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PrisonerAlertsResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist or has no bookings",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAlerts(
+    @Schema(description = "Offender No AKA prisoner number", example = "A1234AK")
+    @PathVariable
+    offenderNo: String,
+  ): PrisonerAlertsResponse = alertsService.getAlerts(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @PostMapping("/prisoners/{offenderNo}/alerts")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -344,6 +399,13 @@ class AlertsResource(
     alertSequence: Long,
   ): Unit = alertsService.deleteAlert(bookingId, alertSequence)
 }
+
+@Schema(description = "The list of unique alerts held against a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PrisonerAlertsResponse(
+  val latestBookingAlerts: List<AlertResponse>,
+  val previousBookingsAlerts: List<AlertResponse>,
+)
 
 @Schema(description = "The data held in NOMIS about an alert associated with a prisoner")
 @JsonInclude(JsonInclude.Include.NON_NULL)

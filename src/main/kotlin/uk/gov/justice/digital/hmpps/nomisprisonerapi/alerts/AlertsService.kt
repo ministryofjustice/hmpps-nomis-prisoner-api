@@ -151,6 +151,26 @@ class AlertsService(
         offenderNo = it.getOffenderNo(),
       )
     }
+
+  fun getAlerts(offenderNo: String): PrisonerAlertsResponse =
+    offenderBookingRepository.findAllByOffenderNomsId(offenderNo).takeIf { it.isNotEmpty() }
+      ?.let { bookings ->
+        val latestBooking = bookings.first { it.bookingSequence == 1 }
+        val alertCodesInLatestBooking = latestBooking.alerts.map { it.alertCode.code }.distinct()
+        val uniqueLatestPreviousBookingsAlerts =
+          bookings
+            .asSequence()
+            .filter { it.bookingSequence != 1 }
+            .flatMap { it.alerts }
+            .filter { it.alertCode.code !in alertCodesInLatestBooking }
+            .groupBy { it.alertCode.code }
+            .map { codeToAlert -> codeToAlert.value.maxBy { it.alertDate } }
+            .toList()
+        return PrisonerAlertsResponse(
+          latestBookingAlerts = latestBooking.alerts.map { it.toAlertResponse() }.sortedBy { it.alertSequence },
+          previousBookingsAlerts = uniqueLatestPreviousBookingsAlerts.map { it.toAlertResponse() }.sortedBy { it.date },
+        )
+      } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any bookings")
 }
 
 private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }

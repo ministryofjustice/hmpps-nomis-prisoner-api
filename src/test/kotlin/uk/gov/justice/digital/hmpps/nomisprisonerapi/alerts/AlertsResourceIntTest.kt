@@ -383,6 +383,309 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /prisoners/{offenderNo}/alerts")
+  @Nested
+  inner class GetAlerts {
+    private var latestBookingIdA1234AB = 0L
+    private var previousBookingIdA1234AB = 0L
+    private var firstBookingIdA1234AB = 0L
+    private lateinit var prisoner: Offender
+    private lateinit var prisonerNoAlerts: Offender
+    private lateinit var prisonerNoBookings: Offender
+    private lateinit var prisonerWithIdenticalAlerts: Offender
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "JANE", lastName = "NARK") {
+          account(username = "JANE.NARK")
+        }
+        staff(firstName = "TREVOR", lastName = "NACK") {
+          account(username = "TREV.NACK")
+        }
+
+        prisoner = offender(nomsId = "A1234AB") {
+          latestBookingIdA1234AB = booking(bookingBeginDate = LocalDateTime.parse("2020-01-31T10:00")) {
+            alert(
+              sequence = 10,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2023-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = 9,
+              alertCode = "SC",
+              typeCode = "S",
+              date = LocalDate.parse("2020-07-19"),
+              expiryDate = LocalDate.parse("2025-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = INACTIVE,
+              commentText = "At risk",
+            )
+            alert(
+              sequence = 8,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2022-07-19"),
+              expiryDate = LocalDate.parse("2022-08-19"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = INACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = 7,
+              alertCode = "HS",
+              typeCode = "H",
+              date = LocalDate.parse("2001-07-19"),
+              expiryDate = LocalDate.parse("2002-08-19"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = INACTIVE,
+              commentText = null,
+            )
+          }.bookingId
+          previousBookingIdA1234AB = booking(bookingBeginDate = LocalDateTime.parse("2018-12-31T10:00")) {
+            release(date = LocalDateTime.parse("2019-12-31T10:00"))
+            alert(
+              sequence = 1,
+              alertCode = "SC",
+              typeCode = "S",
+              date = LocalDate.parse("2019-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = ACTIVE,
+              commentText = "At risk",
+            )
+            alert(
+              sequence = 2,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2019-07-19"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = 3,
+              alertCode = "HS",
+              typeCode = "H",
+              // activate on an old booking that typically shouldn't happen
+              date = LocalDate.parse("2023-07-19"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = 4,
+              alertCode = "P1",
+              typeCode = "P",
+              date = LocalDate.parse("2017-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = ACTIVE,
+              commentText = "MAPPA on middle booking but old date",
+            )
+            alert(
+              sequence = 5,
+              alertCode = "RYP",
+              typeCode = "R",
+              date = LocalDate.parse("2019-07-19"),
+              expiryDate = LocalDate.parse("2019-07-20"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = INACTIVE,
+              commentText = null,
+            )
+          }.bookingId
+          firstBookingIdA1234AB = booking(bookingBeginDate = LocalDateTime.parse("2016-12-31T10:00")) {
+            release(date = LocalDateTime.parse("2017-12-31T10:00"))
+            alert(
+              sequence = 1,
+              alertCode = "P1",
+              typeCode = "P",
+              date = LocalDate.parse("2022-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = ACTIVE,
+              commentText = "MAPPA on old booking but newish date",
+            )
+            alert(
+              sequence = 2,
+              alertCode = "RYP",
+              typeCode = "R",
+              date = LocalDate.parse("2018-07-19"),
+              expiryDate = LocalDate.parse("2018-07-20"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = INACTIVE,
+              commentText = null,
+            )
+          }.bookingId
+        }
+        prisonerNoAlerts = offender(nomsId = "B1234AB") {
+          booking()
+        }
+        prisonerWithIdenticalAlerts = offender(nomsId = "C1234AB") {
+          booking(bookingBeginDate = LocalDateTime.parse("2020-01-31T10:00")) {}
+          booking(bookingBeginDate = LocalDateTime.parse("2018-12-31T10:00")) {
+            release(date = LocalDateTime.parse("2019-12-31T10:00"))
+            alert(
+              sequence = 1,
+              alertCode = "RYP",
+              typeCode = "R",
+              date = LocalDate.parse("2019-07-19"),
+              expiryDate = LocalDate.parse("2019-07-20"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = INACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = 2,
+              alertCode = "RYP",
+              typeCode = "R",
+              date = LocalDate.parse("2019-07-19"),
+              expiryDate = LocalDate.parse("2019-07-20"),
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = INACTIVE,
+              commentText = null,
+            )
+          }
+        }
+        prisonerNoBookings = offender(nomsId = "D1234AB")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+      repository.delete(prisonerNoAlerts)
+      repository.delete(prisonerWithIdenticalAlerts)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AB/alerts")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AB/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A1234AB/alerts")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when prisoner not found`() {
+        webTestClient.get().uri("/prisoners/A9999ZZ/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when prisoner with no bookings not found`() {
+        webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 200 when prisoner found with no alerts`() {
+        webTestClient.get().uri("/prisoners/${prisonerNoAlerts.nomsId}/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("latestBookingAlerts.size()").isEqualTo(0)
+          .jsonPath("previousBookingsAlerts.size()").isEqualTo(0)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `returns all alerts for current booking`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("latestBookingAlerts.size()").isEqualTo(4)
+          .jsonPath("latestBookingAlerts[0].alertSequence").isEqualTo(7)
+          .jsonPath("latestBookingAlerts[0].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("latestBookingAlerts[1].alertSequence").isEqualTo(8)
+          .jsonPath("latestBookingAlerts[1].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("latestBookingAlerts[2].alertSequence").isEqualTo(9)
+          .jsonPath("latestBookingAlerts[2].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("latestBookingAlerts[3].alertSequence").isEqualTo(10)
+          .jsonPath("latestBookingAlerts[3].bookingId").isEqualTo(latestBookingIdA1234AB)
+      }
+
+      @Test
+      fun `returns one of each alert type from previous bookings that is not in the current booking`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("previousBookingsAlerts.size()").isEqualTo(2)
+          .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(5)
+          .jsonPath("previousBookingsAlerts[0].bookingId").isEqualTo(previousBookingIdA1234AB)
+          .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("RYP")
+          .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2019-07-19")
+          .jsonPath("previousBookingsAlerts[1].alertSequence").isEqualTo(1)
+          .jsonPath("previousBookingsAlerts[1].bookingId").isEqualTo(firstBookingIdA1234AB)
+          .jsonPath("previousBookingsAlerts[1].alertCode.code").isEqualTo("P1")
+          .jsonPath("previousBookingsAlerts[1].date").isEqualTo("2022-07-19")
+      }
+
+      @Test
+      fun `only one alert from previous booking of same type on same date is taken`() {
+        webTestClient.get().uri("/prisoners/${prisonerWithIdenticalAlerts.nomsId}/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("latestBookingAlerts.size()").isEqualTo(0)
+          .jsonPath("previousBookingsAlerts.size()").isEqualTo(1)
+          .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(1)
+          .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("RYP")
+          .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2019-07-19")
+      }
+    }
+  }
+
   @DisplayName("GET /alerts/ids")
   @Nested
   inner class GetAlertIds {
