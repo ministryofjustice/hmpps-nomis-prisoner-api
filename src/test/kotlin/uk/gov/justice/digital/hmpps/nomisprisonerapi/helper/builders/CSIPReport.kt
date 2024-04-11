@@ -3,9 +3,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInvolvement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
@@ -25,6 +27,13 @@ annotation class CSIPSaferCustodyScreeningDslMarker
 
 @NomisDataDslMarker
 interface CSIPReportDsl {
+
+  @CSIPFactorDslMarker
+  fun factor(
+    factor: String = "BUL",
+    comment: String? = null,
+    dsl: CSIPFactorDsl.() -> Unit = {},
+  ): CSIPFactor
 
   @CSIPSaferCustodyScreeningDslMarker
   fun scs(
@@ -68,12 +77,14 @@ class CSIPReportBuilderFactory(
   private val repository: CSIPReportBuilderRepository,
   private val csipInterviewBuilderFactory: CSIPInterviewBuilderFactory,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
+  private val csipFactorBuilderFactory: CSIPFactorBuilderFactory,
 ) {
   fun builder(): CSIPReportBuilder {
     return CSIPReportBuilder(
       repository,
       csipInterviewBuilderFactory,
       csipPlanBuilderFactory,
+      csipFactorBuilderFactory,
     )
   }
 }
@@ -85,18 +96,22 @@ class CSIPReportBuilderRepository(
   val locationRepository: ReferenceCodeRepository<CSIPIncidentLocation>,
   val areaOfWorkRepository: ReferenceCodeRepository<CSIPAreaOfWork>,
   val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
+  val involvementRepository: ReferenceCodeRepository<CSIPInvolvement>,
 ) {
   fun save(csipReport: CSIPReport): CSIPReport = repository.save(csipReport)
   fun lookupType(code: String) = typeRepository.findByIdOrNull(CSIPIncidentType.pk(code))!!
   fun lookupLocation(code: String) = locationRepository.findByIdOrNull(CSIPIncidentLocation.pk(code))!!
   fun lookupAreaOfWork(code: String) = areaOfWorkRepository.findByIdOrNull(CSIPAreaOfWork.pk(code))!!
   fun lookupOutcome(code: String) = outcomeRepository.findByIdOrNull(CSIPOutcome.pk(code))!!
+  fun lookupInvolvement(code: String) = involvementRepository.findByIdOrNull(CSIPInvolvement.pk(code))!!
 }
 
 class CSIPReportBuilder(
   private val repository: CSIPReportBuilderRepository,
   private val csipInterviewBuilderFactory: CSIPInterviewBuilderFactory,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
+  private val csipFactorBuilderFactory: CSIPFactorBuilderFactory,
+
 ) : CSIPReportDsl {
   private lateinit var csipReport: CSIPReport
 
@@ -106,6 +121,12 @@ class CSIPReportBuilder(
     location: String,
     areaOfWork: String,
     reportedBy: String,
+    staffAssaulted: Boolean,
+    staffAssaultedName: String?,
+    involvement: String?,
+    concern: String?,
+    knownReasons: String?,
+    otherInformation: String?,
   ): CSIPReport =
     CSIPReport(
       offenderBooking = offenderBooking,
@@ -114,9 +135,30 @@ class CSIPReportBuilder(
       location = repository.lookupLocation(location),
       areaOfWork = repository.lookupAreaOfWork(areaOfWork),
       reportedBy = reportedBy,
+      staffAssaulted = staffAssaulted,
+      staffAssaultedName = staffAssaultedName,
+      involvement = involvement?.let { repository.lookupInvolvement(involvement) },
+      concernDescription = concern,
+      knownReasons = knownReasons,
+      otherInformation = otherInformation,
     )
       .let { repository.save(it) }
       .also { csipReport = it }
+
+  override fun factor(
+    type: String,
+    comment: String?,
+    dsl: CSIPFactorDsl.() -> Unit,
+  ): CSIPFactor = csipFactorBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        csipReport = csipReport,
+        type = type,
+        comment = comment,
+      )
+        .also { csipReport.factors += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun scs(
     outcome: String,

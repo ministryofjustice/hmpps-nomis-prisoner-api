@@ -29,7 +29,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
         booking(agencyLocationId = "MDI") {
-          csip1 = csipReport {
+          csip1 = csipReport(
+            staffAssaulted = true, staffAssaultedName = "Assaulted Person",
+            involvement = "PER", concern = "It may happen again", knownReasons = "Disagreement", otherInformation = "Two other offenders involved",
+          ) {
             scs(
               "ACC", reasonForDecision = "Further help needed", outcomeCreateUsername = "JAMES",
               outcomeCreateDate = LocalDate.now(),
@@ -180,6 +183,31 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `will return a csip Report by Id with minimal data`() {
+      webTestClient.get().uri("/csip/${csip2.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip2.id)
+        .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
+        .jsonPath("offender.firstName").isEqualTo("Bob")
+        .jsonPath("offender.lastName").isEqualTo("Smith")
+        .jsonPath("incidentDateTime").isNotEmpty
+        .jsonPath("type.code").isEqualTo("INT")
+        .jsonPath("type.description").isEqualTo("Intimidation")
+        .jsonPath("location.code").isEqualTo("LIB")
+        .jsonPath("location.description").isEqualTo("Library")
+        .jsonPath("areaOfWork.code").isEqualTo("EDU")
+        .jsonPath("areaOfWork.description").isEqualTo("Education")
+        .jsonPath("reportedBy").isEqualTo("Jane Reporter")
+        .jsonPath("reportedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("proActiveReferral").isEqualTo(false)
+        .jsonPath("staffAssaulted").isEqualTo(false)
+        .jsonPath("staffAssaultedName").doesNotExist()
+    }
+
+    @Test
     fun `will return a csip Report by Id`() {
       webTestClient.get().uri("/csip/${csip1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -190,6 +218,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
+        .jsonPath("incidentDateTime").isNotEmpty
         .jsonPath("type.code").isEqualTo("INT")
         .jsonPath("type.description").isEqualTo("Intimidation")
         .jsonPath("location.code").isEqualTo("LIB")
@@ -197,6 +226,16 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("areaOfWork.code").isEqualTo("EDU")
         .jsonPath("areaOfWork.description").isEqualTo("Education")
         .jsonPath("reportedBy").isEqualTo("Jane Reporter")
+        .jsonPath("reportedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("proActiveReferral").isEqualTo(false)
+        .jsonPath("staffAssaulted").isEqualTo(true)
+        .jsonPath("staffAssaultedName").isEqualTo("Assaulted Person")
+        .jsonPath("reportDetails.involvement.code").isEqualTo("PER")
+        .jsonPath("reportDetails.involvement.description").isEqualTo("Perpetrator")
+        .jsonPath("reportDetails.concern").isEqualTo("It may happen again")
+        .jsonPath("reportDetails.knownReasons").isEqualTo("Disagreement")
+        .jsonPath("reportDetails.otherInformation").isEqualTo("Two other offenders involved")
+      // TODO add test for factors
     }
 
     @Test
@@ -212,8 +251,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].intervention").isEqualTo("Support their work")
         .jsonPath("plans[0].progression").isEqualTo("Behaviour improved")
         .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
-        .jsonPath("plans[0].createdDate").isNotEmpty()
+        .jsonPath("plans[0].createdDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("plans[0].closedDate").isEqualTo(LocalDate.now().toString())
     }
 
     @Test
@@ -256,7 +296,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("id").isEqualTo(csip1.id)
         .jsonPath("investigation.interviews[0].interviewee").isEqualTo("Jim the Interviewee")
-        .jsonPath("investigation.interviews[0].date").isNotEmpty
+        .jsonPath("investigation.interviews[0].date").isEqualTo(LocalDate.now().toString())
         .jsonPath("investigation.interviews[0].role.code").isEqualTo("WITNESS")
         .jsonPath("investigation.interviews[0].role.description").isEqualTo("Witness")
         .jsonPath("investigation.interviews[0].comments").isEqualTo("Helping with behaviour")

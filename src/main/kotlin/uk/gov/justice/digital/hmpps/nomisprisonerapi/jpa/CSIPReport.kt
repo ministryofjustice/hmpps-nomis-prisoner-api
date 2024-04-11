@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -16,6 +17,7 @@ import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -37,7 +39,7 @@ data class CSIPReport(
   @Column(name = "ROOT_OFFENDER_ID", nullable = false)
   val rootOffenderId: Long,
 
-  // Referral Details ---------------------------------------//
+  // ------------------------- Referral Details -------------------------//
   @Column(name = "CSIP_SEQ")
   val logNumber: String? = null,
 
@@ -92,6 +94,54 @@ data class CSIPReport(
   @Column(name = "RFR_DATE_REPORTED", nullable = false)
   val reportedDate: LocalDate = LocalDate.now(),
 
+  @Column(name = "RFR_PROACTIVE_RESPONSE")
+  @Convert(converter = YesNoConverter::class)
+  val proActiveReferral: Boolean = false,
+
+  @Column(name = "RFR_STAFF_ASSAULTED")
+  @Convert(converter = YesNoConverter::class) val staffAssaulted: Boolean = false,
+
+  @Column(name = "RFR_STAFF_NAME")
+  val staffAssaultedName: String? = null,
+
+  // ------------------ Additional Referral Details ---------------------//
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + CSIPInvolvement.CSIP_INV + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "CDR_INVOLVEMENT",
+          referencedColumnName = "code",
+          nullable = true,
+        ),
+      ),
+    ],
+  )
+  val involvement: CSIPInvolvement? = null,
+
+  @Column(name = "CDR_CONCERN_DESCRIPTION")
+  val concernDescription: String? = null,
+
+  @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val factors: MutableList<CSIPFactor> = mutableListOf(),
+
+  @Column(name = "INV_KNOWN_REASONS")
+  val knownReasons: String? = null,
+
+  @Column(name = "CDR_OTHER_INFORMATION")
+  val otherInformation: String? = null,
+
+  // REFERRAL_COMPLETE_FLAG VARCHAR2(1) DEFAULT 'N',
+  // REFERRAL_COMPLETED_BY VARCHAR2(32),
+  // REFERRAL_COMPLETED_DATE DATE,
+  // CDR_SENT_DENT VARCHAR2(1) DEFAULT 'N',
+
   // -------------------- Safer Custody Screening -----------------------//
 
   @ManyToOne
@@ -104,7 +154,7 @@ data class CSIPReport(
         ),
       ), JoinColumnOrFormula(
         column = JoinColumn(
-          name = "INV_OUTCOME",
+          name = "CDR_OUTCOME",
           referencedColumnName = "code",
           nullable = true,
         ),
@@ -145,12 +195,51 @@ data class CSIPReport(
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val interviews: MutableList<CSIPInterview> = mutableListOf(),
 
-  // --------------------------- Decision -------------------------------//
-  // TODO
+  // TODO Investigate when/where these are set
+  // INV_NOMIS_CASE_NOTE VARCHAR2(1) DEFAULT 'N',
+  // CDR_RELEASE_DATE DATE, -- on referral details
+  // AGY_LOC_ID VARCHAR2(6),
 
-  // ----------------------------- Plan ---------------------------------//
+  // ---- NOT MAPPED ---- //
+  // RFR_COMMENT VARCHAR2(4000), = all null in preprod
+  // INV_NAME VARCHAR2(100),  = all null in preprod
+  // MODIFY_DATETIME TIMESTAMP,
+  // MODIFY_USER_ID VARCHAR2(32),
+  // AUDIT_TIMESTAMP TIMESTAMP,
+  // AUDIT_USER_ID VARCHAR2(32),
+  // AUDIT_MODULE_NAME VARCHAR2(65),
+  // AUDIT_CLIENT_USER_ID VARCHAR2(64),
+  // AUDIT_CLIENT_IP_ADDRESS VARCHAR2(39),
+  // AUDIT_CLIENT_WORKSTATION_NAME VARCHAR2(64),
+  // AUDIT_ADDITIONAL_INFO VARCHAR2(256),
+
+  // ---------------------- Decisions & Actions -------------------------/
+  // INV_CONCLUSION VARCHAR2(4000),
+  // INV_OUTCOME VARCHAR2(12),
+  // INV_SIGNED_OFF_BY VARCHAR2(12),
+  // INV_OUTCOME_RECORDED_BY VARCHAR2(100),
+  // INV_OUTCOME_DATE DATE,
+  // INV_NEXT_STEPS VARCHAR2(4000),
+  // INV_OTHER VARCHAR2(4000),
+  // OPEN_CSIP_ALERT VARCHAR2(1) DEFAULT 'N',
+  // INV_NON_ASSOC_UPDATED VARCHAR2(1) DEFAULT 'N',
+  // INV_OBSERVATION_BOOK VARCHAR2(1) DEFAULT 'N',
+  // INV_MOVE VARCHAR2(1) DEFAULT 'N',
+  // INV_REVIEW VARCHAR2(1) DEFAULT 'N',
+  // INV_SERVICE_REFERRAL VARCHAR2(1) DEFAULT 'N',
+  // INV_SIM_REFERRAL VARCHAR2(1) DEFAULT 'N',
+
+  // ----------------------------- Plan & Decision-----------------------//
+
+  // CASE_MANAGER VARCHAR2(100),
+  // REASON VARCHAR2(240),
+  // CASE_REV_DATE DATE,
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val plans: MutableList<CSIPPlan> = mutableListOf(),
+
+  // @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
+  // val reviews: MutableList<CSIPReview> = mutableListOf(),
+
   // ---------------------------------------------------------------------//
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)

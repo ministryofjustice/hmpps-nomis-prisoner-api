@@ -171,7 +171,7 @@ data class CSIPResponse(
   val logNumber: String?,
 
   @Schema(description = "Date/Time incident occurred")
-  val incidentDateTime: LocalDateTime,
+  val incidentDateTime: LocalDateTime?,
   @Schema(description = "Type of incident")
   val type: CodeDescription,
   @Schema(description = "Location of the incident")
@@ -184,6 +184,16 @@ data class CSIPResponse(
   @Schema(description = "Date reported")
   val reportedDate: LocalDate,
 
+  @Schema(description = "proActive Referral")
+  val proActiveReferral: Boolean,
+  @Schema(description = "If a staff member was assaulted")
+  val staffAssaulted: Boolean,
+  @Schema(description = "If assaulted, the staff member name")
+  val staffAssaultedName: String?,
+
+  @Schema(description = "Additional information for the CSIP Report")
+  val reportDetails: ReportDetails,
+
   @Schema(description = "CSIP Plans")
   val plans: List<Plan>,
 
@@ -192,6 +202,30 @@ data class CSIPResponse(
 
   @Schema(description = "Investigation details of the incident")
   val investigation: Investigation,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ReportDetails(
+  @Schema(description = "How the offender was involved")
+  val involvement: CodeDescription?,
+  @Schema(description = "Concern description")
+  val concern: String?,
+  @Schema(description = "What was the concern")
+  val knownReasons: String?,
+  @Schema(description = "What was the concern")
+  val otherInformation: String?,
+  @Schema(description = "Contributory factors")
+  val factors: List<FactorResponse>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class FactorResponse(
+  @Schema(description = "Factor type id")
+  val id: Long,
+  @Schema(description = "Contributory Factor")
+  val type: CodeDescription,
+  @Schema(description = "Factor comment")
+  val comment: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
