@@ -73,6 +73,12 @@ interface BookingDsl {
     location: String = "LIB",
     areaOfWork: String = "EDU",
     reportedBy: String = "Jane Reporter",
+    staffAssaulted: Boolean = false,
+    staffAssaultedName: String? = null,
+    involvement: String? = null,
+    concern: String? = null,
+    knownReasons: String? = null,
+    otherInformation: String? = null,
     dsl: CSIPReportDsl.() -> Unit = {},
   ): CSIPReport
 
@@ -408,6 +414,13 @@ class BookingBuilder(
     location: String,
     areaOfWork: String,
     reportedBy: String,
+    staffAssaulted: Boolean,
+    staffAssaultedName: String?,
+    involvement: String?,
+    concern: String?,
+    // TODO contributoryFactors: MutableList<CSIPFactor>,
+    knownReasons: String?,
+    otherInformation: String?,
     dsl: CSIPReportDsl.() -> Unit,
   ): CSIPReport =
     csipReportBuilderFactory.builder()
@@ -418,6 +431,13 @@ class BookingBuilder(
           location = location,
           areaOfWork = areaOfWork,
           reportedBy = reportedBy,
+          involvement = involvement,
+          // contributoryFactors = mutableListOf(),
+          concern = concern,
+          staffAssaulted = staffAssaulted,
+          staffAssaultedName = staffAssaultedName,
+          knownReasons = knownReasons,
+          otherInformation = otherInformation,
         )
           .also {
             builder.apply(dsl)

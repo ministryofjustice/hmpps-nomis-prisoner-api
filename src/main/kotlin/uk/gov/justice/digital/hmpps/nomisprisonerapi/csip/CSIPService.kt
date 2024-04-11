@@ -60,13 +60,17 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     id = id,
     offender = offenderBooking.offender.toOffender(),
     bookingId = offenderBooking.bookingId,
-    incidentDateTime = incidentTime.toLocalTime().atDate(incidentDate),
+    incidentDateTime = incidentTime?.toLocalTime()?.atDate(incidentDate),
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
     areaOfWork = areaOfWork.toCodeDescription(),
     reportedBy = reportedBy,
     reportedDate = reportedDate,
     logNumber = logNumber,
+    proActiveReferral = proActiveReferral,
+    staffAssaulted = staffAssaulted,
+    staffAssaultedName = staffAssaultedName,
+    reportDetails = toReportDetailResponse(),
     saferCustodyScreening = toSCSResponse(),
     investigation = toInvestigationResponse(),
     plans = plans.map { it.toPlanResponse() },
@@ -77,6 +81,15 @@ private fun Offender.toOffender() =
     offenderNo = nomsId,
     firstName = firstName,
     lastName = lastName,
+  )
+
+private fun CSIPReport.toReportDetailResponse() =
+  ReportDetails(
+    involvement = involvement?.toCodeDescription(),
+    concern = concernDescription,
+    knownReasons = knownReasons,
+    otherInformation = otherInformation,
+    factors = factors.map { FactorResponse(id = it.id, type = it.type.toCodeDescription(), comment = it.comment) },
   )
 
 private fun CSIPReport.toSCSResponse() =
