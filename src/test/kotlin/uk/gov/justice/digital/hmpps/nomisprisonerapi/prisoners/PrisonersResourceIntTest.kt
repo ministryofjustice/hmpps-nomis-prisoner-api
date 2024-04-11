@@ -136,6 +136,22 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isUnauthorized
       }
+
+      @Test
+      fun `access allowed for SYNCHRONISATION_REPORTING`() {
+        webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+
+      @Test
+      fun `access allowed for NOMIS_ALERTS`() {
+        webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+      }
     }
 
     @Nested

@@ -30,7 +30,7 @@ import java.time.LocalDateTime
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class PrisonersResource(private val prisonerService: PrisonerService) {
-  @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
+  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING', 'ROLE_NOMIS_ALERTS')")
   @GetMapping("/prisoners/ids")
   @Operation(
     summary = "Gets the identifiers for all prisoners. By default only active prisoners will be return unless active=false",
