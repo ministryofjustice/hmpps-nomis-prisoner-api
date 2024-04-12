@@ -28,6 +28,8 @@ data class OffenderBooking(
   @Column(name = "OFFENDER_BOOK_ID")
   val bookingId: Long = 0,
 
+  // TODO Not sure why this is null when can't be - maybe because it is a generated field
+  // either way FIXME
   @Column(name = "BOOKING_SEQ", nullable = false)
   val bookingSequence: Int? = null,
 

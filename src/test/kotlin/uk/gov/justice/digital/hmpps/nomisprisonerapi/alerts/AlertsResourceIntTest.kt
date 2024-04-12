@@ -289,6 +289,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBody()
           .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("bookingSequence").isEqualTo(1)
           .jsonPath("alertSequence").isEqualTo(activeAlertSequence)
           .jsonPath("alertCode.code").isEqualTo("HPI")
           .jsonPath("alertCode.description").isEqualTo("High Public Interest")
@@ -642,12 +643,16 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("latestBookingAlerts.size()").isEqualTo(4)
           .jsonPath("latestBookingAlerts[0].alertSequence").isEqualTo(7)
           .jsonPath("latestBookingAlerts[0].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("latestBookingAlerts[0].bookingSequence").isEqualTo(1)
           .jsonPath("latestBookingAlerts[1].alertSequence").isEqualTo(8)
           .jsonPath("latestBookingAlerts[1].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("latestBookingAlerts[1].bookingSequence").isEqualTo(1)
           .jsonPath("latestBookingAlerts[2].alertSequence").isEqualTo(9)
           .jsonPath("latestBookingAlerts[2].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("latestBookingAlerts[2].bookingSequence").isEqualTo(1)
           .jsonPath("latestBookingAlerts[3].alertSequence").isEqualTo(10)
           .jsonPath("latestBookingAlerts[3].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("latestBookingAlerts[3].bookingSequence").isEqualTo(1)
       }
 
       @Test
@@ -661,10 +666,12 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("previousBookingsAlerts.size()").isEqualTo(2)
           .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(5)
           .jsonPath("previousBookingsAlerts[0].bookingId").isEqualTo(previousBookingIdA1234AB)
+          .jsonPath("previousBookingsAlerts[0].bookingSequence").isEqualTo(2)
           .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("RYP")
           .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2019-07-19")
           .jsonPath("previousBookingsAlerts[1].alertSequence").isEqualTo(1)
           .jsonPath("previousBookingsAlerts[1].bookingId").isEqualTo(firstBookingIdA1234AB)
+          .jsonPath("previousBookingsAlerts[1].bookingSequence").isEqualTo(3)
           .jsonPath("previousBookingsAlerts[1].alertCode.code").isEqualTo("P1")
           .jsonPath("previousBookingsAlerts[1].date").isEqualTo("2022-07-19")
       }

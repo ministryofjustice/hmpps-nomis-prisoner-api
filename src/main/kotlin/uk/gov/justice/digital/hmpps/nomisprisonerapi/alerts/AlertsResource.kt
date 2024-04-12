@@ -412,6 +412,8 @@ data class PrisonerAlertsResponse(
 data class AlertResponse(
   @Schema(description = "The prisoner's bookingId related to this alert")
   val bookingId: Long,
+  @Schema(description = "The prisoner's bookingId sequence related to this alert. Used to show if this is on latest bookings")
+  val bookingSequence: Long,
   @Schema(description = "The sequence primary key within this booking")
   val alertSequence: Long,
   @Schema(description = "The alert code")
