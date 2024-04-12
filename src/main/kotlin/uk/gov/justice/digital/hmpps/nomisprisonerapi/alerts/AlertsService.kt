@@ -102,6 +102,7 @@ class AlertsService(
 
   private fun OffenderAlert.toAlertResponse() = AlertResponse(
     bookingId = id.offenderBooking.bookingId,
+    bookingSequence = id.offenderBooking.bookingSequence!!.toLong(),
     alertSequence = id.sequence,
     alertCode = alertCode.toCodeDescription(),
     type = alertType.toCodeDescription(),
