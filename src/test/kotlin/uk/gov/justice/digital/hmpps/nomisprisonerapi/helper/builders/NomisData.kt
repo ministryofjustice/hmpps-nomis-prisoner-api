@@ -30,7 +30,6 @@ class NomisDataBuilder(
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
-  private val csipReportBuilderFactory: CSIPReportBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -44,7 +43,6 @@ class NomisDataBuilder(
     questionnaireBuilderFactory,
     incidentBuilderFactory,
     mergeTransactionBuilderFactory,
-    csipReportBuilderFactory,
   ).apply(dsl)
 }
 
@@ -60,7 +58,6 @@ class NomisData(
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
-  private val csipReportBuilderFactory: CSIPReportBuilderFactory? = null,
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =

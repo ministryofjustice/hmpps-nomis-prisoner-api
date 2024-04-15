@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import java.time.LocalDateTime
@@ -60,7 +62,7 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     id = id,
     offender = offenderBooking.offender.toOffender(),
     bookingId = offenderBooking.bookingId,
-    incidentDateTime = incidentTime?.toLocalTime()?.atDate(incidentDate),
+    incidentDateTime = incidentTime.toLocalTime()?.atDate(incidentDate),
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
     areaOfWork = areaOfWork.toCodeDescription(),
@@ -73,7 +75,13 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     reportDetails = toReportDetailResponse(),
     saferCustodyScreening = toSCSResponse(),
     investigation = toInvestigationResponse(),
+
+    caseManager = caseManager,
+    planReason = reasonForPlan,
+    firstCaseReviewDate = firstCaseReviewDate,
     plans = plans.map { it.toPlanResponse() },
+
+    reviews = reviews.map { it.toReviewResponse() },
   )
 
 private fun Offender.toOffender() =
@@ -85,11 +93,16 @@ private fun Offender.toOffender() =
 
 private fun CSIPReport.toReportDetailResponse() =
   ReportDetails(
+    releaseDate = releaseDate,
     involvement = involvement?.toCodeDescription(),
     concern = concernDescription,
+    factors = factors.map { FactorResponse(id = it.id, type = it.type.toCodeDescription(), comment = it.comment) },
     knownReasons = knownReasons,
     otherInformation = otherInformation,
-    factors = factors.map { FactorResponse(id = it.id, type = it.type.toCodeDescription(), comment = it.comment) },
+    saferCustodyTeamInformed = saferCustodyTeamInformed,
+    referralComplete = referralComplete,
+    referralCompletedBy = referralCompletedBy,
+    referralCompletedDate = referralCompletedDate,
   )
 
 private fun CSIPReport.toSCSResponse() =
@@ -128,4 +141,27 @@ private fun CSIPPlan.toPlanResponse() =
     createdDate = createDate,
     targetDate = targetDate,
     closedDate = closedDate,
+  )
+
+private fun CSIPReview.toReviewResponse() =
+  Review(
+    id = id,
+    reviewSequence = reviewSequence,
+    attendees = attendees.map { it.toAttendeeResponse() },
+    remainOnCSIP = remainOnCSIP,
+    csipUpdated = csipUpdated,
+    caseNote = caseNote,
+    closeCSIP = closeCSIP,
+    peopleInformed = peopleInformed,
+    summary = summary,
+    nextReviewDate = nextReviewDate,
+    closeDate = closeDate,
+  )
+private fun CSIPAttendee.toAttendeeResponse() =
+  Attendee(
+    id = id,
+    name = name,
+    role = role,
+    attended = attended,
+    contribution = contribution,
   )

@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInvolvement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -70,6 +71,19 @@ interface CSIPReportDsl {
     referredBy: String = "Fred Bloggs",
     dsl: CSIPPlanDsl.() -> Unit = {},
   ): CSIPPlan
+
+  @CSIPReviewDslMarker
+  fun review(
+    remainOnCSIP: Boolean = false,
+    csipUpdated: Boolean = false,
+    caseNote: Boolean = false,
+    closeCSIP: Boolean = false,
+    peopleInformed: Boolean = false,
+    summary: String? = "More help needed",
+    nextReview: LocalDate? = LocalDate.parse("2024-08-01"),
+    closeDate: LocalDate? = null,
+    dsl: CSIPReviewDsl.() -> Unit = {},
+  ): CSIPReview
 }
 
 @Component
@@ -77,13 +91,16 @@ class CSIPReportBuilderFactory(
   private val repository: CSIPReportBuilderRepository,
   private val csipInterviewBuilderFactory: CSIPInterviewBuilderFactory,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
+  private val csipReviewBuilderFactory: CSIPReviewBuilderFactory,
   private val csipFactorBuilderFactory: CSIPFactorBuilderFactory,
+
 ) {
   fun builder(): CSIPReportBuilder {
     return CSIPReportBuilder(
       repository,
       csipInterviewBuilderFactory,
       csipPlanBuilderFactory,
+      csipReviewBuilderFactory,
       csipFactorBuilderFactory,
     )
   }
@@ -110,6 +127,7 @@ class CSIPReportBuilder(
   private val repository: CSIPReportBuilderRepository,
   private val csipInterviewBuilderFactory: CSIPInterviewBuilderFactory,
   private val csipPlanBuilderFactory: CSIPPlanBuilderFactory,
+  private val csipReviewBuilderFactory: CSIPReviewBuilderFactory,
   private val csipFactorBuilderFactory: CSIPFactorBuilderFactory,
 
 ) : CSIPReportDsl {
@@ -123,10 +141,17 @@ class CSIPReportBuilder(
     reportedBy: String,
     staffAssaulted: Boolean,
     staffAssaultedName: String?,
+    releaseDate: LocalDate?,
     involvement: String?,
     concern: String?,
     knownReasons: String?,
     otherInformation: String?,
+    referralComplete: Boolean,
+    referralCompletedBy: String?,
+    referralCompletedDate: LocalDate?,
+    caseManager: String?,
+    planReason: String?,
+    firstCaseReviewDate: LocalDate?,
   ): CSIPReport =
     CSIPReport(
       offenderBooking = offenderBooking,
@@ -137,10 +162,17 @@ class CSIPReportBuilder(
       reportedBy = reportedBy,
       staffAssaulted = staffAssaulted,
       staffAssaultedName = staffAssaultedName,
+      releaseDate = releaseDate,
       involvement = involvement?.let { repository.lookupInvolvement(involvement) },
       concernDescription = concern,
       knownReasons = knownReasons,
       otherInformation = otherInformation,
+      referralComplete = referralComplete,
+      referralCompletedBy = referralCompletedBy,
+      referralCompletedDate = referralCompletedDate,
+      caseManager = caseManager,
+      reasonForPlan = planReason,
+      firstCaseReviewDate = firstCaseReviewDate,
     )
       .let { repository.save(it) }
       .also { csipReport = it }
@@ -228,6 +260,34 @@ class CSIPReportBuilder(
         referredBy = referredBy,
       )
         .also { csipReport.plans += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun review(
+    remainOnCSIP: Boolean,
+    csipUpdated: Boolean,
+    caseNote: Boolean,
+    closeCSIP: Boolean,
+    peopleInformed: Boolean,
+    summary: String?,
+    nextReview: LocalDate?,
+    closeDate: LocalDate?,
+    dsl: CSIPReviewDsl.() -> Unit,
+  ): CSIPReview = csipReviewBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        csipReport = csipReport,
+        reviewSequence = csipReport.reviews.size + 1,
+        remainOnCSIP = remainOnCSIP,
+        csipUpdated = csipUpdated,
+        caseNote = caseNote,
+        closeCSIP = closeCSIP,
+        peopleInformed = peopleInformed,
+        summary = summary,
+        nextReviewDate = nextReview,
+        closeDate = closeDate,
+      )
+        .also { csipReport.reviews += it }
         .also { builder.apply(dsl) }
     }
 }

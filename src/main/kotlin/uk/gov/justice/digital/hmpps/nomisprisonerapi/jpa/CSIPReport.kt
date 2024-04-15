@@ -99,12 +99,16 @@ data class CSIPReport(
   val proActiveReferral: Boolean = false,
 
   @Column(name = "RFR_STAFF_ASSAULTED")
-  @Convert(converter = YesNoConverter::class) val staffAssaulted: Boolean = false,
+  @Convert(converter = YesNoConverter::class)
+  val staffAssaulted: Boolean = false,
 
   @Column(name = "RFR_STAFF_NAME")
   val staffAssaultedName: String? = null,
 
   // ------------------ Additional Referral Details ---------------------//
+
+  @Column(name = "CDR_RELEASE_DATE")
+  val releaseDate: LocalDate? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -137,10 +141,16 @@ data class CSIPReport(
   @Column(name = "CDR_OTHER_INFORMATION")
   val otherInformation: String? = null,
 
-  // REFERRAL_COMPLETE_FLAG VARCHAR2(1) DEFAULT 'N',
-  // REFERRAL_COMPLETED_BY VARCHAR2(32),
-  // REFERRAL_COMPLETED_DATE DATE,
-  // CDR_SENT_DENT VARCHAR2(1) DEFAULT 'N',
+  @Column(name = "CDR_SENT_DENT")
+  @Convert(converter = YesNoConverter::class)
+  val saferCustodyTeamInformed: Boolean = false,
+  @Column(name = "REFERRAL_COMPLETE_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  val referralComplete: Boolean = false,
+  @Column(name = "REFERRAL_COMPLETED_BY")
+  val referralCompletedBy: String? = null,
+  @Column(name = "REFERRAL_COMPLETED_DATE")
+  val referralCompletedDate: LocalDate? = null,
 
   // -------------------- Safer Custody Screening -----------------------//
 
@@ -196,8 +206,9 @@ data class CSIPReport(
   val interviews: MutableList<CSIPInterview> = mutableListOf(),
 
   // TODO Investigate when/where these are set
-  // INV_NOMIS_CASE_NOTE VARCHAR2(1) DEFAULT 'N',
-  // CDR_RELEASE_DATE DATE, -- on referral details
+  // Also is dsp_acct missing?
+
+  // INV_NOMIS_CASE_NOTE VARCHAR2(1) DEFAULT 'N', - are these all N in preprod
   // AGY_LOC_ID VARCHAR2(6),
 
   // ---- NOT MAPPED ---- //
@@ -214,31 +225,63 @@ data class CSIPReport(
   // AUDIT_ADDITIONAL_INFO VARCHAR2(256),
 
   // ---------------------- Decisions & Actions -------------------------/
-  // INV_CONCLUSION VARCHAR2(4000),
-  // INV_OUTCOME VARCHAR2(12),
-  // INV_SIGNED_OFF_BY VARCHAR2(12),
-  // INV_OUTCOME_RECORDED_BY VARCHAR2(100),
-  // INV_OUTCOME_DATE DATE,
-  // INV_NEXT_STEPS VARCHAR2(4000),
-  // INV_OTHER VARCHAR2(4000),
-  // OPEN_CSIP_ALERT VARCHAR2(1) DEFAULT 'N',
-  // INV_NON_ASSOC_UPDATED VARCHAR2(1) DEFAULT 'N',
-  // INV_OBSERVATION_BOOK VARCHAR2(1) DEFAULT 'N',
-  // INV_MOVE VARCHAR2(1) DEFAULT 'N',
-  // INV_REVIEW VARCHAR2(1) DEFAULT 'N',
-  // INV_SERVICE_REFERRAL VARCHAR2(1) DEFAULT 'N',
-  // INV_SIM_REFERRAL VARCHAR2(1) DEFAULT 'N',
+
+  @Column(name = "INV_CONCLUSION")
+  var conclusion: String? = null,
+
+  // is this staff - check
+  @Column(name = "INV_SIGNED_OFF_BY")
+  var signedOffBy: String? = null,
+
+  // is this staff?
+  @Column(name = "INV_OUTCOME_RECORDED_BY")
+  var recordedBy: String? = null,
+
+  @Column(name = "INV_OUTCOME_DATE")
+  var outcomeDate: LocalDate? = null,
+
+  @Column(name = "INV_NEXT_STEPS")
+  var nextSteps: String? = null,
+
+  @Column(name = "INV_OTHER")
+  var otherDetails: String? = null,
+
+  @Column(name = "OPEN_CSIP_ALERT")
+  @Convert(converter = YesNoConverter::class)
+  val openCSIPAlert: Boolean = false,
+  @Column(name = "INV_NON_ASSOC_UPDATED")
+  @Convert(converter = YesNoConverter::class)
+  val nonAssociationsUpdated: Boolean = false,
+  @Column(name = "INV_OBSERVATION_BOOK")
+  @Convert(converter = YesNoConverter::class)
+  val observationBook: Boolean = false,
+  @Column(name = "INV_MOVE")
+  @Convert(converter = YesNoConverter::class)
+  val unitOrCellMove: Boolean = false,
+  @Column(name = "INV_REVIEW")
+  @Convert(converter = YesNoConverter::class)
+  val csraRsraReview: Boolean = false,
+  @Column(name = "INV_SERVICE_REFERRAL")
+  @Convert(converter = YesNoConverter::class)
+  val serviceReferral: Boolean = false,
+  @Column(name = "INV_SIM_REFERRAL")
+  @Convert(converter = YesNoConverter::class)
+  val simReferral: Boolean = false,
 
   // ----------------------------- Plan & Decision-----------------------//
 
-  // CASE_MANAGER VARCHAR2(100),
-  // REASON VARCHAR2(240),
-  // CASE_REV_DATE DATE,
+  @Column(name = "CASE_MANAGER")
+  var caseManager: String? = null,
+  @Column(name = "REASON")
+  var reasonForPlan: String? = null,
+  @Column(name = "CASE_REV_DATE")
+  var firstCaseReviewDate: LocalDate? = null,
+
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val plans: MutableList<CSIPPlan> = mutableListOf(),
 
-  // @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
-  // val reviews: MutableList<CSIPReview> = mutableListOf(),
+  @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val reviews: MutableList<CSIPReview> = mutableListOf(),
 
   // ---------------------------------------------------------------------//
 ) {

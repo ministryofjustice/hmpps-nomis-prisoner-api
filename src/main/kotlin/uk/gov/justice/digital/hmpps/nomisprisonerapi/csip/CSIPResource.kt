@@ -194,28 +194,49 @@ data class CSIPResponse(
   @Schema(description = "Additional information for the CSIP Report")
   val reportDetails: ReportDetails,
 
-  @Schema(description = "CSIP Plans")
-  val plans: List<Plan>,
-
   @Schema(description = "Safer custody screening")
   val saferCustodyScreening: SaferCustodyScreening,
 
   @Schema(description = "Investigation details of the incident")
   val investigation: Investigation,
+
+  @Schema(description = "Case Manager involved")
+  val caseManager: String?,
+  @Schema(description = "Reason for plan")
+  val planReason: String?,
+  @Schema(description = "Date of first review")
+  val firstCaseReviewDate: LocalDate?,
+  @Schema(description = "CSIP Plans")
+  val plans: List<Plan>,
+
+  @Schema(description = "CSIP Reviews")
+  val reviews: List<Review>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ReportDetails(
+  @Schema(description = "Date the offender is released")
+  val releaseDate: LocalDate?,
   @Schema(description = "How the offender was involved")
   val involvement: CodeDescription?,
   @Schema(description = "Concern description")
   val concern: String?,
-  @Schema(description = "What was the concern")
-  val knownReasons: String?,
-  @Schema(description = "What was the concern")
-  val otherInformation: String?,
   @Schema(description = "Contributory factors")
   val factors: List<FactorResponse>,
+  @Schema(description = "known reasons for the involvement")
+  val knownReasons: String?,
+  @Schema(description = "Additional information")
+  val otherInformation: String?,
+
+  @Schema(description = "If the safer custody team were informed")
+  val saferCustodyTeamInformed: Boolean,
+  @Schema(description = "If the referral has been completed")
+  val referralComplete: Boolean,
+  @Schema(description = "Who completed the referral")
+  val referralCompletedBy: String?,
+  @Schema(description = "Date the referral was completed")
+  val referralCompletedDate: LocalDate?,
+
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -249,6 +270,46 @@ data class Plan(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+data class Review(
+  @Schema(description = "Review Id")
+  val id: Long,
+  @Schema(description = "Sequence number")
+  val reviewSequence: Int,
+  @Schema(description = "Summary details")
+  val attendees: List<Attendee>,
+  @Schema(description = "Summary details")
+  val remainOnCSIP: Boolean,
+  @Schema(description = "Summary details")
+  val csipUpdated: Boolean,
+  @Schema(description = "Summary details")
+  val caseNote: Boolean,
+  @Schema(description = "Summary details")
+  val closeCSIP: Boolean,
+  @Schema(description = "Summary details")
+  val peopleInformed: Boolean,
+  @Schema(description = "Summary details")
+  val summary: String?,
+  @Schema(description = "Next Review date")
+  val nextReviewDate: LocalDate?,
+  @Schema(description = "Review closed date")
+  val closeDate: LocalDate?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Attendee(
+  @Schema(description = "Review Attendee/Contributor Id")
+  val id: Long,
+  @Schema(description = "Name of attendee/contributor")
+  val name: String?,
+  @Schema(name = "Role of attendee/contributor")
+  val role: String?,
+  @Schema(name = "If attended (otherwise contributor)")
+  val attended: Boolean,
+  @Schema(name = "Contribution")
+  val contribution: String? = null,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Staff(
   @Schema(description = "Username of first account related to staff")
   val username: String,
@@ -269,17 +330,6 @@ data class Offender(
   @Schema(description = "Last name of offender")
   val lastName: String,
 )
-
-/*
- TODO
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class ContributoryFactorResponse(
-  @Schema(description = "Comments regarding this contributory factor")
-  val comment: String?,
-  @Schema(description = "What contributed towards this incident")
-  val factor: CodeDescription,
-)
-*/
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class SaferCustodyScreening(
