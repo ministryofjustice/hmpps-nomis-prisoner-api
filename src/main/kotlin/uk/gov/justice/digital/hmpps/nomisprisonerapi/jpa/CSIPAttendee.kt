@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -11,41 +12,37 @@ import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
-import org.hibernate.annotations.JoinColumnOrFormula
-import org.hibernate.annotations.JoinColumnsOrFormulas
-import org.hibernate.annotations.JoinFormula
+import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "OFFENDER_CSIP_FACTORS")
+@Table(name = "OFFENDER_CSIP_ATTENDEES")
 @EntityOpen
-data class CSIPFactor(
+data class CSIPAttendee(
   @Id
-  @Column(name = "CSIP_FACTOR_ID")
-  @SequenceGenerator(name = "CSIP_FACTOR_ID", sequenceName = "CSIP_FACTOR_ID", allocationSize = 1)
-  @GeneratedValue(generator = "CSIP_FACTOR_ID")
+  @Column(name = "ATTENDEE_ID")
+  @SequenceGenerator(name = "ATTENDEE_ID", sequenceName = "ATTENDEE_ID", allocationSize = 1)
+  @GeneratedValue(generator = "ATTENDEE_ID")
   val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "CSIP_ID")
-  val csipReport: CSIPReport,
+  @JoinColumn(name = "REVIEW_ID")
+  val csipReview: CSIPReview,
 
-  @ManyToOne
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + CSIPFactorType.CSIP_FAC + "'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "CSIP_FACTOR", referencedColumnName = "code", nullable = true)),
-    ],
-  )
-  val type: CSIPFactorType,
+  @Column(name = "ATTENDEE_NAME")
+  val name: String? = null,
 
-  @Column(name = "COMMENTS")
-  val comment: String? = null,
+  @Column(name = "ATTENDEE_ROLE")
+  val role: String? = null,
+
+  @Column(name = "ATTENDED")
+  @Convert(converter = YesNoConverter::class)
+  val attended: Boolean = false,
+
+  @Column(name = "CONTRIBUTION")
+  val contribution: String? = null,
+
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
@@ -58,7 +55,7 @@ data class CSIPFactor(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    other as CSIPFactor
+    other as CSIPAttendee
 
     return id == other.id
   }
