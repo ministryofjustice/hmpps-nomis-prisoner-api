@@ -555,6 +555,67 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
   ): CourtEventResponse = sentencingService.getCourtAppearance(id, offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/offender-charges/{offenderChargeId}")
+  @Operation(
+    summary = "get an offender charge",
+    description = "Requires role NOMIS_SENTENCING. Retrieves offender charge details. Offender Charges are at the booking level.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the court appearance details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender charge not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderCharge(
+    @Schema(description = "Offender Charge id", example = "12345")
+    @PathVariable
+    offenderChargeId: Long,
+    @Schema(description = "Offender No", example = "12345")
+    @PathVariable
+    offenderNo: String,
+  ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
 }
 
 @Schema(description = "Court Case")

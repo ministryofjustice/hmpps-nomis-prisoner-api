@@ -2212,6 +2212,137 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/offender-charges/{id}")
+  @Nested
+  inner class GetOffenderCharge {
+    private lateinit var staff: Staff
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var courtAppearance: CourtEvent
+    private lateinit var offenderCharge1: OffenderCharge
+    private val aDateString = "2023-01-01"
+    private val aLaterDateString = "2023-01-05"
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase(reportingStaff = staff) {
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
+                val offenderCharge2 = offenderCharge()
+                courtAppearance = courtEvent {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                  courtEventCharge(
+                    offenderCharge = offenderCharge2,
+                  )
+                }
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if offender charge not found`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offender Charge 11 for ${prisonerAtMoorland.nomsId} not found")
+      }
+
+      @Test
+      fun `will return 404 if offender not found`() {
+        webTestClient.get().uri("/prisoners/XXXX/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the offender charge`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(offenderCharge1.id)
+          .jsonPath("offenceDate").isEqualTo(aDateString)
+          .jsonPath("offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offencesCount").isEqualTo(1) // what is this?
+          .jsonPath("plea.description").isEqualTo("Guilty")
+          .jsonPath("propertyValue").isEqualTo(8.3)
+          .jsonPath("totalPropertyValue").isEqualTo(11)
+          .jsonPath("cjitCode1").isEqualTo("cj6")
+          .jsonPath("cjitCode2").isEqualTo("cj7")
+          .jsonPath("cjitCode3").isEqualTo("cj8")
+          .jsonPath("resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("resultCode1Indicator").isEqualTo("F")
+          .jsonPath("mostSeriousFlag").isEqualTo(true)
+          .jsonPath("chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("lidsOffenceNumber").isEqualTo(11)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(courtAppearance)
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
   @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{id}")
   inner class UpdateCourtAppearanceDeleteCourtEventCharges {
