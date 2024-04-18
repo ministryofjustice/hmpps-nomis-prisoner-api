@@ -648,6 +648,11 @@ class SentencingService(
     )
   }
 
+  fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
+    findPrisoner(offenderNo).findLatestBooking()
+    return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
+  }
+
   private fun Offender.findLatestBooking(): OffenderBooking {
     return this.bookings.firstOrNull { it.bookingSequence == 1 }
       ?: throw BadDataException("Prisoner ${this.nomsId} has no bookings")
@@ -671,6 +676,11 @@ class SentencingService(
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent {
     return courtEventRepository.findByIdOrNull(id)
       ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
+  }
+
+  private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge {
+    return offenderChargeRepository.findByIdOrNull(id)
+      ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
   }
 
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(
