@@ -43,14 +43,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               outcomeCreateDate = LocalDate.now(),
             )
 
-            plan(progression = "Behaviour improved")
-            review(
-              remainOnCSIP = true,
-              csipUpdated = true,
-            ) {
-              attendee(name = "Fred Attendee", role = "Witness", attended = true, contribution = "helped")
-            }
-
             investigation(
               staffInvolved = "There were numerous staff involved",
               evidenceSecured = "Account by Prisoner Officer",
@@ -60,6 +52,11 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               protectiveFactors = "Supported by staff",
             )
             interview(comment = "Helping with behaviour")
+            decision()
+            plan(progression = "Behaviour improved")
+            review {
+              attendee(name = "Fred Attendee", role = "Witness", attended = true, contribution = "helped")
+            }
           }
           csip2 = csipReport {}
           csip3 = csipReport {}
@@ -206,6 +203,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
+        .jsonPath("originalAgencyLocation").isEqualTo("MDI")
+        .jsonPath("bookingId").isEqualTo(csip2.offenderBooking.bookingId)
         .jsonPath("incidentDateTime").isNotEmpty
         .jsonPath("type.code").isEqualTo("INT")
         .jsonPath("type.description").isEqualTo("Intimidation")
@@ -218,6 +217,22 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("proActiveReferral").isEqualTo(false)
         .jsonPath("staffAssaulted").isEqualTo(false)
         .jsonPath("staffAssaultedName").doesNotExist()
+        .jsonPath("reportDetails.factors").isEmpty
+        .jsonPath("reportDetails.saferCustodyTeamInformed").isEqualTo(false)
+        .jsonPath("reportDetails.referralComplete").isEqualTo(false)
+        .jsonPath("saferCustodyScreening").isEmpty
+        .jsonPath("plans").isEmpty
+        .jsonPath("reviews").isEmpty
+        .jsonPath("investigation.staffInvolved").doesNotExist()
+        .jsonPath("investigation.interviews").isEmpty
+        .jsonPath("decision.recordedBy").doesNotExist()
+        .jsonPath("decision.actions.openCSIPAlert").isEqualTo(false)
+        .jsonPath("decision.actions.nonAssociationsUpdated").isEqualTo(false)
+        .jsonPath("decision.actions.observationBook").isEqualTo(false)
+        .jsonPath("decision.actions.unitOrCellMove").isEqualTo(false)
+        .jsonPath("decision.actions.csraOrRsraReview").isEqualTo(false)
+        .jsonPath("decision.actions.serviceReferral").isEqualTo(false)
+        .jsonPath("decision.actions.simReferral").isEqualTo(false)
     }
 
     @Test
@@ -231,6 +246,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
+        .jsonPath("originalAgencyLocation").isEqualTo("MDI")
         .jsonPath("bookingId").isEqualTo(csip1.offenderBooking.bookingId)
         .jsonPath("incidentDateTime").isNotEmpty
         .jsonPath("type.code").isEqualTo("INT")
@@ -272,6 +288,21 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reportDetails.referralComplete").isEqualTo(true)
         .jsonPath("reportDetails.referralCompletedBy").isEqualTo("Referral Team")
         .jsonPath("reportDetails.referralCompletedDate").isEqualTo("2024-04-15")
+    }
+
+    @Test
+    fun `will return csip safer custody screening data`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("saferCustodyScreening.outcome.code").isEqualTo("ACC")
+        .jsonPath("saferCustodyScreening.outcome.description").isEqualTo("ACCT Supporting")
+        .jsonPath("saferCustodyScreening.recordedBy").isEqualTo("JAMES")
+        .jsonPath("saferCustodyScreening.recordedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("saferCustodyScreening.reasonForDecision").isEqualTo("Further help needed")
     }
 
     @Test
@@ -320,21 +351,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return csip safer custody screening data`() {
-      webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("id").isEqualTo(csip1.id)
-        .jsonPath("saferCustodyScreening.outcome.code").isEqualTo("ACC")
-        .jsonPath("saferCustodyScreening.outcome.description").isEqualTo("ACCT Supporting")
-        .jsonPath("saferCustodyScreening.recordedBy").isEqualTo("JAMES")
-        .jsonPath("saferCustodyScreening.recordedDate").isEqualTo(LocalDate.now().toString())
-        .jsonPath("saferCustodyScreening.reasonForDecision").isEqualTo("Further help needed")
-    }
-
-    @Test
     fun `will return csip investigation data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -367,18 +383,29 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return CSIP Decisions & Actions data`() {
+    fun `will return CSIP Decision & Actions data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(csip1.id)
-        .jsonPath("investigation.interviews[0].interviewee").isEqualTo("Jim the Interviewee")
-        .jsonPath("investigation.interviews[0].date").isEqualTo(LocalDate.now().toString())
-        .jsonPath("investigation.interviews[0].role.code").isEqualTo("WITNESS")
-        .jsonPath("investigation.interviews[0].role.description").isEqualTo("Witness")
-        .jsonPath("investigation.interviews[0].comments").isEqualTo("Helping with behaviour")
+        .jsonPath("decision.conclusion").isEqualTo("The end result")
+        .jsonPath("decision.decisionOutcome.code").isEqualTo("NFA")
+        .jsonPath("decision.decisionOutcome.description").isEqualTo("No Further Action")
+        .jsonPath("decision.signedOffRole.code").isEqualTo("CUSTMAN")
+        .jsonPath("decision.signedOffRole.description").isEqualTo("Custodial Manager")
+        .jsonPath("decision.recordedBy").isEqualTo("Fred James")
+        .jsonPath("decision.recordedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("decision.nextSteps").isEqualTo("provide help")
+        .jsonPath("decision.otherDetails").isEqualTo("Support and assistance needed")
+        .jsonPath("decision.actions.openCSIPAlert").isEqualTo(true)
+        .jsonPath("decision.actions.nonAssociationsUpdated").isEqualTo(false)
+        .jsonPath("decision.actions.observationBook").isEqualTo(true)
+        .jsonPath("decision.actions.unitOrCellMove").isEqualTo(true)
+        .jsonPath("decision.actions.csraOrRsraReview").isEqualTo(false)
+        .jsonPath("decision.actions.serviceReferral").isEqualTo(true)
+        .jsonPath("decision.actions.simReferral").isEqualTo(false)
       // Check create date time?
     }
   }

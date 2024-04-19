@@ -36,6 +36,10 @@ data class CSIPReport(
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking,
 
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "AGY_LOC_ID", nullable = false)
+  var originalAgencyLocation: AgencyLocation,
+
   @Column(name = "ROOT_OFFENDER_ID", nullable = false)
   val rootOffenderId: Long,
 
@@ -205,15 +209,12 @@ data class CSIPReport(
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val interviews: MutableList<CSIPInterview> = mutableListOf(),
 
-  // TODO Investigate when/where these are set
-  // Also is dsp_acct missing?
-
+  // ---- NOT MAPPED - unused ---- //
   // INV_NOMIS_CASE_NOTE VARCHAR2(1) DEFAULT 'N', - are these all N in preprod
-  // AGY_LOC_ID VARCHAR2(6),
-
-  // ---- NOT MAPPED ---- //
   // RFR_COMMENT VARCHAR2(4000), = all null in preprod
   // INV_NAME VARCHAR2(100),  = all null in preprod
+
+  // ---- NOT MAPPED audit data ---- //
   // MODIFY_DATETIME TIMESTAMP,
   // MODIFY_USER_ID VARCHAR2(32),
   // AUDIT_TIMESTAMP TIMESTAMP,
@@ -224,21 +225,55 @@ data class CSIPReport(
   // AUDIT_CLIENT_WORKSTATION_NAME VARCHAR2(64),
   // AUDIT_ADDITIONAL_INFO VARCHAR2(256),
 
-  // ---------------------- Decisions & Actions -------------------------/
+  // ---------------------- Decisions & Actions -------------------------//
 
   @Column(name = "INV_CONCLUSION")
   var conclusion: String? = null,
 
-  // is this staff - check
-  @Column(name = "INV_SIGNED_OFF_BY")
-  var signedOffBy: String? = null,
+  // Currently mapped INV_OUTCOME as CSIPOutcome type, same as CDR_OUTCOME:CSIPOutcome
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + CSIPOutcome.CSIP_OUT + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "INV_OUTCOME",
+          referencedColumnName = "code",
+          nullable = true,
+        ),
+      ),
+    ],
+  )
+  var decisionOutcome: CSIPOutcome? = null,
 
-  // is this staff?
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + CSIPSignedOffRole.CSIP_ROLE + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "INV_SIGNED_OFF_BY",
+          referencedColumnName = "code",
+          nullable = true,
+        ),
+      ),
+    ],
+  )
+  var signedOffRole: CSIPSignedOffRole? = null,
+
   @Column(name = "INV_OUTCOME_RECORDED_BY")
   var recordedBy: String? = null,
 
   @Column(name = "INV_OUTCOME_DATE")
-  var outcomeDate: LocalDate? = null,
+  var recordedDate: LocalDate? = null,
 
   @Column(name = "INV_NEXT_STEPS")
   var nextSteps: String? = null,
@@ -248,27 +283,27 @@ data class CSIPReport(
 
   @Column(name = "OPEN_CSIP_ALERT")
   @Convert(converter = YesNoConverter::class)
-  val openCSIPAlert: Boolean = false,
+  var openCSIPAlert: Boolean = false,
   @Column(name = "INV_NON_ASSOC_UPDATED")
   @Convert(converter = YesNoConverter::class)
-  val nonAssociationsUpdated: Boolean = false,
+  var nonAssociationsUpdated: Boolean = false,
   @Column(name = "INV_OBSERVATION_BOOK")
   @Convert(converter = YesNoConverter::class)
-  val observationBook: Boolean = false,
+  var observationBook: Boolean = false,
   @Column(name = "INV_MOVE")
   @Convert(converter = YesNoConverter::class)
-  val unitOrCellMove: Boolean = false,
+  var unitOrCellMove: Boolean = false,
   @Column(name = "INV_REVIEW")
   @Convert(converter = YesNoConverter::class)
-  val csraRsraReview: Boolean = false,
+  var csraOrRsraReview: Boolean = false,
   @Column(name = "INV_SERVICE_REFERRAL")
   @Convert(converter = YesNoConverter::class)
-  val serviceReferral: Boolean = false,
+  var serviceReferral: Boolean = false,
   @Column(name = "INV_SIM_REFERRAL")
   @Convert(converter = YesNoConverter::class)
-  val simReferral: Boolean = false,
+  var simReferral: Boolean = false,
 
-  // ----------------------------- Plan & Decision-----------------------//
+  // ----------------------------- Plan & Reviews-------------------------//
 
   @Column(name = "CASE_MANAGER")
   var caseManager: String? = null,
