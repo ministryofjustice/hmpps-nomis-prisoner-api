@@ -62,6 +62,7 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     id = id,
     offender = offenderBooking.offender.toOffender(),
     bookingId = offenderBooking.bookingId,
+    originalAgencyLocation = originalAgencyLocation.id,
     incidentDateTime = incidentTime.toLocalTime()?.atDate(incidentDate),
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
@@ -79,8 +80,8 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     caseManager = caseManager,
     planReason = reasonForPlan,
     firstCaseReviewDate = firstCaseReviewDate,
+    decision = toDecisionResponse(),
     plans = plans.map { it.toPlanResponse() },
-
     reviews = reviews.map { it.toReviewResponse() },
   )
 
@@ -129,6 +130,29 @@ private fun CSIPInterview.toInterviewResponse() =
     date = interviewDate,
     role = role.toCodeDescription(),
     comments = comments,
+  )
+
+private fun CSIPReport.toDecisionResponse() =
+  Decision(
+    conclusion = conclusion,
+    decisionOutcome = decisionOutcome?.toCodeDescription(),
+    signedOffRole = signedOffRole?.toCodeDescription(),
+    recordedBy = recordedBy,
+    recordedDate = recordedDate,
+    nextSteps = nextSteps,
+    otherDetails = otherDetails,
+    actions = toActionsResponse(),
+  )
+
+private fun CSIPReport.toActionsResponse() =
+  Actions(
+    openCSIPAlert = openCSIPAlert,
+    nonAssociationsUpdated = nonAssociationsUpdated,
+    observationBook = observationBook,
+    unitOrCellMove = unitOrCellMove,
+    csraOrRsraReview = csraOrRsraReview,
+    serviceReferral = serviceReferral,
+    simReferral = simReferral,
   )
 
 private fun CSIPPlan.toPlanResponse() =

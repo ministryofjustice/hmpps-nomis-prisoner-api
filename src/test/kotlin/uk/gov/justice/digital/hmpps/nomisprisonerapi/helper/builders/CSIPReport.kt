@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPSignedOffRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -25,6 +26,9 @@ annotation class CSIPInvestigationDslMarker
 
 @DslMarker
 annotation class CSIPSaferCustodyScreeningDslMarker
+
+@DslMarker
+annotation class CSIPDecisionDslMarker
 
 @NomisDataDslMarker
 interface CSIPReportDsl {
@@ -74,8 +78,8 @@ interface CSIPReportDsl {
 
   @CSIPReviewDslMarker
   fun review(
-    remainOnCSIP: Boolean = false,
-    csipUpdated: Boolean = false,
+    remainOnCSIP: Boolean = true,
+    csipUpdated: Boolean = true,
     caseNote: Boolean = false,
     closeCSIP: Boolean = false,
     peopleInformed: Boolean = false,
@@ -84,6 +88,24 @@ interface CSIPReportDsl {
     closeDate: LocalDate? = null,
     dsl: CSIPReviewDsl.() -> Unit = {},
   ): CSIPReview
+
+  @CSIPDecisionDslMarker
+  fun decision(
+    conclusion: String = "The end result",
+    decisionOutcome: String = "NFA",
+    signedOffBy: String = "CUSTMAN",
+    recordedBy: String = "Fred James",
+    recordedDate: LocalDate = LocalDate.now(),
+    nextSteps: String = "provide help",
+    otherDetails: String = "Support and assistance needed",
+    openCSIPAlert: Boolean = true,
+    nonAssociationsUpdated: Boolean = false,
+    observationBook: Boolean = true,
+    unitOrCellMove: Boolean = true,
+    csraOrRsraReview: Boolean = false,
+    serviceReferral: Boolean = true,
+    simReferral: Boolean = false,
+  )
 }
 
 @Component
@@ -114,6 +136,9 @@ class CSIPReportBuilderRepository(
   val areaOfWorkRepository: ReferenceCodeRepository<CSIPAreaOfWork>,
   val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
   val involvementRepository: ReferenceCodeRepository<CSIPInvolvement>,
+  val signedOffRoleRepository: ReferenceCodeRepository<CSIPSignedOffRole>,
+  // TODO Check data in preprod if decisionOutcome and outcome the same
+  val decisionOutcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
 ) {
   fun save(csipReport: CSIPReport): CSIPReport = repository.save(csipReport)
   fun lookupType(code: String) = typeRepository.findByIdOrNull(CSIPIncidentType.pk(code))!!
@@ -121,6 +146,8 @@ class CSIPReportBuilderRepository(
   fun lookupAreaOfWork(code: String) = areaOfWorkRepository.findByIdOrNull(CSIPAreaOfWork.pk(code))!!
   fun lookupOutcome(code: String) = outcomeRepository.findByIdOrNull(CSIPOutcome.pk(code))!!
   fun lookupInvolvement(code: String) = involvementRepository.findByIdOrNull(CSIPInvolvement.pk(code))!!
+  fun lookupSignedOffRole(code: String) = signedOffRoleRepository.findByIdOrNull(CSIPSignedOffRole.pk(code))!!
+  fun lookupDecisionOutcome(code: String) = decisionOutcomeRepository.findByIdOrNull(CSIPOutcome.pk(code))!!
 }
 
 class CSIPReportBuilder(
@@ -156,6 +183,7 @@ class CSIPReportBuilder(
     CSIPReport(
       offenderBooking = offenderBooking,
       rootOffenderId = offenderBooking.offender.rootOffenderId ?: offenderBooking.offender.id,
+      originalAgencyLocation = offenderBooking.location!!,
       type = repository.lookupType(type),
       location = repository.lookupLocation(location),
       areaOfWork = repository.lookupAreaOfWork(areaOfWork),
@@ -198,7 +226,6 @@ class CSIPReportBuilder(
     outcomeCreateUsername: String,
     outcomeCreateDate: LocalDate,
   ) {
-    csipReport = csipReport
     csipReport.outcome = repository.lookupOutcome(outcome)
     csipReport.reasonForDecision = reasonForDecision
     csipReport.outcomeCreateUsername = outcomeCreateUsername
@@ -290,4 +317,38 @@ class CSIPReportBuilder(
         .also { csipReport.reviews += it }
         .also { builder.apply(dsl) }
     }
+
+  override fun decision(
+    conclusion: String,
+    decisionOutcome: String,
+    signedOffRole: String,
+    recordedBy: String,
+    recordedDate: LocalDate,
+    nextSteps: String,
+    otherDetails: String,
+    openCSIPAlert: Boolean,
+    nonAssociationsUpdated: Boolean,
+    observationBook: Boolean,
+    unitOrCellMove: Boolean,
+    csraOrRsraReview: Boolean,
+    serviceReferral: Boolean,
+    simReferral: Boolean,
+  ) {
+    csipReport.conclusion = conclusion
+    csipReport.decisionOutcome = repository.lookupDecisionOutcome(decisionOutcome)
+    csipReport.signedOffRole = repository.lookupSignedOffRole(signedOffRole)
+    csipReport.recordedBy = recordedBy
+    csipReport.recordedDate = recordedDate
+    csipReport.nextSteps = nextSteps
+    csipReport.otherDetails = otherDetails
+
+    csipReport.openCSIPAlert = openCSIPAlert
+    csipReport.nonAssociationsUpdated = nonAssociationsUpdated
+    csipReport.observationBook = observationBook
+    csipReport.unitOrCellMove = unitOrCellMove
+    csipReport.csraOrRsraReview = csraOrRsraReview
+    csipReport.serviceReferral = serviceReferral
+    csipReport.simReferral = simReferral
+    repository.save(csipReport)
+  }
 }
