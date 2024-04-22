@@ -486,16 +486,6 @@ class AlertsResourceIntTest : IntegrationTestBase() {
               commentText = null,
             )
             alert(
-              sequence = 4,
-              alertCode = "P1",
-              typeCode = "P",
-              date = LocalDate.parse("2017-07-19"),
-              authorizePersonText = "Security Team",
-              verifiedFlag = true,
-              status = ACTIVE,
-              commentText = "MAPPA on middle booking but old date",
-            )
-            alert(
               sequence = 5,
               alertCode = "RYP",
               typeCode = "R",
