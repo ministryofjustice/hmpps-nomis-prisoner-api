@@ -177,13 +177,15 @@ class AlertsService(
 fun chooseLatestActiveAlert(first: OffenderAlert, second: OffenderAlert): Int {
   /*
   Order is as follows:
+   * Latest booking (i.e. lowest booking sequence)
    * Latest alert date
    * Active if both have same date
    * Audit date if both same data and same status
 
    NB: many alerts might be equally the most relevant
    */
-  return first.alertDate.compareTo(second.alertDate).takeIf { it != 0 }
+  return second.id.offenderBooking.bookingSequence!!.compareTo(first.id.offenderBooking.bookingSequence!!).takeIf { it != 0 }
+    ?: first.alertDate.compareTo(second.alertDate).takeIf { it != 0 }
     ?: second.alertStatus.name.compareTo(first.alertStatus.name).takeIf { it != 0 }
     ?: (first.auditTimestamp ?: LocalDateTime.MIN).compareTo(second.auditTimestamp ?: LocalDateTime.MIN).takeIf { it != 0 }
     ?: 0

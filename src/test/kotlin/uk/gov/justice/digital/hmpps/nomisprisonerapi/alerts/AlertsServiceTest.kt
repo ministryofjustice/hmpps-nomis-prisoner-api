@@ -50,9 +50,7 @@ class AlertsServiceTest {
       fun setUp() {
         whenever(offenderBookingRepository.findAllByOffenderNomsId("A1234KT")).thenReturn(
           listOf(
-            booking(
-              listOf(),
-            ),
+            booking(),
           ),
         )
       }
@@ -73,12 +71,12 @@ class AlertsServiceTest {
       fun setUp() {
         whenever(offenderBookingRepository.findAllByOffenderNomsId("A1234KT")).thenReturn(
           listOf(
-            booking(
-              listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-              ),
-            ),
+            booking().apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+              )
+            },
           ),
         )
       }
@@ -101,15 +99,15 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(),
             ),
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+              )
+            },
           ),
         )
       }
@@ -132,18 +130,20 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+              )
+            },
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+              )
+            },
           ),
         )
       }
@@ -166,19 +166,21 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+              )
+            },
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-                alert(sequence = 3, alertCode = "C"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+                alert(booking = this, sequence = 3, alertCode = "C"),
+              )
+            },
           ),
         )
       }
@@ -201,25 +203,28 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+              )
+            },
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-                alert(sequence = 2, alertCode = "B"),
-                alert(sequence = 3, alertCode = "C"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+                alert(booking = this, sequence = 2, alertCode = "B"),
+                alert(booking = this, sequence = 3, alertCode = "C"),
+              )
+            },
             booking(
               bookingSequence = 3,
-              alerts = listOf(
-                alert(sequence = 4, alertCode = "D"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 4, alertCode = "D"),
+              )
+            },
           ),
         )
       }
@@ -244,28 +249,20 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+              )
+            },
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 20, alertCode = "B", alertDate = alertDate, active = false),
-              ),
-            ),
-            booking(
-              bookingSequence = 3,
-              alerts = listOf(
-                alert(sequence = 30, alertCode = "B", alertDate = alertDate, active = true),
-              ),
-            ),
-            booking(
-              bookingSequence = 4,
-              alerts = listOf(
-                alert(sequence = 40, alertCode = "B", alertDate = alertDate, active = false),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 20, alertCode = "B", alertDate = alertDate, active = false),
+                alert(booking = this, sequence = 30, alertCode = "B", alertDate = alertDate, active = true),
+                alert(booking = this, sequence = 40, alertCode = "B", alertDate = alertDate, active = false),
+              )
+            },
           ),
         )
       }
@@ -281,6 +278,50 @@ class AlertsServiceTest {
     }
 
     @Nested
+    @DisplayName("With alerts on older bookings but newer alert dates")
+    inner class WithPreviousBookingsAlertDatesNewerOnOlderBooking {
+      private val alertDate = LocalDate.parse("2021-01-01")
+
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findAllByOffenderNomsId("A1234KT")).thenReturn(
+          listOf(
+            booking(
+              bookingSequence = 1,
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+              )
+            },
+            booking(
+              bookingSequence = 2,
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 20, alertCode = "B", alertDate = alertDate, active = false),
+              )
+            },
+            booking(
+              bookingSequence = 3,
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 30, alertCode = "B", alertDate = alertDate.plusDays(1), active = true),
+              )
+            },
+          ),
+        )
+      }
+
+      @Test
+      fun `will choose more recent booking over the more recent alerts`() {
+        val alerts = alertsService.getAlerts("A1234KT")
+
+        assertThat(alerts.latestBookingAlerts).extracting<String> { it.alertCode.code }.containsOnly("A")
+        assertThat(alerts.previousBookingsAlerts).extracting<String> { it.alertCode.code }.containsOnly("B")
+        assertThat(alerts.previousBookingsAlerts).extracting<Long> { it.alertSequence }.containsOnly(20)
+      }
+    }
+
+    @Nested
     @DisplayName("With the same extra alerts on previous booking that have the same alert dates, same status but different audit dates")
     inner class WithPreviousBookingManyAlertDatesSameDifferentAuditDates {
       private val alertDate = LocalDate.parse("2021-01-01")
@@ -291,28 +332,20 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+              )
+            },
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 20, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusDays(10)),
-              ),
-            ),
-            booking(
-              bookingSequence = 3,
-              alerts = listOf(
-                alert(sequence = 30, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusDays(1)),
-              ),
-            ),
-            booking(
-              bookingSequence = 4,
-              alerts = listOf(
-                alert(sequence = 40, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusDays(20)),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 20, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusDays(10)),
+                alert(booking = this, sequence = 30, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusDays(1)),
+                alert(booking = this, sequence = 40, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusDays(20)),
+              )
+            },
           ),
         )
       }
@@ -339,28 +372,23 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+              )
+            },
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 20, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
-              ),
             ),
             booking(
               bookingSequence = 3,
-              alerts = listOf(
-                alert(sequence = 30, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
-              ),
-            ),
-            booking(
-              bookingSequence = 4,
-              alerts = listOf(
-                alert(sequence = 40, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusYears(99)),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 20, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
+                alert(booking = this, sequence = 30, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
+                alert(booking = this, sequence = 40, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = LocalDateTime.now().minusYears(99)),
+              )
+            },
           ),
         )
       }
@@ -387,28 +415,26 @@ class AlertsServiceTest {
           listOf(
             booking(
               bookingSequence = 1,
-              alerts = listOf(
-                alert(sequence = 1, alertCode = "A"),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 1, alertCode = "A"),
+              )
+            },
             booking(
               bookingSequence = 2,
-              alerts = listOf(
-                alert(sequence = 20, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
-              ),
             ),
             booking(
               bookingSequence = 3,
-              alerts = listOf(
-                alert(sequence = 30, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
-              ),
             ),
             booking(
               bookingSequence = 4,
-              alerts = listOf(
-                alert(sequence = 40, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = null),
-              ),
-            ),
+            ).apply {
+              this.alerts += listOf(
+                alert(booking = this, sequence = 20, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
+                alert(booking = this, sequence = 30, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = auditTimestamp),
+                alert(booking = this, sequence = 40, alertCode = "B", alertDate = alertDate, active = true, auditTimestamp = null),
+              )
+            },
           ),
         )
       }
@@ -425,10 +451,9 @@ class AlertsServiceTest {
   }
 }
 
-private fun booking(alerts: List<OffenderAlert> = emptyList(), bookingSequence: Int = 1): OffenderBooking =
+private fun booking(bookingSequence: Int = 1): OffenderBooking =
   OffenderBooking(
     bookingSequence = bookingSequence,
-    alerts = alerts.toMutableList(),
     bookingBeginDate = LocalDateTime.now(),
     offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH"),
   )
@@ -439,8 +464,9 @@ private fun alert(
   alertDate: LocalDate = LocalDate.now(),
   auditTimestamp: LocalDateTime? = LocalDateTime.now(),
   active: Boolean = true,
+  booking: OffenderBooking,
 ): OffenderAlert = OffenderAlert(
-  id = OffenderAlertId(booking(), sequence),
+  id = OffenderAlertId(booking, sequence),
   alertCode = AlertCode(alertCode, "A Alert"),
   alertType = AlertType("X", "X Type"),
   alertDate = alertDate,
