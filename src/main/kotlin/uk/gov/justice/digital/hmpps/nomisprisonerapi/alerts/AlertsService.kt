@@ -165,13 +165,38 @@ class AlertsService(
             .flatMap { it.alerts }
             .filter { it.alertCode.code !in alertCodesInLatestBooking }
             .groupBy { it.alertCode.code }
-            .map { codeToAlert -> codeToAlert.value.maxBy { it.alertDate } }
+            .flatMap { it.value.chooseMostRelevantAlerts() }
             .toList()
         return PrisonerAlertsResponse(
           latestBookingAlerts = latestBooking.alerts.map { it.toAlertResponse() }.sortedBy { it.alertSequence },
           previousBookingsAlerts = uniqueLatestPreviousBookingsAlerts.map { it.toAlertResponse() }.sortedBy { it.date },
         )
       } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any bookings")
+}
+
+fun chooseLatestActiveAlert(first: OffenderAlert, second: OffenderAlert): Int {
+  /*
+  Order is as follows:
+   * Latest alert date
+   * Active if both have same date
+   * Audit date if both same data and same status
+
+   NB: many alerts might be equally the most relevant
+   */
+  return first.alertDate.compareTo(second.alertDate).takeIf { it != 0 }
+    ?: second.alertStatus.name.compareTo(first.alertStatus.name).takeIf { it != 0 }
+    ?: (first.auditTimestamp ?: LocalDateTime.MIN).compareTo(second.auditTimestamp ?: LocalDateTime.MIN).takeIf { it != 0 }
+    ?: 0
+}
+
+fun OffenderAlert.isJustAsRelevantAs(other: OffenderAlert): Boolean = chooseLatestActiveAlert(this, other) == 0
+
+fun List<OffenderAlert>.chooseMostRelevantAlerts(): List<OffenderAlert> {
+  // Find any of the most relevant alerts and if exist all the others that are equally relevant are returned
+  val oneOfTheMostRelevantAlerts = this.maxWithOrNull(::chooseLatestActiveAlert)
+  return oneOfTheMostRelevantAlerts?.let {
+    this.filter { it.isJustAsRelevantAs(oneOfTheMostRelevantAlerts) }
+  } ?: emptyList()
 }
 
 private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }

@@ -677,7 +677,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `only one alert from previous booking of same type on same date is taken`() {
+      fun `both alerts from previous booking of same type on same date are taken`() {
         webTestClient.get().uri("/prisoners/${prisonerWithIdenticalAlerts.nomsId}/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
@@ -685,10 +685,12 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBody()
           .jsonPath("latestBookingAlerts.size()").isEqualTo(0)
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(1)
+          .jsonPath("previousBookingsAlerts.size()").isEqualTo(2)
           .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(1)
           .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("RYP")
           .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2019-07-19")
+          .jsonPath("previousBookingsAlerts[1].alertCode.code").isEqualTo("RYP")
+          .jsonPath("previousBookingsAlerts[1].date").isEqualTo("2019-07-19")
       }
     }
   }
