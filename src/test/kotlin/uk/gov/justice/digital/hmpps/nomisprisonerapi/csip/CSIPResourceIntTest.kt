@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import java.time.LocalDate
 
 class CSIPResourceIntTest : IntegrationTestBase() {
@@ -23,12 +24,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   private lateinit var csip1: CSIPReport
   private lateinit var csip2: CSIPReport
   private lateinit var csip3: CSIPReport
+  private lateinit var csipTemplate: IWPTemplate
 
   @BeforeEach
   internal fun createCSIPReports() {
     nomisDataBuilder.build {
+      csipTemplate = template(name = "CSIPA1_FNP", description = "")
       offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
         booking(agencyLocationId = "MDI") {
+          document(template = csipTemplate)
           csip1 = csipReport(
             staffAssaulted = true, staffAssaultedName = "Assaulted Person",
             releaseDate = LocalDate.parse("2028-11-25"),
@@ -38,11 +42,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           ) {
             factor()
             factor(factor = "MED", comment = "Wrong medication given")
-            scs(
-              "ACC", reasonForDecision = "Further help needed", outcomeCreateUsername = "JAMES",
-              outcomeCreateDate = LocalDate.now(),
-            )
-
+            scs()
             investigation(
               staffInvolved = "There were numerous staff involved",
               evidenceSecured = "Account by Prisoner Officer",
@@ -71,6 +71,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     repository.delete(csip2)
     repository.delete(csip3)
     repository.deleteOffenders()
+    repository.delete(csipTemplate)
   }
 
   @Nested
@@ -407,6 +408,19 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.serviceReferral").isEqualTo(true)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
       // Check create date time?
+    }
+
+    @Test
+    fun `will return CSIP Document information`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("documents[0].fileName").isEqualTo("doc1.txt")
+        .jsonPath("documents[0].status.code").isEqualTo("PUBLIC")
+        .jsonPath("documents[0].status.description").isEqualTo("Public")
     }
   }
 }

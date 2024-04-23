@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MergeTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -30,6 +31,7 @@ class NomisDataBuilder(
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
+  private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -43,6 +45,7 @@ class NomisDataBuilder(
     questionnaireBuilderFactory,
     incidentBuilderFactory,
     mergeTransactionBuilderFactory,
+    templateBuilderFactory,
   ).apply(dsl)
 }
 
@@ -58,6 +61,8 @@ class NomisData(
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
+  private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
+
 ) : NomisDataDsl {
   @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
@@ -261,6 +266,20 @@ class NomisData(
           }
       }
 
+  @IWPTemplateDslMarker
+  override fun template(
+    name: String,
+    description: String?,
+    dsl: IWPTemplateDsl.() -> Unit,
+  ): IWPTemplate =
+    templateBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(name, description)
+          .also {
+            builder.apply(dsl)
+          }
+      }
+
   override fun mergeTransaction(
     requestDate: LocalDateTime,
     requestStatusCode: String,
@@ -396,6 +415,13 @@ interface NomisDataDsl {
     reactivationDate: LocalDate? = null,
     dsl: AgencyInternalLocationDsl.() -> Unit = {},
   ): AgencyInternalLocation
+
+  @IWPTemplateDslMarker
+  fun template(
+    name: String = "template1",
+    description: String?,
+    dsl: IWPTemplateDsl.() -> Unit = {},
+  ): IWPTemplate
 
   @MergeTransactionDslMarker
   fun mergeTransaction(

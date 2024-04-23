@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPDocument
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -88,6 +90,14 @@ interface BookingDsl {
     firstCaseReviewDate: LocalDate? = null,
     dsl: CSIPReportDsl.() -> Unit = {},
   ): CSIPReport
+
+  @IWPDocumentDslMarker
+  fun document(
+    fileName: String = "doc1.txt",
+    template: IWPTemplate,
+    status: String = "PUBLIC",
+    dsl: IWPDocumentDsl.() -> Unit = {},
+  ): IWPDocument
 
   @OffenderSentenceDslMarker
   fun sentence(
@@ -222,6 +232,7 @@ class BookingBuilderFactory(
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
+  private val documentBuilderFactory: IWPDocumentBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -234,6 +245,7 @@ class BookingBuilderFactory(
     offenderExternalMovementBuilderFactory,
     offenderAlertBuilderFactory,
     csipReportBuilderFactory,
+    documentBuilderFactory,
   )
 }
 
@@ -248,6 +260,7 @@ class BookingBuilder(
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
+  private val documentBuilderFactory: IWPDocumentBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -634,6 +647,23 @@ class BookingBuilder(
         index = incident.parties.size + 1,
       )
         .also { incident.parties += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun document(
+    fileName: String,
+    template: IWPTemplate,
+    status: String,
+    dsl: IWPDocumentDsl.() -> Unit,
+  ) =
+    documentBuilderFactory.builder().let { builder ->
+      builder.build(
+        fileName = fileName,
+        offenderBooking = offenderBooking,
+        status = status,
+        template = template,
+      )
+        .also { offenderBooking.documents += it }
         .also { builder.apply(dsl) }
     }
 }
