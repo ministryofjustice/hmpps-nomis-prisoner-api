@@ -42,10 +42,10 @@ interface CSIPReportDsl {
 
   @CSIPSaferCustodyScreeningDslMarker
   fun scs(
-    outcome: String,
-    reasonForDecision: String,
-    outcomeCreateUsername: String,
-    outcomeCreateDate: LocalDate,
+    outcome: String = "ACC",
+    reasonForDecision: String = "Further help needed",
+    outcomeCreateUsername: String = "JAMES",
+    outcomeCreateDate: LocalDate = LocalDate.now(),
   )
 
   @CSIPInvestigationDslMarker
