@@ -15,6 +15,9 @@ interface OffenderRepository : JpaRepository<Offender, Long>, JpaSpecificationEx
 
   @Query("select o.id from Offender o join o.bookings b WHERE o.nomsId = :nomsId and b.bookingSequence = 1")
   fun findCurrentIdByNomsId(nomsId: String): Long?
+
+  @Query("select o from Offender o WHERE o.nomsId = :nomsId and o.rootOffenderId = o.id")
+  fun findRootByNomsId(nomsId: String): Offender?
 }
 
-fun OffenderRepository.findRootByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()
+fun OffenderRepository.findLatestAliasByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()

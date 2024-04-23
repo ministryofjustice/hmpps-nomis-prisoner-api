@@ -70,7 +70,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExte
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findLatestAliasByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -469,7 +469,7 @@ class AdjudicationService(
       ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
 
   private fun findPrisoner(offenderNo: String): Offender {
-    return offenderRepository.findRootByNomisId(offenderNo)
+    return offenderRepository.findLatestAliasByNomisId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found")
   }
 

@@ -159,6 +159,64 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     )
     fromDate: LocalDate?,
   ): List<MergeDetail> = prisonerService.findPrisonerMerges(offenderNo, fromDate)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @GetMapping("/prisoners/{offenderNo}/bookings/{bookingId}/previous")
+  @Operation(
+    summary = "Gets a prisoner's previous booking relative to the supplied booking id",
+    description = "Requires role NOMIS_ALERTS.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Ids of booking",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PreviousBookingId::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_ALERTS not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking or prisoner does not exist or has no previous booking",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPreviousBooking(
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @PathVariable
+    @Pattern(regexp = OFFENDER_NO_PATTERN)
+    offenderNo: String,
+    @Schema(description = "Booking Id", example = "123", required = true)
+    @PathVariable
+    bookingId: Long,
+  ): PreviousBookingId = prisonerService.getPreviousBookingId(offenderNo, bookingId)
 }
 
 @Schema(description = "Prisoner identifier")
@@ -193,4 +251,12 @@ data class MergeDetail(
   val previousBookingId: Long,
   @Schema(description = "When the merge happened", example = "2021-01-01T12:34:56")
   val requestDateTime: LocalDateTime,
+)
+
+@Schema(description = "ID of previous booking")
+data class PreviousBookingId(
+  @Schema(description = "The NOMIS booking ID", example = "1234567")
+  val bookingId: Long,
+  @Schema(description = "The NOMIS booking sequence", example = "3")
+  val bookingSequence: Long,
 )

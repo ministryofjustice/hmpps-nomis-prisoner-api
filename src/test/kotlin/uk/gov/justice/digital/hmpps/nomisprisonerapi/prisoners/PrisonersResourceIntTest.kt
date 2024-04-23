@@ -327,6 +327,157 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  inner class GetPreviousBooking {
+    private var bookingId: Long = 0
+    private var previousBookingId: Long = 0
+    private var firstEverBookingId: Long = 0
+    private var bookingIdOnlyOne: Long = 0
+    private var aliasLatestBookingId: Long = 0
+    private var aliasPreviousBookingId: Long = 0
+    private var aliasFirstEverBookingId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisoners() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234TT") {
+          bookingId = booking().bookingId
+          previousBookingId = booking {
+            release()
+          }.bookingId
+          firstEverBookingId = booking {
+            release()
+          }.bookingId
+        }
+        offender(nomsId = "A1234WW") {
+          bookingIdOnlyOne = booking().bookingId
+        }
+        offender(nomsId = "A1234HH") {
+          alias {
+            aliasLatestBookingId = booking().bookingId
+          }
+          aliasPreviousBookingId = booking {
+            release()
+          }.bookingId
+          alias {
+            aliasFirstEverBookingId = booking {
+              release()
+            }.bookingId
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun deletePrisoners() {
+      repository.deleteOffenders()
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A1234TT/bookings/$bookingId/previous")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234TT/bookings/$bookingId/previous")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234TT/bookings/$bookingId/previous")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 for a prisoner that does not exist`() {
+        webTestClient.get().uri("/prisoners/A9999TT/bookings/$bookingId/previous")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 404 for a booking that  does not exist for prisoner`() {
+        webTestClient.get().uri("/prisoners/A1234TT/bookings/9999/previous")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 404 for a booking that has no previous booking`() {
+        webTestClient.get().uri("/prisoners/A1234WW/bookings/$bookingIdOnlyOne/previous")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return previous booking for the latest booking`() {
+        webTestClient.get().uri("/prisoners/A1234TT/bookings/$bookingId/previous")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(previousBookingId)
+          .jsonPath("bookingSequence").isEqualTo(2)
+      }
+
+      @Test
+      fun `will return first booking for the middle booking`() {
+        webTestClient.get().uri("/prisoners/A1234TT/bookings/$previousBookingId/previous")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(firstEverBookingId)
+          .jsonPath("bookingSequence").isEqualTo(3)
+      }
+
+      @Nested
+      inner class WithAliases {
+        @Test
+        fun `will return previous booking for the latest booking`() {
+          webTestClient.get().uri("/prisoners/A1234HH/bookings/$aliasLatestBookingId/previous")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("bookingId").isEqualTo(aliasPreviousBookingId)
+            .jsonPath("bookingSequence").isEqualTo(2)
+        }
+
+        @Test
+        fun `will return first booking for the middle booking`() {
+          webTestClient.get().uri("/prisoners/A1234HH/bookings/$aliasPreviousBookingId/previous")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("bookingId").isEqualTo(aliasFirstEverBookingId)
+            .jsonPath("bookingSequence").isEqualTo(3)
+        }
+      }
+    }
+  }
+
+  @Nested
   @DisplayName("GET /prisoners/{offenderNo}/merges")
   inner class GetPrisonersMerges {
     @Nested
