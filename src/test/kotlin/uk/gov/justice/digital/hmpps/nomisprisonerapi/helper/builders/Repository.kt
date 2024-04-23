@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -58,6 +59,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IWPTemplateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
@@ -121,6 +123,7 @@ class Repository(
   val incidentRepository: IncidentRepository,
   val mergeTransactionRepository: MergeTransactionRepository,
   val csipReportRepository: CSIPReportRepository,
+  val iwpTemplateRepository: IWPTemplateRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -248,6 +251,7 @@ class Repository(
   fun delete(questionnaire: Questionnaire) = questionnaireRepository.deleteById(questionnaire.id)
   fun delete(incident: Incident) = incidentRepository.deleteById(incident.id)
   fun delete(csipReport: CSIPReport) = csipReportRepository.deleteById(csipReport.id)
+  fun delete(template: IWPTemplate) = iwpTemplateRepository.deleteById(template.id)
 
   // Builder lookups
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
