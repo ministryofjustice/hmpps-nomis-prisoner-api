@@ -41,7 +41,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -659,7 +658,7 @@ class SentencingService(
   }
 
   private fun findPrisoner(offenderNo: String): Offender {
-    return offenderRepository.findRootByNomisId(offenderNo)
+    return offenderRepository.findRootByNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found")
   }
 

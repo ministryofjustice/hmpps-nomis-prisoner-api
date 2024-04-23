@@ -764,6 +764,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       latestBookingId = prisonerAtMoorland.latestBooking().bookingId
     }
 
+    @AfterEach
+    fun deletePrisoners() = repository.deleteOffenders()
+
     @Nested
     inner class Security {
       @Test
