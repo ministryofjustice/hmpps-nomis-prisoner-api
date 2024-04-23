@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findLatestAliasByNomisId
 import java.time.LocalDate
 
 @Service
@@ -39,9 +39,9 @@ class NonAssociationService(
       throw BadDataException("Offender and NS Offender cannot be the same")
     }
 
-    val offender = offenderRepository.findRootByNomisId(dto.offenderNo)
+    val offender = offenderRepository.findLatestAliasByNomisId(dto.offenderNo)
       ?: throw BadDataException("Offender with nomsId=${dto.offenderNo} not found")
-    val nsOffender = offenderRepository.findRootByNomisId(dto.nsOffenderNo)
+    val nsOffender = offenderRepository.findLatestAliasByNomisId(dto.nsOffenderNo)
       ?: throw BadDataException("NS Offender with nomsId=${dto.nsOffenderNo} not found")
     val reason = reasonRepository.findByIdOrNull(NonAssociationReason.pk(dto.reason))
       ?: throw BadDataException("Reason with code=${dto.reason} does not exist")

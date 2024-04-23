@@ -7,12 +7,13 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findRootByNomisId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findLatestAliasByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.ActiveBookingsSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.OffenderWithBookingsSpecification
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.status
@@ -54,7 +55,7 @@ class PrisonerService(
   fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> {
     return mergeTransactionRepository.findByNomsIdAndAfterRequestDate(offenderNo, fromDate?.atStartOfDay())
       .map {
-        val offender2Retained = offenderRepository.findRootByNomisId(it.nomsId2) != null
+        val offender2Retained = offenderRepository.findLatestAliasByNomisId(it.nomsId2) != null
         MergeDetail(
           retainedOffenderNo = if (offender2Retained) it.nomsId2 else it.nomsId1,
           previousBookingId = it.offenderBookId1,
@@ -67,4 +68,13 @@ class PrisonerService(
 
   fun Offender.lastBooking(): OffenderBooking =
     this.bookings.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no latest bookings")
+
+  fun getPreviousBookingId(offenderNo: String, bookingId: Long): PreviousBookingId {
+    val offender = offenderRepository.findRootByNomsId(offenderNo) ?: throw NotFoundException("Prisoner with offenderNo $offenderNo not found")
+
+    return offender.bookings.firstOrNull { it.bookingId == bookingId }?.bookingSequence
+      ?.let { bookingSequence -> offender.bookings.firstOrNull { it.bookingSequence == bookingSequence + 1 } }
+      ?.let { PreviousBookingId(bookingId = it.bookingId, bookingSequence = it.bookingSequence!!.toLong()) }
+      ?: throw NotFoundException("Prisoner with offenderNo $offenderNo and booking $bookingId not found or has no previous booking")
+  }
 }
