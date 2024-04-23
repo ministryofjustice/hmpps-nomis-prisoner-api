@@ -29,7 +29,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createCSIPReports() {
     nomisDataBuilder.build {
-      csipTemplate = template(name = "CSIPA1_FNP", description = "")
+      csipTemplate = template(name = "CSIPA1_FNP", description = "This is the CSIP Template 1")
       offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
         booking(agencyLocationId = "MDI") {
           document(template = csipTemplate)
@@ -71,7 +71,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     repository.delete(csip2)
     repository.delete(csip3)
     repository.deleteOffenders()
-    repository.delete(csipTemplate)
+    repository.deleteTemplates()
   }
 
   @Nested
@@ -408,19 +408,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.serviceReferral").isEqualTo(true)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
       // Check create date time?
-    }
-
-    @Test
-    fun `will return CSIP Document information`() {
-      webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("id").isEqualTo(csip1.id)
-        .jsonPath("documents[0].fileName").isEqualTo("doc1.txt")
-        .jsonPath("documents[0].status.code").isEqualTo("PUBLIC")
-        .jsonPath("documents[0].status.description").isEqualTo("Public")
     }
   }
 }

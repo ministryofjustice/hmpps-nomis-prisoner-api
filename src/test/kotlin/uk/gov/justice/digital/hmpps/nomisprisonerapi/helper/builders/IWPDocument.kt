@@ -39,10 +39,12 @@ class IWPDocumentBuilder(
     template: IWPTemplate,
     offenderBooking: OffenderBooking,
     status: String,
+    body: String?,
   ) = IWPDocument(
     fileName = fileName,
     template = template,
     offenderBooking = offenderBooking,
     status = repository.lookupDocumentStatus(status),
+    body = body?.toByteArray(),
   )
 }
