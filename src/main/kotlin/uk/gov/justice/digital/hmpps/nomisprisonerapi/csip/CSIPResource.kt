@@ -216,9 +216,6 @@ data class CSIPResponse(
 
   @Schema(description = "CSIP Reviews")
   val reviews: List<Review>,
-
-  @Schema(description = "CSIP Documents")
-  val documents: List<Document>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -387,16 +384,6 @@ data class Attendee(
   val attended: Boolean,
   @Schema(name = "Contribution")
   val contribution: String? = null,
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class Document(
-  @Schema(description = "Document Id")
-  val id: Long,
-  @Schema(description = "Name of the document")
-  val fileName: String,
-  @Schema(description = "Status")
-  val status: CodeDescription,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

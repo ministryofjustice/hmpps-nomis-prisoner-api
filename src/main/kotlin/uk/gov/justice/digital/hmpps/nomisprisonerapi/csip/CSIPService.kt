@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPDocument
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import java.time.LocalDateTime
@@ -30,6 +29,7 @@ class CSIPService(
   fun getCSIP(csipId: Long): CSIPResponse? {
     return csipRepository.findByIdOrNull(csipId)?.toCSIPResponse()
       ?: throw NotFoundException("CSIP with id=$csipId does not exist")
+    // TODO - add calls to document service to get document summary data
   }
 
   fun findIdsByFilter(pageRequest: Pageable, csipFilter: CSIPFilter): Page<CSIPIdResponse> {
@@ -84,7 +84,6 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     decision = toDecisionResponse(),
     plans = plans.map { it.toPlanResponse() },
     reviews = reviews.map { it.toReviewResponse() },
-    documents = offenderBooking.documents.map { it.toDocumentResponse() },
   )
 
 private fun Offender.toOffender() =
@@ -191,6 +190,3 @@ private fun CSIPAttendee.toAttendeeResponse() =
     attended = attended,
     contribution = contribution,
   )
-
-private fun IWPDocument.toDocumentResponse() =
-  Document(id = id, fileName = fileName, status = status.toCodeDescription())

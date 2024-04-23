@@ -65,7 +65,7 @@ class IWPDocument(
 
   @Lob
   @Column(name = "DOCUMENT_BODY", columnDefinition = "BLOB")
-  val document: ByteArray? = null,
+  val body: ByteArray? = null,
 
 ) {
   //  UNMAPPED FIELDS:

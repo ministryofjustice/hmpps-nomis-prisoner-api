@@ -96,6 +96,7 @@ interface BookingDsl {
     fileName: String = "doc1.txt",
     template: IWPTemplate,
     status: String = "PUBLIC",
+    body: String? = null,
     dsl: IWPDocumentDsl.() -> Unit = {},
   ): IWPDocument
 
@@ -654,6 +655,7 @@ class BookingBuilder(
     fileName: String,
     template: IWPTemplate,
     status: String,
+    body: String?,
     dsl: IWPDocumentDsl.() -> Unit,
   ) =
     documentBuilderFactory.builder().let { builder ->
@@ -662,6 +664,7 @@ class BookingBuilder(
         offenderBooking = offenderBooking,
         status = status,
         template = template,
+        body = body,
       )
         .also { offenderBooking.documents += it }
         .also { builder.apply(dsl) }
