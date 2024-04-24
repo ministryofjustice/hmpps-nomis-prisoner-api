@@ -17,3 +17,9 @@ generic-service:
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     API_BASE_URL_HMPPS_AUTH: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
+
+generic-prometheus-alerts:
+  applicationAlertsEnabled: true
+  ingressAlertsEnabled: true
+  businessHoursOnly: true
+  alertSeverity: syscon-nonprod
