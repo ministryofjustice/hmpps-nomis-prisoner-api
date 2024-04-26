@@ -7,13 +7,17 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.Lob
 import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Entity(name = "IWP_TEMPLATES")
+@Entity
+@Table(name = "IWP_TEMPLATES")
+@EntityOpen
 class IWPTemplate(
   @Id
   @Column(name = "TEMPLATE_ID")

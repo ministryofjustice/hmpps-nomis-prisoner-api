@@ -10,15 +10,19 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.Lob
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
 
-@Entity(name = "IWP_DOCUMENTS")
+@Entity
+@Table(name = "IWP_DOCUMENTS")
+@EntityOpen
 class IWPDocument(
   @Id
   @Column(name = "DOCUMENT_ID")
