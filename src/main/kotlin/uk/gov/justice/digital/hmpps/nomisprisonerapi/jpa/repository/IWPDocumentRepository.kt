@@ -10,7 +10,7 @@ interface IWPDocumentRepository : JpaRepository<IWPDocument, Long> {
   @Query(
     """
       select document.id from IWPDocument document
-       left join IWPTemplate template on template.id = document.template.id
+      join IWPTemplate template on template.id = document.template.id
         where
           document.offenderBooking.bookingId = :bookingId and
           template.name = :name
