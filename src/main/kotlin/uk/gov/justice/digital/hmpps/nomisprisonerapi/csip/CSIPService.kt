@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentIdResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
@@ -21,15 +23,19 @@ import java.time.LocalDateTime
 @Transactional
 class CSIPService(
   private val csipRepository: CSIPReportRepository,
+  private val documentService: DocumentService,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
+    private val csipTemplates = listOf("CSIPA1_HMP", "CSIPA1_FNP", "CSIPA2_HMP", "CSIPA2_FNP", "CSIPA3_HMP", "CSIPA3_FNP")
   }
 
   fun getCSIP(csipId: Long): CSIPResponse? {
-    return csipRepository.findByIdOrNull(csipId)?.toCSIPResponse()
+    val csip = csipRepository.findByIdOrNull(csipId)
       ?: throw NotFoundException("CSIP with id=$csipId does not exist")
-    // TODO - add calls to document service to get document summary data
+
+    val documentIds = documentService.findAllIds(csip.offenderBooking.bookingId, csipTemplates)
+    return csip.toCSIPResponse(documentIds)
   }
 
   fun findIdsByFilter(pageRequest: Pageable, csipFilter: CSIPFilter): Page<CSIPIdResponse> {
@@ -58,13 +64,13 @@ class CSIPService(
   fun getCSIPCount(): Long = csipRepository.count()
 }
 
-private fun CSIPReport.toCSIPResponse(): CSIPResponse =
+private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>): CSIPResponse =
   CSIPResponse(
     id = id,
     offender = offenderBooking.offender.toOffender(),
     bookingId = offenderBooking.bookingId,
     originalAgencyLocation = originalAgencyLocation.id,
-    incidentDateTime = incidentTime.toLocalTime()?.atDate(incidentDate),
+    incidentDateTime = incidentTime?.toLocalTime()?.atDate(incidentDate) ?: incidentDate.atStartOfDay(),
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
     areaOfWork = areaOfWork.toCodeDescription(),
@@ -84,6 +90,7 @@ private fun CSIPReport.toCSIPResponse(): CSIPResponse =
     decision = toDecisionResponse(),
     plans = plans.map { it.toPlanResponse() },
     reviews = reviews.map { it.toReviewResponse() },
+    documents = documentIds,
   )
 
 private fun Offender.toOffender() =

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.core
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -12,6 +13,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
@@ -64,7 +66,7 @@ class DocumentResource(private val documentService: DocumentService) {
   ) = documentService.getDocumentById(id)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_DOCUMENTS')")
-  @GetMapping("/booking/{bookingId}/template/{templateName}", produces = [APPLICATION_JSON_VALUE])
+  @GetMapping("/booking/{bookingId}", produces = [APPLICATION_JSON_VALUE])
   @Operation(
     summary = "Retrieve a list of document ids",
     description = "Retrieve a list of document ids searching by booking id and template name. Requires role NOMIS_DOCUMENTS",
@@ -98,13 +100,19 @@ class DocumentResource(private val documentService: DocumentService) {
   )
   fun getDocumentIds(
     @Schema(description = "The booking id") @PathVariable bookingId: Long,
-    @Schema(description = "The template name") @PathVariable templateName: String,
-  ) = documentService.findAllIds(bookingId, templateName)
+    @RequestParam(value = "templateName", required = true)
+    @Parameter(
+      description = "The unique name of the template used for a document",
+      example = "CSIP_FAC",
+    )
+    templateNames: List<String>,
+  ) =
+    documentService.findAllIds(bookingId, templateNames)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Document id")
 data class DocumentIdResponse(
-  @Schema(description = "The document id", required = true)
+  @Schema(description = "The document id")
   val documentId: Long,
 )

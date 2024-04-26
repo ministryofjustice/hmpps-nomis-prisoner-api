@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -165,7 +166,7 @@ data class CSIPResponse(
   @Schema(description = "The offender")
   val offender: Offender,
   @Schema(description = "The booking id associated with the CSIP")
-  val bookingId: Long?,
+  val bookingId: Long,
   @Schema(description = "The original location when the CSIP was created")
   val originalAgencyLocation: String,
 
@@ -216,6 +217,9 @@ data class CSIPResponse(
 
   @Schema(description = "CSIP Reviews")
   val reviews: List<Review>,
+
+  @Schema(description = "Associated CSIP document Ids")
+  val documents: List<DocumentIdResponse>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
