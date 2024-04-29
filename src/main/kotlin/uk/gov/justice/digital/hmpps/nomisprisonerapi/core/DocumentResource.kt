@@ -102,7 +102,7 @@ class DocumentResource(private val documentService: DocumentService) {
     @Schema(description = "The booking id") @PathVariable bookingId: Long,
     @RequestParam(value = "templateName", required = true)
     @Parameter(
-      description = "The unique name of the template used for a document",
+      description = "The unique name of the template used for a document - this is a repeatable request parameter",
       example = "CSIP_FAC",
     )
     templateNames: List<String>,

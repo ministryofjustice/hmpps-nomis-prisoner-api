@@ -23,9 +23,9 @@ class DocumentResourceIntTest : IntegrationTestBase() {
   private lateinit var template1: IWPTemplate
   private lateinit var template2: IWPTemplate
   private lateinit var offender: Offender
-  private var bookingId: Long = 0L
-  private var document1Id: Long = 0L
-  private var document2Id: Long = 0L
+  private var bookingId: Long = 0
+  private var document1Id: Long = 0
+  private var document2Id: Long = 0
 
   @BeforeEach
   internal fun createDocuments() {
@@ -191,6 +191,17 @@ class DocumentResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("length()").isEqualTo(1)
         .jsonPath("[0].documentId").isEqualTo(document1Id)
+    }
+
+    @Test
+    fun `will return documents filtered by bookingId and multiple template names`() {
+      webTestClient.get().uri("/documents/booking/$bookingId?templateName=CSIPA1_FNP&templateName=ANY1_WM")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("length()").isEqualTo(2)
+        .jsonPath("[*].documentId").value<List<Int>> { assertThat(it).contains(document1Id.toInt(), document2Id.toInt()) }
     }
   }
 }
