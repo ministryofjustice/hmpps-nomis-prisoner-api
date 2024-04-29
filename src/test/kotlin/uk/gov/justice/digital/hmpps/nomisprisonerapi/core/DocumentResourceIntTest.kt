@@ -114,14 +114,14 @@ class DocumentResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /documents/booking/{bookingId}/template/{templateName}")
+  @DisplayName("GET /documents/booking/{bookingId}")
   inner class GetDocumentByBookingIdAndTemplateName {
 
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/documents/booking/$bookingId/template/CSIPA1_FNP")
+        webTestClient.get().uri("/documents/booking/$bookingId?templateName=CSIPA1_FNP")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -129,7 +129,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/documents/booking/$bookingId/template/CSIPA1_FNP")
+        webTestClient.get().uri("/documents/booking/$bookingId?templateName=CSIPA1_FNP")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -137,7 +137,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/documents/booking/$bookingId/template/CSIPA1_FNP")
+        webTestClient.get().uri("/documents/booking/$bookingId?templateName=CSIPA1_FNP")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -145,7 +145,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `document with no body should return data`() {
-      webTestClient.get().uri("/documents/booking/$bookingId/template/ANY1_WM")
+      webTestClient.get().uri("/documents/booking/$bookingId?templateName=ANY1_WM")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
         .exchange()
         .expectStatus().isOk
@@ -156,7 +156,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `unknown bookingId should return empty results`() {
-      webTestClient.get().uri("/documents/booking/-99999/template/CSIPA1_FNP")
+      webTestClient.get().uri("/documents/booking/-99999?templateName=CSIPA1_FNP")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
         .exchange()
         .expectStatus().isOk
@@ -166,7 +166,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `unknown template name should return empty results`() {
-      webTestClient.get().uri("/documents/booking/$bookingId/template/NOT_FOUND")
+      webTestClient.get().uri("/documents/booking/$bookingId?templateName=NOT_FOUND")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
         .exchange()
         .expectStatus().isOk
@@ -175,8 +175,16 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `will return error if only bookingId supplied`() {
+      webTestClient.get().uri("/documents/booking/$bookingId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
     fun `will return a document id filtered by bookingId and template name`() {
-      webTestClient.get().uri("/documents/booking/$bookingId/template/CSIPA1_FNP")
+      webTestClient.get().uri("/documents/booking/$bookingId?templateName=CSIPA1_FNP")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
         .exchange()
         .expectStatus().isOk

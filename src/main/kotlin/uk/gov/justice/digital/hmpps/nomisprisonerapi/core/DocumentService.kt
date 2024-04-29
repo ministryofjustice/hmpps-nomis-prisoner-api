@@ -13,6 +13,6 @@ class DocumentService(private val documentRepository: IWPDocumentRepository) {
     documentRepository.findByIdOrNull(documentId)?.body
       ?: throw NotFoundException("Document with id $documentId does not exist")
 
-  fun findAllIds(bookingId: Long, templateName: String) =
-    documentRepository.findAllDocumentIds(bookingId, templateName).map { DocumentIdResponse(it) }
+  fun findAllIds(bookingId: Long, templateNames: List<String>): List<DocumentIdResponse> =
+    documentRepository.findAllDocumentIds(bookingId, templateNames).map { DocumentIdResponse(it) }
 }

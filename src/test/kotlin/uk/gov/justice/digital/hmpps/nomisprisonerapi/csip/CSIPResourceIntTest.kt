@@ -11,7 +11,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import java.time.LocalDate
 
 class CSIPResourceIntTest : IntegrationTestBase() {
@@ -24,15 +23,19 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   private lateinit var csip1: CSIPReport
   private lateinit var csip2: CSIPReport
   private lateinit var csip3: CSIPReport
-  private lateinit var csipTemplate: IWPTemplate
+  private var document1Id: Long = 0
 
   @BeforeEach
   internal fun createCSIPReports() {
     nomisDataBuilder.build {
-      csipTemplate = template(name = "CSIPA1_FNP", description = "This is the CSIP Template 1")
+      val csipTemplate = template(name = "CSIPA1_FNP", description = "This is the CSIP Template 1")
+      val csipTemplate2 = template(name = "CSIPA3_HMP", description = "This is the CSIP Template 2")
+      val otherTemplate = template(name = "OTHER_TEMPLT", description = "This is a different Template")
       offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
         booking(agencyLocationId = "MDI") {
           document(template = csipTemplate)
+          document(template = csipTemplate2)
+          document(template = otherTemplate)
           csip1 = csipReport(
             staffAssaulted = true, staffAssaultedName = "Assaulted Person",
             releaseDate = LocalDate.parse("2028-11-25"),
@@ -63,6 +66,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         }
       }
     }
+    document1Id = csip1.offenderBooking.documents[0].id
   }
 
   @AfterEach
@@ -408,6 +412,18 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.serviceReferral").isEqualTo(true)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
       // Check create date time?
+    }
+
+    @Test
+    fun `will return CSIP Document information`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("documents.length()").isEqualTo(2)
+        .jsonPath("documents[0].documentId").isEqualTo(document1Id)
     }
   }
 }

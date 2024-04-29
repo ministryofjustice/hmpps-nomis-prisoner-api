@@ -12,10 +12,11 @@ interface IWPDocumentRepository : JpaRepository<IWPDocument, Long> {
       select document.id from IWPDocument document
       join IWPTemplate template on template.id = document.template.id
         where
-          document.offenderBooking.bookingId = :bookingId and
-          template.name = :name
+          document.offenderBooking.bookingId = :bookingId
+        and
+          template.name in (:names)
       order by document.id asc
     """,
   )
-  fun findAllDocumentIds(bookingId: Long, name: String): List<Long>
+  fun findAllDocumentIds(bookingId: Long, names: List<String>): List<Long>
 }

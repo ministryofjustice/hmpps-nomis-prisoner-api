@@ -50,8 +50,8 @@ data class CSIPReport(
   @Column(name = "RFR_INCIDENT_DATE", nullable = false)
   val incidentDate: LocalDate = LocalDate.now(),
 
-  @Column(name = "RFR_INCIDENT_TIME", nullable = false)
-  val incidentTime: LocalDateTime = LocalDateTime.now(),
+  @Column(name = "RFR_INCIDENT_TIME")
+  val incidentTime: LocalDateTime? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
