@@ -123,7 +123,7 @@ private fun CSIPReport.toSCSResponse() =
   )
 
 private fun CSIPReport.toInvestigationResponse() =
-  Investigation(
+  InvestigationDetails(
     staffInvolved = staffInvolved,
     evidenceSecured = evidenceSecured,
     reasonOccurred = reasonOccurred,

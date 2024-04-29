@@ -201,7 +201,7 @@ data class CSIPResponse(
   val saferCustodyScreening: SaferCustodyScreening,
 
   @Schema(description = "Investigation details of the incident")
-  val investigation: Investigation,
+  val investigation: InvestigationDetails,
 
   @Schema(description = "DecisionAndActions")
   val decision: Decision,
@@ -271,7 +271,7 @@ data class FactorResponse(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Investigation(
+data class InvestigationDetails(
   @Schema(description = "Staff involved in the incident")
   val staffInvolved: String?,
   @Schema(description = "Whether any evidence was secured")
