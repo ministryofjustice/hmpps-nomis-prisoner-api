@@ -212,6 +212,61 @@ class AlertsResource(
   ): PrisonerAlertsResponse = alertsService.getAlerts(offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/alerts")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets alert for booking",
+    description = "Retrieves alerts for a specific booking. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Alerts Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = BookingAlertsResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAlertsByBookingId(
+    @Schema(description = "Booking id", example = "12345")
+    @PathVariable
+    bookingId: Long,
+  ): BookingAlertsResponse = alertsService.getAlerts(bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @PostMapping("/prisoners/{offenderNo}/alerts")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -405,6 +460,12 @@ class AlertsResource(
 data class PrisonerAlertsResponse(
   val latestBookingAlerts: List<AlertResponse>,
   val previousBookingsAlerts: List<AlertResponse>,
+)
+
+@Schema(description = "The list of alerts held against a booking")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class BookingAlertsResponse(
+  val alerts: List<AlertResponse>,
 )
 
 @Schema(description = "The data held in NOMIS about an alert associated with a prisoner")

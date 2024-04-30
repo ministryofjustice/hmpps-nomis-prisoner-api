@@ -18,6 +18,9 @@ interface OffenderAlertRepository : JpaRepository<OffenderAlert, OffenderAlertId
   @Suppress("ktlint:standard:function-naming")
   fun findById_OffenderBookingAndId_Sequence(offenderBooking: OffenderBooking, alertSequence: Long): OffenderAlert?
 
+  @Suppress("ktlint:standard:function-naming")
+  fun findAllById_OffenderBooking(offenderBooking: OffenderBooking): List<OffenderAlert>
+
   @Query(
     """
       select 

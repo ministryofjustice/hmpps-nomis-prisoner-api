@@ -685,6 +685,119 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/alerts")
+  @Nested
+  inner class GetAlertsByBookingId {
+    private var bookingId = 0L
+    private var bookingNoAlertsId = 0L
+    private lateinit var prisoner: Offender
+    private lateinit var prisonerNoAlerts: Offender
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1234AB") {
+          bookingId = booking(bookingBeginDate = LocalDateTime.parse("2020-01-31T10:00")) {
+            alert(
+              sequence = 1,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2023-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = 2,
+              alertCode = "SC",
+              typeCode = "S",
+              date = LocalDate.parse("2020-07-19"),
+              expiryDate = LocalDate.parse("2025-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = INACTIVE,
+              commentText = "At risk",
+            )
+          }.bookingId
+        }
+        prisonerNoAlerts = offender(nomsId = "B1234AB") {
+          bookingNoAlertsId = booking().bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+      repository.delete(prisonerNoAlerts)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when booking not found`() {
+        webTestClient.get().uri("/prisoners/booking-id/9999/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 200 when prisoner found with no alerts`() {
+        webTestClient.get().uri("/prisoners/booking-id/$bookingNoAlertsId/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("alerts.size()").isEqualTo(0)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `returns all alerts for current booking`() {
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("alerts.size()").isEqualTo(2)
+          .jsonPath("alerts[0].alertSequence").isEqualTo(1)
+          .jsonPath("alerts[1].alertSequence").isEqualTo(2)
+      }
+    }
+  }
+
   @DisplayName("GET /alerts/ids")
   @Nested
   inner class GetAlertIds {
