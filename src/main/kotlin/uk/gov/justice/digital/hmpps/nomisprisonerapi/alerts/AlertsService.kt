@@ -172,6 +172,11 @@ class AlertsService(
           previousBookingsAlerts = uniqueLatestPreviousBookingsAlerts.map { it.toAlertResponse() }.sortedBy { it.date },
         )
       } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any bookings")
+  fun getAlerts(bookingId: Long): BookingAlertsResponse =
+    offenderBookingRepository.findByIdOrNull(bookingId)
+      ?.let { booking -> offenderAlertRepository.findAllById_OffenderBooking(booking).map { it.toAlertResponse() } }
+      ?.let { BookingAlertsResponse(it) }
+      ?: throw NotFoundException("Prisoner with booking $bookingId not found")
 }
 
 fun chooseLatestActiveAlert(first: OffenderAlert, second: OffenderAlert): Int {
