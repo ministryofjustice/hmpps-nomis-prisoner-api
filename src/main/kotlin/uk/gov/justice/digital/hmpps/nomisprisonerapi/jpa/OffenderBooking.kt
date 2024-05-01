@@ -51,7 +51,7 @@ data class OffenderBooking(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  val location: AgencyLocation? = null,
+  var location: AgencyLocation? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CREATE_AGY_LOC_ID")

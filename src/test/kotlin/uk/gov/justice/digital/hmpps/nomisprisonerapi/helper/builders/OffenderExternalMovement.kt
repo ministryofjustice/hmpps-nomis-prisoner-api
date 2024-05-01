@@ -112,6 +112,7 @@ class OffenderExternalMovementBuilder(
       ),
     ).also {
       offenderBooking.inOutStatus = "OUT"
+      offenderBooking.location = repository.lookupAgency("OUT")
       offenderBooking.active = false
     }
   fun build(

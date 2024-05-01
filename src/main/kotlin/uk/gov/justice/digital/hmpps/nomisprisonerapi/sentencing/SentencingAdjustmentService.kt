@@ -271,6 +271,7 @@ private fun OffenderKeyDateAdjustment.toAdjustmentResponse() =
     active = this.active,
     offenderNo = this.offenderBooking.offender.nomsId,
     hasBeenReleased = this.offenderBooking.hasBeenReleased(),
+    prisonId = this.offenderBooking.location?.id ?: "OUT",
   )
 
 private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustmentResponse(
@@ -287,4 +288,5 @@ private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustme
   hiddenFromUsers = this.offenderKeyDateAdjustmentId != null,
   offenderNo = this.offenderBooking.offender.nomsId,
   hasBeenReleased = this.offenderBooking.hasBeenReleased(),
+  prisonId = this.offenderBooking.location?.id ?: "OUT",
 )

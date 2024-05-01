@@ -72,7 +72,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             adjustmentIdOnInActiveBooking = adjustment {}.id
             release(date = LocalDateTime.now().minusDays(1))
           }
-          booking {
+          booking(agencyLocationId = "MDI") {
             sentence {}
             adjustmentIdOnActiveBooking = adjustment {}.id
           }
@@ -131,19 +131,21 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `release flag is populated`() {
+    fun `release flag and prison is populated`() {
       webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("hasBeenReleased").isEqualTo(false)
+        .jsonPath("prisonId").isEqualTo("MDI")
       webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnInActiveBooking")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("hasBeenReleased").isEqualTo(true)
+        .jsonPath("prisonId").isEqualTo("OUT")
     }
   }
 
@@ -879,7 +881,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             release(date = LocalDateTime.now().minusDays(1))
           }
 
-          booking {
+          booking(agencyLocationId = "MDI") {
             sentence {
               adjustmentIdOnActiveBooking = adjustment {}.id
             }
@@ -955,18 +957,20 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `release flag is populated`() {
+    fun `release flag and prison is populated`() {
       webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
+        .jsonPath("prisonId").isEqualTo("MDI")
         .jsonPath("hasBeenReleased").isEqualTo(false)
       webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnInActiveBooking")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
+        .jsonPath("prisonId").isEqualTo("OUT")
         .jsonPath("hasBeenReleased").isEqualTo(true)
     }
   }
