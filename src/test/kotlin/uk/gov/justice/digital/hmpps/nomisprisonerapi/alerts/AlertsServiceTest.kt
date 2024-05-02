@@ -239,7 +239,7 @@ class AlertsServiceTest {
     }
 
     @Nested
-    @DisplayName("With the same extra alerts on previous booking that have the same alert dates but different status")
+    @DisplayName("With the same extra alerts on previous booking that have the different alert dates and different status")
     inner class WithPreviousBookingAlertDatesSame {
       private val alertDate = LocalDate.parse("2021-01-01")
 
@@ -258,9 +258,9 @@ class AlertsServiceTest {
               bookingSequence = 2,
             ).apply {
               this.alerts += listOf(
-                alert(booking = this, sequence = 20, alertCode = "B", alertDate = alertDate, active = false),
+                alert(booking = this, sequence = 20, alertCode = "B", alertDate = alertDate.plusDays(10), active = false),
                 alert(booking = this, sequence = 30, alertCode = "B", alertDate = alertDate, active = true),
-                alert(booking = this, sequence = 40, alertCode = "B", alertDate = alertDate, active = false),
+                alert(booking = this, sequence = 40, alertCode = "B", alertDate = alertDate.minusDays(10), active = false),
               )
             },
           ),
