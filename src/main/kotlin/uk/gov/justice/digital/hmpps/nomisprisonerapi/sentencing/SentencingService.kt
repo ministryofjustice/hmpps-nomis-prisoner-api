@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -65,6 +66,7 @@ class SentencingService(
   private val courtEventRepository: CourtEventRepository,
   private val offenceResultCodeRepository: OffenceResultCodeRepository,
   private val courtOrderRepository: CourtOrderRepository,
+  private val storedProcedureRepository: StoredProcedureRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -169,6 +171,8 @@ class SentencingService(
         )
       }
       courtCaseRepository.saveAndFlush(courtCase)
+
+      storedProcedureRepository.imprisonmentStatusUpdate(booking.bookingId)
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
@@ -244,6 +248,7 @@ class SentencingService(
               },
             )
           }
+          storedProcedureRepository.imprisonmentStatusUpdate(booking.bookingId)
           return CreateCourtAppearanceResponse(
             id = createdCourtEvent.id,
             courtEventChargesIds = createdCourtEvent.courtEventCharges
@@ -332,6 +337,7 @@ class SentencingService(
     request: CourtAppearanceRequest,
   ): UpdateCourtAppearanceResponse {
     findPrisoner(offenderNo).let { offender ->
+      val offenderBooking = offender.findLatestBooking()
       findCourtCase(caseId, offenderNo).let { courtCase ->
         findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
           courtAppearance.eventDate = request.eventDateTime.toLocalDate()
@@ -352,7 +358,7 @@ class SentencingService(
           updateExistingCharges(chargesToUpdate = request.courtEventChargesToUpdate, courtAppearance)
           val createdOffenderCharges = createNewCharges(
             newCharges = request.courtEventChargesToCreate,
-            offender.findLatestBooking(),
+            offenderBooking,
             courtCase,
             courtAppearance,
           )
@@ -375,6 +381,7 @@ class SentencingService(
               )
             }
           }
+          storedProcedureRepository.imprisonmentStatusUpdate(offenderBooking.bookingId)
           return UpdateCourtAppearanceResponse(
             createdCourtEventChargesIds = courtAppearance.courtEventCharges
               .filter { it.id.offenderCharge.id in createdOffenderCharges }
