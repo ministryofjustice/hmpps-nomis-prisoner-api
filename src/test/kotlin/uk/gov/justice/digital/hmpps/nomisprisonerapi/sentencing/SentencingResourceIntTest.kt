@@ -11,6 +11,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -34,6 +36,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
+
+  @SpyBean
+  private lateinit var spRepository: StoredProcedureRepository
 
   @BeforeEach
   fun setUp() {
@@ -976,6 +981,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds[0].offenderChargeId).isGreaterThan(0)
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds[1].offenderChargeId).isGreaterThan(0)
 
+        // imprisonment status stored procedure is called
+        verify(spRepository).imprisonmentStatusUpdate(
+          eq(latestBookingId),
+        )
+
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
@@ -1428,6 +1438,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         // only newly created Offender charges are returned - for mapping purposes
         assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(2)
 
+        // imprisonment status stored procedure is called
+        verify(spRepository).imprisonmentStatusUpdate(
+          eq(latestBookingId),
+        )
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
@@ -1749,6 +1763,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         // no new offender charges created
         assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(0)
+
+        // imprisonment status stored procedure is called
+        verify(spRepository).imprisonmentStatusUpdate(
+          eq(latestBookingId),
+        )
       }
 
       @Test
@@ -1963,8 +1982,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         // 3 original charges updated, 2 new ones created
         // order of ids is important - must match the request order
         assertThat(offenderCharge1.id).isEqualTo(updatedCourtAppearance.courtEventCharges[0].offenderCharge.id)
-        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[0].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[3].offenderCharge.id)
-        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[1].offenderChargeId).isEqualTo(updatedCourtAppearance.courtEventCharges[4].offenderCharge.id)
+        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[0].offenderChargeId).isEqualTo(
+          updatedCourtAppearance.courtEventCharges[3].offenderCharge.id,
+        )
+        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[1].offenderChargeId).isEqualTo(
+          updatedCourtAppearance.courtEventCharges[4].offenderCharge.id,
+        )
 
         assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(0)
       }
@@ -2094,7 +2117,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -2102,7 +2126,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -2110,14 +2135,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access allowed with correct role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -2151,7 +2178,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return the court appearance`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -2256,7 +2284,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -2264,7 +2293,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -2272,14 +2302,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access allowed with correct role`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -2313,7 +2345,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return the offender charge`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -2418,6 +2451,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
+
+        // imprisonment status stored procedure is called
+        verify(spRepository).imprisonmentStatusUpdate(
+          eq(latestBookingId),
+        )
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
