@@ -168,7 +168,7 @@ data class CSIPResponse(
   @Schema(description = "The booking id associated with the CSIP")
   val bookingId: Long,
   @Schema(description = "The original location when the CSIP was created")
-  val originalAgencyLocation: String,
+  val originalAgencyId: String?,
 
   @Schema(description = "Log number")
   val logNumber: String?,

@@ -69,7 +69,7 @@ private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>): CS
     id = id,
     offender = offenderBooking.offender.toOffender(),
     bookingId = offenderBooking.bookingId,
-    originalAgencyLocation = originalAgencyLocation.id,
+    originalAgencyId = originalAgencyId,
     incidentDateTime = incidentTime?.toLocalTime()?.atDate(incidentDate) ?: incidentDate.atStartOfDay(),
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
