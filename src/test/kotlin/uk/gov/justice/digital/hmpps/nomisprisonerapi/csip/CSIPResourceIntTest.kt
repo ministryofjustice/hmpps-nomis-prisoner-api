@@ -208,7 +208,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
-        .jsonPath("originalAgencyLocation").isEqualTo("MDI")
+        .jsonPath("originalAgencyId").isEqualTo("MDI")
         .jsonPath("bookingId").isEqualTo(csip2.offenderBooking.bookingId)
         .jsonPath("incidentDateTime").isNotEmpty
         .jsonPath("type.code").isEqualTo("INT")
@@ -251,7 +251,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
-        .jsonPath("originalAgencyLocation").isEqualTo("MDI")
+        .jsonPath("originalAgencyId").isEqualTo("MDI")
         .jsonPath("bookingId").isEqualTo(csip1.offenderBooking.bookingId)
         .jsonPath("incidentDateTime").isNotEmpty
         .jsonPath("type.code").isEqualTo("INT")

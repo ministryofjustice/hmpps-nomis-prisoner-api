@@ -36,9 +36,8 @@ data class CSIPReport(
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  var originalAgencyLocation: AgencyLocation,
+  @Column(name = "AGY_LOC_ID")
+  val originalAgencyId: String?,
 
   @Column(name = "ROOT_OFFENDER_ID", nullable = false)
   val rootOffenderId: Long,
