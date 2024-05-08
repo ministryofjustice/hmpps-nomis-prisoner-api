@@ -72,20 +72,36 @@ class PayRatesService(
    * - any existing rates that are expired are retained
    * - any existing rates that are not included in the new request are expired
    */
-  fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity): MutableList<CourseActivityPayRate> {
+  fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity, previousActivityEndDate: LocalDate?): MutableList<CourseActivityPayRate> {
     val newPayRates = mutableListOf<CourseActivityPayRate>()
     val existingPayRates = existingActivity.payRates
     val tomorrow = LocalDate.now().plusDays(1)
 
     requestedPayRates.forEach { requestedPayRate ->
       val existingPayRate = existingPayRates.findExistingPayRate(requestedPayRate)
+
+      handleEndDate(previousActivityEndDate, existingActivity, existingPayRate)
+
       when {
-        existingPayRate == null -> newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity, getStartDate(requestedPayRate.incentiveLevel, requestedPayRate.payBand, existingPayRates, existingActivity.scheduleStartDate)))
+        existingPayRate == null -> newPayRates.add(
+          requestedPayRate.toCourseActivityPayRate(
+            existingActivity,
+            getStartDate(requestedPayRate.incentiveLevel, requestedPayRate.payBand, existingPayRates, existingActivity.scheduleStartDate),
+            existingActivity.scheduleEndDate,
+          ),
+        )
+
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
-        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(existingPayRate.apply { halfDayRate = requestedPayRate.rate }) // e.g. rate adjusted twice in same day
+
+        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(
+          existingPayRate.apply { halfDayRate = requestedPayRate.rate },
+        ) // e.g. rate adjusted twice in same day
+
         existingPayRate.rateIsChanged(requestedPayRate) -> {
           newPayRates.add(existingPayRate.expire())
-          newPayRates.add(requestedPayRate.toCourseActivityPayRate(existingActivity, tomorrow))
+          newPayRates.add(
+            requestedPayRate.toCourseActivityPayRate(existingActivity, tomorrow, existingActivity.scheduleEndDate),
+          )
         }
       }
     }
@@ -95,6 +111,28 @@ class PayRatesService(
     newPayRates.adjustStartDatesIfChanged(existingActivity)
 
     return newPayRates
+  }
+
+  /**
+   * See https://dsdmoj.atlassian.net/browse/SDIT-1605
+   */
+  private fun handleEndDate(
+    previousActivityEndDate: LocalDate?,
+    existingActivity: CourseActivity,
+    existingCurrentPayRate: CourseActivityPayRate?,
+  ) {
+    if (existingCurrentPayRate != null) {
+      if (previousActivityEndDate == null) {
+        if (existingActivity.scheduleEndDate != null) {
+          if (existingCurrentPayRate.endDate == null) {
+            existingCurrentPayRate.endDate = existingActivity.scheduleEndDate
+          }
+          // Leave an existing future date alone
+        }
+      } else {
+        existingCurrentPayRate.endDate = existingActivity.scheduleEndDate
+      }
+    }
   }
 
   private fun MutableList<CourseActivityPayRate>.findExistingPayRate(requested: PayRateRequest) =
