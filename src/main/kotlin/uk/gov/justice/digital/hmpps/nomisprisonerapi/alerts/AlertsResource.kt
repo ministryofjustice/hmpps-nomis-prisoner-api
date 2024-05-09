@@ -212,6 +212,61 @@ class AlertsResource(
   ): PrisonerAlertsResponse = alertsService.getAlerts(offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @GetMapping("/prisoners/{offenderNo}/alerts/reconciliation")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets active alerts for latest booking plus unique list of alerts from previous bookings for a prisoner",
+    description = "Retrieves active alerts for a prisoner across all bookings. The latest booking all active alerts will be returned, from the previous bookings the list will contain at most one alert per alert code that is active type ordered by alert date with latest alert taken. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Active Alerts Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PrisonerAlertsResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist or has no bookings",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActiveAlertsForReconciliation(
+    @Schema(description = "Offender No AKA prisoner number", example = "A1234AK")
+    @PathVariable
+    offenderNo: String,
+  ): PrisonerAlertsResponse = alertsService.getActiveAlertsForReconciliation(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @GetMapping("/prisoners/booking-id/{bookingId}/alerts")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
