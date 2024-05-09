@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
+import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -71,6 +72,7 @@ class PayRateServiceTest {
   private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
   private val threeDaysAgo = today.minusDays(3)
+  private val threeDaysAhead = today.plusDays(3)
 
   @Nested
   internal inner class CreatePayRates {
@@ -179,7 +181,7 @@ class PayRateServiceTest {
     @Test
     fun `no change should do nothing`() {
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(1)
       with(newPayRates.first()) {
@@ -195,7 +197,7 @@ class PayRateServiceTest {
         PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
         PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // existing rate unchanged
@@ -226,7 +228,7 @@ class PayRateServiceTest {
         PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
         PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // new rate added
@@ -240,7 +242,7 @@ class PayRateServiceTest {
     @Test
     fun `amending should expire existing and create new pay rate effective tomorrow`() {
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate has been expired
@@ -269,7 +271,7 @@ class PayRateServiceTest {
       }
 
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate not changed
@@ -298,7 +300,7 @@ class PayRateServiceTest {
         }
       }
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate still expired
@@ -327,7 +329,7 @@ class PayRateServiceTest {
         }
       }
 
-      val newPayRates = payRatesService.buildNewPayRates(listOf(), courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(listOf(), courseActivity, null)
 
       // We only have the old expired rate - the future rate is now removed
       assertThat(newPayRates.size).isEqualTo(1)
@@ -343,7 +345,7 @@ class PayRateServiceTest {
     fun `missing rate should be expired`() {
       // request pay band 6 instead of 5
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(4.3)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // missing rate for pay band 5 has been expired
@@ -377,7 +379,7 @@ class PayRateServiceTest {
         PayRateRequest("STD", "5", BigDecimal(4.4)),
         PayRateRequest("STD", "6", BigDecimal(5.4)),
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(5)
       // old rate for pay band 5 is still expired
@@ -421,7 +423,7 @@ class PayRateServiceTest {
       val request = listOf(
         PayRateRequest("STD", "5", BigDecimal(0.1)),
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate should now expire today
@@ -443,7 +445,7 @@ class PayRateServiceTest {
       val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = BigDecimal(3.2)))
 
       assertThatThrownBy {
-        payRatesService.buildNewPayRates(request, courseActivity)
+        payRatesService.buildNewPayRates(request, courseActivity, null)
       }
         .isInstanceOf(BadDataException::class.java)
         .hasMessageContaining("Pay rate IEP type BAS does not exist for prison $PRISON_ID")
@@ -455,10 +457,61 @@ class PayRateServiceTest {
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "A", rate = BigDecimal(3.2)))
 
       assertThatThrownBy {
-        payRatesService.buildNewPayRates(request, courseActivity)
+        payRatesService.buildNewPayRates(request, courseActivity, null)
       }
         .isInstanceOf(BadDataException::class.java)
         .hasMessageContaining("Pay band code A does not exist")
+    }
+
+    @Test
+    fun `Changing the end date of the activity`() {
+      // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2
+      val request = listOf(
+        PayRateRequest("STD", "2", BigDecimal(0.3)),
+        PayRateRequest("STD", "5", BigDecimal(3.2)),
+      )
+
+      val newPayRates = payRatesService.buildNewPayRates(
+        request,
+        courseActivity.copy(scheduleEndDate = threeDaysAhead),
+        tomorrow,
+      )
+
+      assertThat(newPayRates).extracting("endDate").containsExactlyInAnyOrder(
+        threeDaysAhead,
+        threeDaysAhead,
+      )
+      // 1 pay rate end date updated and 1 added
+    }
+
+    @Test
+    fun `Adding an end date of the activity`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = tomorrow.toString(), payBandCode = "2")
+            payRate(endDate = null)
+          }
+        }
+      }
+      val request = listOf(
+        PayRateRequest("STD", "2", BigDecimal(3.2)),
+        PayRateRequest("STD", "5", BigDecimal(3.2)),
+      )
+
+      val newPayRates = payRatesService.buildNewPayRates(
+        request,
+        courseActivity.copy(scheduleEndDate = threeDaysAhead),
+        null,
+      )
+
+      assertThat(newPayRates).extracting("payBand.code", "endDate").containsExactlyInAnyOrder(
+        Tuple("2", tomorrow),
+        Tuple("5", threeDaysAhead),
+      )
+      // 1 pay rate end date set, and 1 not changed
     }
 
     private fun MutableList<CourseActivityPayRate>.findRate(

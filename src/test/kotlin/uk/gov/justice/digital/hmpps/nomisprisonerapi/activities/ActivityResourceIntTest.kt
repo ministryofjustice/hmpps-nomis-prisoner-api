@@ -561,7 +561,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.internalLocation?.locationId).isEqualTo(-3006)
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
-        assertThat(updated.payRates[1].endDate).isNull()
+        assertThat(updated.payRates[1].endDate).isEqualTo("2022-11-30")
         assertThat(updated.payRates[1].halfDayRate)
           .isCloseTo(BigDecimal(0.8), within(BigDecimal(0.001)))
       }
