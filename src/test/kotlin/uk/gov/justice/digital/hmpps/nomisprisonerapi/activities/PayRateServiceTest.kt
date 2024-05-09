@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
+import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -476,10 +477,11 @@ class PayRateServiceTest {
         tomorrow,
       )
 
-      assertThat(newPayRates.size).isEqualTo(2)
+      assertThat(newPayRates).extracting("endDate").containsExactlyInAnyOrder(
+        threeDaysAhead,
+        threeDaysAhead,
+      )
       // 1 pay rate end date updated and 1 added
-      assertThat(newPayRates.first().endDate).isEqualTo(threeDaysAhead)
-      assertThat(newPayRates.last().endDate).isEqualTo(threeDaysAhead)
     }
 
     @Test
@@ -505,10 +507,11 @@ class PayRateServiceTest {
         null,
       )
 
-      assertThat(newPayRates.size).isEqualTo(2)
+      assertThat(newPayRates).extracting("payBand.code", "endDate").containsExactlyInAnyOrder(
+        Tuple("2", tomorrow),
+        Tuple("5", threeDaysAhead),
+      )
       // 1 pay rate end date set, and 1 not changed
-      assertThat(newPayRates.first().endDate).isEqualTo(tomorrow)
-      assertThat(newPayRates.last().endDate).isEqualTo(threeDaysAhead)
     }
 
     private fun MutableList<CourseActivityPayRate>.findRate(

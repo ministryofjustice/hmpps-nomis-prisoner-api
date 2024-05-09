@@ -93,9 +93,10 @@ class PayRatesService(
 
         existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
 
+        // e.g. rate adjusted twice in same day
         existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(
           existingPayRate.apply { halfDayRate = requestedPayRate.rate },
-        ) // e.g. rate adjusted twice in same day
+        )
 
         existingPayRate.rateIsChanged(requestedPayRate) -> {
           newPayRates.add(existingPayRate.expire())
@@ -115,6 +116,7 @@ class PayRatesService(
 
   /**
    * See https://dsdmoj.atlassian.net/browse/SDIT-1605
+   * If you add an end date to an Activity it should also update the end date on current course activity pay rates.
    */
   private fun handleEndDate(
     previousActivityEndDate: LocalDate?,
@@ -123,12 +125,10 @@ class PayRatesService(
   ) {
     if (existingCurrentPayRate != null) {
       if (previousActivityEndDate == null) {
-        if (existingActivity.scheduleEndDate != null) {
-          if (existingCurrentPayRate.endDate == null) {
-            existingCurrentPayRate.endDate = existingActivity.scheduleEndDate
-          }
-          // Leave an existing future date alone
+        if (existingActivity.scheduleEndDate != null && existingCurrentPayRate.endDate == null) {
+          existingCurrentPayRate.endDate = existingActivity.scheduleEndDate
         }
+        // ... but leave an existing future pay rate end date alone
       } else {
         existingCurrentPayRate.endDate = existingActivity.scheduleEndDate
       }
