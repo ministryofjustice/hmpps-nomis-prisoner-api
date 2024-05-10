@@ -26,10 +26,16 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class SentencingResourceIntTest : IntegrationTestBase() {
+  private val aDateString = "2023-01-01"
+  private val aDateTimeString = "2023-01-01T10:30:00"
+  private val aLaterDateString = "2023-01-05"
+  private val aLaterDateTimeString = "2023-01-05T10:30:00"
+
   @Autowired
   lateinit var repository: Repository
   private var aLocationInMoorland = 0L
@@ -53,10 +59,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtCase: CourtCase
     private lateinit var courtCaseTwo: CourtCase
     private lateinit var offenderCharge1: OffenderCharge
-    private val aDateString = "2023-01-01"
-    private val aDateTimeString = "2023-01-01T10:30:00"
-    private val aLaterDateString = "2023-01-05"
-    private val aLaterDateTimeString = "2023-01-05T10:30:00"
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -2721,6 +2723,216 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @Nested
+  @DisplayName("POST /prisoners/{offenderNo}/sentencing")
+  inner class CreateSentence {
+    private lateinit var staff: Staff
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var courtCase: CourtCase
+    private lateinit var offenderCharge1: OffenderCharge
+    private var latestBookingId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aDateString),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
+                val offenderCharge2 = offenderCharge()
+                courtEvent {
+                  // overrides from the parent offender charge fields
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                  courtOrder {
+                    sentencePurpose(purposeCode = "REPAIR")
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                }
+              }
+            }
+          }
+        latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+      }
+    }
+
+    @AfterEach
+    fun deletePrisoners() = repository.deleteOffenders()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when offender does not exist`() {
+        webTestClient.post().uri("/prisoners/AB765/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+      }
+
+      @Test
+      internal fun `400 when category not valid`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id, category = "TREE"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence category TREE not found")
+      }
+
+      @Test
+      internal fun `400 when calc type not valid`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id, calcType = "TREE"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence calculation with category 2020 and calculation type TREE not found")
+      }
+    }
+
+    @Nested
+    inner class CreateSentenceSuccess {
+      @Test
+      fun `can create a sentence with minimal data`() {
+        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+          .returnResult().responseBody!!.sentenceSeq
+
+        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/$sentenceSeq")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(sentenceSeq)
+          .jsonPath("status").isEqualTo("A")
+          .jsonPath("calculationType").isEqualTo("ADIMP")
+          .jsonPath("sentenceLevel").isEqualTo("IND")
+          .jsonPath("category.code").isEqualTo("2020")
+          .jsonPath("startDate").isEqualTo(aDateString)
+          .jsonPath("endDate").isEqualTo(aLaterDateString)
+          .jsonPath("fineAmount").isEqualTo("8.5")
+          .jsonPath("createdDateTime").isNotEmpty
+      }
+
+      @Test
+      fun `will track telemetry for the create`() {
+        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+          .returnResult().responseBody!!.sentenceSeq
+
+        verify(telemetryClient).trackEvent(
+          eq("sentence-created"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("sentenceSeq", sentenceSeq.toString())
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", prisonerAtMoorland.nomsId)
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+      repository.delete(courtCase)
+      repository.delete(staff)
+    }
+  }
+
   private fun createCourtCaseRequestHierarchy(
     courtId: String = "COURT1",
     legalCaseType: String = "A",
@@ -2792,5 +3004,28 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       nextCourtId = nextCourtId,
       courtEventChargesToUpdate = courtEventChargesToUpdate,
       courtEventChargesToCreate = courtEventChargesToCreate,
+    )
+
+  private fun createSentence(
+    caseId: Long,
+    category: String = "2020",
+    calcType: String = "ADIMP",
+    startDate: LocalDate = LocalDate.parse(aDateString),
+    endDate: LocalDate = LocalDate.parse(aLaterDateString),
+    status: String = "A",
+    sentenceLevel: String = "IND",
+    fine: BigDecimal? = BigDecimal.valueOf(8.5),
+  ) =
+
+    CreateSentenceRequest(
+      startDate = startDate,
+      status = status,
+      endDate = endDate,
+      sentenceCalcType = calcType,
+      sentenceCategory = category,
+      sentenceLevel = sentenceLevel,
+      fine = fine,
+      caseId = caseId,
+      sentenceTerm = SentenceTermRequest(startDate = startDate, sentenceTermType = "IMP", lifeSentenceFlag = false),
     )
 }

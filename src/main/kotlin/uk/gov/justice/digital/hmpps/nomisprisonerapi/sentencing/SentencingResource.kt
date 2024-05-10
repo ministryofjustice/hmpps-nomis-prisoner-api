@@ -247,6 +247,76 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): SentenceResponse = sentencingService.getOffenderSentence(sequence, bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new Sentence",
+    description = "Required role NOMIS_SENTENCING Creates a new Sentence for the offender and latest booking",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateSentenceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Created Sentence",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createSentence(
+    @Schema(description = "Offender number", example = "AB1234K", required = true)
+    @PathVariable
+    offenderNo: String,
+    @RequestBody @Valid
+    request: CreateSentenceRequest,
+  ): CreateSentenceResponse =
+    sentencingService.createSentence(offenderNo, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -308,7 +378,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     ],
   )
   fun createCourtCase(
-    @Schema(description = "Booking Id", example = "12345", required = true)
+    @Schema(description = "Offender No", example = "AK1234B", required = true)
     @PathVariable
     offenderNo: String,
     @RequestBody @Valid
@@ -842,11 +912,17 @@ data class CreateCourtCaseRequest(
    */
 )
 
-@Schema(description = "Create adjustment response")
+@Schema(description = "Create court case response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateCourtCaseResponse(
   val id: Long,
   val courtAppearanceIds: List<CreateCourtAppearanceResponse> = listOf(),
+)
+
+@Schema(description = "Create sentence response")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateSentenceResponse(
+  val sentenceSeq: Long,
 )
 
 @Schema(description = "Create adjustment response")
@@ -939,4 +1015,36 @@ data class ExistingOffenderChargeRequest(
   val resultCode1: String?,
   val mostSeriousFlag: Boolean,
 
+)
+
+@Schema(description = "Sentence request")
+data class CreateSentenceRequest(
+  val startDate: LocalDate,
+  val endDate: LocalDate? = null,
+  // either I or A
+  val status: String = "A",
+  // 1967, 1991, 2003, 2020
+  val sentenceCategory: String,
+  // eg ADIMP_ORA
+  val sentenceCalcType: String,
+  // 'IND' or 'AGG'
+  val sentenceLevel: String,
+  val fine: BigDecimal? = null,
+  // the prototype implies only 1 appearance can be associated with the case on creation
+  val sentenceTerm: SentenceTermRequest,
+  // TODO will we always have an associated court case? nullable for now
+  val caseId: Long? = null,
+)
+
+@Schema(description = "Sentence term request")
+data class SentenceTermRequest(
+  val startDate: LocalDate,
+  val endDate: LocalDate? = null,
+  val years: Int? = null,
+  val months: Int? = null,
+  val weeks: Int? = null,
+  val days: Int? = null,
+  val hours: Int? = null,
+  val sentenceTermType: String,
+  val lifeSentenceFlag: Boolean,
 )
