@@ -28,6 +28,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTermId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
@@ -466,6 +468,20 @@ class SentencingService(
           endDate = request.sentenceTerm.endDate,
           sentenceTermType = lookupSentenceTermType(request.sentenceTerm.sentenceTermType),
         ),
+      )
+
+      sentence.offenderSentenceCharges.addAll(
+        request.offenderChargeIds.map { chargeId ->
+          OffenderSentenceCharge(
+            id = OffenderSentenceChargeId(
+              offenderBooking = booking,
+              sequence = sentence.id.sequence,
+              offenderChargeId = chargeId,
+            ),
+            offenderSentence = sentence,
+            offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId),
+          )
+        },
       )
 
       offenderSentenceRepository.save(sentence)

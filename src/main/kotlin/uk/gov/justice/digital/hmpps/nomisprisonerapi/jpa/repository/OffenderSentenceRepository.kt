@@ -13,6 +13,8 @@ interface OffenderSentenceRepository :
   JpaRepository<OffenderSentence, SentenceId>,
   JpaSpecificationExecutor<OffenderSentence> {
 
+  fun deleteByIdOffenderBookingBookingId(bookingId: Long)
+
   @Query("select coalesce(max(id.sequence), 0) + 1 from OffenderSentence where id.offenderBooking = :offenderBooking")
   fun getNextSequence(offenderBooking: OffenderBooking): Long
 }
