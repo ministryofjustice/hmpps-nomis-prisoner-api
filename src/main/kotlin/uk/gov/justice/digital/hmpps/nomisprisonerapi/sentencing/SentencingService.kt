@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTermId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
@@ -45,6 +46,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceTermRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
@@ -57,6 +59,7 @@ import java.time.LocalTime
 class SentencingService(
   private val courtCaseRepository: CourtCaseRepository,
   private val offenderSentenceRepository: OffenderSentenceRepository,
+  private val offenderSentenceTermRepository: OffenderSentenceTermRepository,
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val telemetryClient: TelemetryClient,
@@ -428,27 +431,54 @@ class SentencingService(
   fun createSentence(offenderNo: String, request: CreateSentenceRequest) =
     findPrisoner(offenderNo).findLatestBooking().let { booking ->
 
-      val sentence = offenderSentenceRepository.saveAndFlush(
-        OffenderSentence(
-          id = SentenceId(booking, sequence = offenderSentenceRepository.getNextSequence(booking)),
-          category = lookupSentenceCategory(request.sentenceCategory),
-          calculationType = lookupSentenceCalculationType(categoryCode = request.sentenceCategory, calcType = request.sentenceCalcType),
-          courtCase = request.caseId?. let { findCourtCase(id = it, offenderNo = offenderNo) },
-          startDate = request.startDate,
-          endDate = request.endDate,
-          status = request.status,
-          fineAmount = request.fine,
-          sentenceLevel = request.sentenceLevel,
+      val sentence = OffenderSentence(
+        id = SentenceId(booking, sequence = offenderSentenceRepository.getNextSequence(booking)),
+        category = lookupSentenceCategory(request.sentenceCategory),
+        calculationType = lookupSentenceCalculationType(
+          categoryCode = request.sentenceCategory,
+          calcType = request.sentenceCalcType,
+        ),
+        courtCase = request.caseId?.let { findCourtCase(id = it, offenderNo = offenderNo) },
+        startDate = request.startDate,
+        endDate = request.endDate,
+        status = request.status,
+        fineAmount = request.fine,
+        sentenceLevel = request.sentenceLevel,
+      )
+      sentence.offenderSentenceTerms.add(
+        OffenderSentenceTerm(
+          id = OffenderSentenceTermId(
+            offenderBooking = booking,
+            sentenceSequence = sentence.id.sequence,
+            termSequence = offenderSentenceTermRepository.getNextTermSequence(
+              offenderBookId = booking.bookingId,
+              sentenceSeq = sentence.id.sequence,
+            ),
+          ),
+          years = request.sentenceTerm.years,
+          months = request.sentenceTerm.months,
+          weeks = request.sentenceTerm.weeks,
+          days = request.sentenceTerm.days,
+          hours = request.sentenceTerm.hours,
+          lifeSentenceFlag = request.sentenceTerm.lifeSentenceFlag,
+          offenderSentence = sentence,
+          startDate = request.sentenceTerm.startDate,
+          endDate = request.sentenceTerm.endDate,
+          sentenceTermType = lookupSentenceTermType(request.sentenceTerm.sentenceTermType),
         ),
       )
 
+      offenderSentenceRepository.save(sentence)
+
       CreateSentenceResponse(
         sentenceSeq = sentence.id.sequence,
-      ).also {
+        termSeq = sentence.offenderSentenceTerms[0].id.termSequence,
+      ).also { response ->
         telemetryClient.trackEvent(
           "sentence-created",
           mapOf(
-            "sentenceSeq" to sentence.id.sequence.toString(),
+            "sentenceSeq" to response.sentenceSeq.toString(),
+            "termSeq" to response.termSeq.toString(),
             "bookingId" to booking.bookingId.toString(),
             "offenderNo" to offenderNo,
           ),
@@ -743,9 +773,11 @@ class SentencingService(
     SentenceCategoryType.pk(code),
   ) ?: throw BadDataException("Sentence category $code not found")
 
-  private fun lookupSentenceCalculationType(categoryCode: String, calcType: String): SentenceCalculationType = sentenceCalculationTypeRepository.findByIdOrNull(
-    SentenceCalculationTypeId(calculationType = calcType, category = categoryCode),
-  ) ?: throw BadDataException("Sentence calculation with category $categoryCode and calculation type $calcType not found")
+  private fun lookupSentenceCalculationType(categoryCode: String, calcType: String): SentenceCalculationType =
+    sentenceCalculationTypeRepository.findByIdOrNull(
+      SentenceCalculationTypeId(calculationType = calcType, category = categoryCode),
+    )
+      ?: throw BadDataException("Sentence calculation with category $categoryCode and calculation type $calcType not found")
 
   private fun lookupDirectionType(code: String): DirectionType = directionTypeRepository.findByIdOrNull(
     DirectionType.pk(code),

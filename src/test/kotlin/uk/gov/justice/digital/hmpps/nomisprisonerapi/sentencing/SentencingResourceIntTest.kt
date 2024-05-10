@@ -2896,6 +2896,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("endDate").isEqualTo(aLaterDateString)
           .jsonPath("fineAmount").isEqualTo("8.5")
           .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("sentenceTerms.size()").isEqualTo(1)
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
+          .jsonPath("sentenceTerms[0].endDate").isEqualTo(aLaterDateString)
+          .jsonPath("sentenceTerms[0].years").isEqualTo(1)
+          .jsonPath("sentenceTerms[0].months").isEqualTo(2)
+          .jsonPath("sentenceTerms[0].weeks").isEqualTo(3)
+          .jsonPath("sentenceTerms[0].days").isEqualTo(4)
+          .jsonPath("sentenceTerms[0].hours").isEqualTo(5)
+          .jsonPath("sentenceTerms[0].sentenceTermType.description").isEqualTo("Imprisonment")
+          .jsonPath("sentenceTerms[0].lifeSentenceFlag").isEqualTo(true)
       }
 
       @Test
@@ -3026,6 +3036,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       sentenceLevel = sentenceLevel,
       fine = fine,
       caseId = caseId,
-      sentenceTerm = SentenceTermRequest(startDate = startDate, sentenceTermType = "IMP", lifeSentenceFlag = false),
+      sentenceTerm = SentenceTermRequest(startDate = startDate, endDate = endDate, sentenceTermType = "IMP", lifeSentenceFlag = true, years = 1, months = 2, weeks = 3, days = 4, hours = 5),
     )
 }

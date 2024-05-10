@@ -58,12 +58,12 @@ data class OffenderSentenceTerm(
   @Column(name = "END_DATE")
   val endDate: LocalDate? = null,
 
-  val years: Int?,
-  val months: Int?,
-  val weeks: Int?,
-  val days: Int?,
+  val years: Int? = null,
+  val months: Int? = null,
+  val weeks: Int? = null,
+  val days: Int? = null,
   // all time portions used in prod
-  val hours: Int?,
+  val hours: Int? = null,
 
   // defaults to 'N' used in prod
   @Convert(converter = YesNoConverter::class)

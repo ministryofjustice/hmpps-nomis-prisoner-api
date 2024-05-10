@@ -923,6 +923,7 @@ data class CreateCourtCaseResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateSentenceResponse(
   val sentenceSeq: Long,
+  val termSeq: Long,
 )
 
 @Schema(description = "Create adjustment response")
@@ -1046,5 +1047,5 @@ data class SentenceTermRequest(
   val days: Int? = null,
   val hours: Int? = null,
   val sentenceTermType: String,
-  val lifeSentenceFlag: Boolean,
+  val lifeSentenceFlag: Boolean = false,
 )
