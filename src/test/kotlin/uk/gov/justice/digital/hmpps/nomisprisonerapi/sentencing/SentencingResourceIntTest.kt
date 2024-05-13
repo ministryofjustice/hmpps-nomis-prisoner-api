@@ -2862,12 +2862,44 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("developerMessage")
           .isEqualTo("Sentence calculation with category 2020 and calculation type TREE not found")
       }
+
+      @Test
+      internal fun `400 when category code and calc type are individually valid but not a valid combination`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id, calcType = "ADIMP_ORA"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
+      }
+
+      @Test
+      internal fun `404 when offender charge id does not exist`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id, offenderChargeIds = mutableListOf(123)),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offender Charge 123 for ${prisonerAtMoorland.nomsId} not found")
+      }
     }
 
     @Nested
     inner class CreateSentenceSuccess {
       @Test
-      fun `can create a sentence with minimal data`() {
+      fun `can create a sentence with data`() {
         val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
