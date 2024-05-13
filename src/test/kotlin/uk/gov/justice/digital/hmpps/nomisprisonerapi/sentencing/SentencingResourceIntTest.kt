@@ -2730,6 +2730,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
     private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
     private var latestBookingId: Long = 0
 
     @BeforeEach
@@ -2748,7 +2749,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateStaff = staff,
               ) {
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
-                val offenderCharge2 = offenderCharge()
+                offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
                 courtEvent {
                   // overrides from the parent offender charge fields
                   courtEventCharge(
@@ -2766,9 +2767,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         latestBookingId = prisonerAtMoorland.latestBooking().bookingId
       }
     }
-
-    @AfterEach
-    fun deletePrisoners() = repository.deleteOffenders()
 
     @Nested
     inner class Security {
@@ -2861,7 +2859,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Sentence calculation with category 2020 and calculation type TREE not found")
+          .jsonPath("developerMessage")
+          .isEqualTo("Sentence calculation with category 2020 and calculation type TREE not found")
       }
     }
 
@@ -2874,7 +2873,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(caseId = courtCase.id),
+              createSentence(
+                caseId = courtCase.id,
+                offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+              ),
             ),
           )
           .exchange()
@@ -2906,6 +2908,24 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceTerms[0].hours").isEqualTo(5)
           .jsonPath("sentenceTerms[0].sentenceTermType.description").isEqualTo("Imprisonment")
           .jsonPath("sentenceTerms[0].lifeSentenceFlag").isEqualTo(true)
+          .jsonPath("offenderCharges.size()").isEqualTo(2)
+          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
+          .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
+          .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
+          .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
+          .jsonPath("offenderCharges[0].totalPropertyValue").isEqualTo(11)
+          .jsonPath("offenderCharges[0].cjitCode1").isEqualTo("cj6")
+          .jsonPath("offenderCharges[0].cjitCode2").isEqualTo("cj7")
+          .jsonPath("offenderCharges[0].cjitCode3").isEqualTo("cj8")
+          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
       }
 
       @Test
@@ -2936,6 +2956,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
+      repository.deleteSentenceByBookingId(latestBookingId)
       repository.delete(prisonerAtMoorland)
       repository.deleteOffenderChargeByBooking(latestBookingId)
       repository.delete(courtCase)
@@ -3025,6 +3046,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     status: String = "A",
     sentenceLevel: String = "IND",
     fine: BigDecimal? = BigDecimal.valueOf(8.5),
+    offenderChargeIds: MutableList<Long> = mutableListOf(),
   ) =
 
     CreateSentenceRequest(
@@ -3036,6 +3058,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       sentenceLevel = sentenceLevel,
       fine = fine,
       caseId = caseId,
-      sentenceTerm = SentenceTermRequest(startDate = startDate, endDate = endDate, sentenceTermType = "IMP", lifeSentenceFlag = true, years = 1, months = 2, weeks = 3, days = 4, hours = 5),
+      sentenceTerm = SentenceTermRequest(
+        startDate = startDate,
+        endDate = endDate,
+        sentenceTermType = "IMP",
+        lifeSentenceFlag = true,
+        years = 1,
+        months = 2,
+        weeks = 3,
+        days = 4,
+        hours = 5,
+      ),
+      offenderChargeIds = offenderChargeIds,
     )
 }

@@ -246,6 +246,7 @@ class Repository(
     offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
 
   fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
+  fun deleteSentenceByBookingId(bookingId: Long) = offenderSentenceRepository.deleteByIdOffenderBookingBookingId(bookingId = bookingId)
 
   fun delete(questionnaire: Questionnaire) = questionnaireRepository.deleteById(questionnaire.id)
   fun delete(incident: Incident) = incidentRepository.deleteById(incident.id)

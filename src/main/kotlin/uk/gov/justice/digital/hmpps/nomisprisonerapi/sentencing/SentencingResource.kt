@@ -1035,6 +1035,7 @@ data class CreateSentenceRequest(
   val sentenceTerm: SentenceTermRequest,
   // TODO will we always have an associated court case? nullable for now
   val caseId: Long? = null,
+  val offenderChargeIds: List<Long>,
 )
 
 @Schema(description = "Sentence term request")
