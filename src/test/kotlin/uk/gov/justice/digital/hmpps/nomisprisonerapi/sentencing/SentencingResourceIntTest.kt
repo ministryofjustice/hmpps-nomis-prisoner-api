@@ -2986,127 +2986,136 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    @Nested
-    @DisplayName("DELETE /prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
-    inner class DeleteSentence {
-      private lateinit var staff: Staff
-      private lateinit var prisonerAtMoorland: Offender
-      private var latestBookingId: Long = 0
-      private lateinit var sentence: OffenderSentence
-      private lateinit var courtCase: CourtCase
-      private lateinit var offenderCharge: OffenderCharge
-      private lateinit var offenderCharge2: OffenderCharge
-      private val aDateString = "2023-01-01"
-      private val aLaterDateString = "2023-01-05"
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.deleteSentenceByBookingId(latestBookingId)
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+      repository.delete(courtCase)
+      repository.delete(staff)
+    }
+  }
 
-      @BeforeEach
-      internal fun createPrisonerAndSentence() {
-        nomisDataBuilder.build {
-          staff = staff {
-            account {}
-          }
-          prisonerAtMoorland =
-            offender(nomsId = "A1234AB") {
-              booking(agencyLocationId = "MDI") {
-                courtCase = courtCase(reportingStaff = staff) {
-                  offenderCharge = offenderCharge(offenceCode = "RT88074")
-                  offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-                }
-                sentence = sentence(statusUpdateStaff = staff) {
-                  offenderSentenceCharge(offenderCharge = offenderCharge)
-                  offenderSentenceCharge(offenderCharge = offenderCharge2)
-                  term {}
-                  term(startDate = LocalDate.parse(aLaterDateString), days = 35)
-                }
+  @Nested
+  @DisplayName("DELETE /prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  inner class DeleteSentence {
+    private lateinit var staff: Staff
+    private lateinit var prisonerAtMoorland: Offender
+    private var latestBookingId: Long = 0
+    private lateinit var sentence: OffenderSentence
+    private lateinit var courtCase: CourtCase
+    private lateinit var offenderCharge: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+    private val aDateString = "2023-01-01"
+    private val aLaterDateString = "2023-01-05"
+
+    @BeforeEach
+    internal fun createPrisonerAndSentence() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(reportingStaff = staff) {
+                offenderCharge = offenderCharge(offenceCode = "RT88074")
+                offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
+              }
+              sentence = sentence(statusUpdateStaff = staff) {
+                offenderSentenceCharge(offenderCharge = offenderCharge)
+                offenderSentenceCharge(offenderCharge = offenderCharge2)
+                term {}
+                term(startDate = LocalDate.parse(aLaterDateString), days = 35)
               }
             }
-        }
-        latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+          }
       }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
 
-      @Nested
-      inner class Security {
-        @Test
-        fun `access forbidden when no role`() {
-          webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
-            .headers(setAuthorisation(roles = listOf()))
-            .exchange()
-            .expectStatus().isForbidden
-        }
-
-        @Test
-        fun `access forbidden with wrong role`() {
-          webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
-            .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-            .exchange()
-            .expectStatus().isForbidden
-        }
-
-        @Test
-        fun `access unauthorised with no auth token`() {
-          webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
-            .exchange()
-            .expectStatus().isUnauthorized
-        }
-      }
-
+    @Nested
+    inner class Security {
       @Test
-      internal fun `204 even when sentence does not exist`() {
-        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/9999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isNotFound
-
-        webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/9999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isNoContent
-
-        verify(telemetryClient).trackEvent(
-          eq("sentence-delete-not-found"),
-          org.mockito.kotlin.check {
-            assertThat(it).containsEntry("sentenceSequence", "9999")
-            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
-          },
-          isNull(),
-        )
-      }
-
-      @Test
-      internal fun `204 when sentence does exist`() {
-        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-
+      fun `access forbidden when no role`() {
         webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf()))
           .exchange()
-          .expectStatus().isNoContent
-
-        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isNotFound
+          .expectStatus().isForbidden
       }
 
       @Test
-      fun `will track telemetry for the delete`() {
+      fun `access forbidden with wrong role`() {
         webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
-          .expectStatus().isNoContent
-
-        verify(telemetryClient).trackEvent(
-          eq("sentence-deleted"),
-          org.mockito.kotlin.check {
-            assertThat(it).containsEntry("sentenceSequence", sentence.id.sequence.toString())
-            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
-            assertThat(it).containsEntry("offenderNo", prisonerAtMoorland.nomsId)
-          },
-          isNull(),
-        )
+          .expectStatus().isForbidden
       }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    internal fun `204 even when sentence does not exist`() {
+      webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNotFound
+
+      webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      verify(telemetryClient).trackEvent(
+        eq("sentence-delete-not-found"),
+        org.mockito.kotlin.check {
+          assertThat(it).containsEntry("sentenceSequence", "9999")
+          assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+        },
+        isNull(),
+      )
+    }
+
+    @Test
+    internal fun `204 when sentence does exist`() {
+      webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will track telemetry for the delete`() {
+      webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      verify(telemetryClient).trackEvent(
+        eq("sentence-deleted"),
+        org.mockito.kotlin.check {
+          assertThat(it).containsEntry("sentenceSequence", sentence.id.sequence.toString())
+          assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+          assertThat(it).containsEntry("offenderNo", prisonerAtMoorland.nomsId)
+        },
+        isNull(),
+      )
     }
 
     @AfterEach
