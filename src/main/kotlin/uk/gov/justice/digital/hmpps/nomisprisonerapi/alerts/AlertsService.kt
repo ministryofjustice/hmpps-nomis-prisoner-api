@@ -36,9 +36,18 @@ class AlertsService(
 ) {
   fun getAlert(bookingId: Long, alertSequence: Long): AlertResponse =
     offenderBookingRepository.findByIdOrNull(bookingId)?.let { booking ->
-      offenderAlertRepository.findById_OffenderBookingAndId_Sequence(booking, alertSequence)?.toAlertResponse()
+      offenderAlertRepository.findById_OffenderBookingAndId_Sequence(booking, alertSequence)?.toAlertResponse(booking)
         ?: throw NotFoundException("Prisoner alert not found for alertSequence=$alertSequence")
     } ?: throw NotFoundException("Prisoner booking not found for bookingId=$bookingId")
+
+  private fun OffenderAlert.toAlertResponse(booking: OffenderBooking) = this.toAlertResponse(isAlertFromPreviousBookingRelevant = this.isAlertFromPreviousBookingRelevant(booking))
+  private fun OffenderAlert.isAlertFromPreviousBookingRelevant(booking: OffenderBooking): Boolean =
+    // this is considered relevant if it is on a previous booking but would have been
+    // previously migrated (e.g. was an alert that was not previously copied to latest booking)
+    // these alerts would typically exist in DPS but not on the latest booking therefore are significant and relevant
+    booking.previousBooking() && getAlerts(booking.offender.nomsId).previousBookingsAlerts.any { it.same(this) }
+
+  private fun AlertResponse.same(other: OffenderAlert) = this.bookingId == other.id.offenderBooking.bookingId && this.alertSequence == other.id.sequence
 
   @Audit
   fun createAlert(offenderNo: String, request: CreateAlertRequest): CreateAlertResponse {
@@ -91,16 +100,15 @@ class AlertsService(
     alert.commentText = request.comment
     alert.modifyUserId = request.updateUsername
     alert.modifyDatetime = LocalDateTime.now()
-    // TODO I suspect DPS won't update these
     alert.alertDate = request.date
     alert.authorizePersonText = request.authorisedBy
 
     alert.addWorkFlowLog(workActionCode = workActionCode, createUsername = request.updateUsername)
 
-    return offenderAlertRepository.save(alert).toAlertResponse()
+    return offenderAlertRepository.save(alert).toAlertResponse(isAlertFromPreviousBookingRelevant = false)
   }
 
-  private fun OffenderAlert.toAlertResponse() = AlertResponse(
+  private fun OffenderAlert.toAlertResponse(isAlertFromPreviousBookingRelevant: Boolean) = AlertResponse(
     bookingId = id.offenderBooking.bookingId,
     bookingSequence = id.offenderBooking.bookingSequence!!.toLong(),
     alertSequence = id.sequence,
@@ -127,6 +135,7 @@ class AlertsService(
       auditClientUserId = auditClientUserId,
       auditClientWorkstationName = auditClientWorkstationName,
     ),
+    isAlertFromPreviousBookingRelevant = isAlertFromPreviousBookingRelevant,
   )
 
   fun deleteAlert(bookingId: Long, alertSequence: Long) {
@@ -168,8 +177,8 @@ class AlertsService(
             .flatMap { it.value.chooseMostRelevantAlerts() }
             .toList()
         return PrisonerAlertsResponse(
-          latestBookingAlerts = latestBooking.alerts.map { it.toAlertResponse() }.sortedBy { it.alertSequence },
-          previousBookingsAlerts = uniqueLatestPreviousBookingsAlerts.map { it.toAlertResponse() }.sortedBy { it.date },
+          latestBookingAlerts = latestBooking.alerts.map { it.toAlertResponse(isAlertFromPreviousBookingRelevant = false) }.sortedBy { it.alertSequence },
+          previousBookingsAlerts = uniqueLatestPreviousBookingsAlerts.map { it.toAlertResponse(isAlertFromPreviousBookingRelevant = true) }.sortedBy { it.date },
         )
       } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any bookings")
   fun getActiveAlertsForReconciliation(offenderNo: String): PrisonerAlertsResponse =
@@ -182,7 +191,7 @@ class AlertsService(
 
   fun getAlerts(bookingId: Long): BookingAlertsResponse =
     offenderBookingRepository.findByIdOrNull(bookingId)
-      ?.let { booking -> offenderAlertRepository.findAllById_OffenderBooking(booking).map { it.toAlertResponse() } }
+      ?.let { booking -> offenderAlertRepository.findAllById_OffenderBooking(booking).map { it.toAlertResponse(isAlertFromPreviousBookingRelevant = booking.bookingSequence != 1) } }
       ?.let { BookingAlertsResponse(it) }
       ?: throw NotFoundException("Prisoner with booking $bookingId not found")
 }
@@ -218,6 +227,8 @@ private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.
 
 private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) =
   this.alerts.firstOrNull { it.alertCode.code == alertCode && it.alertStatus == ACTIVE } != null
+
+private fun OffenderBooking.previousBooking() = this.bookingSequence != 1
 
 data class AlertsFilter(
   val toDate: LocalDate?,

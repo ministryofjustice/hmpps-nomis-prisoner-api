@@ -550,6 +550,8 @@ data class AlertResponse(
   val comment: String? = null,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
+  @Schema(description = "True if this alert is on a previous booking and should have been latest booking and is potentially relevant to prisoner")
+  val isAlertFromPreviousBookingRelevant: Boolean,
 )
 
 @Schema(description = "The data held in NOMIS the person or system that created this record")

@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.WebTestClient.RequestHeadersSpec
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -157,10 +159,13 @@ class AlertsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetAlert {
     var bookingId = 0L
+    var previousBookingId = 0L
     private val activeAlertSequence = 1L
     private val inactiveAlertSequence = 2L
     private val alertSequenceWithAuditMinimal = 3L
     private val alertSequenceWithAudit = 4L
+    private val previousRelevantAlertSequence = 1L
+    private val previousIrrelevantAlertSequence = 2L
     private lateinit var prisoner: Offender
 
     @BeforeEach
@@ -223,6 +228,19 @@ class AlertsResourceIntTest : IntegrationTestBase() {
                 auditAdditionalInfo = "POST /api/bookings/2904199/alert",
               )
             }
+          }.bookingId
+          previousBookingId = booking(bookingBeginDate = LocalDateTime.parse("2018-12-31T10:00")) {
+            release(date = LocalDateTime.parse("2019-12-31T10:00"))
+            alert(
+              sequence = previousRelevantAlertSequence,
+              alertCode = "RCP",
+              typeCode = "R",
+            )
+            alert(
+              sequence = previousIrrelevantAlertSequence,
+              alertCode = "HPI",
+              typeCode = "X",
+            )
           }.bookingId
         }
       }
@@ -380,6 +398,27 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus()
           .isOk
+      }
+
+      @Test
+      fun `will populate relevant previous booking flag when alert is unique to previous booking`() {
+        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$activeAlertSequence")
+          .validExchangeBody()
+          .jsonPath("alertCode.code").isEqualTo("HPI")
+          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
+        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$inactiveAlertSequence")
+          .validExchangeBody()
+          .jsonPath("alertCode.code").isEqualTo("SC")
+          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
+
+        webTestClient.get().uri("/prisoner/booking-id/$previousBookingId/alerts/$previousIrrelevantAlertSequence")
+          .validExchangeBody()
+          .jsonPath("alertCode.code").isEqualTo("HPI")
+          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
+        webTestClient.get().uri("/prisoner/booking-id/$previousBookingId/alerts/$previousRelevantAlertSequence")
+          .validExchangeBody()
+          .jsonPath("alertCode.code").isEqualTo("RCP")
+          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(true)
       }
     }
   }
@@ -2113,4 +2152,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+  private fun <T : RequestHeadersSpec<T>> RequestHeadersSpec<T>.validExchangeBody(): WebTestClient.BodyContentSpec = this.headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+    .exchange()
+    .expectStatus()
+    .isOk
+    .expectBody()
 }
