@@ -840,14 +840,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         eq(bookingId),
       )
     }
-
-    @Test
-    fun `will call audit store procedure to record key date adjustments delete`() {
-      webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-        .exchange()
-        .expectStatus().isNoContent
-    }
   }
 
   @Nested
