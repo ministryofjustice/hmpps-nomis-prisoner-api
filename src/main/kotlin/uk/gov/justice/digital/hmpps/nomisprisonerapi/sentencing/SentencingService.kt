@@ -503,6 +503,35 @@ class SentencingService(
       }
     }
 
+  @Audit
+  fun deleteSentence(bookingId: Long, sentenceSequence: Long) {
+    offenderSentenceRepository.findByIdOrNull(
+      SentenceId(
+        offenderBooking = findOffenderBooking(bookingId),
+        sequence = sentenceSequence,
+      ),
+    )?.also {
+      offenderSentenceRepository.delete(it)
+      telemetryClient.trackEvent(
+        "sentence-deleted",
+        mapOf(
+          "bookingId" to it.id.offenderBooking.bookingId.toString(),
+          "offenderNo" to it.id.offenderBooking.offender.nomsId,
+          "sentenceSequence" to it.id.sequence.toString(),
+        ),
+        null,
+      )
+    }
+      ?: telemetryClient.trackEvent(
+        "sentence-delete-not-found",
+        mapOf(
+          "bookingId" to bookingId.toString(),
+          "sentenceSequence" to sentenceSequence.toString(),
+        ),
+        null,
+      )
+  }
+
   private fun updateExistingCharges(
     chargesToUpdate: List<ExistingOffenderChargeRequest>,
     courtAppearance: CourtEvent,
