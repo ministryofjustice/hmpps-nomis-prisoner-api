@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -315,6 +316,48 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CreateSentenceRequest,
   ): CreateSentenceResponse =
     sentencingService.createSentence(offenderNo, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @DeleteMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @Operation(
+    summary = "deletes a specific sentence",
+    description = "Requires role NOMIS_SENTENCING. Deletes a sentence by booking and sentence sequence",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "the sentence has been deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteSentence(
+    @Schema(description = "Sentence sequence", example = "1")
+    @PathVariable
+    sequence: Long,
+    @Schema(description = "Offender Booking Id", example = "12345")
+    @PathVariable
+    bookingId: Long,
+  ): Unit = sentencingService.deleteSentence(bookingId, sequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases")
