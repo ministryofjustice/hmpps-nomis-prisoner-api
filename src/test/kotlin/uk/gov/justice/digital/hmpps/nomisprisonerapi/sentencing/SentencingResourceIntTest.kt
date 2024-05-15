@@ -2876,7 +2876,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
+          .jsonPath("developerMessage")
+          .isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
       }
 
       @Test
@@ -2933,7 +2934,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
           .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
           .jsonPath("sentenceTerms[0].endDate").isEqualTo(aLaterDateString)
-          .jsonPath("sentenceTerms[0].years").isEqualTo(1)
+          .jsonPath("sentenceTerms[0].years").isEqualTo(7)
           .jsonPath("sentenceTerms[0].months").isEqualTo(2)
           .jsonPath("sentenceTerms[0].weeks").isEqualTo(3)
           .jsonPath("sentenceTerms[0].days").isEqualTo(4)
@@ -2987,7 +2988,238 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
 
     @AfterEach
-    internal fun deletePrisoner() {
+    internal fun deleteSentence() {
+      repository.deleteSentenceByBookingId(latestBookingId)
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+      repository.delete(courtCase)
+      repository.delete(staff)
+    }
+  }
+
+  @Nested
+  @DisplayName("PUT /prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  inner class UpdateSentence {
+    private lateinit var staff: Staff
+    private lateinit var prisonerAtMoorland: Offender
+    private var latestBookingId: Long = 0
+    private lateinit var sentence: OffenderSentence
+    private lateinit var sentenceTwo: OffenderSentence
+    private lateinit var courtCase: CourtCase
+    private lateinit var newCourtCase: CourtCase
+    private lateinit var offenderCharge: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+    private val aDateString = "2023-01-01"
+    private val aLaterDateString = "2023-01-05"
+
+    @BeforeEach
+    internal fun createPrisonerAndSentence() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(reportingStaff = staff) {
+                offenderCharge = offenderCharge(offenceCode = "RT88074")
+                offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
+              }
+              newCourtCase = courtCase(reportingStaff = staff, caseSequence = 2) {
+                offenderCharge = offenderCharge(offenceCode = "RT88080")
+              }
+              sentence = sentence(statusUpdateStaff = staff) {
+                offenderSentenceCharge(offenderCharge = offenderCharge)
+                offenderSentenceCharge(offenderCharge = offenderCharge2)
+                term(startDate = LocalDate.parse(aLaterDateString), days = 35)
+              }
+              sentenceTwo = sentence(statusUpdateStaff = staff) {
+                offenderSentenceCharge(offenderCharge = offenderCharge)
+                term(startDate = LocalDate.parse(aLaterDateString), days = 20)
+              }
+            }
+          }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when booking does not exist`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/9999/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offender booking 9999 not found")
+      }
+
+      @Test
+      internal fun `404 when sentence does not exist`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Sentence for booking $latestBookingId and sentence sequence 5 not found")
+      }
+
+      @Test
+      internal fun `400 when category code and calc type are individually valid but not a valid combination`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id, calcType = "ADIMP_ORA"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
+      }
+    }
+
+    @Nested
+    inner class UpdateCourtAppearanceSuccess {
+
+      @Test
+      fun `can update a sentence`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentenceTwo.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                caseId = newCourtCase.id,
+                calcType = "FTR_ORA",
+                category = "1991",
+                startDate = LocalDate.parse(aLaterDateString),
+                endDate = null,
+                sentenceLevel = "AGG",
+                fine = BigDecimal.valueOf(9.7),
+
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentenceTwo.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("caseId").isEqualTo(newCourtCase.id)
+          .jsonPath("sentenceSeq").isEqualTo(sentenceTwo.id.sequence)
+          .jsonPath("status").isEqualTo("A")
+          .jsonPath("calculationType").isEqualTo("FTR_ORA")
+          .jsonPath("sentenceLevel").isEqualTo("AGG")
+          .jsonPath("category.code").isEqualTo("1991")
+          .jsonPath("startDate").isEqualTo(aLaterDateString)
+          .jsonPath("endDate").doesNotExist()
+          .jsonPath("fineAmount").isEqualTo("9.7")
+          .jsonPath("createdDateTime").isNotEmpty
+          // TODO update charges and term once DPS requirements known
+          .jsonPath("offenderCharges.size()").isEqualTo(1)
+          .jsonPath("sentenceTerms.size()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will track telemetry for the update`() {
+        webTestClient.put()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(caseId = courtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("sentence-updated"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("sentenceSequence", sentence.id.sequence.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deleteSentence() {
       repository.deleteSentenceByBookingId(latestBookingId)
       repository.delete(prisonerAtMoorland)
       repository.deleteOffenderChargeByBooking(latestBookingId)
@@ -3038,7 +3270,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        webTestClient.delete()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -3046,7 +3279,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        webTestClient.delete()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -3054,7 +3288,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        webTestClient.delete()
+          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3084,17 +3319,20 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Test
     internal fun `204 when sentence does exist`() {
-      webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+      webTestClient.get()
+        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
 
-      webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+      webTestClient.delete()
+        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
 
-      webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+      webTestClient.get()
+        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNotFound
@@ -3102,7 +3340,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will track telemetry for the delete`() {
-      webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+      webTestClient.delete()
+        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
@@ -3206,7 +3445,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     category: String = "2020",
     calcType: String = "ADIMP",
     startDate: LocalDate = LocalDate.parse(aDateString),
-    endDate: LocalDate = LocalDate.parse(aLaterDateString),
+    endDate: LocalDate? = LocalDate.parse(aLaterDateString),
     status: String = "A",
     sentenceLevel: String = "IND",
     fine: BigDecimal? = BigDecimal.valueOf(8.5),
@@ -3227,7 +3466,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         endDate = endDate,
         sentenceTermType = "IMP",
         lifeSentenceFlag = true,
-        years = 1,
+        years = 7,
         months = 2,
         weeks = 3,
         days = 4,

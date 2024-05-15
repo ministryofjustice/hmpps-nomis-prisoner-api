@@ -318,6 +318,89 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sentencingService.createSentence(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PutMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Updates Sentence",
+    description = "Required role NOMIS_SENTENCING Updates a Sentence for the offender and latest booking",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateSentenceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Sentence updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Sentence does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateSentence(
+    @Schema(description = "Booking Id", example = "4565456", required = true)
+    @PathVariable
+    bookingId: Long,
+    @Schema(description = "Sentence sequence", example = "1", required = true)
+    @PathVariable
+    sequence: Long,
+    @RequestBody @Valid
+    request: CreateSentenceRequest,
+  ) =
+    sentencingService.updateSentence(sentenceSequence = sequence, bookingId = bookingId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
   @Operation(
