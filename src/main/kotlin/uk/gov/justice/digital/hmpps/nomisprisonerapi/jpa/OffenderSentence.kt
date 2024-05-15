@@ -45,7 +45,7 @@ data class OffenderSentence(
 
   // 'I' or 'A'
   @Column(name = "SENTENCE_STATUS")
-  val status: String,
+  var status: String,
 
   @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumns(
@@ -58,10 +58,10 @@ data class OffenderSentence(
     ],
   )
   @BatchSize(size = 25)
-  val calculationType: SentenceCalculationType,
+  var calculationType: SentenceCalculationType,
 
   @Column(name = "START_DATE")
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ORDER_ID")
@@ -71,7 +71,7 @@ data class OffenderSentence(
   val consecSequence: Int? = null,
 
   @Column(name = "END_DATE")
-  val endDate: LocalDate? = null,
+  var endDate: LocalDate? = null,
 
   val commentText: String? = null,
 
@@ -81,7 +81,7 @@ data class OffenderSentence(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CASE_ID")
-  val courtCase: CourtCase? = null,
+  var courtCase: CourtCase? = null,
 
   @Column(name = "ETD_CALCULATED_DATE")
   val etdCalculatedDate: LocalDate? = null,
@@ -129,7 +129,7 @@ data class OffenderSentence(
   val aggAdjustDays: Int? = null,
 
   // 'IND' or 'AGG' in prod - defaults to 'IND'
-  val sentenceLevel: String,
+  var sentenceLevel: String,
 
   val extendedDays: Int? = null,
 
@@ -165,9 +165,9 @@ data class OffenderSentence(
       ),
     ],
   )
-  val category: SentenceCategoryType,
+  var category: SentenceCategoryType,
 
-  val fineAmount: BigDecimal? = null,
+  var fineAmount: BigDecimal? = null,
 
   val dischargeDate: LocalDate? = null,
 

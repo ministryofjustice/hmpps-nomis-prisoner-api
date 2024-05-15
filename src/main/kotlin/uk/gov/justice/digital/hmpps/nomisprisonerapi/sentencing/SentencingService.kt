@@ -532,6 +532,38 @@ class SentencingService(
       )
   }
 
+  @Audit
+  fun updateSentence(
+    bookingId: Long,
+    sentenceSequence: Long,
+    request: CreateSentenceRequest,
+  ) {
+    findOffenderBooking(bookingId).let { offenderBooking ->
+      findSentence(booking = offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
+        sentence.category = lookupSentenceCategory(request.sentenceCategory)
+        sentence.calculationType = lookupSentenceCalculationType(
+          categoryCode = request.sentenceCategory,
+          calcType = request.sentenceCalcType,
+        )
+        sentence.courtCase = request.caseId?.let { findCourtCase(id = it, offenderNo = offenderBooking.offender.nomsId) }
+        sentence.startDate = request.startDate
+        sentence.endDate = request.endDate
+        sentence.status = request.status
+        sentence.fineAmount = request.fine
+        sentence.sentenceLevel = request.sentenceLevel
+
+        telemetryClient.trackEvent(
+          "sentence-updated",
+          mapOf(
+            "bookingId" to bookingId.toString(),
+            "sentenceSequence" to sentenceSequence.toString(),
+          ),
+          null,
+        )
+      }
+    }
+  }
+
   private fun updateExistingCharges(
     chargesToUpdate: List<ExistingOffenderChargeRequest>,
     courtAppearance: CourtEvent,
@@ -799,6 +831,11 @@ class SentencingService(
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent {
     return courtEventRepository.findByIdOrNull(id)
       ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
+  }
+
+  private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence {
+    return offenderSentenceRepository.findByIdOrNull(SentenceId(sequence = sentenceSequence, offenderBooking = booking))
+      ?: throw NotFoundException("Sentence for booking ${booking.bookingId} and sentence sequence $sentenceSequence not found")
   }
 
   private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge {
