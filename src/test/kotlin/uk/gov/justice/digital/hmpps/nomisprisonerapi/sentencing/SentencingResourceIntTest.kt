@@ -312,8 +312,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(courtCase)
-      repository.delete(courtCaseTwo)
       repository.delete(prisonerAtMoorland)
       repository.delete(staff)
     }
@@ -428,8 +426,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(prisoner1CourtCase)
-      repository.delete(prisoner1CourtCase2)
       repository.delete(prisoner1)
       repository.delete(staff)
     }
@@ -542,8 +538,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(prisoner1CourtCase)
-      repository.delete(prisoner1CourtCase2)
       repository.delete(prisoner1)
       repository.delete(staff)
     }
@@ -740,8 +734,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(sentence)
-      repository.delete(courtCase)
+      // repository.delete(sentence)
       repository.delete(prisonerAtMoorland)
       repository.delete(staff)
     }
@@ -2989,10 +2982,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deleteSentence() {
-      repository.deleteSentenceByBookingId(latestBookingId)
       repository.delete(prisonerAtMoorland)
-      repository.deleteOffenderChargeByBooking(latestBookingId)
-      repository.delete(courtCase)
       repository.delete(staff)
     }
   }
@@ -3220,10 +3210,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deleteSentence() {
-      repository.deleteSentenceByBookingId(latestBookingId)
       repository.delete(prisonerAtMoorland)
-      repository.deleteOffenderChargeByBooking(latestBookingId)
-      repository.delete(courtCase)
       repository.delete(staff)
     }
   }
@@ -3359,10 +3346,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.deleteSentenceByBookingId(latestBookingId)
       repository.delete(prisonerAtMoorland)
-      repository.deleteOffenderChargeByBooking(latestBookingId)
-      repository.delete(courtCase)
       repository.delete(staff)
     }
   }
