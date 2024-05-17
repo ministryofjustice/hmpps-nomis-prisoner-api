@@ -62,8 +62,10 @@ data class IncidentResponseHistory(
   @Column(name = "RESPONSE_COMMENT_TEXT")
   val comment: String? = null,
 
-  @Column
-  var auditModuleName: String? = null,
+  // ---- NOT MAPPED columns ---- //
+  // MODIFY_USER_ID - all null
+  // MODIFY_DATETIME - all null
+  // ALL audit data
 
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)

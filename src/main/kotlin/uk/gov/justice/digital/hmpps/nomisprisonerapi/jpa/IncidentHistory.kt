@@ -42,9 +42,10 @@ data class IncidentHistory(
   @OneToMany(mappedBy = "id.incidentHistory", cascade = [CascadeType.ALL], orphanRemoval = true)
   val questions: MutableList<IncidentQuestionHistory> = mutableListOf(),
 
-  @Column
-  var auditModuleName: String? = null,
-
+  // ---- NOT MAPPED columns ---- //
+  // MODIFY_USER_ID - not required
+  // MODIFY_DATETIME - not required
+  // All AUDIT data
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

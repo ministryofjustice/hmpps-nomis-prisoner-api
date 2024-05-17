@@ -13,10 +13,12 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "QUESTIONNAIRE_QUESTIONS")
+@EntityOpen
 data class QuestionnaireQuestion(
   @Id
   @Column(name = "QUESTIONNAIRE_QUE_ID")

@@ -10,12 +10,13 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Embeddable
-class IncidentRequirementId(
+open class IncidentRequirementId(
   @Column(name = "INCIDENT_CASE_ID", nullable = false)
   var incidentId: Long,
 
@@ -25,7 +26,8 @@ class IncidentRequirementId(
 
 @Entity
 @Table(name = "INCIDENT_CASE_REQUIREMENTS")
-class IncidentRequirement(
+@EntityOpen
+open class IncidentRequirement(
 
   @EmbeddedId
   val id: IncidentRequirementId,
@@ -41,8 +43,17 @@ class IncidentRequirement(
   @JoinColumn(name = "RECORD_STAFF_ID", updatable = false, nullable = false)
   val recordingStaff: Staff,
 
-  @Column
-  var auditModuleName: String? = null,
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
+
+  // ---- NOT MAPPED Columns ---- //
+  // All AUDIT data
+
 ) {
   @Column(name = "RECORD_DATE", insertable = false, updatable = false)
   @Generated
