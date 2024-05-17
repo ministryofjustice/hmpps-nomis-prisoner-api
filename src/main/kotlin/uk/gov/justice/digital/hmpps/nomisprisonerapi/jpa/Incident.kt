@@ -72,6 +72,9 @@ data class Incident(
   @Column(name = "REPORT_TIME", nullable = false)
   val reportedTime: LocalTime,
 
+  @Column(name = "FOLLOW_UP_DATE")
+  val followUpDate: LocalDate,
+
   @Column(name = "INCIDENT_DATE", nullable = false)
   val incidentDate: LocalDate,
   @Column(name = "INCIDENT_TIME", nullable = false)
@@ -85,9 +88,16 @@ data class Incident(
   @Convert(converter = YesNoConverter::class)
   val lockedResponse: Boolean = false,
 
-  @Column
-  var auditModuleName: String? = null,
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
 
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
+
+  // ---- NOT MAPPED columns ---- //
+  // All AUDIT data
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponseHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponseHistoryId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireAnswer
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.time.LocalDate
 
 @DslMarker
 annotation class IncidentResponseHistoryDslMarker
@@ -26,12 +27,14 @@ class IncidentResponseHistoryBuilder :
     answer: QuestionnaireAnswer?,
     answerHistorySequence: Int,
     comment: String?,
+    responseDate: LocalDate?,
     recordingStaff: Staff,
   ): IncidentResponseHistory =
     IncidentResponseHistory(
       id = IncidentResponseHistoryId(incidentQuestionHistory, answerHistorySequence),
       answer = answer,
       comment = comment,
+      responseDate = responseDate,
       recordingStaff = recordingStaff,
     )
 }

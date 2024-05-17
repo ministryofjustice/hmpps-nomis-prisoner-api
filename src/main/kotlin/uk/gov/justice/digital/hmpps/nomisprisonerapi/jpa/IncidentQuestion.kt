@@ -13,6 +13,7 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Generated
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDateTime
 
@@ -27,6 +28,7 @@ class IncidentQuestionId(
 
 @Entity
 @Table(name = "INCIDENT_CASE_QUESTIONS")
+@EntityOpen
 data class IncidentQuestion(
 
   @EmbeddedId
@@ -40,8 +42,10 @@ data class IncidentQuestion(
   @Fetch(FetchMode.SUBSELECT)
   val responses: MutableList<IncidentResponse> = mutableListOf(),
 
-  @Column
-  var auditModuleName: String? = null,
+  // ---- NOT MAPPED columns ---- //
+  // MODIFY_USER_ID - all null?
+  // MODIFY_DATETIME - all null?
+  // All AUDIT data
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

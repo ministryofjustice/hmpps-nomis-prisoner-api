@@ -9,6 +9,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,6 +27,7 @@ data class QuestionnaireOffenderRoleId(
 
 @Entity
 @Table(name = "QUESTIONNAIRE_ROLES")
+@EntityOpen
 data class QuestionnaireOffenderRole(
 
   @EmbeddedId

@@ -66,6 +66,7 @@ class IncidentService(
       prison = prison.toCodeDescription(),
       lockedResponse = lockedResponse,
       incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
+      followUpDate = followUpDate,
       reportingStaff = reportingStaff.toStaff(),
       reportedDateTime = LocalDateTime.of(reportedDate, reportedTime),
       staffParties = staffParties.map { it.toStaffParty() },
@@ -73,6 +74,10 @@ class IncidentService(
       requirements = requirements.map { it.toRequirement() },
       questions = questions.map { it.toQuestionResponse() },
       history = incidentHistory.map { it.toHistoryResponse() },
+      createDateTime = createDatetime,
+      createdBy = createUsername,
+      lastModifiedDateTime = lastModifiedDateTime,
+      lastModifiedBy = lastModifiedUsername,
     )
 }
 
@@ -82,6 +87,10 @@ private fun IncidentRequirement.toRequirement() =
     comment = comment,
     date = recordedDate,
     prisonId = location.id,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )
 
 private fun IncidentQuestion.toQuestionResponse() =
@@ -89,13 +98,20 @@ private fun IncidentQuestion.toQuestionResponse() =
     questionId = question.id,
     sequence = id.questionSequence,
     question = question.questionText,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
     answers = responses.map { response ->
       Response(
         questionResponseId = response.answer?.id,
         sequence = response.id.responseSequence,
         answer = response.answer?.answerText,
         comment = response.comment,
+        responseDate = response.responseDate,
         recordingStaff = response.recordingStaff.toStaff(),
+        createDateTime = response.createDatetime,
+        createdBy = response.createUsername,
+        lastModifiedDateTime = response.lastModifiedDateTime,
+        lastModifiedBy = response.lastModifiedUsername,
       )
     },
   )
@@ -107,6 +123,8 @@ private fun IncidentHistory.toHistoryResponse() =
     description = questionnaire.description,
     incidentChangeDate = incidentChangeDate,
     incidentChangeStaff = incidentChangeStaff.toStaff(),
+    createDateTime = createDatetime,
+    createdBy = createUsername,
     questions = questions.map { historyQuestion ->
       HistoryQuestion(
         questionId = historyQuestion.question.id,
@@ -117,6 +135,7 @@ private fun IncidentHistory.toHistoryResponse() =
             questionResponseId = response.answer?.id,
             responseSequence = response.id.responseSequence,
             answer = response.answer?.answerText,
+            responseDate = response.responseDate,
             comment = response.comment,
             recordingStaff = response.recordingStaff.toStaff(),
           )
@@ -130,6 +149,10 @@ private fun IncidentStaffParty.toStaffParty() =
     staff = staff.toStaff(),
     role = role.toCodeDescription(),
     comment = comment,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )
 
 private fun JPAStaff.toStaff() =
@@ -146,6 +169,10 @@ private fun IncidentOffenderParty.toOffenderParty() =
     role = role.toCodeDescription(),
     outcome = outcome?.toCodeDescription(),
     comment = comment,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )
 
 private fun Offender.toOffender() =

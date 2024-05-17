@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.time.LocalDate
 
 class IncidentResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -58,7 +59,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
         question(question = questionnaire1.questions[3])
         question(question = questionnaire1.questions[2]) {
-          response(answer = questionnaire1.questions[2].answers[0], comment = "Multiple tools were found", recordingStaff = responseRecordingStaff)
+          response(answer = questionnaire1.questions[2].answers[0], responseDate = LocalDate.parse("2025-12-20"), comment = "Multiple tools were found", recordingStaff = responseRecordingStaff)
         }
         question(question = questionnaire1.questions[1]) {
           response(answer = questionnaire1.questions[1].answers[0], recordingStaff = responseRecordingStaff)
@@ -67,7 +68,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
         history(questionnaire = questionnaire2, changeStaff = reportingStaff1) {
           historyQuestion(question = questionnaire2.questions[2]) {
-            historyResponse(answer = questionnaire2.questions[2].answers[0], comment = "Lots of staff", recordingStaff = reportingStaff2)
+            historyResponse(answer = questionnaire2.questions[2].answers[0], responseDate = LocalDate.parse("2024-11-20"), comment = "Lots of staff", recordingStaff = reportingStaff2)
           }
           historyQuestion(question = questionnaire2.questions[1]) {
             historyResponse(answer = questionnaire2.questions[1].answers[0], comment = "A1 - Hurt Arm", recordingStaff = reportingStaff2)
@@ -303,6 +304,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("type").isEqualTo("ESCAPE_EST")
         .jsonPath("prison.code").isEqualTo("BXI")
         .jsonPath("prison.description").isEqualTo("BRIXTON")
+        .jsonPath("followUpDate").isEqualTo("2025-05-04")
         .jsonPath("lockedResponse").isEqualTo(false)
         .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
         .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
@@ -310,6 +312,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
         .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
         .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
+        .jsonPath("createDateTime").isNotEmpty
+        .jsonPath("createdBy").isNotEmpty
     }
 
     @Test
@@ -330,6 +334,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("staffParties[1].role.code").isEqualTo("VICT")
         .jsonPath("staffParties[1].role.description").isEqualTo("Victim")
         .jsonPath("staffParties[1].comment").isEqualTo("Staff said they witnessed everything")
+        .jsonPath("staffParties[0].createDateTime").isNotEmpty
+        .jsonPath("staffParties[0].createdBy").isNotEmpty
     }
 
     @Test
@@ -348,6 +354,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("offenderParties[0].role.code").isEqualTo("VICT")
         .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
         .jsonPath("offenderParties[0].comment").isEqualTo("Offender said they witnessed everything")
+        .jsonPath("offenderParties[0].createDateTime").isNotEmpty
+        .jsonPath("offenderParties[0].createdBy").isNotEmpty
     }
 
     @Test
@@ -363,6 +371,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
         .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
         .jsonPath("requirements[0].prisonId").isEqualTo("MDI")
+        .jsonPath("requirements[0].createDateTime").isNotEmpty
+        .jsonPath("requirements[0].createdBy").isNotEmpty
         .jsonPath("requirements[1].comment").isEqualTo("Ensure all details are added")
     }
 
@@ -379,6 +389,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("questions[0].sequence").isEqualTo(incident1.questions[0].id.questionSequence)
         .jsonPath("questions[0].question").isEqualTo(questionnaire1.questions[3].questionText)
         .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
+        .jsonPath("questions[0].createDateTime").isNotEmpty
+        .jsonPath("questions[0].createdBy").isNotEmpty
     }
 
     @Test
@@ -395,11 +407,14 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("questions[1].question").isEqualTo("Q2: Were tools used?")
         .jsonPath("questions[1].answers[0].answer").isEqualTo("Q2A1: Yes")
         .jsonPath("questions[1].answers[0].comment").isEqualTo("Multiple tools were found")
+        .jsonPath("questions[1].answers[0].responseDate").isEqualTo("2025-12-20")
         .jsonPath("questions[2].question").isEqualTo("Q3: What tools were used?")
         .jsonPath("questions[2].answers[0].answer").isEqualTo("Q3A1: Wire cutters")
         .jsonPath("questions[2].answers[0].comment").doesNotExist()
         .jsonPath("questions[2].answers[1].answer").isEqualTo("Q3A3: Crow bar")
         .jsonPath("questions[2].answers[1].comment").isEqualTo("Large Crow bar")
+        .jsonPath("questions[2].answers[1].createDateTime").isNotEmpty
+        .jsonPath("questions[2].answers[1].createdBy").isNotEmpty
     }
 
     @Test
@@ -436,6 +451,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("history[0].questionnaireId").isEqualTo(questionnaire2.id)
         .jsonPath("history[0].type").isEqualTo("FIRE")
         .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
+        .jsonPath("history[0].createDateTime").isNotEmpty
+        .jsonPath("history[0].createdBy").isNotEmpty
     }
 
     @Test
@@ -465,6 +482,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("history[0].questions[0].answers[0].questionResponseId").isEqualTo(questionnaire2.questions[2].answers[0].id)
         .jsonPath("history[0].questions[0].answers[0].answer").isEqualTo("Q21A1: Yes")
         .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("Lots of staff")
+        .jsonPath("history[0].questions[0].answers[0].responseDate").isEqualTo("2024-11-20")
         .jsonPath("history[0].questions[0].answers[0].recordingStaff.username").isEqualTo("JANESTAFF")
         .jsonPath("history[0].questions[0].answers[0].recordingStaff.staffId").isEqualTo(reportingStaff2.id)
         .jsonPath("history[0].questions[0].answers[0].recordingStaff.firstName").isEqualTo("JANE")
