@@ -36,8 +36,14 @@ class IncidentParty(
   @Column(name = "COMMENT_TEXT")
   open val comment: String? = null,
 
-  @Column
-  var auditModuleName: String? = null,
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
+
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

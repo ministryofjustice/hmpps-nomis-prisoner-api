@@ -43,9 +43,10 @@ data class IncidentQuestionHistory(
   @Fetch(FetchMode.SUBSELECT)
   val responses: MutableList<IncidentResponseHistory> = mutableListOf(),
 
-  @Column
-  var auditModuleName: String? = null,
-
+  // ---- NOT MAPPED columns ---- //
+  // MODIFY_USER_ID - all null
+  // MODIFY_DATETIME - all null
+  // All AUDIT data
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

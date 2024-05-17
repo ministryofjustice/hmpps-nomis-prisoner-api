@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponseHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireAnswer
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.time.LocalDate
 
 @DslMarker
 annotation class IncidentQuestionHistoryDslMarker
@@ -18,6 +19,7 @@ interface IncidentQuestionHistoryDsl {
   fun historyResponse(
     answer: QuestionnaireAnswer? = null,
     comment: String? = null,
+    responseDate: LocalDate? = null,
     recordingStaff: Staff,
     dsl: IncidentResponseHistoryDsl.() -> Unit = {},
   ): IncidentResponseHistory
@@ -49,6 +51,7 @@ class IncidentQuestionHistoryBuilder(
   override fun historyResponse(
     answer: QuestionnaireAnswer?,
     comment: String?,
+    responseDate: LocalDate?,
     recordingStaff: Staff,
     dsl: IncidentResponseHistoryDsl.() -> Unit,
   ): IncidentResponseHistory =
@@ -60,6 +63,7 @@ class IncidentQuestionHistoryBuilder(
           answerHistorySequence = incidentQuestionHistory.responses.size + 1,
           answer = answer,
           comment = comment,
+          responseDate = responseDate,
           recordingStaff = recordingStaff,
         )
           .also { incidentQuestionHistory.responses += it }

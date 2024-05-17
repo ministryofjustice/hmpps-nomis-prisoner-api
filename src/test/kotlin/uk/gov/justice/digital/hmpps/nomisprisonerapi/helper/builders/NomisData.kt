@@ -167,6 +167,7 @@ class NomisData(
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
     incidentStatus: String,
+    followUpDate: LocalDate,
     questionnaire: Questionnaire,
     dsl: IncidentDsl.() -> Unit,
   ): Incident =
@@ -180,6 +181,7 @@ class NomisData(
           reportedDateTime = reportedDateTime,
           incidentDateTime = incidentDateTime,
           incidentStatus = incidentStatus,
+          followUpDate = followUpDate,
           questionnaire = questionnaire,
         )
           .also {
@@ -387,6 +389,7 @@ interface NomisDataDsl {
     reportedDateTime: LocalDateTime = LocalDateTime.parse("2024-01-02T09:30"),
     incidentDateTime: LocalDateTime = LocalDateTime.parse("2023-12-30T13:45"),
     incidentStatus: String = "AWAN",
+    followUpDate: LocalDate = LocalDate.parse("2025-05-04"),
     questionnaire: Questionnaire,
     dsl: IncidentDsl.() -> Unit = {},
   ): Incident

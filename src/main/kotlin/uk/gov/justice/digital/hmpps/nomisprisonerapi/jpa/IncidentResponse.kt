@@ -11,12 +11,13 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Embeddable
-class IncidentResponseId(
+open class IncidentResponseId(
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumns(
     value = [
@@ -40,6 +41,7 @@ class IncidentResponseId(
 
 @Entity
 @Table(name = "INCIDENT_CASE_RESPONSES")
+@EntityOpen
 data class IncidentResponse(
 
   @EmbeddedId
@@ -59,8 +61,17 @@ data class IncidentResponse(
   @Column(name = "RESPONSE_COMMENT_TEXT")
   val comment: String? = null,
 
-  @Column
-  var auditModuleName: String? = null,
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
+
+  // ---- NOT MAPPED columns ---- //
+  // All AUDIT data
+
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

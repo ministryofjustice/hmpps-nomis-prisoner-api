@@ -28,8 +28,14 @@ class IncidentStatus(
   @Convert(converter = YesNoConverter::class)
   val enhancedUser: Boolean = false,
 
-  // active flag - did not map as all Y = true
-  // expiry date - did not map as all null
+  // ---- NOT MAPPED columns ---- //
+  // EXPIRY_DATE - all are null in prod
+  // ACTIVE_FLAG - all Y = true in prod
+  // CREATE_DATETIME
+  // CREATE_USER_ID
+  // MODIFY_DATETIME
+  // MODIFY_USER_ID
+  // All AUDIT Columns
 ) {
 
   override fun equals(other: Any?): Boolean {

@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentStatusRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
@@ -110,6 +111,7 @@ class IncidentBuilder(
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
     incidentStatus: String,
+    followUpDate: LocalDate,
     questionnaire: Questionnaire,
   ): Incident =
     Incident(
@@ -122,6 +124,7 @@ class IncidentBuilder(
       incidentDate = incidentDateTime.toLocalDate(),
       incidentTime = incidentDateTime.toLocalTime(),
       status = repository.lookupIncidentStatusCode(incidentStatus),
+      followUpDate = followUpDate,
       questionnaire = questionnaire,
       incidentType = questionnaire.code,
     )

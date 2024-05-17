@@ -8,9 +8,11 @@ import jakarta.persistence.ManyToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 
 @Entity
 @DiscriminatorValue("offender")
+@EntityOpen
 class IncidentOffenderParty(
   id: IncidentPartyId,
   comment: String?,
@@ -46,3 +48,9 @@ class IncidentOffenderParty(
   val outcome: Outcome? = null,
 
 ) : IncidentParty(id, comment)
+
+// ---- NOT MAPPED columns ---- //
+// PERSON_ID - all are null in prod
+// STAFF_ID - only used in IncidentStaffParty
+// RECORD_STAFF_ID - this is the staff Id for the create user Id
+// All AUDIT data

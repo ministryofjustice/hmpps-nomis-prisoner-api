@@ -33,3 +33,10 @@ class IncidentStaffParty(
   val staff: Staff,
 ) :
   IncidentParty(id, comment)
+
+// ---- NOT MAPPED columns ---- //
+// PERSON_ID - all are null in prod
+// OFFENDER_BOOKING_ID - used in IncidentOffenderParty
+// OUTCOME_CODE - used in IncidentOffenderParty
+// RECORD_STAFF_ID - this is the staff Id for the create user Id
+// All AUDIT data

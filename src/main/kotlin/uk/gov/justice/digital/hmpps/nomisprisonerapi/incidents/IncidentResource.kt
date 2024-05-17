@@ -155,6 +155,18 @@ data class IncidentResponse(
   @Schema(description = "The date and time of the incident")
   val incidentDateTime: LocalDateTime,
 
+  @Schema(description = "The date and time the incident was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the incident")
+  val createdBy: String,
+  @Schema(description = "The date and time the incident was last updated")
+  val lastModifiedDateTime: LocalDateTime?,
+  @Schema(description = "The username of the person who last updated the incident")
+  val lastModifiedBy: String?,
+
+  @Schema(description = "The follow up date for the incident")
+  val followUpDate: LocalDate?,
+
   @Schema(description = "The staff member who reported the incident")
   val reportingStaff: Staff,
   @Schema(description = "The date and time the incident was reported")
@@ -196,6 +208,14 @@ data class StaffParty(
   val role: CodeDescription,
   @Schema(description = "General information about the incident")
   val comment: String?,
+  @Schema(description = "The date and time the staff party was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the staff party")
+  val createdBy: String,
+  @Schema(description = "The date and time the staff party was last updated")
+  val lastModifiedDateTime: LocalDateTime?,
+  @Schema(description = "The username of the person who last updated the staff party")
+  val lastModifiedBy: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -218,6 +238,14 @@ data class OffenderParty(
   val outcome: CodeDescription?,
   @Schema(description = "General information about the incident")
   val comment: String?,
+  @Schema(description = "The date and time the offender party was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the offender party")
+  val createdBy: String,
+  @Schema(description = "The date and time the offender party was last updated")
+  val lastModifiedDateTime: LocalDateTime?,
+  @Schema(description = "The username of the person who last updated the offender party")
+  val lastModifiedBy: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -230,6 +258,14 @@ data class Requirement(
   val staff: Staff,
   @Schema(description = "The reporting location of the staff")
   val prisonId: String,
+  @Schema(description = "The date and time the requirement was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the requirement")
+  val createdBy: String,
+  @Schema(description = "The date and time the requirement was last updated")
+  val lastModifiedDateTime: LocalDateTime?,
+  @Schema(description = "The username of the person who last updated the requirement")
+  val lastModifiedBy: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -242,6 +278,10 @@ data class Question(
   val question: String,
   @Schema(description = "List of Responses to this question")
   val answers: List<Response> = listOf(),
+  @Schema(description = "The date and time the question was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the question")
+  val createdBy: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -254,8 +294,18 @@ data class Response(
   val answer: String?,
   @Schema(description = "Comment added to the response by recording staff")
   val comment: String?,
+  @Schema(description = "Response date added to the response by recording staff")
+  val responseDate: LocalDate?,
   @Schema(description = "Recording staff")
   val recordingStaff: Staff,
+  @Schema(description = "The date and time the response was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the response")
+  val createdBy: String,
+  @Schema(description = "The date and time the response was last updated")
+  val lastModifiedDateTime: LocalDateTime?,
+  @Schema(description = "The username of the person who last updated the response")
+  val lastModifiedBy: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -272,6 +322,10 @@ data class History(
   val incidentChangeDate: LocalDate,
   @Schema(description = "Who changed the questionnaire")
   val incidentChangeStaff: Staff,
+  @Schema(description = "The date and time the historical incident questionnaire was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the historical incident questionnaire")
+  val createdBy: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -296,6 +350,8 @@ data class HistoryResponse(
   val answer: String?,
   @Schema(description = "Comment added to the response by recording staff")
   val comment: String?,
+  @Schema(description = "Response date added to the response by recording staff")
+  val responseDate: LocalDate?,
   @Schema(description = "Recording staff")
   val recordingStaff: Staff,
 )

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
@@ -9,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -128,6 +130,9 @@ class OffenderCharge(
 
   // always populated in prod but presumably won't be by DPS
   val lidsOffenceNumber: Int? = null,
+
+  @OneToMany(mappedBy = "offenderCharge", cascade = [CascadeType.REMOVE])
+  val offenderSentenceCharges: List<OffenderSentenceCharge> = mutableListOf(),
 
   /* COLUMNS NOT MAPPED
     CHARGE_SEQ - not used
