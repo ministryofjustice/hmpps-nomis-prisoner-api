@@ -12,6 +12,7 @@ generic-service:
 
   allowlist:
     groups:
+      - internal
 
   env:
     API_BASE_URL_HMPPS_AUTH: https://sign-in.hmpps.service.justice.gov.uk/auth
