@@ -1,16 +1,10 @@
----
 # Per environment values which override defaults in hmpps-nomis-prisoner-api/values.yaml
 
 generic-service:
-  ingress:
-    host: nomis-prisoner.aks-live-1.studio-hosting.service.justice.gov.uk
-    annotations:
-      # this magic line automatically generates a certificate for the ingress
-      cert-manager.io/cluster-issuer: letsencrypt-production
-      kubernetes.io/ingress.class: nginx
+  replicaCount: 4
 
-  # Disabled for DSO AKS cluster
-  allowlist: null
+  ingress:
+    host: nomis-prisoner-api.prison.service.justice.gov.uk
 
   env:
     API_BASE_URL_HMPPS_AUTH: https://sign-in.hmpps.service.justice.gov.uk/auth

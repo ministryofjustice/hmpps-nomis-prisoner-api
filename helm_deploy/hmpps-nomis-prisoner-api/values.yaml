@@ -16,9 +16,12 @@ generic-service:
 
   ingress:
     enabled: true
-    dso_enabled: true
     host: app-hostname.local    # override per environment
     tlsSecretName: hmpps-nomis-prisoner-api-cert
+
+  allowlist:
+    groups:
+      - internal
 
   # Environment variables to load into the deployment
   env:
@@ -44,7 +47,5 @@ generic-service:
       memory: 1240Mi
 
 generic-prometheus-alerts:
-  targetApplication: prison-api
+  targetApplication: hmpps-nomis-prisoner-api
   alertSeverity: syscon
-  applicationAlertsEnabled: false
-  ingressAlertsEnabled: false
