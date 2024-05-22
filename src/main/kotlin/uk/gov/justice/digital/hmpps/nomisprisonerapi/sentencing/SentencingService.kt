@@ -52,6 +52,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -186,7 +187,7 @@ class SentencingService(
       }
       courtCaseRepository.saveAndFlush(courtCase)
 
-      storedProcedureRepository.imprisonmentStatusUpdate(booking.bookingId)
+      storedProcedureRepository.imprisonmentStatusUpdate(bookingId = booking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name)
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
@@ -262,7 +263,7 @@ class SentencingService(
               },
             )
           }
-          storedProcedureRepository.imprisonmentStatusUpdate(booking.bookingId)
+          storedProcedureRepository.imprisonmentStatusUpdate(bookingId = booking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name)
           return CreateCourtAppearanceResponse(
             id = createdCourtEvent.id,
             courtEventChargesIds = createdCourtEvent.courtEventCharges
@@ -395,7 +396,7 @@ class SentencingService(
               )
             }
           }
-          storedProcedureRepository.imprisonmentStatusUpdate(offenderBooking.bookingId)
+          storedProcedureRepository.imprisonmentStatusUpdate(bookingId = offenderBooking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name)
           return UpdateCourtAppearanceResponse(
             createdCourtEventChargesIds = courtAppearance.courtEventCharges
               .filter { it.id.offenderCharge.id in createdOffenderCharges }
@@ -484,7 +485,9 @@ class SentencingService(
         },
       )
 
-      offenderSentenceRepository.save(sentence)
+      offenderSentenceRepository.saveAndFlush(sentence)
+
+      storedProcedureRepository.imprisonmentStatusUpdate(bookingId = booking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name)
 
       CreateSentenceResponse(
         sentenceSeq = sentence.id.sequence,
@@ -551,6 +554,10 @@ class SentencingService(
         sentence.status = request.status
         sentence.fineAmount = request.fine
         sentence.sentenceLevel = request.sentenceLevel
+
+        offenderSentenceRepository.saveAndFlush(sentence)
+
+        storedProcedureRepository.imprisonmentStatusUpdate(bookingId = offenderBooking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name)
 
         telemetryClient.trackEvent(
           "sentence-updated",

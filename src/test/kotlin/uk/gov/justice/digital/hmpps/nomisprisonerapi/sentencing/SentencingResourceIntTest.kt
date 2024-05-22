@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -978,7 +979,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
-          eq(latestBookingId),
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseResponse.id}")
@@ -1435,7 +1437,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
-          eq(latestBookingId),
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -1761,7 +1764,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
-          eq(latestBookingId),
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
       }
 
@@ -2449,9 +2453,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
-          eq(latestBookingId),
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
-
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
@@ -2909,6 +2913,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
           .returnResult().responseBody!!.sentenceSeq
 
+        verify(spRepository).imprisonmentStatusUpdate(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
+        )
+
         webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/$sentenceSeq")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
@@ -3160,6 +3169,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
+
+        verify(spRepository).imprisonmentStatusUpdate(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
+        )
 
         webTestClient.get()
           .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentenceTwo.id.sequence}")

@@ -16,7 +16,16 @@ class ImprisonmentStatusUpdate(dataSource: DataSource) : SimpleJdbcCall(dataSour
       .withNamedBinding()
       .declareParameters(
         SqlParameter("p_offender_book_id", Types.NUMERIC),
+        SqlParameter("p_change_type", Types.NUMERIC),
       )
     compile()
   }
+}
+
+// TODO could these be new values or are these required for reports?
+enum class ImprisonmentStatusChangeType {
+  UPDATE_SENTENCE,
+  UPDATE_RESULT,
+  UPDATE_LEGAL_STATUS,
+  DELETE,
 }
