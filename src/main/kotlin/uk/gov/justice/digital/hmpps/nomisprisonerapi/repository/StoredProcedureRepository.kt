@@ -21,6 +21,7 @@ interface StoredProcedureRepository {
 
   fun imprisonmentStatusUpdate(
     bookingId: Long,
+    changeType: String,
   )
 }
 
@@ -55,9 +56,11 @@ class StoredProcedureRepositoryOracle(
 
   override fun imprisonmentStatusUpdate(
     bookingId: Long,
+    changeType: String,
   ) {
     val params = MapSqlParameterSource()
       .addValue("p_offender_book_id", bookingId)
+      .addValue("p_change_type", changeType)
     imprisonmentStatusUpdate.execute(params)
   }
 }
@@ -86,7 +89,8 @@ class StoredProcedureRepositoryH2() : StoredProcedureRepository {
 
   override fun imprisonmentStatusUpdate(
     bookingId: Long,
+    changeType: String,
   ) {
-    log.info("calling H2 version of StoreProcedure imprisonmentStatusUpdate")
+    log.info("calling H2 version of StoreProcedure imprisonmentStatusUpdate with bookingId: $bookingId and change type: $changeType")
   }
 }
