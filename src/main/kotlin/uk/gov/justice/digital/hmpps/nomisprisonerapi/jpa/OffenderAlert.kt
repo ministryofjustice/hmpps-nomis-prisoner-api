@@ -42,6 +42,10 @@ class OffenderAlert(
   @EmbeddedId
   val id: OffenderAlertId,
 
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "ROOT_OFFENDER_ID")
+  var rootOffender: Offender? = null,
+
   @Column(name = "ALERT_DATE", nullable = false)
   var alertDate: LocalDate,
 

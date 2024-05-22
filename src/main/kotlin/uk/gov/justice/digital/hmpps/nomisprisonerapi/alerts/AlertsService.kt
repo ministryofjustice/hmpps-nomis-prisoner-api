@@ -65,6 +65,7 @@ class AlertsService(
 
     val alert = OffenderAlert(
       id = OffenderAlertId(offenderBooking, sequence = offenderAlertRepository.getNextSequence(offenderBooking)),
+      rootOffender = offenderBooking.rootOffender,
       alertDate = request.date,
       expiryDate = request.expiryDate,
       alertType = alertTypeRepository.findByIdOrNull(AlertType.pk(alertCode.parentCode!!))!!,
