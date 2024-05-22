@@ -2722,6 +2722,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var staff: Staff
     private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
+    private lateinit var courtAppearance: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private var latestBookingId: Long = 0
@@ -2743,7 +2744,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               ) {
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-                courtEvent {
+                courtAppearance = courtEvent {
                   // overrides from the parent offender charge fields
                   courtEventCharge(
                     offenderCharge = offenderCharge1,
@@ -2923,6 +2924,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("startDate").isEqualTo(aDateString)
           .jsonPath("endDate").isEqualTo(aLaterDateString)
           .jsonPath("fineAmount").isEqualTo("8.5")
+          .jsonPath("courtOrder.id").isEqualTo(courtCase.courtEvents[0].courtOrders[0].id)
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
           .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
@@ -2952,6 +2954,59 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
+      }
+
+      @Test
+      fun `can create a sentence without a court order`() {
+        // update charge (inactive charge) on the court case to remove court order
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${courtAppearance.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtEventChargesToUpdate = mutableListOf(
+                  createExistingOffenderChargeRequest(
+                    offenderChargeId = offenderCharge1.id,
+                    offenceDate = LocalDate.of(2022, 11, 5),
+                    offenceEndDate = LocalDate.of(2022, 11, 5),
+                    offenceCode = "RI64003",
+                    // result code with Final disposition code and Inactive Charge status
+                    resultCode1 = "3502",
+                    offencesCount = 2,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                caseId = courtCase.id,
+                offenderChargeIds = mutableListOf(offenderCharge1.id),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+          .returnResult().responseBody!!.sentenceSeq
+
+        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/$sentenceSeq")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(sentenceSeq)
+          .jsonPath("courtOrder").doesNotExist()
+          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
       }
 
       @Test

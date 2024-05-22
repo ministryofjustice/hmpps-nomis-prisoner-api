@@ -446,6 +446,7 @@ class SentencingService(
         status = request.status,
         fineAmount = request.fine,
         sentenceLevel = request.sentenceLevel,
+        courtOrder = request.caseId?.let { existingCourtOrderByCaseId(it) },
       )
       sentence.offenderSentenceTerms.add(
         OffenderSentenceTerm(
@@ -698,6 +699,9 @@ class SentencingService(
 
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
     courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
+
+  private fun existingCourtOrderByCaseId(caseId: Long) =
+    courtOrderRepository.findFirstByCourtCase_IdAndOrderTypeOrderByCourtDateDesc(caseId = caseId)
 
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus {
     return if (eventDate < booking.bookingBeginDate.toLocalDate()
