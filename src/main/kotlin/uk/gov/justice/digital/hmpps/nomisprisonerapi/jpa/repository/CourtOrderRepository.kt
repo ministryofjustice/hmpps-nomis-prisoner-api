@@ -13,4 +13,10 @@ interface CourtOrderRepository : JpaRepository<CourtOrder, Long> {
     courtEvent: CourtEvent,
     orderType: String = "AUTO",
   ): CourtOrder?
+
+  @Suppress("FunctionName")
+  fun findFirstByCourtCase_IdAndOrderTypeOrderByCourtDateDesc(
+    caseId: Long,
+    orderType: String = "AUTO",
+  ): CourtOrder?
 }
