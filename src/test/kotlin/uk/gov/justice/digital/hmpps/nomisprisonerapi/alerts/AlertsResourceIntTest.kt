@@ -1816,6 +1816,8 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(newAlert.alertType.code).isEqualTo("S")
           assertThat(newAlert.alertDate).isEqualTo("2020-01-01")
           assertThat(newAlert.alertStatus).isEqualTo(ACTIVE)
+          assertThat(newAlert.rootOffender).isNotNull
+          assertThat(newAlert.rootOffender?.id).isEqualTo(booking.rootOffender?.id)
           assertThat(newAlert.workFlows).hasSize(1)
           assertThat(newAlert.workFlows.first().createUsername).isEqualTo("JANE.PEEL")
           assertThat(newAlert.workFlows.first().createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
