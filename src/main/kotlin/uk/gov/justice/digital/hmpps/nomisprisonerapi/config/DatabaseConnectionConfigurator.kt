@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component
 import java.sql.Connection
 import java.sql.SQLException
 import java.util.Properties
+import javax.sql.DataSource
 
 const val PROXY_USERNAME = "PROXY_USERNAME"
 
@@ -58,14 +59,18 @@ class DatabaseConnectionConfigurator(@Lazy private val rolePasswordGetter: RoleP
 }
 
 @Component
-class RolePassword(private val jdbcTemplate: JdbcTemplate) {
+class RolePassword(private val jdbcTemplate: JdbcTemplate, private val dataSource: DataSource) {
   private val log = LoggerFactory.getLogger(this::class.java)
   private val password: String by lazy { this.readPassword() }
   fun get(): String = password
 
   @PostConstruct
   fun getDatabasePassword() {
-    log.info("Database role password retrieved and it is not blank: ${password.isNotEmpty()}")
+    val physicalConnection = dataSource.connection.unwrap(Connection::class.java)
+    when (physicalConnection) {
+      is OracleConnection -> log.info("Database role password retrieved and it is not blank: ${password.isNotEmpty()}")
+      else -> log.info("Not Oracle so no need for database role password")
+    }
   }
 
   private fun readPassword(): String {

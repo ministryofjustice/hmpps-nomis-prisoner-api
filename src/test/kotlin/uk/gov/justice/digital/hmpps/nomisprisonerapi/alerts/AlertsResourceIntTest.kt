@@ -2104,8 +2104,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           assertThat(newAlert.authorizePersonText).isEqualTo("Rasheed in security")
           assertThat(newAlert.expiryDate).isEqualTo(LocalDate.parse("2024-02-28"))
           assertThat(newAlert.alertDate).isEqualTo("2023-07-19")
-          assertThat(newAlert.modifyUserId).isEqualTo("JANE.PEEL")
-          assertThat(newAlert.modifyDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          // unable to test this given this will only be true in Oracle due to the proxy connection
+          // assertThat(newAlert.modifyUserId).isEqualTo("JANE.PEEL")
+          // assertThat(newAlert.modifyDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
 
           // unchanged
           assertThat(newAlert.alertCode.code).isEqualTo("HPI")
