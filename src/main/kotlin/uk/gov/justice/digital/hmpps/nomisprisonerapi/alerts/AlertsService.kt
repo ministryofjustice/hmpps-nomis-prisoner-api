@@ -99,8 +99,6 @@ class AlertsService(
     alert.expiryDate = request.expiryDate
     alert.alertStatus = if (request.isActive) ACTIVE else INACTIVE
     alert.commentText = request.comment
-    alert.modifyUserId = request.updateUsername
-    alert.modifyDatetime = LocalDateTime.now()
     alert.alertDate = request.date
     alert.authorizePersonText = request.authorisedBy
 

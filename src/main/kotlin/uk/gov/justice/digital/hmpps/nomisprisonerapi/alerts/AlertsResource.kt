@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.proxy
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -466,7 +467,7 @@ class AlertsResource(
     alertSequence: Long,
     @RequestBody @Valid
     request: UpdateAlertRequest,
-  ): AlertResponse = alertsService.updateAlert(bookingId, alertSequence, request)
+  ): AlertResponse = proxy(request.updateUsername) { alertsService.updateAlert(bookingId, alertSequence, request) }
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @DeleteMapping("/prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
