@@ -16,7 +16,7 @@ class ImprisonmentStatusUpdate(dataSource: DataSource) : SimpleJdbcCall(dataSour
       .withNamedBinding()
       .declareParameters(
         SqlParameter("p_offender_book_id", Types.NUMERIC),
-        SqlParameter("p_change_type", Types.NUMERIC),
+        SqlParameter("p_change_type", Types.VARCHAR),
       )
     compile()
   }
