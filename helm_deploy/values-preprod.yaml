@@ -1,7 +1,7 @@
 # Per environment values which override defaults in hmpps-nomis-prisoner-api/values.yaml
 
 generic-service:
-  replicaCount: 2
+  replicaCount: 4
 
   ingress:
     host: nomis-prisoner-api-preprod.prison.service.justice.gov.uk
