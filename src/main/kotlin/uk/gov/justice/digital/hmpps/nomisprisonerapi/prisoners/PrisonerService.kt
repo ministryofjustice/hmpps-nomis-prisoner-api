@@ -8,8 +8,6 @@ import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -25,12 +23,12 @@ class PrisonerService(
   private val offenderRepository: OffenderRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
 ) {
-  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerId> {
+  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> {
     return bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
-      .map { PrisonerId(bookingId = it.bookingId, offenderNo = it.offender.nomsId, status = it.status()) }
+      .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId, status = it.status()) }
   }
 
-  fun findAllPrisonersWithBookings(pageRequest: Pageable): Page<PrisonerId> =
+  fun findAllPrisonersWithBookings(pageRequest: Pageable): Page<PrisonerIds> =
     offenderRepository.findAllWithBookings(
       PageRequest.of(
         pageRequest.pageNumber,
@@ -38,12 +36,14 @@ class PrisonerService(
         Sort.by(ASC, "o.rootOffenderId"),
       ),
     ).map {
-      PrisonerId(
-        bookingId = it.getBookingId() ?: 0,
+      PrisonerIds(
+        bookingId = it.getBookingId(),
         offenderNo = it.getNomsId(),
         status = "${if (it.isActive()) "ACTIVE" else "INACTIVE"} ${it.getInOutStatus()}",
       )
     }
+  fun findAllPrisoners(pageRequest: Pageable): Page<PrisonerId> =
+    offenderRepository.findAllIds(pageRequest).map { PrisonerId(offenderNo = it.getNomsId()) }
 
   fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> {
     return bookingRepository.findAllById(bookingIds)
@@ -63,9 +63,6 @@ class PrisonerService(
         )
       }
   }
-
-  fun Offender.lastBooking(): OffenderBooking =
-    this.bookings.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no latest bookings")
 
   fun getPreviousBookingId(offenderNo: String, bookingId: Long): PreviousBookingId {
     val offender = offenderRepository.findRootByNomsId(offenderNo) ?: throw NotFoundException("Prisoner with offenderNo $offenderNo not found")

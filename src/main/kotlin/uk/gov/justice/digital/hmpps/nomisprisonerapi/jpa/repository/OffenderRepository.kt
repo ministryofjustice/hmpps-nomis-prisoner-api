@@ -29,14 +29,24 @@ interface OffenderRepository : JpaRepository<Offender, Long>, JpaSpecificationEx
       select count(ob) from OffenderBooking ob where ob.bookingSequence = 1
     """,
   )
-  fun findAllWithBookings(pageable: Pageable): Page<PrisonerId>
+  fun findAllWithBookings(pageable: Pageable): Page<PrisonerIds>
+
+  @Query(
+    """
+        select o.nomsId as nomsId from Offender o where o.rootOffenderId = o.id
+    """,
+  )
+  fun findAllIds(pageable: Pageable): Page<PrisonerId>
 }
 
 fun OffenderRepository.findLatestAliasByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()
 
-interface PrisonerId {
+interface PrisonerIds {
   fun getNomsId(): String
   fun getBookingId(): Long
   fun isActive(): Boolean
   fun getInOutStatus(): String
+}
+interface PrisonerId {
+  fun getNomsId(): String
 }

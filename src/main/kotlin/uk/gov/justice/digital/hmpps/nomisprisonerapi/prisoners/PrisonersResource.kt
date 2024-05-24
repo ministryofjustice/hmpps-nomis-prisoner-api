@@ -70,7 +70,44 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
       description = "When true only return active prisoners currently in prison else all prisoners that at some point has been in prison are returned",
     )
     active: Boolean = false,
-  ): Page<PrisonerId> = if (active) prisonerService.findAllActivePrisoners(pageRequest) else prisonerService.findAllPrisonersWithBookings(pageRequest)
+  ): Page<PrisonerIds> = if (active) prisonerService.findAllActivePrisoners(pageRequest) else prisonerService.findAllPrisonersWithBookings(pageRequest)
+
+  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING', 'ROLE_NOMIS_ALERTS')")
+  @GetMapping("/prisoners/ids/all")
+  @Operation(
+    summary = "Gets the identifier for all prisoners.",
+    description = "Requires role SYNCHRONISATION_REPORTING.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "paged list of prisoner ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role SYNCHRONISATION_REPORTING or ROLE_NOMIS_ALERTS not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAllPrisoners(
+    @PageableDefault(sort = ["rootOffenderId"], direction = Sort.Direction.ASC)
+    pageRequest: Pageable,
+  ): Page<PrisonerId> = prisonerService.findAllPrisoners(pageRequest)
 
   @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
   @PostMapping("/prisoners/bookings")
@@ -219,14 +256,20 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   ): PreviousBookingId = prisonerService.getPreviousBookingId(offenderNo, bookingId)
 }
 
-@Schema(description = "Prisoner identifier")
-data class PrisonerId(
+@Schema(description = "Prisoner identifiers")
+data class PrisonerIds(
   @Schema(description = "Latest booking id", example = "12345")
   val bookingId: Long,
   @Schema(description = "The NOMIS reference AKA prisoner number", example = "A1234AA")
   val offenderNo: String,
   @Schema(description = "The prisoner's current status", example = "ACTIVE IN")
   val status: String,
+)
+
+@Schema(description = "Prisoner identifier")
+data class PrisonerId(
+  @Schema(description = "The NOMIS reference AKA prisoner number", example = "A1234AA")
+  val offenderNo: String,
 )
 
 @Schema(description = "Details of a prisoner booking")
