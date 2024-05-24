@@ -185,9 +185,12 @@ class SentencingService(
           },
         )
       }
-      courtCaseRepository.saveAndFlush(courtCase)
-
-      storedProcedureRepository.imprisonmentStatusUpdate(bookingId = booking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name)
+      courtCaseRepository.saveAndFlush(courtCase).also {
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          bookingId = booking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+        )
+      }
       CreateCourtCaseResponse(
         id = courtCase.id,
         courtAppearanceIds = courtCase.courtEvents.map
@@ -263,7 +266,10 @@ class SentencingService(
               },
             )
           }
-          storedProcedureRepository.imprisonmentStatusUpdate(bookingId = booking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name)
+          storedProcedureRepository.imprisonmentStatusUpdate(
+            bookingId = booking.bookingId,
+            changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+          )
           return CreateCourtAppearanceResponse(
             id = createdCourtEvent.id,
             courtEventChargesIds = createdCourtEvent.courtEventCharges
@@ -396,7 +402,14 @@ class SentencingService(
               )
             }
           }
-          storedProcedureRepository.imprisonmentStatusUpdate(bookingId = offenderBooking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name)
+
+          courtEventRepository.saveAndFlush(courtAppearance).also {
+            storedProcedureRepository.imprisonmentStatusUpdate(
+              bookingId = offenderBooking.bookingId,
+              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+            )
+          }
+
           return UpdateCourtAppearanceResponse(
             createdCourtEventChargesIds = courtAppearance.courtEventCharges
               .filter { it.id.offenderCharge.id in createdOffenderCharges }
@@ -486,9 +499,12 @@ class SentencingService(
         },
       )
 
-      offenderSentenceRepository.saveAndFlush(sentence)
-
-      storedProcedureRepository.imprisonmentStatusUpdate(bookingId = booking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name)
+      offenderSentenceRepository.saveAndFlush(sentence).also {
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          bookingId = booking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+        )
+      }
 
       CreateSentenceResponse(
         sentenceSeq = sentence.id.sequence,
@@ -549,16 +565,20 @@ class SentencingService(
           categoryCode = request.sentenceCategory,
           calcType = request.sentenceCalcType,
         )
-        sentence.courtCase = request.caseId?.let { findCourtCase(id = it, offenderNo = offenderBooking.offender.nomsId) }
+        sentence.courtCase =
+          request.caseId?.let { findCourtCase(id = it, offenderNo = offenderBooking.offender.nomsId) }
         sentence.startDate = request.startDate
         sentence.endDate = request.endDate
         sentence.status = request.status
         sentence.fineAmount = request.fine
         sentence.sentenceLevel = request.sentenceLevel
 
-        offenderSentenceRepository.saveAndFlush(sentence)
-
-        storedProcedureRepository.imprisonmentStatusUpdate(bookingId = offenderBooking.bookingId, changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name)
+        offenderSentenceRepository.saveAndFlush(sentence).also {
+          storedProcedureRepository.imprisonmentStatusUpdate(
+            bookingId = offenderBooking.bookingId,
+            changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+          )
+        }
 
         telemetryClient.trackEvent(
           "sentence-updated",
