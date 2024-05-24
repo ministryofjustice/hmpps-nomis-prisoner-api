@@ -111,7 +111,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /prisoners/ids?active=false")
-  inner class GetPrisonersAll {
+  inner class GetPrisonersIncludingInactive {
     @Nested
     inner class Security {
       @Test
@@ -221,6 +221,117 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .jsonPath("$.content[2].bookingId").isEqualTo(inactivePrisoner1)
           .jsonPath("$.content[2].offenderNo").isEqualTo("A1234WW")
           .jsonPath("$.content[2].status").isEqualTo("INACTIVE OUT")
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /prisoners/ids/all")
+  inner class GetPrisonersAll {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/ids/all")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/ids/all")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/ids/all")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed for SYNCHRONISATION_REPORTING`() {
+        webTestClient.get().uri("/prisoners/ids/all")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+
+      @Test
+      fun `access allowed for NOMIS_ALERTS`() {
+        webTestClient.get().uri("/prisoners/ids/all")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private var activePrisoner1: Long = 0
+      private var activePrisoner2: Long = 0
+      private var inactivePrisoner1: Long = 0
+
+      @BeforeEach
+      internal fun createPrisoners() {
+        deletePrisoners()
+
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234TT") {
+            activePrisoner1 = booking {}.bookingId
+            booking {
+              release()
+            }
+          }
+          offender(nomsId = "A1234SS") {
+            alias(lastName = "SMITH")
+            alias {
+              activePrisoner2 = booking {}.bookingId
+            }
+          }
+          offender(nomsId = "A1234WW") {
+            alias()
+            inactivePrisoner1 = booking {
+              release()
+            }.bookingId
+          }
+          offender(nomsId = "A1234YY")
+        }
+      }
+
+      @AfterEach
+      fun deletePrisoners() {
+        repository.deleteOffenders()
+      }
+
+      @Test
+      fun `will return count of all prisoners even without a booking`() {
+        webTestClient.get().uri("/prisoners/ids/all?size=1&page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.totalElements").isEqualTo(4)
+          .jsonPath("$.numberOfElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `will return a page of prisoners ordered by rootOffenderId ASC`() {
+        webTestClient.get().uri("/prisoners/ids/all?page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.totalElements").isEqualTo(4)
+          .jsonPath("$.numberOfElements").isEqualTo(4)
+          .jsonPath("$.content[0].offenderNo").isEqualTo("A1234TT")
+          .jsonPath("$.content[1].offenderNo").isEqualTo("A1234SS")
+          .jsonPath("$.content[2].offenderNo").isEqualTo("A1234WW")
+          .jsonPath("$.content[3].offenderNo").isEqualTo("A1234YY")
       }
     }
   }
