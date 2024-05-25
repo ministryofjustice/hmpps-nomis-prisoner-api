@@ -42,7 +42,7 @@ open class IncidentResponseId(
 @Entity
 @Table(name = "INCIDENT_CASE_RESPONSES")
 @EntityOpen
-data class IncidentResponse(
+class IncidentResponse(
 
   @EmbeddedId
   val id: IncidentResponseId,

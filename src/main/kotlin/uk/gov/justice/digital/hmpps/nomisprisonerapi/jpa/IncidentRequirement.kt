@@ -27,7 +27,7 @@ open class IncidentRequirementId(
 @Entity
 @Table(name = "INCIDENT_CASE_REQUIREMENTS")
 @EntityOpen
-open class IncidentRequirement(
+class IncidentRequirement(
 
   @EmbeddedId
   val id: IncidentRequirementId,

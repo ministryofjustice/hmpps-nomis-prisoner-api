@@ -29,7 +29,7 @@ class IncidentQuestionId(
 @Entity
 @Table(name = "INCIDENT_CASE_QUESTIONS")
 @EntityOpen
-data class IncidentQuestion(
+class IncidentQuestion(
 
   @EmbeddedId
   val id: IncidentQuestionId,

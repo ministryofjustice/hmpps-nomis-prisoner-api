@@ -8,9 +8,11 @@ import jakarta.persistence.ManyToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 
 @Entity
 @DiscriminatorValue("staff")
+@EntityOpen
 class IncidentStaffParty(
   id: IncidentPartyId,
   comment: String?,
