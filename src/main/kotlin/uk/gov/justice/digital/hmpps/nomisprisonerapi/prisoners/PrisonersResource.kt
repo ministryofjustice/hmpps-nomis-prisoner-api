@@ -62,6 +62,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
       ),
     ],
   )
+  @Deprecated("Use /prisoners/ids/active")
   fun getPrisonerIdentifiers(
     @PageableDefault(sort = ["bookingId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
@@ -71,6 +72,43 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     )
     active: Boolean = false,
   ): Page<PrisonerIds> = if (active) prisonerService.findAllActivePrisoners(pageRequest) else prisonerService.findAllPrisonersWithBookings(pageRequest)
+
+  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING')")
+  @GetMapping("/prisoners/ids/active")
+  @Operation(
+    summary = "Gets the identifiers for all active prisoners",
+    description = "Requires role SYNCHRONISATION_REPORTING.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "paged list of prisoner ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role SYNCHRONISATION_REPORTING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActivePrisonerIdentifiers(
+    @PageableDefault(sort = ["bookingId"], direction = Sort.Direction.ASC)
+    pageRequest: Pageable,
+  ): Page<PrisonerIds> = prisonerService.findAllActivePrisoners(pageRequest)
 
   @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING', 'ROLE_NOMIS_ALERTS')")
   @GetMapping("/prisoners/ids/all")
@@ -262,8 +300,6 @@ data class PrisonerIds(
   val bookingId: Long,
   @Schema(description = "The NOMIS reference AKA prisoner number", example = "A1234AA")
   val offenderNo: String,
-  @Schema(description = "The prisoner's current status", example = "ACTIVE IN")
-  val status: String,
 )
 
 @Schema(description = "Prisoner identifier")
