@@ -14,6 +14,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.closedStatusValues
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.openStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import java.time.LocalDateTime
@@ -46,7 +48,7 @@ class IncidentService(
     fromDate: LocalDateTime?,
     toDate: LocalDateTime?,
     pageRequest: Pageable,
-  ): Page<Long> =
+  ) =
     if (fromDate == null && toDate == null) {
       incidentRepository.findAllIncidentIds(pageRequest)
     } else {
@@ -55,38 +57,47 @@ class IncidentService(
       incidentRepository.findAllIncidentIds(fromDate, toDate, pageRequest)
     }
 
-  private fun Incident.toIncidentResponse(): IncidentResponse =
-    IncidentResponse(
-      incidentId = id,
-      questionnaireId = questionnaire.id,
-      title = title,
-      description = description,
-      status = status,
-      type = questionnaire.code,
-      prison = prison.toCodeDescription(),
-      lockedResponse = lockedResponse,
-      incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
-      followUpDate = followUpDate,
-      reportingStaff = reportingStaff.toStaff(),
-      reportedDateTime = LocalDateTime.of(reportedDate, reportedTime),
-      staffParties = staffParties.map { it.toStaffParty() },
-      offenderParties = offenderParties.map { it.toOffenderParty() },
-      requirements = requirements.map { it.toRequirement() },
-      questions = questions.map { it.toQuestionResponse() },
-      history = incidentHistory.map { it.toHistoryResponse() },
-      createDateTime = createDatetime,
-      createdBy = createUsername,
-      lastModifiedDateTime = lastModifiedDateTime,
-      lastModifiedBy = lastModifiedUsername,
+  fun findAllIncidentAgencyLocations() =
+    incidentRepository.findAllIncidentAgencyLocations().map { IncidentAgencyLocationId(it) }
+
+  fun getIncidentCountsForReconciliation(locationId: String): IncidentsReconciliationResponse =
+    IncidentsReconciliationResponse(
+      locationId = locationId,
+      incidentCount = incidentRepository.countsByAgencyLocationId(locationId, openStatusValues, closedStatusValues),
     )
 }
+
+private fun Incident.toIncidentResponse(): IncidentResponse =
+  IncidentResponse(
+    incidentId = id,
+    questionnaireId = questionnaire.id,
+    title = title,
+    description = description,
+    status = status,
+    type = questionnaire.code,
+    location = location.toCodeDescription(),
+    lockedResponse = lockedResponse,
+    incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
+    followUpDate = followUpDate,
+    reportingStaff = reportingStaff.toStaff(),
+    reportedDateTime = LocalDateTime.of(reportedDate, reportedTime),
+    staffParties = staffParties.map { it.toStaffParty() },
+    offenderParties = offenderParties.map { it.toOffenderParty() },
+    requirements = requirements.map { it.toRequirement() },
+    questions = questions.map { it.toQuestionResponse() },
+    history = incidentHistory.map { it.toHistoryResponse() },
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
+  )
 
 private fun IncidentRequirement.toRequirement() =
   Requirement(
     staff = recordingStaff.toStaff(),
     comment = comment,
     date = recordedDate,
-    prisonId = location.id,
+    locationId = location.id,
     createDateTime = createDatetime,
     createdBy = createUsername,
     lastModifiedDateTime = lastModifiedDateTime,

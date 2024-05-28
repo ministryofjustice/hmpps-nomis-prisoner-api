@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "INCIDENT_QUESTIONNAIRE_HTY")
 @EntityOpen
-data class IncidentHistory(
+class IncidentHistory(
 
   @Id
   @Column(name = "INCIDENT_QUESTIONNAIRE_ID")
