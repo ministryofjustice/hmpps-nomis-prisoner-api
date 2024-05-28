@@ -41,13 +41,13 @@ class IncidentRequirementBuilder(
     incident: Incident,
     comment: String?,
     recordingStaff: Staff,
-    prisonId: String,
+    agencyId: String,
     requirementSequence: Int,
   ): IncidentRequirement = IncidentRequirement(
     id = IncidentRequirementId(incident.id, requirementSequence),
     comment = comment,
     recordingStaff = recordingStaff,
-    location = repository.lookupAgency(prisonId),
+    agency = repository.lookupAgency(agencyId),
 
   )
     .also { incidentRequirement = it }

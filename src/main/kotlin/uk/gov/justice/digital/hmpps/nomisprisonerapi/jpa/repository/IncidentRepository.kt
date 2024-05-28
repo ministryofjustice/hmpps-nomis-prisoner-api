@@ -42,12 +42,12 @@ interface IncidentRepository : CrudRepository<Incident, Long>, JpaSpecificationE
 
   @Query(
     """
-      select distinct(incident.location.id)
+      select distinct(incident.agency.id)
       from Incident incident 
-      order by incident.location.id 
+      order by incident.agency.id 
     """,
   )
-  fun findAllIncidentAgencyLocations(): List<String>
+  fun findAllIncidentAgencies(): List<String>
 
   @Query(
     """
@@ -56,9 +56,9 @@ interface IncidentRepository : CrudRepository<Incident, Long>, JpaSpecificationE
         coalesce(sum(case when incident.status.code in (:closedStatusValues) THEN 1 else 0 end), 0)
       )
       from Incident incident 
-      where incident.location.id = :agencyLocationId
-      order by incident.location.id
+      where incident.agency.id = :agencyId
+      order by incident.agency.id
     """,
   )
-  fun countsByAgencyLocationId(agencyLocationId: String, openStatusValues: List<String>, closedStatusValues: List<String>): IncidentsCount
+  fun countsByAgencyId(agencyId: String, openStatusValues: List<String>, closedStatusValues: List<String>): IncidentsCount
 }

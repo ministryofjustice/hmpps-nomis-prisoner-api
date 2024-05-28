@@ -117,7 +117,7 @@ class IncidentBuilder(
     Incident(
       title = title,
       description = description,
-      location = repository.lookupAgency(locationId),
+      agency = repository.lookupAgency(locationId),
       reportingStaff = reportingStaff,
       reportedDate = reportedDateTime.toLocalDate(),
       reportedTime = reportedDateTime.toLocalTime(),
@@ -174,7 +174,7 @@ class IncidentBuilder(
   override fun requirement(
     comment: String,
     recordingStaff: Staff,
-    locationId: String,
+    agencyId: String,
     dsl: IncidentRequirementDsl.() -> Unit,
   ): IncidentRequirement =
     incidentRequirementBuilderFactory.builder()
@@ -183,7 +183,7 @@ class IncidentBuilder(
           comment = comment,
           incident = incident,
           recordingStaff = recordingStaff,
-          prisonId = locationId,
+          agencyId = agencyId,
           requirementSequence = incident.requirements.size + 1,
         )
           .also { incident.requirements += it }
