@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findLatestAliasByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.ActiveBookingsSpecification
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.status
 import java.time.LocalDate
 
 @Service
@@ -25,7 +24,7 @@ class PrisonerService(
 ) {
   fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> {
     return bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
-      .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId, status = it.status()) }
+      .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
   }
 
   fun findAllPrisonersWithBookings(pageRequest: Pageable): Page<PrisonerIds> =
@@ -39,7 +38,6 @@ class PrisonerService(
       PrisonerIds(
         bookingId = it.getBookingId(),
         offenderNo = it.getNomsId(),
-        status = "${if (it.isActive()) "ACTIVE" else "INACTIVE"} ${it.getInOutStatus()}",
       )
     }
   fun findAllPrisoners(pageRequest: Pageable): Page<PrisonerId> =
