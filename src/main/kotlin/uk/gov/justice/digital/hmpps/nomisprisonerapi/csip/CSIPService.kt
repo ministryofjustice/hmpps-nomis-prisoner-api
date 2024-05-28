@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
@@ -91,6 +92,10 @@ private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>): CS
     plans = plans.map { it.toPlanResponse() },
     reviews = reviews.map { it.toReviewResponse() },
     documents = documentIds,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )
 
 private fun Offender.toOffender() =
@@ -105,7 +110,7 @@ private fun CSIPReport.toReportDetailResponse() =
     releaseDate = releaseDate,
     involvement = involvement?.toCodeDescription(),
     concern = concernDescription,
-    factors = factors.map { FactorResponse(id = it.id, type = it.type.toCodeDescription(), comment = it.comment) },
+    factors = factors.map { it.toReviewResponse() },
     knownReasons = knownReasons,
     otherInformation = otherInformation,
     saferCustodyTeamInformed = saferCustodyTeamInformed,
@@ -132,12 +137,17 @@ private fun CSIPReport.toInvestigationResponse() =
     protectiveFactors = protectiveFactors,
     interviews = interviews.map { it.toInterviewResponse() },
   )
+
 private fun CSIPInterview.toInterviewResponse() =
   InterviewDetails(
     interviewee = interviewee,
     date = interviewDate,
     role = role.toCodeDescription(),
     comments = comments,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )
 
 private fun CSIPReport.toDecisionResponse() =
@@ -173,6 +183,10 @@ private fun CSIPPlan.toPlanResponse() =
     createdDate = createDate,
     targetDate = targetDate,
     closedDate = closedDate,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )
 
 private fun CSIPReview.toReviewResponse() =
@@ -188,7 +202,22 @@ private fun CSIPReview.toReviewResponse() =
     summary = summary,
     nextReviewDate = nextReviewDate,
     closeDate = closeDate,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )
+private fun CSIPFactor.toReviewResponse() =
+  FactorResponse(
+    id = id,
+    type = type.toCodeDescription(),
+    comment = comment,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
+  )
+
 private fun CSIPAttendee.toAttendeeResponse() =
   Attendee(
     id = id,
@@ -196,4 +225,8 @@ private fun CSIPAttendee.toAttendeeResponse() =
     role = role,
     attended = attended,
     contribution = contribution,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
   )

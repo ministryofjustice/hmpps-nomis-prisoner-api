@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "OFFENDER_CSIP_INTVW")
 @EntityOpen
-data class CSIPInterview(
+class CSIPInterview(
   @Id
   @Column(name = "CSIP_INTVW_ID")
   @SequenceGenerator(name = "CSIP_INTVW_ID", sequenceName = "CSIP_INTVW_ID", allocationSize = 1)
@@ -53,6 +53,20 @@ data class CSIPInterview(
 
   @Column(name = "COMMENTS", nullable = false)
   val comments: String? = null,
+
+  @Column
+  var auditModuleName: String? = null,
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
+
+  // ---- NOT MAPPED columns ---- //
+  // All AUDIT data except auditModuleName
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

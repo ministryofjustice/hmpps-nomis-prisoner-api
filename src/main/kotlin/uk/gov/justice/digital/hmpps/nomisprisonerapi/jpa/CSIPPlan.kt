@@ -18,7 +18,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "OFFENDER_CSIP_PLANS")
 @EntityOpen
-data class CSIPPlan(
+class CSIPPlan(
   @Id
   @Column(name = "PLAN_ID")
   @SequenceGenerator(name = "PLAN_ID", sequenceName = "PLAN_ID", allocationSize = 1)
@@ -50,6 +50,19 @@ data class CSIPPlan(
   @Column(name = "PROGRESSION")
   val progression: String?,
 
+  @Column
+  var auditModuleName: String? = null,
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
+
+  // ---- NOT MAPPED columns ---- //
+  // All AUDIT data except auditModuleName
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
