@@ -238,6 +238,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.csraOrRsraReview").isEqualTo(false)
         .jsonPath("decision.actions.serviceReferral").isEqualTo(false)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
+        .jsonPath("createDateTime").isNotEmpty
+        .jsonPath("createdBy").isNotEmpty
     }
 
     @Test
@@ -265,6 +267,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("proActiveReferral").isEqualTo(false)
         .jsonPath("staffAssaulted").isEqualTo(true)
         .jsonPath("staffAssaultedName").isEqualTo("Assaulted Person")
+        .jsonPath("createDateTime").isNotEmpty
+        .jsonPath("createdBy").isNotEmpty
     }
 
     @Test
@@ -329,6 +333,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].createdDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("plans[0].closedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("plans[0].createDateTime").isNotEmpty
+        .jsonPath("plans[0].createdBy").isNotEmpty
     }
 
     @Test
@@ -348,11 +354,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].peopleInformed").isEqualTo(false)
         .jsonPath("reviews[0].summary").isEqualTo("More help needed")
         .jsonPath("reviews[0].nextReviewDate").isEqualTo("2024-08-01")
+        .jsonPath("reviews[0].createDateTime").isNotEmpty
+        .jsonPath("reviews[0].createdBy").isNotEmpty
         .jsonPath("reviews[0].attendees[0].id").isEqualTo(csip1.reviews[0].attendees[0].id)
         .jsonPath("reviews[0].attendees[0].name").isEqualTo("Fred Attendee")
         .jsonPath("reviews[0].attendees[0].role").isEqualTo("Witness")
         .jsonPath("reviews[0].attendees[0].attended").isEqualTo(true)
         .jsonPath("reviews[0].attendees[0].contribution").isEqualTo("helped")
+        .jsonPath("reviews[0].attendees[0].createDateTime").isNotEmpty
+        .jsonPath("reviews[0].attendees[0].createdBy").isNotEmpty
     }
 
     @Test
@@ -384,7 +394,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("investigation.interviews[0].role.code").isEqualTo("WITNESS")
         .jsonPath("investigation.interviews[0].role.description").isEqualTo("Witness")
         .jsonPath("investigation.interviews[0].comments").isEqualTo("Helping with behaviour")
-      // TODO - should we Check create date time?
+        .jsonPath("investigation.interviews[0].createDateTime").isNotEmpty
+        .jsonPath("investigation.interviews[0].createdBy").isNotEmpty
     }
 
     @Test
@@ -411,7 +422,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.csraOrRsraReview").isEqualTo(false)
         .jsonPath("decision.actions.serviceReferral").isEqualTo(true)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
-      // Check create date time?
     }
 
     @Test

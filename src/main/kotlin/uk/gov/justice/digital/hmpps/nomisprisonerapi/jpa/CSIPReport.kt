@@ -25,7 +25,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "OFFENDER_CSIP_REPORTS")
 @EntityOpen
-data class CSIPReport(
+class CSIPReport(
   @Id
   @Column(name = "CSIP_ID")
   @SequenceGenerator(name = "CSIP_ID", sequenceName = "CSIP_ID", allocationSize = 1)
@@ -37,7 +37,7 @@ data class CSIPReport(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "AGY_LOC_ID")
-  val originalAgencyId: String?,
+  val originalAgencyId: String? = null,
 
   @Column(name = "ROOT_OFFENDER_ID", nullable = false)
   val rootOffenderId: Long,
@@ -208,22 +208,6 @@ data class CSIPReport(
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val interviews: MutableList<CSIPInterview> = mutableListOf(),
 
-  // ---- NOT MAPPED - unused ---- //
-  // INV_NOMIS_CASE_NOTE VARCHAR2(1) DEFAULT 'N', - are these all N in preprod
-  // RFR_COMMENT VARCHAR2(4000), = all null in preprod
-  // INV_NAME VARCHAR2(100),  = all null in preprod
-
-  // ---- NOT MAPPED audit data ---- //
-  // MODIFY_DATETIME TIMESTAMP,
-  // MODIFY_USER_ID VARCHAR2(32),
-  // AUDIT_TIMESTAMP TIMESTAMP,
-  // AUDIT_USER_ID VARCHAR2(32),
-  // AUDIT_MODULE_NAME VARCHAR2(65),
-  // AUDIT_CLIENT_USER_ID VARCHAR2(64),
-  // AUDIT_CLIENT_IP_ADDRESS VARCHAR2(39),
-  // AUDIT_CLIENT_WORKSTATION_NAME VARCHAR2(64),
-  // AUDIT_ADDITIONAL_INFO VARCHAR2(256),
-
   // ---------------------- Decisions & Actions -------------------------//
 
   @Column(name = "INV_CONCLUSION")
@@ -317,7 +301,22 @@ data class CSIPReport(
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val reviews: MutableList<CSIPReview> = mutableListOf(),
 
+  @Column
+  var auditModuleName: String? = null,
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
   // ---------------------------------------------------------------------//
+  // ---- NOT MAPPED columns ---- //
+  // INV_NOMIS_CASE_NOTE VARCHAR2(1) DEFAULT 'N', - are these all N in prod
+  // RFR_COMMENT VARCHAR2(4000), = all null in prod
+  // INV_NAME VARCHAR2(100),  = all null in prod
+  // All AUDIT data except auditModuleName
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

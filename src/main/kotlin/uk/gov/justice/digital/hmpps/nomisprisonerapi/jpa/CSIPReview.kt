@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "OFFENDER_CSIP_REVIEWS")
 @EntityOpen
-data class CSIPReview(
+class CSIPReview(
   @Id
   @Column(name = "REVIEW_ID")
   @SequenceGenerator(name = "REVIEW_ID", sequenceName = "REVIEW_ID", allocationSize = 1)
@@ -72,6 +72,20 @@ data class CSIPReview(
 
   @Column(name = "CLOSE_DATE")
   val closeDate: LocalDate?,
+
+  @Column
+  var auditModuleName: String? = null,
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null,
+
+  // ---- NOT MAPPED columns ---- //
+  // All AUDIT data except auditModuleName
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
