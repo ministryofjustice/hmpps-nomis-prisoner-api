@@ -31,7 +31,7 @@ class IncidentQuestionHistoryId(
 @Entity
 @Table(name = "INCIDENT_QUE_QUESTION_HTY")
 @EntityOpen
-data class IncidentQuestionHistory(
+class IncidentQuestionHistory(
   @EmbeddedId
   val id: IncidentQuestionHistoryId,
 

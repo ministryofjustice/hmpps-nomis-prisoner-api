@@ -46,7 +46,7 @@ interface IncidentDsl {
   fun requirement(
     comment: String = "Please update the name correct",
     recordingStaff: Staff,
-    prisonId: String,
+    locationId: String,
     dsl: IncidentRequirementDsl.() -> Unit = {},
   ): IncidentRequirement
 
@@ -106,7 +106,7 @@ class IncidentBuilder(
   fun build(
     title: String,
     description: String,
-    prisonId: String,
+    locationId: String,
     reportingStaff: Staff,
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
@@ -117,7 +117,7 @@ class IncidentBuilder(
     Incident(
       title = title,
       description = description,
-      prison = repository.lookupAgency(prisonId),
+      location = repository.lookupAgency(locationId),
       reportingStaff = reportingStaff,
       reportedDate = reportedDateTime.toLocalDate(),
       reportedTime = reportedDateTime.toLocalTime(),
@@ -174,7 +174,7 @@ class IncidentBuilder(
   override fun requirement(
     comment: String,
     recordingStaff: Staff,
-    prisonId: String,
+    locationId: String,
     dsl: IncidentRequirementDsl.() -> Unit,
   ): IncidentRequirement =
     incidentRequirementBuilderFactory.builder()
@@ -183,7 +183,7 @@ class IncidentBuilder(
           comment = comment,
           incident = incident,
           recordingStaff = recordingStaff,
-          prisonId = prisonId,
+          prisonId = locationId,
           requirementSequence = incident.requirements.size + 1,
         )
           .also { incident.requirements += it }

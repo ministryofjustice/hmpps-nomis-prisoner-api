@@ -23,7 +23,7 @@ import java.time.LocalTime
 @Entity
 @Table(name = "INCIDENT_CASES")
 @EntityOpen
-data class Incident(
+class Incident(
   @Id
   @Column(name = "INCIDENT_CASE_ID")
   @SequenceGenerator(name = "INCIDENT_CASE_ID", sequenceName = "INCIDENT_CASE_ID", allocationSize = 1)
@@ -42,7 +42,7 @@ data class Incident(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  var prison: AgencyLocation,
+  var location: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "QUESTIONNAIRE_ID", nullable = false)

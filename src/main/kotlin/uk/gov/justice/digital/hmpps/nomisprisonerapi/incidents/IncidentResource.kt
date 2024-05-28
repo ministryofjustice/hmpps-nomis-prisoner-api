@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -61,6 +64,7 @@ class IncidentResource(private val incidentService: IncidentService) {
     ],
   )
   fun getIdsByFilter(
+    @PageableDefault(size = 20)
     pageRequest: Pageable,
     @RequestParam(value = "fromDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -128,6 +132,67 @@ class IncidentResource(private val incidentService: IncidentService) {
   fun getIncident(
     @Schema(description = "Incident id") @PathVariable incidentId: Long,
   ) = incidentService.getIncident(incidentId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
+  @GetMapping("/reconciliation/agencyLocations")
+  @Operation(
+    summary = "Retrieve a list of all agency locations that have raised incidents)",
+    description = "Retrieve a list of all agency locations that have raised incidents, including prisons and PECS. Requires authorised access",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getIncidentLocations() = incidentService.findAllIncidentAgencyLocations()
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
+  @GetMapping("/reconciliation/agencyLocation/{agencyLocationId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets incident counts",
+    description = "Retrieves open and closed incident counts for a prison.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Reconciliation data returned",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getIncidentCountsForReconciliation(
+    @Schema(description = "Agency Location Id", example = "LEI")
+    @PathVariable
+    agencyLocationId: String,
+  ) = incidentService.getIncidentCountsForReconciliation(agencyLocationId)
 }
 
 @Schema(description = "Incident Details")
@@ -141,8 +206,8 @@ data class IncidentResponse(
   val title: String?,
   @Schema(description = "The incident details")
   val description: String?,
-  @Schema(description = "Prison where the incident occurred")
-  val prison: CodeDescription,
+  @Schema(description = "Agency Location where the incident occurred")
+  val location: CodeDescription,
 
   @Schema(description = "Status details")
   val status: IncidentStatus,
@@ -257,7 +322,7 @@ data class Requirement(
   @Schema(description = "The staff member who made the requirement request")
   val staff: Staff,
   @Schema(description = "The reporting location of the staff")
-  val prisonId: String,
+  val locationId: String,
   @Schema(description = "The date and time the requirement was created")
   val createDateTime: LocalDateTime,
   @Schema(description = "The username of the person who created the requirement")
@@ -354,4 +419,26 @@ data class HistoryResponse(
   val responseDate: LocalDate?,
   @Schema(description = "Recording staff")
   val recordingStaff: Staff,
+)
+
+@Schema(description = "Incident Agency Location Id")
+data class IncidentAgencyLocationId(
+  @Schema(description = "The agency location id", example = "BXI")
+  val locationId: String,
+)
+
+@Schema(description = "Incidents reconciliation count response")
+data class IncidentsReconciliationResponse(
+  @Schema(description = "The agency location we checked the incidents for", example = "BXI")
+  val locationId: String,
+  @Schema(description = "All open and closed incidents counts")
+  val incidentCount: IncidentsCount,
+)
+
+@Schema(description = "A count for incidents at an agency location")
+data class IncidentsCount(
+  @Schema(description = "A count for the number of open incidents i.e. all incidents that are not closed or duplicates", example = "4")
+  val openIncidents: Long,
+  @Schema(description = "A count for the number of closed or duplicate incidents", example = "2")
+  val closedIncidents: Long,
 )

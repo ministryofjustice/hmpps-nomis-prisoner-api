@@ -54,8 +54,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         staffParty(staff = reportingStaff2)
         offenderParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
 
-        requirement("Update the name", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
-        requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, prisonId = "MDI")
+        requirement("Update the name", recordingStaff = requirementRecordingStaff, locationId = "MDI")
+        requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, locationId = "MDI")
 
         question(question = questionnaire1.questions[3])
         question(question = questionnaire1.questions[2]) {
@@ -77,7 +77,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         }
       }
       // Incident and incident history with missing questionnaire answer - to mimic Nomis data
-      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1) {
+      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1, locationId = "MDI") {
         question(question = questionnaire1.questions[1]) {
           response(recordingStaff = responseRecordingStaff, comment = "Hammer")
           response(answer = questionnaire1.questions[1].answers[2], comment = "Large Crow bar", recordingStaff = responseRecordingStaff)
@@ -88,7 +88,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           }
         }
       }
-      incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1)
+      incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1, incidentStatus = "CLOSE")
     }
   }
 
@@ -302,8 +302,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("status.standardUser").isEqualTo(true)
         .jsonPath("status.enhancedUser").isEqualTo(true)
         .jsonPath("type").isEqualTo("ESCAPE_EST")
-        .jsonPath("prison.code").isEqualTo("BXI")
-        .jsonPath("prison.description").isEqualTo("BRIXTON")
+        .jsonPath("location.code").isEqualTo("BXI")
+        .jsonPath("location.description").isEqualTo("BRIXTON")
         .jsonPath("followUpDate").isEqualTo("2025-05-04")
         .jsonPath("lockedResponse").isEqualTo(false)
         .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
@@ -370,7 +370,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("requirements[0].comment").isEqualTo("Update the name")
         .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
         .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
-        .jsonPath("requirements[0].prisonId").isEqualTo("MDI")
+        .jsonPath("requirements[0].locationId").isEqualTo("MDI")
         .jsonPath("requirements[0].createDateTime").isNotEmpty
         .jsonPath("requirements[0].createdBy").isNotEmpty
         .jsonPath("requirements[1].comment").isEqualTo("Ensure all details are added")
@@ -507,6 +507,102 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
         .jsonPath("history[0].questions[0].answers[0].answer").doesNotExist()
         .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("one staff")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /incidents/reconciliation/agencyLocations")
+  inner class GetAgencyLocationIds {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `get all agency locations for incidents`() {
+      webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(2)
+        .jsonPath("[0].locationId").isEqualTo("BXI")
+        .jsonPath("[1].locationId").isEqualTo("MDI")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /incidents/reconciliation/agencyLocation/{agencyLocationId}")
+  inner class GetIncidentCountForAgencyLocation {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `get all agency locations for incidents`() {
+      webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("locationId").isEqualTo("BXI")
+        .jsonPath("incidentCount.openIncidents").isEqualTo(1)
+        .jsonPath("incidentCount.closedIncidents").isEqualTo(1)
+    }
+
+    @Test
+    fun `get all agency locations for incidents with no closed`() {
+      webTestClient.get().uri("/incidents/reconciliation/agencyLocation/MDI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("locationId").isEqualTo("MDI")
+        .jsonPath("incidentCount.openIncidents").isEqualTo(1)
+        .jsonPath("incidentCount.closedIncidents").isEqualTo(0)
     }
   }
 }
