@@ -57,13 +57,13 @@ class IncidentService(
       incidentRepository.findAllIncidentIds(fromDate, toDate, pageRequest)
     }
 
-  fun findAllIncidentAgencyLocations() =
-    incidentRepository.findAllIncidentAgencyLocations().map { IncidentAgencyLocationId(it) }
+  fun findAllIncidentAgencies() =
+    incidentRepository.findAllIncidentAgencies().map { IncidentAgencyId(it) }
 
-  fun getIncidentCountsForReconciliation(locationId: String): IncidentsReconciliationResponse =
+  fun getIncidentCountsForReconciliation(agencyId: String): IncidentsReconciliationResponse =
     IncidentsReconciliationResponse(
-      locationId = locationId,
-      incidentCount = incidentRepository.countsByAgencyLocationId(locationId, openStatusValues, closedStatusValues),
+      agencyId = agencyId,
+      incidentCount = incidentRepository.countsByAgencyId(agencyId, openStatusValues, closedStatusValues),
     )
 }
 
@@ -75,7 +75,7 @@ private fun Incident.toIncidentResponse(): IncidentResponse =
     description = description,
     status = status,
     type = questionnaire.code,
-    location = location.toCodeDescription(),
+    agency = agency.toCodeDescription(),
     lockedResponse = lockedResponse,
     incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
     followUpDate = followUpDate,
@@ -97,7 +97,7 @@ private fun IncidentRequirement.toRequirement() =
     staff = recordingStaff.toStaff(),
     comment = comment,
     date = recordedDate,
-    locationId = location.id,
+    agencyId = agency.id,
     createDateTime = createDatetime,
     createdBy = createUsername,
     lastModifiedDateTime = lastModifiedDateTime,
