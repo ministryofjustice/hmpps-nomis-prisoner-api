@@ -134,10 +134,10 @@ class IncidentResource(private val incidentService: IncidentService) {
   ) = incidentService.getIncident(incidentId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
-  @GetMapping("/reconciliation/agencyLocations")
+  @GetMapping("/reconciliation/agencies")
   @Operation(
-    summary = "Retrieve a list of all agency locations that have raised incidents)",
-    description = "Retrieve a list of all agency locations that have raised incidents, including prisons and PECS. Requires authorised access",
+    summary = "Retrieve a list of all agencies that have raised incidents)",
+    description = "Retrieve a list of all agencies that have raised incidents, including prisons and PECS. Requires authorised access",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -152,10 +152,10 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
     ],
   )
-  fun getIncidentLocations() = incidentService.findAllIncidentAgencyLocations()
+  fun getIncidentAgencies() = incidentService.findAllIncidentAgencies()
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
-  @GetMapping("/reconciliation/agencyLocation/{agencyLocationId}")
+  @GetMapping("/reconciliation/agency/{agencyId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets incident counts",
@@ -189,10 +189,10 @@ class IncidentResource(private val incidentService: IncidentService) {
     ],
   )
   fun getIncidentCountsForReconciliation(
-    @Schema(description = "Agency Location Id", example = "LEI")
+    @Schema(description = "Agency Id", example = "LEI")
     @PathVariable
-    agencyLocationId: String,
-  ) = incidentService.getIncidentCountsForReconciliation(agencyLocationId)
+    agencyId: String,
+  ) = incidentService.getIncidentCountsForReconciliation(agencyId)
 }
 
 @Schema(description = "Incident Details")
@@ -206,8 +206,8 @@ data class IncidentResponse(
   val title: String?,
   @Schema(description = "The incident details")
   val description: String?,
-  @Schema(description = "Agency Location where the incident occurred")
-  val location: CodeDescription,
+  @Schema(description = "Agency where the incident occurred")
+  val agency: CodeDescription,
 
   @Schema(description = "Status details")
   val status: IncidentStatus,
@@ -321,8 +321,8 @@ data class Requirement(
   val date: LocalDate,
   @Schema(description = "The staff member who made the requirement request")
   val staff: Staff,
-  @Schema(description = "The reporting location of the staff")
-  val locationId: String,
+  @Schema(description = "The reporting agency of the staff")
+  val agencyId: String,
   @Schema(description = "The date and time the requirement was created")
   val createDateTime: LocalDateTime,
   @Schema(description = "The username of the person who created the requirement")
@@ -421,21 +421,21 @@ data class HistoryResponse(
   val recordingStaff: Staff,
 )
 
-@Schema(description = "Incident Agency Location Id")
-data class IncidentAgencyLocationId(
-  @Schema(description = "The agency location id", example = "BXI")
-  val locationId: String,
+@Schema(description = "Incident Agency Id")
+data class IncidentAgencyId(
+  @Schema(description = "The agency id", example = "BXI")
+  val agencyId: String,
 )
 
 @Schema(description = "Incidents reconciliation count response")
 data class IncidentsReconciliationResponse(
-  @Schema(description = "The agency location we checked the incidents for", example = "BXI")
-  val locationId: String,
+  @Schema(description = "The agency we checked the incidents for", example = "BXI")
+  val agencyId: String,
   @Schema(description = "All open and closed incidents counts")
   val incidentCount: IncidentsCount,
 )
 
-@Schema(description = "A count for incidents at an agency location")
+@Schema(description = "A count for incidents at an agency")
 data class IncidentsCount(
   @Schema(description = "A count for the number of open incidents i.e. all incidents that are not closed or duplicates", example = "4")
   val openIncidents: Long,

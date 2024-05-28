@@ -42,7 +42,7 @@ class Incident(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  var location: AgencyLocation,
+  var agency: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "QUESTIONNAIRE_ID", nullable = false)

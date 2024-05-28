@@ -37,7 +37,7 @@ class IncidentRequirement(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
-  val location: AgencyLocation,
+  val agency: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "RECORD_STAFF_ID", updatable = false, nullable = false)

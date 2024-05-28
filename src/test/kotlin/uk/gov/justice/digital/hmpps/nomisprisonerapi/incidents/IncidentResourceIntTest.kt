@@ -302,8 +302,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("status.standardUser").isEqualTo(true)
         .jsonPath("status.enhancedUser").isEqualTo(true)
         .jsonPath("type").isEqualTo("ESCAPE_EST")
-        .jsonPath("location.code").isEqualTo("BXI")
-        .jsonPath("location.description").isEqualTo("BRIXTON")
+        .jsonPath("agency.code").isEqualTo("BXI")
+        .jsonPath("agency.description").isEqualTo("BRIXTON")
         .jsonPath("followUpDate").isEqualTo("2025-05-04")
         .jsonPath("lockedResponse").isEqualTo(false)
         .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
@@ -370,7 +370,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("requirements[0].comment").isEqualTo("Update the name")
         .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
         .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
-        .jsonPath("requirements[0].locationId").isEqualTo("MDI")
+        .jsonPath("requirements[0].agencyId").isEqualTo("MDI")
         .jsonPath("requirements[0].createDateTime").isNotEmpty
         .jsonPath("requirements[0].createdBy").isNotEmpty
         .jsonPath("requirements[1].comment").isEqualTo("Ensure all details are added")
@@ -511,13 +511,13 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /incidents/reconciliation/agencyLocations")
-  inner class GetAgencyLocationIds {
+  @DisplayName("GET /incidents/reconciliation/agencies")
+  inner class GetIncidentAgencies {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+        webTestClient.get().uri("/incidents/reconciliation/agencies")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -525,7 +525,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+        webTestClient.get().uri("/incidents/reconciliation/agencies")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -533,33 +533,33 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+        webTestClient.get().uri("/incidents/reconciliation/agencies")
           .exchange()
           .expectStatus().isUnauthorized
       }
     }
 
     @Test
-    fun `get all agency locations for incidents`() {
-      webTestClient.get().uri("/incidents/reconciliation/agencyLocations")
+    fun `get all agencies for incidents`() {
+      webTestClient.get().uri("/incidents/reconciliation/agencies")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("size()").isEqualTo(2)
-        .jsonPath("[0].locationId").isEqualTo("BXI")
-        .jsonPath("[1].locationId").isEqualTo("MDI")
+        .jsonPath("[0].agencyId").isEqualTo("BXI")
+        .jsonPath("[1].agencyId").isEqualTo("MDI")
     }
   }
 
   @Nested
-  @DisplayName("GET /incidents/reconciliation/agencyLocation/{agencyLocationId}")
-  inner class GetIncidentCountForAgencyLocation {
+  @DisplayName("GET /incidents/reconciliation/agency/{agencyId}")
+  inner class GetIncidentCountForAgency {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+        webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -567,7 +567,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+        webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -575,32 +575,32 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+        webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
           .exchange()
           .expectStatus().isUnauthorized
       }
     }
 
     @Test
-    fun `get all agency locations for incidents`() {
-      webTestClient.get().uri("/incidents/reconciliation/agencyLocation/BXI")
+    fun `get incident count at agency`() {
+      webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("locationId").isEqualTo("BXI")
+        .jsonPath("agencyId").isEqualTo("BXI")
         .jsonPath("incidentCount.openIncidents").isEqualTo(1)
         .jsonPath("incidentCount.closedIncidents").isEqualTo(1)
     }
 
     @Test
-    fun `get all agency locations for incidents with no closed`() {
-      webTestClient.get().uri("/incidents/reconciliation/agencyLocation/MDI")
+    fun `get incident count at agency with none closed`() {
+      webTestClient.get().uri("/incidents/reconciliation/agency/MDI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("locationId").isEqualTo("MDI")
+        .jsonPath("agencyId").isEqualTo("MDI")
         .jsonPath("incidentCount.openIncidents").isEqualTo(1)
         .jsonPath("incidentCount.closedIncidents").isEqualTo(0)
     }
