@@ -14,7 +14,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
@@ -57,7 +56,6 @@ data class OffenderSentence(
       JoinColumn(name = "SENTENCE_CATEGORY", referencedColumnName = "SENTENCE_CATEGORY"),
     ],
   )
-  @BatchSize(size = 25)
   var calculationType: SentenceCalculationType,
 
   @Column(name = "START_DATE")
