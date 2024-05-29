@@ -7,6 +7,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
@@ -15,8 +19,10 @@ import org.springframework.test.web.reactive.server.WebTestClient.RequestHeaders
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.DATA_ENTRY
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.MODIFIED
@@ -24,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companio
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.COMP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
@@ -37,6 +44,12 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var alertCodeRepository: ReferenceCodeRepository<AlertCode>
+
+  @Autowired
+  private lateinit var alertTypeRepository: ReferenceCodeRepository<AlertType>
 
   @DisplayName("JPA Mapping")
   @Nested
@@ -2154,6 +2167,343 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("POST /alerts/codes")
+  @Nested
+  inner class CreateAlertCodeReferenceData {
+    private val alertCode = "TEST1"
+    private val validAlertCode = CreateAlertCode(
+      code = alertCode,
+      description = "Description for $alertCode",
+      listSequence = 12,
+      typeCode = "X",
+    )
+
+    @AfterEach
+    fun tearDown() {
+      alertCodeRepository.deleteById(AlertCode.pk(alertCode))
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCode)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCode)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/alerts/codes")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCode)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `validation fails when alert code is not present`() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "description": "Description for $alertCode",
+                "typeCode": "X",
+                "listSequence": 12
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `validation fails when description is not present`() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "code": "$alertCode",
+                "typeCode": "X",
+                "listSequence": 12
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `validation fails when alert type is not present`() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "code": "$alertCode",
+                "description": "Description for $alertCode",
+                "listSequence": 12
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `validation fails when alert type is invalid`() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "code": "$alertCode",
+                "description": "Description for $alertCode",
+                "typeCode": "ZZZ",
+                "listSequence": 12
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `attempt to add the same code twice is rejected`() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCode)
+          .exchange()
+          .expectStatus().isEqualTo(201)
+
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCode)
+          .exchange()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.post().uri("/alerts/codes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCode)
+          .exchange()
+          .expectStatus().isEqualTo(201)
+      }
+
+      @Test
+      fun `can create a new alert code`() {
+        repository.runInTransaction {
+          val code = alertCodeRepository.findByIdOrNull(AlertCode.pk(alertCode))
+          assertThat(code?.code).isEqualTo(alertCode)
+          assertThat(code?.description).isEqualTo("Description for $alertCode")
+          assertThat(code?.sequence).isEqualTo(12)
+          assertThat(code?.expiredDate).isNull()
+          assertThat(code?.active).isTrue()
+          assertThat(code?.parentCode).isEqualTo("X")
+          assertThat(code?.parentDomain).isEqualTo("ALERT")
+          assertThat(code?.systemDataFlag).isFalse()
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-code.created"),
+          check {
+            assertThat(it).containsEntry("code", alertCode)
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("POST /alerts/types")
+  @Nested
+  inner class CreateAlertTypeReferenceData {
+    private val typeCode = "TEST1"
+    private val validAlertType = CreateAlertType(
+      code = typeCode,
+      description = "Description for $typeCode",
+      listSequence = 12,
+    )
+
+    @AfterEach
+    fun tearDown() {
+      alertTypeRepository.deleteById(AlertType.pk(typeCode))
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/alerts/types")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertType)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/alerts/types")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertType)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/alerts/types")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertType)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `validation fails when alert type code is not present`() {
+        webTestClient.post().uri("/alerts/types")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "description": "Description for $typeCode",
+                "listSequence": 12
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `validation fails when description is not present`() {
+        webTestClient.post().uri("/alerts/types")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "code": "$typeCode",
+                "listSequence": 12
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `attempt to add the same type twice is rejected`() {
+        webTestClient.post().uri("/alerts/types")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertType)
+          .exchange()
+          .expectStatus().isEqualTo(201)
+
+        webTestClient.post().uri("/alerts/types")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertType)
+          .exchange()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.post().uri("/alerts/types")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertType)
+          .exchange()
+          .expectStatus().isEqualTo(201)
+      }
+
+      @Test
+      fun `can create a new alert type`() {
+        repository.runInTransaction {
+          val code = alertTypeRepository.findByIdOrNull(AlertType.pk(typeCode))
+          assertThat(code?.code).isEqualTo(typeCode)
+          assertThat(code?.description).isEqualTo("Description for $typeCode")
+          assertThat(code?.sequence).isEqualTo(12)
+          assertThat(code?.expiredDate).isNull()
+          assertThat(code?.active).isTrue()
+          assertThat(code?.parentCode).isNull()
+          assertThat(code?.parentDomain).isNull()
+          assertThat(code?.systemDataFlag).isFalse()
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-type.created"),
+          check {
+            assertThat(it).containsEntry("code", typeCode)
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
   private fun <T : RequestHeadersSpec<T>> RequestHeadersSpec<T>.validExchangeBody(): WebTestClient.BodyContentSpec = this.headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
     .exchange()
     .expectStatus()

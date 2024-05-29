@@ -36,6 +36,7 @@ import java.time.LocalDateTime
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class AlertsResource(
   private val alertsService: AlertsService,
+  private val alertsReferenceDataService: AlertsReferenceDataService,
 ) {
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @GetMapping("/alerts/ids")
@@ -508,6 +509,122 @@ class AlertsResource(
     @PathVariable
     alertSequence: Long,
   ): Unit = alertsService.deleteAlert(bookingId, alertSequence)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PostMapping("/alerts/codes")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates an alert code",
+    description = "Creates an alert code in the NOMIS reference data. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Alert code Created",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Code already exits",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createAlertCode(
+    @RequestBody @Valid
+    request: CreateAlertCode,
+  ) = alertsReferenceDataService.createAlertCode(request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PostMapping("/alerts/types")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates an alert type",
+    description = "Creates an alert type in the NOMIS reference data. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Alert type Created",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Type already exits",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createAlertType(
+    @RequestBody @Valid
+    request: CreateAlertType,
+  ) = alertsReferenceDataService.createAlertType(request)
 }
 
 @Schema(description = "The list of unique alerts held against a prisoner")
@@ -645,4 +762,35 @@ data class AlertIdResponse(
   val alertSequence: Long,
   @Schema(description = "The prisoner number")
   val offenderNo: String,
+)
+
+@Schema(description = "A request to create an alert code reference data in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateAlertCode(
+  @Schema(description = "The alert code")
+  @NotNull
+  val code: String,
+  @Schema(description = "The parent type code")
+  @NotNull
+  val typeCode: String,
+  @Schema(description = "The alert description")
+  @NotNull
+  val description: String,
+  @Schema(description = "The sequence in a UI list")
+  @NotNull
+  val listSequence: Int,
+)
+
+@Schema(description = "A request to create an alert type reference data in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateAlertType(
+  @Schema(description = "The alert type code")
+  @NotNull
+  val code: String,
+  @Schema(description = "The alert type description")
+  @NotNull
+  val description: String,
+  @Schema(description = "The sequence in a UI list")
+  @NotNull
+  val listSequence: Int,
 )
