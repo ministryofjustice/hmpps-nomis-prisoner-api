@@ -1,7 +1,7 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.6"
-  kotlin("plugin.spring") version "1.9.23"
-  kotlin("plugin.jpa") version "1.9.23"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.0"
+  kotlin("plugin.spring") version "2.0.0"
+  kotlin("plugin.jpa") version "2.0.0"
   idea
 }
 
@@ -10,7 +10,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:0.2.4")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.0.0")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
@@ -22,7 +22,7 @@ dependencies {
 
   implementation("com.zaxxer:HikariCP:5.1.0")
   implementation("com.h2database:h2:2.2.224")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.22.0.0")
+  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.23.0.0")
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
 
@@ -33,7 +33,7 @@ dependencies {
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.22") {
     exclude(group = "io.swagger.core.v3")
   }
-  testImplementation("io.swagger.core.v3:swagger-core-jakarta:2.2.21")
+  testImplementation("io.swagger.core.v3:swagger-core-jakarta:2.2.22")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 }
@@ -44,9 +44,7 @@ kotlin {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-      jvmTarget = "21"
-    }
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
   }
 }
 
