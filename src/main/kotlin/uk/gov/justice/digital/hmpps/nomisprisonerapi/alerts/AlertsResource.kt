@@ -569,6 +569,66 @@ class AlertsResource(
   ) = alertsReferenceDataService.createAlertCode(request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PutMapping("/alerts/codes/{code}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update an alert code",
+    description = "Updates an alert code in the NOMIS reference data, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Alert code updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alert code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateAlertCode(
+    @PathVariable
+    code: String,
+    @RequestBody @Valid
+    request: UpdateAlertCode,
+  ) = alertsReferenceDataService.updateAlertCode(code, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @PostMapping("/alerts/types")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -625,6 +685,66 @@ class AlertsResource(
     @RequestBody @Valid
     request: CreateAlertType,
   ) = alertsReferenceDataService.createAlertType(request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PutMapping("/alerts/types/{code}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update an alert type",
+    description = "Updates an alert type in the NOMIS reference data, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Alert type updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alert type does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateAlertType(
+    @PathVariable
+    code: String,
+    @RequestBody @Valid
+    request: UpdateAlertType,
+  ) = alertsReferenceDataService.updateAlertType(code, request)
 }
 
 @Schema(description = "The list of unique alerts held against a prisoner")
@@ -781,6 +901,14 @@ data class CreateAlertCode(
   val listSequence: Int,
 )
 
+@Schema(description = "A request to update an alert code reference data in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateAlertCode(
+  @Schema(description = "The alert description")
+  @NotNull
+  val description: String,
+)
+
 @Schema(description = "A request to create an alert type reference data in NOMIS")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateAlertType(
@@ -793,4 +921,12 @@ data class CreateAlertType(
   @Schema(description = "The sequence in a UI list")
   @NotNull
   val listSequence: Int,
+)
+
+@Schema(description = "A request to update an alert type reference data in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateAlertType(
+  @Schema(description = "The alert type description")
+  @NotNull
+  val description: String,
 )
