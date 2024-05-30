@@ -3,11 +3,14 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.integration
 import io.swagger.v3.parser.OpenAPIV3Parser
 import net.minidev.json.JSONArray
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.reactive.server.WebTestClient
+import java.time.Duration
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -17,9 +20,19 @@ class OpenApiDocsTest : IntegrationTestBase() {
   @LocalServerPort
   private var port: Int = 0
 
+  private lateinit var slowWebTestClient: WebTestClient
+
+  @BeforeEach
+  fun setUp() {
+    // It can take around 5 seconds to initialise open-api
+    slowWebTestClient = webTestClient.mutate()
+      .responseTimeout(Duration.ofMillis(10_000))
+      .build()
+  }
+
   @Test
   fun `open api docs are available`() {
-    webTestClient.get()
+    slowWebTestClient.get()
       .uri("/swagger-ui/index.html?configUrl=/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -28,7 +41,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
 
   @Test
   fun `open api docs redirect to correct page`() {
-    webTestClient.get()
+    slowWebTestClient.get()
       .uri("/swagger-ui.html")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -38,7 +51,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
 
   @Test
   fun `the open api json contains documentation`() {
-    webTestClient.get()
+    slowWebTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -55,7 +68,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
 
   @Test
   fun `the open api json contains the version number`() {
-    webTestClient.get()
+    slowWebTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -65,7 +78,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
 
   @Test
   fun `the generated open api for date times hasn't got the time zone`() {
-    webTestClient.get()
+    slowWebTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -84,7 +97,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
   fun `the security scheme is setup for bearer tokens`() {
     val bearerJwts = JSONArray()
     bearerJwts.addAll(listOf("read", "write"))
-    webTestClient.get()
+    slowWebTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -99,7 +112,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
 
   @Test
   fun `the open api json doesn't include LocalTime`() {
-    webTestClient.get()
+    slowWebTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()

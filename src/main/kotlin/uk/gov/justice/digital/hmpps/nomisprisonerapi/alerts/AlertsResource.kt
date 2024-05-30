@@ -629,6 +629,102 @@ class AlertsResource(
   ) = alertsReferenceDataService.updateAlertCode(code, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PutMapping("/alerts/codes/{code}/reactivate")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update an alert code to be active",
+    description = "Updates an alert code in the NOMIS reference data to be active, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Alert code reactivated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alert code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun reactivateAlertCode(
+    @PathVariable
+    code: String,
+  ) = alertsReferenceDataService.reactivateAlertCode(code)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PutMapping("/alerts/codes/{code}/deactivate")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update an alert code to be inactive",
+    description = "Updates an alert code in the NOMIS reference data to be inactive, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Alert code deactivated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alert code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deactivateAlertCode(
+    @PathVariable
+    code: String,
+  ) = alertsReferenceDataService.deactivateAlertCode(code)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @PostMapping("/alerts/types")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -745,6 +841,102 @@ class AlertsResource(
     @RequestBody @Valid
     request: UpdateAlertType,
   ) = alertsReferenceDataService.updateAlertType(code, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PutMapping("/alerts/types/{code}/reactivate")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update an alert type to be active",
+    description = "Updates an alert type in the NOMIS reference data to be active, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Alert code reactivated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alert code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun reactivateAlertType(
+    @PathVariable
+    code: String,
+  ) = alertsReferenceDataService.reactivateAlertType(code)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PutMapping("/alerts/types/{code}/deactivate")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update an alert type to be inactive",
+    description = "Updates an alert type in the NOMIS reference data to be inactive, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Alert type deactivated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alert type does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deactivateAlertType(
+    @PathVariable
+    code: String,
+  ) = alertsReferenceDataService.deactivateAlertType(code)
 }
 
 @Schema(description = "The list of unique alerts held against a prisoner")

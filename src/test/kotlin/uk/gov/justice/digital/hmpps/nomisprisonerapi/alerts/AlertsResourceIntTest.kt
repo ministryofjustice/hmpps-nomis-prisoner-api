@@ -2464,6 +2464,164 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /alerts/codes/{code}/deactivate")
+  @Nested
+  inner class DeactivateAlertCodeReferenceData {
+    private val alertCode = "HPI"
+
+    @AfterEach
+    fun tearDown() {
+      repository.runInTransaction {
+        alertCodeRepository.findByIdOrNull(AlertCode.pk(alertCode))?.apply {
+          active = true
+          expiredDate = null
+          alertCodeRepository.save(this)
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/deactivate")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/deactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/deactivate")
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/deactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+      }
+
+      @Test
+      fun `can update the status and expiry date`() {
+        repository.runInTransaction {
+          val code = alertCodeRepository.findByIdOrNull(AlertCode.pk(alertCode)) ?: throw AssertionError("Cannot find data")
+          assertThat(code.active).isFalse()
+          assertThat(code.expiredDate).isEqualTo(LocalDate.now())
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-code.deactivated"),
+          check {
+            assertThat(it).containsEntry("code", alertCode)
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("PUT /alerts/codes/{code}/reactivate")
+  @Nested
+  inner class ReactivateAlertCodeReferenceData {
+    private val alertCode = "HPI"
+
+    @AfterEach
+    fun tearDown() {
+      repository.runInTransaction {
+        alertCodeRepository.findByIdOrNull(AlertCode.pk(alertCode))?.apply {
+          active = false
+          expiredDate = LocalDate.now().minusYears(1)
+          alertCodeRepository.save(this)
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/reactivate")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/reactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/reactivate")
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.put().uri("/alerts/codes/$alertCode/reactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+      }
+
+      @Test
+      fun `can update the status and expiry date`() {
+        repository.runInTransaction {
+          val code = alertCodeRepository.findByIdOrNull(AlertCode.pk(alertCode)) ?: throw AssertionError("Cannot find data")
+          assertThat(code.active).isTrue()
+          assertThat(code.expiredDate).isNull()
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-code.reactivated"),
+          check {
+            assertThat(it).containsEntry("code", alertCode)
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
   @DisplayName("POST /alerts/types")
   @Nested
   inner class CreateAlertTypeReferenceData {
@@ -2709,6 +2867,164 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           check {
             assertThat(it).containsEntry("code", typeCode)
             assertThat(it).containsEntry("description", "Political violence")
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("PUT /alerts/types/{code}/deactivate")
+  @Nested
+  inner class DeactivateAlertTypeReferenceData {
+    private val alertType = "Z"
+
+    @AfterEach
+    fun tearDown() {
+      repository.runInTransaction {
+        alertTypeRepository.findByIdOrNull(AlertType.pk(alertType))?.apply {
+          active = true
+          expiredDate = null
+          alertTypeRepository.save(this)
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/alerts/types/$alertType/deactivate")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/alerts/types/$alertType/deactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/alerts/types/$alertType/deactivate")
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.put().uri("/alerts/types/$alertType/deactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+      }
+
+      @Test
+      fun `can update the status and expiry date`() {
+        repository.runInTransaction {
+          val code = alertTypeRepository.findByIdOrNull(AlertType.pk(alertType)) ?: throw AssertionError("Cannot find data")
+          assertThat(code.active).isFalse()
+          assertThat(code.expiredDate).isEqualTo(LocalDate.now())
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-type.deactivated"),
+          check {
+            assertThat(it).containsEntry("code", alertType)
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("PUT /alerts/types/{code}/reactivate")
+  @Nested
+  inner class ReactivateAlertTypeReferenceData {
+    private val alertType = "Z"
+
+    @AfterEach
+    fun tearDown() {
+      repository.runInTransaction {
+        alertTypeRepository.findByIdOrNull(AlertType.pk(alertType))?.apply {
+          active = false
+          expiredDate = LocalDate.now().minusYears(1)
+          alertTypeRepository.save(this)
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/alerts/types/$alertType/reactivate")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/alerts/types/$alertType/reactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/alerts/types/$alertType/reactivate")
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.put().uri("/alerts/types/$alertType/reactivate")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+      }
+
+      @Test
+      fun `can update the status and expiry date`() {
+        repository.runInTransaction {
+          val code = alertTypeRepository.findByIdOrNull(AlertType.pk(alertType)) ?: throw AssertionError("Cannot find data")
+          assertThat(code.active).isTrue()
+          assertThat(code.expiredDate).isNull()
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-type.reactivated"),
+          check {
+            assertThat(it).containsEntry("code", alertType)
           },
           isNull(),
         )
