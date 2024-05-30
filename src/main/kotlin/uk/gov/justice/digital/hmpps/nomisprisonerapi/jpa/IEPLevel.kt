@@ -21,6 +21,7 @@ class IEPLevel(
     active = active,
     sequence = sequence,
     parentCode = sequence.toString(),
+    parentDomain = null,
     expiredDate = expiredDate,
   ) {
   companion object {

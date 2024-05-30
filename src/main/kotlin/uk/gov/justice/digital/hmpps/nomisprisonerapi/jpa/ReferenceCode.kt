@@ -36,6 +36,7 @@ abstract class ReferenceCode(
   open var sequence: Int? = 0,
 
   open var parentCode: String? = null,
+  open var parentDomain: String? = null,
 
   open var expiredDate: LocalDate? = null,
 
@@ -50,7 +51,7 @@ abstract class ReferenceCode(
     description = description,
   )
 
-  constructor(domain: String, code: String, description: String, active: Boolean, sequence: Int?, parentCode: String?, expiredDate: LocalDate?) : this(
+  constructor(domain: String, code: String, description: String, active: Boolean, sequence: Int?, parentCode: String?, parentDomain: String?, expiredDate: LocalDate?) : this(
     domain = domain,
     code = code,
     id = Pk(domain, code),
@@ -58,6 +59,7 @@ abstract class ReferenceCode(
     active = active,
     sequence = sequence,
     parentCode = parentCode,
+    parentDomain = parentDomain,
     expiredDate = expiredDate,
   )
 

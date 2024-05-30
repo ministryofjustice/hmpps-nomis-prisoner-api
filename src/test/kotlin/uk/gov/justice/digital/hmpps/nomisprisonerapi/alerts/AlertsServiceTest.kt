@@ -467,7 +467,7 @@ private fun alert(
   booking: OffenderBooking,
 ): OffenderAlert = OffenderAlert(
   id = OffenderAlertId(booking, sequence),
-  alertCode = AlertCode(alertCode, "A Alert"),
+  alertCode = AlertCode(alertCode, "A Alert", parentCode = "X"),
   alertType = AlertType("X", "X Type"),
   alertDate = alertDate,
   createUsername = "BOB",
