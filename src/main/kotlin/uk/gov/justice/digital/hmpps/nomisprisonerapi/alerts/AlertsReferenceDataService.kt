@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -66,5 +67,38 @@ class AlertsReferenceDataService(
     } ?: throw NotFoundException("Alert type $code not found")
 
     telemetryClient.trackEvent("alert-type.updated", mapOf("code" to code, "description" to request.description), null)
+  }
+
+  fun reactivateAlertCode(code: String) {
+    alertCodeRepository.findByIdOrNull(AlertCode.pk(code))?.apply {
+      active = true
+      expiredDate = null
+    } ?: throw NotFoundException("Alert code $code not found")
+
+    telemetryClient.trackEvent("alert-code.reactivated", mapOf("code" to code), null)
+  }
+  fun deactivateAlertCode(code: String) {
+    alertCodeRepository.findByIdOrNull(AlertCode.pk(code))?.apply {
+      active = false
+      expiredDate = LocalDate.now()
+    } ?: throw NotFoundException("Alert code $code not found")
+
+    telemetryClient.trackEvent("alert-code.deactivated", mapOf("code" to code), null)
+  }
+  fun reactivateAlertType(code: String) {
+    alertTypeRepository.findByIdOrNull(AlertType.pk(code))?.apply {
+      active = true
+      expiredDate = null
+    } ?: throw NotFoundException("Alert type $code not found")
+
+    telemetryClient.trackEvent("alert-type.reactivated", mapOf("code" to code), null)
+  }
+  fun deactivateAlertType(code: String) {
+    alertTypeRepository.findByIdOrNull(AlertType.pk(code))?.apply {
+      active = false
+      expiredDate = LocalDate.now()
+    } ?: throw NotFoundException("Alert type $code not found")
+
+    telemetryClient.trackEvent("alert-type.deactivated", mapOf("code" to code), null)
   }
 }
