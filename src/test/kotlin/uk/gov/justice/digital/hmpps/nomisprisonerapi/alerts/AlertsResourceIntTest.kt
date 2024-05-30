@@ -2358,6 +2358,112 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /alerts/codes/{code}")
+  @Nested
+  inner class UpdateAlertCodeReferenceData {
+    private val alertCode = "HPI"
+    private val validAlertCodeUpdate = UpdateAlertCode(
+      description = "Low Public Interest",
+    )
+
+    @AfterEach
+    fun tearDown() {
+      repository.runInTransaction {
+        alertCodeRepository.findByIdOrNull(AlertCode.pk(alertCode))?.apply {
+          description = "High Public Interest"
+          alertCodeRepository.save(this)
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCodeUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCodeUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCodeUpdate)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `validation fails when alert description is not present`() {
+        webTestClient.put().uri("/alerts/codes/$alertCode")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.put().uri("/alerts/codes/$alertCode")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertCodeUpdate)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+      }
+
+      @Test
+      fun `can update the description`() {
+        repository.runInTransaction {
+          val code = alertCodeRepository.findByIdOrNull(AlertCode.pk(alertCode)) ?: throw AssertionError("Cannot find data")
+          assertThat(code.code).isEqualTo(alertCode)
+          assertThat(code.description).isEqualTo("Low Public Interest")
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-code.updated"),
+          check {
+            assertThat(it).containsEntry("code", alertCode)
+            assertThat(it).containsEntry("description", "Low Public Interest")
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
   @DisplayName("POST /alerts/types")
   @Nested
   inner class CreateAlertTypeReferenceData {
@@ -2497,6 +2603,112 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           eq("alert-type.created"),
           check {
             assertThat(it).containsEntry("code", typeCode)
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("PUT /alerts/types/{code}")
+  @Nested
+  inner class UpdateAlertTypeReferenceData {
+    private val typeCode = "Z"
+    private val validAlertTypeUpdate = UpdateAlertCode(
+      description = "Political violence",
+    )
+
+    @AfterEach
+    fun tearDown() {
+      repository.runInTransaction {
+        alertTypeRepository.findByIdOrNull(AlertType.pk(typeCode))!!.apply {
+          description = "Terrorism"
+          alertTypeRepository.save(this)
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/alerts/types/$typeCode")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertTypeUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/alerts/types/$typeCode")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertTypeUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/alerts/types/$typeCode")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertTypeUpdate)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `validation fails when alert description is not present`() {
+        webTestClient.put().uri("/alerts/types/$typeCode")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        webTestClient.put().uri("/alerts/types/$typeCode")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlertTypeUpdate)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+      }
+
+      @Test
+      fun `can update the description`() {
+        repository.runInTransaction {
+          val type = alertTypeRepository.findByIdOrNull(AlertType.pk(typeCode)) ?: throw AssertionError("Cannot find data")
+          assertThat(type.code).isEqualTo(typeCode)
+          assertThat(type.description).isEqualTo("Political violence")
+        }
+      }
+
+      @Test
+      fun `will track telemetry event`() {
+        verify(telemetryClient).trackEvent(
+          eq("alert-type.updated"),
+          check {
+            assertThat(it).containsEntry("code", typeCode)
+            assertThat(it).containsEntry("description", "Political violence")
           },
           isNull(),
         )

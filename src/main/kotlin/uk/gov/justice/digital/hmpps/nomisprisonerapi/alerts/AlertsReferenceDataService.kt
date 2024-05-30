@@ -2,9 +2,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -48,5 +50,21 @@ class AlertsReferenceDataService(
       ),
     )
     telemetryClient.trackEvent("alert-type.created", mapOf("code" to request.code), null)
+  }
+
+  fun updateAlertCode(code: String, request: UpdateAlertCode) {
+    alertCodeRepository.findByIdOrNull(AlertCode.pk(code))?.apply {
+      description = request.description
+    } ?: throw NotFoundException("Alert code $code not found")
+
+    telemetryClient.trackEvent("alert-code.updated", mapOf("code" to code, "description" to request.description), null)
+  }
+
+  fun updateAlertType(code: String, request: UpdateAlertType) {
+    alertTypeRepository.findByIdOrNull(AlertType.pk(code))?.apply {
+      description = request.description
+    } ?: throw NotFoundException("Alert type $code not found")
+
+    telemetryClient.trackEvent("alert-type.updated", mapOf("code" to code, "description" to request.description), null)
   }
 }
