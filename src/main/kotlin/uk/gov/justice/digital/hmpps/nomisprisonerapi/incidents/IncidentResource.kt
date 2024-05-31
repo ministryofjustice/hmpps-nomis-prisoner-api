@@ -155,11 +155,11 @@ class IncidentResource(private val incidentService: IncidentService) {
   fun getIncidentAgencies() = incidentService.findAllIncidentAgencies()
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
-  @GetMapping("/reconciliation/agency/{agencyId}")
+  @GetMapping("/reconciliation/agency/{agencyId}/counts")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets incident counts",
-    description = "Retrieves open and closed incident counts for a prison.",
+    description = "Retrieves open and closed incident counts for an agency.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -193,6 +193,48 @@ class IncidentResource(private val incidentService: IncidentService) {
     @PathVariable
     agencyId: String,
   ) = incidentService.getIncidentCountsForReconciliation(agencyId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
+  @GetMapping("/reconciliation/agency/{agencyId}/ids")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets ids of open incidents at an agency",
+    description = "Retrieves paged ids for open incidents for an agency.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Pageable list of reconciliation ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getOpenIncidentIdsForReconciliation(
+    @PageableDefault
+    pageRequest: Pageable,
+    @Schema(description = "Agency Id", example = "LEI")
+    @PathVariable
+    agencyId: String,
+  ) = incidentService.getOpenIncidentIdsForReconciliation(agencyId, pageRequest)
 }
 
 @Schema(description = "Incident Details")

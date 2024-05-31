@@ -162,7 +162,7 @@ class NomisData(
   override fun incident(
     title: String,
     description: String,
-    locationId: String,
+    agencyId: String,
     reportingStaff: Staff,
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
@@ -176,7 +176,7 @@ class NomisData(
         builder.build(
           title = title,
           description = description,
-          locationId = locationId,
+          agencyId = agencyId,
           reportingStaff = reportingStaff,
           reportedDateTime = reportedDateTime,
           incidentDateTime = incidentDateTime,

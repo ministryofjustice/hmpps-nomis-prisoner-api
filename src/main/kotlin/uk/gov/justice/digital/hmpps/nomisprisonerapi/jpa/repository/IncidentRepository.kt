@@ -20,7 +20,7 @@ interface IncidentRepository : CrudRepository<Incident, Long>, JpaSpecificationE
       from Incident incident 
         where 
           (:fromDate is null or incident.createDatetime > :fromDate) and 
-          (:toDate is null or incident.createDatetime < :toDate)  
+          (:toDate is null or incident.createDatetime < :toDate)
       order by incident.id asc
     """,
   )
@@ -57,8 +57,24 @@ interface IncidentRepository : CrudRepository<Incident, Long>, JpaSpecificationE
       )
       from Incident incident 
       where incident.agency.id = :agencyId
-      order by incident.agency.id
     """,
   )
-  fun countsByAgencyId(agencyId: String, openStatusValues: List<String>, closedStatusValues: List<String>): IncidentsCount
+  fun countsByAgency(agencyId: String, openStatusValues: List<String>, closedStatusValues: List<String>): IncidentsCount
+
+  @Query(
+    """
+      select 
+        incident.id
+      from Incident incident 
+        where 
+          incident.agency.id = :agencyId and
+          incident.status.code in :statusValues
+      order by incident.id asc
+    """,
+  )
+  fun findAllIncidentIdsByAgencyAndStatus(
+    agencyId: String,
+    statusValues: List<String>,
+    pageable: Pageable,
+  ): Page<Long>
 }
