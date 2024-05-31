@@ -106,7 +106,7 @@ class IncidentBuilder(
   fun build(
     title: String,
     description: String,
-    locationId: String,
+    agencyId: String,
     reportingStaff: Staff,
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
@@ -117,7 +117,7 @@ class IncidentBuilder(
     Incident(
       title = title,
       description = description,
-      agency = repository.lookupAgency(locationId),
+      agency = repository.lookupAgency(agencyId),
       reportingStaff = reportingStaff,
       reportedDate = reportedDateTime.toLocalDate(),
       reportedTime = reportedDateTime.toLocalTime(),

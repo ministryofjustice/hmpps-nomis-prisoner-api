@@ -63,8 +63,11 @@ class IncidentService(
   fun getIncidentCountsForReconciliation(agencyId: String): IncidentsReconciliationResponse =
     IncidentsReconciliationResponse(
       agencyId = agencyId,
-      incidentCount = incidentRepository.countsByAgencyId(agencyId, openStatusValues, closedStatusValues),
+      incidentCount = incidentRepository.countsByAgency(agencyId, openStatusValues, closedStatusValues),
     )
+
+  fun getOpenIncidentIdsForReconciliation(agencyId: String, pageRequest: Pageable) =
+    incidentRepository.findAllIncidentIdsByAgencyAndStatus(agencyId, openStatusValues, pageRequest)
 }
 
 private fun Incident.toIncidentResponse(): IncidentResponse =

@@ -35,6 +35,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
   private lateinit var incident2: Incident
   private lateinit var incident3: Incident
+  private lateinit var incident4: Incident
   private lateinit var requirementRecordingStaff: Staff
   private lateinit var responseRecordingStaff: Staff
 
@@ -77,7 +78,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         }
       }
       // Incident and incident history with missing questionnaire answer - to mimic Nomis data
-      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1, locationId = "MDI") {
+      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1, agencyId = "MDI") {
         question(question = questionnaire1.questions[1]) {
           response(recordingStaff = responseRecordingStaff, comment = "Hammer")
           response(answer = questionnaire1.questions[1].answers[2], comment = "Large Crow bar", recordingStaff = responseRecordingStaff)
@@ -89,6 +90,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         }
       }
       incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1, incidentStatus = "CLOSE")
+      incident4 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1)
     }
   }
 
@@ -154,6 +156,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.delete(incident1)
     repository.delete(incident2)
     repository.delete(incident3)
+    repository.delete(incident4)
 
     repository.delete(questionnaire1)
     repository.delete(questionnaire2)
@@ -202,7 +205,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.numberOfElements").isEqualTo(3)
+        .jsonPath("$.numberOfElements").isEqualTo(4)
     }
 
     @Test
@@ -216,7 +219,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(3)
+        .jsonPath("totalElements").isEqualTo(4)
         .jsonPath("numberOfElements").isEqualTo(2)
         .jsonPath("number").isEqualTo(0)
         .jsonPath("totalPages").isEqualTo(2)
@@ -235,8 +238,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(3)
-        .jsonPath("numberOfElements").isEqualTo(1)
+        .jsonPath("totalElements").isEqualTo(4)
+        .jsonPath("numberOfElements").isEqualTo(2)
         .jsonPath("number").isEqualTo(1)
         .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(2)
@@ -553,13 +556,13 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /incidents/reconciliation/agency/{agencyId}")
+  @DisplayName("GET /incidents/reconciliation/agency/{agencyId}/counts")
   inner class GetIncidentCountForAgency {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
+        webTestClient.get().uri("/incidents/reconciliation/agency/BXI/counts")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -567,7 +570,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
+        webTestClient.get().uri("/incidents/reconciliation/agency/BXI/counts")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -575,7 +578,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
+        webTestClient.get().uri("/incidents/reconciliation/agency/BXI/counts")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -583,19 +586,19 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get incident count at agency`() {
-      webTestClient.get().uri("/incidents/reconciliation/agency/BXI")
+      webTestClient.get().uri("/incidents/reconciliation/agency/BXI/counts")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("agencyId").isEqualTo("BXI")
-        .jsonPath("incidentCount.openIncidents").isEqualTo(1)
+        .jsonPath("incidentCount.openIncidents").isEqualTo(2)
         .jsonPath("incidentCount.closedIncidents").isEqualTo(1)
     }
 
     @Test
     fun `get incident count at agency with none closed`() {
-      webTestClient.get().uri("/incidents/reconciliation/agency/MDI")
+      webTestClient.get().uri("/incidents/reconciliation/agency/MDI/counts")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .exchange()
         .expectStatus().isOk
@@ -603,6 +606,86 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("agencyId").isEqualTo("MDI")
         .jsonPath("incidentCount.openIncidents").isEqualTo(1)
         .jsonPath("incidentCount.closedIncidents").isEqualTo(0)
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /incidents/reconciliation/agency/{agencyId}/ids")
+  inner class GetOpenIncidentIdsAtAgency {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/incidents/reconciliation/agency/MDI/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/incidents/reconciliation/agency/MDI/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/incidents/reconciliation/agency/MDI/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `get all open incident ids - no filter specified `() {
+      webTestClient.get().uri {
+        it.path("/incidents/reconciliation/agency/BXI/ids")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("numberOfElements").isEqualTo(2)
+    }
+
+    @Test
+    fun `can request a different page size`() {
+      webTestClient.get().uri {
+        it.path("/incidents/reconciliation/agency/BXI/ids")
+          .queryParam("size", "2")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(2)
+        .jsonPath("numberOfElements").isEqualTo(2)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(1)
+        .jsonPath("size").isEqualTo(2)
+    }
+
+    @Test
+    fun `can request a different page`() {
+      webTestClient.get().uri {
+        it.path("/incidents/reconciliation/agency/BXI/ids")
+          .queryParam("size", "1")
+          .queryParam("page", "1")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(2)
+        .jsonPath("numberOfElements").isEqualTo(1)
+        .jsonPath("number").isEqualTo(1)
+        .jsonPath("totalPages").isEqualTo(2)
+        .jsonPath("size").isEqualTo(1)
     }
   }
 }
