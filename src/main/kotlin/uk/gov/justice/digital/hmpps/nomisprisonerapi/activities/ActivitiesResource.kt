@@ -868,4 +868,39 @@ class ActivitiesResource(
     @Schema(description = "Date") @RequestParam date: LocalDate,
   ) =
     attendanceService.findPaidAttendancesSummary(prisonId, date)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/schedules/max-id")
+  @Operation(
+    summary = "Get the highest value of CRS_SCH_ID in NOMIS",
+    description = "Retrieves the last course schedule ID so we can identify mappings records in preprod that have been copied from prod but don't have any NOMIS data.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Max CRS_SCH_ID returned",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getMaxCourseScheduleId() = scheduleService.getMaxCourseScheduleId()
 }

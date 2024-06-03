@@ -15,4 +15,6 @@ interface CourseScheduleRepository : JpaRepository<CourseSchedule, Long> {
     startTime: LocalDateTime,
     endTime: LocalDateTime,
   ): CourseSchedule?
+
+  fun findTopByOrderByCourseScheduleIdDesc(): CourseSchedule?
 }

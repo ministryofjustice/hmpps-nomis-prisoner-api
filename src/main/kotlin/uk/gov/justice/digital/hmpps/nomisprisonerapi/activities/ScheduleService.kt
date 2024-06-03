@@ -163,4 +163,6 @@ class ScheduleService(
       startTime != other.startTime ||
       endTime != other.endTime ||
       scheduleStatus != other.scheduleStatus
+
+  fun getMaxCourseScheduleId() = scheduleRepository.findTopByOrderByCourseScheduleIdDesc()?.courseScheduleId ?: 0
 }
