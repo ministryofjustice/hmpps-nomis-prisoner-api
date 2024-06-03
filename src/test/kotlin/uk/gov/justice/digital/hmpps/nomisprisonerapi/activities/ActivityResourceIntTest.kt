@@ -1984,4 +1984,51 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @Nested
+  inner class MaxCourseScheduleId {
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.get().uri("/schedules/max-id")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.get().uri("/schedules/max-id")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.get().uri("/schedules/max-id")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return max course schedule ID`() {
+      val courseSchedules = mutableListOf<CourseSchedule>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity(startDate = "$yesterday") {
+            courseSchedules += courseSchedule()
+            courseSchedules += courseSchedule()
+            courseSchedules += courseSchedule()
+          }
+        }
+      }
+
+      webTestClient.get().uri("/schedules/max-id")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectBody()
+        .jsonPath("$").isEqualTo(courseSchedules.maxOfOrNull { it.courseScheduleId } ?: 0)
+    }
+  }
 }
