@@ -414,7 +414,8 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will populate relevant previous booking flag when alert is unique to previous booking`() {
+      fun `will never populate relevant previous booking flag when alert is unique to previous booking`() {
+        //  will remove this test on the next round of cleanup
         webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$activeAlertSequence")
           .validExchangeBody()
           .jsonPath("alertCode.code").isEqualTo("HPI")
@@ -431,7 +432,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri("/prisoner/booking-id/$previousBookingId/alerts/$previousRelevantAlertSequence")
           .validExchangeBody()
           .jsonPath("alertCode.code").isEqualTo("RCP")
-          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(true)
+          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
       }
     }
   }
@@ -698,41 +699,14 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `returns one of each alert type from previous bookings that is not in the current booking`() {
+      fun `returns no alerts from previous bookings`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(2)
-          .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(5)
-          .jsonPath("previousBookingsAlerts[0].bookingId").isEqualTo(previousBookingIdA1234AB)
-          .jsonPath("previousBookingsAlerts[0].bookingSequence").isEqualTo(2)
-          .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("RYP")
-          .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2019-07-19")
-          .jsonPath("previousBookingsAlerts[1].alertSequence").isEqualTo(1)
-          .jsonPath("previousBookingsAlerts[1].bookingId").isEqualTo(firstBookingIdA1234AB)
-          .jsonPath("previousBookingsAlerts[1].bookingSequence").isEqualTo(3)
-          .jsonPath("previousBookingsAlerts[1].alertCode.code").isEqualTo("P1")
-          .jsonPath("previousBookingsAlerts[1].date").isEqualTo("2022-07-19")
-      }
-
-      @Test
-      fun `both alerts from previous booking of same type on same date are taken`() {
-        webTestClient.get().uri("/prisoners/${prisonerWithIdenticalAlerts.nomsId}/alerts/to-migrate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("latestBookingAlerts.size()").isEqualTo(0)
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(2)
-          .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(1)
-          .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("RYP")
-          .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2019-07-19")
-          .jsonPath("previousBookingsAlerts[1].alertCode.code").isEqualTo("RYP")
-          .jsonPath("previousBookingsAlerts[1].date").isEqualTo("2019-07-19")
+          .jsonPath("previousBookingsAlerts.size()").isEqualTo(0)
       }
     }
   }
@@ -992,36 +966,14 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `returns one of each alert type from previous bookings that is not in the current booking bit is active`() {
+      fun `returns no alerts from previous bookings`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/reconciliation")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(1)
-          .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(1)
-          .jsonPath("previousBookingsAlerts[0].bookingId").isEqualTo(firstBookingIdA1234AB)
-          .jsonPath("previousBookingsAlerts[0].bookingSequence").isEqualTo(3)
-          .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("P1")
-          .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2022-07-19")
-      }
-
-      @Test
-      fun `both alerts from previous booking of same type on same date are taken`() {
-        webTestClient.get().uri("/prisoners/${prisonerWithIdenticalAlerts.nomsId}/alerts/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("latestBookingAlerts.size()").isEqualTo(0)
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(2)
-          .jsonPath("previousBookingsAlerts[0].alertSequence").isEqualTo(1)
-          .jsonPath("previousBookingsAlerts[0].alertCode.code").isEqualTo("RYP")
-          .jsonPath("previousBookingsAlerts[0].date").isEqualTo("2019-07-19")
-          .jsonPath("previousBookingsAlerts[1].alertCode.code").isEqualTo("RYP")
-          .jsonPath("previousBookingsAlerts[1].date").isEqualTo("2019-07-19")
+          .jsonPath("previousBookingsAlerts.size()").isEqualTo(0)
       }
     }
   }
