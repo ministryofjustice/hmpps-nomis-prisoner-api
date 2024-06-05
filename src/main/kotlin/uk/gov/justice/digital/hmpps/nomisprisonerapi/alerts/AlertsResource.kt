@@ -161,8 +161,8 @@ class AlertsResource(
   @GetMapping("/prisoners/{offenderNo}/alerts/to-migrate")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Gets alert for latest booking plus unique list of alerts from previous bookings for a prisoner",
-    description = "Retrieves alerts for a prisoner across all bookings. The latest booking all alerts will be returned, from the previous bookings the list will contain at most one alert per alert code type ordered by alert date with latest alert taken. Requires ROLE_NOMIS_ALERTS",
+    summary = "Gets alert for latest booking",
+    description = "Retrieves alerts for a prisoner from latest all bookings. Requires ROLE_NOMIS_ALERTS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -216,8 +216,8 @@ class AlertsResource(
   @GetMapping("/prisoners/{offenderNo}/alerts/reconciliation")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Gets active alerts for latest booking plus unique list of alerts from previous bookings for a prisoner",
-    description = "Retrieves active alerts for a prisoner across all bookings. The latest booking all active alerts will be returned, from the previous bookings the list will contain at most one alert per alert code that is active type ordered by alert date with latest alert taken. Requires ROLE_NOMIS_ALERTS",
+    summary = "Gets active alerts for latest booking",
+    description = "Retrieves active alerts for latest booking. Requires ROLE_NOMIS_ALERTS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -943,7 +943,8 @@ class AlertsResource(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PrisonerAlertsResponse(
   val latestBookingAlerts: List<AlertResponse>,
-  val previousBookingsAlerts: List<AlertResponse>,
+  @Deprecated("No longer relevant - will remove")
+  val previousBookingsAlerts: List<AlertResponse> = emptyList(),
 )
 
 @Schema(description = "The list of alerts held against a booking")
@@ -979,8 +980,8 @@ data class AlertResponse(
   val comment: String? = null,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
-  @Schema(description = "True if this alert is on a previous booking and should have been latest booking and is potentially relevant to prisoner")
-  val isAlertFromPreviousBookingRelevant: Boolean,
+  @Deprecated("will remove - no longer relevant")
+  val isAlertFromPreviousBookingRelevant: Boolean = false,
 )
 
 @Schema(description = "The data held in NOMIS the person or system that created this record")
