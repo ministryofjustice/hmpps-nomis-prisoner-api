@@ -169,7 +169,7 @@ interface BookingDsl {
     beginDate: LocalDate = LocalDate.now(),
     caseSequence: Int = 1,
     caseInfoNumber: String? = "AB1",
-    instId: String = "COURT1",
+    prisonId: String = "COURT1",
     combinedCase: CourtCase? = null,
     reportingStaff: Staff,
     statusUpdateStaff: Staff? = null,

@@ -2,14 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDateTime
@@ -34,7 +32,6 @@ class OffenderCaseNoteBuilderRepository(
   private val repository: OffenderCaseNoteRepository,
   private val taskTypeRepository: ReferenceCodeRepository<TaskType>,
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType>,
-  private val agencyLocationRepository: AgencyLocationRepository,
 ) {
   fun save(casenote: OffenderCaseNote): OffenderCaseNote =
     repository.saveAndFlush(casenote)
@@ -44,9 +41,6 @@ class OffenderCaseNoteBuilderRepository(
 
   fun lookupTaskSubType(code: String): TaskSubType =
     taskSubTypeRepository.findByIdOrNull(TaskSubType.pk(code))!!
-
-  fun lookupAgencyLocation(code: String): AgencyLocation =
-    agencyLocationRepository.findByIdOrNull(code)!!
 }
 
 class OffenderCaseNoteBuilder(
