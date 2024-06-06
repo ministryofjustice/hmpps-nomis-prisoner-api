@@ -15,9 +15,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPDocument
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
@@ -167,7 +169,7 @@ interface BookingDsl {
     beginDate: LocalDate = LocalDate.now(),
     caseSequence: Int = 1,
     caseInfoNumber: String? = "AB1",
-    courtId: String = "COURT1",
+    prisonId: String = "COURT1",
     combinedCase: CourtCase? = null,
     reportingStaff: Staff,
     statusUpdateStaff: Staff? = null,
@@ -195,6 +197,18 @@ interface BookingDsl {
     modifyUsername: String? = null,
     dsl: OffenderAlertDsl.() -> Unit = { },
   ): OffenderAlert
+
+  @OffenderCaseNoteDslMarker
+  fun caseNote(
+    caseNoteType: String,
+    caseNoteSubType: String,
+    date: LocalDateTime = LocalDateTime.now(),
+    author: Staff,
+    caseNoteText: String?,
+    amendmentFlag: Boolean = false,
+    noteSourceCode: NoteSourceCode = NoteSourceCode.INST,
+    dsl: OffenderCaseNoteDsl.() -> Unit = { },
+  ): OffenderCaseNote
 
   @OffenderExternalMovementDslMarker
   fun prisonTransfer(
@@ -232,6 +246,7 @@ class BookingBuilderFactory(
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
+  private val offenderCaseNoteBuilderFactory: OffenderCaseNoteBuilderFactory,
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
 ) {
@@ -245,6 +260,7 @@ class BookingBuilderFactory(
     offenderKeyDateAdjustmentBuilderFactory,
     offenderExternalMovementBuilderFactory,
     offenderAlertBuilderFactory,
+    offenderCaseNoteBuilderFactory,
     csipReportBuilderFactory,
     documentBuilderFactory,
   )
@@ -260,6 +276,7 @@ class BookingBuilder(
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
+  private val offenderCaseNoteBuilderFactory: OffenderCaseNoteBuilderFactory,
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
 ) : BookingDsl {
@@ -554,6 +571,31 @@ class BookingBuilder(
       }
     }
 
+  override fun caseNote(
+    caseNoteType: String,
+    caseNoteSubType: String,
+    date: LocalDateTime,
+    author: Staff,
+    caseNoteText: String?,
+    amendmentFlag: Boolean,
+    noteSourceCode: NoteSourceCode,
+    dsl: OffenderCaseNoteDsl.() -> Unit,
+  ): OffenderCaseNote = offenderCaseNoteBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking,
+        caseNoteType,
+        caseNoteSubType,
+        date,
+        author,
+        caseNoteText,
+        amendmentFlag,
+        noteSourceCode,
+      ).also {
+        builder.apply(dsl)
+      }
+    }
+
   override fun prisonTransfer(
     from: String,
     to: String,
@@ -571,6 +613,7 @@ class BookingBuilder(
           .also { offenderBooking.externalMovements += it.first }
           .also { offenderBooking.externalMovements += it.second }
       }
+
   override fun release(
     date: LocalDateTime,
   ): OffenderExternalMovement =
