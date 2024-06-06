@@ -168,7 +168,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoner/booking-id/{bookingId}/alerts/{alertSequence}")
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
   @Nested
   inner class GetAlert {
     var bookingId = 0L
@@ -268,7 +268,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$activeAlertSequence")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -276,7 +276,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$activeAlertSequence")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -284,7 +284,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$activeAlertSequence")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -294,7 +294,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when prisoner's booking not found`() {
-        webTestClient.get().uri("/prisoner/booking-id/9999/alerts/$activeAlertSequence")
+        webTestClient.get().uri("/prisoners/booking-id/9999/alerts/$activeAlertSequence")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus().isNotFound
@@ -302,7 +302,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `return 404 when prisoner's alert not found`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/9999")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/9999")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus().isNotFound
@@ -313,7 +313,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `returned data for a minimal active alert`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$activeAlertSequence")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
@@ -336,7 +336,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `returned data for a an inactive alert`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$inactiveAlertSequence")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$inactiveAlertSequence")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
@@ -358,7 +358,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can read audit data related to the alert`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$alertSequenceWithAuditMinimal")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$alertSequenceWithAuditMinimal")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
@@ -376,7 +376,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("audit.auditClientIpAddress").exists()
           .jsonPath("audit.auditClientWorkstationName").exists()
           .jsonPath("audit.auditAdditionalInfo").doesNotExist()
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$alertSequenceWithAudit")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$alertSequenceWithAudit")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .exchange()
           .expectStatus()
@@ -396,43 +396,6 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("audit.auditClientIpAddress").isEqualTo("10.1.1.23")
           .jsonPath("audit.auditClientWorkstationName").isEqualTo("MMD1234J")
           .jsonPath("audit.auditAdditionalInfo").isEqualTo("POST /api/bookings/2904199/alert")
-      }
-
-      @Test
-      fun `can use both GET Urls`() {
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$alertSequenceWithAuditMinimal")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-
-        webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$alertSequenceWithAuditMinimal")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-      }
-
-      @Test
-      fun `will never populate relevant previous booking flag when alert is unique to previous booking`() {
-        //  will remove this test on the next round of cleanup
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$activeAlertSequence")
-          .validExchangeBody()
-          .jsonPath("alertCode.code").isEqualTo("HPI")
-          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
-        webTestClient.get().uri("/prisoner/booking-id/$bookingId/alerts/$inactiveAlertSequence")
-          .validExchangeBody()
-          .jsonPath("alertCode.code").isEqualTo("SC")
-          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
-
-        webTestClient.get().uri("/prisoner/booking-id/$previousBookingId/alerts/$previousIrrelevantAlertSequence")
-          .validExchangeBody()
-          .jsonPath("alertCode.code").isEqualTo("HPI")
-          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
-        webTestClient.get().uri("/prisoner/booking-id/$previousBookingId/alerts/$previousRelevantAlertSequence")
-          .validExchangeBody()
-          .jsonPath("alertCode.code").isEqualTo("RCP")
-          .jsonPath("isAlertFromPreviousBookingRelevant").isEqualTo(false)
       }
     }
   }
@@ -669,7 +632,6 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("latestBookingAlerts.size()").isEqualTo(0)
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(0)
       }
     }
 
@@ -696,17 +658,6 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("latestBookingAlerts[3].alertSequence").isEqualTo(10)
           .jsonPath("latestBookingAlerts[3].bookingId").isEqualTo(latestBookingIdA1234AB)
           .jsonPath("latestBookingAlerts[3].bookingSequence").isEqualTo(1)
-      }
-
-      @Test
-      fun `returns no alerts from previous bookings`() {
-        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/to-migrate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(0)
       }
     }
   }
@@ -942,7 +893,6 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("latestBookingAlerts.size()").isEqualTo(0)
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(0)
       }
     }
 
@@ -963,17 +913,6 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("latestBookingAlerts[1].alertSequence").isEqualTo(10)
           .jsonPath("latestBookingAlerts[1].bookingId").isEqualTo(latestBookingIdA1234AB)
           .jsonPath("latestBookingAlerts[1].bookingSequence").isEqualTo(1)
-      }
-
-      @Test
-      fun `returns no alerts from previous bookings`() {
-        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("previousBookingsAlerts.size()").isEqualTo(0)
       }
     }
   }
@@ -1087,260 +1026,6 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("alerts.size()").isEqualTo(2)
           .jsonPath("alerts[0].alertSequence").isEqualTo(1)
           .jsonPath("alerts[1].alertSequence").isEqualTo(2)
-      }
-    }
-  }
-
-  @DisplayName("GET /alerts/ids")
-  @Nested
-  inner class GetAlertIds {
-    var bookingId1 = 0L
-    var bookingId2 = 0L
-    private val alertSequenceFromJuly2020 = 1L
-    private val inactiveAlertSequenceFromJuly2020 = 2L
-    private val alertSequenceFromToday = 3L
-    private val alertSequenceFromJan2020 = 4L
-    private val alertSequenceFromFeb2020 = 4L
-    private lateinit var prisoner1: Offender
-    private lateinit var prisoner2: Offender
-
-    @BeforeEach
-    fun setUp() {
-      nomisDataBuilder.build {
-        prisoner1 = offender(nomsId = "A1234AB") {
-          bookingId1 = booking {
-            alert(
-              sequence = alertSequenceFromJuly2020,
-              alertCode = "HPI",
-              typeCode = "X",
-              date = LocalDate.parse("2023-07-19"),
-              expiryDate = null,
-              authorizePersonText = null,
-              verifiedFlag = false,
-              status = ACTIVE,
-              commentText = null,
-            )
-            alert(
-              sequence = inactiveAlertSequenceFromJuly2020,
-              alertCode = "SC",
-              typeCode = "S",
-              date = LocalDate.parse("2020-07-19"),
-              expiryDate = LocalDate.parse("2025-07-19"),
-              authorizePersonText = "Security Team",
-              verifiedFlag = true,
-              status = INACTIVE,
-              commentText = "At risk",
-            )
-            alert(
-              sequence = alertSequenceFromToday,
-              alertCode = "HPI",
-              typeCode = "X",
-            ) {
-              audit()
-            }
-            alert(
-              sequence = alertSequenceFromJan2020,
-              alertCode = "HPI",
-              typeCode = "X",
-            ) {
-              audit(
-                createUsername = "JANE.NARK",
-                createDatetime = LocalDateTime.parse("2020-01-23T10:23"),
-                modifyUserId = "TREV.NACK",
-                modifyDatetime = LocalDateTime.parse("2022-02-23T10:23:12"),
-                auditTimestamp = LocalDateTime.parse("2022-02-23T10:23:13"),
-                auditUserId = "TREV.MACK",
-                auditModuleName = "OCDALERT",
-                auditClientUserId = "trev.nack",
-                auditClientIpAddress = "10.1.1.23",
-                auditClientWorkstationName = "MMD1234J",
-                auditAdditionalInfo = "POST /api/bookings/2904199/alert",
-              )
-            }
-          }.bookingId
-        }
-        prisoner2 = offender(nomsId = "A1234BC") {
-          bookingId2 = booking {
-            alert(
-              sequence = alertSequenceFromJuly2020,
-              alertCode = "HPI",
-              typeCode = "X",
-              date = LocalDate.parse("2023-07-19"),
-              expiryDate = null,
-              authorizePersonText = null,
-              verifiedFlag = false,
-              status = ACTIVE,
-              commentText = null,
-            )
-            alert(
-              sequence = inactiveAlertSequenceFromJuly2020,
-              alertCode = "SC",
-              typeCode = "S",
-              date = LocalDate.parse("2020-07-19"),
-              expiryDate = LocalDate.parse("2025-07-19"),
-              authorizePersonText = "Security Team",
-              verifiedFlag = true,
-              status = INACTIVE,
-              commentText = "At risk",
-            )
-            alert(
-              sequence = alertSequenceFromToday,
-              alertCode = "HPI",
-              typeCode = "X",
-            ) {
-              audit()
-            }
-            alert(
-              sequence = alertSequenceFromFeb2020,
-              alertCode = "HPI",
-              typeCode = "X",
-            ) {
-              audit(
-                createUsername = "JANE.NARK",
-                createDatetime = LocalDateTime.parse("2020-02-23T10:23"),
-                modifyUserId = "TREV.NACK",
-                modifyDatetime = LocalDateTime.parse("2022-03-23T10:23:12"),
-                auditTimestamp = LocalDateTime.parse("2022-03-23T10:23:13"),
-                auditUserId = "TREV.MACK",
-                auditModuleName = "OCDALERT",
-                auditClientUserId = "trev.nack",
-                auditClientIpAddress = "10.1.1.23",
-                auditClientWorkstationName = "MMD1234J",
-                auditAdditionalInfo = "POST /api/bookings/2904199/alert",
-              )
-            }
-          }.bookingId
-        }
-      }
-    }
-
-    @AfterEach
-    fun tearDown() {
-      repository.deleteOffenders()
-    }
-
-    @Nested
-    inner class Security {
-      @Test
-      fun `access forbidden when no role`() {
-        webTestClient.get().uri("/alerts/ids")
-          .headers(setAuthorisation(roles = listOf()))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/alerts/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/alerts/ids")
-          .exchange()
-          .expectStatus().isUnauthorized
-      }
-    }
-
-    @Nested
-    inner class HappyPath {
-      @Test
-      fun `will return offender no, bookingId and alert sequence`() {
-        webTestClient.get().uri {
-          it.path("/alerts/ids")
-            .queryParam("fromDate", "2020-01-23")
-            .queryParam("toDate", "2020-01-23")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(1)
-          .jsonPath("$.content[0].bookingId").isEqualTo(bookingId1)
-          .jsonPath("$.content[0].alertSequence").isEqualTo(alertSequenceFromJan2020)
-          .jsonPath("$.content[0].offenderNo").isEqualTo("A1234AB")
-      }
-
-      @Test
-      fun `can filter by just from date`() {
-        webTestClient.get().uri {
-          it.path("/alerts/ids")
-            .queryParam("fromDate", "2020-01-24")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(7)
-      }
-
-      @Test
-      fun `can filter by just to date`() {
-        webTestClient.get().uri {
-          it.path("/alerts/ids")
-            .queryParam("toDate", "2020-01-24")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(1)
-      }
-
-      @Test
-      fun `will get all alerts when there is no filter`() {
-        webTestClient.get().uri {
-          it.path("/alerts/ids")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(8)
-      }
-
-      @Test
-      fun `will order by booking id, sequence ascending`() {
-        webTestClient.get().uri {
-          it.path("/alerts/ids")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(8)
-          .jsonPath("$.content[0].bookingId").isEqualTo(bookingId1)
-          .jsonPath("$.content[0].alertSequence").isEqualTo(1)
-          .jsonPath("$.content[0].offenderNo").isEqualTo("A1234AB")
-          .jsonPath("$.content[1].bookingId").isEqualTo(bookingId1)
-          .jsonPath("$.content[1].alertSequence").isEqualTo(2)
-          .jsonPath("$.content[1].offenderNo").isEqualTo("A1234AB")
-          .jsonPath("$.content[2].bookingId").isEqualTo(bookingId1)
-          .jsonPath("$.content[2].alertSequence").isEqualTo(3)
-          .jsonPath("$.content[2].offenderNo").isEqualTo("A1234AB")
-          .jsonPath("$.content[3].bookingId").isEqualTo(bookingId1)
-          .jsonPath("$.content[3].alertSequence").isEqualTo(4)
-          .jsonPath("$.content[3].offenderNo").isEqualTo("A1234AB")
-          .jsonPath("$.content[4].bookingId").isEqualTo(bookingId2)
-          .jsonPath("$.content[4].alertSequence").isEqualTo(1)
-          .jsonPath("$.content[4].offenderNo").isEqualTo("A1234BC")
-          .jsonPath("$.content[5].bookingId").isEqualTo(bookingId2)
-          .jsonPath("$.content[5].alertSequence").isEqualTo(2)
-          .jsonPath("$.content[5].offenderNo").isEqualTo("A1234BC")
-          .jsonPath("$.content[6].bookingId").isEqualTo(bookingId2)
-          .jsonPath("$.content[6].alertSequence").isEqualTo(3)
-          .jsonPath("$.content[6].offenderNo").isEqualTo("A1234BC")
-          .jsonPath("$.content[7].bookingId").isEqualTo(bookingId2)
-          .jsonPath("$.content[7].alertSequence").isEqualTo(4)
-          .jsonPath("$.content[7].offenderNo").isEqualTo("A1234BC")
       }
     }
   }

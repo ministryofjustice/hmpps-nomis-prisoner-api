@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts
 
 import jakarta.transaction.Transactional
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
@@ -22,7 +20,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAlertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -135,24 +132,6 @@ class AlertsService(
     }
   }
 
-  fun findAlertIdsByFilter(pageable: Pageable, alertsFilter: AlertsFilter): Page<AlertIdResponse> =
-    // optimize SQL so for prod don't supply any dates
-    if (alertsFilter.fromDate != null || alertsFilter.toDate != null) {
-      offenderAlertRepository.findAllAlertIds(
-        fromDate = alertsFilter.fromDate?.atStartOfDay(),
-        toDate = alertsFilter.toDate?.atStartOfDay()?.plusDays(1),
-        pageable = pageable,
-      )
-    } else {
-      offenderAlertRepository.findAllAlertIds(pageable = pageable)
-    }.map {
-      AlertIdResponse(
-        bookingId = it.getBookingId(),
-        alertSequence = it.getAlertSequence(),
-        offenderNo = it.getOffenderNo(),
-      )
-    }
-
   fun getAlerts(offenderNo: String): PrisonerAlertsResponse =
     offenderBookingRepository.findAllByOffenderNomsId(offenderNo).takeIf { it.isNotEmpty() }
       ?.let { bookings ->
@@ -178,8 +157,3 @@ private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.
 
 private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) =
   this.alerts.firstOrNull { it.alertCode.code == alertCode && it.alertStatus == ACTIVE } != null
-
-data class AlertsFilter(
-  val toDate: LocalDate?,
-  val fromDate: LocalDate?,
-)
