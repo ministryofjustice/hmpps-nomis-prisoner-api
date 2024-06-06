@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
@@ -61,6 +62,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IWPTemplateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
@@ -123,6 +125,7 @@ class Repository(
   val mergeTransactionRepository: MergeTransactionRepository,
   val csipReportRepository: CSIPReportRepository,
   val iwpTemplateRepository: IWPTemplateRepository,
+  val offenderCaseNoteRepository: OffenderCaseNoteRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -228,6 +231,8 @@ class Repository(
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
   fun deleteStaffByAccount(vararg staffUserAccount: StaffUserAccount) =
     staffUserAccount.map { it.staff }.forEach { staffRepository.delete(it) }
+
+  fun save(staff: Staff): Staff = staffRepository.save(staff)
 
   fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
     offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
@@ -388,4 +393,6 @@ class Repository(
     agencyInternalLocationRepository.delete(agencyInternalLocation)
 
   fun deleteAgencyInternalLocationById(id: Long) = agencyInternalLocationRepository.deleteById(id)
+
+  fun save(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.save(offenderCaseNote)
 }
