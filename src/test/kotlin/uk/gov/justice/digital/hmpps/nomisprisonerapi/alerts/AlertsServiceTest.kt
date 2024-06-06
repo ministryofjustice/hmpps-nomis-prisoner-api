@@ -60,7 +60,6 @@ class AlertsServiceTest {
         val alerts = alertsService.getAlerts("A1234KT")
 
         assertThat(alerts.latestBookingAlerts).isEmpty()
-        assertThat(alerts.previousBookingsAlerts).isEmpty()
       }
     }
 
@@ -82,11 +81,10 @@ class AlertsServiceTest {
       }
 
       @Test
-      fun `there will be two alerts on latest and none on previous`() {
+      fun `there will be two alerts on latest`() {
         val alerts = alertsService.getAlerts("A1234KT")
 
         assertThat(alerts.latestBookingAlerts).extracting<String> { it.alertCode.code }.containsOnly("A", "B")
-        assertThat(alerts.previousBookingsAlerts).isEmpty()
       }
     }
 
@@ -113,11 +111,9 @@ class AlertsServiceTest {
       }
 
       @Test
-      fun `there will be no alerts on previous and none on latest`() {
+      fun `there will be no alerts on latest`() {
         val alerts = alertsService.getAlerts("A1234KT")
 
-        // will remove test in next cleanup round
-        assertThat(alerts.previousBookingsAlerts).isEmpty()
         assertThat(alerts.latestBookingAlerts).isEmpty()
       }
     }
