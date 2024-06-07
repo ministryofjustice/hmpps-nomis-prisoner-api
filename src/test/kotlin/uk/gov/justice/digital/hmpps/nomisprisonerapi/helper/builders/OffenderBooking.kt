@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -210,6 +211,15 @@ interface BookingDsl {
     dsl: OffenderCaseNoteDsl.() -> Unit = { },
   ): OffenderCaseNote
 
+  @OffenderPhysicalAttributesDslMarker
+  fun physicalAttributes(
+    heightCentimetres: Int? = 180,
+    heightFeet: Int? = 5,
+    heightInches: Int? = 11,
+    weightKilograms: Int? = 80,
+    weightPounds: Int? = 176,
+  ): OffenderPhysicalAttributes
+
   @OffenderExternalMovementDslMarker
   fun prisonTransfer(
     from: String = "BXI",
@@ -249,6 +259,7 @@ class BookingBuilderFactory(
   private val offenderCaseNoteBuilderFactory: OffenderCaseNoteBuilderFactory,
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
+  private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -263,6 +274,7 @@ class BookingBuilderFactory(
     offenderCaseNoteBuilderFactory,
     csipReportBuilderFactory,
     documentBuilderFactory,
+    offenderPhysicalAttributesBuilderFactory,
   )
 }
 
@@ -279,6 +291,7 @@ class BookingBuilder(
   private val offenderCaseNoteBuilderFactory: OffenderCaseNoteBuilderFactory,
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
+  private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -593,6 +606,26 @@ class BookingBuilder(
         noteSourceCode,
       ).also {
         builder.apply(dsl)
+      }
+    }
+
+  override fun physicalAttributes(
+    heightCentimetres: Int?,
+    heightFeet: Int?,
+    heightInches: Int?,
+    weightKilograms: Int?,
+    weightPounds: Int?,
+  ): OffenderPhysicalAttributes = offenderPhysicalAttributesBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        heightCentimetres = heightCentimetres,
+        heightFeet = heightFeet,
+        heightInches = heightInches,
+        weightKilograms = weightKilograms,
+        weightPounds = weightPounds,
+      ).also {
+        offenderBooking.physicalAttributes += it
       }
     }
 
