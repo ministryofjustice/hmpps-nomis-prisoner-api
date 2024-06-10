@@ -11,12 +11,12 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.JwtAuthHelper
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.PrisonerProfileService
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
 abstract class IntegrationTestBase {
 
-  @Suppress("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired
   lateinit var webTestClient: WebTestClient
 
@@ -25,6 +25,10 @@ abstract class IntegrationTestBase {
 
   @SpyBean
   protected lateinit var telemetryClient: TelemetryClient
+
+  // TODO SDIT-1817 remove this once we implement the service
+  @SpyBean
+  protected lateinit var prisonerProfileService: PrisonerProfileService
 
   internal fun setAuthorisation(
     user: String = "AUTH_ADM",
