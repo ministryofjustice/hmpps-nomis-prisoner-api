@@ -47,7 +47,7 @@ class CaseNotesService(
 
     val staffUserAccount =
       staffUserAccountRepository.findByUsername(request.authorUsername)
-        ?: throw BadDataException("Username not found")
+        ?: throw BadDataException("Username ${request.authorUsername} not found")
 
     val caseNote = offenderCaseNoteRepository.save(
       OffenderCaseNote(
@@ -84,7 +84,7 @@ class CaseNotesService(
     validateTypes(caseNoteType, caseNoteSubType)
 
     val staffUserAccount = staffUserAccountRepository.findByUsername(request.authorUsername)
-      ?: throw BadDataException("Username not found")
+      ?: throw BadDataException("Username ${request.authorUsername} not found")
 
     caseNote.caseNoteText = request.caseNoteText
     // TODO do we want to do an 'amend' as in appending text as at present?
@@ -172,4 +172,4 @@ class CaseNotesService(
 }
 
 private const val CHECK_THRESHOLD: Int = 3900
-private const val MAX_VARCHAR_BYTES: Int = 4000
+private const val MAX_CASENOTE_LENGTH_BYTES: Int = 4000
