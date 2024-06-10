@@ -84,6 +84,7 @@ class OffenderCaseNote(
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
   val agencyLocation: AgencyLocation? = null,
+  // can be null pre c.2017
 
   @Column(name = "CASE_NOTE_TEXT")
   var caseNoteText: String? = null,
