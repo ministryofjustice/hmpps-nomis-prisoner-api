@@ -126,7 +126,7 @@ class CaseNotesService(
   ) = offenderCaseNoteRepository.findAllBookingIds(fromId, toId, activeOnly, pageable)
 
   private fun validateTextLength(value: String) {
-    if (value.length >= CHECK_THRESHOLD || Utf8.encodedLength(value) > MAX_VARCHAR_BYTES) {
+    if (value.length >= CHECK_THRESHOLD || Utf8.encodedLength(value) > MAX_CASENOTE_LENGTH_BYTES) {
       throw BadDataException("Case note text too long")
     }
   }
