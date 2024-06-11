@@ -31,13 +31,13 @@ data class BookingPhysicalAttributesResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PhysicalAttributesResponse(
   @Schema(description = "The height of the prisoner in centimetres", example = "180")
-  val heightCentimetres: Int,
+  val heightCentimetres: Int?,
   @Schema(description = "The weight of the prisoner in kilograms", example = "80")
-  val weightKilograms: Int,
+  val weightKilograms: Int?,
   @Schema(description = "The time the physical attributes were created", example = "2020-07-17T12:34:56")
-  val createDate: LocalDateTime,
+  val createDateTime: LocalDateTime,
   @Schema(description = "The time the physical attributes were last changed", example = "2021-07-16T12:34:56")
-  val modifiedDate: LocalDateTime,
+  val modifiedDateTime: LocalDateTime?,
   @Schema(description = "The name of the module that last changed the physical attributes, indicates if this was NOMIS or the synchronisation service", example = "DPS_SYNCHRONISATION")
-  val auditModuleName: String,
+  val auditModuleName: String?,
 )

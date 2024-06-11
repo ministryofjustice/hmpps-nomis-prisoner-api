@@ -91,7 +91,7 @@ data class OffenderBooking(
   val youthAdultCode: String? = null,
 
   @Column(name = "BOOKING_END_DATE")
-  val bookingEndDate: LocalDateTime? = null,
+  var bookingEndDate: LocalDateTime? = null,
 
   @Column(name = "IN_OUT_STATUS", nullable = false)
   var inOutStatus: String? = null,

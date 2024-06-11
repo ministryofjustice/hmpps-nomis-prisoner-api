@@ -214,10 +214,10 @@ interface BookingDsl {
   @OffenderPhysicalAttributesDslMarker
   fun physicalAttributes(
     heightCentimetres: Int? = 180,
-    heightFeet: Int? = 5,
-    heightInches: Int? = 11,
+    heightFeet: Int? = null,
+    heightInches: Int? = null,
     weightKilograms: Int? = 80,
-    weightPounds: Int? = 176,
+    weightPounds: Int? = null,
   ): OffenderPhysicalAttributes
 
   @OffenderExternalMovementDslMarker
@@ -656,6 +656,12 @@ class BookingBuilder(
           offenderBooking = offenderBooking,
           date = date,
         )
+          .also {
+            offenderBooking.inOutStatus = "OUT"
+            offenderBooking.location = repository.lookupAgencyLocation("OUT")
+            offenderBooking.active = false
+            offenderBooking.bookingEndDate = date
+          }
           .also { offenderBooking.externalMovements.forEach { it.active = false } }
           .also { offenderBooking.externalMovements += it }
       }
