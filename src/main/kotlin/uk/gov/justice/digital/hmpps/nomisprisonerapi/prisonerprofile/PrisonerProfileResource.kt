@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts.AlertResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.PrisonerPhysicalAttributesResponse
 
@@ -34,7 +33,7 @@ class PrisonerProfileResource(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AlertResponse::class),
+            schema = Schema(implementation = PrisonerPhysicalAttributesResponse::class),
           ),
         ],
       ),

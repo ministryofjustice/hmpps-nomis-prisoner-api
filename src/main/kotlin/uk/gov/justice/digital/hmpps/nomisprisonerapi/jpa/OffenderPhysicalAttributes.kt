@@ -12,6 +12,7 @@ import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDateTime
+import kotlin.math.roundToInt
 
 @Embeddable
 data class OffenderPhysicalAttributeId(
@@ -57,4 +58,20 @@ class OffenderPhysicalAttributes(
   @Column(name = "AUDIT_MODULE_NAME")
   @Generated
   var auditModuleName: String? = null
+
+  fun getHeightInCentimetres() =
+    // Take height in cm if it exists because the data is more accurate (being a smaller unit than inches)
+    if (heightCentimetres != null) {
+      heightCentimetres
+    } else {
+      heightFeet?.let { ((it * 12) + (heightInches ?: 0)) * 2.54 }?.roundToInt()
+    }
+
+  fun getWeightInKilograms() =
+    // Take weight in lb and convert if it exists because the data is more accurate (being a smaller unit than kg). See the unit tests for an example explaining why.
+    if (weightPounds != null) {
+      weightPounds!!.let { (it * 0.453592) }.roundToInt()
+    } else {
+      weightKilograms
+    }
 }
