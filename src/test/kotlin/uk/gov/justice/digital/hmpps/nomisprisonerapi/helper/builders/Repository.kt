@@ -231,6 +231,7 @@ class Repository(
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
   fun deleteStaffByAccount(vararg staffUserAccount: StaffUserAccount) =
     staffUserAccount.map { it.staff }.forEach { staffRepository.delete(it) }
+  fun deleteStaff() = staffRepository.deleteAll()
 
   fun save(staff: Staff): Staff = staffRepository.save(staff)
 
@@ -395,4 +396,6 @@ class Repository(
   fun deleteAgencyInternalLocationById(id: Long) = agencyInternalLocationRepository.deleteById(id)
 
   fun save(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.save(offenderCaseNote)
+  fun delete(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.delete(offenderCaseNote)
+  fun deleteCaseNotes() = offenderCaseNoteRepository.deleteAll()
 }
