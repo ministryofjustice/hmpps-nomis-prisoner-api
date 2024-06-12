@@ -16,6 +16,7 @@ class PrisonerProfileService(
   fun getPhysicalAttributes(offenderNo: String) =
     repository.findAllByOffenderNomsId(offenderNo)
       .takeIf { it.isNotEmpty() }
+      ?.filterNot { it.physicalAttributes.isEmpty() }
       ?.map {
         BookingPhysicalAttributesResponse(
           bookingId = it.bookingId,
