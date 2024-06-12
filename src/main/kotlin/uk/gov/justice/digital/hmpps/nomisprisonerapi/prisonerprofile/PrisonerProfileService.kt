@@ -11,10 +11,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.Prisone
 @Service
 @Transactional
 class PrisonerProfileService(
-  private val repository: OffenderBookingRepository,
+  private val bookingRepository: OffenderBookingRepository,
 ) {
   fun getPhysicalAttributes(offenderNo: String) =
-    repository.findAllByOffenderNomsId(offenderNo)
+    bookingRepository.findAllByOffenderNomsId(offenderNo)
       .takeIf { it.isNotEmpty() }
       ?.filterNot { it.physicalAttributes.isEmpty() }
       ?.map {
