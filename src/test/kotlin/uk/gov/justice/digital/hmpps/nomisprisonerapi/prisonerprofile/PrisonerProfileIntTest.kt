@@ -98,6 +98,23 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should not return bookings without physical attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(bookings).isEmpty()
+            }
+          }
+      }
+
+      @Test
       fun `should return multiple physical attributes`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
