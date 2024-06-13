@@ -76,6 +76,7 @@ data class Offender(
   @JoinColumn(name = "ROOT_OFFENDER_ID", updatable = false, insertable = false)
   var rootOffender: Offender? = null,
 
+  @Deprecated("Do not use; only some of the bookings may be associated with the root or any particular alias")
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val bookings: MutableList<OffenderBooking> = mutableListOf(),
 
