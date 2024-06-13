@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction.ASC
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -21,6 +22,7 @@ class PrisonerService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
 ) {
   fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> {
     return bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
@@ -62,12 +64,10 @@ class PrisonerService(
       }
   }
 
-  fun getPreviousBookingId(offenderNo: String, bookingId: Long): PreviousBookingId {
-    val offender = offenderRepository.findRootByNomsId(offenderNo) ?: throw NotFoundException("Prisoner with offenderNo $offenderNo not found")
-
-    return offender.bookings.firstOrNull { it.bookingId == bookingId }?.bookingSequence
-      ?.let { bookingSequence -> offender.bookings.firstOrNull { it.bookingSequence == bookingSequence + 1 } }
+  fun getPreviousBookingId(offenderNo: String, bookingId: Long): PreviousBookingId =
+    offenderBookingRepository.findByIdOrNull(bookingId)
+      ?.bookingSequence
+      ?.let { bookingSequence -> offenderBookingRepository.findOneByOffenderNomsIdAndBookingSequence(offenderNo, bookingSequence + 1) }
       ?.let { PreviousBookingId(bookingId = it.bookingId, bookingSequence = it.bookingSequence!!.toLong()) }
       ?: throw NotFoundException("Prisoner with offenderNo $offenderNo and booking $bookingId not found or has no previous booking")
-  }
 }

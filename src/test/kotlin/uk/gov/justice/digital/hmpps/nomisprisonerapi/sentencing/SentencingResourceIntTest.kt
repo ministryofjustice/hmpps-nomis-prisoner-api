@@ -170,7 +170,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
       }
     }
 
@@ -343,10 +343,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 reportingStaff = staff,
               ) {}
             }
-            prisoner1Booking2 = booking(agencyLocationId = "MDI") {
-              prisoner1CourtCase2 = courtCase(
-                reportingStaff = staff,
-              ) {}
+            alias {
+              prisoner1Booking2 = booking(agencyLocationId = "MDI") {
+                prisoner1CourtCase2 = courtCase(
+                  reportingStaff = staff,
+                ) {}
+              }
             }
           }
         prisoner2 =
@@ -404,7 +406,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
       }
     }
 
@@ -452,10 +454,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
         prisoner1 =
           offender(nomsId = "A1234AB") {
-            prisoner1Booking = booking(agencyLocationId = "MDI") {
-              prisoner1CourtCase = courtCase(
-                reportingStaff = staff,
-              ) {}
+            alias {
+              prisoner1Booking = booking(agencyLocationId = "MDI") {
+                prisoner1CourtCase = courtCase(
+                  reportingStaff = staff,
+                ) {}
+              }
             }
             prisoner1Booking2 = booking(agencyLocationId = "MDI") {
               prisoner1CourtCase2 = courtCase(
@@ -827,7 +831,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
       }
 
       @Test
@@ -1376,7 +1380,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
       }
 
       @Test
@@ -1684,7 +1688,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
       }
 
       @Test
@@ -2169,7 +2173,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
       }
     }
 
@@ -2336,7 +2340,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
       }
     }
 
@@ -2825,7 +2829,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
       }
 
       @Test
@@ -3063,7 +3067,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var newCourtCase: CourtCase
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
-    private val aDateString = "2023-01-01"
     private val aLaterDateString = "2023-01-05"
 
     @BeforeEach
@@ -3294,7 +3297,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtCase: CourtCase
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
-    private val aDateString = "2023-01-01"
     private val aLaterDateString = "2023-01-05"
 
     @BeforeEach

@@ -36,4 +36,6 @@ interface OffenderBookingRepository :
         """,
   )
   fun findAllByOffenderNomsId(@Param("nomsId") nomsId: String): List<OffenderBooking>
+
+  fun findOneByOffenderNomsIdAndBookingSequence(nomsId: String, sequence: Int): OffenderBooking?
 }

@@ -24,7 +24,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
@@ -46,7 +45,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepos
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceTermRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -63,7 +61,6 @@ class SentencingService(
   private val courtCaseRepository: CourtCaseRepository,
   private val offenderSentenceRepository: OffenderSentenceRepository,
   private val offenderSentenceTermRepository: OffenderSentenceTermRepository,
-  private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val telemetryClient: TelemetryClient,
   private val legalCaseTypeRepository: ReferenceCodeRepository<LegalCaseType>,
@@ -91,14 +88,14 @@ class SentencingService(
   }
 
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
-    findPrisoner(offenderNo).findLatestBooking()
+    findLatestBooking(offenderNo)
 
     return courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
       ?: throw NotFoundException("Court case $id not found")
   }
 
   fun getCourtCasesByOffender(offenderNo: String): List<CourtCaseResponse> {
-    findPrisoner(offenderNo).findLatestBooking()
+    findLatestBooking(offenderNo)
 
     return courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
       .map { courtCase ->
@@ -122,7 +119,7 @@ class SentencingService(
 
   @Audit
   fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) =
-    findPrisoner(offenderNo).findLatestBooking().let { booking ->
+    findLatestBooking(offenderNo).let { booking ->
 
       val courtCase = courtCaseRepository.saveAndFlush(
         CourtCase(
@@ -226,7 +223,7 @@ class SentencingService(
     caseId: Long,
     courtAppearanceRequest: CourtAppearanceRequest,
   ): CreateCourtAppearanceResponse {
-    findPrisoner(offenderNo).findLatestBooking().let { booking ->
+    findLatestBooking(offenderNo).let { booking ->
       findCourtCase(caseId, offenderNo).let { courtCase ->
         val courtEvent = CourtEvent(
           offenderBooking = booking,
@@ -301,7 +298,7 @@ class SentencingService(
   }
 
   fun getCourtAppearance(id: Long, offenderNo: String): CourtEventResponse {
-    findPrisoner(offenderNo).findLatestBooking()
+    findLatestBooking(offenderNo)
     return findCourtAppearance(offenderNo = offenderNo, id = id).toCourtEvent()
   }
 
@@ -357,8 +354,7 @@ class SentencingService(
     eventId: Long,
     request: CourtAppearanceRequest,
   ): UpdateCourtAppearanceResponse {
-    findPrisoner(offenderNo).let { offender ->
-      val offenderBooking = offender.findLatestBooking()
+    findLatestBooking(offenderNo).let { offenderBooking ->
       findCourtCase(caseId, offenderNo).let { courtCase ->
         findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
           courtAppearance.eventDate = request.eventDateTime.toLocalDate()
@@ -445,7 +441,7 @@ class SentencingService(
 
   @Audit
   fun createSentence(offenderNo: String, request: CreateSentenceRequest) =
-    findPrisoner(offenderNo).findLatestBooking().let { booking ->
+    findLatestBooking(offenderNo).let { booking ->
 
       val sentence = OffenderSentence(
         id = SentenceId(booking, sequence = offenderSentenceRepository.getNextSequence(booking)),
@@ -835,19 +831,13 @@ class SentencingService(
   }
 
   fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
-    findPrisoner(offenderNo).findLatestBooking()
+    findLatestBooking(offenderNo)
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
   }
 
-  private fun Offender.findLatestBooking(): OffenderBooking {
-    return this.bookings.firstOrNull { it.bookingSequence == 1 }
-      ?: throw BadDataException("Prisoner ${this.nomsId} has no bookings")
-  }
-
-  private fun findPrisoner(offenderNo: String): Offender {
-    return offenderRepository.findRootByNomsId(offenderNo)
-      ?: throw NotFoundException("Prisoner $offenderNo not found")
-  }
+  private fun findLatestBooking(offenderNo: String): OffenderBooking =
+    offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
 
   private fun findOffenderBooking(id: Long): OffenderBooking {
     return offenderBookingRepository.findByIdOrNull(id)

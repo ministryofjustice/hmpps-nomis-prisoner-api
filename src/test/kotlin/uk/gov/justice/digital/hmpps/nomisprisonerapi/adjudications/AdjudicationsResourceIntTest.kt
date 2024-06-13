@@ -125,12 +125,16 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
           prisonerAtMoorlandPreviouslyAtBrixton =
             offender(nomsId = "A1234AA") {
-              booking(agencyLocationId = "MDI", active = true)
               booking(agencyLocationId = "BXI", active = false)
+              alias {
+                booking(agencyLocationId = "MDI", active = true)
+              }
             }
           prisonerAtMoorland =
             offender(nomsId = "A1234AB") {
-              booking(agencyLocationId = "MDI")
+              alias {
+                booking(agencyLocationId = "MDI")
+              }
             }
           prisonerAtBrixton =
             offender(nomsId = "A1234AC") {
@@ -1225,7 +1229,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner A9999ZZ not found")
+          .jsonPath("developerMessage").isEqualTo("Prisoner A9999ZZ not found or has no bookings")
       }
 
       @Test
@@ -1241,15 +1245,15 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return 400 if person has no bookings yet`() {
+      fun `will return 404 if person has no bookings yet`() {
         webTestClient.post().uri("/prisoners/${prisonerWithNoBookings.nomsId}/adjudications")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
-          .expectStatus().isBadRequest
+          .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner ${prisonerWithNoBookings.nomsId} has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner ${prisonerWithNoBookings.nomsId} not found or has no bookings")
       }
 
       @Test

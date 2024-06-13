@@ -309,7 +309,7 @@ class BookingBuilder(
     val agencyLocation = repository.lookupAgencyLocation(agencyLocationCode)
     return OffenderBooking(
       offender = offender,
-      rootOffender = offender,
+      rootOffender = offender.rootOffender,
       bookingSequence = bookingSequence,
       createLocation = agencyLocation,
       location = agencyLocation,

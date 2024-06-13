@@ -76,7 +76,7 @@ data class Offender(
   @JoinColumn(name = "ROOT_OFFENDER_ID", updatable = false, insertable = false)
   var rootOffender: Offender? = null,
 
-  @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+  @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val bookings: MutableList<OffenderBooking> = mutableListOf(),
 
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
