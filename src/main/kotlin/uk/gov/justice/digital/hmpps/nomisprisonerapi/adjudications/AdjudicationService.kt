@@ -41,7 +41,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.NO_FURTHER_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SUSPECT_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
@@ -66,11 +65,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.Adjudication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.findLatestAliasByNomisId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.staffParty
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -88,7 +84,6 @@ class AdjudicationService(
   private val adjudicationHearingRepository: AdjudicationHearingRepository,
   private val adjudicationHearingResultRepository: AdjudicationHearingResultRepository,
   private val adjudicationHearingResultAwardRepository: AdjudicationHearingResultAwardRepository,
-  private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
@@ -103,7 +98,6 @@ class AdjudicationService(
   private val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
   private val sanctionTypeRepository: ReferenceCodeRepository<AdjudicationSanctionType>,
   private val sanctionStatusRepository: ReferenceCodeRepository<AdjudicationSanctionStatus>,
-  private val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -239,8 +233,7 @@ class AdjudicationService(
     request: CreateAdjudicationRequest,
   ): AdjudicationResponse {
     val adjudicationNumber = adjudicationIncidentPartyRepository.getNextAdjudicationNumber()
-    val prisoner = findPrisoner(offenderNo)
-    val offenderBooking = findBooking(prisoner)
+    val offenderBooking = findLatestBooking(offenderNo)
     val reportingStaff = findStaffByUsername(request.incident.reportingStaffUsername)
     val prison = findPrison(request.incident.prisonId)
     val internalLocation = findInternalLocation(request.incident.internalLocationId)
@@ -387,7 +380,7 @@ class AdjudicationService(
     offenderNo: String,
   ): AdjudicationIncidentParty = AdjudicationIncidentParty(
     id = AdjudicationIncidentPartyId(agencyIncidentId = incident.id, partySequence = partySequence),
-    offenderBooking = findPrisoner(offenderNo).findLatestBooking(),
+    offenderBooking = findLatestBooking(offenderNo),
     actionDecision = lookupNoFurtherActionIncidentAction(),
     incident = incident,
     incidentRole = VICTIM_ROLE,
@@ -468,11 +461,6 @@ class AdjudicationService(
     adjudicationHearingRepository.findByIdOrNull(hearingId)?.toHearing()
       ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
 
-  private fun findPrisoner(offenderNo: String): Offender {
-    return offenderRepository.findLatestAliasByNomisId(offenderNo)
-      ?: throw NotFoundException("Prisoner $offenderNo not found")
-  }
-
   private fun findPrison(prisonId: String): AgencyLocation {
     return agencyLocationRepository.findByIdOrNull(prisonId)
       ?: throw BadDataException("Prison $prisonId not found")
@@ -483,15 +471,9 @@ class AdjudicationService(
       ?: throw BadDataException("Prison internal location $internalLocationId not found")
   }
 
-  private fun findBooking(prisoner: Offender): OffenderBooking {
-    return prisoner.bookings.firstOrNull { it.bookingSequence == 1 }
-      ?: throw BadDataException("Prisoner ${prisoner.nomsId} has no bookings")
-  }
-
-  private fun Offender.findLatestBooking(): OffenderBooking {
-    return this.bookings.firstOrNull { it.bookingSequence == 1 }
-      ?: throw BadDataException("Prisoner ${this.nomsId} has no bookings")
-  }
+  private fun findLatestBooking(offenderNo: String): OffenderBooking =
+    offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
 
   private fun findStaffByUsername(reportingStaffUsername: String): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff {
     return staffUserAccountRepository.findByUsername(reportingStaffUsername)?.staff

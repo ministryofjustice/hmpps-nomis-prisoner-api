@@ -22,7 +22,7 @@ class OffenderBookingBuilder(
   fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
     OffenderBooking(
       offender = offender,
-      rootOffender = offender,
+      rootOffender = offender.rootOffender,
       bookingBeginDate = bookingBeginDate,
       active = active,
       inOutStatus = inOutStatus,

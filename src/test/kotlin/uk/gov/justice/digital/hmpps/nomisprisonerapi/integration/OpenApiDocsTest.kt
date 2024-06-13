@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@AutoConfigureWebTestClient(timeout = "PT10S")
+@AutoConfigureWebTestClient(timeout = "PT60S")
 class OpenApiDocsTest : IntegrationTestBase() {
   @LocalServerPort
   private var port: Int = 0

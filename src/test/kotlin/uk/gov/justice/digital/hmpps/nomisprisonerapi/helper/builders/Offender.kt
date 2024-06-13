@@ -81,6 +81,7 @@ class OffenderBuilder(
   )
     .let { repository.save(it) }
     .also { it.rootOffenderId = it.id }
+    .also { it.rootOffender = it }
     .also { offender = it }
 
   private fun buildAlias(

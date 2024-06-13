@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationDetailId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationDetailRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -32,6 +33,7 @@ class NonAssociationService(
   private val reasonRepository: ReferenceCodeRepository<NonAssociationReason>,
   private val typeRepository: ReferenceCodeRepository<NonAssociationType>,
   private val telemetryClient: TelemetryClient,
+  private val offenderBookingRepository: OffenderBookingRepository,
 ) {
   @Audit
   fun createNonAssociation(dto: CreateNonAssociationRequest): CreateNonAssociationResponse {
@@ -85,10 +87,12 @@ class NonAssociationService(
       otherExisting.recipNonAssociationReason = reason
       otherExisting.offenderNonAssociationDetails.add(mapDetails(recipReason, otherExisting, dto, typeSequence))
     } else {
+      val bookingId = offenderBookingRepository.findLatestByOffenderNomsId(dto.offenderNo)!!.bookingId
+      val nsBookingId = offenderBookingRepository.findLatestByOffenderNomsId(dto.nsOffenderNo)!!.bookingId
       OffenderNonAssociation(
         id = OffenderNonAssociationId(offender.id, nsOffender.id),
-        offenderBookingId = offender.bookings.first().bookingId,
-        nsOffenderBookingId = nsOffender.bookings.first().bookingId,
+        offenderBookingId = bookingId,
+        nsOffenderBookingId = nsBookingId,
         nonAssociationReason = recipReason,
         recipNonAssociationReason = recipReason,
       )
@@ -100,8 +104,8 @@ class NonAssociationService(
 
       OffenderNonAssociation(
         id = OffenderNonAssociationId(nsOffender.id, offender.id),
-        offenderBookingId = nsOffender.bookings.first().bookingId,
-        nsOffenderBookingId = offender.bookings.first().bookingId,
+        offenderBookingId = nsBookingId,
+        nsOffenderBookingId = bookingId,
         nonAssociationReason = recipReason,
         recipNonAssociationReason = reason,
       )

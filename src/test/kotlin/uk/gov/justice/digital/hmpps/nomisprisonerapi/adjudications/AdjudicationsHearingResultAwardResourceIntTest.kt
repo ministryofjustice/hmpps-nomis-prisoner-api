@@ -48,6 +48,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
   inner class CreateHearingResultAward {
     private val offenderNo = "A1965NM"
     private lateinit var prisoner: Offender
+    private var bookingId: Long = 0
     private lateinit var reportingStaff: Staff
     private lateinit var existingIncident: AdjudicationIncident
     private lateinit var previousIncident: AdjudicationIncident
@@ -66,7 +67,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
-          booking {
+          bookingId = booking {
             adjudicationParty(incident = previousIncident, adjudicationNumber = previousAdjudicationNumber) {
               val charge = charge(offenceCode = "51:1A")
               hearing(
@@ -119,7 +120,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                 )
               }
             }
-          }
+          }.bookingId
         }
       }
     }
@@ -288,7 +289,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo(4)
           .jsonPath("awardsCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/4")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/4")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -317,7 +318,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       @Test
       fun `create a consecutive adjudication hearing result award`() {
         // given there is an existing ADA
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/2")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/2")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -362,7 +363,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("awardsCreated[0].sanctionSequence").isEqualTo(4)
           .jsonPath("awardsCreated[0].bookingId").isEqualTo(prisoner.latestBooking().bookingId)
 
-        webTestClient.get().uri("/prisoners/booking-id/${prisoner.bookings.first().bookingId}/awards/4")
+        webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/4")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
           .expectStatus().isOk
@@ -419,6 +420,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
   inner class UpdateHearingResultAward {
     private val offenderNo = "A1965NM"
     private lateinit var prisoner: Offender
+    private var bookingId: Long = 0
     private lateinit var reportingStaff: Staff
     private lateinit var existingIncident: AdjudicationIncident
     private lateinit var previousIncident: AdjudicationIncident
@@ -437,7 +439,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
-          booking {
+          bookingId = booking {
             adjudicationParty(incident = previousIncident, adjudicationNumber = previousAdjudicationNumber) {
               val charge = charge(offenceCode = "51:1A")
               hearing(
@@ -512,7 +514,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
-          }
+          }.bookingId
         }
       }
     }
@@ -667,8 +669,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `create any adjudication hearing result awards that need adding`() {
-        val bookingId = prisoner.bookings.first().bookingId
-
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -713,7 +713,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       @Test
       fun `create a consecutive adjudication hearing result award`() {
         // given there is an existing ADA
-        val bookingId = prisoner.bookings.first().bookingId
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/2")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
@@ -794,7 +793,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will update existing awards`() {
-        val bookingId = prisoner.bookings.first().bookingId
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
@@ -904,7 +902,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will delete awards no longer referenced and return their IDs`() {
-        val bookingId = prisoner.bookings.first().bookingId
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
@@ -1041,7 +1038,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .jsonPath("awardsDeleted[0].sanctionSequence").isEqualTo("5")
           .jsonPath("awardsDeleted[1].sanctionSequence").isEqualTo("6")
 
-        val bookingId = prisoner.bookings.first().bookingId
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/5")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
@@ -1140,6 +1136,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
   inner class SquashHearingResultAward {
     private val offenderNo = "A1965NM"
     private lateinit var prisoner: Offender
+    private var bookingId: Long = 0
     private lateinit var reportingStaff: Staff
     private lateinit var existingIncident: AdjudicationIncident
     private lateinit var previousIncident: AdjudicationIncident
@@ -1160,7 +1157,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
-          booking {
+          bookingId = booking {
             adjudicationParty(incident = previousIncident, adjudicationNumber = dpsCreateAdjudication) {
               val charge = charge(offenceCode = "51:1A")
               dpsHearing = hearing(
@@ -1263,7 +1260,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
-          }
+          }.bookingId
         }
       }
     }
@@ -1351,8 +1348,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `awards and outcome all set to quashed`() {
-        val bookingId = prisoner.bookings.first().bookingId
-
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$dpsCreateAdjudication/charge/1/quash")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -1413,8 +1408,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will only quash awards for the specific charge for a migrated adjudication`() {
-        val bookingId = prisoner.bookings.first().bookingId
-
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$nomisMigratedAdjudication/charge/${nomisCreatedCharge2.id.chargeSequence}/quash")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -1505,6 +1498,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
   inner class UnquashHearingResultAward {
     private val offenderNo = "A1965NM"
     private lateinit var prisoner: Offender
+    private var bookingId: Long = 0
     private lateinit var reportingStaff: Staff
     private lateinit var incident: AdjudicationIncident
     private val adjudicationNumber = 123456L
@@ -1520,7 +1514,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         }
         incident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
-          booking {
+          bookingId = booking {
             adjudicationParty(incident = incident, adjudicationNumber = adjudicationNumber) {
               charge = charge(offenceCode = "51:1B")
               hearing = hearing(
@@ -1558,7 +1552,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
-          }
+          }.bookingId
         }
       }
     }
@@ -1674,7 +1668,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will update existing awards`() {
-        val bookingId = prisoner.bookings.first().bookingId
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/awards/1")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
@@ -1773,8 +1766,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return any new or deleted awards when the unquash happens with NOMIS is out of sync with DPS`() {
-        val bookingId = prisoner.bookings.first().bookingId
-
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$adjudicationNumber/charge/${charge.id.chargeSequence}/unquash")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
@@ -1882,6 +1873,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
   inner class DeleteHearingResultAwards {
     private val offenderNo = "A1965NM"
     private lateinit var prisoner: Offender
+    private var bookingId: Long = 0
     private lateinit var reportingStaff: Staff
     private lateinit var existingIncident: AdjudicationIncident
     private lateinit var previousIncident: AdjudicationIncident
@@ -1901,7 +1893,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
         existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
-          booking {
+          bookingId = booking {
             adjudicationParty(incident = previousIncident, adjudicationNumber = previousAdjudicationNumber) {
               val charge = charge(offenceCode = "51:1A")
               hearing(
@@ -1958,7 +1950,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
-          }
+          }.bookingId
         }
       }
     }
@@ -2040,7 +2032,6 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will delete awards and audit the deletions`() {
-        val bookingId = prisoner.bookings.first().bookingId
         webTestClient.get().uri("/adjudications/hearings/${previousHearingResult.hearing.id}/charge/${previousHearingResult.chargeSequence}/result")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
           .exchange()
