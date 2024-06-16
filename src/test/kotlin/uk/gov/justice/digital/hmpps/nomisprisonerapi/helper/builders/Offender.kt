@@ -27,6 +27,7 @@ interface OffenderDsl {
     youthAdultCode: String = "N",
     agencyLocationId: String = "BXI",
     livingUnitId: Long = -3009,
+    bookingSequence: Int? = null,
     dsl: BookingDsl.() -> Unit = {},
   ): OffenderBooking
 
@@ -54,9 +55,7 @@ class OffenderBuilderFactory(
   private val repository: OffenderBuilderRepository,
   private val bookingBuilderFactory: BookingBuilderFactory,
 ) {
-  fun builder(): OffenderBuilder {
-    return OffenderBuilder(repository, bookingBuilderFactory)
-  }
+  fun builder(): OffenderBuilder = OffenderBuilder(repository, bookingBuilderFactory)
 }
 
 class OffenderBuilder(
@@ -97,6 +96,7 @@ class OffenderBuilder(
     gender = repository.gender(genderCode),
     lastNameKey = lastName.uppercase(),
     rootOffenderId = offender.rootOffenderId,
+    rootOffender = offender.rootOffender,
   )
     .let { repository.save(it) }
 
@@ -107,13 +107,14 @@ class OffenderBuilder(
     youthAdultCode: String,
     agencyLocationId: String,
     livingUnitId: Long,
+    bookingSequence: Int?,
     dsl: BookingDsl.() -> Unit,
   ) = bookingBuilderFactory.builder()
     .let { builder ->
       builder.build(
         offender = offender,
         // if you want multiple bookings then create them with latest booking first so it gets seq 1 like in Nomis
-        bookingSequence = offender.bookings.size + 1,
+        bookingSequence = bookingSequence ?: (offender.bookings.size + 1),
         agencyLocationCode = agencyLocationId,
         bookingBeginDate = bookingBeginDate,
         active = active,

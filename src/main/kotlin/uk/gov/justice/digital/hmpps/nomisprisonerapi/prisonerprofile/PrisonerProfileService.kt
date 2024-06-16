@@ -22,6 +22,7 @@ class PrisonerProfileService(
           bookingId = it.bookingId,
           startDate = it.bookingBeginDate.toLocalDate(),
           endDate = it.bookingEndDate?.toLocalDate(),
+          latestBooking = it.bookingSequence == 1,
           physicalAttributes = it.physicalAttributes.map {
             PhysicalAttributesResponse(
               heightCentimetres = it.getHeightInCentimetres(),
