@@ -25,6 +25,8 @@ data class BookingPhysicalAttributesResponse(
   val endDate: LocalDate?,
   @Schema(description = "A list of physical attributes for this booking")
   val physicalAttributes: List<PhysicalAttributesResponse>,
+  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  val latestBooking: Boolean,
 )
 
 @Schema(description = "Physical attributes recorded against a prisoner")
