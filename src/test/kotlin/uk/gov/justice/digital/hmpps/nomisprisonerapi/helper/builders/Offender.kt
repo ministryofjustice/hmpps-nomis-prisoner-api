@@ -62,7 +62,9 @@ class OffenderBuilder(
   private val repository: OffenderBuilderRepository,
   private val bookingBuilderFactory: BookingBuilderFactory,
 ) : OffenderDsl {
-  private lateinit var offender: Offender
+  private lateinit var rootOffender: Offender
+  private lateinit var aliasOffender: Offender
+  private var nextBookingSequence: Int = 1
 
   fun build(
     nomsId: String,
@@ -79,9 +81,12 @@ class OffenderBuilder(
     lastNameKey = lastName.uppercase(),
   )
     .let { repository.save(it) }
-    .also { it.rootOffenderId = it.id }
-    .also { it.rootOffender = it }
-    .also { offender = it }
+    .also {
+      it.rootOffenderId = it.id
+      it.rootOffender = it
+      rootOffender = it
+      aliasOffender = it
+    }
 
   private fun buildAlias(
     lastName: String,
@@ -89,16 +94,19 @@ class OffenderBuilder(
     birthDate: LocalDate,
     genderCode: String,
   ): Offender = Offender(
-    nomsId = offender.nomsId,
+    nomsId = rootOffender.nomsId,
     lastName = lastName,
     firstName = firstName,
     birthDate = birthDate,
     gender = repository.gender(genderCode),
     lastNameKey = lastName.uppercase(),
-    rootOffenderId = offender.rootOffenderId,
-    rootOffender = offender.rootOffender,
+    rootOffenderId = rootOffender.rootOffenderId,
+    rootOffender = rootOffender.rootOffender,
   )
     .let { repository.save(it) }
+    .also {
+      aliasOffender = it
+    }
 
   override fun booking(
     bookingBeginDate: LocalDateTime,
@@ -112,9 +120,10 @@ class OffenderBuilder(
   ) = bookingBuilderFactory.builder()
     .let { builder ->
       builder.build(
-        offender = offender,
-        // if you want multiple bookings then create them with latest booking first so it gets seq 1 like in Nomis
-        bookingSequence = bookingSequence ?: (offender.bookings.size + 1),
+        offender = aliasOffender,
+        // if you want multiple bookings then create them with latest booking first so it gets seq 1 like in Nomis,
+        // or override the sequences
+        bookingSequence = bookingSequence ?: nextBookingSequence++,
         agencyLocationCode = agencyLocationId,
         bookingBeginDate = bookingBeginDate,
         active = active,
@@ -122,7 +131,11 @@ class OffenderBuilder(
         youthAdultCode = youthAdultCode,
         livingUnitId = livingUnitId,
       )
-        .also { offender.bookings += it }
+        .also {
+          println("Created $it for ${it.offender}")
+          aliasOffender.bookings += it
+          rootOffender.getAllBookings()?.add(it)
+        }
         .also { builder.apply(dsl) }
     }
 

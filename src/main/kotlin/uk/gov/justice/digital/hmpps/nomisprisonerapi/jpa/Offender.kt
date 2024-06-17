@@ -80,6 +80,9 @@ data class Offender(
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val bookings: MutableList<OffenderBooking> = mutableListOf(),
 
+  @OneToMany(mappedBy = "rootOffender", fetch = FetchType.LAZY)
+  private val allBookings: MutableList<OffenderBooking> = mutableListOf(),
+
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val identifiers: List<OffenderIdentifier> = ArrayList(),
 
@@ -120,6 +123,10 @@ data class Offender(
   val middleNames: String
     get() = StringUtils.trimToNull(StringUtils.trimToEmpty(middleName) + " " + StringUtils.trimToEmpty(middleName2))
 
+  fun getAllBookings(): MutableList<OffenderBooking>? {
+    return rootOffender?.allBookings
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -128,4 +135,7 @@ data class Offender(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+
+  override fun toString(): String =
+    "${javaClass.simpleName}(id = $id, nomsId=$nomsId, firstName = $firstName, lastName = $lastName)"
 }

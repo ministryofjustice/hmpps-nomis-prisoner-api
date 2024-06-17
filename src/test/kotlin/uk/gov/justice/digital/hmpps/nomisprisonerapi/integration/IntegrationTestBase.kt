@@ -33,4 +33,4 @@ abstract class IntegrationTestBase {
 }
 
 fun Offender.latestBooking(): OffenderBooking =
-  this.bookings.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")
+  this.getAllBookings()?.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")

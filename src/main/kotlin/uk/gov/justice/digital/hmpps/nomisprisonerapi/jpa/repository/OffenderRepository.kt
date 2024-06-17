@@ -23,7 +23,9 @@ interface OffenderRepository : JpaRepository<Offender, Long>, JpaSpecificationEx
 
   @Query(
     value = """
-        select o.nomsId as nomsId, ob.bookingId as bookingId, ob.active as active, ob.inOutStatus as inOutStatus from OffenderBooking ob join ob.offender.rootOffender o where ob.rootOffender = o.rootOffender and ob.bookingSequence = 1
+      select o.nomsId as nomsId, ob.bookingId as bookingId, ob.active as active, ob.inOutStatus as inOutStatus 
+        from OffenderBooking ob join ob.offender o 
+        where ob.bookingSequence = 1
     """,
     countQuery = """
       select count(ob) from OffenderBooking ob where ob.bookingSequence = 1

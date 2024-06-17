@@ -425,11 +425,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         repository.delete(incidentAtMoorland)
         repository.delete(anotherIncidentAtMoorland)
         incidentsAtLeeds.forEach { repository.delete(it) }
-        repository.delete(prisonerAtMoorlandPreviouslyAtBrixton)
-        repository.delete(prisonerAtMoorland)
-        repository.delete(prisonerAtBrixton)
-        repository.delete(prisonerAtLeeds)
-        repository.delete(prisonerVictim)
+        repository.deleteOffenders()
         repository.delete(staff)
         repository.delete(staffVictim)
       }
@@ -641,10 +637,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       repository.deleteHearingByAdjudicationNumber(PREVIOUS_ADJUDICATION_NUMBER)
       repository.delete(previousIncident)
       repository.delete(incident)
-      repository.delete(prisoner)
-      repository.delete(prisonerVictim)
-      repository.delete(prisonerWitness)
-      repository.delete(anotherSuspect)
+      repository.deleteOffenders()
       repository.delete(staff)
       repository.delete(staffInvestigator)
       repository.delete(staffWitness)
@@ -1173,7 +1166,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.delete(existingIncident)
-      repository.delete(prisoner)
+      repository.deleteOffenders()
       repository.delete(reportingStaff)
     }
 
@@ -1371,7 +1364,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun tearDown() {
         incident?.run { repository.delete(this) }
         repository.deleteStaffByAccount(staffWitnessAdaeze, staffWitnessAbiodun, staffVictimAarav, staffVictimShivav)
-        repository.delete(prisonerVictimG1234VV, prisonerVictimA1234CT)
+        repository.deleteOffenders()
       }
 
       @Test
@@ -2061,7 +2054,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.delete(existingIncident)
-      repository.delete(prisoner)
+      repository.deleteOffenders()
       repository.delete(reportingStaff)
     }
 
@@ -2365,7 +2358,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.delete(existingIncident)
-      repository.delete(prisoner)
+      repository.deleteOffenders()
       repository.delete(reportingStaff)
     }
 
@@ -2722,7 +2715,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-      repository.delete(prisoner)
+      repository.deleteOffenders()
       repository.delete(reportingStaff)
     }
 

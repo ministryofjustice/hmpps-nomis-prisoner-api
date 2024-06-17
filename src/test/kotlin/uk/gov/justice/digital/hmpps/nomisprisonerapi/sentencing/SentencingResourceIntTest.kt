@@ -429,7 +429,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(prisoner1)
+      repository.deleteOffenders()
       repository.delete(staff)
     }
   }
@@ -543,7 +543,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(prisoner1)
+      repository.deleteOffenders()
       repository.delete(staff)
     }
   }
@@ -2600,8 +2600,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       latestBookingId = prisonerAtMoorland.latestBooking().bookingId
     }
 
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+
     @Nested
-    inner class CortOrderCreationAndDeletionSuccess {
+    inner class CourtOrderCreationAndDeletionSuccess {
 
       @Test
       fun `changing a result to Final and Active will create a Court Order when none exists for the court appearance`() {

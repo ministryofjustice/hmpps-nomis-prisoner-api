@@ -109,7 +109,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deleteData() {
-      repository.delete(offenderAtMoorlands)
+      repository.deleteOffenders()
       repository.delete(threePeople)
       repository.deleteAllVisitSlots()
       repository.deleteAllVisitTimes()
