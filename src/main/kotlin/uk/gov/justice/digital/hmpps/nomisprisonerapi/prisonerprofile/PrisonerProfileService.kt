@@ -28,7 +28,9 @@ class PrisonerProfileService(
               heightCentimetres = it.getHeightInCentimetres(),
               weightKilograms = it.getWeightInKilograms(),
               createDateTime = it.createDatetime,
+              createdBy = it.createUserId,
               modifiedDateTime = it.modifyDatetime,
+              modifiedBy = it.modifyUserId,
               auditModuleName = it.auditModuleName,
             )
           },

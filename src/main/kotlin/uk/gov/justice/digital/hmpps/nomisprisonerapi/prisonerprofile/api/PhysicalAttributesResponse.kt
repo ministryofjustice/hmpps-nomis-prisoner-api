@@ -38,8 +38,12 @@ data class PhysicalAttributesResponse(
   val weightKilograms: Int?,
   @Schema(description = "The time the physical attributes were created", example = "2020-07-17T12:34:56")
   val createDateTime: LocalDateTime,
+  @Schema(description = "The user who created the physical attributes", example = "AQ425D")
+  val createdBy: String,
   @Schema(description = "The time the physical attributes were last changed", example = "2021-07-16T12:34:56")
   val modifiedDateTime: LocalDateTime?,
+  @Schema(description = "The user who modified the physical attributes", example = "AQ425D")
+  val modifiedBy: String?,
   @Schema(description = "The name of the module that last changed the physical attributes, indicates if this was NOMIS or the synchronisation service", example = "DPS_SYNCHRONISATION")
   val auditModuleName: String?,
 )
