@@ -51,9 +51,17 @@ class OffenderPhysicalAttributes(
   @Generated
   lateinit var createDatetime: LocalDateTime
 
+  @Column(name = "CREATE_USER_ID")
+  @Generated
+  lateinit var createUserId: String
+
   @Column(name = "MODIFY_DATETIME")
   @Generated
   var modifyDatetime: LocalDateTime? = null
+
+  @Column(name = "MODIFY_USER_ID")
+  @Generated
+  var modifyUserId: String? = null
 
   @Column(name = "AUDIT_MODULE_NAME")
   @Generated
