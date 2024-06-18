@@ -12,10 +12,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 interface OffenderRepository : JpaRepository<Offender, Long>, JpaSpecificationExecutor<Offender> {
   fun findByNomsId(nomsId: String): List<Offender>
 
-  @Query("select o from Offender o left join fetch o.bookings b WHERE o.nomsId = :nomsId order by b.bookingSequence asc")
+  @Query("select o from Offender o left join fetch o.allBookings b WHERE o.nomsId = :nomsId order by b.bookingSequence asc")
   fun findByNomsIdOrderedWithBookings(nomsId: String): List<Offender>
 
-  @Query("select o.id from Offender o join o.bookings b WHERE o.nomsId = :nomsId and b.bookingSequence = 1")
+  @Query("select o.id from Offender o join o.allBookings b WHERE o.nomsId = :nomsId and b.bookingSequence = 1")
   fun findCurrentIdByNomsId(nomsId: String): Long?
 
   @Query("select o from Offender o WHERE o.nomsId = :nomsId and o.rootOffenderId = o.id")

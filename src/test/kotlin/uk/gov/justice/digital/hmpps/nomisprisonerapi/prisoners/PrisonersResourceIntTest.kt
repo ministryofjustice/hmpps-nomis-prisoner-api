@@ -55,27 +55,16 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     // assert that entities returned from DSL are correct
 
     with(rootOffender) {
-      assertThat(id).isEqualTo(rootOffender.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactlyInAnyOrder(
           Tuple(activeBooking.bookingId, rootOffender.id, rootOffender.id, 1, true),
           Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
-        )
-      assertThat(getAllBookings()).extracting("bookingId")
-        .containsExactlyInAnyOrder(
-          activeBooking.bookingId,
-          oldBooking.bookingId,
-          aliasBooking.bookingId,
-          oldAliasBooking.bookingId,
-        )
-    }
-    with(aliasOffender1) {
-      assertThat(id).isEqualTo(aliasOffender1.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
           Tuple(aliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 3, false),
           Tuple(oldAliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 4, false),
         )
+    }
+    with(aliasOffender1) {
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
       assertThat(getAllBookings()).extracting("bookingId")
         .containsExactlyInAnyOrder(
           activeBooking.bookingId,
@@ -85,8 +74,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         )
     }
     with(aliasOffender2) {
-      assertThat(id).isEqualTo(aliasOffender2.id)
-      assertThat(bookings).isEmpty()
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
       assertThat(getAllBookings()).extracting("bookingId")
         .containsExactlyInAnyOrder(
           activeBooking.bookingId,
@@ -103,23 +91,10 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     val alias2 = repository.getOffender(aliasOffender2.id)!!
     with(root) {
       assertThat(id).isEqualTo(rootOffender.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactlyInAnyOrder(
           Tuple(activeBooking.bookingId, rootOffender.id, rootOffender.id, 1, true),
           Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
-        )
-      assertThat(getAllBookings()).extracting("bookingId")
-        .containsExactlyInAnyOrder(
-          activeBooking.bookingId,
-          oldBooking.bookingId,
-          aliasBooking.bookingId,
-          oldAliasBooking.bookingId,
-        )
-    }
-    with(alias1) {
-      assertThat(id).isEqualTo(aliasOffender1.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
           Tuple(aliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 3, false),
           Tuple(oldAliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 4, false),
         )
@@ -131,9 +106,20 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           oldAliasBooking.bookingId,
         )
     }
+    with(alias1) {
+      assertThat(id).isEqualTo(aliasOffender1.id)
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
     with(alias2) {
       assertThat(id).isEqualTo(aliasOffender2.id)
-      assertThat(bookings).isEmpty()
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
       assertThat(getAllBookings()).extracting("bookingId")
         .containsExactlyInAnyOrder(
           activeBooking.bookingId,
@@ -162,23 +148,14 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     // assert that entities returned from DSL are correct
 
     with(rootOffender) {
-      assertThat(id).isEqualTo(rootOffender.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
-          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
-        )
-      assertThat(getAllBookings()).extracting("bookingId")
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
         .containsExactlyInAnyOrder(
-          activeBooking.bookingId,
-          oldBooking.bookingId,
+          Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
+          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
         )
     }
     with(aliasOffender1) {
-      assertThat(id).isEqualTo(aliasOffender1.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
-          Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
-        )
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
       assertThat(getAllBookings()).extracting("bookingId")
         .containsExactlyInAnyOrder(
           activeBooking.bookingId,
@@ -192,8 +169,9 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     val alias1 = repository.getOffender(aliasOffender1.id)!!
     with(root) {
       assertThat(id).isEqualTo(rootOffender.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactlyInAnyOrder(
+          Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
           Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
         )
       assertThat(getAllBookings()).extracting("bookingId")
@@ -204,10 +182,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     }
     with(alias1) {
       assertThat(id).isEqualTo(aliasOffender1.id)
-      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
-        .containsExactly(
-          Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
-        )
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
       assertThat(getAllBookings()).extracting("bookingId")
         .containsExactlyInAnyOrder(
           activeBooking.bookingId,

@@ -147,7 +147,7 @@ class ActivityRepositoryTest {
     val seedOffenderBooking = builderRepository.save(
       LegacyOffenderBuilder()
         .withBooking(OffenderBookingBuilder()),
-    ).bookings.first()
+    ).latestBooking()
 
     offenderProgramProfileRepository.saveAndFlush(
       OffenderProgramProfile(

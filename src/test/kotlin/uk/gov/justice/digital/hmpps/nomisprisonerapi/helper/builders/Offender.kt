@@ -109,7 +109,6 @@ class OffenderBuilder(
         livingUnitId = livingUnitId,
       )
         .also {
-          rootOffender.bookings += it
           rootOffender.getAllBookings()?.add(it)
         }
         .also { builder.apply(dsl) }

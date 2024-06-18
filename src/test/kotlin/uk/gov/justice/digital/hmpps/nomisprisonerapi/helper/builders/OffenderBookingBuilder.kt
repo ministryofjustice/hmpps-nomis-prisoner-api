@@ -31,7 +31,6 @@ class OffenderBookingBuilder(
       createLocation = agencyLocation,
       location = agencyLocation,
     ).apply {
-      offender.bookings.add(this)
       offender.getAllBookings()?.add(this)
     }
 

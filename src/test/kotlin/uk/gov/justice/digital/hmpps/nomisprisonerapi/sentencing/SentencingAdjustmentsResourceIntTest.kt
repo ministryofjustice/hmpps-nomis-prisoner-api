@@ -1941,7 +1941,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         }
       }
 
-      bookingId = anotherPrisoner.bookings.first().bookingId
+      bookingId = anotherPrisoner.latestBooking().bookingId
     }
 
     @AfterEach

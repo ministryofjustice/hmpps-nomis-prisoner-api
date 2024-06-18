@@ -39,8 +39,8 @@ class DocumentResourceIntTest : IntegrationTestBase() {
         }.bookingId
       }
     }
-    document1Id = offender.bookings[0].documents[0].id
-    document2Id = offender.bookings[0].documents[1].id
+    document1Id = offender.latestBooking().documents[0].id
+    document2Id = offender.latestBooking().documents[1].id
   }
 
   @AfterEach

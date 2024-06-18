@@ -1147,7 +1147,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `get visit success`() {
-        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .exchange()
@@ -1188,7 +1188,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `get visit prevents access without appropriate role`() {
-        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         assertThat(
           webTestClient.get().uri("/visits/$visitId")
             .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
@@ -1199,7 +1199,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `get visit prevents access without authorization`() {
-        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         assertThat(
           webTestClient.get().uri("/visits/$visitId")
             .exchange()
@@ -1248,7 +1248,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `visit wil contain lead visitor with telephone numbers`() {
-        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .exchange()
@@ -1306,7 +1306,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `visit will contain outcome and status`() {
-        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .exchange()
@@ -1361,7 +1361,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `visit will contain outcome and status`() {
-        val visitId = offenderAtMoorlands.bookings[0].visits[0].id
+        val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
           .exchange()

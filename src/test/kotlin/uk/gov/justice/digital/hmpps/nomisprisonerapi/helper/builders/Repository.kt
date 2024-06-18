@@ -175,7 +175,7 @@ class Repository(
     offenderRepository.saveAndFlush(offender)
 
     // children that require a flushed booking
-    offender.bookings.forEachIndexed { bookingIndex, booking ->
+    offender.getAllBookings()!!.forEachIndexed { bookingIndex, booking ->
       booking.incentives.addAll(
         offenderBuilder.bookingBuilders[bookingIndex].incentives.map {
           it.build(booking, lookupIepLevel(it.iepLevel))
@@ -299,7 +299,6 @@ class Repository(
 
   fun getOffender(nomsId: String): Offender? {
     val offender = offenderRepository.findByNomsId(nomsId).firstOrNull()
-    offender?.bookings?.size // hydrate
     offender?.getAllBookings()?.size // hydrate
     offender?.getAllBookings()?.firstOrNull()?.incentives?.size // hydrate
     return offender
@@ -307,7 +306,6 @@ class Repository(
 
   fun getOffender(offenderId: Long): Offender? {
     val offender = offenderRepository.findByIdOrNull(offenderId)
-    offender?.bookings?.size // hydrate
     offender?.getAllBookings()?.size // hydrate
     return offender
   }

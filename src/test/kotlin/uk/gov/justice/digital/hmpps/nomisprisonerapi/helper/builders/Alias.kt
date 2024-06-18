@@ -98,7 +98,6 @@ class AliasBuilder(
         livingUnitId = livingUnitId,
       )
         .also {
-          aliasOffender.bookings += it
           offenderBuilder.rootOffender.getAllBookings()?.add(it)
         }
         .also { builder.apply(dsl) }

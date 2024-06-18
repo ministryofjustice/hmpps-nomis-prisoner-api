@@ -70,7 +70,7 @@ class VisitRepositoryTest {
     val seedOffenderBooking = builderRepository.save(
       LegacyOffenderBuilder()
         .withBooking(OffenderBookingBuilder().withVisitBalance()),
-    ).bookings.first()
+    ).latestBooking()
 
     val seedPerson1 = builderRepository.save(PersonBuilder())
     val seedPerson2 = builderRepository.save(PersonBuilder())
@@ -146,7 +146,7 @@ class VisitRepositoryTest {
             ),
           ),
         ),
-    ).bookings.first()
+    ).latestBooking()
     val seedBalance = seedOffenderBooking.visitBalance ?: throw IllegalStateException("No visit balance")
     assertThat(seedBalance.remainingVisitOrders).isEqualTo(25)
     assertThat(seedBalance.remainingPrivilegedVisitOrders).isEqualTo(2)

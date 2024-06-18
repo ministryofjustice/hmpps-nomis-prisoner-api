@@ -76,36 +76,12 @@ data class Offender(
   @JoinColumn(name = "ROOT_OFFENDER_ID", updatable = false, insertable = false)
   var rootOffender: Offender? = null,
 
-  @Deprecated("Do not use; only some of the bookings may be associated with the root or any particular alias")
-  @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-  val bookings: MutableList<OffenderBooking> = mutableListOf(),
-
-  @OneToMany(mappedBy = "rootOffender", fetch = FetchType.LAZY)
+  // CAUTION: this list is only populated for the root offender; normally the function getAllBookings() below should be used instead
+  @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   private val allBookings: MutableList<OffenderBooking> = mutableListOf(),
 
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val identifiers: List<OffenderIdentifier> = ArrayList(),
-
-  //    @ManyToOne(fetch = FetchType.LAZY)
-  //    @JoinColumnsOrFormulas(value = {
-  //        @JoinColumnOrFormula(formula = @JoinFormula(value = "'" + ETHNICITY + "'", referencedColumnName = "domain")),
-  //        @JoinColumnOrFormula(column = @JoinColumn(name = "RACE_CODE", referencedColumnName = "code"))
-  //    })
-  //    private Ethnicity ethnicity;
-  //
-  //    @ManyToOne(fetch = FetchType.LAZY)
-  //    @JoinColumnsOrFormulas(value = {
-  //        @JoinColumnOrFormula(formula = @JoinFormula(value = "'" + TITLE + "'", referencedColumnName = "domain")),
-  //        @JoinColumnOrFormula(column = @JoinColumn(name = "TITLE", referencedColumnName = "code"))
-  //    })
-  //    private Title title;
-  //
-  //    @ManyToOne(fetch = FetchType.LAZY)
-  //    @JoinColumnsOrFormulas(value = {
-  //        @JoinColumnOrFormula(formula = @JoinFormula(value = "'" + SUFFIX + "'", referencedColumnName = "domain")),
-  //        @JoinColumnOrFormula(column = @JoinColumn(name = "SUFFIX", referencedColumnName = "code"))
-  //    })
-  //    private Suffix suffix;
 
   @Column(name = "LAST_NAME_KEY", nullable = false)
   var lastNameKey: String? = null,
