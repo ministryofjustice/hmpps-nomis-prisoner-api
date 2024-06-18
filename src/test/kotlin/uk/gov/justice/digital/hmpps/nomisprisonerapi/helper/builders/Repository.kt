@@ -140,7 +140,7 @@ class Repository(
     }
 
     offenderBuilder.bookingBuilders.forEachIndexed { index, bookingBuilder ->
-      val booking = bookingBuilder.build(offender, index, lookupAgency(bookingBuilder.agencyLocationId))
+      val booking = bookingBuilder.build(offender, index + 1, lookupAgency(bookingBuilder.agencyLocationId))
       bookingBuilder.visitBalanceBuilder?.run {
         booking.visitBalance = this.build(booking)
       }

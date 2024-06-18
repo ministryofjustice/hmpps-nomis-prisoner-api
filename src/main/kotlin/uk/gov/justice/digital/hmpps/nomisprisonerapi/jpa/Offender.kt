@@ -91,10 +91,6 @@ data class Offender(
 
   @Column(name = "LAST_NAME_ALPHA_KEY")
   val lastNameAlphaKey: String? = null,
-
-  //    @OneToMany(mappedBy = "offender", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  //    @Where(clause = "OWNER_CLASS = '"+OffenderAddress.ADDR_TYPE+"'")
-  //    private List<OffenderAddress> addresses = new ArrayList<>();
 ) {
   val middleNames: String
     get() = StringUtils.trimToNull(StringUtils.trimToEmpty(middleName) + " " + StringUtils.trimToEmpty(middleName2))
@@ -102,7 +98,7 @@ data class Offender(
   fun getAllBookings(): MutableList<OffenderBooking>? = rootOffender?.allBookings
 
   fun latestBooking(): OffenderBooking =
-    getAllBookings()?.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")
+    getAllBookings()?.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no active bookings")
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
