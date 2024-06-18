@@ -123,9 +123,10 @@ data class Offender(
   val middleNames: String
     get() = StringUtils.trimToNull(StringUtils.trimToEmpty(middleName) + " " + StringUtils.trimToEmpty(middleName2))
 
-  fun getAllBookings(): MutableList<OffenderBooking>? {
-    return rootOffender?.allBookings
-  }
+  fun getAllBookings(): MutableList<OffenderBooking>? = rootOffender?.allBookings
+
+  fun latestBooking(): OffenderBooking =
+    getAllBookings()?.firstOrNull { it.active } ?: throw IllegalStateException("Offender has no active bookings")
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

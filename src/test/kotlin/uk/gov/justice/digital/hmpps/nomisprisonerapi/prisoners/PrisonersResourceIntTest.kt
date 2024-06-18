@@ -51,6 +51,53 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         aliasOffender2 = alias(lastName = "ALIAS2")
       }
     }
+
+    // assert that entities returned from DSL are correct
+
+    with(rootOffender) {
+      assertThat(id).isEqualTo(rootOffender.id)
+      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactly(
+          Tuple(activeBooking.bookingId, rootOffender.id, rootOffender.id, 1, true),
+          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
+        )
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+    with(aliasOffender1) {
+      assertThat(id).isEqualTo(aliasOffender1.id)
+      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactly(
+          Tuple(aliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 3, false),
+          Tuple(oldAliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 4, false),
+        )
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+    with(aliasOffender2) {
+      assertThat(id).isEqualTo(aliasOffender2.id)
+      assertThat(bookings).isEmpty()
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+
+    // assert that entities loaded from database are correct
+
     val root = repository.getOffender(nomsId = "A1234TT")!!
     val alias1 = repository.getOffender(aliasOffender1.id)!!
     val alias2 = repository.getOffender(aliasOffender2.id)!!
@@ -112,6 +159,35 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         }
       }
     }
+    // assert that entities returned from DSL are correct
+
+    with(rootOffender) {
+      assertThat(id).isEqualTo(rootOffender.id)
+      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactly(
+          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
+        )
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+        )
+    }
+    with(aliasOffender1) {
+      assertThat(id).isEqualTo(aliasOffender1.id)
+      assertThat(bookings).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactly(
+          Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
+        )
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+        )
+    }
+
+    // assert that entities loaded from database are correct
+
     val root = repository.getOffender(nomsId = "A1234TT")!!
     val alias1 = repository.getOffender(aliasOffender1.id)!!
     with(root) {

@@ -12,10 +12,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class OffenderDslMarker
+annotation class AliasDslMarker
 
 @NomisDataDslMarker
-interface OffenderDsl {
+interface AliasDsl {
   @BookingDslMarker
   fun booking(
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
@@ -27,19 +27,10 @@ interface OffenderDsl {
     bookingSequence: Int? = null,
     dsl: BookingDsl.() -> Unit = {},
   ): OffenderBooking
-
-  @AliasDslMarker
-  fun alias(
-    lastName: String = "NTHANDA",
-    firstName: String = "LEKAN",
-    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
-    genderCode: String = "M",
-    dsl: AliasDsl.() -> Unit = {},
-  ): Offender
 }
 
 @Component
-class OffenderBuilderRepository(
+class AliasBuilderRepository(
   private val offenderRepository: OffenderRepository,
   private val genderRepository: ReferenceCodeRepository<Gender>,
 ) {
@@ -48,41 +39,39 @@ class OffenderBuilderRepository(
 }
 
 @Component
-class OffenderBuilderFactory(
-  private val repository: OffenderBuilderRepository,
+class AliasBuilderFactory(
+  private val repository: AliasBuilderRepository,
   private val bookingBuilderFactory: BookingBuilderFactory,
-  private val aliasBuilderFactory: AliasBuilderFactory,
 ) {
-  fun builder(): OffenderBuilder = OffenderBuilder(repository, bookingBuilderFactory, aliasBuilderFactory)
+  fun builder(offenderBuilder: OffenderBuilder): AliasBuilder =
+    AliasBuilder(repository, bookingBuilderFactory, offenderBuilder)
 }
 
-class OffenderBuilder(
-  private val repository: OffenderBuilderRepository,
+class AliasBuilder(
+  private val repository: AliasBuilderRepository,
   private val bookingBuilderFactory: BookingBuilderFactory,
-  private val aliasBuilderFactory: AliasBuilderFactory,
-) : OffenderDsl {
-  lateinit var rootOffender: Offender
-  var nextBookingSequence: Int = 1
+  private val offenderBuilder: OffenderBuilder,
+) : AliasDsl {
+  private lateinit var aliasOffender: Offender
 
   fun build(
-    nomsId: String,
     lastName: String,
     firstName: String,
     birthDate: LocalDate,
     genderCode: String,
   ): Offender = Offender(
-    nomsId = nomsId,
+    nomsId = offenderBuilder.rootOffender.nomsId,
     lastName = lastName,
     firstName = firstName,
     birthDate = birthDate,
     gender = repository.gender(genderCode),
     lastNameKey = lastName.uppercase(),
+    rootOffenderId = offenderBuilder.rootOffender.rootOffenderId,
+    rootOffender = offenderBuilder.rootOffender.rootOffender,
   )
     .let { repository.save(it) }
     .also {
-      it.rootOffenderId = it.id
-      it.rootOffender = it
-      rootOffender = it
+      aliasOffender = it
     }
 
   override fun booking(
@@ -97,10 +86,10 @@ class OffenderBuilder(
   ) = bookingBuilderFactory.builder()
     .let { builder ->
       builder.build(
-        offender = rootOffender,
+        offender = aliasOffender,
         // if you want multiple bookings then create them with latest booking first so it gets seq 1 like in Nomis,
         // or override the sequences
-        bookingSequence = bookingSequence ?: nextBookingSequence++,
+        bookingSequence = bookingSequence ?: offenderBuilder.nextBookingSequence++,
         agencyLocationCode = agencyLocationId,
         bookingBeginDate = bookingBeginDate,
         active = active,
@@ -109,21 +98,9 @@ class OffenderBuilder(
         livingUnitId = livingUnitId,
       )
         .also {
-          rootOffender.bookings += it
-          rootOffender.getAllBookings()?.add(it)
+          aliasOffender.bookings += it
+          offenderBuilder.rootOffender.getAllBookings()?.add(it)
         }
-        .also { builder.apply(dsl) }
-    }
-
-  override fun alias(
-    lastName: String,
-    firstName: String,
-    birthDate: LocalDate,
-    genderCode: String,
-    dsl: AliasDsl.() -> Unit,
-  ): Offender = aliasBuilderFactory.builder(this)
-    .let { builder ->
-      builder.build(lastName, firstName, birthDate, genderCode)
         .also { builder.apply(dsl) }
     }
 }
