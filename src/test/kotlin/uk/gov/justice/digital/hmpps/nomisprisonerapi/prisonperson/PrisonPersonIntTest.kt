@@ -60,7 +60,7 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       @Test
       fun `not found`() {
         webTestClient.get().uri("/prisoners/A1234AA/physical-attributes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_PROFILE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -249,7 +249,7 @@ class PrisonPersonIntTest : IntegrationTestBase() {
 
   fun WebTestClient.getPhysicalAttributesOk(offenderNo: String) =
     this.get().uri("/prisoners/$offenderNo/physical-attributes")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_PROFILE")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
       .exchange()
       .expectStatus().isOk
       .expectBody<PrisonerPhysicalAttributesResponse>()
