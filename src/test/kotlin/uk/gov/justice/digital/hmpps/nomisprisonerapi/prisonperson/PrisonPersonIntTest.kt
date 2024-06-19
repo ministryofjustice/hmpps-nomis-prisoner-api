@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
 
 import io.opentelemetry.sdk.testing.assertj.OpenTelemetryAssertions.assertThat
 import org.assertj.core.groups.Tuple.tuple
@@ -13,11 +13,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.PrisonerPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-class PrisonerProfileIntTest : IntegrationTestBase() {
+class PrisonPersonIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
