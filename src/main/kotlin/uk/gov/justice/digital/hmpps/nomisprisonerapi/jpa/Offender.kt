@@ -76,33 +76,12 @@ data class Offender(
   @JoinColumn(name = "ROOT_OFFENDER_ID", updatable = false, insertable = false)
   var rootOffender: Offender? = null,
 
-  @Deprecated("Do not use; only some of the bookings may be associated with the root or any particular alias")
-  @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-  val bookings: MutableList<OffenderBooking> = mutableListOf(),
+  // CAUTION: this list is only populated for the root offender; normally the function getAllBookings() below should be used instead
+  @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+  private val allBookings: MutableList<OffenderBooking> = mutableListOf(),
 
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val identifiers: List<OffenderIdentifier> = ArrayList(),
-
-  //    @ManyToOne(fetch = FetchType.LAZY)
-  //    @JoinColumnsOrFormulas(value = {
-  //        @JoinColumnOrFormula(formula = @JoinFormula(value = "'" + ETHNICITY + "'", referencedColumnName = "domain")),
-  //        @JoinColumnOrFormula(column = @JoinColumn(name = "RACE_CODE", referencedColumnName = "code"))
-  //    })
-  //    private Ethnicity ethnicity;
-  //
-  //    @ManyToOne(fetch = FetchType.LAZY)
-  //    @JoinColumnsOrFormulas(value = {
-  //        @JoinColumnOrFormula(formula = @JoinFormula(value = "'" + TITLE + "'", referencedColumnName = "domain")),
-  //        @JoinColumnOrFormula(column = @JoinColumn(name = "TITLE", referencedColumnName = "code"))
-  //    })
-  //    private Title title;
-  //
-  //    @ManyToOne(fetch = FetchType.LAZY)
-  //    @JoinColumnsOrFormulas(value = {
-  //        @JoinColumnOrFormula(formula = @JoinFormula(value = "'" + SUFFIX + "'", referencedColumnName = "domain")),
-  //        @JoinColumnOrFormula(column = @JoinColumn(name = "SUFFIX", referencedColumnName = "code"))
-  //    })
-  //    private Suffix suffix;
 
   @Column(name = "LAST_NAME_KEY", nullable = false)
   var lastNameKey: String? = null,
@@ -112,13 +91,14 @@ data class Offender(
 
   @Column(name = "LAST_NAME_ALPHA_KEY")
   val lastNameAlphaKey: String? = null,
-
-  //    @OneToMany(mappedBy = "offender", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  //    @Where(clause = "OWNER_CLASS = '"+OffenderAddress.ADDR_TYPE+"'")
-  //    private List<OffenderAddress> addresses = new ArrayList<>();
 ) {
   val middleNames: String
     get() = StringUtils.trimToNull(StringUtils.trimToEmpty(middleName) + " " + StringUtils.trimToEmpty(middleName2))
+
+  fun getAllBookings(): MutableList<OffenderBooking>? = rootOffender?.allBookings
+
+  fun latestBooking(): OffenderBooking =
+    getAllBookings()?.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no active bookings")
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -128,4 +108,7 @@ data class Offender(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+
+  override fun toString(): String =
+    "${javaClass.simpleName}(id = $id, nomsId=$nomsId, firstName = $firstName, lastName = $lastName)"
 }

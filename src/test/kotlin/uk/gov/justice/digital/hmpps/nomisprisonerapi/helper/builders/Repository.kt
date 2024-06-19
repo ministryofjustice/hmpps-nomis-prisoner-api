@@ -136,49 +136,46 @@ class Repository(
 
     val offender = offenderRepository.saveAndFlush(offenderBuilder.build(gender)).apply {
       rootOffenderId = id
+      rootOffender = this
     }
 
-    offender.bookings.addAll(
-      offenderBuilder.bookingBuilders.mapIndexed { index, bookingBuilder ->
-        val booking = bookingBuilder.build(offender, index, lookupAgency(bookingBuilder.agencyLocationId))
-        bookingBuilder.visitBalanceBuilder?.run {
-          booking.visitBalance = this.build(booking)
-        }
-        booking.contacts.addAll(
-          bookingBuilder.contacts.map {
-            it.build(booking, lookupContactType(it.contactTypeCode), lookupRelationshipType(it.relationshipTypeCode))
-          },
-        )
-        booking.visits.addAll(
-          bookingBuilder.visits.map { visitBuilder ->
-            val visit = visitBuilder.build(
-              offenderBooking = booking,
-              visitType = lookupVisitType(visitBuilder.visitTypeCode),
-              visitStatus = lookupVisitStatus(visitBuilder.visitStatusCode),
-              agencyLocation = lookupAgency(visitBuilder.agyLocId),
-              agencyInternalLocation = visitBuilder.agencyInternalLocationDescription?.run {
-                lookupAgencyInternalLocationByDescription(
-                  this,
-                )
-              },
-            )
-            visit.visitors.addAll(
-              visitBuilder.visitors.map {
-                it.build(it.person, leadVisitor = it.leadVisitor, visit)
-              } + visitBuilder.visitOutcome.build(visit),
-            )
-            visit
-          },
-        )
-
-        booking
-      },
-    )
+    offenderBuilder.bookingBuilders.forEachIndexed { index, bookingBuilder ->
+      val booking = bookingBuilder.build(offender, index + 1, lookupAgency(bookingBuilder.agencyLocationId))
+      bookingBuilder.visitBalanceBuilder?.run {
+        booking.visitBalance = this.build(booking)
+      }
+      booking.contacts.addAll(
+        bookingBuilder.contacts.map {
+          it.build(booking, lookupContactType(it.contactTypeCode), lookupRelationshipType(it.relationshipTypeCode))
+        },
+      )
+      booking.visits.addAll(
+        bookingBuilder.visits.map { visitBuilder ->
+          val visit = visitBuilder.build(
+            offenderBooking = booking,
+            visitType = lookupVisitType(visitBuilder.visitTypeCode),
+            visitStatus = lookupVisitStatus(visitBuilder.visitStatusCode),
+            agencyLocation = lookupAgency(visitBuilder.agyLocId),
+            agencyInternalLocation = visitBuilder.agencyInternalLocationDescription?.run {
+              lookupAgencyInternalLocationByDescription(
+                this,
+              )
+            },
+          )
+          visit.visitors.addAll(
+            visitBuilder.visitors.map {
+              it.build(it.person, leadVisitor = it.leadVisitor, visit)
+            } + visitBuilder.visitOutcome.build(visit),
+          )
+          visit
+        },
+      )
+    }
 
     offenderRepository.saveAndFlush(offender)
 
     // children that require a flushed booking
-    offender.bookings.forEachIndexed { bookingIndex, booking ->
+    offender.getAllBookings()!!.forEachIndexed { bookingIndex, booking ->
       booking.incentives.addAll(
         offenderBuilder.bookingBuilders[bookingIndex].incentives.map {
           it.build(booking, lookupIepLevel(it.iepLevel))
@@ -302,7 +299,14 @@ class Repository(
 
   fun getOffender(nomsId: String): Offender? {
     val offender = offenderRepository.findByNomsId(nomsId).firstOrNull()
-    offender?.bookings?.firstOrNull()?.incentives?.size // hydrate
+    offender?.getAllBookings()?.size // hydrate
+    offender?.getAllBookings()?.firstOrNull()?.incentives?.size // hydrate
+    return offender
+  }
+
+  fun getOffender(offenderId: Long): Offender? {
+    val offender = offenderRepository.findByIdOrNull(offenderId)
+    offender?.getAllBookings()?.size // hydrate
     return offender
   }
 

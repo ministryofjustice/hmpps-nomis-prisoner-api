@@ -143,12 +143,12 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         lateinit var oldBooking: OffenderBooking
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
-            oldBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2).atStartOfDay()) {
+            booking = booking(bookingBeginDate = today.atStartOfDay()) {
+              physicalAttributes(170, null, null, 70, null)
+            }
+            oldBooking = booking(bookingBeginDate = today.minusDays(2).atStartOfDay()) {
               physicalAttributes(180, null, null, 80, null)
               release(date = yesterday.atStartOfDay())
-            }
-            booking = booking(bookingSequence = 1, bookingBeginDate = today.atStartOfDay()) {
-              physicalAttributes(170, null, null, 70, null)
             }
           }
         }
@@ -158,15 +158,15 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
             with(it.responseBody!!) {
               assertThat(bookings).extracting("bookingId", "startDate", "endDate", "latestBooking")
                 .containsExactly(
-                  tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
                   tuple(booking.bookingId, today, null, true),
+                  tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
                 )
               assertThat(bookings[0].physicalAttributes)
                 .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(180, 80))
+                .containsExactly(tuple(170, 70))
               assertThat(bookings[1].physicalAttributes)
                 .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(170, 70))
+                .containsExactly(tuple(180, 80))
             }
           }
       }
@@ -176,14 +176,14 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         lateinit var aliasBooking: OffenderBooking
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(170, null, null, 70, null)
+            }
             alias {
-              aliasBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2).atStartOfDay()) {
+              aliasBooking = booking(bookingBeginDate = today.minusDays(2).atStartOfDay()) {
                 physicalAttributes(180, null, null, 80, null)
                 release(date = yesterday.atStartOfDay())
               }
-            }
-            booking = booking(bookingSequence = 1) {
-              physicalAttributes(170, null, null, 70, null)
             }
           }
         }
@@ -193,15 +193,15 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
             with(it.responseBody!!) {
               assertThat(bookings).extracting("bookingId", "startDate", "endDate", "latestBooking")
                 .containsExactly(
-                  tuple(aliasBooking.bookingId, today.minusDays(2), yesterday, false),
                   tuple(booking.bookingId, booking.bookingBeginDate.toLocalDate(), null, true),
+                  tuple(aliasBooking.bookingId, today.minusDays(2), yesterday, false),
                 )
               assertThat(bookings[0].physicalAttributes)
                 .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(180, 80))
+                .containsExactly(tuple(170, 70))
               assertThat(bookings[1].physicalAttributes)
                 .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(170, 70))
+                .containsExactly(tuple(180, 80))
             }
           }
       }
@@ -211,15 +211,15 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         lateinit var oldBooking: OffenderBooking
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
-            oldBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2).atStartOfDay()) {
-              physicalAttributes(170, null, null, 70, null)
-              physicalAttributes(171, null, null, 71, null)
-              release(date = yesterday.atStartOfDay())
-            }
-            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday.atStartOfDay()) {
+            booking = booking(bookingBeginDate = yesterday.atStartOfDay()) {
               physicalAttributes(180, null, null, 80, null)
               physicalAttributes(181, null, null, 81, null)
               release(date = today.atStartOfDay())
+            }
+            oldBooking = booking(bookingBeginDate = today.minusDays(2).atStartOfDay()) {
+              physicalAttributes(170, null, null, 70, null)
+              physicalAttributes(171, null, null, 71, null)
+              release(date = yesterday.atStartOfDay())
             }
           }
         }
@@ -229,15 +229,15 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
             with(it.responseBody!!) {
               assertThat(bookings).extracting("bookingId", "startDate", "endDate", "latestBooking")
                 .containsExactly(
-                  tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
                   tuple(booking.bookingId, yesterday, today, true),
+                  tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
                 )
               assertThat(bookings[0].physicalAttributes)
                 .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(170, 70), tuple(171, 71))
+                .containsExactly(tuple(180, 80), tuple(181, 81))
               assertThat(bookings[1].physicalAttributes)
                 .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(180, 80), tuple(181, 81))
+                .containsExactly(tuple(170, 70), tuple(171, 71))
             }
           }
       }

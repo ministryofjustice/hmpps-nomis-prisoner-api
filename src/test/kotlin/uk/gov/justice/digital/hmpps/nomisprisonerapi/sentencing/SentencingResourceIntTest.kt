@@ -17,7 +17,6 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.latestBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -429,7 +428,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(prisoner1)
+      repository.deleteOffenders()
       repository.delete(staff)
     }
   }
@@ -543,7 +542,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-      repository.delete(prisoner1)
+      repository.deleteOffenders()
       repository.delete(staff)
     }
   }
@@ -2600,8 +2599,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       latestBookingId = prisonerAtMoorland.latestBooking().bookingId
     }
 
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+
     @Nested
-    inner class CortOrderCreationAndDeletionSuccess {
+    inner class CourtOrderCreationAndDeletionSuccess {
 
       @Test
       fun `changing a result to Final and Active will create a Court Order when none exists for the court appearance`() {

@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners
 
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -21,6 +23,173 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
+
+  @AfterEach
+  fun cleanUp() {
+    repository.deleteOffenders()
+  }
+
+  @Test
+  fun `DSL setup check - latest booking on root`() {
+    lateinit var rootOffender: Offender
+    lateinit var aliasOffender1: Offender
+    lateinit var aliasOffender2: Offender
+    lateinit var activeBooking: OffenderBooking
+    lateinit var oldBooking: OffenderBooking
+    lateinit var aliasBooking: OffenderBooking
+    lateinit var oldAliasBooking: OffenderBooking
+
+    nomisDataBuilder.build {
+      rootOffender = offender(nomsId = "A1234TT") {
+        activeBooking = booking {}
+        oldBooking = booking(active = false)
+
+        aliasOffender1 = alias(lastName = "ALIAS1") {
+          aliasBooking = booking(active = false)
+          oldAliasBooking = booking(active = false)
+        }
+        aliasOffender2 = alias(lastName = "ALIAS2")
+      }
+    }
+
+    // assert that entities returned from DSL are correct
+
+    with(rootOffender) {
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactlyInAnyOrder(
+          Tuple(activeBooking.bookingId, rootOffender.id, rootOffender.id, 1, true),
+          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
+          Tuple(aliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 3, false),
+          Tuple(oldAliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 4, false),
+        )
+    }
+    with(aliasOffender1) {
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+    with(aliasOffender2) {
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+
+    // assert that entities loaded from database are correct
+
+    val root = repository.getOffender(nomsId = "A1234TT")!!
+    val alias1 = repository.getOffender(aliasOffender1.id)!!
+    val alias2 = repository.getOffender(aliasOffender2.id)!!
+    with(root) {
+      assertThat(id).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactlyInAnyOrder(
+          Tuple(activeBooking.bookingId, rootOffender.id, rootOffender.id, 1, true),
+          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
+          Tuple(aliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 3, false),
+          Tuple(oldAliasBooking.bookingId, aliasOffender1.id, rootOffender.id, 4, false),
+        )
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+    with(alias1) {
+      assertThat(id).isEqualTo(aliasOffender1.id)
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+    with(alias2) {
+      assertThat(id).isEqualTo(aliasOffender2.id)
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+          aliasBooking.bookingId,
+          oldAliasBooking.bookingId,
+        )
+    }
+  }
+
+  @Test
+  fun `DSL setup check - latest booking on alias`() {
+    lateinit var rootOffender: Offender
+    lateinit var aliasOffender1: Offender
+    lateinit var activeBooking: OffenderBooking
+    lateinit var oldBooking: OffenderBooking
+
+    nomisDataBuilder.build {
+      rootOffender = offender(nomsId = "A1234TT") {
+        oldBooking = booking(active = false, bookingSequence = 2)
+        aliasOffender1 = alias(lastName = "ALIAS1") {
+          activeBooking = booking(bookingSequence = 1)
+        }
+      }
+    }
+    // assert that entities returned from DSL are correct
+
+    with(rootOffender) {
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactlyInAnyOrder(
+          Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
+          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
+        )
+    }
+    with(aliasOffender1) {
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+        )
+    }
+
+    // assert that entities loaded from database are correct
+
+    val root = repository.getOffender(nomsId = "A1234TT")!!
+    val alias1 = repository.getOffender(aliasOffender1.id)!!
+    with(root) {
+      assertThat(id).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+        .containsExactlyInAnyOrder(
+          Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
+          Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
+        )
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+        )
+    }
+    with(alias1) {
+      assertThat(id).isEqualTo(aliasOffender1.id)
+      assertThat(rootOffenderId).isEqualTo(rootOffender.id)
+      assertThat(getAllBookings()).extracting("bookingId")
+        .containsExactlyInAnyOrder(
+          activeBooking.bookingId,
+          oldBooking.bookingId,
+        )
+    }
+  }
 
   @Nested
   @DisplayName("GET /prisoners/ids")
@@ -59,8 +228,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisoners() {
-        deletePrisoners()
-
         nomisDataBuilder.build {
           activePrisoner1 =
             offender(nomsId = "A1234TT") {
@@ -74,11 +241,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
             booking(active = false)
           }
         }
-      }
-
-      @AfterEach
-      fun deletePrisoners() {
-        repository.deleteOffenders()
       }
 
       @Test
@@ -146,8 +308,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisoners() {
-        deletePrisoners()
-
         nomisDataBuilder.build {
           activePrisoner1 =
             offender(nomsId = "A1234TT") {
@@ -161,11 +321,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
             booking(active = false)
           }
         }
-      }
-
-      @AfterEach
-      fun deletePrisoners() {
-        repository.deleteOffenders()
       }
 
       @Test
@@ -249,8 +404,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisoners() {
-        deletePrisoners()
-
         nomisDataBuilder.build {
           offender(nomsId = "A1234TT") {
             activePrisoner1 = booking {}.bookingId
@@ -272,11 +425,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           }
           offender(nomsId = "A1234YY")
         }
-      }
-
-      @AfterEach
-      fun deletePrisoners() {
-        repository.deleteOffenders()
       }
 
       @Test
@@ -362,8 +510,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisoners() {
-        deletePrisoners()
-
         nomisDataBuilder.build {
           offender(nomsId = "A1234TT") {
             activePrisoner1 = booking {}.bookingId
@@ -385,11 +531,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           }
           offender(nomsId = "A1234YY")
         }
-      }
-
-      @AfterEach
-      fun deletePrisoners() {
-        repository.deleteOffenders()
       }
 
       @Test
@@ -439,11 +580,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           bookingTrn = booking(active = false, agencyLocationId = "TRN")
         }
       }
-    }
-
-    @AfterEach
-    fun deletePrisoners() {
-      repository.deleteOffenders()
     }
 
     @Test
@@ -560,11 +696,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           }
         }
       }
-    }
-
-    @AfterEach
-    fun deletePrisoners() {
-      repository.deleteOffenders()
     }
 
     @Nested

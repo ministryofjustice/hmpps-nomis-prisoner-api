@@ -30,7 +30,9 @@ class OffenderBookingBuilder(
       bookingSequence = bookingSequence,
       createLocation = agencyLocation,
       location = agencyLocation,
-    )
+    ).apply {
+      offender.getAllBookings()?.add(this)
+    }
 
   fun withVisitBalance(visitBalanceBuilder: VisitBalanceBuilder = VisitBalanceBuilder()): OffenderBookingBuilder {
     this.visitBalanceBuilder = visitBalanceBuilder
@@ -44,10 +46,6 @@ class OffenderBookingBuilder(
 
   fun withVisits(vararg visitBuilder: VisitBuilder): OffenderBookingBuilder {
     this.visits = arrayOf(*visitBuilder).asList()
-    return this
-  }
-  fun withIncentives(vararg incentiveBuilder: LegacyIncentiveBuilder): OffenderBookingBuilder {
-    this.incentives = arrayOf(*incentiveBuilder).asList()
     return this
   }
   fun withSentences(vararg sentenceBuilder: LegacySentenceBuilder): OffenderBookingBuilder {
