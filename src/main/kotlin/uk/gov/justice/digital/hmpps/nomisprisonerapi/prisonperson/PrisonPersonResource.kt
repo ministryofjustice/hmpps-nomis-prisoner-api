@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -12,20 +12,20 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.PrisonerPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
 
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class PrisonerProfileResource(
-  private val service: PrisonerProfileService,
+class PrisonPersonResource(
+  private val service: PrisonPersonService,
 ) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_PROFILE')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
   @GetMapping("/prisoners/{offenderNo}/physical-attributes")
   @Operation(
     summary = "Get physical attributes for a prisoner",
-    description = "Retrieves physical attributes for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_PRISONER_PROFILE",
+    description = "Retrieves physical attributes for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_PRISON_PERSON",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -49,7 +49,7 @@ class PrisonerProfileResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_PROFILE",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISON_PERSON",
         content = [
           Content(
             mediaType = "application/json",

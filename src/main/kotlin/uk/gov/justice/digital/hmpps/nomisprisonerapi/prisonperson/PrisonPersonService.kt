@@ -1,16 +1,16 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
 
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.BookingPhysicalAttributesResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.PhysicalAttributesResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.PrisonerPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.BookingPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
 
 @Service
 @Transactional
-class PrisonerProfileService(
+class PrisonPersonService(
   private val bookingRepository: OffenderBookingRepository,
 ) {
   fun getPhysicalAttributes(offenderNo: String) =
