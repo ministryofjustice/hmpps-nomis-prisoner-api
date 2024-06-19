@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Schema(description = "Physical attributes held against a prisoner")
@@ -19,10 +18,10 @@ data class PrisonerPhysicalAttributesResponse(
 data class BookingPhysicalAttributesResponse(
   @Schema(description = "The booking's unique identifier", example = "1234567")
   val bookingId: Long,
-  @Schema(description = "The start date of the booking", example = "2020-07-17")
-  val startDate: LocalDate,
-  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16")
-  val endDate: LocalDate?,
+  @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  val endDateTime: LocalDateTime?,
   @Schema(description = "A list of physical attributes for this booking")
   val physicalAttributes: List<PhysicalAttributesResponse>,
   @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
