@@ -20,8 +20,8 @@ class PrisonerProfileService(
       ?.map {
         BookingPhysicalAttributesResponse(
           bookingId = it.bookingId,
-          startDate = it.bookingBeginDate.toLocalDate(),
-          endDate = it.bookingEndDate?.toLocalDate(),
+          startDateTime = it.bookingBeginDate,
+          endDateTime = it.bookingEndDate,
           latestBooking = it.bookingSequence == 1,
           physicalAttributes = it.physicalAttributes.map {
             PhysicalAttributesResponse(

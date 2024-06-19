@@ -14,7 +14,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonerprofile.api.PrisonerPhysicalAttributesResponse
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 class PrisonerProfileIntTest : IntegrationTestBase() {
   @Autowired
@@ -68,14 +69,16 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       lateinit var booking: OffenderBooking
-      val today = LocalDate.now()
+
+      // The DB column is a DATE type so truncates milliseconds, but bizarrely H2 uses half-up rounding so I have to emulate here or tests fail
+      val today = LocalDateTime.now().roundToNearestSecond()
       val yesterday = today.minusDays(1)
 
       @Test
       fun `should return physical attributes`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
-            booking = booking {
+            booking = booking(bookingBeginDate = yesterday) {
               physicalAttributes(
                 heightCentimetres = 180,
                 weightKilograms = 81,
@@ -88,8 +91,8 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
           .consumeWith {
             with(it.responseBody!!) {
               assertThat(offenderNo).isEqualTo("A1234AA")
-              assertThat(bookings).extracting("bookingId", "startDate", "endDate", "latestBooking")
-                .containsExactly(tuple(booking.bookingId, booking.bookingBeginDate.toLocalDate(), booking.bookingEndDate?.toLocalDate(), true))
+              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
+                .containsExactly(tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true))
               assertThat(bookings[0].physicalAttributes)
                 .extracting("heightCentimetres", "weightKilograms")
                 .containsExactly(tuple(180, 81))
@@ -143,12 +146,12 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         lateinit var oldBooking: OffenderBooking
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
-            booking = booking(bookingBeginDate = today.atStartOfDay()) {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
               physicalAttributes(170, null, null, 70, null)
             }
-            oldBooking = booking(bookingBeginDate = today.minusDays(2).atStartOfDay()) {
+            oldBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
               physicalAttributes(180, null, null, 80, null)
-              release(date = yesterday.atStartOfDay())
+              release(date = yesterday)
             }
           }
         }
@@ -156,7 +159,7 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         webTestClient.getPhysicalAttributesOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "startDate", "endDate", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
                 .containsExactly(
                   tuple(booking.bookingId, today, null, true),
                   tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
@@ -176,13 +179,13 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         lateinit var aliasBooking: OffenderBooking
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
-            booking = booking {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
               physicalAttributes(170, null, null, 70, null)
             }
             alias {
-              aliasBooking = booking(bookingBeginDate = today.minusDays(2).atStartOfDay()) {
+              aliasBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
                 physicalAttributes(180, null, null, 80, null)
-                release(date = yesterday.atStartOfDay())
+                release(date = yesterday)
               }
             }
           }
@@ -191,9 +194,9 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         webTestClient.getPhysicalAttributesOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "startDate", "endDate", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
                 .containsExactly(
-                  tuple(booking.bookingId, booking.bookingBeginDate.toLocalDate(), null, true),
+                  tuple(booking.bookingId, booking.bookingBeginDate, null, true),
                   tuple(aliasBooking.bookingId, today.minusDays(2), yesterday, false),
                 )
               assertThat(bookings[0].physicalAttributes)
@@ -211,15 +214,15 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         lateinit var oldBooking: OffenderBooking
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
-            booking = booking(bookingBeginDate = yesterday.atStartOfDay()) {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
               physicalAttributes(180, null, null, 80, null)
               physicalAttributes(181, null, null, 81, null)
-              release(date = today.atStartOfDay())
+              release(date = today)
             }
-            oldBooking = booking(bookingBeginDate = today.minusDays(2).atStartOfDay()) {
+            oldBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
               physicalAttributes(170, null, null, 70, null)
               physicalAttributes(171, null, null, 71, null)
-              release(date = yesterday.atStartOfDay())
+              release(date = yesterday)
             }
           }
         }
@@ -227,7 +230,7 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
         webTestClient.getPhysicalAttributesOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "startDate", "endDate", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
                 .containsExactly(
                   tuple(booking.bookingId, yesterday, today, true),
                   tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
@@ -250,4 +253,11 @@ class PrisonerProfileIntTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectBody<PrisonerPhysicalAttributesResponse>()
+
+  private fun LocalDateTime.roundToNearestSecond(): LocalDateTime {
+    val secondsOnly = this.truncatedTo(ChronoUnit.SECONDS)
+    val nanosOnly = this.nano
+    val nanosRounded = if (nanosOnly >= 500_000_000) 1 else 0
+    return secondsOnly.plusSeconds(nanosRounded.toLong())
+  }
 }
