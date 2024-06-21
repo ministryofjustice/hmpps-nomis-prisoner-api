@@ -31,6 +31,8 @@ data class BookingPhysicalAttributesResponse(
 @Schema(description = "Physical attributes recorded against a prisoner")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PhysicalAttributesResponse(
+  @Schema(description = "Multiple physical attribute records can be created for each booking", example = "1")
+  val attributeSequence: Long?,
   @Schema(description = "The height of the prisoner in centimetres", example = "180")
   val heightCentimetres: Int?,
   @Schema(description = "The weight of the prisoner in kilograms", example = "80")

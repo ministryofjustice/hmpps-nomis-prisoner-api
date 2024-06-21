@@ -25,6 +25,7 @@ class PrisonPersonService(
           latestBooking = it.bookingSequence == 1,
           physicalAttributes = it.physicalAttributes.map {
             PhysicalAttributesResponse(
+              attributeSequence = it.id.sequence,
               heightCentimetres = it.getHeightInCentimetres(),
               weightKilograms = it.getWeightInKilograms(),
               createDateTime = it.createDatetime,

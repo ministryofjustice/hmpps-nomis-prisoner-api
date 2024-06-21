@@ -94,8 +94,8 @@ class PrisonPersonIntTest : IntegrationTestBase() {
               assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
                 .containsExactly(tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true))
               assertThat(bookings[0].physicalAttributes)
-                .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(180, 81))
+                .extracting("attributeSequence", "heightCentimetres", "weightKilograms")
+                .containsExactly(tuple(1L, 180, 81))
             }
           }
       }
@@ -132,10 +132,10 @@ class PrisonPersonIntTest : IntegrationTestBase() {
           .consumeWith {
             with(it.responseBody!!) {
               assertThat(bookings[0].physicalAttributes)
-                .extracting("heightCentimetres", "weightKilograms")
+                .extracting("attributeSequence", "heightCentimetres", "weightKilograms")
                 .containsExactly(
-                  tuple(180, 80),
-                  tuple(170, 70),
+                  tuple(1L, 180, 80),
+                  tuple(2L, 170, 70),
                 )
             }
           }
@@ -165,11 +165,11 @@ class PrisonPersonIntTest : IntegrationTestBase() {
                   tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
                 )
               assertThat(bookings[0].physicalAttributes)
-                .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(170, 70))
+                .extracting("attributeSequence", "heightCentimetres", "weightKilograms")
+                .containsExactly(tuple(1L, 170, 70))
               assertThat(bookings[1].physicalAttributes)
-                .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(180, 80))
+                .extracting("attributeSequence", "heightCentimetres", "weightKilograms")
+                .containsExactly(tuple(1L, 180, 80))
             }
           }
       }
@@ -236,11 +236,11 @@ class PrisonPersonIntTest : IntegrationTestBase() {
                   tuple(oldBooking.bookingId, today.minusDays(2), yesterday, false),
                 )
               assertThat(bookings[0].physicalAttributes)
-                .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(180, 80), tuple(181, 81))
+                .extracting("attributeSequence", "heightCentimetres", "weightKilograms")
+                .containsExactly(tuple(1L, 180, 80), tuple(2L, 181, 81))
               assertThat(bookings[1].physicalAttributes)
-                .extracting("heightCentimetres", "weightKilograms")
-                .containsExactly(tuple(170, 70), tuple(171, 71))
+                .extracting("attributeSequence", "heightCentimetres", "weightKilograms")
+                .containsExactly(tuple(1L, 170, 70), tuple(2L, 171, 71))
             }
           }
       }
