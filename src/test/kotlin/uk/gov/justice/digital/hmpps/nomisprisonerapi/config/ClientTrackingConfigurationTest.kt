@@ -15,10 +15,10 @@ import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.JwtAuthHelper
+import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 import java.time.Duration
 
-@Import(JwtAuthHelper::class, ClientTrackingInterceptor::class, ClientTrackingConfiguration::class)
+@Import(JwtAuthorisationHelper::class, ClientTrackingInterceptor::class, ClientTrackingConfiguration::class)
 @ContextConfiguration(initializers = [ConfigDataApplicationContextInitializer::class])
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension::class)
@@ -29,7 +29,7 @@ class ClientTrackingConfigurationTest {
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired
-  private lateinit var jwtAuthHelper: JwtAuthHelper
+  private lateinit var jwtAuthHelper: JwtAuthorisationHelper
   private val res = MockHttpServletResponse()
   private val req = MockHttpServletRequest()
 
@@ -37,7 +37,7 @@ class ClientTrackingConfigurationTest {
 
   @Test
   fun shouldAddClientIdAndUserNameToInsightTelemetry() {
-    val token = jwtAuthHelper.createJwt("AUTH_ADM")
+    val token = jwtAuthHelper.createJwtAccessToken(username = "AUTH_ADM", clientId = "nomis-prisoner")
     req.addHeader(HttpHeaders.AUTHORIZATION, "Bearer $token")
     tracer.spanBuilder("span").startSpan().run {
       makeCurrent().use { clientTrackingInterceptor.preHandle(req, res, "null") }
@@ -53,7 +53,7 @@ class ClientTrackingConfigurationTest {
 
   @Test
   fun shouldAddClientIdAndUserNameToInsightTelemetryEvenIfTokenExpired() {
-    val token = jwtAuthHelper.createJwt("Fred", expiryTime = Duration.ofHours(-1L))
+    val token = jwtAuthHelper.createJwtAccessToken(username = "Fred", clientId = "nomis-prisoner", expiryTime = Duration.ofHours(-1L))
     req.addHeader(HttpHeaders.AUTHORIZATION, "Bearer $token")
     tracer.spanBuilder("span").startSpan().run {
       makeCurrent().use { clientTrackingInterceptor.preHandle(req, res, "null") }
