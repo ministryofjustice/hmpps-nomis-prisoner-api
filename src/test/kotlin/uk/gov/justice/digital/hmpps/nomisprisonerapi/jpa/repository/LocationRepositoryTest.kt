@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.context.annotation.Import
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
@@ -16,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyInter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 
 @DataJpaTest
@@ -29,7 +29,7 @@ import java.time.LocalDate
   AgencyInternalLocationBuilderFactory::class,
   AgencyInternalLocationBuilderRepository::class,
 )
-@WithMockUser
+@WithMockAuthUser
 class LocationRepositoryTest {
 
   @Autowired

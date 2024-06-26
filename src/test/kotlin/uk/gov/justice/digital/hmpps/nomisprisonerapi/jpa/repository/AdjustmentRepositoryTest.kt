@@ -9,7 +9,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.context.annotation.Import
 import org.springframework.data.domain.Pageable
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
@@ -19,13 +18,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacySente
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacySentenceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDateTime
 
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(AuthenticationFacade::class, AuditorAwareImpl::class, Repository::class)
-@WithMockUser
+@WithMockAuthUser
 class AdjustmentRepositoryTest {
 
   @Autowired
