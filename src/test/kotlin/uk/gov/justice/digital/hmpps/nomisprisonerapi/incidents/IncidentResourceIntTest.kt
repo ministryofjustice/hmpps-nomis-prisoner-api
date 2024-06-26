@@ -242,6 +242,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("number").isEqualTo(1)
         .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(2)
+        .jsonPath("content[0].incidentId").isEqualTo(incident3.id)
+        .jsonPath("content[1].incidentId").isEqualTo(incident4.id)
     }
   }
 
@@ -666,6 +668,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("number").isEqualTo(0)
         .jsonPath("totalPages").isEqualTo(1)
         .jsonPath("size").isEqualTo(2)
+        .jsonPath("content[0].incidentId").isEqualTo(incident1.id)
+        .jsonPath("content[1].incidentId").isEqualTo(incident4.id)
     }
 
     @Test
