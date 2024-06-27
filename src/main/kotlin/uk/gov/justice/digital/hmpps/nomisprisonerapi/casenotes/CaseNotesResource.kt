@@ -8,8 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -159,17 +156,17 @@ class CaseNotesResource(
   ): CaseNoteResponse = caseNotesService.amendCaseNote(caseNoteId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
-  @GetMapping("/bookings/{bookingId}/casenotes")
+  @GetMapping("/prisoners/{offenderNo}/casenotes")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Gets all case notes for a booking",
-    description = "Retrieves all case notes for a specific booking, for migration or reconciliation. Requires ROLE_NOMIS_CASENOTES",
+    summary = "Gets all case notes for a prisoner",
+    description = "Retrieves all case notes for a specific prisoner, for migration or reconciliation. Requires ROLE_NOMIS_CASENOTES",
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "CaseNotes Returned",
+        description = "Case notes Returned",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = BookingCaseNotesResponse::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = PrisonerCaseNotesResponse::class)),
         ],
       ),
       ApiResponse(
@@ -184,59 +181,59 @@ class CaseNotesResource(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Prisoner does not exist or has no bookings",
+        description = "Prisoner does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )
-  fun getCaseNotes(
-    @Schema(description = "Booking id", example = "12345678")
+  fun getCaseNotesForPrisoner(
+    @Schema(description = "Offender No AKA prisoner number", example = "A3745XD")
     @PathVariable
-    bookingId: Long,
-  ): BookingCaseNotesResponse = caseNotesService.getCaseNotes(bookingId)
+    offenderNo: String,
+  ): PrisonerCaseNotesResponse = caseNotesService.getCaseNotes(offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
-  @GetMapping("/bookings/ids")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-    summary = "Gets all booking ids",
-    description = "Retrieves all booking ids subject to filters, for migration or reconciliation. Requires ROLE_NOMIS_CASENOTES",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "CaseNotes Returned",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = Page::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prisoner does not exist or has no bookings",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  fun getBookings(
-    @Schema(description = "Start or minimum booking id", example = "12345678") @RequestParam fromId: Long?,
-    @Schema(description = "End or maximum booking id", example = "98765432") toId: Long?,
-    @Schema(description = "If true return only bookings currently in prison") activeOnly: Boolean,
-    pageable: Pageable,
-  ): Page<Long> = caseNotesService.getAllBookingIds(fromId, toId, activeOnly, pageable)
+//  @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
+//  @GetMapping("/bookings/ids")
+//  @ResponseStatus(HttpStatus.OK)
+//  @Operation(
+//    summary = "Gets all booking ids",
+//    description = "Retrieves all booking ids subject to filters, for migration or reconciliation. Requires ROLE_NOMIS_CASENOTES",
+//    responses = [
+//      ApiResponse(
+//        responseCode = "200",
+//        description = "CaseNotes Returned",
+//        content = [
+//          Content(mediaType = "application/json", schema = Schema(implementation = Page::class)),
+//        ],
+//      ),
+//      ApiResponse(
+//        responseCode = "401",
+//        description = "Unauthorized to access this endpoint",
+//        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+//      ),
+//      ApiResponse(
+//        responseCode = "403",
+//        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+//        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+//      ),
+//      ApiResponse(
+//        responseCode = "404",
+//        description = "Prisoner does not exist or has no bookings",
+//        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+//      ),
+//    ],
+//  )
+//  fun getBookings(
+//    @Schema(description = "Start or minimum booking id", example = "12345678") @RequestParam fromId: Long?,
+//    @Schema(description = "End or maximum booking id", example = "98765432") toId: Long?,
+//    @Schema(description = "If true return only bookings currently in prison") activeOnly: Boolean,
+//    pageable: Pageable,
+//  ): Page<BookingIdResponse> = caseNotesService.getAllBookingIds(fromId, toId, activeOnly, pageable)
 }
 
 @Schema(description = "The list of case notes held against a booking")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class BookingCaseNotesResponse(
+data class PrisonerCaseNotesResponse(
   val caseNotes: List<CaseNoteResponse>,
 )
 
@@ -308,4 +305,8 @@ data class AmendCaseNoteRequest(
   @Size(max = 4000)
   @Schema(description = "Free format text body of case note")
   val caseNoteText: String,
+)
+
+data class BookingIdResponse(
+  val bookingId: Long,
 )

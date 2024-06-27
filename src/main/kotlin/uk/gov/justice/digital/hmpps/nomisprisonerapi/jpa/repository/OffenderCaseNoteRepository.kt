@@ -9,8 +9,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 
 @Repository
 interface OffenderCaseNoteRepository : JpaRepository<OffenderCaseNote, Long> {
+//  @Suppress("ktlint:standard:function-naming")
+//  fun findAllByOffenderBooking_BookingId(bookingId: Long): List<OffenderCaseNote>
+
   @Suppress("ktlint:standard:function-naming")
-  fun findAllByOffenderBooking_BookingId(bookingId: Long): List<OffenderCaseNote>
+  fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderCaseNote>
 
   @Query(
     """
