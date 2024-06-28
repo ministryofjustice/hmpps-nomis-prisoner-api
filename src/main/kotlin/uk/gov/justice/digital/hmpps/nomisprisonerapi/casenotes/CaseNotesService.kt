@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.casenotes
 
 import com.google.common.base.Utf8
 import jakarta.transaction.Transactional
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
@@ -14,15 +13,17 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 
 @Service
 @Transactional
 class CaseNotesService(
-  val offenderBookingRepository: OffenderBookingRepository,
-  val offenderCaseNoteRepository: OffenderCaseNoteRepository,
-  val staffUserAccountRepository: StaffUserAccountRepository,
+  private val offenderRepository: OffenderRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
+  private val offenderCaseNoteRepository: OffenderCaseNoteRepository,
+  private val staffUserAccountRepository: StaffUserAccountRepository,
   private val taskTypeRepository: ReferenceCodeRepository<TaskType>,
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType>,
 ) {
@@ -108,22 +109,29 @@ class CaseNotesService(
   /**
    * For reconciliation or migration
    */
-  fun getCaseNotes(bookingId: Long): BookingCaseNotesResponse {
-    offenderBookingRepository.findById(bookingId).orElseThrow { NotFoundException("bookingId $bookingId not found") }
-    return BookingCaseNotesResponse(
-      offenderCaseNoteRepository.findAllByOffenderBooking_BookingId(bookingId).map { it.toCaseNoteResponse() },
+  fun getCaseNotes(offenderNo: String): PrisonerCaseNotesResponse {
+    offenderRepository.findByNomsId(offenderNo).takeIf {
+      it.isEmpty()
+    }?.apply {
+      throw NotFoundException("offender $offenderNo not found")
+    }
+
+    return PrisonerCaseNotesResponse(
+      offenderCaseNoteRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
+        .map
+        { it.toCaseNoteResponse() },
     )
   }
 
   /**
    * For reconciliation or migration
    */
-  fun getAllBookingIds(
-    fromId: Long?,
-    toId: Long?,
-    activeOnly: Boolean = true,
-    pageable: Pageable,
-  ) = offenderCaseNoteRepository.findAllBookingIds(fromId, toId, activeOnly, pageable)
+//  fun getAllBookingIds(
+//    fromId: Long?,
+//    toId: Long?,
+//    activeOnly: Boolean = true,
+//    pageable: Pageable,
+//  ): Page<BookingIdResponse> = offenderCaseNoteRepository.findAllBookingIds(fromId, toId, activeOnly, pageable).map { BookingIdResponse(it) }
 
   private fun validateTextLength(value: String) {
     if (value.length >= CHECK_THRESHOLD || Utf8.encodedLength(value) > MAX_CASENOTE_LENGTH_BYTES) {
