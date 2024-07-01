@@ -425,8 +425,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return CSIP Document information`() {
-      webTestClient.get().uri("/csip/${csip1.id}")
+    fun `will return CSIP Document information if requested`() {
+      webTestClient.get().uri("/csip/${csip1.id}?includeDocumentIds=true")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
         .exchange()
         .expectStatus().isOk
@@ -434,6 +434,17 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(csip1.id)
         .jsonPath("documents.length()").isEqualTo(2)
         .jsonPath("documents[0].documentId").isEqualTo(document1Id)
+    }
+
+    @Test
+    fun `will not return CSIP Document information by default`() {
+      webTestClient.get().uri("/csip/${csip1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("documents").doesNotExist()
     }
   }
 }
