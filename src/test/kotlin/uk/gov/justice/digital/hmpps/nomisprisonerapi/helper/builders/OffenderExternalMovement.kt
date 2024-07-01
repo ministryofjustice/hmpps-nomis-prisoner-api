@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 @DslMarker
 annotation class OffenderExternalMovementDslMarker
@@ -26,9 +27,7 @@ interface OffenderExternalMovementDsl
 class OffenderExternalMovementBuilderFactory(
   private val repository: OffenderExternalMovementBuilderRepository,
 ) {
-  fun builder(): OffenderExternalMovementBuilder {
-    return OffenderExternalMovementBuilder(repository)
-  }
+  fun builder(): OffenderExternalMovementBuilder = OffenderExternalMovementBuilder(repository)
 }
 
 @Component
@@ -114,7 +113,9 @@ class OffenderExternalMovementBuilder(
       offenderBooking.inOutStatus = "OUT"
       offenderBooking.location = repository.lookupAgency("OUT")
       offenderBooking.active = false
+      offenderBooking.bookingEndDate = date.truncatedTo(ChronoUnit.DAYS)
     }
+
   fun build(
     fromPrisonId: String,
     toPrisonId: String,

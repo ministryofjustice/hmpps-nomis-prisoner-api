@@ -656,12 +656,6 @@ class BookingBuilder(
           offenderBooking = offenderBooking,
           date = date,
         )
-          .also {
-            offenderBooking.inOutStatus = "OUT"
-            offenderBooking.location = repository.lookupAgencyLocation("OUT")
-            offenderBooking.active = false
-            offenderBooking.bookingEndDate = date
-          }
           .also { offenderBooking.externalMovements.forEach { it.active = false } }
           .also { offenderBooking.externalMovements += it }
       }
