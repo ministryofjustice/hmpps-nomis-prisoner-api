@@ -3,10 +3,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.BookingPhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -21,7 +23,7 @@ class PrisonPersonService(
         BookingPhysicalAttributesResponse(
           bookingId = it.bookingId,
           startDateTime = it.bookingBeginDate,
-          endDateTime = it.bookingEndDate,
+          endDateTime = it.getReleaseTime(),
           latestBooking = it.bookingSequence == 1,
           physicalAttributes = it.physicalAttributes.map {
             PhysicalAttributesResponse(
@@ -40,4 +42,14 @@ class PrisonPersonService(
         PrisonerPhysicalAttributesResponse(offenderNo = offenderNo, bookings = it)
       }
       ?: throw NotFoundException("No bookings found for offender $offenderNo")
+
+  // NOMIS truncates the time from booking end date, so try and get the accurate time from the release movement
+  private fun OffenderBooking.getReleaseTime(): LocalDateTime? =
+    bookingEndDate?.let {
+      externalMovements
+        .filter { it.movementDate == bookingEndDate?.toLocalDate() }
+        .filter { it.movementType.code == "REL" }
+        .maxByOrNull { it.movementTime }
+        ?.movementTime
+    }
 }
