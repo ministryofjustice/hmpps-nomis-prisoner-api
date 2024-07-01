@@ -31,11 +31,15 @@ class CSIPService(
     private val csipTemplates = listOf("CSIPA1_HMP", "CSIPA1_FNP", "CSIPA2_HMP", "CSIPA2_FNP", "CSIPA3_HMP", "CSIPA3_FNP")
   }
 
-  fun getCSIP(csipId: Long): CSIPResponse? {
+  fun getCSIP(csipId: Long, includeDocumentIds: Boolean): CSIPResponse? {
     val csip = csipRepository.findByIdOrNull(csipId)
       ?: throw NotFoundException("CSIP with id=$csipId does not exist")
 
-    val documentIds = documentService.findAllIds(csip.offenderBooking.bookingId, csipTemplates)
+    val documentIds = if (includeDocumentIds) {
+      documentService.findAllIds(csip.offenderBooking.bookingId, csipTemplates)
+    } else {
+      null
+    }
     return csip.toCSIPResponse(documentIds)
   }
 
@@ -65,7 +69,7 @@ class CSIPService(
   fun getCSIPCount(): Long = csipRepository.count()
 }
 
-private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>): CSIPResponse =
+private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>?): CSIPResponse =
   CSIPResponse(
     id = id,
     offender = offenderBooking.offender.toOffender(),
@@ -110,7 +114,7 @@ private fun CSIPReport.toReportDetailResponse() =
     releaseDate = releaseDate,
     involvement = involvement?.toCodeDescription(),
     concern = concernDescription,
-    factors = factors.map { it.toReviewResponse() },
+    factors = factors.map { it.toFactorResponse() },
     knownReasons = knownReasons,
     otherInformation = otherInformation,
     saferCustodyTeamInformed = saferCustodyTeamInformed,
@@ -207,8 +211,8 @@ private fun CSIPReview.toReviewResponse() =
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
   )
-private fun CSIPFactor.toReviewResponse() =
-  FactorResponse(
+private fun CSIPFactor.toFactorResponse() =
+  CSIPFactorResponse(
     id = id,
     type = type.toCodeDescription(),
     comment = comment,

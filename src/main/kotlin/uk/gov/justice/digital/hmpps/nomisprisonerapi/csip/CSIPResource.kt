@@ -127,7 +127,9 @@ class CSIPResource(private val csipService: CSIPService) {
   )
   fun getCSIP(
     @Schema(description = "CSIP id") @PathVariable id: Long,
-  ) = csipService.getCSIP(id)
+    @RequestParam(value = "includeDocumentIds", required = false)
+    includeDocumentIds: Boolean = false,
+  ) = csipService.getCSIP(id, includeDocumentIds)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
   @GetMapping("/count")
@@ -219,7 +221,7 @@ data class CSIPResponse(
   val reviews: List<Review>,
 
   @Schema(description = "Associated CSIP document Ids")
-  val documents: List<DocumentIdResponse>,
+  val documents: List<DocumentIdResponse>? = null,
 
   @Schema(description = "The date and time the report was created")
   val createDateTime: LocalDateTime,
@@ -252,7 +254,7 @@ data class ReportDetails(
   @Schema(description = "Concern description")
   val concern: String?,
   @Schema(description = "Contributory factors")
-  val factors: List<FactorResponse>,
+  val factors: List<CSIPFactorResponse>,
   @Schema(description = "known reasons for the involvement")
   val knownReasons: String?,
   @Schema(description = "Additional information")
@@ -269,7 +271,7 @@ data class ReportDetails(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class FactorResponse(
+data class CSIPFactorResponse(
   @Schema(description = "Factor type id")
   val id: Long,
   @Schema(description = "Contributory Factor")
