@@ -113,7 +113,9 @@ class OffenderExternalMovementBuilder(
       offenderBooking.inOutStatus = "OUT"
       offenderBooking.location = repository.lookupAgency("OUT")
       offenderBooking.active = false
-      offenderBooking.bookingEndDate = date.truncatedTo(ChronoUnit.DAYS)
+      if (offenderBooking.bookingEndDate == null) {
+        offenderBooking.bookingEndDate = date.truncatedTo(ChronoUnit.DAYS)
+      }
     }
 
   fun build(

@@ -19,6 +19,8 @@ interface OffenderDsl {
   @BookingDslMarker
   fun booking(
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
+    // This is a date because NOMIS uses a DATE column which truncates the time
+    bookingEndDate: LocalDate? = null,
     active: Boolean = true,
     inOutStatus: String = "IN",
     youthAdultCode: String = "N",
@@ -87,6 +89,7 @@ class OffenderBuilder(
 
   override fun booking(
     bookingBeginDate: LocalDateTime,
+    bookingEndDate: LocalDate?,
     active: Boolean,
     inOutStatus: String,
     youthAdultCode: String,
@@ -103,6 +106,7 @@ class OffenderBuilder(
         bookingSequence = bookingSequence ?: nextBookingSequence++,
         agencyLocationCode = agencyLocationId,
         bookingBeginDate = bookingBeginDate,
+        bookingEndDate = bookingEndDate,
         active = active,
         inOutStatus = inOutStatus,
         youthAdultCode = youthAdultCode,

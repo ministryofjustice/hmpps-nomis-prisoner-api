@@ -43,13 +43,13 @@ class PrisonPersonService(
       }
       ?: throw NotFoundException("No bookings found for offender $offenderNo")
 
-  // NOMIS truncates the time from booking end date, so try and get the accurate time from the release movement
+  // NOMIS truncates the time from booking end date, so try and get the accurate time from the last release movement
   private fun OffenderBooking.getReleaseTime(): LocalDateTime? =
     bookingEndDate?.let {
       externalMovements
-        .filter { it.movementDate == bookingEndDate?.toLocalDate() }
         .filter { it.movementType.code == "REL" }
         .maxByOrNull { it.movementTime }
         ?.movementTime
+        ?: bookingEndDate
     }
 }
