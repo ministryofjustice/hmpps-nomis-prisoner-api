@@ -301,6 +301,7 @@ class BookingBuilder(
     bookingSequence: Int,
     agencyLocationCode: String,
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
+    bookingEndDate: LocalDate? = null,
     active: Boolean,
     inOutStatus: String,
     youthAdultCode: String,
@@ -314,6 +315,8 @@ class BookingBuilder(
       createLocation = agencyLocation,
       location = agencyLocation,
       bookingBeginDate = bookingBeginDate,
+      // note this overrides the booking end date set by the release() function
+      bookingEndDate = bookingEndDate?.atStartOfDay(),
       active = active,
       inOutStatus = inOutStatus,
       youthAdultCode = youthAdultCode,

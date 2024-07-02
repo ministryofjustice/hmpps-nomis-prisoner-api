@@ -175,6 +175,65 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should return end date from last release movement`() {
+        lateinit var oldBooking: OffenderBooking
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              physicalAttributes()
+            }
+            oldBooking =
+              booking(bookingSequence = 2, bookingBeginDate = today.minusDays(3), bookingEndDate = today.minusDays(2).toLocalDate()) {
+                physicalAttributes()
+                // Note the release time is after the bookingEndDate - an edge case seen in production data
+                release(date = today.minusDays(1))
+              }
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "endDateTime")
+                .containsExactly(
+                  tuple(booking.bookingId, null),
+                  // For the old booking we return the latest release time rather than the booking end date - because it includes the time but booking end date doesn't
+                  tuple(oldBooking.bookingId, today.minusDays(1)),
+                )
+            }
+          }
+      }
+
+      @Test
+      fun `should return booking end date if can't find a release movement`() {
+        lateinit var oldBooking: OffenderBooking
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              physicalAttributes()
+            }
+            oldBooking =
+              booking(bookingSequence = 2, bookingBeginDate = today.minusDays(3), bookingEndDate = today.minusDays(2).toLocalDate()) {
+                // Note there is no release movement added here - an edge case seen in production data
+                physicalAttributes()
+              }
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "endDateTime")
+                .containsExactly(
+                  tuple(booking.bookingId, null),
+                  // For the old booking without a release movement we return the booking end date
+                  tuple(oldBooking.bookingId, today.minusDays(2).truncatedTo(ChronoUnit.DAYS)),
+                )
+            }
+          }
+      }
+
+      @Test
       fun `should return physical attributes from aliases`() {
         lateinit var aliasBooking: OffenderBooking
         nomisDataBuilder.build {
