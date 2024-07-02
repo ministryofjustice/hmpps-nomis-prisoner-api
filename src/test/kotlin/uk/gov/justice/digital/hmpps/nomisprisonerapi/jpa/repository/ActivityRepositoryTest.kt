@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Import
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.ProgramServiceBuilderFactory
@@ -24,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
+import uk.gov.justice.hmpps.kotlin.auth.HmppsAuthenticationHolder
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -31,7 +31,7 @@ import java.time.LocalDate
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(AuthenticationFacade::class, AuditorAwareImpl::class, Repository::class, ProgramServiceBuilderFactory::class)
+@Import(HmppsAuthenticationHolder::class, AuditorAwareImpl::class, Repository::class, ProgramServiceBuilderFactory::class)
 @WithMockAuthUser
 class ActivityRepositoryTest {
   @Autowired

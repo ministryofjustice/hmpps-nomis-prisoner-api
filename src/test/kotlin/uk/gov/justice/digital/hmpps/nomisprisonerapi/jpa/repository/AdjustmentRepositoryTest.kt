@@ -11,20 +11,20 @@ import org.springframework.context.annotation.Import
 import org.springframework.data.domain.Pageable
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyKeyDateAdjustmentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacySentenceAdjustmentBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacySentenceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.hmpps.kotlin.auth.HmppsAuthenticationHolder
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDateTime
 
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(AuthenticationFacade::class, AuditorAwareImpl::class, Repository::class)
+@Import(HmppsAuthenticationHolder::class, AuditorAwareImpl::class, Repository::class)
 @WithMockAuthUser
 class AdjustmentRepositoryTest {
 
