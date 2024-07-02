@@ -8,10 +8,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.factors.toFactorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
@@ -67,6 +67,13 @@ class CSIPService(
     }
 
   fun getCSIPCount(): Long = csipRepository.count()
+
+  fun deleteCSIP(csipId: Long) {
+    csipRepository.findByIdOrNull(csipId)?.also {
+      csipRepository.deleteById(csipId)
+    }
+      ?: log.info("CSIP deletion request for: $csipId ignored. CSIP does not exist")
+  }
 }
 
 private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>?): CSIPResponse =
@@ -206,16 +213,6 @@ private fun CSIPReview.toReviewResponse() =
     summary = summary,
     nextReviewDate = nextReviewDate,
     closeDate = closeDate,
-    createDateTime = createDatetime,
-    createdBy = createUsername,
-    lastModifiedDateTime = lastModifiedDateTime,
-    lastModifiedBy = lastModifiedUsername,
-  )
-private fun CSIPFactor.toFactorResponse() =
-  CSIPFactorResponse(
-    id = id,
-    type = type.toCodeDescription(),
-    comment = comment,
     createDateTime = createDatetime,
     createdBy = createUsername,
     lastModifiedDateTime = lastModifiedDateTime,

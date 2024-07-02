@@ -447,4 +447,85 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("documents").doesNotExist()
     }
   }
+
+  @DisplayName("DELETE /csip/{csipId}")
+  @Nested
+  inner class DeleteCsip {
+    private lateinit var csipToDelete: CSIPReport
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234YY", firstName = "Jim", lastName = "Jones") {
+          booking(agencyLocationId = "MDI") {
+            csipToDelete = csipReport()
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(csipToDelete)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/csip/${csipToDelete.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/csip/${csipToDelete.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/csip/${csipToDelete.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class NoValidation {
+      @Test
+      fun `return 204 even when does not exist`() {
+        webTestClient.delete().uri("/csip/99999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the csip`() {
+        webTestClient.get().uri("/csip/${csipToDelete.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .exchange()
+          .expectStatus()
+          .isOk
+        webTestClient.delete().uri("/csip/${csipToDelete.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        webTestClient.get().uri("/csip/${csipToDelete.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .exchange()
+          .expectStatus()
+          .isNotFound
+      }
+    }
+  }
 }

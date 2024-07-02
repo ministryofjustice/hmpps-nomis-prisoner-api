@@ -92,7 +92,7 @@ class CSIPReport(
   val areaOfWork: CSIPAreaOfWork,
 
   @Column(name = "RFR_REPORTED_BY")
-  val reportedBy: String? = null,
+  val reportedBy: String,
 
   @Column(name = "RFR_DATE_REPORTED", nullable = false)
   val reportedDate: LocalDate = LocalDate.now(),
