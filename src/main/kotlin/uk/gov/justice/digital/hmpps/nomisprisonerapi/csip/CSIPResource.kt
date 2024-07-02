@@ -9,16 +9,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentIdResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.factors.CSIPFactorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,9 +30,9 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(value = ["/csip"], produces = [MediaType.APPLICATION_JSON_VALUE])
+@PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
 class CSIPResource(private val csipService: CSIPService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
   @GetMapping("/ids")
   @Operation(
     summary = "get csip IDs by filter",
@@ -85,7 +89,6 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
     )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
   @GetMapping("/{id}")
   @Operation(
     summary = "Get CSIP details",
@@ -131,7 +134,44 @@ class CSIPResource(private val csipService: CSIPService) {
     includeDocumentIds: Boolean = false,
   ) = csipService.getCSIP(id, includeDocumentIds)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
+  @DeleteMapping("/{csipId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Deletes a csip report",
+    description = "Deletes a csip report. Requires ROLE_NOMIS_CSIP",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Csip report Deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCSIP(
+    @Schema(description = "CSIP Factor Id", example = "12345")
+    @PathVariable
+    csipId: Long,
+  ): Unit = csipService.deleteCSIP(csipId)
+
   @GetMapping("/count")
   @Operation(
     summary = "Get csip count",
@@ -185,7 +225,7 @@ data class CSIPResponse(
   @Schema(description = "The Area of work, aka function")
   val areaOfWork: CodeDescription,
   @Schema(description = "The person reporting the incident - free text")
-  val reportedBy: String?,
+  val reportedBy: String,
   @Schema(description = "Date reported")
   val reportedDate: LocalDate,
 
@@ -268,24 +308,6 @@ data class ReportDetails(
   val referralCompletedBy: String?,
   @Schema(description = "Date the referral was completed")
   val referralCompletedDate: LocalDate?,
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class CSIPFactorResponse(
-  @Schema(description = "Factor type id")
-  val id: Long,
-  @Schema(description = "Contributory Factor")
-  val type: CodeDescription,
-  @Schema(description = "Factor comment")
-  val comment: String?,
-  @Schema(description = "The date and time the report was created")
-  val createDateTime: LocalDateTime,
-  @Schema(description = "The username of the person who created the report")
-  val createdBy: String,
-  @Schema(description = "The date and time the report was last updated")
-  val lastModifiedDateTime: LocalDateTime?,
-  @Schema(description = "The username of the person who last updated the report")
-  val lastModifiedBy: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
