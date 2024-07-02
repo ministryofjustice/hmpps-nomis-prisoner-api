@@ -9,12 +9,12 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuthenticationFacade
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyInternalLocationBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyInternalLocationBuilderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.hmpps.kotlin.auth.HmppsAuthenticationHolder
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 
@@ -22,7 +22,7 @@ import java.time.LocalDate
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(
-  AuthenticationFacade::class,
+  HmppsAuthenticationHolder::class,
   AuditorAwareImpl::class,
   Repository::class,
   NomisDataBuilder::class,
