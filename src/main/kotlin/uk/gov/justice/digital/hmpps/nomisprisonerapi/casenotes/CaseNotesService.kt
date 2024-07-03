@@ -110,9 +110,7 @@ class CaseNotesService(
    * For reconciliation or migration
    */
   fun getCaseNotes(offenderNo: String): PrisonerCaseNotesResponse {
-    offenderRepository.findByNomsId(offenderNo).takeIf {
-      it.isEmpty()
-    }?.apply {
+    offenderRepository.findByNomsId(offenderNo).ifEmpty {
       throw NotFoundException("offender $offenderNo not found")
     }
 
