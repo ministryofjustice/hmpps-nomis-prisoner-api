@@ -3,6 +3,8 @@ info.app:
   version: 1.0
 
 spring:
+  main:
+    web-application-type: servlet
   application:
     name: hmpps-nomis-prisoner-api
   codec:

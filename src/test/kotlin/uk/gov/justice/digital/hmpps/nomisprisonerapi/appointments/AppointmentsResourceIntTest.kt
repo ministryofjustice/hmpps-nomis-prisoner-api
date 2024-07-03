@@ -1013,9 +1013,9 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
                 .queryParam("prisonIds", "MDI")
                 .build()
             }
-            .headers(setAuthorisation(roles = listOf("")))
+            .headers(setAuthorisation(roles = listOf()))
             .exchange()
-            .expectStatus().isUnauthorized,
+            .expectStatus().isForbidden,
         )
       }
 
