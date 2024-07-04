@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttend
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadRequestError
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AttendanceOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -180,6 +181,17 @@ class AttendanceService(
   private fun getEventStatus(requestStatus: EventStatus, oldStatus: EventStatus) = if (oldStatus.code == "COMP" && requestStatus.code != "CANC") oldStatus else requestStatus
 
   fun deleteAttendance(eventId: Long) = attendanceRepository.deleteById(eventId)
+
+  fun deleteAttendance(courseScheduleId: Long, bookingId: Long) {
+    val courseSchedule = scheduleRepository.findByIdOrNull(courseScheduleId) ?: throw NotFoundException("Course schedule $courseScheduleId not found")
+    val booking = offenderBookingRepository.findByIdOrNull(bookingId) ?: throw NotFoundException("Booking $bookingId not found")
+    attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, booking)
+      ?.run {
+        if (paidTransactionId != null) throw BadDataException("Attendance for course schedule $courseScheduleId and booking $bookingId has already been paid")
+        attendanceRepository.delete(this)
+      }
+      ?: throw NotFoundException("Attendance for course schedule $courseScheduleId and booking $bookingId not found")
+  }
 
   fun findPaidAttendancesSummary(prisonId: String, date: LocalDate) =
     attendanceRepository.findBookingPaidAttendanceCountsByPrisonAndDate(prisonId, date)
