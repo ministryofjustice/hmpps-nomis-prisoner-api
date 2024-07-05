@@ -68,13 +68,22 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       replace(""""endTime": "11:00",""", endTime?.let { """"endTime": "$endTime",""" } ?: "")
 
     private fun String.withEventStatusCode(eventStatusCode: String?) =
-      replace(""""eventStatusCode": "SCH",""", eventStatusCode?.let { """"eventStatusCode": "$eventStatusCode",""" } ?: "")
+      replace(
+        """"eventStatusCode": "SCH",""",
+        eventStatusCode?.let { """"eventStatusCode": "$eventStatusCode",""" } ?: "",
+      )
 
     private fun String.withEventOutcomeCode(eventOutcomeCode: String?) =
-      replace(""""eventOutcomeCode": null,""", eventOutcomeCode?.let { """"eventOutcomeCode": "$eventOutcomeCode",""" } ?: "")
+      replace(
+        """"eventOutcomeCode": null,""",
+        eventOutcomeCode?.let { """"eventOutcomeCode": "$eventOutcomeCode",""" } ?: "",
+      )
 
     private fun String.withUnexcusedAbsence(unexcusedAbsence: String?) =
-      replace(""""unexcusedAbsence": null,""", unexcusedAbsence?.let { """"unexcusedAbsence": $unexcusedAbsence,""" } ?: "")
+      replace(
+        """"unexcusedAbsence": null,""",
+        unexcusedAbsence?.let { """"unexcusedAbsence": $unexcusedAbsence,""" } ?: "",
+      )
 
     private fun String.withPaidFlag(paidFlag: String?) =
       replace(""""paid": null,""", paidFlag?.let { """"paid": $paidFlag,""" } ?: "")
@@ -188,7 +197,11 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, validJsonRequest.withEventOutcomeCode("SUS"))
+        webTestClient.upsertAttendance(
+          courseSchedule.courseScheduleId,
+          offenderBooking.bookingId,
+          validJsonRequest.withEventOutcomeCode("SUS"),
+        )
           .expectStatus().isOk
       }
 
@@ -502,7 +515,11 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, validJsonRequest.withScheduleDate("$today"))
+        val response = webTestClient.upsertAttendance(
+          courseSchedule.courseScheduleId,
+          offenderBooking.bookingId,
+          validJsonRequest.withScheduleDate("$today"),
+        )
           .expectStatus().isOk
           .expectBody(UpsertAttendanceResponse::class.java)
           .returnResult().responseBody!!
@@ -826,5 +843,127 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .body(BodyInserters.fromValue(jsonRequest))
         .exchange()
+  }
+
+  @Nested
+  inner class DeleteAttendance {
+
+    private lateinit var courseActivity: CourseActivity
+    private lateinit var courseSchedule: CourseSchedule
+    private lateinit var offenderBooking: OffenderBooking
+    private lateinit var attendance: OffenderCourseAttendance
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule = courseSchedule()
+            courseScheduleRule()
+            payRate()
+          }
+        }
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity) {
+              attendance = courseAttendance(courseSchedule)
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun cleanUp() {
+      repository.deleteAttendances()
+      repository.deleteOffenders()
+      repository.deleteActivities()
+      repository.deleteProgramServices()
+    }
+
+    @Test
+    fun `should return unauthorised if no token`() {
+      webTestClient.delete().uri("/schedules/1/booking/2/attendance")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden if no role`() {
+      webTestClient.delete().uri("/schedules/1/booking/2/attendance")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden with wrong role`() {
+      webTestClient.delete().uri("/schedules/1/booking/2/attendance")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return not found for unknown schedule`() {
+      webTestClient.delete().uri("/schedules/9999/booking/${offenderBooking.bookingId}/attendance")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should return not found for unknown booking`() {
+      webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/99999/attendance")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should return not found if there is no attendance`() {
+      nomisDataBuilder.build {
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity)
+          }
+        }
+      }
+
+      webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/${offenderBooking.bookingId}/attendance")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should delete an attendance`() {
+      webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/${offenderBooking.bookingId}/attendance")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      repository.offenderCourseAttendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, offenderBooking).let {
+        assertThat(it).isNull()
+      }
+    }
+
+    @Test
+    fun `should return bad request if attendance already paid`() {
+      nomisDataBuilder.build {
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity) {
+              attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
+            }
+          }
+        }
+      }
+
+      webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/${offenderBooking.bookingId}/attendance")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
   }
 }

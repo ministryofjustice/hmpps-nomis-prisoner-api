@@ -293,6 +293,46 @@ class ActivitiesResource(
     attendanceService.upsertAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @DeleteMapping("/schedules/{courseScheduleId}/booking/{bookingId}/attendance")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Deletes an attendance record",
+    description = "Deletes an attendance for the course schedule. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Attendance deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun deleteAttendance(
+    @Schema(description = "Course schedule id") @PathVariable courseScheduleId: Long,
+    @Schema(description = "Booking id") @PathVariable bookingId: Long,
+  ) =
+    attendanceService.deleteAttendance(courseScheduleId, bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/ids")
   @Operation(
     summary = "Find paged active activities",
