@@ -536,6 +536,33 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `already deactivated but forced`() {
+      nomisDataBuilder.build {
+        location1 = agencyInternalLocation(
+          locationCode = "MEDI",
+          locationType = "MEDI",
+          prisonId = "MDI",
+          listSequence = 100,
+          active = false,
+          deactivationDate = LocalDate.parse("2024-01-01"),
+        )
+      }
+      webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue("""{ "deactivateDate": "2024-02-02", "force": true }"""))
+        .exchange()
+        .expectStatus().isOk
+
+      // Check the database
+      repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
+        assertThat(deactivateDate).isEqualTo(LocalDate.parse("2024-02-02"))
+        assertThat(deactivateReason).isNull()
+        assertThat(active).isFalse()
+      }
+    }
+
+    @Test
     fun `invalid reason code`() {
       nomisDataBuilder.build {
         location1 = agencyInternalLocation(

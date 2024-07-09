@@ -19,4 +19,7 @@ data class DeactivateRequest(
 
   @Schema(description = "The expected reactivation date if any", example = "2024-12-31")
   val reactivateDate: LocalDate? = null,
+
+  @Schema(description = "If true, update Nomis even if already inactive. Useful when a temporarily inactive location is deactivated permanently")
+  val force: Boolean = false,
 )
