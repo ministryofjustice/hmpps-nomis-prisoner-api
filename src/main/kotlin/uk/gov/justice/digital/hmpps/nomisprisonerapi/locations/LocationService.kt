@@ -116,7 +116,7 @@ class LocationService(
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
     if (deactivateRequest.force) {
-      log.info("Force-deactivating already inactive location $location")
+      log.info("Force-deactivating location $location")
     } else if (!location.active) {
       throw BadDataException("Location with id=$locationId is already inactive")
     }
