@@ -306,7 +306,3 @@ data class AmendCaseNoteRequest(
   @Schema(description = "Free format text body of case note")
   val caseNoteText: String,
 )
-
-data class BookingIdResponse(
-  val bookingId: Long,
-)
