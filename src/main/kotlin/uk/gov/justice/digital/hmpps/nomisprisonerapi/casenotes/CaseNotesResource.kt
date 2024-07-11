@@ -258,6 +258,8 @@ data class CaseNoteResponse(
   var caseNoteText: String? = null,
   @Schema(description = "Whether the case note was amended", example = "false")
   val amended: Boolean,
+  @Schema(description = "Which screen (or DPS) created the case note", example = "false")
+  val auditModuleName: String? = null,
 )
 
 @Schema(description = "A request to create a case note in NOMIS")

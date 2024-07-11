@@ -131,6 +131,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("amended").isEqualTo("false")
           .jsonPath("occurrenceDateTime")
           .value<String> { assertThat(LocalDateTime.parse(it)).isCloseTo(now, within(2, ChronoUnit.MINUTES)) }
+          .jsonPath("auditModuleName").isEqualTo("A_MODULE")
       }
     }
   }
