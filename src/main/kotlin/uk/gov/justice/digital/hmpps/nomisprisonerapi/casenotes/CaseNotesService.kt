@@ -84,7 +84,7 @@ class CaseNotesService(
 
     validateTypes(caseNoteType, caseNoteSubType)
 
-    val staffUserAccount = staffUserAccountRepository.findByUsername(request.authorUsername)
+    staffUserAccountRepository.findByUsername(request.authorUsername)
       ?: throw BadDataException("Username ${request.authorUsername} not found")
 
     caseNote.caseNoteText = request.caseNoteText
@@ -104,6 +104,7 @@ class CaseNotesService(
     prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
     caseNoteText = caseNoteText,
     amended = amendmentFlag,
+    auditModuleName = auditModuleName,
   )
 
   /**
