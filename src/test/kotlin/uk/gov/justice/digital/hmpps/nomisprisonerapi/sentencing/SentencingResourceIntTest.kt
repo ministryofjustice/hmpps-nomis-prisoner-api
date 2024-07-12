@@ -3457,7 +3457,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       offenceDate = offenceDate,
       offenceEndDate = offenceEndDate,
       resultCode1 = resultCode1,
-      mostSeriousFlag = mostSeriousFlag,
     )
 
   private fun createExistingOffenderChargeRequest(
@@ -3476,7 +3475,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       offenceDate = offenceDate,
       offenceEndDate = offenceEndDate,
       resultCode1 = resultCode1,
-      mostSeriousFlag = mostSeriousFlag,
     )
 
   private fun createCourtAppearanceRequest(
