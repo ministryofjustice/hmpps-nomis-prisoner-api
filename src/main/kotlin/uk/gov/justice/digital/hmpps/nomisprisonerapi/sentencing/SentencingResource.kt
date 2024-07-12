@@ -1114,7 +1114,6 @@ data class OffenderChargeRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
-  val mostSeriousFlag: Boolean,
 
   /*
   val plea: String?,
@@ -1129,6 +1128,8 @@ data class OffenderChargeRequest(
   val resultCode2Indicator: String?,
   val lidsOffenceNumber: Int?,
    */
+
+  /* mostSeriousFlag has been removed - DPS not providing */
 )
 
 @Schema(description = "Court Event")
@@ -1140,8 +1141,6 @@ data class ExistingOffenderChargeRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
-  val mostSeriousFlag: Boolean,
-
 )
 
 @Schema(description = "Sentence request")
