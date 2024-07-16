@@ -718,8 +718,6 @@ class SentencingService(
   }
 
   fun OffenceResultCode.resultRequiresACourtOrder(): Boolean {
-    log.info("Result code charge status: $this.chargeStatus and disposition code: ${this.dispositionCode}")
-    log.info("resturning ${this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)}")
     return this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
   }
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
