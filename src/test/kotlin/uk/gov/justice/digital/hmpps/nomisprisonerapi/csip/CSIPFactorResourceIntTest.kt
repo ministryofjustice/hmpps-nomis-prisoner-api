@@ -121,7 +121,7 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("DELETE /csip/factors/{csipId}")
   @Nested
-  inner class DeleteCsip {
+  inner class DeleteCSIPFactor {
     private lateinit var csipToDelete: CSIPReport
 
     @BeforeEach
