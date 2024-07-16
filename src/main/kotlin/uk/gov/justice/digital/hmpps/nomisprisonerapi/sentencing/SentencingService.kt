@@ -717,9 +717,9 @@ class SentencingService(
     }
   }
 
-  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean {
-    return this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
-  }
+  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean =
+    this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
+
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
     courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
 
