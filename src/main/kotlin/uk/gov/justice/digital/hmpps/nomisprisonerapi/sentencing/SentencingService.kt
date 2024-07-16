@@ -183,6 +183,8 @@ class SentencingService(
         )
       }
       courtCaseRepository.saveAndFlush(courtCase).also {
+        // TODO confirm no order associated with Next appearances
+        refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
         storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = booking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
@@ -217,6 +219,7 @@ class SentencingService(
       }
     }
 
+  // TODO not currently updating the EXISTING offendercharge - eg with new offenceresultcode
   @Audit
   fun createCourtAppearance(
     offenderNo: String,
@@ -255,6 +258,7 @@ class SentencingService(
         )
         courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
           var nextAppearanceId: Long? = null
+          refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
           createdCourtEvent.nextEventDate?.let {
             createdCourtEvent.courtCase!!.courtEvents.add(
               createNextCourtEvent(booking, createdCourtEvent, courtAppearanceRequest).also { nextCourtEvent ->
@@ -379,7 +383,6 @@ class SentencingService(
             courtCase,
             courtAppearance,
           )
-          refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
 
           val deletedOffenderCharges = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also {
             it.forEach {
@@ -400,6 +403,7 @@ class SentencingService(
           }
 
           courtEventRepository.saveAndFlush(courtAppearance).also {
+            refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
             storedProcedureRepository.imprisonmentStatusUpdate(
               bookingId = offenderBooking.bookingId,
               changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
@@ -717,9 +721,11 @@ class SentencingService(
     }
   }
 
-  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean =
-    this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
-
+  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean {
+    log.info("Result code charge status: $this.chargeStatus and disposition code: ${this.dispositionCode}")
+    log.info("resturning ${this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)}")
+    return this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
+  }
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
     courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
 

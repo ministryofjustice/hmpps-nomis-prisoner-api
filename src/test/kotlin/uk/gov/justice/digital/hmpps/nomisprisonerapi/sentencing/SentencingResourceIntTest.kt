@@ -211,7 +211,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
@@ -302,7 +302,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").doesNotExist()
-          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo("false")
           .jsonPath("courtEvents[0].nextEventDateTime").doesNotExist()
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
@@ -961,6 +961,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       offenceDate = LocalDate.of(2023, 1, 2),
                       offenceEndDate = LocalDate.of(2023, 1, 3),
                       offenceCode = "HP03001",
+                      resultCode1 = "1002",
                     ),
                   ),
                 ),
@@ -1001,6 +1002,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("beginDate").isEqualTo("2023-01-01")
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].courtOrders[0].id").exists()
           .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-05T09:00:00")
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Court Appearance")
@@ -1011,7 +1013,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("1004")
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
@@ -1028,6 +1030,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1067")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
+          .jsonPath("courtEvents[1].courtOrders[0].id").doesNotExist()
           .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-02-20T09:00:00")
           .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
           .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
@@ -1037,7 +1040,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventDateTime").doesNotExist()
           .jsonPath("courtEvents[1].nextEventStartTime").doesNotExist()
@@ -1418,6 +1421,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   courtEventChargesToCreate = mutableListOf(
                     createOffenderChargeRequest(
                       offenceCode = "RT88077B",
+                      resultCode1 = "1004",
                       offenceDate = LocalDate.of(2023, 1, 3),
                       offenceEndDate = LocalDate.of(2023, 1, 5),
                     ),
@@ -1459,11 +1463,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].outcomeReasonCode.code").isEqualTo("1004")
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
           .jsonPath("courtEvents[1].createdDateTime").isNotEmpty
           .jsonPath("courtEvents[1].createdByUsername").isNotEmpty
+          .jsonPath("courtEvents[1].courtOrders[0].id").exists()
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
@@ -1482,9 +1487,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[2].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[2].commentText").doesNotExist()
           .jsonPath("courtEvents[2].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[2].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[2].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[2].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[2].nextEventDateTime").doesNotExist()
+          .jsonPath("courtEvents[2].courtOrders[0].id").doesNotExist()
           .jsonPath("courtEvents[2].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[2].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[2].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
@@ -1502,7 +1508,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[2].courtEventCharges[2].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[2].courtEventCharges[2].offenderCharge.offence.offenceCode").isEqualTo("RT88077B")
           .jsonPath("courtEvents[2].courtEventCharges[2].offencesCount").isEqualTo(1)
-          .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1.code").isEqualTo("1067")
+          .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1.code").isEqualTo("1004")
           .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1Indicator").isEqualTo("F")
           .jsonPath("courtEvents[2].courtEventCharges[3].offenceDate").isEqualTo("2023-02-03")
           .jsonPath("courtEvents[2].courtEventCharges[3].offenceEndDate").isEqualTo("2023-02-05")
@@ -1516,9 +1522,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[1].resultCode1Indicator").isEqualTo("F")
           .jsonPath("offenderCharges[1].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[2].resultCode1.description")
-          .isEqualTo("Bound Over to Leave the Island within 3 days")
+          .isEqualTo("Restriction Order")
           .jsonPath("offenderCharges[2].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("offenderCharges[2].chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("offenderCharges[2].chargeStatus.description").isEqualTo("Active")
       }
 
       @Test
@@ -2198,7 +2204,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("commentText").isEqualTo("Court event comment")
           .jsonPath("orderRequestedFlag").isEqualTo(false)
-          .jsonPath("holdFlag").doesNotExist()
+          .jsonPath("holdFlag").isEqualTo(false)
           .jsonPath("nextEventRequestFlag").isEqualTo(false)
           .jsonPath("nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("createdDateTime").isNotEmpty
