@@ -603,7 +603,6 @@ class SentencingService(
         val resultCode = offenderChargeRequest.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
         courtEventCharge.offenceDate = offenderChargeRequest.offenceDate
         courtEventCharge.offenceEndDate = offenderChargeRequest.offenceEndDate
-        courtEventCharge.mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
         courtEventCharge.offencesCount = offenderChargeRequest.offencesCount
         courtEventCharge.resultCode1 = resultCode
         courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
@@ -630,7 +629,6 @@ class SentencingService(
         OffenderCharge(
           offenceDate = newCharge.offenceDate,
           offenceEndDate = newCharge.offenceEndDate,
-          mostSeriousFlag = newCharge.mostSeriousFlag,
           offencesCount = newCharge.offencesCount,
           offenderBooking = offenderBooking,
           resultCode1 = resultCode,
@@ -645,7 +643,6 @@ class SentencingService(
           id = CourtEventChargeId(offenderCharge = offenderCharge, courtEvent = courtAppearance),
           offenceDate = newCharge.offenceDate,
           offenceEndDate = newCharge.offenceEndDate,
-          mostSeriousFlag = newCharge.mostSeriousFlag,
           offencesCount = newCharge.offencesCount,
           resultCode1 = resultCode,
           resultCode1Indicator = resultCode?.dispositionCode,
@@ -669,7 +666,6 @@ class SentencingService(
       resultCode1 = resultCode
       resultCode1Indicator = resultCode?.dispositionCode
       chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
-      mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
       offencesCount = offenderChargeRequest.offencesCount
     }
   }

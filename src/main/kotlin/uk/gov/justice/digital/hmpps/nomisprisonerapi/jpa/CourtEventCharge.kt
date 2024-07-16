@@ -91,7 +91,7 @@ class CourtEventCharge(
   val resultCode2Indicator: String? = null,
 
   @Convert(converter = YesNoConverter::class)
-  var mostSeriousFlag: Boolean,
+  var mostSeriousFlag: Boolean = false,
 
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
