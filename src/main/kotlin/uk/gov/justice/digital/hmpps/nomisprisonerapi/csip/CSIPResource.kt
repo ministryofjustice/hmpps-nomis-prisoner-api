@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.factors.CSIPFactorResp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @RestController
 @Validated
@@ -216,7 +217,9 @@ data class CSIPResponse(
   val logNumber: String?,
 
   @Schema(description = "Date/Time incident occurred")
-  val incidentDateTime: LocalDateTime?,
+  val incidentDate: LocalDate,
+  @Schema(description = "Date/Time incident occurred")
+  val incidentTime: LocalTime?,
   @Schema(description = "Type of incident")
   val type: CodeDescription,
   @Schema(description = "Location of the incident")

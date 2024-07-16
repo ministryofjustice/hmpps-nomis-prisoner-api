@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @DslMarker
 annotation class BookingDslMarker
@@ -78,6 +79,8 @@ interface BookingDsl {
     location: String = "LIB",
     areaOfWork: String = "EDU",
     reportedBy: String = "Jane Reporter",
+    incidentDate: LocalDate = LocalDate.now(),
+    incidentTime: LocalTime? = null,
     staffAssaulted: Boolean = false,
     staffAssaultedName: String? = null,
     releaseDate: LocalDate? = null,
@@ -468,6 +471,8 @@ class BookingBuilder(
     location: String,
     areaOfWork: String,
     reportedBy: String,
+    incidentDate: LocalDate,
+    incidentTime: LocalTime?,
     staffAssaulted: Boolean,
     staffAssaultedName: String?,
     releaseDate: LocalDate?,
@@ -491,6 +496,8 @@ class BookingBuilder(
           location = location,
           areaOfWork = areaOfWork,
           reportedBy = reportedBy,
+          incidentDate = incidentDate,
+          incidentTime = incidentTime,
           releaseDate = releaseDate,
           involvement = involvement,
           concern = concern,

@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import java.time.LocalDate
+import java.time.LocalTime
 
 class CSIPResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -37,6 +38,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           document(template = csipTemplate2)
           document(template = otherTemplate)
           csip1 = csipReport(
+            incidentDate = LocalDate.parse("2024-01-25"), incidentTime = LocalTime.parse("12:34"),
             staffAssaulted = true, staffAssaultedName = "Assaulted Person",
             releaseDate = LocalDate.parse("2028-11-25"),
             involvement = "PER", concern = "It may happen again", knownReasons = "Disagreement", otherInformation = "Two other offenders involved",
@@ -210,7 +212,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.lastName").isEqualTo("Smith")
         .jsonPath("originalAgencyId").isEqualTo("MDI")
         .jsonPath("bookingId").isEqualTo(csip2.offenderBooking.bookingId)
-        .jsonPath("incidentDateTime").isNotEmpty
+        .jsonPath("incidentDate").isNotEmpty
+        .jsonPath("incidentTime").doesNotExist()
         .jsonPath("type.code").isEqualTo("INT")
         .jsonPath("type.description").isEqualTo("Intimidation")
         .jsonPath("location.code").isEqualTo("LIB")
@@ -255,7 +258,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.lastName").isEqualTo("Smith")
         .jsonPath("originalAgencyId").isEqualTo("MDI")
         .jsonPath("bookingId").isEqualTo(csip1.offenderBooking.bookingId)
-        .jsonPath("incidentDateTime").isNotEmpty
+        .jsonPath("incidentDate").isEqualTo("2024-01-25")
+        .jsonPath("incidentTime").isEqualTo("12:34:00")
         .jsonPath("type.code").isEqualTo("INT")
         .jsonPath("type.description").isEqualTo("Intimidation")
         .jsonPath("location.code").isEqualTo("LIB")

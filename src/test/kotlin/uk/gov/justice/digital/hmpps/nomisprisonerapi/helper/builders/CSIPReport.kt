@@ -17,6 +17,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 @DslMarker
 annotation class CSIPReportDslMarker
@@ -166,6 +168,8 @@ class CSIPReportBuilder(
     location: String,
     areaOfWork: String,
     reportedBy: String,
+    incidentDate: LocalDate,
+    incidentTime: LocalTime?,
     staffAssaulted: Boolean,
     staffAssaultedName: String?,
     releaseDate: LocalDate?,
@@ -188,6 +192,8 @@ class CSIPReportBuilder(
       location = repository.lookupLocation(location),
       areaOfWork = repository.lookupAreaOfWork(areaOfWork),
       reportedBy = reportedBy,
+      incidentDate = incidentDate,
+      incidentTime = incidentTime?.let { LocalDateTime.of(LocalDate.now(), incidentTime) },
       staffAssaulted = staffAssaulted,
       staffAssaultedName = staffAssaultedName,
       releaseDate = releaseDate,
