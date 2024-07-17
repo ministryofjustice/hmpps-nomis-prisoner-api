@@ -29,6 +29,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   internal fun createCSIPReports() {
     nomisDataBuilder.build {
+      staff(firstName = "FRED", lastName = "JAMES") {
+        account(username = "FRED.JAMES")
+      }
       val csipTemplate = template(name = "CSIPA1_FNP", description = "This is the CSIP Template 1")
       val csipTemplate2 = template(name = "CSIPA3_HMP", description = "This is the CSIP Template 2")
       val otherTemplate = template(name = "OTHER_TEMPLT", description = "This is a different Template")
@@ -359,7 +362,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].summary").isEqualTo("More help needed")
         .jsonPath("reviews[0].nextReviewDate").isEqualTo("2024-08-01")
         .jsonPath("reviews[0].createDateTime").isNotEmpty
-        .jsonPath("reviews[0].createdBy").isNotEmpty
+        .jsonPath("reviews[0].createdBy").isEqualTo("SA")
+        .jsonPath("reviews[0].createdByDisplayName").doesNotExist()
         .jsonPath("reviews[0].attendees[0].id").isEqualTo(csip1.reviews[0].attendees[0].id)
         .jsonPath("reviews[0].attendees[0].name").isEqualTo("Fred Attendee")
         .jsonPath("reviews[0].attendees[0].role").isEqualTo("Witness")
@@ -415,7 +419,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.decisionOutcome.description").isEqualTo("No Further Action")
         .jsonPath("decision.signedOffRole.code").isEqualTo("CUSTMAN")
         .jsonPath("decision.signedOffRole.description").isEqualTo("Custodial Manager")
-        .jsonPath("decision.recordedBy").isEqualTo("Fred James")
+        .jsonPath("decision.recordedBy").isEqualTo("FRED.JAMES")
+        .jsonPath("decision.recordedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("decision.recordedDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("decision.nextSteps").isEqualTo("provide help")
         .jsonPath("decision.otherDetails").isEqualTo("Support and assistance needed")

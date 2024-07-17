@@ -359,8 +359,10 @@ data class Decision(
   var decisionOutcome: CodeDescription?,
   @Schema(description = "Signed off by")
   var signedOffRole: CodeDescription?,
-  @Schema(description = "Recorded By")
+  @Schema(description = "The username of the person who recorded the decision")
   var recordedBy: String?,
+  @Schema(description = "Real name of who recorded the decision")
+  var recordedByDisplayName: String?,
   @Schema(description = "Recorded Date")
   var recordedDate: LocalDate?,
   @Schema(description = "What to do next")
@@ -435,8 +437,10 @@ data class Review(
   val closeDate: LocalDate?,
   @Schema(description = "The date and time the review was created")
   val createDateTime: LocalDateTime,
-  @Schema(description = "The username of the person who created the review")
+  @Schema(description = "The username of the person who created/recorded the review")
   val createdBy: String,
+  @Schema(description = "Real name of who created/recorded the review")
+  val createdByDisplayName: String?,
   @Schema(description = "The date and time the review was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the review")

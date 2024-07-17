@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import java.time.LocalDateTime
 
@@ -168,6 +169,7 @@ private fun CSIPReport.toDecisionResponse() =
     decisionOutcome = decisionOutcome?.toCodeDescription(),
     signedOffRole = signedOffRole?.toCodeDescription(),
     recordedBy = recordedBy,
+    recordedByDisplayName = recordedByStaffUserAccount?.staff.asDisplayName(),
     recordedDate = recordedDate,
     nextSteps = nextSteps,
     otherDetails = otherDetails,
@@ -216,6 +218,7 @@ private fun CSIPReview.toReviewResponse() =
     closeDate = closeDate,
     createDateTime = createDatetime,
     createdBy = createUsername,
+    createdByDisplayName = createdByStaffUserAccount?.staff.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
   )
@@ -232,3 +235,5 @@ private fun CSIPAttendee.toAttendeeResponse() =
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
   )
+
+private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }
