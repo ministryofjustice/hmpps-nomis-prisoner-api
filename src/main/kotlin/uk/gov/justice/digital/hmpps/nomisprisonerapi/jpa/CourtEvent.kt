@@ -118,7 +118,7 @@ class CourtEvent(
   val directionCode: DirectionType? = null,
 
   @Convert(converter = YesNoConverter::class)
-  val holdFlag: Boolean? = null,
+  val holdFlag: Boolean? = false,
 
   @OneToMany(mappedBy = "id.courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   var courtEventCharges: MutableList<CourtEventCharge> = mutableListOf(),
