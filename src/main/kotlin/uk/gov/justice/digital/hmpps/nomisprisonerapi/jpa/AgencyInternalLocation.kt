@@ -130,9 +130,9 @@ data class AgencyInternalLocation(
   @Generated
   lateinit var createDatetime: LocalDateTime
 
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Column(name = "AUDIT_USER_ID", insertable = false, updatable = false)
   @Generated
-  val modifyUsername: String? = null
+  val auditUsername: String? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

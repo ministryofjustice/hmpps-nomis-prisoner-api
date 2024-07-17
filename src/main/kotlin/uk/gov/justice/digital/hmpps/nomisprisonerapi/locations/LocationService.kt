@@ -319,7 +319,7 @@ class LocationService(
       amendments = amendments.map { toAmendmentResponse(it) },
       createDatetime = createDatetime,
       createUsername = createUsername,
-      modifyUsername = modifyUsername,
+      modifyUsername = auditUsername,
     )
 
   private fun toProfileResponse(id: AgencyInternalLocationProfileId) = ProfileRequest(
