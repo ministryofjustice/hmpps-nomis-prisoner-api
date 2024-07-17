@@ -73,6 +73,10 @@ class CSIPReview(
   @Column(name = "CLOSE_DATE")
   val closeDate: LocalDate?,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  val createdByStaffUserAccount: StaffUserAccount? = null,
+
   @Column
   var auditModuleName: String? = null,
 

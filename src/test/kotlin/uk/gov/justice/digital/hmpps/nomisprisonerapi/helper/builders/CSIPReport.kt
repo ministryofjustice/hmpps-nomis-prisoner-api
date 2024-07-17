@@ -96,7 +96,7 @@ interface CSIPReportDsl {
     conclusion: String = "The end result",
     decisionOutcome: String = "NFA",
     signedOffBy: String = "CUSTMAN",
-    recordedBy: String = "Fred James",
+    recordedBy: String = "FRED.JAMES",
     recordedDate: LocalDate = LocalDate.now(),
     nextSteps: String = "provide help",
     otherDetails: String = "Support and assistance needed",
