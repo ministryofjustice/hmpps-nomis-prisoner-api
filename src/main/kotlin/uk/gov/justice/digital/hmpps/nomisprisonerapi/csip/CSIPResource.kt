@@ -415,17 +415,17 @@ data class Review(
   val id: Long,
   @Schema(description = "Sequence number")
   val reviewSequence: Int,
-  @Schema(description = "Summary details")
+  @Schema(description = "Attendees to the review")
   val attendees: List<Attendee>,
-  @Schema(description = "Summary details")
+  @Schema(description = "Whether to remain on CSIP")
   val remainOnCSIP: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "If the csip has been updated")
   val csipUpdated: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "If a case note was added")
   val caseNote: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "If the csip is closed")
   val closeCSIP: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "Whether people were informed")
   val peopleInformed: Boolean,
   @Schema(description = "Summary details")
   val summary: String?,
