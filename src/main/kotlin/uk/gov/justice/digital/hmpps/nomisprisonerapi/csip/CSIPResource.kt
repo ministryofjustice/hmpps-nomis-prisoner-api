@@ -449,11 +449,11 @@ data class Attendee(
   val id: Long,
   @Schema(description = "Name of attendee/contributor")
   val name: String?,
-  @Schema(name = "Role of attendee/contributor")
+  @Schema(description = "Role of attendee/contributor")
   val role: String?,
-  @Schema(name = "If attended (otherwise contributor)")
+  @Schema(description = "If attended (otherwise contributor)")
   val attended: Boolean,
-  @Schema(name = "Contribution")
+  @Schema(description = "Contribution")
   val contribution: String? = null,
   @Schema(description = "The date and time the attendee was created")
   val createDateTime: LocalDateTime,
