@@ -93,6 +93,14 @@ class CaseNotesService(
     return caseNote.toCaseNoteResponse()
   }
 
+  @Audit
+  fun deleteCaseNote(caseNoteId: Long) {
+    offenderCaseNoteRepository.findByIdOrNull(caseNoteId)
+      ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
+
+    offenderCaseNoteRepository.deleteById(caseNoteId)
+  }
+
   private fun OffenderCaseNote.toCaseNoteResponse() = CaseNoteResponse(
     caseNoteId = id,
     bookingId = offenderBooking.bookingId,

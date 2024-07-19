@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -27,11 +28,11 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+@PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
 class CaseNotesResource(
   private val caseNotesService: CaseNotesService,
 ) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
   @GetMapping("/casenotes/{caseNoteId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -68,7 +69,6 @@ class CaseNotesResource(
     caseNoteId: Long,
   ): CaseNoteResponse = caseNotesService.getCaseNote(caseNoteId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
   @PostMapping("/prisoners/{offenderNo}/casenotes")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -112,7 +112,6 @@ class CaseNotesResource(
     request: CreateCaseNoteRequest,
   ): CreateCaseNoteResponse = caseNotesService.createCaseNote(offenderNo, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
   @PutMapping("/casenotes/{caseNoteId}")
   @Operation(
     summary = "Amends a case note on a prisoner",
@@ -155,7 +154,44 @@ class CaseNotesResource(
     request: AmendCaseNoteRequest,
   ): CaseNoteResponse = caseNotesService.amendCaseNote(caseNoteId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
+  @DeleteMapping("/casenotes/{caseNoteId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Deletes a case note",
+    description = "Deletes the specified case note. Requires ROLE_NOMIS_CASENOTES",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "CaseNote Deleted",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CaseNoteResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "CaseNote does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun deleteCaseNote(
+    @Schema(description = "Case note id", example = "1234567")
+    @PathVariable
+    caseNoteId: Long,
+  ) {
+    caseNotesService.deleteCaseNote(caseNoteId)
+  }
+
   @GetMapping("/prisoners/{offenderNo}/casenotes")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
