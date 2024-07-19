@@ -468,7 +468,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `supplying fromDate means only adjudications created on or after that date are returned`() {
+      fun `supplying fromDate means only court cases created on or after that date are returned`() {
         webTestClient.get().uri {
           it.path("/sentencing/court-cases/ids")
             .queryParam("size", "200")
@@ -483,7 +483,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `supplying toDate means only adjudications created on or before that date are returned`() {
+      fun `supplying toDate means only court cases created on or before that date are returned`() {
         webTestClient.get().uri {
           it.path("/sentencing/court-cases/ids")
             .queryParam("size", "200")
