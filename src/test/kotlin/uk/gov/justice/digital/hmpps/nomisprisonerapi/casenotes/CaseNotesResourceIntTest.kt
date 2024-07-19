@@ -470,6 +470,81 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("DELETE /casenotes/{caseNoteId}")
+  @Nested
+  inner class DeleteCaseNote {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff1 = staff(firstName = "JANE", lastName = "NARK") {
+          account(username = "JANE.NARK")
+        }
+        prisoner = offender(nomsId = "A1234AB") {
+          booking {
+            casenote1 = caseNote(
+              caseNoteType = "ALERT",
+              caseNoteSubType = "ACTIVE",
+              author = staff1,
+              caseNoteText = "A note",
+            )
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/casenotes/1")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/casenotes/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/casenotes/1")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `validation fails when case note does not exist`() {
+        webTestClient.delete().uri("/casenotes/99999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `Can delete the caseNote`() {
+        webTestClient.delete().uri("/casenotes/${casenote1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .exchange()
+          .expectStatus().isEqualTo(204)
+
+        repository.runInTransaction {
+          assertThat(offenderCaseNoteRepository.findByIdOrNull(casenote1.id)).isNull()
+        }
+      }
+    }
+  }
+
   @DisplayName("GET /bookings/{bookingId}/casenotes")
   @Nested
   @Disabled
@@ -574,7 +649,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     private var latestBookingIdA1234AB = 0L
     private var firstBookingIdA1234AB = 0L
     private lateinit var prisoner: Offender
-    private lateinit var prisonerNoAlerts: Offender
+    private lateinit var prisonerNoCaseNotes: Offender
     private lateinit var prisonerNoBookings: Offender
     private var id1 = 0L
     private var id2 = 0L
@@ -629,7 +704,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
             ).id
           }.bookingId
         }
-        prisonerNoAlerts = offender(nomsId = "B1234AB") {
+        prisonerNoCaseNotes = offender(nomsId = "B1234AB") {
           booking()
         }
         prisonerNoBookings = offender(nomsId = "D1234AB")
@@ -640,7 +715,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     fun tearDown() {
       repository.deleteCaseNotes()
       repository.delete(prisoner)
-      repository.delete(prisonerNoAlerts)
+      repository.delete(prisonerNoCaseNotes)
       repository.delete(prisonerNoBookings)
     }
 
@@ -691,8 +766,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `return 200 when prisoner found with no alerts`() {
-        webTestClient.get().uri("/prisoners/${prisonerNoAlerts.nomsId}/casenotes")
+      fun `return 200 when prisoner found with no casenotes`() {
+        webTestClient.get().uri("/prisoners/${prisonerNoCaseNotes.nomsId}/casenotes")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .exchange()
           .expectStatus().isOk
@@ -704,7 +779,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `returns all alerts for current booking`() {
+      fun `returns all casenotes for current booking`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/casenotes")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .exchange()
