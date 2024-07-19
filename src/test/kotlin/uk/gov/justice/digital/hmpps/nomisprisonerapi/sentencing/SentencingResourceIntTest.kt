@@ -317,6 +317,210 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /sentencing/court-cases/ids")
+  @Nested
+  inner class GetCourtCaseIdsForMigration {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private lateinit var staff: Staff
+      private lateinit var prisoner1: Offender
+      private lateinit var prisoner1Booking: OffenderBooking
+      private lateinit var prisoner1Booking2: OffenderBooking
+      private lateinit var prisoner2: Offender
+      private lateinit var prisoner1CourtCase: CourtCase
+      private lateinit var prisoner1CourtCase2: CourtCase
+      private lateinit var prisoner1CourtCase3: CourtCase
+      private lateinit var prisoner2CourtCase: CourtCase
+      private val leedsCourtCasesNumberRange = 1..100
+      private val casesAtLeeds: MutableList<CourtCase> = mutableListOf()
+
+      @BeforeEach
+      internal fun createPrisonerAndCourtCase() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          prisoner1 =
+            offender(nomsId = "A1234AB") {
+              prisoner1Booking = booking(agencyLocationId = "MDI") {
+                prisoner1CourtCase = courtCase(
+                  reportingStaff = staff,
+                ) {
+                  audit(createDatetime = LocalDateTime.parse("2020-01-01T10:00"))
+                }
+                prisoner1CourtCase2 = courtCase(
+                  reportingStaff = staff,
+                  caseSequence = 2,
+                ) {
+                  audit(createDatetime = LocalDateTime.parse("2020-03-01T10:00"))
+                }
+              }
+              alias {
+                prisoner1Booking2 = booking(agencyLocationId = "MDI") {
+                  prisoner1CourtCase3 = courtCase(
+                    reportingStaff = staff,
+                  ) {
+                    audit(createDatetime = LocalDateTime.parse("2020-05-01T10:00"))
+                  }
+                }
+              }
+            }
+          prisoner2 =
+            offender(nomsId = "A1234AC") {
+              booking(agencyLocationId = "LEI") {
+                leedsCourtCasesNumberRange.forEachIndexed { index, it ->
+                  casesAtLeeds.add(
+                    courtCase(
+                      reportingStaff = staff,
+                      caseSequence = index,
+                    ) {
+                      audit(createDatetime = LocalDateTime.parse("2015-01-01T10:00").plusSeconds(index.toLong()))
+                    },
+                  )
+                }
+              }
+            }
+        }
+      }
+
+      @Test
+      fun `will return total count when size is 1`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(103)
+          .jsonPath("numberOfElements").isEqualTo(1)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(103)
+          .jsonPath("size").isEqualTo(1)
+      }
+
+      @Test
+      fun `by default there will be a page size of 20`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(103)
+          .jsonPath("numberOfElements").isEqualTo(20)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(6)
+          .jsonPath("size").isEqualTo(20)
+      }
+
+      @Test
+      fun `will order by case id ascending`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "300")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].caseId").isEqualTo(prisoner1CourtCase.id)
+          .jsonPath("content[102].caseId").isEqualTo(casesAtLeeds[99].id)
+      }
+
+      @Test
+      fun `supplying fromDate means only court cases created on or after that date are returned`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "200")
+            .queryParam("fromDate", "2020-04-25")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `supplying toDate means only court cases created on or before that date are returned`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "200")
+            .queryParam("toDate", "2033-01-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(103)
+      }
+
+      @Test
+      fun `can filter using both from and to dates`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "200")
+            .queryParam("fromDate", "2020-01-01")
+            .queryParam("toDate", "2020-04-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(2)
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.deleteOffenders()
+        repository.delete(staff)
+      }
+    }
+  }
+
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases")
   @Nested
   inner class GetCourtCasesByOffender {
