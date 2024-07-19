@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -219,6 +221,17 @@ class SentencingService(
       }
     }
 
+  fun findCourtCaseIdsByFilter(pageRequest: Pageable, courtCaseFilter: CourtCaseFilter): Page<CourtCaseIdResponse> =
+    if (courtCaseFilter.toDateTime == null && courtCaseFilter.fromDateTime == null) {
+      courtCaseRepository.findAllCourtCaseIds(pageable = pageRequest).map { CourtCaseIdResponse(it) }
+    } else {
+      courtCaseRepository.findAllCourtCaseIds(
+        fromDateTime = courtCaseFilter.fromDateTime,
+        toDateTime = courtCaseFilter.toDateTime,
+        pageable = pageRequest,
+      ).map { CourtCaseIdResponse(it) }
+    }
+
   // TODO not currently updating the EXISTING offendercharge - eg with new offenceresultcode
   @Audit
   fun createCourtAppearance(
@@ -384,8 +397,8 @@ class SentencingService(
             courtAppearance,
           )
 
-          val deletedOffenderCharges = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also {
-            it.forEach {
+          val deletedOffenderCharges = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
+            orphanedOffenderCharges.forEach {
               courtCase.offenderCharges.remove(it)
               log.debug("Offender charge deleted: ${it.id}")
               telemetryClient.trackEvent(
@@ -920,7 +933,7 @@ class SentencingService(
 }
 
 private fun CourtCase.getOffenderChargesNotAssociatedWithCourtAppearances(): List<OffenderCharge> {
-  val referencedOffenderCharges = this.courtEvents.flatMap { it.courtEventCharges.map { it.id.offenderCharge } }.toSet()
+  val referencedOffenderCharges = this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
   return this.offenderCharges.filterNot { oc -> referencedOffenderCharges.contains(oc) }
 }
 

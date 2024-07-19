@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
@@ -20,6 +21,9 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class CourtCaseDslMarker
 
+@DslMarker
+annotation class CourtCaseAuditDslMarker
+
 @NomisDataDslMarker
 interface CourtCaseDsl {
   @CourtEventDslMarker
@@ -35,6 +39,11 @@ interface CourtCaseDsl {
     orderRequestedFlag: Boolean? = false,
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
+
+  @CourtCaseAuditDslMarker
+  fun audit(
+    createDatetime: LocalDateTime = LocalDateTime.now(),
+  )
 
   @OffenderChargeDslMarker
   fun offenderCharge(
@@ -73,9 +82,10 @@ class CourtCaseBuilderRepository(
   private val legalCaseTypeRepository: ReferenceCodeRepository<LegalCaseType>,
   private val caseStatusRepository: ReferenceCodeRepository<CaseStatus>,
   private val agencyLocationRepository: AgencyLocationRepository,
+  private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) {
   fun save(courtCase: CourtCase): CourtCase =
-    repository.save(courtCase)
+    repository.saveAndFlush(courtCase)
 
   fun lookupCaseType(code: String): LegalCaseType =
     legalCaseTypeRepository.findByIdOrNull(LegalCaseType.pk(code))!!
@@ -84,6 +94,24 @@ class CourtCaseBuilderRepository(
     caseStatusRepository.findByIdOrNull(CaseStatus.pk(code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
+
+  fun updateAudit(
+    id: Long,
+    createDatetime: LocalDateTime,
+  ) {
+    jdbcTemplate.update(
+      """
+      UPDATE OFFENDER_CASES 
+      SET 
+        CREATE_DATETIME = :createDatetime 
+      WHERE CASE_ID = :id 
+      """,
+      mapOf(
+        "createDatetime" to createDatetime,
+        "id" to id,
+      ),
+    )
+  }
 }
 
 class CourtCaseBuilder(
@@ -201,4 +229,11 @@ class CourtCaseBuilder(
         .also { courtCase.courtEvents += it }
         .also { builder.apply(dsl) }
     }
+
+  override fun audit(
+    createDatetime: LocalDateTime,
+  ) = repository.updateAudit(
+    id = courtCase.id,
+    createDatetime = createDatetime,
+  )
 }
