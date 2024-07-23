@@ -96,6 +96,11 @@ class SentencingService(
       ?: throw NotFoundException("Court case $id not found")
   }
 
+  fun getCourtCaseForMigration(id: Long): CourtCaseResponse {
+    return courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
+      ?: throw NotFoundException("Court case $id not found")
+  }
+
   fun getCourtCasesByOffender(offenderNo: String): List<CourtCaseResponse> {
     findLatestBooking(offenderNo)
 
