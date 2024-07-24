@@ -10,13 +10,11 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -30,11 +28,65 @@ import java.time.LocalTime
 
 @RestController
 @Validated
-@RequestMapping(value = ["/csip"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
 class CSIPResource(private val csipService: CSIPService) {
 
-  @GetMapping("/ids")
+  @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
+  @GetMapping("/prisoners/{offenderNo}/csip/to-migrate")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets csips for an offender",
+    description = "Retrieves csips for a prisoner from all bookings. Requires ROLE_NOMIS_CSIP",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "CSIPs Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PrisonerCSIPsResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist or has no csips",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCSIPsToMigrate(
+    @Schema(description = "Offender No AKA prisoner number", example = "A1234AK")
+    @PathVariable
+    offenderNo: String,
+  ): PrisonerCSIPsResponse = csipService.getCSIPs(offenderNo)
+
+  @GetMapping("/csip/ids")
   @Operation(
     summary = "get csip IDs by filter",
     description = "Retrieves a paged list of csip ids by filter. Requires ROLE_NOMIS_CSIP.",
@@ -90,7 +142,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
     )
 
-  @GetMapping("/{id}")
+  @GetMapping("/csip/{id}")
   @Operation(
     summary = "Get CSIP details",
     description = "Gets csip details. Requires role NOMIS_CSIP",
@@ -135,7 +187,7 @@ class CSIPResource(private val csipService: CSIPService) {
     includeDocumentIds: Boolean = false,
   ) = csipService.getCSIP(id, includeDocumentIds)
 
-  @DeleteMapping("/{csipId}")
+  @DeleteMapping("/csip/{csipId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a csip report",
@@ -173,7 +225,7 @@ class CSIPResource(private val csipService: CSIPService) {
     csipId: Long,
   ): Unit = csipService.deleteCSIP(csipId)
 
-  @GetMapping("/count")
+  @GetMapping("/csip/count")
   @Operation(
     summary = "Get csip count",
     description = "Gets a count of all csips. Requires role NOMIS_CSIP",
@@ -200,6 +252,12 @@ class CSIPResource(private val csipService: CSIPService) {
   )
   fun getCSIPCount() = csipService.getCSIPCount()
 }
+
+@Schema(description = "The list of CSIPs held against a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PrisonerCSIPsResponse(
+  val offenderCSIPs: List<CSIPResponse>,
+)
 
 @Schema(description = "CSIP Details")
 @JsonInclude(JsonInclude.Include.NON_NULL)
