@@ -88,6 +88,7 @@ interface CSIPReportDsl {
     summary: String? = "More help needed",
     nextReview: LocalDate? = LocalDate.parse("2024-08-01"),
     closeDate: LocalDate? = null,
+    recordedBy: String? = "FRED.JAMES",
     dsl: CSIPReviewDsl.() -> Unit = {},
   ): CSIPReview
 
@@ -305,6 +306,7 @@ class CSIPReportBuilder(
     summary: String?,
     nextReview: LocalDate?,
     closeDate: LocalDate?,
+    recordedBy: String?,
     dsl: CSIPReviewDsl.() -> Unit,
   ): CSIPReview = csipReviewBuilderFactory.builder()
     .let { builder ->
@@ -319,6 +321,7 @@ class CSIPReportBuilder(
         summary = summary,
         nextReviewDate = nextReview,
         closeDate = closeDate,
+        recordedBy = recordedBy,
       )
         .also { csipReport.reviews += it }
         .also { builder.apply(dsl) }

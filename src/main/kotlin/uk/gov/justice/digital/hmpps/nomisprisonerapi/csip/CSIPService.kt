@@ -77,7 +77,7 @@ class CSIPService(
   }
 }
 
-private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>?): CSIPResponse =
+private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>? = null): CSIPResponse =
   CSIPResponse(
     id = id,
     offender = offenderBooking.offender.toOffender(),
@@ -216,9 +216,9 @@ private fun CSIPReview.toReviewResponse() =
     summary = summary,
     nextReviewDate = nextReviewDate,
     closeDate = closeDate,
-    createDateTime = createDatetime,
-    createdBy = createUsername,
-    createdByDisplayName = createdByStaffUserAccount?.staff.asDisplayName(),
+    recordedDate = recordedDate!!,
+    recordedBy = recordedUser!!,
+    recordedByDisplayName = recordedByStaffUserAccount?.staff.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
   )
