@@ -361,9 +361,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].peopleInformed").isEqualTo(false)
         .jsonPath("reviews[0].summary").isEqualTo("More help needed")
         .jsonPath("reviews[0].nextReviewDate").isEqualTo("2024-08-01")
-        .jsonPath("reviews[0].createDateTime").isNotEmpty
-        .jsonPath("reviews[0].createdBy").isEqualTo("SA")
-        .jsonPath("reviews[0].createdByDisplayName").doesNotExist()
+        .jsonPath("reviews[0].recordedDate").isNotEmpty
+        .jsonPath("reviews[0].recordedBy").isEqualTo("FRED.JAMES")
+        .jsonPath("reviews[0].recordedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("reviews[0].attendees[0].id").isEqualTo(csip1.reviews[0].attendees[0].id)
         .jsonPath("reviews[0].attendees[0].name").isEqualTo("Fred Attendee")
         .jsonPath("reviews[0].attendees[0].role").isEqualTo("Witness")

@@ -435,12 +435,12 @@ data class Review(
   val nextReviewDate: LocalDate?,
   @Schema(description = "Review closed date")
   val closeDate: LocalDate?,
-  @Schema(description = "The date and time the review was created")
-  val createDateTime: LocalDateTime,
-  @Schema(description = "The username of the person who created/recorded the review")
-  val createdBy: String,
-  @Schema(description = "Real name of who created/recorded the review")
-  val createdByDisplayName: String?,
+  @Schema(description = "The date the review was created")
+  val recordedDate: LocalDate,
+  @Schema(description = "The username of the person who recorded the review")
+  val recordedBy: String,
+  @Schema(description = "Real name of who recorded the review")
+  val recordedByDisplayName: String?,
   @Schema(description = "The date and time the review was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the review")
