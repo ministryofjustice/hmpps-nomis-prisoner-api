@@ -37,4 +37,6 @@ interface CSIPReportRepository : CrudRepository<CSIPReport, Long>, JpaSpecificat
     """,
   )
   fun findAllCSIPIds(pageable: Pageable): Page<Long>
+
+  fun findAllByOffenderBookingOffenderNomsId(offenderNo: String): List<CSIPReport>
 }

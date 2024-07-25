@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDateTime
 
 @Service
@@ -26,11 +27,20 @@ import java.time.LocalDateTime
 class CSIPService(
   private val csipRepository: CSIPReportRepository,
   private val documentService: DocumentService,
+  private val offenderRepository: OffenderRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
     private val csipTemplates = listOf("CSIPA1_HMP", "CSIPA1_FNP", "CSIPA2_HMP", "CSIPA2_FNP", "CSIPA3_HMP", "CSIPA3_FNP")
   }
+
+  fun getCSIPs(offenderNo: String): PrisonerCSIPsResponse =
+    offenderRepository.findByNomsId(offenderNo).takeIf { it.isNotEmpty() }
+      ?.let {
+        PrisonerCSIPsResponse(
+          csipRepository.findAllByOffenderBookingOffenderNomsId(offenderNo).map { it.toCSIPResponse() },
+        )
+      } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any csips")
 
   fun getCSIP(csipId: Long, includeDocumentIds: Boolean): CSIPResponse? {
     val csip = csipRepository.findByIdOrNull(csipId)
