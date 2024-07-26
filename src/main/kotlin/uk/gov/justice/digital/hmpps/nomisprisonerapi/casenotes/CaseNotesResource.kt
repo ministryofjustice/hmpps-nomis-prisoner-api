@@ -227,44 +227,6 @@ class CaseNotesResource(
     @PathVariable
     offenderNo: String,
   ): PrisonerCaseNotesResponse = caseNotesService.getCaseNotes(offenderNo)
-
-//  @PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
-//  @GetMapping("/bookings/ids")
-//  @ResponseStatus(HttpStatus.OK)
-//  @Operation(
-//    summary = "Gets all booking ids",
-//    description = "Retrieves all booking ids subject to filters, for migration or reconciliation. Requires ROLE_NOMIS_CASENOTES",
-//    responses = [
-//      ApiResponse(
-//        responseCode = "200",
-//        description = "CaseNotes Returned",
-//        content = [
-//          Content(mediaType = "application/json", schema = Schema(implementation = Page::class)),
-//        ],
-//      ),
-//      ApiResponse(
-//        responseCode = "401",
-//        description = "Unauthorized to access this endpoint",
-//        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-//      ),
-//      ApiResponse(
-//        responseCode = "403",
-//        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
-//        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-//      ),
-//      ApiResponse(
-//        responseCode = "404",
-//        description = "Prisoner does not exist or has no bookings",
-//        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-//      ),
-//    ],
-//  )
-//  fun getBookings(
-//    @Schema(description = "Start or minimum booking id", example = "12345678") @RequestParam fromId: Long?,
-//    @Schema(description = "End or maximum booking id", example = "98765432") toId: Long?,
-//    @Schema(description = "If true return only bookings currently in prison") activeOnly: Boolean,
-//    pageable: Pageable,
-//  ): Page<BookingIdResponse> = caseNotesService.getAllBookingIds(fromId, toId, activeOnly, pageable)
 }
 
 @Schema(description = "The list of case notes held against a booking")
@@ -313,7 +275,7 @@ data class CreateCaseNoteRequest(
   @Schema(description = "Free format text of person or department that created the case note")
   val authorUsername: String,
   @NotBlank
-  @Size(max = 4000) // For Swagger - custom annotations not well supported
+  @Size(max = 4000) // For Swagger - custom annotations not well-supported
   @Schema(description = "Free format text body of case note")
   val caseNoteText: String,
 )
@@ -323,6 +285,8 @@ data class CreateCaseNoteRequest(
 data class CreateCaseNoteResponse(
   @Schema(description = "The id of this case note")
   val id: Long,
+  @Schema(description = "The booking id of this case note (which is the prisoner's latest at creation time)")
+  val bookingId: Long,
 )
 
 @Schema(description = "A request to amend a case note in NOMIS")
