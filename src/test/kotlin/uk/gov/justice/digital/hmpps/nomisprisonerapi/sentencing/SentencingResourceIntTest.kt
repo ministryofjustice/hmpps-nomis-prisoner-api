@@ -530,14 +530,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /sentencing/court-cases/ids")
+  @DisplayName("GET /court-cases/ids")
   @Nested
   inner class GetCourtCaseIdsForMigration {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/sentencing/court-cases/ids")
+        webTestClient.get().uri("/court-cases/ids")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -545,7 +545,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/sentencing/court-cases/ids")
+        webTestClient.get().uri("/court-cases/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -553,14 +553,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/sentencing/court-cases/ids")
+        webTestClient.get().uri("/court-cases/ids")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access allowed with correct role`() {
-        webTestClient.get().uri("/sentencing/court-cases/ids")
+        webTestClient.get().uri("/court-cases/ids")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -633,7 +633,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return total count when size is 1`() {
         webTestClient.get().uri {
-          it.path("/sentencing/court-cases/ids")
+          it.path("/court-cases/ids")
             .queryParam("size", "1")
             .build()
         }
@@ -651,7 +651,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `by default there will be a page size of 20`() {
         webTestClient.get().uri {
-          it.path("/sentencing/court-cases/ids")
+          it.path("/court-cases/ids")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -668,7 +668,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will order by case id ascending`() {
         webTestClient.get().uri {
-          it.path("/sentencing/court-cases/ids")
+          it.path("/court-cases/ids")
             .queryParam("size", "300")
             .build()
         }
@@ -683,7 +683,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `supplying fromDate means only court cases created on or after that date are returned`() {
         webTestClient.get().uri {
-          it.path("/sentencing/court-cases/ids")
+          it.path("/court-cases/ids")
             .queryParam("size", "200")
             .queryParam("fromDate", "2020-04-25")
             .build()
@@ -698,7 +698,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `supplying toDate means only court cases created on or before that date are returned`() {
         webTestClient.get().uri {
-          it.path("/sentencing/court-cases/ids")
+          it.path("/court-cases/ids")
             .queryParam("size", "200")
             .queryParam("toDate", "2033-01-01")
             .build()
@@ -713,7 +713,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can filter using both from and to dates`() {
         webTestClient.get().uri {
-          it.path("/sentencing/court-cases/ids")
+          it.path("/court-cases/ids")
             .queryParam("size", "200")
             .queryParam("fromDate", "2020-01-01")
             .queryParam("toDate", "2020-04-01")
