@@ -868,7 +868,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @GetMapping("/sentencing/court-cases/ids")
+  @GetMapping("/court-cases/ids")
   @Operation(
     summary = "get court case IDs by filter",
     description = "Retrieves a paged list of court case ids by filter. Requires ROLE_NOMIS_SENTENCING.",
