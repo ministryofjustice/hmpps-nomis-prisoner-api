@@ -47,7 +47,7 @@ class PrisonPersonService(
   private fun OffenderBooking.getReleaseTime(): LocalDateTime? =
     bookingEndDate?.let {
       externalMovements
-        .filter { it.movementType.code == "REL" }
+        .filter { it.movementType?.code == "REL" }
         .maxByOrNull { it.movementTime }
         ?.movementTime
         ?: bookingEndDate
