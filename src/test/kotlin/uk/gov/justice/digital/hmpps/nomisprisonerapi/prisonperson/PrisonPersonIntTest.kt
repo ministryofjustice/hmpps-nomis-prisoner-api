@@ -58,7 +58,7 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `not found`() {
+      fun `not found if prisoner does not exist`() {
         webTestClient.get().uri("/prisoners/A1234AA/physical-attributes")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
           .exchange()
@@ -101,7 +101,23 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should not return bookings without physical attributes`() {
+      fun `should return empty list if no bookings`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(bookings).isEmpty()
+            }
+          }
+      }
+
+      @Test
+      fun `should return empty list if no physical attributes`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking()

@@ -9,7 +9,11 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 
 @Repository
-interface OffenderRepository : JpaRepository<Offender, Long>, JpaSpecificationExecutor<Offender> {
+interface OffenderRepository :
+  JpaRepository<Offender, Long>,
+  JpaSpecificationExecutor<Offender> {
+  fun existsByNomsId(nomsId: String): Boolean
+
   fun findByNomsId(nomsId: String): List<Offender>
 
   @Query("select o from Offender o left join fetch o.allBookings b WHERE o.nomsId = :nomsId order by b.bookingSequence asc")
