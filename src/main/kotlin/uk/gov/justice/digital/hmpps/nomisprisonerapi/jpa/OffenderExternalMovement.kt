@@ -59,7 +59,7 @@ class OffenderExternalMovement(
       JoinColumnOrFormula(column = JoinColumn(name = "MOVEMENT_TYPE", referencedColumnName = "code")),
     ],
   )
-  val movementType: MovementType,
+  val movementType: MovementType? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
