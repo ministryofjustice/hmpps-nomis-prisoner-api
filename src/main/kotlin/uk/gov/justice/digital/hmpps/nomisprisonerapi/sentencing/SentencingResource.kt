@@ -2,10 +2,15 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -17,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -89,6 +95,54 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
   ): CourtCaseResponse = sentencingService.getCourtCase(id, offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/court-cases/{id}")
+  @Operation(
+    summary = "get a court case, migration version without offenderNo validation",
+    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the court case details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court case not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtCaseForMigration(
+    @Schema(description = "Court case id", example = "12345")
+    @PathVariable
+    id: Long,
+  ): CourtCaseResponse = sentencingService.getCourtCaseForMigration(id)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases")
@@ -812,6 +866,64 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
   ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/sentencing/court-cases/ids")
+  @Operation(
+    summary = "get court case IDs by filter",
+    description = "Retrieves a paged list of court case ids by filter. Requires ROLE_NOMIS_SENTENCING.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Pageable list of ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role ROLE_NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtCaseIdsByFilter(
+    @PageableDefault(size = 20)
+    pageRequest: Pageable,
+    @RequestParam(value = "fromDate")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by court cases that were created on or after the given date",
+      example = "2021-11-03",
+    )
+    fromDate: LocalDate?,
+    @RequestParam(value = "toDate")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by court cases that were created on or before the given date",
+      example = "2021-11-03",
+    )
+    toDate: LocalDate?,
+  ): Page<CourtCaseIdResponse> =
+    sentencingService.findCourtCaseIdsByFilter(
+      pageRequest = pageRequest,
+      CourtCaseFilter(
+        toDateTime = toDate?.plusDays(1)?.atStartOfDay(),
+        fromDateTime = fromDate?.atStartOfDay(),
+      ),
+    )
 }
 
 @Schema(description = "Court Case")
@@ -1045,6 +1157,12 @@ data class CreateCourtCaseResponse(
   val courtAppearanceIds: List<CreateCourtAppearanceResponse> = listOf(),
 )
 
+@Schema(description = "court case id")
+data class CourtCaseIdResponse(
+  @Schema(description = "Court case Id")
+  val caseId: Long,
+)
+
 @Schema(description = "Create sentence response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateSentenceResponse(
@@ -1114,7 +1232,6 @@ data class OffenderChargeRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
-  val mostSeriousFlag: Boolean,
 
   /*
   val plea: String?,
@@ -1129,6 +1246,8 @@ data class OffenderChargeRequest(
   val resultCode2Indicator: String?,
   val lidsOffenceNumber: Int?,
    */
+
+  /* mostSeriousFlag has been removed - DPS not providing */
 )
 
 @Schema(description = "Court Event")
@@ -1140,8 +1259,6 @@ data class ExistingOffenderChargeRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
-  val mostSeriousFlag: Boolean,
-
 )
 
 @Schema(description = "Sentence request")

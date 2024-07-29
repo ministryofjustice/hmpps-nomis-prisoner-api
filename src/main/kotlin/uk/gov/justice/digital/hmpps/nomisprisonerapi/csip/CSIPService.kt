@@ -17,7 +17,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDateTime
 
 @Service
@@ -25,11 +27,20 @@ import java.time.LocalDateTime
 class CSIPService(
   private val csipRepository: CSIPReportRepository,
   private val documentService: DocumentService,
+  private val offenderRepository: OffenderRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
     private val csipTemplates = listOf("CSIPA1_HMP", "CSIPA1_FNP", "CSIPA2_HMP", "CSIPA2_FNP", "CSIPA3_HMP", "CSIPA3_FNP")
   }
+
+  fun getCSIPs(offenderNo: String): PrisonerCSIPsResponse =
+    offenderRepository.findByNomsId(offenderNo).takeIf { it.isNotEmpty() }
+      ?.let {
+        PrisonerCSIPsResponse(
+          csipRepository.findAllByOffenderBookingOffenderNomsId(offenderNo).map { it.toCSIPResponse() },
+        )
+      } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any csips")
 
   fun getCSIP(csipId: Long, includeDocumentIds: Boolean): CSIPResponse? {
     val csip = csipRepository.findByIdOrNull(csipId)
@@ -76,13 +87,14 @@ class CSIPService(
   }
 }
 
-private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>?): CSIPResponse =
+private fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>? = null): CSIPResponse =
   CSIPResponse(
     id = id,
     offender = offenderBooking.offender.toOffender(),
     bookingId = offenderBooking.bookingId,
     originalAgencyId = originalAgencyId,
-    incidentDateTime = incidentTime?.toLocalTime()?.atDate(incidentDate) ?: incidentDate.atStartOfDay(),
+    incidentDate = incidentDate,
+    incidentTime = incidentTime?.toLocalTime(),
     type = type.toCodeDescription(),
     location = location.toCodeDescription(),
     areaOfWork = areaOfWork.toCodeDescription(),
@@ -167,6 +179,7 @@ private fun CSIPReport.toDecisionResponse() =
     decisionOutcome = decisionOutcome?.toCodeDescription(),
     signedOffRole = signedOffRole?.toCodeDescription(),
     recordedBy = recordedBy,
+    recordedByDisplayName = recordedByStaffUserAccount?.staff.asDisplayName(),
     recordedDate = recordedDate,
     nextSteps = nextSteps,
     otherDetails = otherDetails,
@@ -213,8 +226,9 @@ private fun CSIPReview.toReviewResponse() =
     summary = summary,
     nextReviewDate = nextReviewDate,
     closeDate = closeDate,
-    createDateTime = createDatetime,
-    createdBy = createUsername,
+    recordedDate = recordedDate!!,
+    recordedBy = recordedUser!!,
+    recordedByDisplayName = recordedByStaffUserAccount?.staff.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
   )
@@ -231,3 +245,5 @@ private fun CSIPAttendee.toAttendeeResponse() =
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
   )
+
+private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }

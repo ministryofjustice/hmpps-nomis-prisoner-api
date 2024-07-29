@@ -211,7 +211,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
@@ -302,7 +302,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").doesNotExist()
-          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo("false")
           .jsonPath("courtEvents[0].nextEventDateTime").doesNotExist()
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
@@ -314,6 +314,423 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     internal fun deletePrisoner() {
       repository.delete(prisonerAtMoorland)
       repository.delete(staff)
+    }
+  }
+
+  @DisplayName("GET /court-cases/{id}")
+  @Nested
+  inner class GetCourtCaseForMigration {
+    private lateinit var staff: Staff
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var courtCase: CourtCase
+    private lateinit var courtCaseTwo: CourtCase
+    private lateinit var offenderCharge1: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aDateString),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
+                val offenderCharge2 = offenderCharge()
+                courtEvent {
+                  // overrides from the parent offender charge fields
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                  courtEventCharge(
+                    offenderCharge = offenderCharge2,
+                  )
+                  courtOrder {
+                    sentencePurpose(purposeCode = "REPAIR")
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                }
+              }
+              courtCaseTwo = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aLaterDateString),
+                statusUpdateDate = null,
+                statusUpdateComment = null,
+                statusUpdateReason = null,
+                statusUpdateStaff = null,
+                lidsCaseId = null,
+                lidsCombinedCaseId = null,
+                caseSequence = 2,
+              ) {
+                courtEvent(
+                  commentText = null,
+                  outcomeReasonCode = null,
+                  judgeName = null,
+                  nextEventDateTime = null,
+                  orderRequestedFlag = null,
+                )
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/court-cases/${courtCase.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if court case not found`() {
+        webTestClient.get().uri("/court-cases/111")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Court case 111 not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the court case and events`() {
+        webTestClient.get().uri("/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
+          .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("courtId").isEqualTo("COURT1")
+          .jsonPath("caseStatus.code").isEqualTo("A")
+          .jsonPath("caseStatus.description").isEqualTo("Active")
+          .jsonPath("legalCaseType.code").isEqualTo("A")
+          .jsonPath("legalCaseType.description").isEqualTo("Adult")
+          .jsonPath("beginDate").isEqualTo(aDateString)
+          .jsonPath("caseInfoNumber").isEqualTo("AB1")
+          .jsonPath("statusUpdateComment").isEqualTo("a comment")
+          .jsonPath("statusUpdateReason").isEqualTo("a reason")
+          .jsonPath("statusUpdateDate").isEqualTo(aDateString)
+          .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
+          .jsonPath("lidsCaseNumber").isEqualTo(1)
+          .jsonPath("lidsCaseId").isEqualTo(2)
+          .jsonPath("lidsCombinedCaseId").isEqualTo(3)
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
+          .jsonPath("courtEvents[0].eventDateTime").isEqualTo(aDateTimeString)
+          .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Trial")
+          .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
+          .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
+          .jsonPath("courtEvents[0].judgeName").isEqualTo("Mike")
+          .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("3514")
+          .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
+          .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].nextEventDateTime").isEqualTo(aLaterDateTimeString)
+          .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
+          .jsonPath("courtEvents[0].courtEventCharges[0].eventId").exists()
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenderCharge.id").isEqualTo(offenderCharge1.id)
+          .jsonPath("courtEvents[0].courtEventCharges[0].offencesCount").isEqualTo(1)
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenceDate").isEqualTo(aDateString)
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("courtEvents[0].courtEventCharges[0].plea.description").isEqualTo("Not Guilty")
+          .jsonPath("courtEvents[0].courtEventCharges[0].propertyValue").isEqualTo(3.2)
+          .jsonPath("courtEvents[0].courtEventCharges[0].totalPropertyValue").isEqualTo(10)
+          .jsonPath("courtEvents[0].courtEventCharges[0].cjitCode1").isEqualTo("cj1")
+          .jsonPath("courtEvents[0].courtEventCharges[0].cjitCode2").isEqualTo("cj2")
+          .jsonPath("courtEvents[0].courtEventCharges[0].cjitCode3").isEqualTo("cj3")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.description").isEqualTo("Imprisonment")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1Indicator").isEqualTo("rci1")
+          .jsonPath("courtEvents[0].courtEventCharges[0].mostSeriousFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].courtOrders[0].id").exists()
+          .jsonPath("courtEvents[0].courtOrders[0].orderType").isEqualTo("AUTO")
+          .jsonPath("courtEvents[0].courtOrders[0].orderStatus").isEqualTo("A")
+          .jsonPath("courtEvents[0].courtOrders[0].courtInfoId").isEqualTo("A12345")
+          .jsonPath("courtEvents[0].courtOrders[0].issuingCourt").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].courtOrders[0].seriousnessLevel.description")
+          .isEqualTo("High")
+          .jsonPath("courtEvents[0].courtOrders[0].courtDate").isEqualTo(aDateString)
+          .jsonPath("courtEvents[0].courtOrders[0].requestDate").isEqualTo(aDateString)
+          .jsonPath("courtEvents[0].courtOrders[0].dueDate").isEqualTo(aLaterDateString)
+          .jsonPath("courtEvents[0].courtOrders[0].commentText").isEqualTo("a court order comment")
+          .jsonPath("courtEvents[0].courtOrders[0].nonReportFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].purposeCode").isEqualTo("REPAIR")
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].orderPartyCode").isEqualTo("CRT")
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].orderId").exists()
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[0].purposeCode").isEqualTo("REPAIR")
+          .jsonPath("courtEvents[0].courtOrders[0].sentencePurposes[1].purposeCode").isEqualTo("PUNISH")
+          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
+          .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
+          .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1) // what is this?
+          .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
+          .jsonPath("offenderCharges[0].propertyValue").isEqualTo(8.3)
+          .jsonPath("offenderCharges[0].totalPropertyValue").isEqualTo(11)
+          .jsonPath("offenderCharges[0].cjitCode1").isEqualTo("cj6")
+          .jsonPath("offenderCharges[0].cjitCode2").isEqualTo("cj7")
+          .jsonPath("offenderCharges[0].cjitCode3").isEqualTo("cj8")
+          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("offenderCharges[0].lidsOffenceNumber").isEqualTo(11)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
+  @DisplayName("GET /sentencing/court-cases/ids")
+  @Nested
+  inner class GetCourtCaseIdsForMigration {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/sentencing/court-cases/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private lateinit var staff: Staff
+      private lateinit var prisoner1: Offender
+      private lateinit var prisoner1Booking: OffenderBooking
+      private lateinit var prisoner1Booking2: OffenderBooking
+      private lateinit var prisoner2: Offender
+      private lateinit var prisoner1CourtCase: CourtCase
+      private lateinit var prisoner1CourtCase2: CourtCase
+      private lateinit var prisoner1CourtCase3: CourtCase
+      private lateinit var prisoner2CourtCase: CourtCase
+      private val leedsCourtCasesNumberRange = 1..100
+      private val casesAtLeeds: MutableList<CourtCase> = mutableListOf()
+
+      @BeforeEach
+      internal fun createPrisonerAndCourtCase() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          prisoner1 =
+            offender(nomsId = "A1234AB") {
+              prisoner1Booking = booking(agencyLocationId = "MDI") {
+                prisoner1CourtCase = courtCase(
+                  reportingStaff = staff,
+                ) {
+                  audit(createDatetime = LocalDateTime.parse("2020-01-01T10:00"))
+                }
+                prisoner1CourtCase2 = courtCase(
+                  reportingStaff = staff,
+                  caseSequence = 2,
+                ) {
+                  audit(createDatetime = LocalDateTime.parse("2020-03-01T10:00"))
+                }
+              }
+              alias {
+                prisoner1Booking2 = booking(agencyLocationId = "MDI") {
+                  prisoner1CourtCase3 = courtCase(
+                    reportingStaff = staff,
+                  ) {
+                    audit(createDatetime = LocalDateTime.parse("2020-05-01T10:00"))
+                  }
+                }
+              }
+            }
+          prisoner2 =
+            offender(nomsId = "A1234AC") {
+              booking(agencyLocationId = "LEI") {
+                leedsCourtCasesNumberRange.forEachIndexed { index, it ->
+                  casesAtLeeds.add(
+                    courtCase(
+                      reportingStaff = staff,
+                      caseSequence = index,
+                    ) {
+                      audit(createDatetime = LocalDateTime.parse("2015-01-01T10:00").plusSeconds(index.toLong()))
+                    },
+                  )
+                }
+              }
+            }
+        }
+      }
+
+      @Test
+      fun `will return total count when size is 1`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(103)
+          .jsonPath("numberOfElements").isEqualTo(1)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(103)
+          .jsonPath("size").isEqualTo(1)
+      }
+
+      @Test
+      fun `by default there will be a page size of 20`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(103)
+          .jsonPath("numberOfElements").isEqualTo(20)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(6)
+          .jsonPath("size").isEqualTo(20)
+      }
+
+      @Test
+      fun `will order by case id ascending`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "300")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].caseId").isEqualTo(prisoner1CourtCase.id)
+          .jsonPath("content[102].caseId").isEqualTo(casesAtLeeds[99].id)
+      }
+
+      @Test
+      fun `supplying fromDate means only court cases created on or after that date are returned`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "200")
+            .queryParam("fromDate", "2020-04-25")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `supplying toDate means only court cases created on or before that date are returned`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "200")
+            .queryParam("toDate", "2033-01-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(103)
+      }
+
+      @Test
+      fun `can filter using both from and to dates`() {
+        webTestClient.get().uri {
+          it.path("/sentencing/court-cases/ids")
+            .queryParam("size", "200")
+            .queryParam("fromDate", "2020-01-01")
+            .queryParam("toDate", "2020-04-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(2)
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.deleteOffenders()
+        repository.delete(staff)
+      }
     }
   }
 
@@ -961,6 +1378,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       offenceDate = LocalDate.of(2023, 1, 2),
                       offenceEndDate = LocalDate.of(2023, 1, 3),
                       offenceCode = "HP03001",
+                      resultCode1 = "1002",
                     ),
                   ),
                 ),
@@ -1001,6 +1419,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("beginDate").isEqualTo("2023-01-01")
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].courtOrders[0].id").exists()
           .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-05T09:00:00")
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Court Appearance")
@@ -1011,7 +1430,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("1004")
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
@@ -1028,6 +1447,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1067")
           .jsonPath("offenderCharges[0].offencesCount").isEqualTo(1)
           // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
+          .jsonPath("courtEvents[1].courtOrders[0].id").doesNotExist()
           .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-02-20T09:00:00")
           .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
           .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
@@ -1037,7 +1457,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventDateTime").doesNotExist()
           .jsonPath("courtEvents[1].nextEventStartTime").doesNotExist()
@@ -1418,6 +1838,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   courtEventChargesToCreate = mutableListOf(
                     createOffenderChargeRequest(
                       offenceCode = "RT88077B",
+                      resultCode1 = "1004",
                       offenceDate = LocalDate.of(2023, 1, 3),
                       offenceEndDate = LocalDate.of(2023, 1, 5),
                     ),
@@ -1459,11 +1880,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].outcomeReasonCode.code").isEqualTo("1004")
           .jsonPath("courtEvents[1].commentText").doesNotExist()
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
           .jsonPath("courtEvents[1].createdDateTime").isNotEmpty
           .jsonPath("courtEvents[1].createdByUsername").isNotEmpty
+          .jsonPath("courtEvents[1].courtOrders[0].id").exists()
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
@@ -1482,9 +1904,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[2].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[2].commentText").doesNotExist()
           .jsonPath("courtEvents[2].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[2].holdFlag").doesNotExist()
+          .jsonPath("courtEvents[2].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[2].nextEventRequestFlag").isEqualTo(false)
           .jsonPath("courtEvents[2].nextEventDateTime").doesNotExist()
+          .jsonPath("courtEvents[2].courtOrders[0].id").doesNotExist()
           .jsonPath("courtEvents[2].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[2].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[2].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
@@ -1502,7 +1925,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[2].courtEventCharges[2].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[2].courtEventCharges[2].offenderCharge.offence.offenceCode").isEqualTo("RT88077B")
           .jsonPath("courtEvents[2].courtEventCharges[2].offencesCount").isEqualTo(1)
-          .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1.code").isEqualTo("1067")
+          .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1.code").isEqualTo("1004")
           .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1Indicator").isEqualTo("F")
           .jsonPath("courtEvents[2].courtEventCharges[3].offenceDate").isEqualTo("2023-02-03")
           .jsonPath("courtEvents[2].courtEventCharges[3].offenceEndDate").isEqualTo("2023-02-05")
@@ -1516,9 +1939,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[1].resultCode1Indicator").isEqualTo("F")
           .jsonPath("offenderCharges[1].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[2].resultCode1.description")
-          .isEqualTo("Bound Over to Leave the Island within 3 days")
+          .isEqualTo("Restriction Order")
           .jsonPath("offenderCharges[2].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("offenderCharges[2].chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("offenderCharges[2].chargeStatus.description").isEqualTo("Active")
       }
 
       @Test
@@ -2198,7 +2621,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("commentText").isEqualTo("Court event comment")
           .jsonPath("orderRequestedFlag").isEqualTo(false)
-          .jsonPath("holdFlag").doesNotExist()
+          .jsonPath("holdFlag").isEqualTo(false)
           .jsonPath("nextEventRequestFlag").isEqualTo(false)
           .jsonPath("nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("createdDateTime").isNotEmpty
@@ -3457,7 +3880,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       offenceDate = offenceDate,
       offenceEndDate = offenceEndDate,
       resultCode1 = resultCode1,
-      mostSeriousFlag = mostSeriousFlag,
     )
 
   private fun createExistingOffenderChargeRequest(
@@ -3476,7 +3898,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       offenceDate = offenceDate,
       offenceEndDate = offenceEndDate,
       resultCode1 = resultCode1,
-      mostSeriousFlag = mostSeriousFlag,
     )
 
   private fun createCourtAppearanceRequest(

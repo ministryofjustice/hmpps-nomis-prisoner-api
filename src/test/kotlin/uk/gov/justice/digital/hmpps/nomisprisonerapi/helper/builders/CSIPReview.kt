@@ -44,6 +44,7 @@ class CSIPReviewBuilder(
     summary: String?,
     nextReviewDate: LocalDate?,
     closeDate: LocalDate?,
+    recordedBy: String?,
   ): CSIPReview =
     CSIPReview(
       csipReport = csipReport,
@@ -56,6 +57,7 @@ class CSIPReviewBuilder(
       summary = summary,
       nextReviewDate = nextReviewDate,
       closeDate = closeDate,
+      recordedUser = recordedBy,
     )
       .also { csipReview = it }
 

@@ -17,6 +17,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 @DslMarker
 annotation class CSIPReportDslMarker
@@ -86,6 +88,7 @@ interface CSIPReportDsl {
     summary: String? = "More help needed",
     nextReview: LocalDate? = LocalDate.parse("2024-08-01"),
     closeDate: LocalDate? = null,
+    recordedBy: String? = "FRED.JAMES",
     dsl: CSIPReviewDsl.() -> Unit = {},
   ): CSIPReview
 
@@ -94,7 +97,7 @@ interface CSIPReportDsl {
     conclusion: String = "The end result",
     decisionOutcome: String = "NFA",
     signedOffBy: String = "CUSTMAN",
-    recordedBy: String = "Fred James",
+    recordedBy: String = "FRED.JAMES",
     recordedDate: LocalDate = LocalDate.now(),
     nextSteps: String = "provide help",
     otherDetails: String = "Support and assistance needed",
@@ -166,6 +169,8 @@ class CSIPReportBuilder(
     location: String,
     areaOfWork: String,
     reportedBy: String,
+    incidentDate: LocalDate,
+    incidentTime: LocalTime?,
     staffAssaulted: Boolean,
     staffAssaultedName: String?,
     releaseDate: LocalDate?,
@@ -188,6 +193,8 @@ class CSIPReportBuilder(
       location = repository.lookupLocation(location),
       areaOfWork = repository.lookupAreaOfWork(areaOfWork),
       reportedBy = reportedBy,
+      incidentDate = incidentDate,
+      incidentTime = incidentTime?.let { LocalDateTime.of(LocalDate.now(), incidentTime) },
       staffAssaulted = staffAssaulted,
       staffAssaultedName = staffAssaultedName,
       releaseDate = releaseDate,
@@ -299,6 +306,7 @@ class CSIPReportBuilder(
     summary: String?,
     nextReview: LocalDate?,
     closeDate: LocalDate?,
+    recordedBy: String?,
     dsl: CSIPReviewDsl.() -> Unit,
   ): CSIPReview = csipReviewBuilderFactory.builder()
     .let { builder ->
@@ -313,6 +321,7 @@ class CSIPReportBuilder(
         summary = summary,
         nextReviewDate = nextReview,
         closeDate = closeDate,
+        recordedBy = recordedBy,
       )
         .also { csipReport.reviews += it }
         .also { builder.apply(dsl) }

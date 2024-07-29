@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -90,6 +92,11 @@ class SentencingService(
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
     findLatestBooking(offenderNo)
 
+    return courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
+      ?: throw NotFoundException("Court case $id not found")
+  }
+
+  fun getCourtCaseForMigration(id: Long): CourtCaseResponse {
     return courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
       ?: throw NotFoundException("Court case $id not found")
   }
@@ -183,6 +190,8 @@ class SentencingService(
         )
       }
       courtCaseRepository.saveAndFlush(courtCase).also {
+        // TODO confirm no order associated with Next appearances
+        refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
         storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = booking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
@@ -217,6 +226,18 @@ class SentencingService(
       }
     }
 
+  fun findCourtCaseIdsByFilter(pageRequest: Pageable, courtCaseFilter: CourtCaseFilter): Page<CourtCaseIdResponse> =
+    if (courtCaseFilter.toDateTime == null && courtCaseFilter.fromDateTime == null) {
+      courtCaseRepository.findAllCourtCaseIds(pageable = pageRequest).map { CourtCaseIdResponse(it) }
+    } else {
+      courtCaseRepository.findAllCourtCaseIds(
+        fromDateTime = courtCaseFilter.fromDateTime,
+        toDateTime = courtCaseFilter.toDateTime,
+        pageable = pageRequest,
+      ).map { CourtCaseIdResponse(it) }
+    }
+
+  // TODO not currently updating the EXISTING offendercharge - eg with new offenceresultcode
   @Audit
   fun createCourtAppearance(
     offenderNo: String,
@@ -255,6 +276,7 @@ class SentencingService(
         )
         courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
           var nextAppearanceId: Long? = null
+          refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
           createdCourtEvent.nextEventDate?.let {
             createdCourtEvent.courtCase!!.courtEvents.add(
               createNextCourtEvent(booking, createdCourtEvent, courtAppearanceRequest).also { nextCourtEvent ->
@@ -379,10 +401,9 @@ class SentencingService(
             courtCase,
             courtAppearance,
           )
-          refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
 
-          val deletedOffenderCharges = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also {
-            it.forEach {
+          val deletedOffenderCharges = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
+            orphanedOffenderCharges.forEach {
               courtCase.offenderCharges.remove(it)
               log.debug("Offender charge deleted: ${it.id}")
               telemetryClient.trackEvent(
@@ -400,6 +421,7 @@ class SentencingService(
           }
 
           courtEventRepository.saveAndFlush(courtAppearance).also {
+            refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
             storedProcedureRepository.imprisonmentStatusUpdate(
               bookingId = offenderBooking.bookingId,
               changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
@@ -599,7 +621,6 @@ class SentencingService(
         val resultCode = offenderChargeRequest.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
         courtEventCharge.offenceDate = offenderChargeRequest.offenceDate
         courtEventCharge.offenceEndDate = offenderChargeRequest.offenceEndDate
-        courtEventCharge.mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
         courtEventCharge.offencesCount = offenderChargeRequest.offencesCount
         courtEventCharge.resultCode1 = resultCode
         courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
@@ -626,7 +647,6 @@ class SentencingService(
         OffenderCharge(
           offenceDate = newCharge.offenceDate,
           offenceEndDate = newCharge.offenceEndDate,
-          mostSeriousFlag = newCharge.mostSeriousFlag,
           offencesCount = newCharge.offencesCount,
           offenderBooking = offenderBooking,
           resultCode1 = resultCode,
@@ -641,7 +661,6 @@ class SentencingService(
           id = CourtEventChargeId(offenderCharge = offenderCharge, courtEvent = courtAppearance),
           offenceDate = newCharge.offenceDate,
           offenceEndDate = newCharge.offenceEndDate,
-          mostSeriousFlag = newCharge.mostSeriousFlag,
           offencesCount = newCharge.offencesCount,
           resultCode1 = resultCode,
           resultCode1Indicator = resultCode?.dispositionCode,
@@ -665,7 +684,6 @@ class SentencingService(
       resultCode1 = resultCode
       resultCode1Indicator = resultCode?.dispositionCode
       chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
-      mostSeriousFlag = offenderChargeRequest.mostSeriousFlag
       offencesCount = offenderChargeRequest.offencesCount
     }
   }
@@ -920,7 +938,7 @@ class SentencingService(
 }
 
 private fun CourtCase.getOffenderChargesNotAssociatedWithCourtAppearances(): List<OffenderCharge> {
-  val referencedOffenderCharges = this.courtEvents.flatMap { it.courtEventCharges.map { it.id.offenderCharge } }.toSet()
+  val referencedOffenderCharges = this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
   return this.offenderCharges.filterNot { oc -> referencedOffenderCharges.contains(oc) }
 }
 

@@ -111,6 +111,9 @@ class CourtCase(
   @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderCharges: MutableList<OffenderCharge> = mutableListOf(),
 
+  @Column(name = "CREATE_DATETIME")
+  @Generated
+  var createDatetime: LocalDateTime = LocalDateTime.now(),
   /* COLUMNS NOT MAPPED
     VICTIM_LIAISON_UNIT - not used
     CASE_INFO_PREFIX - not used
@@ -120,10 +123,6 @@ class CourtCase(
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
-
-  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
-  @Generated
-  lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

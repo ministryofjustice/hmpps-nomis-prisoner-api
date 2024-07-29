@@ -111,6 +111,7 @@ class OffenderCaseNote(
   var timeCreation: LocalDateTime? = null,
   // date part always the same as DATE_CREATION
 
+  val auditModuleName: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

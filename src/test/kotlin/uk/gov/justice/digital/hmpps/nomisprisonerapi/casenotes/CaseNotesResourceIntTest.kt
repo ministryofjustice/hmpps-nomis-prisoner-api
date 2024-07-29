@@ -4,15 +4,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
-import org.springframework.test.web.reactive.server.WebTestClient
-import org.springframework.test.web.reactive.server.WebTestClient.RequestHeadersSpec
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -131,6 +128,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("amended").isEqualTo("false")
           .jsonPath("occurrenceDateTime")
           .value<String> { assertThat(LocalDateTime.parse(it)).isCloseTo(now, within(2, ChronoUnit.MINUTES)) }
+          .jsonPath("auditModuleName").isEqualTo("A_MODULE")
       }
     }
   }
@@ -289,6 +287,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .responseBody!!
 
         assertThat(response.id).isGreaterThan(0)
+        assertThat(response.bookingId).isEqualTo(booking.bookingId)
 
         repository.runInTransaction {
           val newCaseNote = offenderCaseNoteRepository.findByIdOrNull(response.id)!!
@@ -469,12 +468,9 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /bookings/{bookingId}/casenotes")
+  @DisplayName("DELETE /casenotes/{caseNoteId}")
   @Nested
-  @Disabled
-  inner class GetCaseNotesByBookingId {
-    private var bookingNoCaseNotesId = 0L
-
+  inner class DeleteCaseNote {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
@@ -482,23 +478,14 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           account(username = "JANE.NARK")
         }
         prisoner = offender(nomsId = "A1234AB") {
-          booking = booking {
+          booking {
             casenote1 = caseNote(
-              caseNoteType = "ACP",
-              caseNoteSubType = "POEM",
+              caseNoteType = "ALERT",
+              caseNoteSubType = "ACTIVE",
               author = staff1,
-              caseNoteText = "Note 1",
-            )
-            caseNote(
-              caseNoteType = "ACP",
-              caseNoteSubType = "POPEM",
-              author = staff1,
-              caseNoteText = "Note 2",
+              caseNoteText = "A note",
             )
           }
-        }
-        offender(nomsId = "B1234AB") {
-          bookingNoCaseNotesId = booking().bookingId
         }
       }
     }
@@ -507,7 +494,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/bookings/${booking.bookingId}/casenotes")
+        webTestClient.delete().uri("/casenotes/1")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -515,7 +502,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/bookings/${booking.bookingId}/casenotes")
+        webTestClient.delete().uri("/casenotes/1")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -523,7 +510,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/bookings/${booking.bookingId}/casenotes")
+        webTestClient.delete().uri("/casenotes/1")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -532,37 +519,26 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Validation {
       @Test
-      fun `return 404 when booking not found`() {
-        webTestClient.get().uri("/bookings/9999/casenotes")
+      fun `validation fails when case note does not exist`() {
+        webTestClient.delete().uri("/casenotes/99999")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .exchange()
           .expectStatus().isNotFound
-      }
-
-      @Test
-      fun `return 200 when booking found with no caseNotes`() {
-        webTestClient.get().uri("/bookings/$bookingNoCaseNotesId/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("caseNotes.size()").isEqualTo(0)
       }
     }
 
     @Nested
     inner class HappyPath {
       @Test
-      fun `returns all caseNotes for current booking`() {
-        webTestClient.get().uri("/bookings/${booking.bookingId}/casenotes")
+      fun `Can delete the caseNote`() {
+        webTestClient.delete().uri("/casenotes/${casenote1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("caseNotes.size()").isEqualTo(2)
-          .jsonPath("caseNotes[0].caseNoteText").isEqualTo("Note 1")
-          .jsonPath("caseNotes[1].caseNoteText").isEqualTo("Note 2")
+          .expectStatus().isEqualTo(204)
+
+        repository.runInTransaction {
+          assertThat(offenderCaseNoteRepository.findByIdOrNull(casenote1.id)).isNull()
+        }
       }
     }
   }
@@ -573,7 +549,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     private var latestBookingIdA1234AB = 0L
     private var firstBookingIdA1234AB = 0L
     private lateinit var prisoner: Offender
-    private lateinit var prisonerNoAlerts: Offender
+    private lateinit var prisonerNoCaseNotes: Offender
     private lateinit var prisonerNoBookings: Offender
     private var id1 = 0L
     private var id2 = 0L
@@ -628,7 +604,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
             ).id
           }.bookingId
         }
-        prisonerNoAlerts = offender(nomsId = "B1234AB") {
+        prisonerNoCaseNotes = offender(nomsId = "B1234AB") {
           booking()
         }
         prisonerNoBookings = offender(nomsId = "D1234AB")
@@ -639,7 +615,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     fun tearDown() {
       repository.deleteCaseNotes()
       repository.delete(prisoner)
-      repository.delete(prisonerNoAlerts)
+      repository.delete(prisonerNoCaseNotes)
       repository.delete(prisonerNoBookings)
     }
 
@@ -690,8 +666,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `return 200 when prisoner found with no alerts`() {
-        webTestClient.get().uri("/prisoners/${prisonerNoAlerts.nomsId}/casenotes")
+      fun `return 200 when prisoner found with no casenotes`() {
+        webTestClient.get().uri("/prisoners/${prisonerNoCaseNotes.nomsId}/casenotes")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .exchange()
           .expectStatus().isOk
@@ -703,7 +679,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `returns all alerts for current booking`() {
+      fun `returns all casenotes for current booking`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/casenotes")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .exchange()
@@ -732,134 +708,4 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       }
     }
   }
-
-  @DisplayName("GET /bookings/ids")
-  @Disabled
-  @Nested
-  inner class GetBookingIds {
-    var bookingId1: Long = 0
-    var bookingId2: Long = 0
-
-    @BeforeEach
-    fun setUp() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AB") {
-          bookingId1 = booking {}.bookingId
-          booking {}
-          booking {}
-          booking {}
-        }
-        offender(nomsId = "B1234AB") {
-          booking {}
-          bookingId2 = booking {}.bookingId
-        }
-      }
-    }
-
-    @Nested
-    inner class Security {
-      @Test
-      fun `access forbidden when no role`() {
-        webTestClient.get().uri("/bookings/ids")
-          .headers(setAuthorisation(roles = listOf()))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/bookings/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/bookings/ids")
-          .exchange()
-          .expectStatus().isUnauthorized
-      }
-    }
-
-    @Nested
-    inner class HappyPath {
-      @Test
-      fun `will return bookingIds`() {
-        webTestClient.get().uri {
-          it.path("/bookings/ids")
-            .queryParam("fromId", "${bookingId1 + 1}")
-            .queryParam("toId", "${bookingId2 - 1}")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(2)
-          .jsonPath("$.content[0]").isEqualTo(bookingId1 + 2)
-      }
-
-      @Test
-      fun `can filter by just fromId`() {
-        webTestClient.get().uri {
-          it.path("/bookings/ids")
-            .queryParam("fromId", "${bookingId1 + 2}")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(3)
-      }
-
-      @Test
-      fun `can filter by just toId`() {
-        webTestClient.get().uri {
-          it.path("/bookings/ids")
-            .queryParam("toId", "$bookingId2")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(5)
-      }
-
-      @Test
-      fun `will get all ids when there is no filter`() {
-        webTestClient.get().uri {
-          it.path("/bookings/ids")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("$.numberOfElements").isEqualTo(6)
-      }
-
-      @Test
-      fun `will order by booking id ascending`() {
-        webTestClient.get().uri {
-          it.path("/bookings/ids")
-            .build()
-        }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .validExchangeBody()
-          .jsonPath("$.numberOfElements").isEqualTo(6)
-          .jsonPath("$.content[0]").isEqualTo(bookingId1)
-          .jsonPath("$.content[5]").isEqualTo(bookingId2)
-      }
-    }
-  }
-
-  private fun <T : RequestHeadersSpec<T>> RequestHeadersSpec<T>.validExchangeBody(): WebTestClient.BodyContentSpec =
-    this.headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-      .exchange()
-      .expectStatus()
-      .isOk
-      .expectBody()
 }

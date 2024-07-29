@@ -10,13 +10,11 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -26,14 +24,69 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.factors.CSIPFactorResp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @RestController
 @Validated
-@RequestMapping(value = ["/csip"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
 class CSIPResource(private val csipService: CSIPService) {
 
-  @GetMapping("/ids")
+  @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
+  @GetMapping("/prisoners/{offenderNo}/csip/to-migrate")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets csips for an offender",
+    description = "Retrieves csips for a prisoner from all bookings. Requires ROLE_NOMIS_CSIP",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "CSIPs Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PrisonerCSIPsResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist or has no csips",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCSIPsToMigrate(
+    @Schema(description = "Offender No AKA prisoner number", example = "A1234AK")
+    @PathVariable
+    offenderNo: String,
+  ): PrisonerCSIPsResponse = csipService.getCSIPs(offenderNo)
+
+  @GetMapping("/csip/ids")
   @Operation(
     summary = "get csip IDs by filter",
     description = "Retrieves a paged list of csip ids by filter. Requires ROLE_NOMIS_CSIP.",
@@ -89,7 +142,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
     )
 
-  @GetMapping("/{id}")
+  @GetMapping("/csip/{id}")
   @Operation(
     summary = "Get CSIP details",
     description = "Gets csip details. Requires role NOMIS_CSIP",
@@ -134,7 +187,7 @@ class CSIPResource(private val csipService: CSIPService) {
     includeDocumentIds: Boolean = false,
   ) = csipService.getCSIP(id, includeDocumentIds)
 
-  @DeleteMapping("/{csipId}")
+  @DeleteMapping("/csip/{csipId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a csip report",
@@ -172,7 +225,7 @@ class CSIPResource(private val csipService: CSIPService) {
     csipId: Long,
   ): Unit = csipService.deleteCSIP(csipId)
 
-  @GetMapping("/count")
+  @GetMapping("/csip/count")
   @Operation(
     summary = "Get csip count",
     description = "Gets a count of all csips. Requires role NOMIS_CSIP",
@@ -200,6 +253,12 @@ class CSIPResource(private val csipService: CSIPService) {
   fun getCSIPCount() = csipService.getCSIPCount()
 }
 
+@Schema(description = "The list of CSIPs held against a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PrisonerCSIPsResponse(
+  val offenderCSIPs: List<CSIPResponse>,
+)
+
 @Schema(description = "CSIP Details")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CSIPResponse(
@@ -216,7 +275,9 @@ data class CSIPResponse(
   val logNumber: String?,
 
   @Schema(description = "Date/Time incident occurred")
-  val incidentDateTime: LocalDateTime?,
+  val incidentDate: LocalDate,
+  @Schema(description = "Date/Time incident occurred")
+  val incidentTime: LocalTime?,
   @Schema(description = "Type of incident")
   val type: CodeDescription,
   @Schema(description = "Location of the incident")
@@ -356,8 +417,10 @@ data class Decision(
   var decisionOutcome: CodeDescription?,
   @Schema(description = "Signed off by")
   var signedOffRole: CodeDescription?,
-  @Schema(description = "Recorded By")
+  @Schema(description = "The username of the person who recorded the decision")
   var recordedBy: String?,
+  @Schema(description = "Real name of who recorded the decision")
+  var recordedByDisplayName: String?,
   @Schema(description = "Recorded Date")
   var recordedDate: LocalDate?,
   @Schema(description = "What to do next")
@@ -412,17 +475,17 @@ data class Review(
   val id: Long,
   @Schema(description = "Sequence number")
   val reviewSequence: Int,
-  @Schema(description = "Summary details")
+  @Schema(description = "Attendees to the review")
   val attendees: List<Attendee>,
-  @Schema(description = "Summary details")
+  @Schema(description = "Whether to remain on CSIP")
   val remainOnCSIP: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "If the csip has been updated")
   val csipUpdated: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "If a case note was added")
   val caseNote: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "If the csip is closed")
   val closeCSIP: Boolean,
-  @Schema(description = "Summary details")
+  @Schema(description = "Whether people were informed")
   val peopleInformed: Boolean,
   @Schema(description = "Summary details")
   val summary: String?,
@@ -430,10 +493,12 @@ data class Review(
   val nextReviewDate: LocalDate?,
   @Schema(description = "Review closed date")
   val closeDate: LocalDate?,
-  @Schema(description = "The date and time the review was created")
-  val createDateTime: LocalDateTime,
-  @Schema(description = "The username of the person who created the review")
-  val createdBy: String,
+  @Schema(description = "The date the review was created")
+  val recordedDate: LocalDate,
+  @Schema(description = "The username of the person who recorded the review")
+  val recordedBy: String,
+  @Schema(description = "Real name of who recorded the review")
+  val recordedByDisplayName: String?,
   @Schema(description = "The date and time the review was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the review")
@@ -446,11 +511,11 @@ data class Attendee(
   val id: Long,
   @Schema(description = "Name of attendee/contributor")
   val name: String?,
-  @Schema(name = "Role of attendee/contributor")
+  @Schema(description = "Role of attendee/contributor")
   val role: String?,
-  @Schema(name = "If attended (otherwise contributor)")
+  @Schema(description = "If attended (otherwise contributor)")
   val attended: Boolean,
-  @Schema(name = "Contribution")
+  @Schema(description = "Contribution")
   val contribution: String? = null,
   @Schema(description = "The date and time the attendee was created")
   val createDateTime: LocalDateTime,

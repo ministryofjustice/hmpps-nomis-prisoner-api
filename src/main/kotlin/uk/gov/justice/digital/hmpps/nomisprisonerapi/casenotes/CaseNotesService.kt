@@ -66,7 +66,7 @@ class CaseNotesService(
         timeCreation = request.occurrenceDateTime,
       ),
     )
-    return CreateCaseNoteResponse(caseNote.id)
+    return CreateCaseNoteResponse(caseNote.id, offenderBooking.bookingId)
   }
 
   @Audit
@@ -84,13 +84,21 @@ class CaseNotesService(
 
     validateTypes(caseNoteType, caseNoteSubType)
 
-    val staffUserAccount = staffUserAccountRepository.findByUsername(request.authorUsername)
+    staffUserAccountRepository.findByUsername(request.authorUsername)
       ?: throw BadDataException("Username ${request.authorUsername} not found")
 
     caseNote.caseNoteText = request.caseNoteText
     // TODO do we want to do an 'amend' as in appending text as at present?
 
     return caseNote.toCaseNoteResponse()
+  }
+
+  @Audit
+  fun deleteCaseNote(caseNoteId: Long) {
+    offenderCaseNoteRepository.findByIdOrNull(caseNoteId)
+      ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
+
+    offenderCaseNoteRepository.deleteById(caseNoteId)
   }
 
   private fun OffenderCaseNote.toCaseNoteResponse() = CaseNoteResponse(
@@ -104,6 +112,7 @@ class CaseNotesService(
     prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
     caseNoteText = caseNoteText,
     amended = amendmentFlag,
+    auditModuleName = auditModuleName,
   )
 
   /**
@@ -120,16 +129,6 @@ class CaseNotesService(
         { it.toCaseNoteResponse() },
     )
   }
-
-  /**
-   * For reconciliation or migration
-   */
-//  fun getAllBookingIds(
-//    fromId: Long?,
-//    toId: Long?,
-//    activeOnly: Boolean = true,
-//    pageable: Pageable,
-//  ): Page<BookingIdResponse> = offenderCaseNoteRepository.findAllBookingIds(fromId, toId, activeOnly, pageable).map { BookingIdResponse(it) }
 
   private fun validateTextLength(value: String) {
     if (value.length >= CHECK_THRESHOLD || Utf8.encodedLength(value) > MAX_CASENOTE_LENGTH_BYTES) {

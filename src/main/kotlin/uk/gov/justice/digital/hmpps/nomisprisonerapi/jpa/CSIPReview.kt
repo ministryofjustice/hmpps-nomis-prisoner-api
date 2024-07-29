@@ -62,16 +62,20 @@ class CSIPReview(
   @Column(name = "SUMMARY")
   val summary: String?,
 
-  // @Column(name = "CREATE_DATE")
-  // val createDate: LocalDate?,
-  // @Column(name = "CREATE_USER", nullable = false)
-  // val createUser: String,
-
   @Column(name = "NEXT_REVIEW_DATE", nullable = false)
   val nextReviewDate: LocalDate?,
 
   @Column(name = "CLOSE_DATE")
   val closeDate: LocalDate?,
+
+  @Column(name = "CREATE_DATE")
+  val recordedDate: LocalDate? = LocalDate.now(),
+  @Column(name = "CREATE_USER")
+  val recordedUser: String? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "CREATE_USER", insertable = false, updatable = false)
+  val recordedByStaffUserAccount: StaffUserAccount? = null,
 
   @Column
   var auditModuleName: String? = null,

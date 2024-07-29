@@ -255,6 +255,10 @@ class CSIPReport(
   @Column(name = "INV_OUTCOME_RECORDED_BY")
   var recordedBy: String? = null,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "INV_OUTCOME_RECORDED_BY", insertable = false, updatable = false)
+  val recordedByStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "INV_OUTCOME_DATE")
   var recordedDate: LocalDate? = null,
 

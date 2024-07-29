@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsageLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LivingUnitReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -29,7 +28,6 @@ import java.time.LocalDate
 class LocationService(
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
-  private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType>,
   private val housingUnitTypeRepository: ReferenceCodeRepository<HousingUnitType>,
   private val livingUnitReasonRepository: ReferenceCodeRepository<LivingUnitReason>,
   private val internalLocationUsageRepository: InternalLocationUsageRepository,
@@ -117,7 +115,9 @@ class LocationService(
     val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
-    if (!location.active) {
+    if (deactivateRequest.force) {
+      log.info("Force-deactivating location $location")
+    } else if (!location.active) {
       throw BadDataException("Location with id=$locationId is already inactive")
     }
 

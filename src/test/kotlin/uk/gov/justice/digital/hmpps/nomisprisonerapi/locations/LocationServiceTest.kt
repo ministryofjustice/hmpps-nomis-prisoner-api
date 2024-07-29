@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsageLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LivingUnitReason
@@ -38,7 +37,6 @@ internal class LocationServiceTest {
 
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository = mock()
   private val agencyLocationRepository: AgencyLocationRepository = mock()
-  private val internalLocationTypeRepository: ReferenceCodeRepository<InternalLocationType> = mock()
   private val housingUnitTypeRepository: ReferenceCodeRepository<HousingUnitType> = mock()
   private val livingUnitReasonRepository: ReferenceCodeRepository<LivingUnitReason> = mock()
   private val internalLocationUsageRepository: InternalLocationUsageRepository = mock()
@@ -47,7 +45,6 @@ internal class LocationServiceTest {
   private val locationService = LocationService(
     agencyInternalLocationRepository,
     agencyLocationRepository,
-    internalLocationTypeRepository,
     housingUnitTypeRepository,
     livingUnitReasonRepository,
     internalLocationUsageRepository,
@@ -58,9 +55,6 @@ internal class LocationServiceTest {
 
   @BeforeEach
   fun setup() {
-    whenever(internalLocationTypeRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(InternalLocationType((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
-    }
     whenever(housingUnitTypeRepository.findById(any())).thenAnswer {
       return@thenAnswer Optional.of(HousingUnitType((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
