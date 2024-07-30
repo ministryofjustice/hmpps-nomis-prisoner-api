@@ -79,7 +79,7 @@ data class PrisonIepLevel(
 
   companion object {
     data class PK(
-      val id: String? = null,
+      val iepLevelCode: String? = null,
       val agencyLocation: AgencyLocation? = null,
     ) : Serializable
   }
