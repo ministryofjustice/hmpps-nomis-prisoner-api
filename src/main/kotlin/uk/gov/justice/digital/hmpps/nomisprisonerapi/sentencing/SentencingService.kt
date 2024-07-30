@@ -125,7 +125,7 @@ class SentencingService(
   }
 
   @Audit
-  fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) =
+  fun createCourtCaseHierachy(offenderNo: String, request: CreateCourtCaseRequest) =
     findLatestBooking(offenderNo).let { booking ->
 
       val courtCase = courtCaseRepository.saveAndFlush(
@@ -138,8 +138,9 @@ class SentencingService(
           caseSequence = courtCaseRepository.getNextCaseSequence(booking),
         ),
       )
+      val mandatoryCourtAppearanceRequest = request.courtAppearance!!
       courtCase.courtEvents.addAll(
-        request.courtAppearance.let { courtAppearanceRequest ->
+        mandatoryCourtAppearanceRequest.let { courtAppearanceRequest ->
           mutableListOf(
             CourtEvent(
               offenderBooking = booking,
@@ -157,7 +158,7 @@ class SentencingService(
               nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
               directionCode = lookupDirectionType(DirectionType.OUT),
             ).also { courtEvent ->
-              courtAppearanceRequest.courtEventChargesToCreate.map { offenderChargeRequest ->
+              courtAppearanceRequest!!.courtEventChargesToCreate.map { offenderChargeRequest ->
                 val resultCode =
                   offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) } ?: courtEvent.outcomeReasonCode
                 // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
@@ -184,7 +185,7 @@ class SentencingService(
 
       request.courtAppearance.nextEventDateTime?.let {
         courtCase.courtEvents.add(
-          createNextCourtEvent(booking, courtCase.courtEvents[0], request.courtAppearance).also { nextCourtEvent ->
+          createNextCourtEvent(booking, courtCase.courtEvents[0], request.courtAppearance!!).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
           },
         )
@@ -220,6 +221,39 @@ class SentencingService(
             "court" to request.courtId,
             "legalCaseType" to request.legalCaseType,
             "courtEventId" to it.courtAppearanceIds[0].id.toString(),
+          ),
+          null,
+        )
+      }
+    }
+
+  @Audit
+  fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) =
+    findLatestBooking(offenderNo).let { booking ->
+
+      val courtCase = courtCaseRepository.saveAndFlush(
+        CourtCase(
+          offenderBooking = booking,
+          legalCaseType = lookupLegalCaseType(request.legalCaseType),
+          beginDate = request.startDate,
+          caseStatus = lookupCaseStatus(request.status),
+          court = lookupEstablishment(request.courtId),
+          caseSequence = courtCaseRepository.getNextCaseSequence(booking),
+        ),
+      )
+      courtCaseRepository.saveAndFlush(courtCase)
+      CreateCourtCaseResponse(
+        id = courtCase.id,
+        courtAppearanceIds = emptyList(),
+      ).also {
+        telemetryClient.trackEvent(
+          "court-case-created",
+          mapOf(
+            "courtCaseId" to courtCase.id.toString(),
+            "bookingId" to booking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "court" to request.courtId,
+            "legalCaseType" to request.legalCaseType,
           ),
           null,
         )
