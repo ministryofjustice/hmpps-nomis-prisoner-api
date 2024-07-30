@@ -305,7 +305,7 @@ class IncentivesService(
         val iepLevel = incentiveReferenceCodeRepository.findById(pk(createRequest.levelCode)).orElseThrow()
         prisonIncentiveLevelRepository.save(
           PrisonIepLevel(
-            id = createRequest.levelCode,
+            iepLevelCode = createRequest.levelCode,
             agencyLocation = prison,
             active = createRequest.active,
             default = createRequest.defaultOnAdmission,
@@ -460,7 +460,7 @@ class IncentivesService(
       .orElseThrow(BadDataException("Prison with id=${dto.prisonId} does not exist"))
 
     val availablePrisonIepLevel =
-      prisonIncentiveLevelRepository.findFirstByAgencyLocationAndId(location, dto.iepLevel)
+      prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(location, dto.iepLevel)
         ?: throw BadDataException("IEP type ${dto.iepLevel} does not exist for prison ${dto.prisonId}")
 
     return Incentive(

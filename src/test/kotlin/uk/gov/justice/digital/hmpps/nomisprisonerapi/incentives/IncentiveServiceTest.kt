@@ -77,7 +77,7 @@ internal class IncentiveServiceTest {
     whenever(offenderBookingRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(
       Optional.of(defaultOffenderBooking),
     )
-    whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
+    whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenAnswer {
       val prison = (it.arguments[0] as AgencyLocation)
       val code = (it.arguments[1] as String)
       return@thenAnswer PrisonIepLevel(code, prison, IEPLevel(code, "$code-desc"))
@@ -141,7 +141,7 @@ internal class IncentiveServiceTest {
 
     @Test
     fun invalidIEP() {
-      whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenReturn(null)
+      whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenReturn(null)
 
       val thrown = assertThrows<BadDataException> {
         incentivesService.createIncentive(OFFENDER_BOOKING_ID, createRequest)
@@ -509,7 +509,7 @@ internal class IncentiveServiceTest {
     val iepLevel = IEPLevel("STD", "STD-desc")
 
     return PrisonIepLevel(
-      id = iepLevel.code,
+      iepLevelCode = iepLevel.code,
       agencyLocation = prison,
       active = false,
       default = false,
