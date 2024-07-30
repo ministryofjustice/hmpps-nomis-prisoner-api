@@ -11,15 +11,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
 @Service
 @Transactional
 class PayRatesService(
-  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
+  private val availablePrisonIepLevelRepository: PrisonIepLevelRepository,
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val payBandRepository: ReferenceCodeRepository<PayBand>,
 ) {
@@ -39,7 +39,7 @@ class PayRatesService(
       return@map CourseActivityPayRate(
         id = CourseActivityPayRateId(
           courseActivity = courseActivity,
-          iepLevelCode = availablePrisonIepLevel.iepLevel.code,
+          iepLevelCode = availablePrisonIepLevel.id,
           payBandCode = payBand.code,
           startDate = dto.startDate,
         ),
