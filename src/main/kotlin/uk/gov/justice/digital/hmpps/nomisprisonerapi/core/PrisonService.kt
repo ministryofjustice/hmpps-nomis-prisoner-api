@@ -16,6 +16,6 @@ class PrisonService(
   fun getPrisonIepLevels(prisonId: String): List<IncentiveLevel> =
     agencyLocationRepository.findByIdOrNull(prisonId)
       ?.let { prisonIepLevelRepository.findAllByAgencyLocationAndActive(it) }
-      ?.map { IncentiveLevel(it.id, it.iepLevel.description) }
+      ?.map { IncentiveLevel(it.iepLevelCode, it.iepLevel.description) }
       ?: throw NotFoundException("Prison $prisonId does not exist")
 }

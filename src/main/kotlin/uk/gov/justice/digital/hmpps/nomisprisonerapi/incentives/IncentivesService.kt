@@ -305,7 +305,7 @@ class IncentivesService(
         val iepLevel = incentiveReferenceCodeRepository.findById(pk(createRequest.levelCode)).orElseThrow()
         prisonIncentiveLevelRepository.save(
           PrisonIepLevel(
-            id = createRequest.levelCode,
+            iepLevelCode = createRequest.levelCode,
             agencyLocation = prison,
             active = createRequest.active,
             default = createRequest.defaultOnAdmission,
