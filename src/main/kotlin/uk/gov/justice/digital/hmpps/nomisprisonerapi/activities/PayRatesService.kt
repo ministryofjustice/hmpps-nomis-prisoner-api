@@ -39,7 +39,7 @@ class PayRatesService(
       return@map CourseActivityPayRate(
         id = CourseActivityPayRateId(
           courseActivity = courseActivity,
-          iepLevelCode = availablePrisonIepLevel.id,
+          iepLevelCode = availablePrisonIepLevel.iepLevelCode,
           payBandCode = payBand.code,
           startDate = dto.startDate,
         ),

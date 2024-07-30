@@ -48,7 +48,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     from CourseActivity ca 
     join CourseScheduleRule csr on ca = csr.courseActivity
     join CourseActivityPayRate capr on ca = capr.id.courseActivity
-    left join PrisonIepLevel pil on :prisonId = pil.agencyLocation.id and capr.id.iepLevelCode = pil.id
+    left join PrisonIepLevel pil on :prisonId = pil.agencyLocation.id and capr.id.iepLevelCode = pil.iepLevelCode
       and pil.active = true and (pil.expiryDate is null or pil.expiryDate > current_date)
     where ca.prison.id = :prisonId
     and ca.active = true
@@ -69,9 +69,8 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
        and ob.location.id = :prisonId
       )   
     and (capr.endDate is null or capr.endDate > current_date)
-    and pil.id is null
+    and pil.iepLevelCode is null
   """,
-    // redundant join to IepLevel ??
   )
   fun findPayRatesWithUnknownIncentive(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<PayRateWithUnknownIncentive>
 

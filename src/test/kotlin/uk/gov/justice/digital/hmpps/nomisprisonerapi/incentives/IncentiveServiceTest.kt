@@ -509,7 +509,7 @@ internal class IncentiveServiceTest {
     val iepLevel = IEPLevel("STD", "STD-desc")
 
     return PrisonIepLevel(
-      id = iepLevel.code,
+      iepLevelCode = iepLevel.code,
       agencyLocation = prison,
       active = false,
       default = false,

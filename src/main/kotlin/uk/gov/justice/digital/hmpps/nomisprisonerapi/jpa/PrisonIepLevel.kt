@@ -25,7 +25,7 @@ data class PrisonIepLevel(
 
   @Id
   @Column(name = "IEP_LEVEL")
-  val id: String,
+  val iepLevelCode: String,
 
   @Id
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -72,7 +72,7 @@ data class PrisonIepLevel(
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as PrisonIepLevel
-    return id == other.id && agencyLocation.id == other.agencyLocation.id
+    return iepLevelCode == other.iepLevelCode && agencyLocation.id == other.agencyLocation.id
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
