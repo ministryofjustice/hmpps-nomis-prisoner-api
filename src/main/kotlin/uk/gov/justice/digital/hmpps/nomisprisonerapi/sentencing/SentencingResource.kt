@@ -564,7 +564,8 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @RequestBody @Valid
     request: CreateCourtCaseRequest,
   ): CreateCourtCaseResponse =
-    sentencingService.createCourtCase(offenderNo, request)
+    request.courtAppearance?.let { sentencingService.createCourtCaseHierachy(offenderNo, request) }
+      ?: sentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances")
@@ -1134,7 +1135,7 @@ data class CreateCourtCaseRequest(
   // ACTIVE, INACTIVE, CLOSED
   val status: String,
   // the prototype implies only 1 appearance can be associated with the case on creation
-  val courtAppearance: CourtAppearanceRequest,
+  val courtAppearance: CourtAppearanceRequest? = null,
 
   /* not currently provided by sentencing service:
   caseSequence: Int,

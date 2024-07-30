@@ -1290,13 +1290,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class CreateCourtCaseSuccess {
       @Test
-      fun `can create a court case with minimal data`() {
+      fun `can create a court case without a court appearance`() {
         val courtCaseId = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCaseRequestHierarchy(),
+              createCourtCaseWithoutAppearance(),
             ),
           )
           .exchange()
@@ -3864,6 +3864,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       startDate = startDate,
       status = status,
       courtAppearance = courtAppearance,
+    )
+
+  private fun createCourtCaseWithoutAppearance(
+    courtId: String = "COURT1",
+    legalCaseType: String = "A",
+    startDate: LocalDate = LocalDate.of(2023, 1, 1),
+    status: String = "A",
+  ) =
+    CreateCourtCaseRequest(
+      courtId = courtId,
+      legalCaseType = legalCaseType,
+      startDate = startDate,
+      status = status,
     )
 
   private fun createOffenderChargeRequest(
