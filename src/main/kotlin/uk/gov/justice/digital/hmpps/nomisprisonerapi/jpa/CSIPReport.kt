@@ -182,6 +182,10 @@ class CSIPReport(
   @Column(name = "CDR_OUTCOME_RECORDED_BY")
   var outcomeCreateUsername: String? = null,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "CDR_OUTCOME_RECORDED_BY", insertable = false, updatable = false)
+  val outcomeCreatedByStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "CDR_OUTCOME_DATE")
   var outcomeCreateDate: LocalDate? = null,
 

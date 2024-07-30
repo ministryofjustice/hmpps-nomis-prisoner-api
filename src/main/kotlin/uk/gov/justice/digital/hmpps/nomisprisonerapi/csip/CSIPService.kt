@@ -40,7 +40,7 @@ class CSIPService(
         PrisonerCSIPsResponse(
           csipRepository.findAllByOffenderBookingOffenderNomsId(offenderNo).map { it.toCSIPResponse() },
         )
-      } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any csips")
+      } ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any csips")
 
   fun getCSIP(csipId: Long, includeDocumentIds: Boolean): CSIPResponse? {
     val csip = csipRepository.findByIdOrNull(csipId)
@@ -146,6 +146,7 @@ private fun CSIPReport.toSCSResponse() =
   SaferCustodyScreening(
     outcome = outcome?.toCodeDescription(),
     recordedBy = outcomeCreateUsername,
+    recordedByDisplayName = outcomeCreatedByStaffUserAccount?.staff.asDisplayName(),
     recordedDate = outcomeCreateDate,
     reasonForDecision = reasonForDecision,
   )
