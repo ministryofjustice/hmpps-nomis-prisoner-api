@@ -158,7 +158,7 @@ class SentencingService(
               nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
               directionCode = lookupDirectionType(DirectionType.OUT),
             ).also { courtEvent ->
-              courtAppearanceRequest!!.courtEventChargesToCreate.map { offenderChargeRequest ->
+              mandatoryCourtAppearanceRequest.courtEventChargesToCreate.map { offenderChargeRequest ->
                 val resultCode =
                   offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) } ?: courtEvent.outcomeReasonCode
                 // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
@@ -185,7 +185,7 @@ class SentencingService(
 
       request.courtAppearance.nextEventDateTime?.let {
         courtCase.courtEvents.add(
-          createNextCourtEvent(booking, courtCase.courtEvents[0], request.courtAppearance!!).also { nextCourtEvent ->
+          createNextCourtEvent(booking, courtCase.courtEvents[0], mandatoryCourtAppearanceRequest).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
           },
         )
