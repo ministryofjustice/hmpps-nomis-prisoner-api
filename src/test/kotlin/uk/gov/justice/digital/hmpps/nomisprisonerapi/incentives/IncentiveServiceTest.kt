@@ -15,23 +15,20 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevel
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevelId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevelId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIncentiveLevelRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitAllowanceLevelRepository
 import java.math.BigDecimal
@@ -47,19 +44,17 @@ private const val PRISON_DESCRIPTION = "Shrewsbury"
 internal class IncentiveServiceTest {
 
   private val incentiveRepository: IncentiveRepository = mock()
-  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val incentivesCodeRepository: ReferenceCodeRepository<IEPLevel> = mock()
-  private val prisonIncentiveLevelRepository: PrisonIncentiveLevelRepository = mock()
+  private val prisonIncentiveLevelRepository: PrisonIepLevelRepository = mock()
   private val visitAllowanceLevelRepository: VisitAllowanceLevelRepository = mock()
 
   private val incentivesService = IncentivesService(
     incentiveRepository,
     offenderBookingRepository,
     agencyLocationRepository,
-    availablePrisonIepLevelRepository,
     incentivesCodeRepository,
     visitAllowanceLevelRepository,
     prisonIncentiveLevelRepository,
@@ -82,10 +77,10 @@ internal class IncentiveServiceTest {
     whenever(offenderBookingRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(
       Optional.of(defaultOffenderBooking),
     )
-    whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenAnswer {
+    whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenAnswer {
       val prison = (it.arguments[0] as AgencyLocation)
       val code = (it.arguments[1] as String)
-      return@thenAnswer AvailablePrisonIepLevel(code, prison, IEPLevel(code, "$code-desc"))
+      return@thenAnswer PrisonIepLevel(code, prison, IEPLevel(code, "$code-desc"))
     }
     whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(
       Optional.of(AgencyLocation(PRISON_ID, "desc")),
@@ -146,7 +141,7 @@ internal class IncentiveServiceTest {
 
     @Test
     fun invalidIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(any(), any())).thenReturn(null)
+      whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenReturn(null)
 
       val thrown = assertThrows<BadDataException> {
         incentivesService.createIncentive(OFFENDER_BOOKING_ID, createRequest)
@@ -267,7 +262,7 @@ internal class IncentiveServiceTest {
       whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
         Optional.of(IEPLevel("NSTD", "desc", true, 1)),
       )
-      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIepLevel.Companion.PK("NSTD", prison))).thenReturn(
         Optional.empty(),
       )
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
@@ -320,7 +315,7 @@ internal class IncentiveServiceTest {
       whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
         Optional.of(IEPLevel("NSTD", "desc", true, 1)),
       )
-      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIepLevel.Companion.PK("NSTD", prison))).thenReturn(
         Optional.empty(),
       )
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
@@ -372,7 +367,7 @@ internal class IncentiveServiceTest {
       whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
         Optional.of(IEPLevel("NSTD", "desc", true, 1)),
       )
-      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIepLevel.Companion.PK("NSTD", prison))).thenReturn(
         Optional.of(getPrisonIncentiveLevel()),
       )
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
@@ -408,7 +403,7 @@ internal class IncentiveServiceTest {
       whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
         Optional.of(IEPLevel("NSTD", "desc", true, 1)),
       )
-      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIepLevel.Companion.PK("NSTD", prison))).thenReturn(
         Optional.empty(),
       )
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
@@ -454,7 +449,7 @@ internal class IncentiveServiceTest {
       whenever(incentivesCodeRepository.findById(ReferenceCode.Pk("IEP_LEVEL", "NSTD"))).thenReturn(
         Optional.of(IEPLevel("NSTD", "desc", true, 1)),
       )
-      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIepLevel.Companion.PK("NSTD", prison))).thenReturn(
         Optional.of(getPrisonIncentiveLevel()),
       )
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
@@ -490,7 +485,7 @@ internal class IncentiveServiceTest {
       whenever(agencyLocationRepository.findById("MDI")).thenReturn(
         Optional.of(prison),
       )
-      whenever(prisonIncentiveLevelRepository.findById(PrisonIncentiveLevelId(prison, "NSTD"))).thenReturn(
+      whenever(prisonIncentiveLevelRepository.findById(PrisonIepLevel.Companion.PK("NSTD", prison))).thenReturn(
         Optional.of(getPrisonIncentiveLevel()),
       )
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
@@ -509,16 +504,20 @@ internal class IncentiveServiceTest {
     }
   }
 
-  private fun getPrisonIncentiveLevel(): PrisonIncentiveLevel {
+  private fun getPrisonIncentiveLevel(): PrisonIepLevel {
     val prison = AgencyLocation("MDI", "desc")
-    return PrisonIncentiveLevel(
-      id = PrisonIncentiveLevelId(location = prison, iepLevelCode = "STD"),
+    val iepLevel = IEPLevel("STD", "STD-desc")
+
+    return PrisonIepLevel(
+      iepLevelCode = iepLevel.code,
+      agencyLocation = prison,
       active = false,
       default = false,
       remandTransferLimit = BigDecimal.valueOf(3.5),
       remandSpendLimit = BigDecimal.valueOf(0.5),
       convictedTransferLimit = BigDecimal.valueOf(45.5),
       convictedSpendLimit = BigDecimal.valueOf(4.5),
+      iepLevel = iepLevel,
     )
   }
 

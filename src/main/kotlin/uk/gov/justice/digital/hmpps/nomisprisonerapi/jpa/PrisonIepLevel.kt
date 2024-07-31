@@ -15,15 +15,17 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
 import java.io.Serializable
+import java.math.BigDecimal
+import java.time.LocalDate
 
 @Entity
-@IdClass(AvailablePrisonIepLevel.Companion.PK::class)
+@IdClass(PrisonIepLevel.Companion.PK::class)
 @Table(name = "IEP_LEVELS")
-data class AvailablePrisonIepLevel(
+data class PrisonIepLevel(
 
   @Id
   @Column(name = "IEP_LEVEL")
-  val id: String,
+  val iepLevelCode: String,
 
   @Id
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -53,21 +55,32 @@ data class AvailablePrisonIepLevel(
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = false,
+  var active: Boolean = false,
+
+  @Column(name = "DEFAULT_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  var default: Boolean = false,
+
+  var remandTransferLimit: BigDecimal? = null,
+  var remandSpendLimit: BigDecimal? = null,
+  var convictedTransferLimit: BigDecimal? = null,
+  var convictedSpendLimit: BigDecimal? = null,
+  var expiryDate: LocalDate? = null,
+
 ) : Serializable {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    other as AvailablePrisonIepLevel
-    return iepLevel == other.iepLevel && agencyLocation.id == other.agencyLocation.id
+    other as PrisonIepLevel
+    return iepLevelCode == other.iepLevelCode && agencyLocation.id == other.agencyLocation.id
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
 
   companion object {
-    class PK(
-      private val id: String? = null,
-      private val agencyLocation: AgencyLocation? = null,
+    data class PK(
+      val iepLevelCode: String? = null,
+      val agencyLocation: AgencyLocation? = null,
     ) : Serializable
   }
 }

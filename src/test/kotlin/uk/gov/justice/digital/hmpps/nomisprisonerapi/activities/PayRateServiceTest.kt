@@ -17,16 +17,16 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AvailablePrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayPerSession
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -43,7 +43,7 @@ class PayRateServiceTest {
 
   private val nomisDataBuilder = NomisDataBuilder()
   private lateinit var courseActivity: CourseActivity
-  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository = mock()
+  private val availablePrisonIepLevelRepository: PrisonIepLevelRepository = mock()
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository = mock()
   private val payBandRepository: ReferenceCodeRepository<PayBand> = mock()
   private val payRatesService = PayRatesService(
@@ -113,10 +113,10 @@ class PayRateServiceTest {
 
     @BeforeEach
     fun `set up validation mocks`() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIdAndActive(any(), any(), any())).thenAnswer {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), any(), any())).thenAnswer {
         val prison = (it.arguments[0] as AgencyLocation)
         val code = (it.arguments[1] as String)
-        AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
+        PrisonIepLevel(code, prison, defaultIepLevel(code))
       }
       whenever(payBandRepository.findById(any())).thenAnswer {
         Optional.of(PayBand((it.arguments[0] as Pk).code, ""))
@@ -148,7 +148,7 @@ class PayRateServiceTest {
 
     @Test
     fun invalidPayBandIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIdAndActive(any(), eq("BAS"), any())).thenReturn(null)
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), eq("BAS"), any())).thenReturn(null)
 
       assertThatThrownBy {
         payRatesService.mapRates(createRequest, courseActivity)
@@ -168,10 +168,10 @@ class PayRateServiceTest {
           courseActivity = courseActivity()
         }
       }
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIdAndActive(any(), any(), any())).thenAnswer {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), any(), any())).thenAnswer {
         val prison = (it.arguments[0] as AgencyLocation)
         val code = (it.arguments[1] as String)
-        AvailablePrisonIepLevel(code, prison, defaultIepLevel(code))
+        PrisonIepLevel(code, prison, defaultIepLevel(code))
       }
       whenever(payBandRepository.findById(any())).thenAnswer {
         Optional.of(PayBand((it.arguments[0] as Pk).code, ""))
@@ -441,7 +441,7 @@ class PayRateServiceTest {
 
     @Test
     fun invalidPayBandIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIdAndActive(any(), eq("BAS"), any())).thenReturn(null)
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), eq("BAS"), any())).thenReturn(null)
       val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = BigDecimal(3.2)))
 
       assertThatThrownBy {

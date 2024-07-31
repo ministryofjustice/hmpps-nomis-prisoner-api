@@ -14,18 +14,17 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel.Companion.pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncentiveId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevel
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIncentiveLevelId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIepLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitAllowanceLevelId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncentiveRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIncentiveLevelRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitAllowanceLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.IncentiveSpecification
@@ -39,10 +38,9 @@ class IncentivesService(
   private val incentiveRepository: IncentiveRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
-  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
   private val incentiveReferenceCodeRepository: ReferenceCodeRepository<IEPLevel>,
   private val visitAllowanceLevelsRepository: VisitAllowanceLevelRepository,
-  private val prisonIncentiveLevelRepository: PrisonIncentiveLevelRepository,
+  private val prisonIncentiveLevelRepository: PrisonIepLevelRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -103,7 +101,7 @@ class IncentivesService(
 
   @Audit
   fun createGlobalIncentiveLevel(createIncentiveRequest: CreateGlobalIncentiveRequest): ReferenceCode {
-    return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createIncentiveRequest.code))
+    return incentiveReferenceCodeRepository.findByIdOrNull(pk(createIncentiveRequest.code))
       ?.let {
         ReferenceCode(
           code = it.code,
@@ -160,7 +158,7 @@ class IncentivesService(
 
   @Audit
   fun updateGlobalIncentiveLevel(code: String, updateIncentiveRequest: UpdateGlobalIncentiveRequest): ReferenceCode {
-    return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
+    return incentiveReferenceCodeRepository.findByIdOrNull(pk(code))
       ?.let {
         it.expiredDate = synchroniseExpiredDateOnUpdate(updateIncentiveRequest.active, it.expiredDate)
         it.active = updateIncentiveRequest.active
@@ -186,14 +184,14 @@ class IncentivesService(
   }
 
   fun getGlobalIncentiveLevel(code: String): ReferenceCode {
-    return incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
+    return incentiveReferenceCodeRepository.findByIdOrNull(pk(code))
       ?.let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }
       ?: throw NotFoundException("Incentive level: $code not found")
   }
 
   @Audit
   fun deleteGlobalIncentiveLevel(code: String) {
-    incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(code))
+    incentiveReferenceCodeRepository.findByIdOrNull(pk(code))
       ?.let {
         incentiveReferenceCodeRepository.delete(it)
         telemetryClient.trackEvent(
@@ -210,7 +208,7 @@ class IncentivesService(
   @Audit
   fun reorderGlobalIncentiveLevels(codeList: List<String>) {
     codeList.mapIndexed { index, levelCode ->
-      incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(levelCode))?.let { iepLevel ->
+      incentiveReferenceCodeRepository.findByIdOrNull(pk(levelCode))?.let { iepLevel ->
         iepLevel.sequence = (index + 1)
         iepLevel.parentCode = iepLevel.sequence.toString()
       } ?: log.error("Attempted to reorder missing Incentive level $levelCode")
@@ -237,7 +235,7 @@ class IncentivesService(
     val prison = agencyLocationRepository.findByIdOrNull(prisonId)
       ?: throw NotFoundException("Prison with id=$prisonId does not exist")
 
-    incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(createRequest.levelCode))
+    incentiveReferenceCodeRepository.findByIdOrNull(pk(createRequest.levelCode))
       ?: throw BadDataException("Incentive level with code=${createRequest.levelCode} does not exist")
 
     val prisonIncentiveLevel =
@@ -297,17 +295,18 @@ class IncentivesService(
   private fun savePrisonIncentiveLevel(
     prison: AgencyLocation,
     createRequest: CreatePrisonIncentiveRequest,
-  ): PrisonIncentiveLevel =
-
-    prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(prison, createRequest.levelCode))
+  ): PrisonIepLevel =
+    prisonIncentiveLevelRepository.findByIdOrNull(PrisonIepLevel.Companion.PK(createRequest.levelCode, prison))
       ?.also {
         log.warn("savePrisonIncentiveLevel: - Updating Prison IEP level as ${prison.id} ${createRequest.levelCode} already exists.")
         updatePrisonIncentiveLevelData(prison.id, createRequest.levelCode, createRequest.toUpdateRequest())
       }
       ?: let {
+        val iepLevel = incentiveReferenceCodeRepository.findById(pk(createRequest.levelCode)).orElseThrow()
         prisonIncentiveLevelRepository.save(
-          PrisonIncentiveLevel(
-            id = PrisonIncentiveLevelId(location = prison, iepLevelCode = createRequest.levelCode),
+          PrisonIepLevel(
+            iepLevelCode = createRequest.levelCode,
+            agencyLocation = prison,
             active = createRequest.active,
             default = createRequest.defaultOnAdmission,
             remandTransferLimit = createRequest.remandTransferLimitInPence?.toPounds(),
@@ -315,6 +314,7 @@ class IncentivesService(
             convictedTransferLimit = createRequest.convictedTransferLimitInPence?.toPounds(),
             convictedSpendLimit = createRequest.convictedSpendLimitInPence?.toPounds(),
             expiryDate = if (createRequest.active) null else LocalDate.now(),
+            iepLevel = iepLevel,
           ),
         )
       }
@@ -328,7 +328,7 @@ class IncentivesService(
     val prison = agencyLocationRepository.findByIdOrNull(prisonId)
       ?: throw NotFoundException("Prison with id=$prisonId does not exist")
 
-    incentiveReferenceCodeRepository.findByIdOrNull(IEPLevel.pk(levelCode))
+    incentiveReferenceCodeRepository.findByIdOrNull(pk(levelCode))
       ?: throw NotFoundException("Incentive level with code=$levelCode does not exist")
 
     val prisonIncentiveLevel =
@@ -358,9 +358,9 @@ class IncentivesService(
     prison: AgencyLocation,
     levelCode: String,
     updateRequest: UpdatePrisonIncentiveRequest,
-  ): PrisonIncentiveLevel =
+  ): PrisonIepLevel =
     (
-      prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(prison, levelCode))
+      prisonIncentiveLevelRepository.findByIdOrNull(PrisonIepLevel.Companion.PK(levelCode, prison))
         ?.also {
           it.expiryDate = synchroniseExpiredDateOnUpdate(updateRequest.active, it.expiryDate)
           it.active = updateRequest.active
@@ -371,7 +371,7 @@ class IncentivesService(
           it.convictedTransferLimit = updateRequest.convictedTransferLimitInPence?.toPounds()
         } ?: let {
         val createRequest = updateRequest.toCreateRequest(levelCode)
-        log.warn("updatePrisonIncentiveLevel: creating the PrisonIncentiveLevel as it does not exist: $createRequest")
+        log.warn("updatePrisonIncentiveLevel: creating the Prison Incentive Level as it does not exist: $createRequest")
         savePrisonIncentiveLevel(prison, createRequest)
       }
       )
@@ -405,7 +405,7 @@ class IncentivesService(
         visitAllowanceLevelsRepository.delete(it)
       } ?: log.info("Visit allowance level deletion request for: $code ignored. Level does not exist")
 
-    prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(prison, code))
+    prisonIncentiveLevelRepository.findByIdOrNull(PrisonIepLevel.Companion.PK(code, prison))
       ?.let {
         prisonIncentiveLevelRepository.delete(it)
       } ?: log.info("Prison Incentive level deletion request for: $code ignored. Level does not exist")
@@ -427,7 +427,7 @@ class IncentivesService(
       .orElseThrow(BadDataException("Prison with id=$prison does not exist"))
 
     val prisonIncentiveLevel =
-      prisonIncentiveLevelRepository.findByIdOrNull(PrisonIncentiveLevelId(location, code))
+      prisonIncentiveLevelRepository.findByIdOrNull(PrisonIepLevel.Companion.PK(code, location))
         ?: throw NotFoundException("Prison incentive level for level $code at $prison not found")
 
     val visitAllowanceLevel =
@@ -460,7 +460,7 @@ class IncentivesService(
       .orElseThrow(BadDataException("Prison with id=${dto.prisonId} does not exist"))
 
     val availablePrisonIepLevel =
-      availablePrisonIepLevelRepository.findFirstByAgencyLocationAndId(location, dto.iepLevel)
+      prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(location, dto.iepLevel)
         ?: throw BadDataException("IEP type ${dto.iepLevel} does not exist for prison ${dto.prisonId}")
 
     return Incentive(
@@ -477,7 +477,7 @@ class IncentivesService(
   private fun mapPrisonLevelDataResponse(
     prisonId: String,
     code: String,
-    prisonIncentiveLevel: PrisonIncentiveLevel,
+    prisonIncentiveLevel: PrisonIepLevel,
     visitAllowanceLevel: VisitAllowanceLevel?,
   ): PrisonIncentiveLevelDataResponse =
     PrisonIncentiveLevelDataResponse(

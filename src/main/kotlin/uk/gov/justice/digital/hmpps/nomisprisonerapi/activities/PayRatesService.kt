@@ -11,15 +11,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivityPayRateId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AvailablePrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
 @Service
 @Transactional
 class PayRatesService(
-  private val availablePrisonIepLevelRepository: AvailablePrisonIepLevelRepository,
+  private val availablePrisonIepLevelRepository: PrisonIepLevelRepository,
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val payBandRepository: ReferenceCodeRepository<PayBand>,
 ) {
@@ -27,7 +27,7 @@ class PayRatesService(
   fun mapRates(dto: CreateActivityRequest, courseActivity: CourseActivity): MutableList<CourseActivityPayRate> {
     return dto.payRates.map { rate ->
 
-      val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIdAndActive(
+      val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(
         courseActivity.prison,
         rate.incentiveLevel,
       )
@@ -39,7 +39,7 @@ class PayRatesService(
       return@map CourseActivityPayRate(
         id = CourseActivityPayRateId(
           courseActivity = courseActivity,
-          iepLevelCode = availablePrisonIepLevel.iepLevel.code,
+          iepLevelCode = availablePrisonIepLevel.iepLevelCode,
           payBandCode = payBand.code,
           startDate = dto.startDate,
         ),
@@ -187,7 +187,7 @@ class PayRatesService(
     val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
       ?: throw BadDataException("Pay band code $payBand does not exist")
 
-    val availableIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIdAndActive(courseActivity.prison, incentiveLevel)
+    val availableIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(courseActivity.prison, incentiveLevel)
       ?: throw BadDataException("Pay rate IEP type $incentiveLevel does not exist for prison ${courseActivity.prison.id}")
 
     return CourseActivityPayRate(
