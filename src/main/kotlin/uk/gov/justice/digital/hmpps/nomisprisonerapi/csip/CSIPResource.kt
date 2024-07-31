@@ -338,8 +338,10 @@ data class CSIPResponse(
 data class SaferCustodyScreening(
   @Schema(description = "Result of the Safer Custody Screening")
   val outcome: CodeDescription?,
-  @Schema(description = "Who recorded the data")
+  @Schema(description = "The username of the person who recorded the data")
   val recordedBy: String?,
+  @Schema(description = "Real name of who recorded the data")
+  val recordedByDisplayName: String?,
   @Schema(description = "When the the SCS occurred")
   val recordedDate: LocalDate?,
   @Schema(description = "Why the decision was made")
