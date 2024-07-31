@@ -316,7 +316,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(csip1.id)
         .jsonPath("saferCustodyScreening.outcome.code").isEqualTo("ACC")
         .jsonPath("saferCustodyScreening.outcome.description").isEqualTo("ACCT Supporting")
-        .jsonPath("saferCustodyScreening.recordedBy").isEqualTo("JAMES")
+        .jsonPath("saferCustodyScreening.recordedBy").isEqualTo("FRED.JAMES")
+        .jsonPath("saferCustodyScreening.recordedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("saferCustodyScreening.recordedDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("saferCustodyScreening.reasonForDecision").isEqualTo("Further help needed")
     }
@@ -582,14 +583,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when does not exist`() {
-        webTestClient.get().uri("/prisoners/99999/csip/to-migrate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
-          .exchange()
-          .expectStatus().isNotFound
-      }
-
-      @Test
-      fun `return 404 when offender has no bookings`() {
         webTestClient.get().uri("/prisoners/99999/csip/to-migrate")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
           .exchange()

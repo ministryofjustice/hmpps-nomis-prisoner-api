@@ -46,7 +46,7 @@ interface CSIPReportDsl {
   fun scs(
     outcome: String = "ACC",
     reasonForDecision: String = "Further help needed",
-    outcomeCreateUsername: String = "JAMES",
+    outcomeCreateUsername: String = "FRED.JAMES",
     outcomeCreateDate: LocalDate = LocalDate.now(),
   )
 
