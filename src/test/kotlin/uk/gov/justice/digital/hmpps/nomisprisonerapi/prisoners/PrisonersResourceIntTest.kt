@@ -851,6 +851,16 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
             nomsId2 = "A1234AL",
             rootOffenderId2 = 2,
             offenderBookId2 = 102,
+            requestStatusCode = "CANCELLED",
+          )
+          mergeTransaction(
+            requestDate = LocalDateTime.parse("2002-01-01T12:00:00"),
+            nomsId1 = "A1234AK",
+            rootOffenderId1 = 1,
+            offenderBookId1 = 101,
+            nomsId2 = "A1234AL",
+            rootOffenderId2 = 2,
+            offenderBookId2 = 102,
           )
           mergeTransaction(
             requestDate = LocalDateTime.parse("2024-01-01T12:00:00"),

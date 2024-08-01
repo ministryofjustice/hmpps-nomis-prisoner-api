@@ -8,6 +8,6 @@ import java.time.LocalDateTime
 
 @Repository
 interface MergeTransactionRepository : JpaRepository<MergeTransaction, Long> {
-  @Query("select m from MergeTransaction m where (m.nomsId1 = :offenderNo or m.nomsId2 = :offenderNo) and (:requestDate is null or m.requestDate > :requestDate)")
+  @Query("select m from MergeTransaction m where (m.nomsId1 = :offenderNo or m.nomsId2 = :offenderNo) and (:requestDate is null or m.requestDate > :requestDate) and m.requestStatusCode = 'COMPLETED'")
   fun findByNomsIdAndAfterRequestDate(offenderNo: String, requestDate: LocalDateTime?): List<MergeTransaction>
 }
