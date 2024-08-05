@@ -4,18 +4,24 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributeId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhysicalAttributesRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.BookingPhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
 import java.time.LocalDateTime
+import kotlin.math.roundToInt
 
 @Service
 @Transactional
 class PrisonPersonService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
+  private val offenderPhysicalAttributesRepository: OffenderPhysicalAttributesRepository,
 ) {
   fun getPhysicalAttributes(offenderNo: String): PrisonerPhysicalAttributesResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -57,4 +63,47 @@ class PrisonPersonService(
         ?.movementTime
         ?: bookingEndDate
     }
+
+  fun upsertPhysicalAttributes(offenderNo: String, request: UpsertPhysicalAttributesRequest) {
+    val booking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("No latest booking found for $offenderNo")
+
+    val physicalAttributes = booking.physicalAttributes.find { it.id.sequence == 1L }
+      ?: OffenderPhysicalAttributes(id = OffenderPhysicalAttributeId(booking, 1L))
+
+    physicalAttributes.setWeightInKilograms(request.weight)
+    physicalAttributes.setHeightInCentimetres(request.height)
+    offenderPhysicalAttributesRepository.save(physicalAttributes)
+  }
+
+  // Note that the OffenderPhysicalAttributes extension functions below haven't been added to the class as getters and setters
+  // because they only make sense in the context of this service. For example if JPA started using these methods then this
+  // class wouldn't represent the values found in NOMIS.
+  private fun OffenderPhysicalAttributes.getHeightInCentimetres() =
+    // Take height in cm if it exists because the data is more accurate (being a smaller unit than inches)
+    if (heightCentimetres != null) {
+      heightCentimetres
+    } else {
+      heightFeet?.let { ((it * 12) + (heightInches ?: 0)) * 2.54 }?.roundToInt()
+    }
+
+  private fun OffenderPhysicalAttributes.setHeightInCentimetres(value: Int?) {
+    heightCentimetres = value
+    val inches = heightCentimetres?.div(2.54)
+    heightFeet = inches?.div(12)?.toInt()
+    heightInches = inches?.rem(12)?.roundToInt()
+  }
+
+  private fun OffenderPhysicalAttributes.getWeightInKilograms() =
+    // Take weight in lb and convert if it exists because the data is more accurate (being a smaller unit than kg). See the unit tests for an example explaining why.
+    if (weightPounds != null) {
+      weightPounds!!.let { (it * 0.453592) }.roundToInt()
+    } else {
+      weightKilograms
+    }
+
+  private fun OffenderPhysicalAttributes.setWeightInKilograms(value: Int?) {
+    weightKilograms = value
+    weightPounds = weightKilograms?.let { (it / 0.453592) }?.roundToInt()
+  }
 }

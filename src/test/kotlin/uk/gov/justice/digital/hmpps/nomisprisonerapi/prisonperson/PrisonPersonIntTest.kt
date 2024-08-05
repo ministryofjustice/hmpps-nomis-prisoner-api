@@ -6,14 +6,20 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributeId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhysicalAttributesRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -24,6 +30,12 @@ class PrisonPersonIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var repository: Repository
 
+  @Autowired
+  private lateinit var physicalAttributesRepository: OffenderPhysicalAttributesRepository
+
+  @Autowired
+  private lateinit var service: PrisonPersonService
+
   @AfterEach
   fun cleanUp() {
     repository.deleteOffenders()
@@ -32,6 +44,8 @@ class PrisonPersonIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /prisoners/{offenderNo}/physical-attributes")
   inner class GetPhysicalAttributes {
+    lateinit var booking: OffenderBooking
+
     @Nested
     inner class Security {
       @Test
@@ -68,8 +82,6 @@ class PrisonPersonIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      lateinit var booking: OffenderBooking
-
       // The DB column is a DATE type so truncates milliseconds, but bizarrely H2 uses half-up rounding so I have to emulate here or tests fail
       val today = LocalDateTime.now().roundToNearestSecond()
       val yesterday = today.minusDays(1)
@@ -319,6 +331,116 @@ class PrisonPersonIntTest : IntegrationTestBase() {
             }
           }
       }
+
+      @Test
+      fun `should return null if empty attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                heightCentimetres = null,
+                weightKilograms = null,
+              )
+            }
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookings[0].physicalAttributes)
+              .extracting("heightCentimetres", "weightKilograms")
+              .containsExactly(tuple(null, null))
+          }
+      }
+
+      @Test
+      fun `should return metric measures if imperial measures are empty`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                heightCentimetres = 180,
+                weightKilograms = 80,
+              )
+            }
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookings[0].physicalAttributes)
+              .extracting("heightCentimetres", "weightKilograms")
+              .containsExactly(tuple(180, 80))
+          }
+      }
+
+      @Test
+      fun `should convert from imperial to metric if metric measures are empty`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                heightFeet = 5,
+                heightInches = 10,
+                weightPounds = 180,
+              )
+            }
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookings[0].physicalAttributes)
+              .extracting("heightCentimetres", "weightKilograms")
+              .containsExactly(tuple(180, 82))
+          }
+      }
+
+      @Test
+      fun `should return metric height if both imperial and metric measures are present`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                heightCentimetres = 180,
+                heightFeet = 5,
+                heightInches = 10,
+              )
+            }
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookings[0].physicalAttributes[0].heightCentimetres)
+              .isEqualTo(180)
+          }
+      }
+
+      @Test
+      fun `should convert from imperial weight if both imperial and metric measures are present`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                weightKilograms = 80,
+                weightPounds = 180,
+              )
+            }
+          }
+        }
+
+        /*
+         * Note this result is different to the weightKilograms on the NOMIS record (80).
+         * This is because we know the user entered weightPounds, so we convert that to kilograms.
+         * We know the user entered weightPounds because had they entered weightKilograms, weightPounds would be 80/0.45359=176.37, clearly not 180.
+         */
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookings[0].physicalAttributes[0].weightKilograms)
+              .isEqualTo(82)
+          }
+      }
     }
   }
 
@@ -334,5 +456,165 @@ class PrisonPersonIntTest : IntegrationTestBase() {
     val nanosOnly = this.nano
     val nanosRounded = if (nanosOnly >= 500_000_000) 1 else 0
     return secondsOnly.plusSeconds(nanosRounded.toLong())
+  }
+
+  // TODO SDIT-1826 Switch to using the API when it has been written
+  @Nested
+  @DisplayName("PUT /prisoners/{offenderNo}/physical-attributes")
+  inner class UpsertPhysicalAttributes {
+    private lateinit var booking: OffenderBooking
+    private lateinit var oldBooking: OffenderBooking
+
+    @Test
+    fun `should create physical attributes`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          booking = booking()
+        }
+      }
+
+      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
+
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+        assertThat(heightCentimetres).isEqualTo(180)
+        assertThat(heightFeet).isEqualTo(5)
+        assertThat(heightInches).isEqualTo(11)
+        assertThat(weightKilograms).isEqualTo(80)
+        assertThat(weightPounds).isEqualTo(176)
+      }
+    }
+
+    @Test
+    fun `should update physical attributes`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          booking = booking {
+            physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+          }
+        }
+      }
+
+      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
+
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+        assertThat(heightCentimetres).isEqualTo(180)
+        assertThat(weightKilograms).isEqualTo(80)
+      }
+    }
+
+    @Test
+    fun `should only update active booking`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          oldBooking = booking(bookingSequence = 2) {
+            physicalAttributes(heightCentimetres = 160, weightKilograms = 60)
+            release(date = LocalDateTime.now().minusDays(1))
+          }
+          booking = booking(bookingSequence = 1, bookingBeginDate = LocalDateTime.now()) {
+            physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+          }
+        }
+      }
+
+      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
+
+      // the new booking should have been updated
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+        assertThat(heightCentimetres).isEqualTo(180)
+        assertThat(weightKilograms).isEqualTo(80)
+      }
+      // the old booking should not have changed
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(oldBooking, 1))!!) {
+        assertThat(heightCentimetres).isEqualTo(160)
+        assertThat(weightKilograms).isEqualTo(60)
+      }
+    }
+
+    @Test
+    fun `should only update latest booking`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          oldBooking = booking(bookingSequence = 2) {
+            physicalAttributes(heightCentimetres = 160, weightKilograms = 60)
+            release(date = LocalDateTime.now().minusDays(2))
+          }
+          booking = booking(bookingSequence = 1, bookingBeginDate = LocalDateTime.now().minusDays(1)) {
+            physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+            release(date = LocalDateTime.now())
+          }
+        }
+      }
+
+      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
+
+      // the latest booking should have been updated
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+        assertThat(heightCentimetres).isEqualTo(180)
+        assertThat(weightKilograms).isEqualTo(80)
+      }
+      // the old booking should not have changed
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(oldBooking, 1))!!) {
+        assertThat(heightCentimetres).isEqualTo(160)
+        assertThat(weightKilograms).isEqualTo(60)
+      }
+    }
+
+    @Test
+    fun `should reject if no offender`() {
+      assertThrows<NotFoundException> {
+        service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
+      }
+    }
+
+    @Test
+    fun `should reject if no bookings`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA")
+      }
+
+      assertThrows<NotFoundException> {
+        service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
+      }
+    }
+
+    @Test
+    fun `should create physical attributes with null values`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          booking = booking()
+        }
+      }
+
+      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(null, null))
+
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+        assertThat(heightCentimetres).isNull()
+        assertThat(heightFeet).isNull()
+        assertThat(heightInches).isNull()
+        assertThat(weightKilograms).isNull()
+        assertThat(weightPounds).isNull()
+      }
+    }
+
+    @Test
+    fun `should update physical attributes with null values`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          booking = booking {
+            physicalAttributes(heightCentimetres = 170, heightFeet = 5, heightInches = 6, weightKilograms = 70, weightPounds = 160)
+          }
+        }
+      }
+
+      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(null, null))
+
+      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+        assertThat(heightCentimetres).isNull()
+        assertThat(heightFeet).isNull()
+        assertThat(heightInches).isNull()
+        assertThat(weightKilograms).isNull()
+        assertThat(weightPounds).isNull()
+      }
+    }
   }
 }
