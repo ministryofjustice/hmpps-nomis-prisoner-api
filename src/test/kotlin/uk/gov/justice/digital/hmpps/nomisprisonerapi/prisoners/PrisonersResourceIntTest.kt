@@ -658,6 +658,86 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /prisoners/{offenderNo}")
+  inner class GetPrisonerDetails {
+    private lateinit var bookingBxi: OffenderBooking
+    private lateinit var bookingOut: OffenderBooking
+    private lateinit var bookingTrn: OffenderBooking
+
+    @BeforeEach
+    internal fun createPrisoners() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234TT") {
+          bookingBxi = booking(agencyLocationId = "BXI")
+        }
+        offender(nomsId = "A1234WW") {
+          bookingOut = booking(active = false, agencyLocationId = "OUT")
+        }
+        offender(nomsId = "A1234XX") {
+          bookingTrn = booking(active = false, agencyLocationId = "TRN")
+        }
+      }
+    }
+
+    @Test
+    fun `should return unauthorised with no auth token`() {
+      webTestClient.get().uri("/prisoners/A1234TT")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden when no role`() {
+      webTestClient.get().uri("/prisoners/A1234TT")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden with wrong role`() {
+      webTestClient.get().uri("/prisoners/A1234TT")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return 404 for not found `() {
+      webTestClient.get().uri("/prisoners/A9999ZZ")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should get prisoner details`() {
+      webTestClient.get().uri("/prisoners/A1234TT")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("location").isEqualTo("BXI")
+        .jsonPath("active").isEqualTo(true)
+        .jsonPath("bookingId").isEqualTo(bookingBxi.bookingId)
+        .jsonPath("offenderNo").isEqualTo("A1234TT")
+    }
+
+    @Test
+    fun `should get inactive prisoner details`() {
+      webTestClient.get().uri("/prisoners/A1234WW")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("location").isEqualTo("OUT")
+        .jsonPath("bookingId").isEqualTo(bookingOut.bookingId)
+        .jsonPath("offenderNo").isEqualTo("A1234WW")
+        .jsonPath("active").isEqualTo(false)
+    }
+  }
+
+  @Nested
   inner class GetPreviousBooking {
     private var bookingId: Long = 0
     private var previousBookingId: Long = 0
