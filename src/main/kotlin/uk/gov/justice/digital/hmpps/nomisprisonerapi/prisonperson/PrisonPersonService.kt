@@ -71,7 +71,6 @@ class PrisonPersonService(
   fun upsertPhysicalAttributes(offenderNo: String, request: UpsertPhysicalAttributesRequest): UpsertPhysicalAttributesResponse {
     val booking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("No latest booking found for $offenderNo")
-    val telemetry = mutableMapOf("offenderNo" to offenderNo, "booking" to booking.bookingId.toString())
     var created = true
 
     val physicalAttributes = booking.physicalAttributes.find { it.id.sequence == 1L }
@@ -89,7 +88,10 @@ class PrisonPersonService(
       }
       .also {
         val type = if (created) "created" else "updated"
-        telemetryClient.trackEvent("physical-attributes-$type", telemetry)
+        telemetryClient.trackEvent(
+          "physical-attributes-$type",
+          mutableMapOf("offenderNo" to offenderNo, "booking" to booking.bookingId.toString()),
+        )
       }
   }
 
