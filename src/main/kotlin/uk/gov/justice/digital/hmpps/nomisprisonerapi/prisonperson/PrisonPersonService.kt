@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributeId
@@ -23,6 +25,7 @@ class PrisonPersonService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
   private val offenderPhysicalAttributesRepository: OffenderPhysicalAttributesRepository,
+  private val telemetryClient: TelemetryClient,
 ) {
   fun getPhysicalAttributes(offenderNo: String): PrisonerPhysicalAttributesResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -83,11 +86,18 @@ class PrisonPersonService(
           created = created,
         )
       }
+      .also {
+        val type = if (created) "created" else "updated"
+        telemetryClient.trackEvent(
+          "physical-attributes-$type",
+          mutableMapOf("offenderNo" to offenderNo, "bookingId" to booking.bookingId.toString()),
+        )
+      }
   }
 
   // Note that the OffenderPhysicalAttributes extension functions below haven't been added to the class as getters and setters
-  // because they only make sense in the context of this service. For example if JPA started using these methods then this
-  // class wouldn't represent the values found in NOMIS.
+  // because they only make sense in the context of this service. For example if JPA started using these methods then
+  // OffenderPhysicalAttributes wouldn't represent the values found in NOMIS.
   private fun OffenderPhysicalAttributes.getHeightInCentimetres() =
     // Take height in cm if it exists because the data is more accurate (being a smaller unit than inches)
     if (heightCentimetres != null) {

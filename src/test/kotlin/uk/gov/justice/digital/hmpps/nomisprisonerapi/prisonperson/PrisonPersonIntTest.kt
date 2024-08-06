@@ -6,6 +6,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -454,7 +458,6 @@ class PrisonPersonIntTest : IntegrationTestBase() {
     return secondsOnly.plusSeconds(nanosRounded.toLong())
   }
 
-  // TODO SDIT-1826 Switch to using the API when it has been written
   @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/physical-attributes")
   inner class UpsertPhysicalAttributes {
@@ -681,6 +684,56 @@ class PrisonPersonIntTest : IntegrationTestBase() {
           assertThat(weightKilograms).isNull()
           assertThat(weightPounds).isNull()
         }
+      }
+
+      @Test
+      fun `should publish telemetry when creating physical attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", 180, 80)
+
+        verify(telemetryClient).trackEvent(
+          eq("physical-attributes-created"),
+          check {
+            assertThat(it).containsExactlyInAnyOrderEntriesOf(
+              mapOf(
+                "offenderNo" to "A1234AA",
+                "bookingId" to booking.bookingId.toString(),
+              ),
+            )
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `should publish telemetry when updating physical attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+            }
+          }
+        }
+
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", 180, 80)
+
+        verify(telemetryClient).trackEvent(
+          eq("physical-attributes-updated"),
+          check {
+            assertThat(it).containsExactlyInAnyOrderEntriesOf(
+              mapOf(
+                "offenderNo" to "A1234AA",
+                "bookingId" to booking.bookingId.toString(),
+              ),
+            )
+          },
+          isNull(),
+        )
       }
     }
 
