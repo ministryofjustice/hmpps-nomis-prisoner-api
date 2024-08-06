@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.BookingPhy
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesResponse
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
@@ -64,16 +65,24 @@ class PrisonPersonService(
         ?: bookingEndDate
     }
 
-  fun upsertPhysicalAttributes(offenderNo: String, request: UpsertPhysicalAttributesRequest) {
+  fun upsertPhysicalAttributes(offenderNo: String, request: UpsertPhysicalAttributesRequest): UpsertPhysicalAttributesResponse {
     val booking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("No latest booking found for $offenderNo")
+    var created = true
 
     val physicalAttributes = booking.physicalAttributes.find { it.id.sequence == 1L }
+      ?.also { created = false }
       ?: OffenderPhysicalAttributes(id = OffenderPhysicalAttributeId(booking, 1L))
 
     physicalAttributes.setWeightInKilograms(request.weight)
     physicalAttributes.setHeightInCentimetres(request.height)
-    offenderPhysicalAttributesRepository.save(physicalAttributes)
+    return offenderPhysicalAttributesRepository.save(physicalAttributes)
+      .let {
+        UpsertPhysicalAttributesResponse(
+          bookingId = it.id.offenderBooking.bookingId,
+          created = created,
+        )
+      }
   }
 
   // Note that the OffenderPhysicalAttributes extension functions below haven't been added to the class as getters and setters

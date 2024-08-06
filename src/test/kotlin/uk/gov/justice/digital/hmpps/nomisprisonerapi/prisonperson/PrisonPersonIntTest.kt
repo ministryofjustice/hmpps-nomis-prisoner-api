@@ -6,12 +6,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -20,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttribu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhysicalAttributesRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesResponse
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -32,9 +31,6 @@ class PrisonPersonIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var physicalAttributesRepository: OffenderPhysicalAttributesRepository
-
-  @Autowired
-  private lateinit var service: PrisonPersonService
 
   @AfterEach
   fun cleanUp() {
@@ -465,156 +461,235 @@ class PrisonPersonIntTest : IntegrationTestBase() {
     private lateinit var booking: OffenderBooking
     private lateinit var oldBooking: OffenderBooking
 
-    @Test
-    fun `should create physical attributes`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking()
+    @Nested
+    inner class Security {
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/prisoners/A1234AA/physical-attributes")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/physical-attributes")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/physical-attributes")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `not found if prisoner does not exist`() {
+        webTestClient.get().uri("/prisoners/A1234AA/physical-attributes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class Upserts {
+      @Test
+      fun `should create physical attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", 180, 80)
+          .consumeWith {
+            assertThat(it.responseBody!!.created).isEqualTo(true)
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
+          }
+
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+          assertThat(heightCentimetres).isEqualTo(180)
+          assertThat(heightFeet).isEqualTo(5)
+          assertThat(heightInches).isEqualTo(11)
+          assertThat(weightKilograms).isEqualTo(80)
+          assertThat(weightPounds).isEqualTo(176)
         }
       }
 
-      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
-
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
-        assertThat(heightCentimetres).isEqualTo(180)
-        assertThat(heightFeet).isEqualTo(5)
-        assertThat(heightInches).isEqualTo(11)
-        assertThat(weightKilograms).isEqualTo(80)
-        assertThat(weightPounds).isEqualTo(176)
-      }
-    }
-
-    @Test
-    fun `should update physical attributes`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking {
-            physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+      @Test
+      fun `should update physical attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+            }
           }
+        }
+
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", 180, 80)
+          .consumeWith {
+            assertThat(it.responseBody!!.created).isEqualTo(false)
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
+          }
+
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+          assertThat(heightCentimetres).isEqualTo(180)
+          assertThat(weightKilograms).isEqualTo(80)
         }
       }
 
-      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
-
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
-        assertThat(heightCentimetres).isEqualTo(180)
-        assertThat(weightKilograms).isEqualTo(80)
-      }
-    }
-
-    @Test
-    fun `should only update active booking`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          oldBooking = booking(bookingSequence = 2) {
-            physicalAttributes(heightCentimetres = 160, weightKilograms = 60)
-            release(date = LocalDateTime.now().minusDays(1))
+      @Test
+      fun `should only update active booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            oldBooking = booking(bookingSequence = 2) {
+              physicalAttributes(heightCentimetres = 160, weightKilograms = 60)
+              release(date = LocalDateTime.now().minusDays(1))
+            }
+            booking = booking(bookingSequence = 1, bookingBeginDate = LocalDateTime.now()) {
+              physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+            }
           }
-          booking = booking(bookingSequence = 1, bookingBeginDate = LocalDateTime.now()) {
-            physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+        }
+
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", 180, 80)
+          .consumeWith {
+            assertThat(it.responseBody!!.created).isEqualTo(false)
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
           }
+
+        // the new booking should have been updated
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+          assertThat(heightCentimetres).isEqualTo(180)
+          assertThat(weightKilograms).isEqualTo(80)
+        }
+        // the old booking should not have changed
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(oldBooking, 1))!!) {
+          assertThat(heightCentimetres).isEqualTo(160)
+          assertThat(weightKilograms).isEqualTo(60)
         }
       }
 
-      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
-
-      // the new booking should have been updated
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
-        assertThat(heightCentimetres).isEqualTo(180)
-        assertThat(weightKilograms).isEqualTo(80)
-      }
-      // the old booking should not have changed
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(oldBooking, 1))!!) {
-        assertThat(heightCentimetres).isEqualTo(160)
-        assertThat(weightKilograms).isEqualTo(60)
-      }
-    }
-
-    @Test
-    fun `should only update latest booking`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          oldBooking = booking(bookingSequence = 2) {
-            physicalAttributes(heightCentimetres = 160, weightKilograms = 60)
-            release(date = LocalDateTime.now().minusDays(2))
+      @Test
+      fun `should only update latest booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            oldBooking = booking(bookingSequence = 2) {
+              physicalAttributes(heightCentimetres = 160, weightKilograms = 60)
+              release(date = LocalDateTime.now().minusDays(2))
+            }
+            booking = booking(bookingSequence = 1, bookingBeginDate = LocalDateTime.now().minusDays(1)) {
+              physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
+              release(date = LocalDateTime.now())
+            }
           }
-          booking = booking(bookingSequence = 1, bookingBeginDate = LocalDateTime.now().minusDays(1)) {
-            physicalAttributes(heightCentimetres = 170, weightKilograms = 70)
-            release(date = LocalDateTime.now())
+        }
+
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", 180, 80)
+          .consumeWith {
+            assertThat(it.responseBody!!.created).isEqualTo(false)
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
           }
+
+        // the latest booking should have been updated
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+          assertThat(heightCentimetres).isEqualTo(180)
+          assertThat(weightKilograms).isEqualTo(80)
+        }
+        // the old booking should not have changed
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(oldBooking, 1))!!) {
+          assertThat(heightCentimetres).isEqualTo(160)
+          assertThat(weightKilograms).isEqualTo(60)
         }
       }
 
-      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
-
-      // the latest booking should have been updated
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
-        assertThat(heightCentimetres).isEqualTo(180)
-        assertThat(weightKilograms).isEqualTo(80)
-      }
-      // the old booking should not have changed
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(oldBooking, 1))!!) {
-        assertThat(heightCentimetres).isEqualTo(160)
-        assertThat(weightKilograms).isEqualTo(60)
-      }
-    }
-
-    @Test
-    fun `should reject if no offender`() {
-      assertThrows<NotFoundException> {
-        service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
-      }
-    }
-
-    @Test
-    fun `should reject if no bookings`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA")
+      @Test
+      fun `should reject if no offender`() {
+        webTestClient.put().uri("/prisoners/A1234AA/physical-attributes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .bodyValue(UpsertPhysicalAttributesRequest(180, 80))
+          .exchange()
+          .expectStatus().isNotFound
       }
 
-      assertThrows<NotFoundException> {
-        service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(180, 80))
-      }
-    }
-
-    @Test
-    fun `should create physical attributes with null values`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking()
+      @Test
+      fun `should reject if no bookings`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA")
         }
+
+        webTestClient.put().uri("/prisoners/A1234AA/physical-attributes")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .bodyValue(UpsertPhysicalAttributesRequest(180, 80))
+          .exchange()
+          .expectStatus().isNotFound
       }
 
-      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(null, null))
-
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
-        assertThat(heightCentimetres).isNull()
-        assertThat(heightFeet).isNull()
-        assertThat(heightInches).isNull()
-        assertThat(weightKilograms).isNull()
-        assertThat(weightPounds).isNull()
-      }
-    }
-
-    @Test
-    fun `should update physical attributes with null values`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking {
-            physicalAttributes(heightCentimetres = 170, heightFeet = 5, heightInches = 6, weightKilograms = 70, weightPounds = 160)
+      @Test
+      fun `should create physical attributes with null values`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
           }
         }
+
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", null, null)
+          .consumeWith {
+            assertThat(it.responseBody!!.created).isEqualTo(true)
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
+          }
+
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+          assertThat(heightCentimetres).isNull()
+          assertThat(heightFeet).isNull()
+          assertThat(heightInches).isNull()
+          assertThat(weightKilograms).isNull()
+          assertThat(weightPounds).isNull()
+        }
       }
 
-      service.upsertPhysicalAttributes("A1234AA", UpsertPhysicalAttributesRequest(null, null))
+      @Test
+      fun `should update physical attributes with null values`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                heightCentimetres = 170,
+                heightFeet = 5,
+                heightInches = 6,
+                weightKilograms = 70,
+                weightPounds = 160,
+              )
+            }
+          }
+        }
 
-      with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
-        assertThat(heightCentimetres).isNull()
-        assertThat(heightFeet).isNull()
-        assertThat(heightInches).isNull()
-        assertThat(weightKilograms).isNull()
-        assertThat(weightPounds).isNull()
+        webTestClient.upsertPhysicalAttributesOk("A1234AA", null, null)
+          .consumeWith {
+            assertThat(it.responseBody!!.created).isEqualTo(false)
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
+          }
+
+        with(physicalAttributesRepository.findByIdOrNull(OffenderPhysicalAttributeId(booking, 1))!!) {
+          assertThat(heightCentimetres).isNull()
+          assertThat(heightFeet).isNull()
+          assertThat(heightInches).isNull()
+          assertThat(weightKilograms).isNull()
+          assertThat(weightPounds).isNull()
+        }
       }
     }
+
+    fun WebTestClient.upsertPhysicalAttributesOk(offenderNo: String, height: Int?, weight: Int?) =
+      this.put().uri("/prisoners/$offenderNo/physical-attributes")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+        .bodyValue(UpsertPhysicalAttributesRequest(height, weight))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<UpsertPhysicalAttributesResponse>()
   }
 }
