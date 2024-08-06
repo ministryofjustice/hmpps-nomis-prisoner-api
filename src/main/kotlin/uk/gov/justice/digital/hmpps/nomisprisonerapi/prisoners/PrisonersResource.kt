@@ -236,6 +236,61 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   ): List<MergeDetail> = prisonerService.findPrisonerMerges(offenderNo, fromDate)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @GetMapping("/prisoners/{offenderNo}")
+  @Operation(
+    summary = "Gets the prisoner's details",
+    description = "Requires role NOMIS_ALERTS.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "prisoner details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = PrisonerDetails::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_ALERTS not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerDetails(
+    @Schema(description = "Offender Noms Id", example = "A1234ZZ", required = true)
+    @PathVariable
+    @Pattern(regexp = OFFENDER_NO_PATTERN)
+    offenderNo: String,
+  ): PrisonerDetails = prisonerService.findPrisonerDetails(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @GetMapping("/prisoners/{offenderNo}/bookings/{bookingId}/previous")
   @Operation(
     summary = "Gets a prisoner's previous booking relative to the supplied booking id",
@@ -316,6 +371,8 @@ data class PrisonerDetails(
   val bookingId: Long,
   @Schema(description = "The prisoner's current location", example = "BXI, OUT")
   val location: String,
+  @Schema(description = "True if prisoner is active in prison")
+  val active: Boolean,
 )
 
 @Schema(description = "Details of a prisoner merge")

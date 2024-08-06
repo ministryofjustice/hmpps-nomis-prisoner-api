@@ -9,6 +9,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -24,10 +25,8 @@ class PrisonerService(
   private val mergeTransactionRepository: MergeTransactionRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
 ) {
-  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> {
-    return bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
-      .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
-  }
+  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> = bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
+    .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
 
   fun findAllPrisonersWithBookings(pageRequest: Pageable): Page<PrisonerIds> =
     offenderRepository.findAllWithBookings(
@@ -45,24 +44,21 @@ class PrisonerService(
   fun findAllPrisoners(pageRequest: Pageable): Page<PrisonerId> =
     offenderRepository.findAllIds(pageRequest).map { PrisonerId(offenderNo = it.getNomsId()) }
 
-  fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> {
-    return bookingRepository.findAllById(bookingIds)
-      .map { PrisonerDetails(it.offender.nomsId, it.bookingId, it.location?.id ?: "") }
-  }
+  fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> = bookingRepository.findAllById(bookingIds)
+    .map { it.toPrisonerDetails() }
+  fun findPrisonerDetails(offenderNo: String): PrisonerDetails = bookingRepository.findLatestByOffenderNomsId(offenderNo)?.toPrisonerDetails() ?: throw NotFoundException("No prisoner with offender $offenderNo found")
 
-  fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> {
-    return mergeTransactionRepository.findByNomsIdAndAfterRequestDate(offenderNo, fromDate?.atStartOfDay())
-      .map {
-        val offender2Retained = offenderRepository.findLatestAliasByNomisId(it.nomsId2) != null
-        MergeDetail(
-          retainedOffenderNo = if (offender2Retained) it.nomsId2 else it.nomsId1,
-          previousBookingId = it.offenderBookId1,
-          deletedOffenderNo = if (offender2Retained) it.nomsId1 else it.nomsId2,
-          activeBookingId = it.offenderBookId2,
-          requestDateTime = it.requestDate,
-        )
-      }
-  }
+  fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> = mergeTransactionRepository.findByNomsIdAndAfterRequestDate(offenderNo, fromDate?.atStartOfDay())
+    .map {
+      val offender2Retained = offenderRepository.findLatestAliasByNomisId(it.nomsId2) != null
+      MergeDetail(
+        retainedOffenderNo = if (offender2Retained) it.nomsId2 else it.nomsId1,
+        previousBookingId = it.offenderBookId1,
+        deletedOffenderNo = if (offender2Retained) it.nomsId1 else it.nomsId2,
+        activeBookingId = it.offenderBookId2,
+        requestDateTime = it.requestDate,
+      )
+    }
 
   fun getPreviousBookingId(offenderNo: String, bookingId: Long): PreviousBookingId =
     offenderBookingRepository.findByIdOrNull(bookingId)
@@ -71,3 +67,10 @@ class PrisonerService(
       ?.let { PreviousBookingId(bookingId = it.bookingId, bookingSequence = it.bookingSequence!!.toLong()) }
       ?: throw NotFoundException("Prisoner with offenderNo $offenderNo and booking $bookingId not found or has no previous booking")
 }
+
+private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetails(
+  offenderNo = offender.nomsId,
+  bookingId = bookingId,
+  location = location?.id ?: "",
+  active = active,
+)
