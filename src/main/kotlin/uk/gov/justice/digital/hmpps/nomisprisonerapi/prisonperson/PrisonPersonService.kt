@@ -90,7 +90,7 @@ class PrisonPersonService(
         val type = if (created) "created" else "updated"
         telemetryClient.trackEvent(
           "physical-attributes-$type",
-          mutableMapOf("offenderNo" to offenderNo, "booking" to booking.bookingId.toString()),
+          mutableMapOf("offenderNo" to offenderNo, "bookingId" to booking.bookingId.toString()),
         )
       }
   }
