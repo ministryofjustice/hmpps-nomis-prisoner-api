@@ -69,10 +69,9 @@ class PrisonPersonService(
     }
 
   fun upsertPhysicalAttributes(offenderNo: String, request: UpsertPhysicalAttributesRequest): UpsertPhysicalAttributesResponse {
-    val telemetry = mutableMapOf("offenderNo" to offenderNo)
     val booking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
-      ?.also { telemetry["bookingId"] = it.bookingId.toString() }
       ?: throw NotFoundException("No latest booking found for $offenderNo")
+    val telemetry = mutableMapOf("offenderNo" to offenderNo, "booking" to booking.bookingId.toString())
     var created = true
 
     val physicalAttributes = booking.physicalAttributes.find { it.id.sequence == 1L }
