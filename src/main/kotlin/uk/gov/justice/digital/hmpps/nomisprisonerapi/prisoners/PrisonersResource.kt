@@ -247,7 +247,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = PrisonerDetails::class)),
+            schema = Schema(implementation = PrisonerDetails::class),
           ),
         ],
       ),
