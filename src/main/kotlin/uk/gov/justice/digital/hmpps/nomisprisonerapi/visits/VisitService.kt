@@ -95,6 +95,7 @@ class VisitService(
 
     addVisitors(mappedVisit, offenderBooking, visitDto)
 
+    val visitAlreadyExists = doesVisitAlreadyExist(mappedVisit)
     val visit = visitRepository.save(mappedVisit)
 
     telemetryClient.trackEvent(
@@ -107,9 +108,30 @@ class VisitService(
       null,
     )
     log.debug("Visit created with Nomis visit id = ${visit.id}")
+    if (visitAlreadyExists) {
+      // check that API has been called twice by mistake (messaging issue or whatnot)
+      // first phase is check we can identify a duplicate visit efficiently
+      telemetryClient.trackEvent(
+        "visit-duplicate",
+        mapOf(
+          "nomisVisitId" to visit.id.toString(),
+          "offenderNo" to offenderNo,
+          "prisonId" to visitDto.prisonId,
+        ),
+        null,
+      )
+    }
 
     return CreateVisitResponse(visit.id)
   }
+
+  private fun doesVisitAlreadyExist(visit: Visit): Boolean = visitRepository.existsByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatus(
+    offenderBooking = visit.offenderBooking,
+    startDateTime = visit.startDateTime,
+    endDateTime = visit.endDateTime,
+    commentText = visit.commentText,
+    visitStatus = visit.visitStatus,
+  )
 
   fun cancelVisit(offenderNo: String, visitId: Long, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
@@ -232,9 +254,7 @@ class VisitService(
     return visitRepository.findAll(VisitSpecification(visitFilter), pageRequest).map { VisitIdResponse(it.id) }
   }
 
-  fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> {
-    return visitRepository.findRoomUsageWithFilter(visitFilter)
-  }
+  fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> = visitRepository.findRoomUsageWithFilter(visitFilter)
 
   private fun createBalance(
     visit: Visit,
@@ -477,13 +497,11 @@ class VisitService(
   private fun AgencyInternalLocation.toInternalLocationDescription(isClosedVisit: Boolean) =
     "$description-VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
 
-  private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay {
-    return visitDayRepository.save(
-      AgencyVisitDay(
-        AgencyVisitDayId(location, weekDayNomis),
-      ),
-    )
-  }
+  private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay = visitDayRepository.save(
+    AgencyVisitDay(
+      AgencyVisitDayId(location, weekDayNomis),
+    ),
+  )
 
   private fun createVisitTime(
     startDateTime: LocalDateTime,
@@ -562,9 +580,7 @@ class VisitService(
     )
   }
 
-  private fun getNextEvent(): Long {
-    return visitVisitorRepository.getEventId()
-  }
+  private fun getNextEvent(): Long = visitVisitorRepository.getEventId()
 }
 
 private fun VisitVisitor.isStatusRecord() = this.offenderBooking != null

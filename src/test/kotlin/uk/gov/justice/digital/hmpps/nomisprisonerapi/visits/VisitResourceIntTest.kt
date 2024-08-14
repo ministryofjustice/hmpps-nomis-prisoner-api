@@ -8,6 +8,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.ColumnMapRowMapper
@@ -419,6 +425,129 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.locationCode).isEqualTo("VSIP_SOC")
         assertThat(visit.agencyVisitSlot!!.agencyInternalLocation.parentLocation?.description).isEqualTo("BXI-VISIT")
       }
+    }
+
+    @Test
+    fun `creating two identical visits results in app insights event`() {
+      val personIds: String = threePeople.map { it.id }.joinToString(",")
+      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            // language=JSON
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-04T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "$PRISON_ID",
+            "visitorPersonIds"  : [$personIds],
+            "issueDate"         : "2021-11-02",
+            "visitComment"      : "VSIP Ref: asd-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
+            "room"              : "Main visit room",
+            "openClosedStatus"  : "OPEN"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+
+      verify(telemetryClient).trackEvent(eq("visit-created"), any(), isNull())
+      verify(telemetryClient, never()).trackEvent(eq("visit-duplicate"), any(), isNull())
+      reset(telemetryClient)
+
+      // another visit at different time
+      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            // language=JSON
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-05T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "$PRISON_ID",
+            "visitorPersonIds"  : [$personIds],
+            "issueDate"         : "2021-11-05",
+            "visitComment"      : "VSIP Ref: asd-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
+            "room"              : "Main visit room",
+            "openClosedStatus"  : "OPEN"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+
+      verify(telemetryClient).trackEvent(eq("visit-created"), any(), isNull())
+      verify(telemetryClient, never()).trackEvent(eq("visit-duplicate"), any(), isNull())
+      reset(telemetryClient)
+
+      // another visit at same time with difference reference
+      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            // language=JSON
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-05T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "$PRISON_ID",
+            "visitorPersonIds"  : [$personIds],
+            "issueDate"         : "2021-11-05",
+            "visitComment"      : "VSIP Ref: xxx-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: xxx-fff-ddd",
+            "room"              : "Main visit room",
+            "openClosedStatus"  : "OPEN"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+
+      verify(telemetryClient).trackEvent(eq("visit-created"), any(), isNull())
+      verify(telemetryClient, never()).trackEvent(eq("visit-duplicate"), any(), isNull())
+      reset(telemetryClient)
+
+      // another visit at same time with same reference
+      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            // language=JSON
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-05T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "$PRISON_ID",
+            "visitorPersonIds"  : [$personIds],
+            "issueDate"         : "2021-11-05",
+            "visitComment"      : "VSIP Ref: xxx-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: xxx-fff-ddd",
+            "room"              : "Main visit room",
+            "openClosedStatus"  : "OPEN"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+
+      verify(telemetryClient).trackEvent(eq("visit-created"), any(), isNull())
+      verify(telemetryClient).trackEvent(eq("visit-duplicate"), any(), isNull())
+      reset(telemetryClient)
     }
 
     @Nested
