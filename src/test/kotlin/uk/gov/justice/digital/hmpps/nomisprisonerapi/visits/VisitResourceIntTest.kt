@@ -80,6 +80,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
   lateinit var offenderNo: String
   lateinit var offenderAtMoorlands: Offender
+  lateinit var anotherOffenderAtMoorlands: Offender
   lateinit var offenderAtLeeds: Offender
   lateinit var offenderAtBrixton: Offender
   private var offenderBookingId: Long = 0L
@@ -104,6 +105,14 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     offenderNo = offenderAtMoorlands.nomsId
     offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
+
+    anotherOffenderAtMoorlands = repository.save(
+      LegacyOffenderBuilder(nomsId = "A5432KU")
+        .withBooking(
+          OffenderBookingBuilder()
+            .withVisitBalance(),
+        ),
+    )
   }
 
   @DisplayName("Create")
@@ -631,6 +640,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
               endTime = "16:00",
               room = "Big blue room",
               openClosedStatus = "CLOSED",
+              offenderNoForVisit = anotherOffenderAtMoorlands.nomsId,
             ),
           )
           assertThat(visitInDifferentPhysicalRoom.agencyInternalLocation!!.description).isEqualTo("$PRISON_ID-VISIT-VSIP_CLO")
@@ -749,8 +759,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun createVisit(startDateTime: String, endTime: String, room: String, openClosedStatus: String) =
-    webTestClient.post().uri("/prisoners/$offenderNo/visits")
+  private fun createVisit(startDateTime: String, endTime: String, room: String, openClosedStatus: String, offenderNoForVisit: String = offenderNo) =
+    webTestClient.post().uri("/prisoners/$offenderNoForVisit/visits")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
       .contentType(MediaType.APPLICATION_JSON)
       .body(

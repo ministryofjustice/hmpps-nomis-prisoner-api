@@ -126,20 +126,22 @@ class VisitService(
     return CreateVisitResponse(visit.id)
   }
 
-  private fun doesVisitAlreadyExist(visit: Visit): Boolean = visitRepository.existsByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatus(
+  private fun doesVisitAlreadyExist(visit: Visit): Boolean = visitRepository.existsByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
     offenderBooking = visit.offenderBooking,
     startDateTime = visit.startDateTime,
     endDateTime = visit.endDateTime,
     commentText = visit.commentText,
     visitStatus = visit.visitStatus,
+    room = visit.agencyInternalLocation,
   )
 
-  private fun getExistingVisit(visit: Visit): Visit? = visitRepository.findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatus(
+  private fun getExistingVisit(visit: Visit): Visit? = visitRepository.findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
     offenderBooking = visit.offenderBooking,
     startDateTime = visit.startDateTime,
     endDateTime = visit.endDateTime,
     commentText = visit.commentText,
     visitStatus = visit.visitStatus,
+    room = visit.agencyInternalLocation,
   )
 
   fun cancelVisit(offenderNo: String, visitId: Long, visitDto: CancelVisitRequest) {
