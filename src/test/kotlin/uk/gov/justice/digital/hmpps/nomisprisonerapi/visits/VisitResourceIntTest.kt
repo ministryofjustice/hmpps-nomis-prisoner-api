@@ -9,12 +9,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.ColumnMapRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
@@ -428,7 +430,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `creating two identical visits results in app insights event`() {
+    fun `creating two identical visits results in 409 response error`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
@@ -452,8 +454,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody(CreateVisitResponse::class.java)
-        .returnResult().responseBody
 
       verify(telemetryClient).trackEvent(eq("visit-created"), any(), isNull())
       verify(telemetryClient, never()).trackEvent(eq("visit-duplicate"), any(), isNull())
@@ -482,15 +482,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody(CreateVisitResponse::class.java)
-        .returnResult().responseBody
 
       verify(telemetryClient).trackEvent(eq("visit-created"), any(), isNull())
       verify(telemetryClient, never()).trackEvent(eq("visit-duplicate"), any(), isNull())
       reset(telemetryClient)
 
       // another visit at same time with difference reference
-      webTestClient.post().uri("/prisoners/$offenderNo/visits")
+      val existingVisit = webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
@@ -541,12 +539,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
           ),
         )
         .exchange()
-        .expectStatus().isCreated
-        .expectBody(CreateVisitResponse::class.java)
-        .returnResult().responseBody
+        .expectStatus().isEqualTo(HttpStatus.CONFLICT)
 
-      verify(telemetryClient).trackEvent(eq("visit-created"), any(), isNull())
-      verify(telemetryClient).trackEvent(eq("visit-duplicate"), any(), isNull())
+      verify(telemetryClient).trackEvent(
+        eq("visit-duplicate"),
+        check {
+          assertThat(it["nomisVisitId"]).isEqualTo("${existingVisit?.visitId}")
+        },
+        isNull(),
+      )
       reset(telemetryClient)
     }
 

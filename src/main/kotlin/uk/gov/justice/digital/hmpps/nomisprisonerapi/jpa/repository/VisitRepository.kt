@@ -26,4 +26,12 @@ interface VisitRepository :
     commentText: String?,
     visitStatus: VisitStatus,
   ): Boolean
+
+  fun findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatus(
+    offenderBooking: OffenderBooking,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+    commentText: String?,
+    visitStatus: VisitStatus,
+  ): Visit?
 }

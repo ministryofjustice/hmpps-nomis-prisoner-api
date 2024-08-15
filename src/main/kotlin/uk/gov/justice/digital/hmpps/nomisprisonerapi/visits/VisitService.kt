@@ -95,7 +95,21 @@ class VisitService(
 
     addVisitors(mappedVisit, offenderBooking, visitDto)
 
-    val visitAlreadyExists = doesVisitAlreadyExist(mappedVisit)
+    if (doesVisitAlreadyExist(mappedVisit)) {
+      val nomisVisitId = getExistingVisit(mappedVisit)?.id
+      // check that API has been called twice by mistake (messaging issue or whatnot)
+      telemetryClient.trackEvent(
+        "visit-duplicate",
+        mapOf(
+          "nomisVisitId" to nomisVisitId.toString(),
+          "offenderNo" to offenderNo,
+          "prisonId" to visitDto.prisonId,
+        ),
+        null,
+      )
+
+      throw ConflictException("Visit already exists $nomisVisitId")
+    }
     val visit = visitRepository.save(mappedVisit)
 
     telemetryClient.trackEvent(
@@ -108,24 +122,19 @@ class VisitService(
       null,
     )
     log.debug("Visit created with Nomis visit id = ${visit.id}")
-    if (visitAlreadyExists) {
-      // check that API has been called twice by mistake (messaging issue or whatnot)
-      // first phase is check we can identify a duplicate visit efficiently
-      telemetryClient.trackEvent(
-        "visit-duplicate",
-        mapOf(
-          "nomisVisitId" to visit.id.toString(),
-          "offenderNo" to offenderNo,
-          "prisonId" to visitDto.prisonId,
-        ),
-        null,
-      )
-    }
 
     return CreateVisitResponse(visit.id)
   }
 
   private fun doesVisitAlreadyExist(visit: Visit): Boolean = visitRepository.existsByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatus(
+    offenderBooking = visit.offenderBooking,
+    startDateTime = visit.startDateTime,
+    endDateTime = visit.endDateTime,
+    commentText = visit.commentText,
+    visitStatus = visit.visitStatus,
+  )
+
+  private fun getExistingVisit(visit: Visit): Visit? = visitRepository.findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatus(
     offenderBooking = visit.offenderBooking,
     startDateTime = visit.startDateTime,
     endDateTime = visit.endDateTime,
