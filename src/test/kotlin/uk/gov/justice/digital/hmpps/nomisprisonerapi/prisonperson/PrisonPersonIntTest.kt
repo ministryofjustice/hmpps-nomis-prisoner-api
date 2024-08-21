@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhysicalAttributesRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonPersonReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesResponse
@@ -211,7 +212,11 @@ class PrisonPersonIntTest : IntegrationTestBase() {
               physicalAttributes()
             }
             oldBooking =
-              booking(bookingSequence = 2, bookingBeginDate = today.minusDays(3), bookingEndDate = today.minusDays(2).toLocalDate()) {
+              booking(
+                bookingSequence = 2,
+                bookingBeginDate = today.minusDays(3),
+                bookingEndDate = today.minusDays(2).toLocalDate(),
+              ) {
                 physicalAttributes()
                 // Note the release time is after the bookingEndDate - an edge case seen in production data
                 release(date = today.minusDays(1))
@@ -241,7 +246,11 @@ class PrisonPersonIntTest : IntegrationTestBase() {
               physicalAttributes()
             }
             oldBooking =
-              booking(bookingSequence = 2, bookingBeginDate = today.minusDays(3), bookingEndDate = today.minusDays(2).toLocalDate()) {
+              booking(
+                bookingSequence = 2,
+                bookingBeginDate = today.minusDays(3),
+                bookingEndDate = today.minusDays(2).toLocalDate(),
+              ) {
                 // Note there is no release movement added here - an edge case seen in production data
                 physicalAttributes()
               }
@@ -456,6 +465,232 @@ class PrisonPersonIntTest : IntegrationTestBase() {
     val nanosOnly = this.nano
     val nanosRounded = if (nanosOnly >= 500_000_000) 1 else 0
     return secondsOnly.plusSeconds(nanosRounded.toLong())
+  }
+
+  @Nested
+  @DisplayName("GET /prisoners/{offenderNo}/prison-person/reconciliation")
+  inner class GetPrisonPersonReconciliation {
+    lateinit var booking: OffenderBooking
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A1234AA/prison-person/reconciliation")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/prison-person/reconciliation")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/prison-person/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `not found if prisoner does not exist`() {
+        webTestClient.get().uri("/prisoners/A1234AA/prison-person/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `not found if no bookings`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+          }
+        }
+
+        webTestClient.get().uri("/prisoners/A1234AA/prison-person/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class PhysicalAttributes {
+      val today: LocalDateTime = LocalDateTime.now()
+      val yesterday: LocalDateTime = today.minusDays(1)
+
+      @Test
+      fun `should return physical attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday) {
+              physicalAttributes(
+                heightCentimetres = 180,
+                weightKilograms = 80,
+              )
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(180)
+              assertThat(weight).isEqualTo(80)
+            }
+          }
+      }
+
+      @Test
+      fun `should return nulls if no physical attributes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isNull()
+              assertThat(weight).isNull()
+            }
+          }
+      }
+
+      @Test
+      fun `should return last modified attributes from active booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(180, null, null, weightKilograms = 80, null)
+              physicalAttributes(170, null, null, weightKilograms = 70, null)
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(170)
+              assertThat(weight).isEqualTo(70)
+            }
+          }
+      }
+
+      @Test
+      fun `should return physical attributes from latest booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              physicalAttributes(170, null, null, 70, null)
+            }
+            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              physicalAttributes(180, null, null, 80, null)
+              release(date = yesterday)
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(170)
+              assertThat(weight).isEqualTo(70)
+            }
+          }
+      }
+
+      @Test
+      fun `should convert from imperial to metric if metric measures are empty`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                heightFeet = 5,
+                heightInches = 10,
+                weightPounds = 180,
+              )
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(180)
+              assertThat(weight).isEqualTo(82)
+            }
+          }
+      }
+
+      @Test
+      fun `should return metric height if both imperial and metric measures are present`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                heightCentimetres = 180,
+                heightFeet = 5,
+                heightInches = 10,
+              )
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(180)
+            }
+          }
+      }
+
+      @Test
+      fun `should convert from imperial weight if both imperial and metric measures are present`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(
+                weightKilograms = 80,
+                weightPounds = 180,
+              )
+            }
+          }
+        }
+
+        /*
+         * Note this result is different to the weightKilograms on the NOMIS record (80).
+         * This is because we know the user entered weightPounds, so we convert that to kilograms.
+         * We know the user entered weightPounds because had they entered weightKilograms, weightPounds would be 80/0.45359=176.37, clearly not 180.
+         */
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(weight).isEqualTo(82)
+            }
+          }
+      }
+    }
+
+    fun WebTestClient.getReconciliationOk(offenderNo: String) =
+      this.get().uri("/prisoners/$offenderNo/prison-person/reconciliation")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<PrisonPersonReconciliationResponse>()
   }
 
   @Nested

@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhys
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.BookingPhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonPersonReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesResponse
@@ -95,6 +96,25 @@ class PrisonPersonService(
       }
   }
 
+  fun getReconciliation(offenderNo: String): PrisonPersonReconciliationResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("No offender found for $offenderNo")
+    }
+
+    val latestBooking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("No bookings found for $offenderNo")
+
+    return latestBooking.physicalAttributes.findLastModified()
+      ?.let {
+        PrisonPersonReconciliationResponse(
+          offenderNo = offenderNo,
+          height = it.getHeightInCentimetres(),
+          weight = it.getWeightInKilograms(),
+        )
+      }
+      ?: PrisonPersonReconciliationResponse(offenderNo = offenderNo)
+  }
+
   // Note that the OffenderPhysicalAttributes extension functions below haven't been added to the class as getters and setters
   // because they only make sense in the context of this service. For example if JPA started using these methods then
   // OffenderPhysicalAttributes wouldn't represent the values found in NOMIS.
@@ -125,4 +145,14 @@ class PrisonPersonService(
     weightKilograms = value
     weightPounds = weightKilograms?.let { (it / 0.453592) }?.roundToInt()
   }
+
+  private fun List<OffenderPhysicalAttributes>.findLastModified(): OffenderPhysicalAttributes? =
+    takeIf { it.isNotEmpty() }
+      ?.maxBy {
+        if (it.modifyDatetime != null) {
+          it.modifyDatetime!!
+        } else {
+          it.createDatetime
+        }
+      }
 }
