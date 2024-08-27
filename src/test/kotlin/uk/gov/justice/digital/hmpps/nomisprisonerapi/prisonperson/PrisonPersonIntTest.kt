@@ -611,6 +611,30 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should return physical attributes from latest booking if none on active booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              // no physical attributes on active booking
+            }
+            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              physicalAttributes(180, null, null, 80, null)
+              release(date = yesterday)
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(180)
+              assertThat(weight).isEqualTo(80)
+            }
+          }
+      }
+
+      @Test
       fun `should convert from imperial to metric if metric measures are empty`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
