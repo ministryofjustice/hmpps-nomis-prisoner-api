@@ -163,14 +163,14 @@ class LocationService(
   }
 
   @Audit
-  fun updateCapacity(locationId: Long, capacity: UpdateCapacityRequest) {
+  fun updateCapacity(locationId: Long, capacity: UpdateCapacityRequest, ignoreOperationalCapacity: Boolean) {
     val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
     location.capacity = capacity.capacity
-    location.operationalCapacity = capacity.operationalCapacity
-
-    // Note that parent capacities are done by separate sync event
+    if (!ignoreOperationalCapacity) {
+      location.operationalCapacity = capacity.operationalCapacity
+    }
 
     telemetryClient.trackEvent(
       "location-capacity-changed",
@@ -179,6 +179,7 @@ class LocationService(
         "description" to location.description,
         "capacity" to location.capacity.toString(),
         "operationalCapacity" to location.operationalCapacity.toString(),
+        "ignoreOperationalCapacity" to ignoreOperationalCapacity.toString(),
       ),
       null,
     )
@@ -191,8 +192,6 @@ class LocationService(
 
     location.certified = certification.certified
     location.cnaCapacity = certification.cnaCapacity
-
-    // Note that parent capacities are done by separate sync event
 
     telemetryClient.trackEvent(
       "location-certification-changed",
