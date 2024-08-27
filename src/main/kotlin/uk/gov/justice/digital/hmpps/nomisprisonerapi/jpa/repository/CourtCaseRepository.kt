@@ -28,8 +28,8 @@ interface CourtCaseRepository : JpaRepository<CourtCase, Long> {
         courtCase.id
       from CourtCase courtCase 
         where 
-          (:fromDateTime is null or courtCase.createDatetime > :fromDateTime) and 
-          (:toDateTime is null or courtCase.createDatetime < :toDateTime)  
+          (:fromDateTime is null or courtCase.createDatetime >= :fromDateTime) and 
+          (:toDateTime is null or courtCase.createDatetime <= :toDateTime)  
       order by courtCase.id asc
     """,
   )

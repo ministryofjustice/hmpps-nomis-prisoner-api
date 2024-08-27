@@ -607,7 +607,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   prisoner1CourtCase3 = courtCase(
                     reportingStaff = staff,
                   ) {
-                    audit(createDatetime = LocalDateTime.parse("2020-05-01T10:00"))
+                    audit(createDatetime = LocalDateTime.parse("2020-05-01T00:00"))
                   }
                 }
               }
@@ -685,7 +685,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         webTestClient.get().uri {
           it.path("/court-cases/ids")
             .queryParam("size", "200")
-            .queryParam("fromDate", "2020-04-25")
+            .queryParam("fromDate", "2020-05-01")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
