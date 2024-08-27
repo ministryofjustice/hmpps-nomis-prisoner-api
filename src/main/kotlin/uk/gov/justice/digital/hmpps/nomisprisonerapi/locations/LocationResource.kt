@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -219,9 +220,12 @@ class LocationResource(private val locationService: LocationService) {
     @Schema(description = "NOMIS location Id", example = "1234567", required = true)
     @PathVariable
     locationId: Long,
+    @Schema(description = "If true leave the operational capacity unchanged", type = "boolean")
+    @RequestParam(name = "ignoreOperationalCapacity", required = false, defaultValue = "false")
+    ignoreOperationalCapacity: Boolean,
     @RequestBody
     updateCapacityRequest: UpdateCapacityRequest,
-  ) = locationService.updateCapacity(locationId, updateCapacityRequest)
+  ) = locationService.updateCapacity(locationId, updateCapacityRequest, ignoreOperationalCapacity)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
   @PutMapping("/locations/{locationId}/certification")

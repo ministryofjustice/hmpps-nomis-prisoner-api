@@ -741,6 +741,40 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(operationalCapacity).isEqualTo(15)
       }
     }
+
+    @Test
+    fun `will ignore operational capacity`() {
+      nomisDataBuilder.build {
+        location1 = agencyInternalLocation(
+          locationCode = "MEDI",
+          locationType = "MEDI",
+          prisonId = "MDI",
+          listSequence = 100,
+          capacity = 10,
+          operationalCapacity = 5,
+        )
+      }
+      webTestClient.put().uri("/locations/{locationId}/capacity?ignoreOperationalCapacity=true", location1!!.locationId)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                 "capacity"            : 20,
+                 "operationalCapacity" : 15
+               }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      // Check the database
+      repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
+        assertThat(capacity).isEqualTo(20)
+        assertThat(operationalCapacity).isEqualTo(5)
+      }
+    }
   }
 
   @Nested
