@@ -184,6 +184,7 @@ class CSIPReportBuilder(
     caseManager: String?,
     planReason: String?,
     firstCaseReviewDate: LocalDate?,
+    logNumber: String?,
   ): CSIPReport =
     CSIPReport(
       offenderBooking = offenderBooking,
@@ -208,6 +209,7 @@ class CSIPReportBuilder(
       caseManager = caseManager,
       reasonForPlan = planReason,
       firstCaseReviewDate = firstCaseReviewDate,
+      logNumber = logNumber,
     )
       .let { repository.save(it) }
       .also { csipReport = it }

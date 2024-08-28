@@ -94,6 +94,7 @@ interface BookingDsl {
     caseManager: String? = null,
     planReason: String? = null,
     firstCaseReviewDate: LocalDate? = null,
+    logNumber: String? = null,
     dsl: CSIPReportDsl.() -> Unit = {},
   ): CSIPReport
 
@@ -486,6 +487,7 @@ class BookingBuilder(
     caseManager: String?,
     planReason: String?,
     firstCaseReviewDate: LocalDate?,
+    logNumber: String?,
     dsl: CSIPReportDsl.() -> Unit,
   ): CSIPReport =
     csipReportBuilderFactory.builder()
@@ -511,6 +513,7 @@ class BookingBuilder(
           caseManager = caseManager,
           planReason = planReason,
           firstCaseReviewDate = firstCaseReviewDate,
+          logNumber = logNumber,
         )
           .also {
             builder.apply(dsl)

@@ -393,6 +393,8 @@ data class InvestigationDetails(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InterviewDetails(
+  @Schema(description = "Interview Id")
+  val id: Long,
   @Schema(description = "Person being interviewed")
   val interviewee: String,
   @Schema(description = "date of interview")
