@@ -214,6 +214,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
         .jsonPath("originalAgencyId").isEqualTo("MDI")
+        .jsonPath("logNumber").isEqualTo("fred")
         .jsonPath("bookingId").isEqualTo(csip2.offenderBooking.bookingId)
         .jsonPath("incidentDate").isNotEmpty
         .jsonPath("incidentTime").doesNotExist()
@@ -398,6 +399,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(csip1.id)
+        .jsonPath("investigation.interviews[0].id").isEqualTo(csip1.interviews[0].id)
         .jsonPath("investigation.interviews[0].interviewee").isEqualTo("Jim the Interviewee")
         .jsonPath("investigation.interviews[0].date").isEqualTo(LocalDate.now().toString())
         .jsonPath("investigation.interviews[0].role.code").isEqualTo("WITNESS")
