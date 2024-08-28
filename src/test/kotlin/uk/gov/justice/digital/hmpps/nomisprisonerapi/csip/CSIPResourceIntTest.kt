@@ -47,6 +47,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             involvement = "PER", concern = "It may happen again", knownReasons = "Disagreement", otherInformation = "Two other offenders involved",
             referralComplete = true, referralCompletedBy = "Referral Team", referralCompletedDate = LocalDate.parse("2024-04-15"),
             caseManager = "The Case Manager", planReason = "Will help offender", firstCaseReviewDate = LocalDate.parse("2024-08-03"),
+            logNumber = "MDI-1234",
           ) {
             factor()
             factor(factor = "MED", comment = "Wrong medication given")
@@ -214,7 +215,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
         .jsonPath("originalAgencyId").isEqualTo("MDI")
-        .jsonPath("logNumber").isEqualTo("fred")
+        .jsonPath("logNumber").doesNotExist()
         .jsonPath("bookingId").isEqualTo(csip2.offenderBooking.bookingId)
         .jsonPath("incidentDate").isNotEmpty
         .jsonPath("incidentTime").doesNotExist()
@@ -261,6 +262,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("offender.firstName").isEqualTo("Bob")
         .jsonPath("offender.lastName").isEqualTo("Smith")
         .jsonPath("originalAgencyId").isEqualTo("MDI")
+        .jsonPath("logNumber").isEqualTo("MDI-1234")
         .jsonPath("bookingId").isEqualTo(csip1.offenderBooking.bookingId)
         .jsonPath("incidentDate").isEqualTo("2024-01-25")
         .jsonPath("incidentTime").isEqualTo("12:34:00")
