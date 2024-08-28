@@ -611,7 +611,7 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return physical attributes from latest booking if none on active booking`() {
+      fun `should return physical attributes from latest booking with physical attributes if none on active booking`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = today) {
@@ -620,6 +620,29 @@ class PrisonPersonIntTest : IntegrationTestBase() {
             booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
               physicalAttributes(180, null, null, 80, null)
               release(date = yesterday)
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(180)
+              assertThat(weight).isEqualTo(80)
+            }
+          }
+      }
+
+      @Test
+      fun `should return physical attributes from lowest booking sequence if multiple bookings have null end date`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              physicalAttributes(170, null, null, 70, null)
+            }
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              physicalAttributes(180, null, null, 80, null)
             }
           }
         }

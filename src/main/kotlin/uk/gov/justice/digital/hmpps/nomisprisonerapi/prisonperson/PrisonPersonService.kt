@@ -109,8 +109,8 @@ class PrisonPersonService(
     val latestBookingWithPhysicalAttributes =
       bookings
         .filter { it.physicalAttributes.isNotEmpty() }
-        // a null end date is considered the latest
-        .maxByOrNull { it.bookingEndDate ?: LocalDateTime.MAX }
+        // a null end date is considered the latest, matching end dates (e.g. both null) should pick the lowest booking sequence
+        .maxWithOrNull(compareBy({ it.bookingEndDate ?: LocalDateTime.MAX }, { -it.bookingSequence }))
 
     val physicalAttributes = latestBookingWithPhysicalAttributes
       ?.physicalAttributes
