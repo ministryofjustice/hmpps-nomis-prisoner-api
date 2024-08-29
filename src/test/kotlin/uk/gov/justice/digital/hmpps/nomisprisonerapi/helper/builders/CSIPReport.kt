@@ -185,10 +185,11 @@ class CSIPReportBuilder(
     planReason: String?,
     firstCaseReviewDate: LocalDate?,
     logNumber: String?,
+    createUsername: String,
   ): CSIPReport =
     CSIPReport(
       offenderBooking = offenderBooking,
-      rootOffenderId = offenderBooking.offender.rootOffenderId ?: offenderBooking.offender.id,
+      rootOffender = offenderBooking.rootOffender,
       originalAgencyId = offenderBooking.location?.id,
       type = repository.lookupType(type),
       location = repository.lookupLocation(location),
@@ -210,6 +211,7 @@ class CSIPReportBuilder(
       reasonForPlan = planReason,
       firstCaseReviewDate = firstCaseReviewDate,
       logNumber = logNumber,
+      createUsername = createUsername,
     )
       .let { repository.save(it) }
       .also { csipReport = it }
