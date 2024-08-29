@@ -80,9 +80,17 @@ class CSIPReview(
   @Column
   var auditModuleName: String? = null,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  var createdByStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   @Generated
   var lastModifiedUsername: String? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  val lastModifiedByStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
   @Generated
@@ -97,7 +105,7 @@ class CSIPReview(
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
-  lateinit var createDatetime: LocalDateTime
+  lateinit var createDateTime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

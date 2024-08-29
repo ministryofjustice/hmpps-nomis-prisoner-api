@@ -45,7 +45,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             staffAssaulted = true, staffAssaultedName = "Assaulted Person",
             releaseDate = LocalDate.parse("2028-11-25"),
             involvement = "PER", concern = "It may happen again", knownReasons = "Disagreement", otherInformation = "Two other offenders involved",
-            referralComplete = true, referralCompletedBy = "Referral Team", referralCompletedDate = LocalDate.parse("2024-04-15"),
+            referralComplete = true, referralCompletedBy = "FRED.JAMES", referralCompletedDate = LocalDate.parse("2024-04-15"),
             caseManager = "The Case Manager", planReason = "Will help offender", firstCaseReviewDate = LocalDate.parse("2024-08-03"),
             logNumber = "MDI-1234",
           ) {
@@ -247,7 +247,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.serviceReferral").isEqualTo(false)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
         .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isNotEmpty
+        .jsonPath("createdBy").isEqualTo("FRED.JAMES")
+        .jsonPath("createdByDisplayName").isEqualTo("FRED JAMES")
     }
 
     @Test
@@ -278,7 +279,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("staffAssaulted").isEqualTo(true)
         .jsonPath("staffAssaultedName").isEqualTo("Assaulted Person")
         .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isNotEmpty
+        .jsonPath("createdBy").isEqualTo("FRED.JAMES")
+        .jsonPath("createdByDisplayName").isEqualTo("FRED JAMES")
     }
 
     @Test
@@ -305,7 +307,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reportDetails.otherInformation").isEqualTo("Two other offenders involved")
         .jsonPath("reportDetails.saferCustodyTeamInformed").isEqualTo(false)
         .jsonPath("reportDetails.referralComplete").isEqualTo(true)
-        .jsonPath("reportDetails.referralCompletedBy").isEqualTo("Referral Team")
+        .jsonPath("reportDetails.referralCompletedBy").isEqualTo("FRED.JAMES")
+        .jsonPath("reportDetails.referralCompletedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("reportDetails.referralCompletedDate").isEqualTo("2024-04-15")
     }
 
@@ -346,6 +349,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].closedDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("plans[0].createDateTime").isNotEmpty
         .jsonPath("plans[0].createdBy").isNotEmpty
+        .jsonPath("plans[0].createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -368,6 +372,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].recordedDate").isNotEmpty
         .jsonPath("reviews[0].recordedBy").isEqualTo("FRED.JAMES")
         .jsonPath("reviews[0].recordedByDisplayName").isEqualTo("FRED JAMES")
+        .jsonPath("reviews[0].createDateTime").isNotEmpty
+        .jsonPath("reviews[0].createdBy").isNotEmpty
+        .jsonPath("reviews[0].createdByDisplayName").doesNotExist()
         .jsonPath("reviews[0].attendees[0].id").isEqualTo(csip1.reviews[0].attendees[0].id)
         .jsonPath("reviews[0].attendees[0].name").isEqualTo("Fred Attendee")
         .jsonPath("reviews[0].attendees[0].role").isEqualTo("Witness")
@@ -375,6 +382,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].attendees[0].contribution").isEqualTo("helped")
         .jsonPath("reviews[0].attendees[0].createDateTime").isNotEmpty
         .jsonPath("reviews[0].attendees[0].createdBy").isNotEmpty
+        .jsonPath("reviews[0].attendees[0].createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -409,6 +417,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("investigation.interviews[0].comments").isEqualTo("Helping with behaviour")
         .jsonPath("investigation.interviews[0].createDateTime").isNotEmpty
         .jsonPath("investigation.interviews[0].createdBy").isNotEmpty
+        .jsonPath("investigation.interviews[0].createdByDisplayName").doesNotExist()
     }
 
     @Test

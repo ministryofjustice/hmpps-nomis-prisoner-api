@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 
 fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>? = null): CSIPResponse =
   CSIPResponse(
@@ -39,10 +39,12 @@ fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>? = null): CS
     plans = plans.map { it.toPlanResponse() },
     reviews = reviews.map { it.toReviewResponse() },
     documents = documentIds,
-    createDateTime = createDatetime,
     createdBy = createUsername,
-    lastModifiedDateTime = lastModifiedDateTime,
+    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
+    createDateTime = createDatetime,
     lastModifiedBy = lastModifiedUsername,
+    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
+    lastModifiedDateTime = lastModifiedDateTime,
   )
 
 private fun Offender.toOffender() =
@@ -63,6 +65,7 @@ private fun CSIPReport.toReportDetailResponse() =
     saferCustodyTeamInformed = saferCustodyTeamInformed,
     referralComplete = referralComplete,
     referralCompletedBy = referralCompletedBy,
+    referralCompletedByDisplayName = referralCompletedByStaffUserAccount.asDisplayName(),
     referralCompletedDate = referralCompletedDate,
   )
 
@@ -70,7 +73,7 @@ private fun CSIPReport.toSCSResponse() =
   SaferCustodyScreening(
     outcome = outcome?.toCodeDescription(),
     recordedBy = outcomeCreateUsername,
-    recordedByDisplayName = outcomeCreatedByStaffUserAccount?.staff.asDisplayName(),
+    recordedByDisplayName = outcomeCreatedByStaffUserAccount.asDisplayName(),
     recordedDate = outcomeCreateDate,
     reasonForDecision = reasonForDecision,
   )
@@ -95,8 +98,10 @@ private fun CSIPInterview.toInterviewResponse() =
     comments = comments,
     createDateTime = createDatetime,
     createdBy = createUsername,
+    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
+    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPReport.toDecisionResponse() =
@@ -105,7 +110,7 @@ private fun CSIPReport.toDecisionResponse() =
     decisionOutcome = decisionOutcome?.toCodeDescription(),
     signedOffRole = signedOffRole?.toCodeDescription(),
     recordedBy = recordedBy,
-    recordedByDisplayName = recordedByStaffUserAccount?.staff.asDisplayName(),
+    recordedByDisplayName = recordedByStaffUserAccount.asDisplayName(),
     recordedDate = recordedDate,
     nextSteps = nextSteps,
     otherDetails = otherDetails,
@@ -135,8 +140,10 @@ private fun CSIPPlan.toPlanResponse() =
     closedDate = closedDate,
     createDateTime = createDatetime,
     createdBy = createUsername,
+    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
+    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPReview.toReviewResponse() =
@@ -154,9 +161,13 @@ private fun CSIPReview.toReviewResponse() =
     closeDate = closeDate,
     recordedDate = recordedDate!!,
     recordedBy = recordedUser!!,
-    recordedByDisplayName = recordedByStaffUserAccount?.staff.asDisplayName(),
+    recordedByDisplayName = recordedByStaffUserAccount.asDisplayName(),
+    createDateTime = createDateTime,
+    createdBy = createUsername,
+    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
+    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPAttendee.toAttendeeResponse() =
@@ -168,8 +179,10 @@ private fun CSIPAttendee.toAttendeeResponse() =
     contribution = contribution,
     createDateTime = createDatetime,
     createdBy = createUsername,
+    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
+    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
-private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }
+private fun StaffUserAccount?.asDisplayName(): String? = this?.staff?.let { "${it.firstName} ${it.lastName}" }

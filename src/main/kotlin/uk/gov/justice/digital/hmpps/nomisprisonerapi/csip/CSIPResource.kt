@@ -328,10 +328,14 @@ data class CSIPResponse(
   val createDateTime: LocalDateTime,
   @Schema(description = "The username of the person who created the report")
   val createdBy: String,
+  @Schema(description = "Real name of the person who created the report")
+  val createdByDisplayName: String?,
   @Schema(description = "The date and time the report was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the report")
   val lastModifiedBy: String?,
+  @Schema(description = "Real name of the person who last updated the report")
+  val lastModifiedByDisplayName: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -369,6 +373,8 @@ data class ReportDetails(
   val referralComplete: Boolean,
   @Schema(description = "Who completed the referral")
   val referralCompletedBy: String?,
+  @Schema(description = "Real name of the person who completed the referral")
+  val referralCompletedByDisplayName: String?,
   @Schema(description = "Date the referral was completed")
   val referralCompletedDate: LocalDate?,
 )
@@ -403,14 +409,19 @@ data class InterviewDetails(
   val role: CodeDescription,
   @Schema(description = "Additional data regarding the interview")
   val comments: String? = null,
+
   @Schema(description = "The date and time the interview was created")
   val createDateTime: LocalDateTime,
   @Schema(description = "The username of the person who created the interview")
   val createdBy: String,
+  @Schema(description = "Real name of the person who created the interview")
+  val createdByDisplayName: String?,
   @Schema(description = "The date and time the interview was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the interview")
   val lastModifiedBy: String?,
+  @Schema(description = "Real name of the person who last updated the interview")
+  val lastModifiedByDisplayName: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -463,14 +474,19 @@ data class Plan(
   val targetDate: LocalDate,
   @Schema(description = "Plan closed date")
   val closedDate: LocalDate?,
+
   @Schema(description = "The date and time the plan was created")
   val createDateTime: LocalDateTime,
   @Schema(description = "The username of the person who created the plan")
   val createdBy: String,
+  @Schema(description = "Real name of the person who created the plan")
+  val createdByDisplayName: String?,
   @Schema(description = "The date and time the plan was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the plan")
   val lastModifiedBy: String?,
+  @Schema(description = "Real name of the person who last updated the plan")
+  val lastModifiedByDisplayName: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -503,10 +519,19 @@ data class Review(
   val recordedBy: String,
   @Schema(description = "Real name of who recorded the review")
   val recordedByDisplayName: String?,
+
+  @Schema(description = "The date and time the review was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the review")
+  val createdBy: String,
+  @Schema(description = "Real name of the person who created the plan")
+  val createdByDisplayName: String?,
   @Schema(description = "The date and time the review was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the review")
   val lastModifiedBy: String?,
+  @Schema(description = "Real name of the person who last updated the review")
+  val lastModifiedByDisplayName: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -521,14 +546,19 @@ data class Attendee(
   val attended: Boolean,
   @Schema(description = "Contribution")
   val contribution: String? = null,
+
   @Schema(description = "The date and time the attendee was created")
   val createDateTime: LocalDateTime,
   @Schema(description = "The username of the person who created the attendee")
   val createdBy: String,
+  @Schema(description = "Real name of the person who created the attendee")
+  val createdByDisplayName: String?,
   @Schema(description = "The date and time the attendee was last updated")
   val lastModifiedDateTime: LocalDateTime?,
   @Schema(description = "The username of the person who last updated the attendee")
   val lastModifiedBy: String?,
+  @Schema(description = "Real name of the person who last updated the attendee")
+  val lastModifiedByDisplayName: String?,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

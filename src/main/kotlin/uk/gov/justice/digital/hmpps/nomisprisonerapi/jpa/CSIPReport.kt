@@ -5,6 +5,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -39,8 +40,9 @@ class CSIPReport(
   @Column(name = "AGY_LOC_ID")
   val originalAgencyId: String? = null,
 
-  @Column(name = "ROOT_OFFENDER_ID", nullable = false)
-  val rootOffenderId: Long,
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "ROOT_OFFENDER_ID")
+  var rootOffender: Offender? = null,
 
   // ------------------------- Referral Details -------------------------//
   @Column(name = "CSIP_SEQ")
@@ -152,6 +154,11 @@ class CSIPReport(
   val referralComplete: Boolean = false,
   @Column(name = "REFERRAL_COMPLETED_BY")
   val referralCompletedBy: String? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "REFERRAL_COMPLETED_BY", insertable = false, updatable = false)
+  val referralCompletedByStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "REFERRAL_COMPLETED_DATE")
   val referralCompletedDate: LocalDate? = null,
 
@@ -312,13 +319,23 @@ class CSIPReport(
   @Column
   var auditModuleName: String? = null,
 
+  @Column(name = "CREATE_USER_ID")
+  val createUsername: String,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  val createdByStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  @Generated
   var lastModifiedUsername: String? = null,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  val lastModifiedByStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
-  @Generated
   var lastModifiedDateTime: LocalDateTime? = null,
+
   // ---------------------------------------------------------------------//
   // ---- NOT MAPPED columns ---- //
   // INV_NOMIS_CASE_NOTE VARCHAR2(1) DEFAULT 'N', - are these all N in prod
@@ -326,9 +343,6 @@ class CSIPReport(
   // INV_NAME VARCHAR2(100),  = all null in prod
   // All AUDIT data except auditModuleName
 ) {
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
