@@ -319,8 +319,7 @@ class CSIPReport(
   @Column
   var auditModuleName: String? = null,
 
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
+  @Column(name = "CREATE_USER_ID")
   val createUsername: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
