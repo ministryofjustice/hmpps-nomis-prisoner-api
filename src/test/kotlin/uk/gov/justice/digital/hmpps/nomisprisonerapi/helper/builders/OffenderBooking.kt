@@ -223,6 +223,7 @@ interface BookingDsl {
     heightInches: Int? = null,
     weightKilograms: Int? = 80,
     weightPounds: Int? = null,
+    sequence: Long? = null,
   ): OffenderPhysicalAttributes
 
   @OffenderExternalMovementDslMarker
@@ -631,10 +632,12 @@ class BookingBuilder(
     heightInches: Int?,
     weightKilograms: Int?,
     weightPounds: Int?,
+    sequence: Long?,
   ): OffenderPhysicalAttributes = offenderPhysicalAttributesBuilderFactory.builder()
     .let { builder ->
       builder.build(
         offenderBooking = offenderBooking,
+        sequence = sequence,
         heightCentimetres = heightCentimetres,
         heightFeet = heightFeet,
         heightInches = heightInches,

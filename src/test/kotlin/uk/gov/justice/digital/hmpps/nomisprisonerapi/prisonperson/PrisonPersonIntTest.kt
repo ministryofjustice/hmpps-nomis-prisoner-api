@@ -566,12 +566,12 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return last modified attributes from active booking`() {
+      fun `should return first attribute sequence from active booking`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking {
-              physicalAttributes(180, null, null, weightKilograms = 80, null)
-              physicalAttributes(170, null, null, weightKilograms = 70, null)
+              physicalAttributes(180, null, null, weightKilograms = 80, null, sequence = 1L)
+              physicalAttributes(170, null, null, weightKilograms = 70, null, sequence = 2L)
             }
           }
         }
@@ -580,8 +580,29 @@ class PrisonPersonIntTest : IntegrationTestBase() {
           .consumeWith {
             with(it.responseBody!!) {
               assertThat(offenderNo).isEqualTo("A1234AA")
-              assertThat(height).isEqualTo(170)
-              assertThat(weight).isEqualTo(70)
+              assertThat(height).isEqualTo(180)
+              assertThat(weight).isEqualTo(80)
+            }
+          }
+      }
+
+      @Test
+      fun `should return first attribute sequence from active booking even if not seq=1`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              physicalAttributes(180, null, null, weightKilograms = 80, null, sequence = 2L)
+              physicalAttributes(170, null, null, weightKilograms = 70, null, sequence = 3L)
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(height).isEqualTo(180)
+              assertThat(weight).isEqualTo(80)
             }
           }
       }
@@ -611,7 +632,7 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return physical attributes from latest booking with physical attributes if none on active booking`() {
+      fun `should return null if no physical attributes on active booking`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = today) {
@@ -628,8 +649,8 @@ class PrisonPersonIntTest : IntegrationTestBase() {
           .consumeWith {
             with(it.responseBody!!) {
               assertThat(offenderNo).isEqualTo("A1234AA")
-              assertThat(height).isEqualTo(180)
-              assertThat(weight).isEqualTo(80)
+              assertThat(height).isEqualTo(null)
+              assertThat(weight).isEqualTo(null)
             }
           }
       }
