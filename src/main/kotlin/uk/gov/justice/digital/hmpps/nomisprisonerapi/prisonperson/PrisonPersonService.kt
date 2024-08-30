@@ -101,28 +101,17 @@ class PrisonPersonService(
       throw NotFoundException("No offender found for $offenderNo")
     }
 
-    val bookings = bookingRepository.findAllByOffenderNomsId(offenderNo)
-    if (bookings.isEmpty()) {
-      throw NotFoundException("No bookings found for $offenderNo")
-    }
+    val latestBooking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("No bookings found for $offenderNo")
 
-    val latestBookingWithPhysicalAttributes =
-      bookings
-        .filter { it.physicalAttributes.isNotEmpty() }
-        // a null end date is considered the latest, matching end dates (e.g. both null) should pick the lowest booking sequence
-        .maxWithOrNull(compareBy({ it.bookingEndDate ?: LocalDateTime.MAX }, { -it.bookingSequence }))
-
-    val physicalAttributes = latestBookingWithPhysicalAttributes
-      ?.physicalAttributes
-      ?.maxBy { it.modifyDatetime ?: it.createDatetime }
-
-    return physicalAttributes?.let {
-      PrisonPersonReconciliationResponse(
-        offenderNo = offenderNo,
-        height = physicalAttributes.getHeightInCentimetres(),
-        weight = physicalAttributes.getWeightInKilograms(),
-      )
-    }
+    return latestBooking.physicalAttributes.minByOrNull { it.id.sequence }
+      ?.let {
+        PrisonPersonReconciliationResponse(
+          offenderNo = offenderNo,
+          height = it.getHeightInCentimetres(),
+          weight = it.getWeightInKilograms(),
+        )
+      }
       ?: PrisonPersonReconciliationResponse(offenderNo = offenderNo)
   }
 
