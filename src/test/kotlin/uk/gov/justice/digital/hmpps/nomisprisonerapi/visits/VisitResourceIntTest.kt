@@ -549,6 +549,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+        .expectBody()
+        .jsonPath("moreInfo").isEqualTo("${existingVisit?.visitId}")
+        .jsonPath("userMessage").isEqualTo("Visit already exists ${existingVisit?.visitId}")
 
       verify(telemetryClient).trackEvent(
         eq("visit-duplicate"),

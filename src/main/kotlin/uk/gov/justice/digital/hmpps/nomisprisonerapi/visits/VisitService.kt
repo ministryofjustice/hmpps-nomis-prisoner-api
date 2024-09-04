@@ -108,7 +108,7 @@ class VisitService(
         null,
       )
 
-      throw ConflictException("Visit already exists $nomisVisitId")
+      throw ConflictException("Visit already exists $nomisVisitId", entityId = "$nomisVisitId")
     }
     val visit = visitRepository.save(mappedVisit)
 

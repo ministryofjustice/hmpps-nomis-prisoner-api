@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.config
 
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -106,7 +107,7 @@ class NomisPrisonerApiExceptionHandler {
   }
 
   @ExceptionHandler(ConflictException::class)
-  fun handleConflictException(e: Exception): ResponseEntity<ErrorResponse?>? {
+  fun handleConflictException(e: ConflictException): ResponseEntity<ErrorResponse?>? {
     log.info("Conflict http error: {}", e.message)
     return ResponseEntity
       .status(CONFLICT)
@@ -115,6 +116,7 @@ class NomisPrisonerApiExceptionHandler {
           status = CONFLICT,
           userMessage = e.message,
           developerMessage = e.message,
+          moreInfo = e.entityId,
         ),
       )
   }
@@ -171,6 +173,7 @@ data class ErrorResponse(
   val errorCode: Int? = null,
   val userMessage: String? = null,
   val developerMessage: String? = null,
+  @Schema(description = "For 409 errors this may contain the entity Id for the existing record that causes the duplicate")
   val moreInfo: String? = null,
 ) {
   constructor(

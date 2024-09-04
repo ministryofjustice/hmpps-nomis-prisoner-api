@@ -84,6 +84,16 @@ class VisitResource(private val visitService: VisitService) {
           ),
         ],
       ),
+      ApiResponse(
+        responseCode = "409",
+        description = "visit already exists exist. The moreInfo contains the NOMIS visitId for the existing visit",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
   fun createVisit(
