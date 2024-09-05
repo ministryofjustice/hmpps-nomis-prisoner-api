@@ -17,6 +17,18 @@ interface AdjudicationHearingResultAwardRepository : JpaRepository<AdjudicationH
     chargeSequence: Int,
   ): AdjudicationHearingResultAward?
 
+  @Query(
+    """
+    select award 
+        from AdjudicationHearingResultAward award 
+        join award.hearingResult hearingResult 
+        join hearingResult.incident incident 
+        join incident.parties adjudication 
+        where adjudication.adjudicationNumber = :adjudicationNumber 
+            and hearingResult.chargeSequence = :chargeSequence 
+        order by award.id.sanctionSequence asc
+  """,
+  )
   fun findByIncidentPartyAdjudicationNumberAndHearingResultChargeSequenceOrderByIdSanctionSequence(
     adjudicationNumber: Long,
     chargeSequence: Int,
