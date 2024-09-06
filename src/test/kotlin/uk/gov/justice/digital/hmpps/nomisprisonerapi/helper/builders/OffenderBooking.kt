@@ -237,6 +237,11 @@ interface BookingDsl {
   fun release(
     date: LocalDateTime = LocalDateTime.now(),
   ): OffenderExternalMovement
+
+  @OffenderExternalMovementDslMarker
+  fun receive(
+    date: LocalDateTime = LocalDateTime.now(),
+  ): OffenderExternalMovement
 }
 
 @Component
@@ -676,6 +681,18 @@ class BookingBuilder(
           date = date,
         )
           .also { offenderBooking.externalMovements.forEach { it.active = false } }
+          .also { offenderBooking.externalMovements += it }
+      }
+
+  override fun receive(
+    date: LocalDateTime,
+  ): OffenderExternalMovement =
+    offenderExternalMovementBuilderFactory.builder()
+      .let { builder ->
+        builder.buildReceive(
+          offenderBooking = offenderBooking,
+          date = date,
+        )
           .also { offenderBooking.externalMovements += it }
       }
 
