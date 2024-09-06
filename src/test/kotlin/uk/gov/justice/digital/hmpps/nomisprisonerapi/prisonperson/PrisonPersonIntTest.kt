@@ -237,6 +237,49 @@ class PrisonPersonIntTest : IntegrationTestBase() {
           }
       }
 
+      /*
+       * This is to deal with an edge case found in production where an inactive booking has a null booking end date.
+       * In this case we attempt to get the booking end date from the last release movement.
+       * Note that although the active booking also has a release movement it sends null booking end date.
+       */
+      @Test
+      fun `should return end date from last release movement if booking end date is null and booking inactive`() {
+        lateinit var oldBooking: OffenderBooking
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today.minusDays(3)) {
+              physicalAttributes()
+              // We need a release movement to prove it does not get sent as the booking end date
+              release(date = today.minusDays(2))
+              receive(date = today.minusDays(1))
+            }
+            oldBooking =
+              booking(
+                bookingSequence = 2,
+                bookingBeginDate = today.minusDays(3),
+              ) {
+                physicalAttributes()
+                release(date = today.minusDays(1))
+              }.apply {
+                bookingEndDate = null
+              }
+          }
+        }
+
+        webTestClient.getPhysicalAttributesOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "endDateTime")
+                .containsExactly(
+                  // The active booking has a null booking end date
+                  tuple(booking.bookingId, null),
+                  // For the old (inactive) booking we return the latest release time
+                  tuple(oldBooking.bookingId, today.minusDays(1)),
+                )
+            }
+          }
+      }
+
       @Test
       fun `should return booking end date if can't find a release movement`() {
         lateinit var oldBooking: OffenderBooking
@@ -250,6 +293,7 @@ class PrisonPersonIntTest : IntegrationTestBase() {
                 bookingSequence = 2,
                 bookingBeginDate = today.minusDays(3),
                 bookingEndDate = today.minusDays(2).toLocalDate(),
+                active = false,
               ) {
                 // Note there is no release movement added here - an edge case seen in production data
                 physicalAttributes()

@@ -118,6 +118,32 @@ class OffenderExternalMovementBuilder(
       }
     }
 
+  fun buildReceive(
+    date: LocalDateTime,
+    offenderBooking: OffenderBooking,
+  ): OffenderExternalMovement =
+    repository.save(
+      OffenderExternalMovement(
+        id = OffenderExternalMovementId(
+          offenderBooking,
+          offenderBooking.externalMovements.size + 1L,
+        ),
+        movementDate = date.toLocalDate(),
+        movementTime = date,
+        movementDirection = IN,
+        movementType = repository.lookupMovementType("ADM"),
+        movementReason = repository.lookupMovementReason("N"),
+        toAgency = offenderBooking.location,
+        fromAgency = null,
+        active = false,
+      ),
+    ).also {
+      offenderBooking.inOutStatus = "IN"
+      offenderBooking.location = offenderBooking.location
+      offenderBooking.active = true
+      offenderBooking.bookingEndDate = null
+    }
+
   fun build(
     fromPrisonId: String,
     toPrisonId: String,

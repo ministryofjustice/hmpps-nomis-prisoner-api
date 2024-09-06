@@ -61,13 +61,14 @@ class PrisonPersonService(
 
   // NOMIS truncates the time from booking end date, so try and get the accurate time from the last release movement
   private fun OffenderBooking.getReleaseTime(): LocalDateTime? =
-    bookingEndDate?.let {
-      externalMovements
-        .filter { it.movementType?.code == "REL" }
-        .maxByOrNull { it.movementTime }
-        ?.movementTime
-        ?: bookingEndDate
-    }
+    takeIf { !active }
+      ?.let {
+        externalMovements
+          .filter { it.movementType?.code == "REL" }
+          .maxByOrNull { it.movementTime }
+          ?.movementTime
+          ?: bookingEndDate
+      }
 
   fun upsertPhysicalAttributes(offenderNo: String, request: UpsertPhysicalAttributesRequest): UpsertPhysicalAttributesResponse {
     val booking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
