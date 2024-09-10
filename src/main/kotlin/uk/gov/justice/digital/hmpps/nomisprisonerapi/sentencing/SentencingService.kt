@@ -136,6 +136,7 @@ class SentencingService(
           caseStatus = lookupCaseStatus(request.status),
           court = lookupEstablishment(request.courtId),
           caseSequence = courtCaseRepository.getNextCaseSequence(booking),
+          caseInfoNumber = request.caseReference,
         ),
       )
       val mandatoryCourtAppearanceRequest = request.courtAppearance!!
