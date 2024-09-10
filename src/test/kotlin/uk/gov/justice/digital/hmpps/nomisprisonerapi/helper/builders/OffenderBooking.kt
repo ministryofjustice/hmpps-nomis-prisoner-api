@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -226,6 +227,13 @@ interface BookingDsl {
     sequence: Long? = null,
   ): OffenderPhysicalAttributes
 
+  @OffenderProfileDslMarker
+  fun profile(
+    checkDate: LocalDate = LocalDate.now(),
+    sequence: Long = 1L,
+    dsl: OffenderProfileDsl.() -> Unit = {},
+  ): OffenderProfile
+
   @OffenderExternalMovementDslMarker
   fun prisonTransfer(
     from: String = "BXI",
@@ -271,6 +279,7 @@ class BookingBuilderFactory(
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
   private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
+  private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -286,6 +295,7 @@ class BookingBuilderFactory(
     csipReportBuilderFactory,
     documentBuilderFactory,
     offenderPhysicalAttributesBuilderFactory,
+    offenderProfileBuilderFactory,
   )
 }
 
@@ -303,6 +313,7 @@ class BookingBuilder(
   private val csipReportBuilderFactory: CSIPReportBuilderFactory,
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
   private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
+  private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -650,6 +661,22 @@ class BookingBuilder(
         weightPounds = weightPounds,
       ).also {
         offenderBooking.physicalAttributes += it
+      }
+    }
+
+  override fun profile(
+    checkDate: LocalDate,
+    sequence: Long,
+    dsl: OffenderProfileDsl.() -> Unit,
+  ): OffenderProfile = offenderProfileBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        checkDate = checkDate,
+        sequence = sequence,
+      ).also {
+        offenderBooking.profiles += it
+        builder.apply(dsl)
       }
     }
 
