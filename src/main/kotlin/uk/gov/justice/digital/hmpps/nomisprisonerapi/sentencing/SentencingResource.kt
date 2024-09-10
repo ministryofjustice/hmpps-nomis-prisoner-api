@@ -1136,6 +1136,8 @@ data class CreateCourtCaseRequest(
   val status: String,
   // the prototype implies only 1 appearance can be associated with the case on creation
   val courtAppearance: CourtAppearanceRequest? = null,
+  // optional case reference (dps holds case ref at the appearance level - max of one when creating a case)
+  val caseReference: String? = null,
 
   /* not currently provided by sentencing service:
   caseSequence: Int,

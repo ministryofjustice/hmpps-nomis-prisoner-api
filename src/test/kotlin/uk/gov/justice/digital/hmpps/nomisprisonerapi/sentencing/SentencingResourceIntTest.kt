@@ -1371,6 +1371,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .body(
             BodyInserters.fromValue(
               createCourtCaseRequestHierarchy(
+                caseReference = "TT33333333",
                 courtAppearance = createCourtAppearanceRequest(
                   courtEventChargesToCreate = mutableListOf(
                     createOffenderChargeRequest(),
@@ -1411,6 +1412,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(offenderNo)
           .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("caseInfoNumber").isEqualTo("TT33333333")
           .jsonPath("courtId").isEqualTo("COURT1")
           .jsonPath("caseStatus.code").isEqualTo("A")
           .jsonPath("caseStatus.description").isEqualTo("Active")
@@ -3855,6 +3857,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     legalCaseType: String = "A",
     startDate: LocalDate = LocalDate.of(2023, 1, 1),
     status: String = "A",
+    caseReference: String? = "TT22222222",
     courtAppearance: CourtAppearanceRequest = createCourtAppearanceRequest(),
   ) =
 
@@ -3864,6 +3867,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       startDate = startDate,
       status = status,
       courtAppearance = courtAppearance,
+      caseReference = caseReference,
     )
 
   private fun createCourtCaseWithoutAppearance(
