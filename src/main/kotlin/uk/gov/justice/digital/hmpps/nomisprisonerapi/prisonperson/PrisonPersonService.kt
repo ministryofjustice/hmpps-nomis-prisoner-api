@@ -62,8 +62,12 @@ class PrisonPersonService(
       }
   }
 
-  fun getProfileDetails(offenderNo: String): PrisonerProfileDetailsResponse =
-    bookingRepository.findAllByOffenderNomsId(offenderNo)
+  fun getProfileDetails(offenderNo: String): PrisonerProfileDetailsResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("No offender found for $offenderNo")
+    }
+
+    return bookingRepository.findAllByOffenderNomsId(offenderNo)
       .filterNot { it.profiles.isEmpty() }
       .map { booking ->
         BookingProfileDetailsResponse(
@@ -88,6 +92,7 @@ class PrisonPersonService(
       }
       .filterNotNull()
       .let { PrisonerProfileDetailsResponse(offenderNo = offenderNo, bookings = it) }
+  }
 
   // NOMIS truncates the time from booking end date, so try and get the accurate time from the last release movement
   private fun OffenderBooking.getReleaseTime(): LocalDateTime? =
