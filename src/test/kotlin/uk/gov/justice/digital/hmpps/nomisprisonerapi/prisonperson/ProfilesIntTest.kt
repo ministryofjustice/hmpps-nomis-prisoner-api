@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
 
 import io.opentelemetry.sdk.testing.assertj.OpenTelemetryAssertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -9,43 +11,189 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 class ProfilesIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Autowired
-  private lateinit var bookingRepository: OffenderBookingRepository
-
-  @Autowired
   private lateinit var repository: Repository
+
+  // TODO remove and replace with calls to the API when it is available
+  @Autowired
+  private lateinit var service: PrisonPersonService
+
+  @AfterEach
+  fun cleanUp() {
+    repository.deleteOffenders()
+  }
 
   @Nested
   inner class GetProfiles {
     private lateinit var booking: OffenderBooking
 
-    @Test
-    fun `should return profile details from the DB`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking {
-            profile {
-              detail(profileType = "L_EYE_C", profileCode = "RED")
-              detail(profileType = "SHOESIZE", profileCode = "8.5")
+    // The DB column is a DATE type so truncates milliseconds, but bizarrely H2 uses half-up rounding so I have to emulate here or tests fail
+    val today = LocalDateTime.now().roundToNearestSecond()
+    val yesterday = today.minusDays(1)
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should return profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday) {
+              profile {
+                detail(profileType = "L_EYE_C", profileCode = "RED")
+                detail(profileType = "SHOESIZE", profileCode = "8.5")
+              }
             }
           }
         }
+
+        with(service.getProfileDetails("A1234AA")) {
+          assertThat(offenderNo).isEqualTo("A1234AA")
+          assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
+            .containsExactly(tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true))
+          assertThat(bookings[0].profileDetails).extracting("type", "code")
+            .containsExactlyInAnyOrder(
+              tuple("L_EYE_C", "RED"),
+              tuple("SHOESIZE", "8.5"),
+            )
+          assertThat(bookings[0].profileDetails[0].createDateTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
+          assertThat(bookings[0].profileDetails[0].createdBy).isEqualTo("SA")
+        }
       }
 
-      repository.runInTransaction {
-        val profiles = bookingRepository.findLatestByOffenderNomsId("A1234AA")!!.profiles
+      @Test
+      fun `should ignore null profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              profile {
+                detail(profileType = "L_EYE_C", profileCode = "RED")
+                detail(profileType = "SHOESIZE", profileCode = null)
+              }
+            }
+          }
+        }
 
-        assertThat(profiles.first().profileDetails).extracting("id.profileType.type", "profileCodeId")
-          .containsExactlyInAnyOrder(
-            tuple("L_EYE_C", "RED"),
-            tuple("SHOESIZE", "8.5"),
-          )
+        with(service.getProfileDetails("A1234AA")) {
+          assertThat(bookings[0].profileDetails).extracting("type", "code")
+            .containsExactlyInAnyOrder(
+              tuple("L_EYE_C", "RED"),
+            )
+        }
+      }
+
+      @Test
+      fun `should return empty list if no bookings`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA")
+        }
+
+        with(service.getProfileDetails("A1234AA")) {
+          assertThat(bookings).isEmpty()
+        }
+      }
+
+      @Test
+      fun `should return empty list if no profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking()
+          }
+        }
+
+        with(service.getProfileDetails("A1234AA")) {
+          assertThat(bookings).isEmpty()
+        }
+      }
+
+      @Test
+      fun `should return empty list if all profile details are null`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking {
+              profile {
+                detail(profileType = "L_EYE_C", profileCode = null)
+                detail(profileType = "SHOESIZE", profileCode = null)
+              }
+            }
+          }
+        }
+
+        with(service.getProfileDetails("A1234AA")) {
+          assertThat(bookings).isEmpty()
+        }
+      }
+
+      // There are only 5 bookings in production with multiple profile details. We'll handle these manually rather than complicate the migration/sync.
+      @Test
+      fun `should only return the first profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking {
+              profile(sequence = 1) {
+                detail(profileType = "L_EYE_C", profileCode = "RED")
+                detail(profileType = "SHOESIZE", profileCode = "8.5")
+              }
+              profile(sequence = 2) {
+                detail(profileType = "R_EYE_C", profileCode = "BLUE")
+                detail(profileType = "BUILD", profileCode = "SLIM")
+              }
+            }
+          }
+        }
+
+        with(service.getProfileDetails("A1234AA")) {
+          assertThat(bookings[0].profileDetails).extracting("type", "code")
+            .containsExactlyInAnyOrder(
+              tuple("L_EYE_C", "RED"),
+              tuple("SHOESIZE", "8.5"),
+            )
+        }
+      }
+
+      @Test
+      fun `should return profile details from old bookings`() {
+        lateinit var oldBooking: OffenderBooking
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile {
+                detail(profileType = "HAIR", profileCode = "BROWN")
+                detail(profileType = "FACIAL_HAIR", profileCode = "CLEAN SHAVEN")
+              }
+            }
+            oldBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              profile {
+                detail(profileType = "HAIR", profileCode = "BALD")
+                detail(profileType = "FACIAL_HAIR", profileCode = "BEARDED")
+              }
+            }
+          }
+        }
+
+        with(service.getProfileDetails("A1234AA")) {
+          assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
+            .containsExactly(
+              tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true),
+              tuple(oldBooking.bookingId, oldBooking.bookingBeginDate, oldBooking.bookingEndDate, false),
+            )
+          assertThat(bookings[0].profileDetails).extracting("type", "code")
+            .containsExactlyInAnyOrder(
+              tuple("HAIR", "BROWN"),
+              tuple("FACIAL_HAIR", "CLEAN SHAVEN"),
+            )
+          assertThat(bookings[1].profileDetails).extracting("type", "code")
+            .containsExactlyInAnyOrder(
+              tuple("HAIR", "BALD"),
+              tuple("FACIAL_HAIR", "BEARDED"),
+            )
+        }
       }
     }
   }

@@ -504,13 +504,6 @@ class PrisonPersonIntTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectBody<PrisonerPhysicalAttributesResponse>()
 
-  private fun LocalDateTime.roundToNearestSecond(): LocalDateTime {
-    val secondsOnly = this.truncatedTo(ChronoUnit.SECONDS)
-    val nanosOnly = this.nano
-    val nanosRounded = if (nanosOnly >= 500_000_000) 1 else 0
-    return secondsOnly.plusSeconds(nanosRounded.toLong())
-  }
-
   @Nested
   @DisplayName("GET /prisoners/{offenderNo}/prison-person/reconciliation")
   inner class GetPrisonPersonReconciliation {
@@ -1092,4 +1085,11 @@ class PrisonPersonIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody<UpsertPhysicalAttributesResponse>()
   }
+}
+
+fun LocalDateTime.roundToNearestSecond(): LocalDateTime {
+  val secondsOnly = this.truncatedTo(ChronoUnit.SECONDS)
+  val nanosOnly = this.nano
+  val nanosRounded = if (nanosOnly >= 500_000_000) 1 else 0
+  return secondsOnly.plusSeconds(nanosRounded.toLong())
 }

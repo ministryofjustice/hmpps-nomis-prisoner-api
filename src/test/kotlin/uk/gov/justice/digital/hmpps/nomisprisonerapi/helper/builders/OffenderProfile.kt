@@ -17,7 +17,7 @@ interface OffenderProfileDsl {
   fun detail(
     listSequence: Long = 99,
     profileType: String = "BUILD",
-    profileCode: String = "SMALL",
+    profileCode: String? = "SMALL",
   ): OffenderProfileDetail
 }
 
@@ -51,7 +51,7 @@ class OffenderProfileBuilder(
   override fun detail(
     listSequence: Long,
     profileType: String,
-    profileCode: String,
+    profileCode: String?,
   ): OffenderProfileDetail =
     detailBuilderFactory.builder().build(
       profile = offenderProfile,
