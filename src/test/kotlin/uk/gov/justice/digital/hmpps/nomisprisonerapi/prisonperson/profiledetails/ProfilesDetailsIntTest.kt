@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.profiledetails
 
 import io.opentelemetry.sdk.testing.assertj.OpenTelemetryAssertions.assertThat
 import org.assertj.core.api.Assertions.tuple
@@ -14,20 +14,16 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerProfileDetailsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.roundToNearestSecond
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-class ProfilesIntTest : IntegrationTestBase() {
+class ProfilesDetailsIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Autowired
   private lateinit var repository: Repository
-
-  // TODO remove and replace with calls to the API when it is available
-  @Autowired
-  private lateinit var service: PrisonPersonService
 
   @AfterEach
   fun cleanUp() {
@@ -139,9 +135,12 @@ class ProfilesIntTest : IntegrationTestBase() {
           offender(nomsId = "A1234AA")
         }
 
-        with(service.getProfileDetails("A1234AA")) {
-          assertThat(bookings).isEmpty()
-        }
+        webTestClient.getProfileDetailsOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).isEmpty()
+            }
+          }
       }
 
       @Test

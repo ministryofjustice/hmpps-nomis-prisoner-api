@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.physicalattributes
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -15,20 +15,13 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonPersonReconciliationResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerProfileDetailsResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesResponse
 
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class PrisonPersonResource(
-  private val service: PrisonPersonService,
-) {
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
+class PhysicalAttributesResource(private val service: PhysicalAttributesService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
   @GetMapping("/prisoners/{offenderNo}/physical-attributes")
   @Operation(
     summary = "Get physical attributes for a prisoner",
@@ -80,59 +73,6 @@ class PrisonPersonResource(
     @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
   ): PrisonerPhysicalAttributesResponse = service.getPhysicalAttributes(offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
-  @GetMapping("/prisoners/{offenderNo}/prison-person/reconciliation")
-  @Operation(
-    summary = "Get prison person reconciliation details for a prisoner",
-    description = "Retrieves reconciliation details used to check NOMIS and DPS are aligned. Requires ROLE_NOMIS_PRISON_PERSON",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Physical Attributes Returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = PrisonPersonReconciliationResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISON_PERSON",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prisoner does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getReconciliation(
-    @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
-  ): PrisonPersonReconciliationResponse = service.getReconciliation(offenderNo)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
   @PutMapping("/prisoners/{offenderNo}/physical-attributes")
   @Operation(
     summary = "Upsert physical attributes for a prisoner",
@@ -192,56 +132,4 @@ class PrisonPersonResource(
     @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
     @RequestBody @Valid request: UpsertPhysicalAttributesRequest,
   ): UpsertPhysicalAttributesResponse = service.upsertPhysicalAttributes(offenderNo, request)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
-  @GetMapping("/prisoners/{offenderNo}/profile-details")
-  @Operation(
-    summary = "Get profile details for a prisoner",
-    description = "Retrieves profile details for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_PRISON_PERSON",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Profile Details Returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = PrisonerProfileDetailsResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISON_PERSON",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prisoner does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getProfileDetails(
-    @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
-  ): PrisonerProfileDetailsResponse = service.getProfileDetails(offenderNo)
 }
