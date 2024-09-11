@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonPersonReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerProfileDetailsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesResponse
 
@@ -191,4 +192,56 @@ class PrisonPersonResource(
     @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
     @RequestBody @Valid request: UpsertPhysicalAttributesRequest,
   ): UpsertPhysicalAttributesResponse = service.upsertPhysicalAttributes(offenderNo, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
+  @GetMapping("/prisoners/{offenderNo}/profile-details")
+  @Operation(
+    summary = "Get profile details for a prisoner",
+    description = "Retrieves profile details for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_PRISON_PERSON",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Profile Details Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PrisonerProfileDetailsResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISON_PERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getProfileDetails(
+    @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
+  ): PrisonerProfileDetailsResponse = service.getProfileDetails(offenderNo)
 }
