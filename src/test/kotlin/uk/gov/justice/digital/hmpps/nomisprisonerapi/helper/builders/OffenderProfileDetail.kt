@@ -38,7 +38,7 @@ class OffenderProfileDetailBuilder(
   fun build(
     listSequence: Long,
     profileTypeId: String,
-    profileCodeId: String,
+    profileCodeId: String?,
     profile: OffenderProfile,
   ): OffenderProfileDetail = OffenderProfileDetail(
     id = OffenderProfileDetailId(
@@ -47,7 +47,7 @@ class OffenderProfileDetailBuilder(
       profileType = repository.lookupProfileType(profileTypeId),
     ),
     offenderProfile = profile,
-    profileCode = repository.lookupProfileCode(profileTypeId, profileCodeId),
+    profileCode = profileCodeId?.let { repository.lookupProfileCode(profileTypeId, profileCodeId) },
     profileCodeId = profileCodeId,
     listSequence = listSequence,
   )

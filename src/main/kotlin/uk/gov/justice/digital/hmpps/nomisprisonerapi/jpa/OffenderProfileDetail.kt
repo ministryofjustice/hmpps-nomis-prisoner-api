@@ -10,7 +10,9 @@ import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import java.io.Serializable
+import java.time.LocalDateTime
 
 @Embeddable
 data class OffenderProfileDetailId(
@@ -56,6 +58,27 @@ data class OffenderProfileDetail(
   @Column(name = "PROFILE_CODE", nullable = false)
   val profileCodeId: String? = profileCode?.id?.code,
 ) {
+
+  @Column(name = "CREATE_DATETIME")
+  @Generated
+  lateinit var createDatetime: LocalDateTime
+
+  @Column(name = "CREATE_USER_ID")
+  @Generated
+  lateinit var createUserId: String
+
+  @Column(name = "MODIFY_DATETIME")
+  @Generated
+  var modifyDatetime: LocalDateTime? = null
+
+  @Column(name = "MODIFY_USER_ID")
+  @Generated
+  var modifyUserId: String? = null
+
+  @Column(name = "AUDIT_MODULE_NAME")
+  @Generated
+  var auditModuleName: String? = null
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

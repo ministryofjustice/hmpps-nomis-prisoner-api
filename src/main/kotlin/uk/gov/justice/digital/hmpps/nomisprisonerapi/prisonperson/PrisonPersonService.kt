@@ -12,9 +12,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhysicalAttributesRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.BookingPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.BookingProfileDetailsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PhysicalAttributesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonPersonReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerPhysicalAttributesResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.PrisonerProfileDetailsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.ProfileDetailsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.api.UpsertPhysicalAttributesResponse
 import java.time.LocalDateTime
@@ -58,6 +61,33 @@ class PrisonPersonService(
         PrisonerPhysicalAttributesResponse(offenderNo = offenderNo, bookings = it)
       }
   }
+
+  fun getProfileDetails(offenderNo: String): PrisonerProfileDetailsResponse =
+    bookingRepository.findAllByOffenderNomsId(offenderNo)
+      .filterNot { it.profiles.isEmpty() }
+      .map { booking ->
+        BookingProfileDetailsResponse(
+          bookingId = booking.bookingId,
+          startDateTime = booking.bookingBeginDate,
+          endDateTime = booking.getReleaseTime(),
+          latestBooking = booking.bookingSequence == 1,
+          profileDetails = booking.profiles.first().profileDetails
+            .filter { pd -> pd.profileCodeId != null }
+            .map { pd ->
+              ProfileDetailsResponse(
+                type = pd.id.profileType.type,
+                code = pd.profileCodeId!!,
+                createDateTime = pd.createDatetime,
+                createdBy = pd.createUserId,
+                modifiedDateTime = pd.modifyDatetime,
+                modifiedBy = pd.modifyUserId,
+                auditModuleName = pd.auditModuleName,
+              )
+            },
+        ).takeIf { bookingResponse -> bookingResponse.profileDetails.isNotEmpty() }
+      }
+      .filterNotNull()
+      .let { PrisonerProfileDetailsResponse(offenderNo = offenderNo, bookings = it) }
 
   // NOMIS truncates the time from booking end date, so try and get the accurate time from the last release movement
   private fun OffenderBooking.getReleaseTime(): LocalDateTime? =
