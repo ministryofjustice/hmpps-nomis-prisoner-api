@@ -104,6 +104,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
                 caseNoteSubType = "SA",
                 author = staff1,
                 caseNoteText = "A note",
+                date = LocalDateTime.parse("2021-02-03T04:05:06"),
               )
             }.bookingId
           }
@@ -123,11 +124,14 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseNoteType.code").isEqualTo("ALL")
           .jsonPath("caseNoteSubType.code").isEqualTo("SA")
           .jsonPath("authorUsername").isEqualTo("JANE.NARK")
+          .jsonPath("authorStaffId").isEqualTo(staff1.id)
+          .jsonPath("authorName").isEqualTo("JANE NARK")
           .jsonPath("prisonId").isEqualTo("BXI")
           .jsonPath("caseNoteText").isEqualTo("A note")
-          .jsonPath("amended").isEqualTo("false")
-          .jsonPath("occurrenceDateTime")
-          .value<String> { assertThat(LocalDateTime.parse(it)).isCloseTo(now, within(2, ChronoUnit.MINUTES)) }
+          .jsonPath("amendments").isEmpty()
+          .jsonPath("occurrenceDateTime").isEqualTo("2021-02-03T04:05:06")
+          .jsonPath("noteSourceCode").isEqualTo("INST")
+          .jsonPath("createdDatetime").isEqualTo("2021-02-03T04:05:06")
           .jsonPath("auditModuleName").isEqualTo("A_MODULE")
       }
     }

@@ -16,6 +16,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Service
 @Transactional
@@ -61,9 +64,10 @@ class CaseNotesService(
         agencyLocation = offenderBooking.location,
         caseNoteText = request.caseNoteText,
         amendmentFlag = false,
-        // TODO
+        // Use date/timeCreation rather than createdDatetime. both provided for now
         dateCreation = request.occurrenceDateTime.toLocalDate(),
         timeCreation = request.occurrenceDateTime,
+        createdDatetime = request.occurrenceDateTime,
       ),
     )
     return CreateCaseNoteResponse(caseNote.id, offenderBooking.bookingId)
@@ -108,12 +112,64 @@ class CaseNotesService(
     caseNoteSubType = caseNoteSubType.toCodeDescription(),
     occurrenceDateTime = occurrenceDateTime,
     authorUsername = author.accounts.first().username,
+    // NB ^ omitted by the /{offenderNo}/case-notes/v2 endpoint
+    authorStaffId = author.id,
+    authorName = "${author.firstName} ${author.lastName}",
     // TODO not sure what will be required here
     prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
-    caseNoteText = caseNoteText,
-    amended = amendmentFlag,
+    caseNoteText = parseMainText(caseNoteText),
+    amendments = parseAmendments(caseNoteText),
+    noteSourceCode = noteSourceCode,
+    createdDatetime = LocalDateTime.of(dateCreation, timeCreation?.toLocalTime() ?: LocalTime.MIDNIGHT),
     auditModuleName = auditModuleName,
   )
+
+  val pattern =
+    // "<text> ...[<username> updated the case notes on <date> <time>] <amend text>"
+    " \\.\\.\\.\\[([A-Za-z0-9_]+) updated the case notes on (\\d{4}/\\d{2}/\\d{2}) (\\d{2}:\\d{2}:\\d{2})] "
+      .toRegex()
+
+  val dateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
+
+  internal fun parseMainText(caseNoteText: String?): String? {
+    if (caseNoteText == null) {
+      return null
+    }
+    return pattern
+      .find(caseNoteText)
+      ?.let { caseNoteText.slice(0..it.range.first - 1) }
+      ?: caseNoteText
+  }
+
+  internal fun parseAmendments(caseNoteText: String?): List<CaseNoteAmendment> {
+    if (caseNoteText == null) {
+      return emptyList()
+    }
+
+    val matchResults = pattern.findAll(caseNoteText)
+    val matchLastIndex = matchResults.count() - 1
+
+    return matchResults.mapIndexed { index, matchResult ->
+
+      val (user, date, time) = matchResult.destructured
+      val startOfNext = if (matchLastIndex > index) {
+        matchResults.elementAt(index + 1).range.first - 1
+      } else {
+        caseNoteText.length - 1
+      }
+
+      val amendText = caseNoteText.slice(matchResult.range.last + 1..startOfNext)
+      val staff = staffUserAccountRepository.findByUsername(user)?.staff
+
+      CaseNoteAmendment(
+        text = amendText,
+        authorUsername = user,
+        authorUserId = staff?.id,
+        authorName = staff?.run { "$firstName $lastName" },
+        createdDateTime = LocalDateTime.parse("$date $time", dateTimeFormat),
+      )
+    }.toList()
+  }
 
   /**
    * For reconciliation or migration
