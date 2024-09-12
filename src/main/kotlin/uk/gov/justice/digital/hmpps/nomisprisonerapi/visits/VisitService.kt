@@ -180,7 +180,6 @@ class VisitService(
     visit.visitors.forEach {
       it.eventOutcome = absenceEventOutcome
       it.eventStatus = cancelledEventStatus
-      it.outcomeReason = visitOutcome
       it.outcomeReasonCode = visitOutcome.code
     }
 
