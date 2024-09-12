@@ -115,7 +115,8 @@ internal class VisitServiceTest {
     bookingId = OFFENDER_BOOKING_ID,
     offender = defaultOffender,
     bookingBeginDate = LocalDateTime.now(),
-  ).apply { // add circular reference
+  ).apply {
+    // add circular reference
     visitBalance = OffenderVisitBalance(
       offenderBooking = this,
       remainingVisitOrders = 3,
@@ -143,7 +144,8 @@ internal class VisitServiceTest {
     ),
     commentText = "some comments",
     visitorConcernText = "concerns",
-  ).apply { // add circular reference
+  ).apply {
+    // add circular reference
     visitors.add(VisitVisitor(visit = this, offenderBooking = defaultOffenderBooking))
     visitors.add(VisitVisitor(visit = this, person = Person(-7L, "First", "Last")))
   }
@@ -490,7 +492,7 @@ internal class VisitServiceTest {
       with(defaultVisit) {
         assertThat(visitStatus.code).isEqualTo("CANC")
 
-        assertThat(visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReason.code")
+        assertThat(visitors).extracting("eventOutcome.code", "eventStatus.code", "outcomeReasonCode")
           .containsExactly(
             Tuple.tuple("ABS", "CANC", "OFFCANC"),
             Tuple.tuple("ABS", "CANC", "OFFCANC"),
