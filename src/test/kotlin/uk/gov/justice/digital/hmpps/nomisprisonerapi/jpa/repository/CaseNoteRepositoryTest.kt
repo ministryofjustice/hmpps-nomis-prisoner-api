@@ -64,6 +64,7 @@ class CaseNoteRepositoryTest {
         noteSourceCode = NoteSourceCode.INST,
         dateCreation = timestamp.toLocalDate(),
         timeCreation = timestamp,
+        createdDatetime = timestamp,
       ),
     )
 

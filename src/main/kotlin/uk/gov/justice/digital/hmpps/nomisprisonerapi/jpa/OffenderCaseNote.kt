@@ -101,15 +101,19 @@ class OffenderCaseNote(
   @Enumerated(EnumType.STRING)
   var noteSourceCode: NoteSourceCode? = null,
 
-  @Column(name = "DATE_CREATION")
+  @Column(name = "DATE_CREATION", nullable = false)
   @CreatedDate
-  var dateCreation: LocalDate? = null,
-  // can be different to both the contact date and the create_datetime
+  var dateCreation: LocalDate,
+  // Actually nullable but never null in prod data
+  // Can be different to both the contact date and the create_datetime
 
   @Column(name = "TIME_CREATION")
   @CreatedDate
   var timeCreation: LocalDateTime? = null,
   // date part always the same as DATE_CREATION
+
+  @Column(name = "CREATE_DATETIME")
+  var createdDatetime: LocalDateTime,
 
   val auditModuleName: String? = null,
 ) {

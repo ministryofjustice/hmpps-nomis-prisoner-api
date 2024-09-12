@@ -71,6 +71,7 @@ class OffenderCaseNoteBuilder(
     dateCreation = date.toLocalDate(),
     timeCreation = date,
     auditModuleName = "A_MODULE",
+    createdDatetime = date,
   )
     .let { repository.save(it) }
     .also { casenote = it }

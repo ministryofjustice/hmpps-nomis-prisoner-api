@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import java.time.LocalDateTime
 
 @RestController
@@ -246,16 +247,28 @@ data class CaseNoteResponse(
   val caseNoteType: CodeDescription,
   @Schema(description = "The case note subtype")
   val caseNoteSubType: CodeDescription,
+  @Schema(description = "Whether system-generated")
+  val noteSourceCode: NoteSourceCode? = null,
   @Schema(description = "Date case note occurred")
   val occurrenceDateTime: LocalDateTime? = null,
-  @Schema(description = "Free format text of person or department that created the case note")
+
+  @Schema(description = "Author STAFF_ID")
+  val authorStaffId: Long,
+  @Schema(description = "Author username or login name")
   val authorUsername: String,
+  @Schema(description = "Free format text of person or department that created the case note (first and last names)")
+  val authorName: String,
+
   @Schema(description = "Prison id")
   val prisonId: String? = null,
   @Schema(description = "Free format text body of case note")
   var caseNoteText: String? = null,
-  @Schema(description = "Whether the case note was amended", example = "false")
-  val amended: Boolean,
+
+  @Schema(description = "Amendments to the text")
+  val amendments: List<CaseNoteAmendment> = mutableListOf(),
+
+  @Schema(description = "Created timestamp")
+  var createdDatetime: LocalDateTime,
   @Schema(description = "Which screen (or DPS) created the case note", example = "false")
   val auditModuleName: String? = null,
 )
@@ -278,6 +291,20 @@ data class CreateCaseNoteRequest(
   @Size(max = 4000) // For Swagger - custom annotations not well-supported
   @Schema(description = "Free format text body of case note")
   val caseNoteText: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CaseNoteAmendment(
+  @Schema(description = "Free format text body of amendment")
+  val text: String,
+  @Schema(description = "Author login name")
+  val authorUsername: String,
+  @Schema(description = "Author STAFF_ID")
+  val authorUserId: Long?,
+  @Schema(description = "Free format text of person or department that added the amendment")
+  val authorName: String?,
+  @Schema(description = "Amendment created timestamp")
+  val createdDateTime: LocalDateTime,
 )
 
 @Schema(description = "A response after a case note created in NOMIS")
