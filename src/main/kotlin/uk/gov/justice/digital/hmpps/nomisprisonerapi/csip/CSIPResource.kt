@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentIdResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.factors.CSIPFactorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -454,6 +453,30 @@ data class Actions(
   val csraOrRsraReview: Boolean,
   val serviceReferral: Boolean,
   val simReferral: Boolean,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CSIPFactorResponse(
+  @Schema(description = "Factor type id")
+  val id: Long,
+  @Schema(description = "Contributory Factor")
+  val type: CodeDescription,
+  @Schema(description = "Factor comment")
+  val comment: String?,
+
+  @Schema(description = "The date and time the factor was created")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who created the factor")
+  val createdBy: String,
+  @Schema(description = "Real name of the person who created the factor")
+  val createdByDisplayName: String?,
+  @Schema(description = "The date and time the factor was last updated")
+  val lastModifiedDateTime: LocalDateTime?,
+  @Schema(description = "The username of the person who last updated the factor")
+  val lastModifiedBy: String?,
+  @Schema(description = "Real name of the person who last updated the factor")
+  val lastModifiedByDisplayName: String?,
+
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

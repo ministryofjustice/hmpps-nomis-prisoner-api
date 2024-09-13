@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.factors
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -16,8 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -106,21 +103,3 @@ class CSIPFactorResource(private val csipFactorService: CSIPFactorService) {
     csipFactorId: Long,
   ): Unit = csipFactorService.deleteCSIPFactor(csipFactorId)
 }
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class CSIPFactorResponse(
-  @Schema(description = "Factor type id")
-  val id: Long,
-  @Schema(description = "Contributory Factor")
-  val type: CodeDescription,
-  @Schema(description = "Factor comment")
-  val comment: String?,
-  @Schema(description = "The date and time the report was created")
-  val createDateTime: LocalDateTime,
-  @Schema(description = "The username of the person who created the report")
-  val createdBy: String,
-  @Schema(description = "The date and time the report was last updated")
-  val lastModifiedDateTime: LocalDateTime?,
-  @Schema(description = "The username of the person who last updated the report")
-  val lastModifiedBy: String?,
-)

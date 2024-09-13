@@ -50,9 +50,17 @@ class CSIPFactor(
   @Column
   var auditModuleName: String? = null,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  var createdByStaffUserAccount: StaffUserAccount? = null,
+
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   @Generated
   var lastModifiedUsername: String? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  var lastModifiedByStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
   @Generated
