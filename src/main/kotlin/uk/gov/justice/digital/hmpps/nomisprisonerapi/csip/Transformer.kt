@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.csip
 
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentIdResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.factors.toFactorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
@@ -76,6 +76,19 @@ private fun CSIPReport.toSCSResponse() =
     recordedByDisplayName = outcomeCreatedByStaffUserAccount.asDisplayName(),
     recordedDate = outcomeCreateDate,
     reasonForDecision = reasonForDecision,
+  )
+
+fun CSIPFactor.toFactorResponse() =
+  CSIPFactorResponse(
+    id = id,
+    type = type.toCodeDescription(),
+    comment = comment,
+    createDateTime = createDatetime,
+    createdBy = createUsername,
+    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
+    lastModifiedDateTime = lastModifiedDateTime,
+    lastModifiedBy = lastModifiedUsername,
+    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPReport.toInvestigationResponse() =
