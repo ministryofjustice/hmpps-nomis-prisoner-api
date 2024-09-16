@@ -25,8 +25,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderContactBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBuilder
@@ -78,6 +78,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
 
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
+
   lateinit var offenderNo: String
   lateinit var offenderAtMoorlands: Offender
   lateinit var anotherOffenderAtMoorlands: Offender
@@ -89,30 +92,28 @@ class VisitResourceIntTest : IntegrationTestBase() {
   private val updateVisitWithPeople: () -> UpdateVisitRequest = { updateVisit(threePeople.map { it.id }) }
 
   internal fun createPrisoner() {
-    threePeople.addAll(
-      (1..3).map {
-        repository.save(LegacyPersonBuilder())
-      },
-    )
-    offenderAtMoorlands = repository.save(
-      LegacyOffenderBuilder()
-        .withBooking(
-          OffenderBookingBuilder()
-            .withVisitBalance()
-            .withContacts(*threePeople.map { OffenderContactBuilder(it) }.toTypedArray()),
-        ),
-    )
+    nomisDataBuilder.build {
+      threePeople.add(person { })
+      threePeople.add(person { })
+      threePeople.add(person { })
+
+      offenderAtMoorlands = offender {
+        booking {
+          visitBalance { }
+          contact(person = threePeople[0])
+          contact(person = threePeople[1])
+          contact(person = threePeople[2])
+        }
+      }
+      anotherOffenderAtMoorlands = offender(nomsId = "A5432KU") {
+        booking {
+          visitBalance { }
+        }
+      }
+    }
 
     offenderNo = offenderAtMoorlands.nomsId
     offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
-
-    anotherOffenderAtMoorlands = repository.save(
-      LegacyOffenderBuilder(nomsId = "A5432KU")
-        .withBooking(
-          OffenderBookingBuilder()
-            .withVisitBalance(),
-        ),
-    )
   }
 
   @DisplayName("Create")
@@ -1000,13 +1001,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun setUp() {
-        anotherOffender = repository.save(
-          LegacyOffenderBuilder(nomsId = "A9999AA")
-            .withBooking(
-              OffenderBookingBuilder()
-                .withVisitBalance(),
-            ),
-        )
+        nomisDataBuilder.build {
+          anotherOffender = offender(nomsId = "A9999AA") {
+            booking {
+              visitBalance { }
+            }
+          }
+        }
       }
 
       @AfterEach
@@ -1035,32 +1036,26 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun setUp() {
-        johnSmith = repository.save(LegacyPersonBuilder(firstName = "JOHN", lastName = "SMITH"))
-        neoAyomide = repository.save(LegacyPersonBuilder(firstName = "NEO", lastName = "AYOMIDE"))
-        kashfAbidi = repository.save(LegacyPersonBuilder(firstName = "KASHF", lastName = "ABIDI"))
-
-        offenderWithVisit = repository.save(
-          LegacyOffenderBuilder(nomsId = "A7688JM")
-            .withBooking(
-              OffenderBookingBuilder()
-                .withVisitBalance()
-                .withContacts(
-                  *listOf(johnSmith, neoAyomide, kashfAbidi).map { OffenderContactBuilder(it) }
-                    .toTypedArray(),
-                ),
-            ),
-        )
-
-        offenderWithVisitNoBalance = repository.save(
-          LegacyOffenderBuilder(nomsId = "A7688JJ")
-            .withBooking(
-              OffenderBookingBuilder()
-                .withContacts(
-                  *listOf(johnSmith, neoAyomide, kashfAbidi).map { OffenderContactBuilder(it) }
-                    .toTypedArray(),
-                ),
-            ),
-        )
+        nomisDataBuilder.build {
+          johnSmith = person(firstName = "JOHN", lastName = "SMITH")
+          neoAyomide = person(firstName = "NEO", lastName = "AYOMIDE")
+          kashfAbidi = person(firstName = "KASHF", lastName = "ABIDI")
+          offenderWithVisit = offender(nomsId = "A7688JM") {
+            booking {
+              visitBalance { }
+              contact(person = johnSmith)
+              contact(person = neoAyomide)
+              contact(person = kashfAbidi)
+            }
+          }
+          offenderWithVisitNoBalance = offender(nomsId = "A7688JJ") {
+            booking {
+              contact(person = johnSmith)
+              contact(person = neoAyomide)
+              contact(person = kashfAbidi)
+            }
+          }
+        }
 
         existingVisitId = createVisit(
           offenderWithVisit.nomsId,
@@ -1264,12 +1259,19 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithVisit() {
-        val person1 = repository.save(LegacyPersonBuilder())
-        val person2 = repository.save(LegacyPersonBuilder())
+        lateinit var person1: Person
+        lateinit var person2: Person
+
+        nomisDataBuilder.build {
+          person1 = person {}
+          person2 = person {}
+        }
+
         offenderAtMoorlands = repository.save(
           LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
+                // TODO move this to DSL
                 .withVisits(
                   VisitBuilder().withVisitors(
                     VisitVisitorBuilder(person1, leadVisitor = false),
@@ -1357,6 +1359,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithVisit() {
+        // TODO move to DSL by adding address and numbers
         val leadVisitor = repository.save(
           LegacyPersonBuilder(
             firstName = "Manon",
@@ -1372,6 +1375,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
+                // TODO - move to DSL
                 .withVisits(
                   VisitBuilder().withVisitors(
                     VisitVisitorBuilder(leadVisitor, leadVisitor = true),
@@ -1430,6 +1434,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
+                // TODO - move to DSL
                 .withVisits(
                   VisitBuilder()
                     .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
@@ -1485,6 +1490,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
               OffenderBookingBuilder()
+                // TODO - move to DSL
                 .withVisits(
                   VisitBuilder()
                     .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
@@ -1535,6 +1541,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         LegacyOffenderBuilder(nomsId = "A1234TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "MDI")
+              // TODO - move to DSL
               .withVisits(
                 VisitBuilder(
                   agyLocId = "MDI",
@@ -1560,6 +1567,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         LegacyOffenderBuilder(nomsId = "A4567TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "LEI")
+              // TODO - move to DSL
               .withVisits(
                 VisitBuilder(
                   agyLocId = "LEI",
@@ -1582,6 +1590,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         LegacyOffenderBuilder(nomsId = "A7897TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "BXI")
+              // TODO - move to DSL
               .withVisits(
                 VisitBuilder(
                   agyLocId = "BXI",
@@ -1843,6 +1852,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         LegacyOffenderBuilder(nomsId = "A1234TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "MDI")
+              // TODO - move to DSL
               .withVisits(
                 VisitBuilder(
                   agyLocId = "MDI",
@@ -1860,6 +1870,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         LegacyOffenderBuilder(nomsId = "A4567TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "LEI")
+              // TODO - move to DSL
               .withVisits(
                 VisitBuilder(
                   agyLocId = "LEI",
@@ -1885,6 +1896,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         LegacyOffenderBuilder(nomsId = "A7897TT")
           .withBooking(
             OffenderBookingBuilder(agencyLocationId = "BXI")
+              // TODO - move to DSL
               .withVisits(
                 VisitBuilder(
                   agyLocId = "BXI",

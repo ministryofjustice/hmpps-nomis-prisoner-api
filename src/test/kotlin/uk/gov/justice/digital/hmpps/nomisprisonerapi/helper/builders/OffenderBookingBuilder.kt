@@ -10,7 +10,7 @@ class OffenderBookingBuilder(
   var active: Boolean = true,
   var inOutStatus: String = "IN",
   var youthAdultCode: String = "N",
-  var visitBalanceBuilder: VisitBalanceBuilder? = null,
+  var visitBalanceBuilder: LegacyVisitBalanceBuilder? = null,
   var agencyLocationId: String = "BXI",
   var contacts: List<OffenderContactBuilder> = emptyList(),
   var visits: List<VisitBuilder> = emptyList(),
@@ -34,13 +34,8 @@ class OffenderBookingBuilder(
       offender.getAllBookings()?.add(this)
     }
 
-  fun withVisitBalance(visitBalanceBuilder: VisitBalanceBuilder = VisitBalanceBuilder()): OffenderBookingBuilder {
+  fun withVisitBalance(visitBalanceBuilder: LegacyVisitBalanceBuilder = LegacyVisitBalanceBuilder()): OffenderBookingBuilder {
     this.visitBalanceBuilder = visitBalanceBuilder
-    return this
-  }
-
-  fun withContacts(vararg contactBuilder: OffenderContactBuilder): OffenderBookingBuilder {
-    this.contacts = arrayOf(*contactBuilder).asList()
     return this
   }
 
