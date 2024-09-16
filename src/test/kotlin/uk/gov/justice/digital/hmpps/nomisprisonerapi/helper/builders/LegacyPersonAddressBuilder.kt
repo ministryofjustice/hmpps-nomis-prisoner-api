@@ -4,7 +4,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
 
-class PersonAddressBuilder(
+class LegacyPersonAddressBuilder(
   var premise: String = "41",
   var street: String = "High Street",
   var locality: String = "Sheffield",

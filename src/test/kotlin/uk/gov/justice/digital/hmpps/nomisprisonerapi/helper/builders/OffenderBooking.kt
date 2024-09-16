@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -261,6 +262,17 @@ interface BookingDsl {
     dsl: VisitBalanceDsl.() -> Unit = {},
   ): OffenderVisitBalance
 
+  @VisitDslMarker
+  fun visit(
+    visitTypeCode: String = "SCON",
+    visitStatusCode: String = "SCH",
+    startDateTimeString: String = "2022-01-01T12:05",
+    endDateTimeString: String = "2022-01-01T13:05",
+    agyLocId: String = "MDI",
+    agencyInternalLocationDescription: String? = "MDI-1-1-001",
+    dsl: VisitDsl.() -> Unit = {},
+  ): Visit
+
   @OffenderContactPersonDslMarker
   fun contact(
     person: Person,
@@ -305,6 +317,7 @@ class BookingBuilderFactory(
   private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
+  private val visitBuilderFactory: VisitBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -323,6 +336,7 @@ class BookingBuilderFactory(
     offenderProfileBuilderFactory,
     visitBalanceBuilderFactory,
     offenderContactPersonBuilderFactory,
+    visitBuilderFactory,
   )
 }
 
@@ -343,6 +357,7 @@ class BookingBuilder(
   private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
+  private val visitBuilderFactory: VisitBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -764,6 +779,30 @@ class BookingBuilder(
     )
     return offenderBooking.visitBalance!!
   }
+
+  override fun visit(
+    visitTypeCode: String,
+    visitStatusCode: String,
+    startDateTimeString: String,
+    endDateTimeString: String,
+    agyLocId: String,
+    agencyInternalLocationDescription: String?,
+    dsl: VisitDsl.() -> Unit,
+  ): Visit = visitBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        visitTypeCode = visitTypeCode,
+        visitStatusCode = visitStatusCode,
+        startDateTimeString = startDateTimeString,
+        endDateTimeString = endDateTimeString,
+        agyLocId = agyLocId,
+        agencyInternalLocationDescription = agencyInternalLocationDescription,
+      ).also {
+        offenderBooking.visits += it
+        builder.apply(dsl)
+      }
+    }
 
   override fun contact(
     person: Person,
