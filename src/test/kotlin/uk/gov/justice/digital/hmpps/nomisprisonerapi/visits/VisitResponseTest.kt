@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -52,7 +52,7 @@ internal class VisitResponseTest {
   ).apply {
     this.visitors.add(
       VisitVisitor(
-        person = PersonBuilder().build().apply { id = 88L },
+        person = LegacyPersonBuilder().build().apply { id = 88L },
         groupLeader = true,
         visit = this,
       ),
@@ -117,7 +117,7 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = PersonBuilder(
+              person = LegacyPersonBuilder(
                 phoneNumbers = listOf(
                   Triple(
                     "HOME",
@@ -141,7 +141,7 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = PersonBuilder(
+              person = LegacyPersonBuilder(
                 phoneNumbers = listOf(
                   Triple("HOME", "0123456789", null),
                   Triple("MOBL", "07973 121212", null),
@@ -162,7 +162,7 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = PersonBuilder(
+              person = LegacyPersonBuilder(
                 phoneNumbers = listOf(
                   Triple("HOME", "0123456789", null),
                   Triple("MOBL", "07973 121212", "x777"),
@@ -198,7 +198,7 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = PersonBuilder(
+              person = LegacyPersonBuilder(
                 phoneNumbers = listOf(
                   Triple("HOME", "0123456789", null),
                   Triple("MOBL", "07973 121212", "x777"),
@@ -269,10 +269,8 @@ internal class VisitResponseTest {
   }
 }
 
-fun anOffenderBooking(nomsId: String): OffenderBooking {
-  return OffenderBookingBuilder().build(
-    offender = LegacyOffenderBuilder(nomsId = nomsId).build(Gender("F", "FEMALE")),
-    bookingSequence = 1,
-    AgencyLocation(id = "LEI", description = "Leeds HMP"),
-  )
-}
+fun anOffenderBooking(nomsId: String): OffenderBooking = OffenderBookingBuilder().build(
+  offender = LegacyOffenderBuilder(nomsId = nomsId).build(Gender("F", "FEMALE")),
+  bookingSequence = 1,
+  AgencyLocation(id = "LEI", description = "Leeds HMP"),
+)

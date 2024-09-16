@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBalanceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
@@ -72,8 +72,8 @@ class VisitRepositoryTest {
         .withBooking(OffenderBookingBuilder().withVisitBalance()),
     ).latestBooking()
 
-    val seedPerson1 = builderRepository.save(PersonBuilder())
-    val seedPerson2 = builderRepository.save(PersonBuilder())
+    val seedPerson1 = builderRepository.save(LegacyPersonBuilder())
+    val seedPerson2 = builderRepository.save(LegacyPersonBuilder())
 
     val visit = Visit(
       offenderBooking = seedOffenderBooking,

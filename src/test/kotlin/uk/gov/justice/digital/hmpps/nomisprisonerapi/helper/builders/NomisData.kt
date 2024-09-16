@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MergeTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -31,6 +32,7 @@ class NomisDataBuilder(
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
+  private val personBuilderFactory: PersonBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -45,6 +47,7 @@ class NomisDataBuilder(
     incidentBuilderFactory,
     mergeTransactionBuilderFactory,
     templateBuilderFactory,
+    personBuilderFactory,
   ).apply(dsl)
 }
 
@@ -61,6 +64,7 @@ class NomisData(
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
+  private val personBuilderFactory: PersonBuilderFactory? = null,
 
 ) : NomisDataDsl {
   @StaffDslMarker
@@ -321,6 +325,14 @@ class NomisData(
           builder.apply(dsl)
         }
     }
+
+  override fun person(firstName: String, lastName: String, dsl: PersonDsl.() -> Unit): Person = personBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(lastName, firstName)
+        .also {
+          builder.apply(dsl)
+        }
+    }
 }
 
 @NomisDataDslMarker
@@ -444,6 +456,9 @@ interface NomisDataDsl {
     firstName2: String = "DEREK",
     dsl: MergeTransactionDsl.() -> Unit = {},
   ): MergeTransaction
+
+  @PersonDslMarker
+  fun person(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: PersonDsl.() -> Unit = {}): Person
 }
 
 @DslMarker
