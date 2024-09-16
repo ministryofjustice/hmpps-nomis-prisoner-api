@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -8,6 +9,7 @@ import jakarta.persistence.MapsId
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.type.YesNoConverter
 
 @Entity
 @Table(name = "OFFENDER_VISIT_BALANCES")
@@ -29,6 +31,7 @@ data class OffenderVisitBalance(
   var remainingPrivilegedVisitOrders: Int? = null,
 
   @Column(name = "VISIT_ALLOWANCE_INDICATOR")
+  @Convert(converter = YesNoConverter::class)
   val visitAllowanceIndicator: Boolean? = false,
 ) {
   override fun equals(other: Any?): Boolean {
@@ -42,7 +45,5 @@ data class OffenderVisitBalance(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(offenderBookingId = $offenderBookingId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(offenderBookingId = $offenderBookingId )"
 }

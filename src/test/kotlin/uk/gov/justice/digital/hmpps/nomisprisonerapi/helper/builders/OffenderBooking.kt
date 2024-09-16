@@ -20,12 +20,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -250,6 +253,26 @@ interface BookingDsl {
   fun receive(
     date: LocalDateTime = LocalDateTime.now(),
   ): OffenderExternalMovement
+
+  @VisitBalanceDslMarker
+  fun visitBalance(
+    remainingVisitOrders: Int = 4,
+    remainingPrivilegedVisitOrders: Int = 4,
+    dsl: VisitBalanceDsl.() -> Unit = {},
+  ): OffenderVisitBalance
+
+  @OffenderContactPersonDslMarker
+  fun contact(
+    person: Person,
+    relationshipType: String = "FRI",
+    contactType: String = "S",
+    active: Boolean = true,
+    nextOfKin: Boolean = false,
+    emergencyContact: Boolean = false,
+    approvedVisitor: Boolean = true,
+    comment: String? = null,
+    dsl: OffenderContactPersonDsl.() -> Unit = {},
+  ): OffenderContactPerson
 }
 
 @Component
@@ -280,6 +303,8 @@ class BookingBuilderFactory(
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
   private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
   private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
+  private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
+  private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -296,6 +321,8 @@ class BookingBuilderFactory(
     documentBuilderFactory,
     offenderPhysicalAttributesBuilderFactory,
     offenderProfileBuilderFactory,
+    visitBalanceBuilderFactory,
+    offenderContactPersonBuilderFactory,
   )
 }
 
@@ -314,6 +341,8 @@ class BookingBuilder(
   private val documentBuilderFactory: IWPDocumentBuilderFactory,
   private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
   private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
+  private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
+  private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -722,6 +751,45 @@ class BookingBuilder(
         )
           .also { offenderBooking.externalMovements += it }
       }
+
+  override fun visitBalance(
+    remainingVisitOrders: Int,
+    remainingPrivilegedVisitOrders: Int,
+    dsl: VisitBalanceDsl.() -> Unit,
+  ): OffenderVisitBalance {
+    offenderBooking.visitBalance = visitBalanceBuilderFactory.builder().build(
+      offenderBooking = offenderBooking,
+      remainingVisitOrders = remainingVisitOrders,
+      remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
+    )
+    return offenderBooking.visitBalance!!
+  }
+
+  override fun contact(
+    person: Person,
+    relationshipType: String,
+    contactType: String,
+    active: Boolean,
+    nextOfKin: Boolean,
+    emergencyContact: Boolean,
+    approvedVisitor: Boolean,
+    comment: String?,
+    dsl: OffenderContactPersonDsl.() -> Unit,
+  ): OffenderContactPerson = offenderContactPersonBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderBooking,
+      person = person,
+      relationshipType = relationshipType,
+      contactType = contactType,
+      active = active,
+      nextOfKin = nextOfKin,
+      emergencyContact = emergencyContact,
+      approvedVisitor = approvedVisitor,
+      comment = comment,
+    )
+      .also { offenderBooking.contacts += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun adjustment(
     adjustmentTypeCode: String,

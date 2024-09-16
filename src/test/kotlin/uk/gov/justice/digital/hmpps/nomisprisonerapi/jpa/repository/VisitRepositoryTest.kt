@@ -11,9 +11,9 @@ import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyVisitBalanceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBalanceBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
@@ -140,7 +140,7 @@ class VisitRepositoryTest {
       LegacyOffenderBuilder()
         .withBooking(
           OffenderBookingBuilder().withVisitBalance(
-            VisitBalanceBuilder(
+            LegacyVisitBalanceBuilder(
               remainingPrivilegedVisitOrders = 2,
               remainingVisitOrders = 25,
             ),
