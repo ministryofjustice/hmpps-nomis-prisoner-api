@@ -13,7 +13,7 @@ class OffenderBookingBuilder(
   var visitBalanceBuilder: LegacyVisitBalanceBuilder? = null,
   var agencyLocationId: String = "BXI",
   var contacts: List<OffenderContactBuilder> = emptyList(),
-  var visits: List<VisitBuilder> = emptyList(),
+  var visits: List<LegacyVisitBuilder> = emptyList(),
   var incentives: List<LegacyIncentiveBuilder> = emptyList(),
   var sentences: List<LegacySentenceBuilder> = emptyList(),
   var keyDateAdjustments: List<LegacyKeyDateAdjustmentBuilder> = emptyList(),
@@ -39,7 +39,7 @@ class OffenderBookingBuilder(
     return this
   }
 
-  fun withVisits(vararg visitBuilder: VisitBuilder): OffenderBookingBuilder {
+  fun withVisits(vararg visitBuilder: LegacyVisitBuilder): OffenderBookingBuilder {
     this.visits = arrayOf(*visitBuilder).asList()
     return this
   }

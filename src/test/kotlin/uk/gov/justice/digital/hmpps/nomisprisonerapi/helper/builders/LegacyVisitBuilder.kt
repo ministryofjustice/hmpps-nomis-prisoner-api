@@ -10,15 +10,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
 import java.time.LocalDateTime
 
-class VisitBuilder(
+class LegacyVisitBuilder(
   var visitTypeCode: String = "SCON",
   var visitStatusCode: String = "SCH",
   var startDateTimeString: String = "2022-01-01T12:05",
   var endDateTimeString: String = "2022-01-01T13:05",
   var agyLocId: String = "MDI",
   var agencyInternalLocationDescription: String? = "MDI-1-1-001",
-  var visitors: List<VisitVisitorBuilder> = emptyList(),
-  var visitOutcome: VisitOutcomeBuilder = VisitOutcomeBuilder(),
+  var visitors: List<LegacyVisitVisitorBuilder> = emptyList(),
+  var visitOutcome: LegacyVisitOutcomeBuilder = LegacyVisitOutcomeBuilder(),
 ) {
   fun build(
     offenderBooking: OffenderBooking,
@@ -40,17 +40,13 @@ class VisitBuilder(
     )
   }
 
-  fun withVisitors(vararg visitVisitorBuilders: VisitVisitorBuilder): VisitBuilder {
+  fun withVisitors(vararg visitVisitorBuilders: LegacyVisitVisitorBuilder): LegacyVisitBuilder {
     this.visitors = arrayOf(*visitVisitorBuilders).asList()
-    return this
-  }
-  fun withVisitOutcome(visitOutcomeCode: String): VisitBuilder {
-    this.visitOutcome = VisitOutcomeBuilder(visitOutcomeCode)
     return this
   }
 }
 
-class VisitVisitorBuilder(
+class LegacyVisitVisitorBuilder(
   val person: Person,
   val leadVisitor: Boolean = false,
 ) {
@@ -62,7 +58,7 @@ class VisitVisitorBuilder(
     )
 }
 
-class VisitOutcomeBuilder(
+class LegacyVisitOutcomeBuilder(
   val outcomeCode: String? = null,
 ) {
   fun build(visit: Visit): VisitVisitor =
