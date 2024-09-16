@@ -24,10 +24,10 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderContactBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitVisitorBuilder
@@ -91,7 +91,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
   internal fun createPrisoner() {
     threePeople.addAll(
       (1..3).map {
-        repository.save(PersonBuilder())
+        repository.save(LegacyPersonBuilder())
       },
     )
     offenderAtMoorlands = repository.save(
@@ -171,7 +171,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `create visit with invalid person`() {
       val error = webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
-        .body(BodyInserters.fromValue(createVisitWithPeople().copy(visitorPersonIds = listOf(-7L, -99L))))
+        .body(BodyInserters.fromValue(createVisitWithPeople().copy(visitorPersonIds = listOf(threePeople[0].id, -99L))))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
@@ -1035,9 +1035,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun setUp() {
-        johnSmith = repository.save(PersonBuilder(firstName = "JOHN", lastName = "SMITH"))
-        neoAyomide = repository.save(PersonBuilder(firstName = "NEO", lastName = "AYOMIDE"))
-        kashfAbidi = repository.save(PersonBuilder(firstName = "KASHF", lastName = "ABIDI"))
+        johnSmith = repository.save(LegacyPersonBuilder(firstName = "JOHN", lastName = "SMITH"))
+        neoAyomide = repository.save(LegacyPersonBuilder(firstName = "NEO", lastName = "AYOMIDE"))
+        kashfAbidi = repository.save(LegacyPersonBuilder(firstName = "KASHF", lastName = "ABIDI"))
 
         offenderWithVisit = repository.save(
           LegacyOffenderBuilder(nomsId = "A7688JM")
@@ -1264,8 +1264,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithVisit() {
-        val person1 = repository.save(PersonBuilder())
-        val person2 = repository.save(PersonBuilder())
+        val person1 = repository.save(LegacyPersonBuilder())
+        val person2 = repository.save(LegacyPersonBuilder())
         offenderAtMoorlands = repository.save(
           LegacyOffenderBuilder(nomsId = "A1234TT")
             .withBooking(
@@ -1358,7 +1358,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       internal fun createPrisonerWithVisit() {
         val leadVisitor = repository.save(
-          PersonBuilder(
+          LegacyPersonBuilder(
             firstName = "Manon",
             lastName = "Dupont",
             phoneNumbers = listOf(Triple("HOME", "01145551234", "ext456"), Triple("MOB", "07973555123", null)),
@@ -1420,7 +1420,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       internal fun createPrisonerWithVisit() {
         val leadVisitor = repository.save(
-          PersonBuilder(
+          LegacyPersonBuilder(
             firstName = "Manon",
             lastName = "Dupont",
           ),
@@ -1475,7 +1475,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       internal fun createPrisonerWithVisit() {
         val leadVisitor = repository.save(
-          PersonBuilder(
+          LegacyPersonBuilder(
             firstName = "Manon",
             lastName = "Dupont",
           ),
@@ -1529,8 +1529,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
   inner class GetVisitIdsByFilterRequest {
     @BeforeEach
     internal fun createPrisonerWithVisits() {
-      val person1 = repository.save(PersonBuilder())
-      val person2 = repository.save(PersonBuilder())
+      val person1 = repository.save(LegacyPersonBuilder())
+      val person2 = repository.save(LegacyPersonBuilder())
       offenderAtMoorlands = repository.save(
         LegacyOffenderBuilder(nomsId = "A1234TT")
           .withBooking(
@@ -1837,8 +1837,8 @@ class VisitResourceIntTest : IntegrationTestBase() {
   inner class GetVisitRoomCountByFilterRequest {
     @BeforeEach
     internal fun createPrisonerWithVisits() {
-      val person1 = repository.save(PersonBuilder())
-      val person2 = repository.save(PersonBuilder())
+      val person1 = repository.save(LegacyPersonBuilder())
+      val person2 = repository.save(LegacyPersonBuilder())
       offenderAtMoorlands = repository.save(
         LegacyOffenderBuilder(nomsId = "A1234TT")
           .withBooking(

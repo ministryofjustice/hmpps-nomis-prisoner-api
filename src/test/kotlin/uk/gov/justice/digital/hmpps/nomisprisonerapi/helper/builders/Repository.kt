@@ -216,7 +216,7 @@ class Repository(
   fun deleteOffenders() = offenderRepository.deleteAll()
   fun deleteMergeTransactions() = mergeTransactionRepository.deleteAll()
 
-  fun save(personBuilder: PersonBuilder): Person = personRepository.save(personBuilder.build())
+  fun save(personBuilder: LegacyPersonBuilder): Person = personRepository.save(personBuilder.build())
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
 
   fun deleteProgramServices() = programServiceRepository.deleteAll()

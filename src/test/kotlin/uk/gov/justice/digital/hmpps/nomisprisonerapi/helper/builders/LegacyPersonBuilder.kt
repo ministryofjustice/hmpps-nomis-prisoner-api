@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
 
-class PersonBuilder(
+class LegacyPersonBuilder(
   var firstName: String = "NEO",
   var lastName: String = "AYOMIDE",
   var phoneNumbers: List<Triple<String, String, String?>> = listOf(),
