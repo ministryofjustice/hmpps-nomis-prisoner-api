@@ -7,7 +7,7 @@ class LegacyPersonBuilder(
   var firstName: String = "NEO",
   var lastName: String = "AYOMIDE",
   var phoneNumbers: List<Triple<String, String, String?>> = listOf(),
-  var addressBuilders: List<PersonAddressBuilder> = listOf(),
+  var addressBuilders: List<LegacyPersonAddressBuilder> = listOf(),
 ) {
   fun build(): Person =
     Person(

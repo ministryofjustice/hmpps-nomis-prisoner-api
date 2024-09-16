@@ -24,12 +24,12 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonAddressBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyVisitBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyVisitVisitorBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -1360,7 +1360,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             lastName = "Dupont",
             phoneNumbers = listOf(Triple("HOME", "01145551234", "ext456"), Triple("MOB", "07973555123", null)),
             addressBuilders = listOf(
-              PersonAddressBuilder(phoneNumbers = listOf(Triple("HOME", "01145559999", null))),
+              LegacyPersonAddressBuilder(phoneNumbers = listOf(Triple("HOME", "01145559999", null))),
             ),
           ),
         )

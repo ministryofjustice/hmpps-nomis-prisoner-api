@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonAddressBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -168,10 +168,10 @@ internal class VisitResponseTest {
                   Triple("MOBL", "07973 121212", "x777"),
                 ),
                 addressBuilders = listOf(
-                  PersonAddressBuilder(
+                  LegacyPersonAddressBuilder(
                     phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null)),
                   ),
-                  PersonAddressBuilder(
+                  LegacyPersonAddressBuilder(
                     phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null)),
                   ),
                 ),
@@ -204,10 +204,10 @@ internal class VisitResponseTest {
                   Triple("MOBL", "07973 121212", "x777"),
                 ),
                 addressBuilders = listOf(
-                  PersonAddressBuilder(
+                  LegacyPersonAddressBuilder(
                     phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null)),
                   ),
-                  PersonAddressBuilder(
+                  LegacyPersonAddressBuilder(
                     phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null)),
                   ),
                 ),
