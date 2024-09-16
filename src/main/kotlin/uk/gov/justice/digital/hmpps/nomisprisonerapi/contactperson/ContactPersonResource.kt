@@ -69,7 +69,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
     ],
   )
-  fun getAlert(
+  fun getPerson(
     @Schema(description = "Person Id", example = "12345")
     @PathVariable
     personId: Long,

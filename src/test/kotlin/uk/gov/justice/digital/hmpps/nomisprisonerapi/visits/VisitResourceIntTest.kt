@@ -171,7 +171,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `create visit with invalid person`() {
       val error = webTestClient.post().uri("/prisoners/$offenderNo/visits")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
-        .body(BodyInserters.fromValue(createVisitWithPeople().copy(visitorPersonIds = listOf(-7L, -99L))))
+        .body(BodyInserters.fromValue(createVisitWithPeople().copy(visitorPersonIds = listOf(threePeople[0].id, -99L))))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody(ErrorResponse::class.java)
