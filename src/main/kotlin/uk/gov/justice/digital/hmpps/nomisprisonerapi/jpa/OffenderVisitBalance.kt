@@ -45,5 +45,5 @@ data class OffenderVisitBalance(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String = this::class.simpleName + "(offenderBookingId = $offenderBookingId )"
+  override fun toString(): String = "${this::class.simpleName} (offenderBookingId = $offenderBookingId)"
 }
