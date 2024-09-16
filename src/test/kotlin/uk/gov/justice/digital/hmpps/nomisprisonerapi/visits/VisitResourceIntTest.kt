@@ -23,13 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonAddressBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyVisitBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyVisitVisitorBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -1353,31 +1347,27 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithVisit() {
-        // TODO move to DSL by adding address and numbers
-        val leadVisitor = repository.save(
-          LegacyPersonBuilder(
+        lateinit var leadVisitor: Person
+
+        nomisDataBuilder.build {
+          leadVisitor = person(
             firstName = "Manon",
             lastName = "Dupont",
-            phoneNumbers = listOf(Triple("HOME", "01145551234", "ext456"), Triple("MOB", "07973555123", null)),
-            addressBuilders = listOf(
-              LegacyPersonAddressBuilder(phoneNumbers = listOf(Triple("HOME", "01145559999", null))),
-            ),
-          ),
-        )
-
-        offenderAtMoorlands = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234TT")
-            .withBooking(
-              OffenderBookingBuilder()
-                // TODO - move to DSL
-                .withVisits(
-                  LegacyVisitBuilder().withVisitors(
-                    LegacyVisitVisitorBuilder(leadVisitor, leadVisitor = true),
-                  ),
-                ),
-            ),
-        )
-
+          ) {
+            phone(phoneType = "HOME", phoneNo = "01145551234", extNo = "ext456")
+            phone(phoneType = "MOB", phoneNo = "07973555123")
+            address {
+              phone(phoneType = "HOME", phoneNo = "01145559999")
+            }
+          }
+          offenderAtMoorlands = offender(nomsId = "A1234TT") {
+            booking {
+              visit {
+                visitor(person = leadVisitor, groupLeader = true)
+              }
+            }
+          }
+        }
         offenderNo = offenderAtMoorlands.nomsId
         offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
       }
