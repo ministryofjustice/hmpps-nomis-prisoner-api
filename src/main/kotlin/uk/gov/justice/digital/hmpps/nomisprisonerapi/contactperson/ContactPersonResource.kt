@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import java.time.LocalDate
 
 @RestController
 @Validated
@@ -81,4 +83,16 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
 data class ContactPerson(
   @Schema(description = "The person id")
   val personId: Long,
+  @Schema(description = "First name of the person")
+  val firstName: String,
+  @Schema(description = "Surname name of the person")
+  val lastName: String,
+  @Schema(description = "Middle name of the person")
+  val middleName: String?,
+  @Schema(description = "Date of birth of the person")
+  val dateOfBirth: LocalDate?,
+  @Schema(description = "Gender of the person")
+  val gender: CodeDescription?,
+  @Schema(description = "Title of the person")
+  val title: CodeDescription?,
 )

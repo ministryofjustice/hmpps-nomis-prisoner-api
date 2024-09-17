@@ -1,10 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @DslMarker
 annotation class PersonDslMarker
@@ -41,8 +46,13 @@ class PersonBuilderFactory(
 @Component
 class PersonBuilderRepository(
   private val personRepository: PersonRepository,
+  private val genderRepository: ReferenceCodeRepository<Gender>,
+  private val titleRepository: ReferenceCodeRepository<Title>,
+
 ) {
   fun save(person: Person): Person = personRepository.save(person)
+  fun genderOf(code: String?): Gender? = code?.let { genderRepository.findByIdOrNull(Gender.pk(it)) }
+  fun titleOf(code: String?): Title? = code?.let { titleRepository.findByIdOrNull(Title.pk(it)) }
 }
 
 class PersonBuilder(
@@ -55,9 +65,17 @@ class PersonBuilder(
   fun build(
     lastName: String,
     firstName: String,
+    middleName: String?,
+    dateOfBirth: LocalDate?,
+    gender: String?,
+    title: String?,
   ): Person = Person(
     lastName = lastName,
     firstName = firstName,
+    middleName = middleName,
+    birthDate = dateOfBirth,
+    sex = repository.genderOf(gender),
+    title = repository.titleOf(title),
   )
     .let { repository.save(it) }
     .also { person = it }

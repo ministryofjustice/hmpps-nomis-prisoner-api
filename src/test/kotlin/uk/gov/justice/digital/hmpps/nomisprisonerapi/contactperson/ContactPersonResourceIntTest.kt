@@ -22,12 +22,25 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /persons/{personId}")
   @Nested
   inner class GetPerson {
-    private lateinit var person: Person
+    private lateinit var personMinimal: Person
+    private lateinit var personFull: Person
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        person = person(firstName = "JANE", lastName = "NARK") {
+        personMinimal = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+        }
+        personFull = person(
+          firstName = "JANE",
+          lastName = "NARK",
+          middleName = "LIZ",
+          dateOfBirth = "1999-12-22",
+          gender = "F",
+          title = "DR",
+        ) {
         }
       }
     }
@@ -41,7 +54,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/persons/${person.id}")
+        webTestClient.get().uri("/persons/${personMinimal.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -49,7 +62,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/persons/${person.id}")
+        webTestClient.get().uri("/persons/${personMinimal.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -57,7 +70,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/persons/${person.id}")
+        webTestClient.get().uri("/persons/${personMinimal.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -78,13 +91,38 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return basic person data`() {
-        webTestClient.get().uri("/persons/${person.id}")
+        webTestClient.get().uri("/persons/${personMinimal.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("personId").isEqualTo(person.id)
+          .jsonPath("personId").isEqualTo(personMinimal.id)
+          .jsonPath("firstName").isEqualTo("JOHN")
+          .jsonPath("lastName").isEqualTo("BOG")
+          .jsonPath("middleName").doesNotExist()
+          .jsonPath("dateOfBirth").doesNotExist()
+          .jsonPath("gender").doesNotExist()
+          .jsonPath("title").doesNotExist()
+      }
+
+      @Test
+      fun `will return full person data`() {
+        webTestClient.get().uri("/persons/${personFull.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("personId").isEqualTo(personFull.id)
+          .jsonPath("firstName").isEqualTo("JANE")
+          .jsonPath("lastName").isEqualTo("NARK")
+          .jsonPath("middleName").isEqualTo("LIZ")
+          .jsonPath("dateOfBirth").isEqualTo("1999-12-22")
+          .jsonPath("gender.code").isEqualTo("F")
+          .jsonPath("gender.description").isEqualTo("Female")
+          .jsonPath("title.code").isEqualTo("DR")
+          .jsonPath("title.description").isEqualTo("Dr")
       }
     }
   }
