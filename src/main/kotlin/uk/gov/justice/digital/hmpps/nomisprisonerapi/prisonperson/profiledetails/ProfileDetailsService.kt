@@ -28,11 +28,10 @@ class ProfileDetailsService(
           endDateTime = booking.getReleaseTimer(),
           latestBooking = booking.bookingSequence == 1,
           profileDetails = booking.profiles.first().profileDetails
-            .filter { pd -> pd.profileCodeId != null }
             .map { pd ->
               ProfileDetailsResponse(
                 type = pd.id.profileType.type,
-                code = pd.profileCodeId!!,
+                code = pd.profileCodeId,
                 createDateTime = pd.createDatetime,
                 createdBy = pd.createUserId,
                 modifiedDateTime = pd.modifyDatetime,
