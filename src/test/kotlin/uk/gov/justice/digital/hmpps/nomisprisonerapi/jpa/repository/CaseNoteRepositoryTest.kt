@@ -45,7 +45,7 @@ class CaseNoteRepositoryTest {
   @Test
   fun getOffenderCaseNote() {
     seedOffenderBooking = builderRepository.save(
-      LegacyOffenderBuilder().withBooking(OffenderBookingBuilder().withVisitBalance()),
+      LegacyOffenderBuilder().withBooking(OffenderBookingBuilder()),
     ).latestBooking()
 
     val timestamp = LocalDateTime.now()

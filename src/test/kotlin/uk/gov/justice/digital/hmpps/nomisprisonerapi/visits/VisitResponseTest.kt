@@ -7,13 +7,15 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonAddressBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
@@ -52,7 +54,7 @@ internal class VisitResponseTest {
   ).apply {
     this.visitors.add(
       VisitVisitor(
-        person = LegacyPersonBuilder().build().apply { id = 88L },
+        person = Person(id = 88, firstName = "Name", lastName = "Name"),
         groupLeader = true,
         visit = this,
       ),
@@ -117,15 +119,17 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = LegacyPersonBuilder(
-                phoneNumbers = listOf(
-                  Triple(
-                    "HOME",
-                    "0123456789",
-                    "ext: 876",
+              groupLeader = true,
+              person = Person(id = 88, firstName = "Name", lastName = "Name").apply {
+                this.phones.add(
+                  PersonPhone(
+                    person = this,
+                    phoneType = "HOME",
+                    phoneNo = "0123456789",
+                    extNo = "ext: 876",
                   ),
-                ),
-              ).build(),
+                )
+              },
             ),
             outcomeVisitorRecord,
           ),
@@ -141,12 +145,22 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = LegacyPersonBuilder(
-                phoneNumbers = listOf(
-                  Triple("HOME", "0123456789", null),
-                  Triple("MOBL", "07973 121212", null),
-                ),
-              ).build(),
+              person = Person(firstName = "Name", lastName = "Name").apply {
+                this.phones.add(
+                  PersonPhone(
+                    person = this,
+                    phoneType = "HOME",
+                    phoneNo = "0123456789",
+                  ),
+                )
+                this.phones.add(
+                  PersonPhone(
+                    person = this,
+                    phoneType = "MOBL",
+                    phoneNo = "07973 121212",
+                  ),
+                )
+              },
             ),
             outcomeVisitorRecord,
           ),
@@ -162,20 +176,43 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = LegacyPersonBuilder(
-                phoneNumbers = listOf(
-                  Triple("HOME", "0123456789", null),
-                  Triple("MOBL", "07973 121212", "x777"),
-                ),
-                addressBuilders = listOf(
-                  LegacyPersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null)),
+              person = Person(firstName = "Name", lastName = "Name").apply {
+                this.phones.add(
+                  PersonPhone(
+                    person = this,
+                    phoneType = "HOME",
+                    phoneNo = "0123456789",
                   ),
-                  LegacyPersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null)),
+                )
+                this.phones.add(
+                  PersonPhone(
+                    person = this,
+                    phoneType = "MOBL",
+                    phoneNo = "07973 121212",
+                    extNo = "x777",
                   ),
-                ),
-              ).build(),
+                )
+                this.addresses.add(
+                  PersonAddress(person = this).apply {
+                    phones.add(
+                      AddressPhone(this, "HOME", "1234567890", null),
+                    )
+                    phones.add(
+                      AddressPhone(this, "MOBL", "07973 333333", null),
+                    )
+                  },
+                )
+                this.addresses.add(
+                  PersonAddress(person = this).apply {
+                    phones.add(
+                      AddressPhone(this, "HOME", "2345678901", "x888"),
+                    )
+                    phones.add(
+                      AddressPhone(this, "MOBL", "07973 444444", null),
+                    )
+                  },
+                )
+              },
             ),
             outcomeVisitorRecord,
           ),
@@ -198,20 +235,43 @@ internal class VisitResponseTest {
         visit.copy(
           visitors = mutableListOf(
             visitor.copy(
-              person = LegacyPersonBuilder(
-                phoneNumbers = listOf(
-                  Triple("HOME", "0123456789", null),
-                  Triple("MOBL", "07973 121212", "x777"),
-                ),
-                addressBuilders = listOf(
-                  LegacyPersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "1234567890", null), Triple("MOBL", "07973 333333", null)),
+              person = Person(firstName = "Name", lastName = "Name").apply {
+                this.phones.add(
+                  PersonPhone(
+                    person = this,
+                    phoneType = "HOME",
+                    phoneNo = "0123456789",
                   ),
-                  LegacyPersonAddressBuilder(
-                    phoneNumbers = listOf(Triple("HOME", "2345678901", "x888"), Triple("MOBL", "07973 444444", null)),
+                )
+                this.phones.add(
+                  PersonPhone(
+                    person = this,
+                    phoneType = "MOBL",
+                    phoneNo = "07973 121212",
+                    extNo = "x777",
                   ),
-                ),
-              ).build().apply {
+                )
+                this.addresses.add(
+                  PersonAddress(person = this).apply {
+                    phones.add(
+                      AddressPhone(this, "HOME", "1234567890", null),
+                    )
+                    phones.add(
+                      AddressPhone(this, "MOBL", "07973 333333", null),
+                    )
+                  },
+                )
+                this.addresses.add(
+                  PersonAddress(person = this).apply {
+                    phones.add(
+                      AddressPhone(this, "HOME", "2345678901", "x888"),
+                    )
+                    phones.add(
+                      AddressPhone(this, "MOBL", "07973 444444", null),
+                    )
+                  },
+                )
+              }.apply {
                 this.phones[0].whenCreated = LocalDateTime.now().minusDays(10) // 6th
                 this.phones[1].whenCreated = LocalDateTime.now().minusDays(11)
                 this.phones[1].whenModified = LocalDateTime.now().minusDays(4) // 4th

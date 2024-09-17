@@ -45,7 +45,7 @@ class IncentiveRepositoryTest {
   fun saveIncentive() {
     val seedOffenderBooking = builderRepository.save(
       LegacyOffenderBuilder()
-        .withBooking(OffenderBookingBuilder().withVisitBalance()),
+        .withBooking(OffenderBookingBuilder()),
     ).latestBooking()
 
     val incentive = Incentive(
