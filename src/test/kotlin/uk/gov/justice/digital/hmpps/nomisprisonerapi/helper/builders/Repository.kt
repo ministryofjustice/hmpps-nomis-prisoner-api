@@ -35,10 +35,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
@@ -72,8 +68,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonReposi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import kotlin.jvm.optionals.getOrNull
@@ -94,8 +88,6 @@ class Repository(
   val agencyVisitTimeRepository: AgencyVisitTimeRepository,
   val activityRepository: ActivityRepository,
   val programServiceRepository: ProgramServiceRepository,
-  val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
-  val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
   val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   val payBandRepository: ReferenceCodeRepository<PayBand>,
   val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
@@ -112,7 +104,6 @@ class Repository(
   val courtEventRepository: CourtEventRepository,
   val offenderSentenceRepository: OffenderSentenceRepository,
   val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
-  val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
   val offenderChargeRepository: OffenderChargeRepository,
   val questionnaireRepository: QuestionnaireRepository,
   val incidentRepository: IncidentRepository,
@@ -125,7 +116,7 @@ class Repository(
   lateinit var jdbcTemplate: JdbcTemplate
 
   // Entity builders
-  fun save(offenderBuilder: LegacyOffenderBuilder): Offender {
+  fun save(offenderBuilder: OffenderDataBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
 
     val offender = offenderRepository.saveAndFlush(offenderBuilder.build(gender)).apply {
@@ -138,41 +129,6 @@ class Repository(
     }
 
     offenderRepository.saveAndFlush(offender)
-
-    // children that require a flushed booking
-    offender.getAllBookings()!!.forEachIndexed { bookingIndex, booking ->
-      booking.incentives.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].incentives.map {
-          it.build(booking, lookupIepLevel(it.iepLevel))
-        },
-      )
-      booking.sentences.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].sentences.mapIndexed { sentenceIndex, sentenceBuilder ->
-          val sentence = sentenceBuilder.build(
-            offenderBooking = booking,
-            sequence = sentenceIndex.toLong() + 1,
-            calculationType = lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category),
-            category = lookupSentenceCategory(sentenceBuilder.category),
-          )
-          sentence.adjustments.addAll(
-            sentenceBuilder.adjustments.map {
-              it.build(lookupSentenceAdjustment(it.adjustmentTypeCode), sentence)
-            },
-          )
-          sentence
-        },
-      )
-      booking.keyDateAdjustments.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].keyDateAdjustments.map {
-          it.build(
-            booking,
-            lookupSentenceAdjustment(it.adjustmentTypeCode),
-          )
-        },
-      )
-    }
-
-    offenderRepository.flush()
     return offender
   }
 
@@ -223,14 +179,6 @@ class Repository(
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
 
   fun lookupIepLevel(code: String): IEPLevel = iepLevelRepository.findByIdOrNull(Pk(IEPLevel.IEP_LEVEL, code))!!
-
-  fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
-    sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
-
-  fun lookupSentenceCategory(code: String): SentenceCategoryType =
-    sentenceCategoryTypeRepository.findByIdOrNull(Pk(SentenceCategoryType.CATEGORY, code))!!
-
-  fun lookupSentenceAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation? =

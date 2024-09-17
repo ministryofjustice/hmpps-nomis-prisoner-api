@@ -6,8 +6,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -329,8 +329,8 @@ internal class VisitResponseTest {
   }
 }
 
-fun anOffenderBooking(nomsId: String): OffenderBooking = OffenderBookingBuilder().build(
-  offender = LegacyOffenderBuilder(nomsId = nomsId).build(Gender("F", "FEMALE")),
+fun anOffenderBooking(nomsId: String): OffenderBooking = OffenderBookingDataBuilder().build(
+  offender = OffenderDataBuilder(nomsId = nomsId).build(Gender("F", "FEMALE")),
   bookingSequence = 1,
   AgencyLocation(id = "LEI", description = "Leeds HMP"),
 )
