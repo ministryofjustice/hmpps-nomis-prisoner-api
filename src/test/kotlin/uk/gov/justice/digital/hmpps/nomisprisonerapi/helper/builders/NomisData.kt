@@ -326,9 +326,24 @@ class NomisData(
         }
     }
 
-  override fun person(firstName: String, lastName: String, dsl: PersonDsl.() -> Unit): Person = personBuilderFactory!!.builder()
+  override fun person(
+    firstName: String,
+    lastName: String,
+    middleName: String?,
+    dateOfBirth: String?,
+    gender: String?,
+    title: String?,
+    dsl: PersonDsl.() -> Unit,
+  ): Person = personBuilderFactory!!.builder()
     .let { builder ->
-      builder.build(lastName, firstName)
+      builder.build(
+        lastName = lastName,
+        firstName = firstName,
+        middleName = middleName,
+        dateOfBirth = dateOfBirth?.let { LocalDate.parse(it) },
+        gender = gender,
+        title = title,
+      )
         .also {
           builder.apply(dsl)
         }
@@ -458,7 +473,15 @@ interface NomisDataDsl {
   ): MergeTransaction
 
   @PersonDslMarker
-  fun person(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: PersonDsl.() -> Unit = {}): Person
+  fun person(
+    firstName: String = "AAYAN",
+    lastName: String = "AHMAD",
+    middleName: String? = null,
+    dateOfBirth: String? = null,
+    gender: String? = null,
+    title: String? = null,
+    dsl: PersonDsl.() -> Unit = {},
+  ): Person
 }
 
 @DslMarker
