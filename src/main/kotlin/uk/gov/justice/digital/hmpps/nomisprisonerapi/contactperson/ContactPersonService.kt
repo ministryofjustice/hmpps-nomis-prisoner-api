@@ -51,6 +51,20 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           extension = number.extNo,
         )
       },
+      addresses = it.addresses.map { address ->
+        Address(
+          addressId = address.addressId,
+          type = address.addressType?.toCodeDescription(),
+          phoneNumbers = address.phones.map { number ->
+            PhoneNumber(
+              phoneId = number.phoneId,
+              number = number.phoneNo,
+              type = number.phoneType.toCodeDescription(),
+              extension = number.extNo,
+            )
+          },
+        )
+      },
     )
   } ?: throw NotFoundException("Person not found $personId")
 }

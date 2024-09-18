@@ -114,6 +114,8 @@ data class ContactPerson(
   val audit: NomisAudit,
   @Schema(description = "List of phone numbers for the person")
   val phoneNumbers: List<PhoneNumber>,
+  @Schema(description = "List of addresses for the person")
+  val addresses: List<Address>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -127,4 +129,15 @@ data class PhoneNumber(
   val extension: String?,
   @Schema(description = "Phone type")
   val type: CodeDescription,
+)
+
+@Schema(description = "The data held in NOMIS about a address number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Address(
+  @Schema(description = "Unique NOMIS Id of number")
+  val addressId: Long,
+  @Schema(description = "Address type")
+  val type: CodeDescription?,
+  @Schema(description = "List of phone numbers for the address")
+  val phoneNumbers: List<PhoneNumber>,
 )

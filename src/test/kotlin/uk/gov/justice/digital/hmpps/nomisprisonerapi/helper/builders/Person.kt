@@ -21,6 +21,7 @@ interface PersonDsl {
 
   @PersonAddressDslMarker
   fun address(
+    type: String? = null,
     premise: String = "41",
     street: String = "High Street",
     locality: String = "Sheffield",
@@ -101,6 +102,7 @@ class PersonBuilder(
     .also { person = it }
 
   override fun address(
+    type: String?,
     premise: String,
     street: String,
     locality: String,
@@ -108,6 +110,7 @@ class PersonBuilder(
   ): PersonAddress =
     personAddressBuilderFactory.builder().let { builder ->
       builder.build(
+        type = type,
         person = person,
         premise = premise,
         street = street,

@@ -37,13 +37,6 @@ abstract class Address(
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @SQLRestriction("OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
   open val phones: MutableList<AddressPhone> = ArrayList(),
-) {
-  @Id
-  @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
-  @GeneratedValue(generator = "ADDRESS_ID")
-  @Column(name = "ADDRESS_ID", nullable = false)
-  open val addressId: Long = 0
-
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
@@ -56,7 +49,14 @@ abstract class Address(
       ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_TYPE", referencedColumnName = "code")),
     ],
   )
-  open val addressType: AddressType? = null
+  open val addressType: AddressType? = null,
+) {
+  @Id
+  @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
+  @GeneratedValue(generator = "ADDRESS_ID")
+  @Column(name = "ADDRESS_ID", nullable = false)
+  open val addressId: Long = 0
+
   open val flat: String? = null
 
   @Column(name = "POSTAL_CODE")
