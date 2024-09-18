@@ -77,7 +77,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         }
       }
       // Incident and incident history with missing questionnaire answer - to mimic Nomis data
-      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1, agencyId = "MDI") {
+      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1, locationId = "MDI") {
         question(question = questionnaire1.questions[1]) {
           response(recordingStaff = responseRecordingStaff, comment = "Hammer")
           response(answer = questionnaire1.questions[1].answers[2], comment = "Large Crow bar", recordingStaff = responseRecordingStaff)

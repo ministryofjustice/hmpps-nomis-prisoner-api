@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
@@ -48,11 +49,13 @@ class PersonBuilderRepository(
   private val personRepository: PersonRepository,
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
+  private val languageRepository: ReferenceCodeRepository<Language>,
 
 ) {
   fun save(person: Person): Person = personRepository.save(person)
   fun genderOf(code: String?): Gender? = code?.let { genderRepository.findByIdOrNull(Gender.pk(it)) }
   fun titleOf(code: String?): Title? = code?.let { titleRepository.findByIdOrNull(Title.pk(it)) }
+  fun languageOf(code: String?): Language? = code?.let { languageRepository.findByIdOrNull(Language.pk(it)) }
 }
 
 class PersonBuilder(
@@ -69,6 +72,7 @@ class PersonBuilder(
     dateOfBirth: LocalDate?,
     gender: String?,
     title: String?,
+    language: String?,
   ): Person = Person(
     lastName = lastName,
     firstName = firstName,
@@ -76,6 +80,7 @@ class PersonBuilder(
     birthDate = dateOfBirth,
     sex = repository.genderOf(gender),
     title = repository.titleOf(title),
+    language = repository.languageOf(language),
   )
     .let { repository.save(it) }
     .also { person = it }

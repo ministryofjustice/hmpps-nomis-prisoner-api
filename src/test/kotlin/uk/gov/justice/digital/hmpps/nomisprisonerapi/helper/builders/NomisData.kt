@@ -27,7 +27,6 @@ class NomisDataBuilder(
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
   private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
-  private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
@@ -42,7 +41,6 @@ class NomisDataBuilder(
     nonAssociationBuilderFactory,
     externalServiceBuilderFactory,
     agencyInternalLocationBuilderFactory,
-    courtCaseBuilderFactory,
     questionnaireBuilderFactory,
     incidentBuilderFactory,
     mergeTransactionBuilderFactory,
@@ -59,7 +57,6 @@ class NomisData(
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
   private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
-  private val courtCaseBuilderFactory: CourtCaseBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
@@ -165,7 +162,7 @@ class NomisData(
   override fun incident(
     title: String,
     description: String,
-    agencyId: String,
+    locationId: String,
     reportingStaff: Staff,
     reportedDateTime: LocalDateTime,
     incidentDateTime: LocalDateTime,
@@ -179,7 +176,7 @@ class NomisData(
         builder.build(
           title = title,
           description = description,
-          agencyId = agencyId,
+          agencyId = locationId,
           reportingStaff = reportingStaff,
           reportedDateTime = reportedDateTime,
           incidentDateTime = incidentDateTime,
@@ -333,6 +330,7 @@ class NomisData(
     dateOfBirth: String?,
     gender: String?,
     title: String?,
+    language: String?,
     dsl: PersonDsl.() -> Unit,
   ): Person = personBuilderFactory!!.builder()
     .let { builder ->
@@ -343,6 +341,7 @@ class NomisData(
         dateOfBirth = dateOfBirth?.let { LocalDate.parse(it) },
         gender = gender,
         title = title,
+        language = language,
       )
         .also {
           builder.apply(dsl)
@@ -480,6 +479,7 @@ interface NomisDataDsl {
     dateOfBirth: String? = null,
     gender: String? = null,
     title: String? = null,
+    language: String? = null,
     dsl: PersonDsl.() -> Unit = {},
   ): Person
 }
