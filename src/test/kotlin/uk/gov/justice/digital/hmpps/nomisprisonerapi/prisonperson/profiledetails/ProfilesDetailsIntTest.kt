@@ -106,7 +106,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should ignore null profile details`() {
+      fun `should return null profile details`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking {
@@ -124,6 +124,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
                   tuple("L_EYE_C", "RED"),
+                  tuple("SHOESIZE", null),
                 )
             }
           }
@@ -160,7 +161,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return empty list if all profile details are null`() {
+      fun `should not return empty list if all profile details are null`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking {
@@ -175,7 +176,11 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).isEmpty()
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("L_EYE_C", null),
+                  tuple("SHOESIZE", null),
+                )
             }
           }
       }

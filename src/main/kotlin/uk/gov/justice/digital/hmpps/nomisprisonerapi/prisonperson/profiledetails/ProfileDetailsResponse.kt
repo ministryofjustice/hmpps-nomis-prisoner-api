@@ -34,7 +34,7 @@ data class ProfileDetailsResponse(
   @Schema(description = "The type of profile info", example = "BUILD")
   val type: String,
   @Schema(description = "The value of the profile info", example = "SLIM")
-  val code: String,
+  val code: String?,
   @Schema(description = "The time the profile info was created", example = "2020-07-17T12:34:56")
   val createDateTime: LocalDateTime,
   @Schema(description = "The user who created the profile info", example = "AQ425D")

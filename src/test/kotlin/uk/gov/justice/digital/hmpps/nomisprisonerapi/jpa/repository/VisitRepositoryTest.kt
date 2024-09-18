@@ -3,35 +3,24 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
-import org.springframework.context.annotation.Import
-import org.springframework.test.context.ActiveProfiles
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.AuditorAwareImpl
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyVisitBalanceBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
-import uk.gov.justice.hmpps.kotlin.auth.HmppsAuthenticationHolder
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@DataJpaTest
-@ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(HmppsAuthenticationHolder::class, AuditorAwareImpl::class, Repository::class)
 @WithMockAuthUser
-class VisitRepositoryTest {
+class VisitRepositoryTest : IntegrationTestBase() {
   @Autowired
   lateinit var builderRepository: Repository
 
@@ -63,17 +52,23 @@ class VisitRepositoryTest {
   lateinit var visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>
 
   @Autowired
-  lateinit var entityManager: TestEntityManager
+  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Test
   fun saveVisit() {
-    val seedOffenderBooking = builderRepository.save(
-      LegacyOffenderBuilder()
-        .withBooking(OffenderBookingBuilder().withVisitBalance()),
-    ).latestBooking()
+    lateinit var seedOffenderBooking: OffenderBooking
+    lateinit var seedPerson1: Person
+    lateinit var seedPerson2: Person
 
-    val seedPerson1 = builderRepository.save(LegacyPersonBuilder())
-    val seedPerson2 = builderRepository.save(LegacyPersonBuilder())
+    nomisDataBuilder.build {
+      offender {
+        seedOffenderBooking = booking {
+          visitBalance()
+        }
+      }
+      seedPerson1 = person { }
+      seedPerson2 = person { }
+    }
 
     val visit = Visit(
       offenderBooking = seedOffenderBooking,
@@ -107,46 +102,45 @@ class VisitRepositoryTest {
       ),
     )
 
-    repository.save(visit)
-    entityManager.flush()
+    builderRepository.runInTransaction {
+      repository.save(visit)
 
-    val persistedVisitList = repository.findByOffenderBooking(seedOffenderBooking)
-    assertThat(persistedVisitList).isNotEmpty
-    val persistedVisit = persistedVisitList[0]
+      val persistedVisitList = repository.findByOffenderBooking(seedOffenderBooking)
+      assertThat(persistedVisitList).isNotEmpty
+      val persistedVisit = persistedVisitList[0]
 
-    assertThat(persistedVisit.visitDate).isEqualTo(LocalDate.parse("2009-12-21"))
-    assertThat(persistedVisit.startDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T13:15"))
-    assertThat(persistedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T14:15"))
-    assertThat(persistedVisit.id).isNotNull
-    assertThat(persistedVisit.searchLevel!!.description).isEqualTo("Full Search")
-    assertThat(persistedVisit.visitStatus.description).isEqualTo("Scheduled")
-    assertThat(persistedVisit.visitorConcernText).isEqualTo("visitor concerns")
+      assertThat(persistedVisit.visitDate).isEqualTo(LocalDate.parse("2009-12-21"))
+      assertThat(persistedVisit.startDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T13:15"))
+      assertThat(persistedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T14:15"))
+      assertThat(persistedVisit.id).isNotNull
+      assertThat(persistedVisit.searchLevel!!.description).isEqualTo("Full Search")
+      assertThat(persistedVisit.visitStatus.description).isEqualTo("Scheduled")
+      assertThat(persistedVisit.visitorConcernText).isEqualTo("visitor concerns")
 
-    val visitVisitors = persistedVisit.visitors
-    assertThat(visitVisitors.size).isEqualTo(2)
-    val (_, offenderBooking, parentVisit, person, groupLeader, assistedVisit) = visitVisitors[0]
-    assertThat(offenderBooking?.bookingId).isEqualTo(seedOffenderBooking.bookingId)
-    assertThat(parentVisit.id).isEqualTo(visit.id)
-    assertThat(groupLeader).isTrue
-    assertThat(assistedVisit).isTrue
-    assertThat(person?.id).isEqualTo(seedPerson1.id)
-    assertThat(visitVisitors[1].person?.id).isEqualTo(seedPerson2.id)
-    assertThat(visitVisitors[1].eventId).isGreaterThan(0)
+      val visitVisitors = persistedVisit.visitors
+      assertThat(visitVisitors.size).isEqualTo(2)
+      val (_, offenderBooking, parentVisit, person, groupLeader, assistedVisit) = visitVisitors[0]
+      assertThat(offenderBooking?.bookingId).isEqualTo(seedOffenderBooking.bookingId)
+      assertThat(parentVisit.id).isEqualTo(visit.id)
+      assertThat(groupLeader).isTrue
+      assertThat(assistedVisit).isTrue
+      assertThat(person?.id).isEqualTo(seedPerson1.id)
+      assertThat(visitVisitors[1].person?.id).isEqualTo(seedPerson2.id)
+      assertThat(visitVisitors[1].eventId).isGreaterThan(0)
+    }
   }
 
   @Test
   fun saveBalanceAdjustment() {
-    val seedOffenderBooking = builderRepository.save(
-      LegacyOffenderBuilder()
-        .withBooking(
-          OffenderBookingBuilder().withVisitBalance(
-            LegacyVisitBalanceBuilder(
-              remainingPrivilegedVisitOrders = 2,
-              remainingVisitOrders = 25,
-            ),
-          ),
-        ),
-    ).latestBooking()
+    lateinit var seedOffenderBooking: OffenderBooking
+    nomisDataBuilder.build {
+      offender {
+        seedOffenderBooking = booking {
+          visitBalance(remainingPrivilegedVisitOrders = 2, remainingVisitOrders = 25)
+        }
+      }
+    }
+
     val seedBalance = seedOffenderBooking.visitBalance ?: throw IllegalStateException("No visit balance")
     assertThat(seedBalance.remainingVisitOrders).isEqualTo(25)
     assertThat(seedBalance.remainingPrivilegedVisitOrders).isEqualTo(2)
@@ -165,7 +159,6 @@ class VisitRepositoryTest {
         endorsedStaffId = 123L,
       ),
     )
-    entityManager.flush()
 
     val offenderVisitBalanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll().first()
     assertThat(offenderVisitBalanceAdjustment.id).isEqualTo(1)

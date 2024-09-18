@@ -23,14 +23,8 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyOffenderBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.LegacyPersonBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderBookingBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.VisitVisitorBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -1265,21 +1259,15 @@ class VisitResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           person1 = person {}
           person2 = person {}
+          offenderAtMoorlands = offender(nomsId = "A1234TT") {
+            booking {
+              visit {
+                visitor(person = person1, groupLeader = false)
+                visitor(person = person2, groupLeader = false)
+              }
+            }
+          }
         }
-
-        offenderAtMoorlands = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234TT")
-            .withBooking(
-              OffenderBookingBuilder()
-                // TODO move this to DSL
-                .withVisits(
-                  VisitBuilder().withVisitors(
-                    VisitVisitorBuilder(person1, leadVisitor = false),
-                    VisitVisitorBuilder(person2, leadVisitor = false),
-                  ),
-                ),
-            ),
-        )
 
         offenderNo = offenderAtMoorlands.nomsId
         offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
@@ -1359,31 +1347,27 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithVisit() {
-        // TODO move to DSL by adding address and numbers
-        val leadVisitor = repository.save(
-          LegacyPersonBuilder(
+        lateinit var leadVisitor: Person
+
+        nomisDataBuilder.build {
+          leadVisitor = person(
             firstName = "Manon",
             lastName = "Dupont",
-            phoneNumbers = listOf(Triple("HOME", "01145551234", "ext456"), Triple("MOB", "07973555123", null)),
-            addressBuilders = listOf(
-              PersonAddressBuilder(phoneNumbers = listOf(Triple("HOME", "01145559999", null))),
-            ),
-          ),
-        )
-
-        offenderAtMoorlands = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234TT")
-            .withBooking(
-              OffenderBookingBuilder()
-                // TODO - move to DSL
-                .withVisits(
-                  VisitBuilder().withVisitors(
-                    VisitVisitorBuilder(leadVisitor, leadVisitor = true),
-                  ),
-                ),
-            ),
-        )
-
+          ) {
+            phone(phoneType = "HOME", phoneNo = "01145551234", extNo = "ext456")
+            phone(phoneType = "MOB", phoneNo = "07973555123")
+            address {
+              phone(phoneType = "HOME", phoneNo = "01145559999")
+            }
+          }
+          offenderAtMoorlands = offender(nomsId = "A1234TT") {
+            booking {
+              visit {
+                visitor(person = leadVisitor, groupLeader = true)
+              }
+            }
+          }
+        }
         offenderNo = offenderAtMoorlands.nomsId
         offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
       }
@@ -1423,25 +1407,21 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithVisit() {
-        val leadVisitor = repository.save(
-          LegacyPersonBuilder(
+        var leadVisitor: Person
+        nomisDataBuilder.build {
+          leadVisitor = person(
             firstName = "Manon",
             lastName = "Dupont",
-          ),
-        )
-
-        offenderAtMoorlands = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234TT")
-            .withBooking(
-              OffenderBookingBuilder()
-                // TODO - move to DSL
-                .withVisits(
-                  VisitBuilder()
-                    .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
-                    .withVisitOutcome("REFUSED"),
-                ),
-            ),
-        )
+          )
+          offenderAtMoorlands = offender(nomsId = "A1234TT") {
+            booking {
+              visit {
+                visitor(person = leadVisitor, groupLeader = true)
+                visitOutcome(outcomeReason = "REFUSED")
+              }
+            }
+          }
+        }
 
         offenderNo = offenderAtMoorlands.nomsId
         offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
@@ -1479,25 +1459,21 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       internal fun createPrisonerWithVisit() {
-        val leadVisitor = repository.save(
-          LegacyPersonBuilder(
+        var leadVisitor: Person
+        nomisDataBuilder.build {
+          leadVisitor = person(
             firstName = "Manon",
             lastName = "Dupont",
-          ),
-        )
-
-        offenderAtMoorlands = repository.save(
-          LegacyOffenderBuilder(nomsId = "A1234TT")
-            .withBooking(
-              OffenderBookingBuilder()
-                // TODO - move to DSL
-                .withVisits(
-                  VisitBuilder()
-                    .withVisitors(VisitVisitorBuilder(leadVisitor, leadVisitor = true))
-                    .withVisitOutcome("BATCH_CANC"),
-                ),
-            ),
-        )
+          )
+          offenderAtMoorlands = offender(nomsId = "A1234TT") {
+            booking {
+              visit {
+                visitor(person = leadVisitor, groupLeader = true)
+                visitOutcome(outcomeReason = "BATCH_CANC")
+              }
+            }
+          }
+        }
 
         offenderNo = offenderAtMoorlands.nomsId
         offenderBookingId = offenderAtMoorlands.latestBooking().bookingId
@@ -1535,95 +1511,84 @@ class VisitResourceIntTest : IntegrationTestBase() {
   inner class GetVisitIdsByFilterRequest {
     @BeforeEach
     internal fun createPrisonerWithVisits() {
-      val person1 = repository.save(LegacyPersonBuilder())
-      val person2 = repository.save(LegacyPersonBuilder())
-      offenderAtMoorlands = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI")
-              // TODO - move to DSL
-              .withVisits(
-                VisitBuilder(
-                  agyLocId = "MDI",
-                  startDateTimeString = "2022-01-01T09:00",
-                  endDateTimeString = "2022-01-01T10:00",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                  VisitVisitorBuilder(person2, leadVisitor = true),
-                ),
-                VisitBuilder(
-                  agyLocId = "MDI",
-                  startDateTimeString = "2022-01-01T12:00",
-                  endDateTimeString = "2022-01-01T13:00",
-                  // no room specified
-                  agencyInternalLocationDescription = null,
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-              ),
-          ),
-      )
-      offenderAtLeeds = repository.save(
-        LegacyOffenderBuilder(nomsId = "A4567TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "LEI")
-              // TODO - move to DSL
-              .withVisits(
-                VisitBuilder(
-                  agyLocId = "LEI",
-                  startDateTimeString = "2022-01-02T09:00",
-                  endDateTimeString = "2022-01-02T10:00",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                VisitBuilder(
-                  agyLocId = "LEI",
-                  startDateTimeString = "2022-01-02T14:00",
-                  endDateTimeString = "2022-01-02T15:00",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-              ),
-          ),
-      )
-      offenderAtBrixton = repository.save(
-        LegacyOffenderBuilder(nomsId = "A7897TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "BXI")
-              // TODO - move to DSL
-              .withVisits(
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = "2022-01-01T09:00",
-                  endDateTimeString = "2022-01-01T10:00",
-                  visitTypeCode = "OFFI",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = "2023-01-01T09:00",
-                  endDateTimeString = "2023-01-01T10:00",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = "2023-02-01T09:00",
-                  endDateTimeString = "2023-02-01T10:00",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = "2023-03-01T09:00",
-                  endDateTimeString = "2023-03-01T10:00",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-              ),
-          ),
-      )
+      var person1: Person
+      var person2: Person
+      nomisDataBuilder.build {
+        person1 = person {}
+        person2 = person {}
+        offenderAtMoorlands = offender(nomsId = "A1234TT") {
+          booking {
+            visit(
+              agyLocId = "MDI",
+              startDateTimeString = "2022-01-01T09:00",
+              endDateTimeString = "2022-01-01T10:00",
+            ) {
+              visitor(person = person1)
+              visitor(person = person2, groupLeader = true)
+            }
+            visit(
+              agyLocId = "MDI",
+              startDateTimeString = "2022-01-01T12:00",
+              endDateTimeString = "2022-01-01T13:00",
+              // no room specified
+              agencyInternalLocationDescription = null,
+            ) {
+              visitor(person = person1)
+            }
+          }
+        }
+        offenderAtLeeds = offender(nomsId = "A4567TT") {
+          booking(agencyLocationId = "LEI") {
+            visit(
+              agyLocId = "LEI",
+              startDateTimeString = "2022-01-02T09:00",
+              endDateTimeString = "2022-01-02T10:00",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "LEI",
+              startDateTimeString = "2022-01-02T14:00",
+              endDateTimeString = "2022-01-02T15:00",
+            ) {
+              visitor(person = person1)
+            }
+          }
+        }
+        offenderAtBrixton = offender(nomsId = "A7897TT") {
+          booking(agencyLocationId = "LEI") {
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = "2022-01-01T09:00",
+              endDateTimeString = "2022-01-01T10:00",
+              visitTypeCode = "OFFI",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = "2023-01-01T09:00",
+              endDateTimeString = "2023-01-01T10:00",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = "2023-02-01T09:00",
+              endDateTimeString = "2023-02-01T10:00",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = "2023-03-01T09:00",
+              endDateTimeString = "2023-03-01T10:00",
+            ) {
+              visitor(person = person1)
+            }
+          }
+        }
+      }
       repository.updateCreatedToMatchVisitStart() // hack to allow easier testing of date ranges (CREATED is not updateable via JPA)
     }
 
@@ -1846,94 +1811,83 @@ class VisitResourceIntTest : IntegrationTestBase() {
   inner class GetVisitRoomCountByFilterRequest {
     @BeforeEach
     internal fun createPrisonerWithVisits() {
-      val person1 = repository.save(LegacyPersonBuilder())
-      val person2 = repository.save(LegacyPersonBuilder())
-      offenderAtMoorlands = repository.save(
-        LegacyOffenderBuilder(nomsId = "A1234TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "MDI")
-              // TODO - move to DSL
-              .withVisits(
-                VisitBuilder(
-                  agyLocId = "MDI",
-                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(2), LocalTime.of(11, 0)).toString(),
-                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(2), LocalTime.of(12, 0)).toString(),
-                  agencyInternalLocationDescription = "MDI-1-1-001",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                  VisitVisitorBuilder(person2, leadVisitor = true),
-                ),
-              ),
-          ),
-      )
-      offenderAtLeeds = repository.save(
-        LegacyOffenderBuilder(nomsId = "A4567TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "LEI")
-              // TODO - move to DSL
-              .withVisits(
-                VisitBuilder(
-                  agyLocId = "LEI",
-                  startDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(9, 0)).toString(),
-                  endDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "LEI-VISITS-NEW_SOC_VIS",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                /* bad data - visit booked way in the future */
-                VisitBuilder(
-                  agyLocId = "LEI",
-                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusYears(24), LocalTime.of(9, 0)).toString(),
-                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusYears(24), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "LEI-VISITS-SEG_VIS",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-              ),
-          ),
-      )
-      offenderAtBrixton = repository.save(
-        LegacyOffenderBuilder(nomsId = "A7897TT")
-          .withBooking(
-            OffenderBookingBuilder(agencyLocationId = "BXI")
-              // TODO - move to DSL
-              .withVisits(
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(9, 0)).toString(),
-                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(10, 0)).toString(),
-                  visitTypeCode = "OFFI",
-                  agencyInternalLocationDescription = "BXI-VISIT",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(9, 0)).toString(),
-                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "BXI-VISIT",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(9, 0)).toString(),
-                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "BXI-VISIT2",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-                VisitBuilder(
-                  agyLocId = "BXI",
-                  startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(9, 0)).toString(),
-                  endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(10, 0)).toString(),
-                  agencyInternalLocationDescription = "BXI-VISIT2",
-                ).withVisitors(
-                  VisitVisitorBuilder(person1),
-                ),
-              ),
-          ),
-      )
+      var person1: Person
+      var person2: Person
+      nomisDataBuilder.build {
+        person1 = person {}
+        person2 = person {}
+        offenderAtMoorlands = offender(nomsId = "A1234TT") {
+          booking {
+            visit(
+              agyLocId = "MDI",
+              startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(2), LocalTime.of(11, 0)).toString(),
+              endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(2), LocalTime.of(12, 0)).toString(),
+              agencyInternalLocationDescription = "MDI-1-1-001",
+            ) {
+              visitor(person = person1)
+              visitor(person = person2, groupLeader = true)
+            }
+          }
+        }
+        offenderAtLeeds = offender(nomsId = "A4567TT") {
+          booking(agencyLocationId = "LEI") {
+            visit(
+              agyLocId = "LEI",
+              startDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(9, 0)).toString(),
+              endDateTimeString = LocalDateTime.of(LocalDate.now().minusWeeks(2), LocalTime.of(10, 0)).toString(),
+              agencyInternalLocationDescription = "LEI-VISITS-NEW_SOC_VIS",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "LEI",
+              startDateTimeString = LocalDateTime.of(LocalDate.now().plusYears(24), LocalTime.of(9, 0)).toString(),
+              endDateTimeString = LocalDateTime.of(LocalDate.now().plusYears(24), LocalTime.of(10, 0)).toString(),
+              agencyInternalLocationDescription = "LEI-VISITS-SEG_VIS",
+            ) {
+              visitor(person = person1)
+            }
+          }
+        }
+        offenderAtBrixton = offender(nomsId = "A7897TT") {
+          booking(agencyLocationId = "LEI") {
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(9, 0)).toString(),
+              endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.of(10, 0)).toString(),
+              visitTypeCode = "OFFI",
+              agencyInternalLocationDescription = "BXI-VISIT",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(9, 0)).toString(),
+              endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(5), LocalTime.of(10, 0)).toString(),
+              agencyInternalLocationDescription = "BXI-VISIT",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(9, 0)).toString(),
+              endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(10), LocalTime.of(10, 0)).toString(),
+              agencyInternalLocationDescription = "BXI-VISIT2",
+            ) {
+              visitor(person = person1)
+            }
+            visit(
+              agyLocId = "BXI",
+              startDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(9, 0)).toString(),
+              endDateTimeString = LocalDateTime.of(LocalDate.now().plusWeeks(15), LocalTime.of(10, 0)).toString(),
+              agencyInternalLocationDescription = "BXI-VISIT2",
+            ) {
+              visitor(person = person1)
+            }
+          }
+        }
+      }
+
       repository.updateCreatedToMatchVisitStart() // hack to allow easier testing of date ranges (CREATED is not updateable via JPA)
     }
 

@@ -6,10 +6,15 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 import java.util.stream.Collectors
@@ -46,11 +51,36 @@ data class Person(
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   @SQLRestriction("OWNER_CLASS = '${PersonInternetAddress.TYPE}'")
   val internetAddresses: List<PersonInternetAddress> = ArrayList(),
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + Title.TITLE + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "TITLE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val title: Title? = null,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + Gender.SEX + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "SEX", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val sex: Gender? = null,
+
 ) {
-  fun getEmails(): List<PersonInternetAddress> {
-    return internetAddresses.stream().filter { ia: PersonInternetAddress -> "EMAIL" == ia.internetAddressClass }
-      .collect(Collectors.toList())
-  }
+  fun getEmails(): List<PersonInternetAddress> = internetAddresses.stream().filter { ia: PersonInternetAddress -> "EMAIL" == ia.internetAddressClass }
+    .collect(Collectors.toList())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -63,7 +93,5 @@ data class Person(
   override fun hashCode(): Int = id.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(id = $id )"
-  }
+  override fun toString(): String = "${this::class.simpleName} (id = $id )"
 }

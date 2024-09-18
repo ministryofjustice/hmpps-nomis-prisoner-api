@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -36,16 +35,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
@@ -75,8 +68,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonReposi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import kotlin.jvm.optionals.getOrNull
@@ -85,23 +76,18 @@ import kotlin.jvm.optionals.getOrNull
 @Transactional
 class Repository(
   val genderRepository: ReferenceCodeRepository<Gender>,
-  val contactTypeRepository: ReferenceCodeRepository<ContactType>,
-  val relationshipTypeRepository: ReferenceCodeRepository<RelationshipType>,
   val offenderRepository: OffenderRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   val personRepository: PersonRepository,
   val visitRepository: VisitRepository,
   val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
-  val visitTypeRepository: ReferenceCodeRepository<VisitType>,
   val iepLevelRepository: ReferenceCodeRepository<IEPLevel>,
   val agencyVisitSlotRepository: AgencyVisitSlotRepository,
   val agencyVisitDayRepository: AgencyVisitDayRepository,
   val agencyVisitTimeRepository: AgencyVisitTimeRepository,
   val activityRepository: ActivityRepository,
   val programServiceRepository: ProgramServiceRepository,
-  val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
-  val sentenceAdjustmentRepository: SentenceAdjustmentRepository,
   val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   val payBandRepository: ReferenceCodeRepository<PayBand>,
   val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
@@ -118,7 +104,6 @@ class Repository(
   val courtEventRepository: CourtEventRepository,
   val offenderSentenceRepository: OffenderSentenceRepository,
   val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
-  val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
   val offenderChargeRepository: OffenderChargeRepository,
   val questionnaireRepository: QuestionnaireRepository,
   val incidentRepository: IncidentRepository,
@@ -131,7 +116,7 @@ class Repository(
   lateinit var jdbcTemplate: JdbcTemplate
 
   // Entity builders
-  fun save(offenderBuilder: LegacyOffenderBuilder): Offender {
+  fun save(offenderBuilder: OffenderDataBuilder): Offender {
     val gender = lookupGender(offenderBuilder.genderCode)
 
     val offender = offenderRepository.saveAndFlush(offenderBuilder.build(gender)).apply {
@@ -140,74 +125,10 @@ class Repository(
     }
 
     offenderBuilder.bookingBuilders.forEachIndexed { index, bookingBuilder ->
-      val booking = bookingBuilder.build(offender, index + 1, lookupAgency(bookingBuilder.agencyLocationId))
-      bookingBuilder.visitBalanceBuilder?.run {
-        booking.visitBalance = this.build(booking)
-      }
-      booking.contacts.addAll(
-        bookingBuilder.contacts.map {
-          it.build(booking, lookupContactType(it.contactTypeCode), lookupRelationshipType(it.relationshipTypeCode))
-        },
-      )
-      booking.visits.addAll(
-        bookingBuilder.visits.map { visitBuilder ->
-          val visit = visitBuilder.build(
-            offenderBooking = booking,
-            visitType = lookupVisitType(visitBuilder.visitTypeCode),
-            visitStatus = lookupVisitStatus(visitBuilder.visitStatusCode),
-            agencyLocation = lookupAgency(visitBuilder.agyLocId),
-            agencyInternalLocation = visitBuilder.agencyInternalLocationDescription?.run {
-              lookupAgencyInternalLocationByDescription(
-                this,
-              )
-            },
-          )
-          visit.visitors.addAll(
-            visitBuilder.visitors.map {
-              it.build(it.person, leadVisitor = it.leadVisitor, visit)
-            } + visitBuilder.visitOutcome.build(visit),
-          )
-          visit
-        },
-      )
+      bookingBuilder.build(offender, index + 1, lookupAgency(bookingBuilder.agencyLocationId))
     }
 
     offenderRepository.saveAndFlush(offender)
-
-    // children that require a flushed booking
-    offender.getAllBookings()!!.forEachIndexed { bookingIndex, booking ->
-      booking.incentives.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].incentives.map {
-          it.build(booking, lookupIepLevel(it.iepLevel))
-        },
-      )
-      booking.sentences.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].sentences.mapIndexed { sentenceIndex, sentenceBuilder ->
-          val sentence = sentenceBuilder.build(
-            offenderBooking = booking,
-            sequence = sentenceIndex.toLong() + 1,
-            calculationType = lookupSentenceCalculationType(sentenceBuilder.calculationType, sentenceBuilder.category),
-            category = lookupSentenceCategory(sentenceBuilder.category),
-          )
-          sentence.adjustments.addAll(
-            sentenceBuilder.adjustments.map {
-              it.build(lookupSentenceAdjustment(it.adjustmentTypeCode), sentence)
-            },
-          )
-          sentence
-        },
-      )
-      booking.keyDateAdjustments.addAll(
-        offenderBuilder.bookingBuilders[bookingIndex].keyDateAdjustments.map {
-          it.build(
-            booking,
-            lookupSentenceAdjustment(it.adjustmentTypeCode),
-          )
-        },
-      )
-    }
-
-    offenderRepository.flush()
     return offender
   }
 
@@ -216,7 +137,6 @@ class Repository(
   fun deleteOffenders() = offenderRepository.deleteAll()
   fun deleteMergeTransactions() = mergeTransactionRepository.deleteAll()
 
-  fun save(personBuilder: LegacyPersonBuilder): Person = personRepository.save(personBuilder.build())
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
 
   fun deleteProgramServices() = programServiceRepository.deleteAll()
@@ -249,7 +169,6 @@ class Repository(
     offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
 
   fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
-  fun deleteSentenceByBookingId(bookingId: Long) = offenderSentenceRepository.deleteByIdOffenderBookingBookingId(bookingId = bookingId)
 
   fun delete(questionnaire: Questionnaire) = questionnaireRepository.deleteById(questionnaire.id)
   fun delete(incident: Incident) = incidentRepository.deleteById(incident.id)
@@ -258,26 +177,8 @@ class Repository(
 
   // Builder lookups
   fun lookupGender(code: String): Gender = genderRepository.findByIdOrNull(Pk(Gender.SEX, code))!!
-  fun lookupContactType(code: String): ContactType =
-    contactTypeRepository.findByIdOrNull(Pk(ContactType.CONTACTS, code))!!
-
-  fun lookupVisitType(code: String): VisitType = visitTypeRepository.findByIdOrNull(Pk(VisitType.VISIT_TYPE, code))!!
 
   fun lookupIepLevel(code: String): IEPLevel = iepLevelRepository.findByIdOrNull(Pk(IEPLevel.IEP_LEVEL, code))!!
-
-  fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
-    sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
-
-  fun lookupSentenceCategory(code: String): SentenceCategoryType =
-    sentenceCategoryTypeRepository.findByIdOrNull(Pk(SentenceCategoryType.CATEGORY, code))!!
-
-  fun lookupSentenceAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
-
-  fun lookupVisitStatus(code: String): VisitStatus =
-    visitStatusRepository.findByIdOrNull(Pk(VisitStatus.VISIT_STATUS, code))!!
-
-  fun lookupRelationshipType(code: String): RelationshipType =
-    relationshipTypeRepository.findByIdOrNull(Pk(RelationshipType.RELATIONSHIP, code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation? =
