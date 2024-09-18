@@ -4,6 +4,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
@@ -50,12 +51,14 @@ class PersonBuilderRepository(
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
   private val languageRepository: ReferenceCodeRepository<Language>,
+  private val maritalStatusRepository: ReferenceCodeRepository<MaritalStatus>,
 
 ) {
   fun save(person: Person): Person = personRepository.save(person)
   fun genderOf(code: String?): Gender? = code?.let { genderRepository.findByIdOrNull(Gender.pk(it)) }
   fun titleOf(code: String?): Title? = code?.let { titleRepository.findByIdOrNull(Title.pk(it)) }
   fun languageOf(code: String?): Language? = code?.let { languageRepository.findByIdOrNull(Language.pk(it)) }
+  fun martialStatusOf(code: String?): MaritalStatus? = code?.let { maritalStatusRepository.findByIdOrNull(MaritalStatus.pk(it)) }
 }
 
 class PersonBuilder(
@@ -73,6 +76,8 @@ class PersonBuilder(
     gender: String?,
     title: String?,
     language: String?,
+    interpreterRequired: Boolean,
+    domesticStatus: String?,
   ): Person = Person(
     lastName = lastName,
     firstName = firstName,
@@ -81,6 +86,8 @@ class PersonBuilder(
     sex = repository.genderOf(gender),
     title = repository.titleOf(title),
     language = repository.languageOf(language),
+    interpreterRequired = interpreterRequired,
+    domesticStatus = repository.martialStatusOf(domesticStatus),
   )
     .let { repository.save(it) }
     .also { person = it }

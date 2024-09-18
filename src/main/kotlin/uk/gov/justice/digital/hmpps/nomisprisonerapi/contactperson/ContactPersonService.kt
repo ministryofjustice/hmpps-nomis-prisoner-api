@@ -18,6 +18,8 @@ class ContactPersonService(private val personRepository: PersonRepository) {
       gender = it.sex?.toCodeDescription(),
       title = it.title?.toCodeDescription(),
       language = it.language?.toCodeDescription(),
+      interpreterRequired = it.interpreterRequired,
+      domesticStatus = it.domesticStatus?.toCodeDescription(),
     )
   } ?: throw NotFoundException("Person not found $personId")
 }

@@ -331,6 +331,8 @@ class NomisData(
     gender: String?,
     title: String?,
     language: String?,
+    interpreterRequired: Boolean,
+    domesticStatus: String?,
     dsl: PersonDsl.() -> Unit,
   ): Person = personBuilderFactory!!.builder()
     .let { builder ->
@@ -342,6 +344,8 @@ class NomisData(
         gender = gender,
         title = title,
         language = language,
+        interpreterRequired = interpreterRequired,
+        domesticStatus = domesticStatus,
       )
         .also {
           builder.apply(dsl)
@@ -480,6 +484,8 @@ interface NomisDataDsl {
     gender: String? = null,
     title: String? = null,
     language: String? = null,
+    interpreterRequired: Boolean = false,
+    domesticStatus: String? = null,
     dsl: PersonDsl.() -> Unit = {},
   ): Person
 }
