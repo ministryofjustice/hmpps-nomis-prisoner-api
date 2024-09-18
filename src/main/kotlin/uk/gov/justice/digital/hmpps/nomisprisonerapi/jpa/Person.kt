@@ -17,7 +17,6 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
-import java.util.stream.Collectors
 
 @Entity
 @Table(name = "PERSONS")
@@ -78,9 +77,30 @@ data class Person(
   )
   val sex: Gender? = null,
 
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + Language.LANG + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "LANGUAGE_CODE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val language: Language? = null,
+
+  /* columns not mapped
+  OCCUPATION_CODE - always null
+  CRIMINAL_HISTORY_TEXT - always null
+  NAME_TYPE - always null
+  ALIAS_PERSON_ID - always null
+  ROOT_PERSON_ID - always null
+
+
+   */
+
 ) {
-  fun getEmails(): List<PersonInternetAddress> = internetAddresses.stream().filter { ia: PersonInternetAddress -> "EMAIL" == ia.internetAddressClass }
-    .collect(Collectors.toList())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

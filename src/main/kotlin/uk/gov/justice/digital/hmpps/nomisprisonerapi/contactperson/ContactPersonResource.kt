@@ -95,4 +95,6 @@ data class ContactPerson(
   val gender: CodeDescription?,
   @Schema(description = "Title of the person")
   val title: CodeDescription?,
+  @Schema(description = "Language of the person")
+  val language: CodeDescription?,
 )
