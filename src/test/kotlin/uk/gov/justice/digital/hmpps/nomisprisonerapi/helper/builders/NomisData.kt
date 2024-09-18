@@ -333,6 +333,10 @@ class NomisData(
     language: String?,
     interpreterRequired: Boolean,
     domesticStatus: String?,
+    deceasedDate: String?,
+    isStaff: Boolean?,
+    isRemitter: Boolean?,
+    keepBiometrics: Boolean,
     dsl: PersonDsl.() -> Unit,
   ): Person = personBuilderFactory!!.builder()
     .let { builder ->
@@ -346,6 +350,10 @@ class NomisData(
         language = language,
         interpreterRequired = interpreterRequired,
         domesticStatus = domesticStatus,
+        deceasedDate = deceasedDate?.let { LocalDate.parse(it) },
+        isStaff = isStaff,
+        isRemitter = isRemitter,
+        keepBiometrics = keepBiometrics,
       )
         .also {
           builder.apply(dsl)
@@ -486,6 +494,10 @@ interface NomisDataDsl {
     language: String? = null,
     interpreterRequired: Boolean = false,
     domesticStatus: String? = null,
+    deceasedDate: String? = null,
+    isStaff: Boolean? = null,
+    isRemitter: Boolean? = null,
+    keepBiometrics: Boolean = false,
     dsl: PersonDsl.() -> Unit = {},
   ): Person
 }

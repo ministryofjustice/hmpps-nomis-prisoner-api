@@ -41,7 +41,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           gender = "F",
           title = "DR",
           language = "VIE",
+          interpreterRequired = true,
           domesticStatus = "M",
+          deceasedDate = "2023-12-22",
+          isStaff = true,
+          isRemitter = true,
+          keepBiometrics = true,
         ) {
         }
       }
@@ -107,7 +112,14 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("gender").doesNotExist()
           .jsonPath("title").doesNotExist()
           .jsonPath("language").doesNotExist()
+          .jsonPath("interpreterRequired").isEqualTo(false)
           .jsonPath("domesticStatus").doesNotExist()
+          .jsonPath("deceasedDate").doesNotExist()
+          .jsonPath("isStaff").doesNotExist()
+          .jsonPath("isRemitter").doesNotExist()
+          .jsonPath("keepBiometrics").isEqualTo(false)
+          .jsonPath("audit.createUsername").isNotEmpty
+          .jsonPath("audit.createDatetime").isNotEmpty
       }
 
       @Test
@@ -129,8 +141,15 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("title.description").isEqualTo("Dr")
           .jsonPath("language.code").isEqualTo("VIE")
           .jsonPath("language.description").isEqualTo("Vietnamese")
+          .jsonPath("interpreterRequired").isEqualTo(true)
           .jsonPath("domesticStatus.code").isEqualTo("M")
           .jsonPath("domesticStatus.description").isEqualTo("Married or in civil partnership")
+          .jsonPath("deceasedDate").isEqualTo("2023-12-22")
+          .jsonPath("isStaff").isEqualTo(true)
+          .jsonPath("isRemitter").isEqualTo(true)
+          .jsonPath("keepBiometrics").isEqualTo(true)
+          .jsonPath("audit.createUsername").isNotEmpty
+          .jsonPath("audit.createDatetime").isNotEmpty
       }
     }
   }

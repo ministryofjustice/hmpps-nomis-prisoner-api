@@ -78,6 +78,10 @@ class PersonBuilder(
     language: String?,
     interpreterRequired: Boolean,
     domesticStatus: String?,
+    deceasedDate: LocalDate?,
+    isStaff: Boolean?,
+    isRemitter: Boolean?,
+    keepBiometrics: Boolean,
   ): Person = Person(
     lastName = lastName,
     firstName = firstName,
@@ -88,6 +92,10 @@ class PersonBuilder(
     language = repository.languageOf(language),
     interpreterRequired = interpreterRequired,
     domesticStatus = repository.martialStatusOf(domesticStatus),
+    deceasedDate = deceasedDate,
+    isStaff = isStaff,
+    isRemitter = isRemitter,
+    keepBiometrics = keepBiometrics,
   )
     .let { repository.save(it) }
     .also { person = it }

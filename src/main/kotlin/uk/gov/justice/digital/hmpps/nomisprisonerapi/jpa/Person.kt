@@ -4,7 +4,7 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -13,12 +13,14 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.SQLRestriction
 import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity
 @Table(name = "PERSONS")
@@ -41,15 +43,15 @@ data class Person(
   @Column(name = "BIRTHDATE")
   val birthDate: LocalDate? = null,
 
-  @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${PersonAddress.ADDR_TYPE}'")
   val addresses: MutableList<PersonAddress> = mutableListOf(),
 
-  @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${PersonPhone.PHONE_TYPE}'")
   val phones: MutableList<PersonPhone> = mutableListOf(),
 
-  @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${PersonInternetAddress.TYPE}'")
   val internetAddresses: List<PersonInternetAddress> = ArrayList(),
 
@@ -109,6 +111,29 @@ data class Person(
   )
   val domesticStatus: MaritalStatus? = null,
 
+  @Column(name = "DECEASED_DATE")
+  val deceasedDate: LocalDate? = null,
+
+  @Column(name = "STAFF_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  val isStaff: Boolean? = false,
+
+  @Column(name = "REMITTER_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  val isRemitter: Boolean? = false,
+
+  @Column(name = "KEEP_BIOMETRICS")
+  @Convert(converter = YesNoConverter::class)
+  val keepBiometrics: Boolean = false,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  val createStaffUserAccount: StaffUserAccount? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  val modifyStaffUserAccount: StaffUserAccount? = null,
+
   /* columns not mapped
   OCCUPATION_CODE - always null
   CRIMINAL_HISTORY_TEXT - always null
@@ -122,10 +147,58 @@ data class Person(
   PRIMARY_LANGUAGE_CODE - always null
   MEMO_TEXT - always null
   SUSPENDED_FLAG - always default of N
-  CITIZENSHIP = always null
+  CITIZENSHIP - always null
+  CORONER_NUMBER - always null
+  ATTENTION - always null
+  CARE_OF - always null
+  SUSPENDED_DATE - always null
+  NAME_SEQUENCE - always null
    */
 
 ) {
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
+
+  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  @Generated
+  lateinit var createDatetime: LocalDateTime
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var modifyUserId: String? = null
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var modifyDatetime: LocalDateTime? = null
+
+  @Column(name = "AUDIT_TIMESTAMP", insertable = false, updatable = false)
+  @Generated
+  var auditTimestamp: LocalDateTime? = null
+
+  @Column(name = "AUDIT_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var auditUserId: String? = null
+
+  @Column(name = "AUDIT_MODULE_NAME", insertable = false, updatable = false)
+  @Generated
+  var auditModuleName: String? = null
+
+  @Column(name = "AUDIT_CLIENT_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var auditClientUserId: String? = null
+
+  @Column(name = "AUDIT_CLIENT_IP_ADDRESS", insertable = false, updatable = false)
+  @Generated
+  var auditClientIpAddress: String? = null
+
+  @Column(name = "AUDIT_CLIENT_WORKSTATION_NAME", insertable = false, updatable = false)
+  @Generated
+  var auditClientWorkstationName: String? = null
+
+  @Column(name = "AUDIT_ADDITIONAL_INFO", insertable = false, updatable = false)
+  @Generated
+  var auditAdditionalInfo: String? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

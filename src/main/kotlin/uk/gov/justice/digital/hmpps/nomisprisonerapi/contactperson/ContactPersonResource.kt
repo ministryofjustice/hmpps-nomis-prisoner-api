@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts.NomisAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import java.time.LocalDate
@@ -101,4 +102,14 @@ data class ContactPerson(
   val interpreterRequired: Boolean,
   @Schema(description = "Domestic aka marital status of the person")
   val domesticStatus: CodeDescription?,
+  @Schema(description = "Date the person dies")
+  val deceasedDate: LocalDate?,
+  @Schema(description = "True if a staff member")
+  val isStaff: Boolean?,
+  @Schema(description = "No longer used in NOMIS since 2018")
+  val isRemitter: Boolean?,
+  @Schema(description = "No longer used in NOMIS since 2019")
+  val keepBiometrics: Boolean,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
