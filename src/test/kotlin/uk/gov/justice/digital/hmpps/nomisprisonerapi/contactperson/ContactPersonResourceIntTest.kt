@@ -202,8 +202,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            address()
-            address(type = "HOME") {
+            address(premise = null, street = null, locality = null, postcode = "S1 3GG")
+            address(type = "HOME", flat = "3B", premise = "Brown Court", street = "Scotland Street", locality = "Hunters Bar", postcode = "S1 3GG") {
               phone(phoneType = "MOB", phoneNo = "07399999999")
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
             }
@@ -221,9 +221,18 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("addresses[0].addressId").isEqualTo(person.addresses[0].addressId)
           .jsonPath("addresses[0].type").doesNotExist()
+          .jsonPath("addresses[0].flat").doesNotExist()
+          .jsonPath("addresses[0].premise").doesNotExist()
+          .jsonPath("addresses[0].street").doesNotExist()
+          .jsonPath("addresses[0].locality").doesNotExist()
           .jsonPath("addresses[1].addressId").isEqualTo(person.addresses[1].addressId)
           .jsonPath("addresses[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
+          .jsonPath("addresses[1].flat").isEqualTo("3B")
+          .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
+          .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
+          .jsonPath("addresses[1].locality").isEqualTo("Hunters Bar")
+          .jsonPath("addresses[1].postcode").isEqualTo("S1 3GG")
       }
 
       @Test

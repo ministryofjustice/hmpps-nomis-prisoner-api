@@ -138,6 +138,16 @@ data class Address(
   val addressId: Long,
   @Schema(description = "Address type")
   val type: CodeDescription?,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String?,
+  @Schema(description = "Premise", example = "22")
+  val premise: String?,
+  @Schema(description = "Street", example = "West Street")
+  val street: String?,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String?,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String?,
   @Schema(description = "List of phone numbers for the address")
   val phoneNumbers: List<PhoneNumber>,
 )

@@ -52,9 +52,11 @@ class PersonAddressBuilder(
   fun build(
     type: String?,
     person: Person,
-    premise: String,
-    street: String,
-    locality: String,
+    premise: String?,
+    street: String?,
+    locality: String?,
+    flat: String?,
+    postcode: String?,
   ): PersonAddress =
     PersonAddress(
       addressType = addressPhoneBuilderRepository.addressTypeOf(type),
@@ -62,6 +64,8 @@ class PersonAddressBuilder(
       premise = premise,
       street = street,
       locality = locality,
+      flat = flat,
+      postalCode = postcode,
     )
       .also { address = it }
 
