@@ -22,9 +22,11 @@ interface PersonDsl {
   @PersonAddressDslMarker
   fun address(
     type: String? = null,
-    premise: String = "41",
-    street: String = "High Street",
-    locality: String = "Sheffield",
+    premise: String? = "41",
+    street: String? = "High Street",
+    locality: String? = "Sheffield",
+    flat: String? = null,
+    postcode: String? = null,
     dsl: PersonAddressDsl.() -> Unit = {},
   ): PersonAddress
 
@@ -103,9 +105,11 @@ class PersonBuilder(
 
   override fun address(
     type: String?,
-    premise: String,
-    street: String,
-    locality: String,
+    premise: String?,
+    street: String?,
+    locality: String?,
+    flat: String?,
+    postcode: String?,
     dsl: PersonAddressDsl.() -> Unit,
   ): PersonAddress =
     personAddressBuilderFactory.builder().let { builder ->
@@ -115,6 +119,8 @@ class PersonBuilder(
         premise = premise,
         street = street,
         locality = locality,
+        flat = flat,
+        postcode = postcode,
       )
         .also { person.addresses += it }
         .also { builder.apply(dsl) }

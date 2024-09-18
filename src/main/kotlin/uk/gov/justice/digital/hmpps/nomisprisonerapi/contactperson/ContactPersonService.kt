@@ -55,6 +55,11 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         Address(
           addressId = address.addressId,
           type = address.addressType?.toCodeDescription(),
+          flat = address.flat,
+          premise = address.premise,
+          street = address.street,
+          locality = address.locality,
+          postcode = address.postalCode,
           phoneNumbers = address.phones.map { number ->
             PhoneNumber(
               phoneId = number.phoneId,

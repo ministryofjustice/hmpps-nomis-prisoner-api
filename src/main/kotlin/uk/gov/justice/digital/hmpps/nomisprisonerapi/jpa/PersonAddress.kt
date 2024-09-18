@@ -20,6 +20,8 @@ class PersonAddress(
   noFixedAddressFlag: String = "N",
   phones: MutableList<AddressPhone> = mutableListOf(),
   addressType: AddressType? = null,
+  flat: String? = null,
+  postalCode: String? = null,
 ) : Address(
   addressType = addressType,
   premise = premise,
@@ -28,6 +30,8 @@ class PersonAddress(
   startDate = startDate,
   noFixedAddressFlag = noFixedAddressFlag,
   phones = phones,
+  flat = flat,
+  postalCode = postalCode,
 ) {
   companion object {
     const val ADDR_TYPE = "PER"

@@ -27,16 +27,25 @@ import java.time.LocalDate
 @DiscriminatorColumn(name = "OWNER_CLASS")
 @Inheritance
 abstract class Address(
+  @Column(name = "PREMISE")
   open val premise: String? = null,
+
+  @Column(name = "STREET")
   open val street: String? = null,
+
+  @Column(name = "LOCALITY")
   open val locality: String? = null,
+
   @Column(name = "START_DATE")
   open val startDate: LocalDate = LocalDate.now(),
+
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
   open val noFixedAddressFlag: String = "N",
+
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @SQLRestriction("OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
   open val phones: MutableList<AddressPhone> = ArrayList(),
+
   @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
@@ -50,17 +59,19 @@ abstract class Address(
     ],
   )
   open val addressType: AddressType? = null,
+
+  @Column(name = "FLAT")
+  open val flat: String? = null,
+
+  @Column(name = "POSTAL_CODE")
+  open val postalCode: String? = null,
+
 ) {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
   open val addressId: Long = 0
-
-  open val flat: String? = null
-
-  @Column(name = "POSTAL_CODE")
-  open val postalCode: String? = null
 
   @Column(name = "PRIMARY_FLAG", nullable = false)
   open val primaryFlag = "N"
