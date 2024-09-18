@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskType
@@ -68,6 +69,8 @@ class CaseNotesService(
         dateCreation = request.occurrenceDateTime.toLocalDate(),
         timeCreation = request.occurrenceDateTime,
         createdDatetime = request.occurrenceDateTime,
+        createdUserId = staffUserAccount.username,
+        noteSourceCode = NoteSourceCode.INST,
       ),
     )
     return CreateCaseNoteResponse(caseNote.id, offenderBooking.bookingId)
@@ -114,13 +117,15 @@ class CaseNotesService(
     authorUsername = author.accounts.first().username,
     // NB ^ omitted by the /{offenderNo}/case-notes/v2 endpoint
     authorStaffId = author.id,
-    authorName = "${author.firstName} ${author.lastName}",
-    // TODO not sure what will be required here
+    // see https://mojdt.slack.com/archives/C06G85DCF8T/p1726158063333349?thread_ts=1726156937.043299&cid=C06G85DCF8T
+    authorFirstName = author.firstName,
+    authorLastName = author.lastName,
     prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
     caseNoteText = parseMainText(caseNoteText),
     amendments = parseAmendments(caseNoteText),
     noteSourceCode = noteSourceCode,
     createdDatetime = LocalDateTime.of(dateCreation, timeCreation?.toLocalTime() ?: LocalTime.MIDNIGHT),
+    createdUsername = createdUserId,
     auditModuleName = auditModuleName,
   )
 
@@ -131,21 +136,14 @@ class CaseNotesService(
 
   val dateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
 
-  internal fun parseMainText(caseNoteText: String?): String? {
-    if (caseNoteText == null) {
-      return null
-    }
+  internal fun parseMainText(caseNoteText: String): String {
     return pattern
       .find(caseNoteText)
       ?.let { caseNoteText.slice(0..it.range.first - 1) }
       ?: caseNoteText
   }
 
-  internal fun parseAmendments(caseNoteText: String?): List<CaseNoteAmendment> {
-    if (caseNoteText == null) {
-      return emptyList()
-    }
-
+  internal fun parseAmendments(caseNoteText: String): List<CaseNoteAmendment> {
     val matchResults = pattern.findAll(caseNoteText)
     val matchLastIndex = matchResults.count() - 1
 
@@ -164,8 +162,9 @@ class CaseNotesService(
       CaseNoteAmendment(
         text = amendText,
         authorUsername = user,
-        authorUserId = staff?.id,
-        authorName = staff?.run { "$firstName $lastName" },
+        authorStaffId = staff?.id,
+        authorFirstName = staff?.firstName,
+        authorLastName = staff?.lastName,
         createdDateTime = LocalDateTime.parse("$date $time", dateTimeFormat),
       )
     }.toList()

@@ -43,11 +43,6 @@ internal class CaseNotesServiceTest {
     }
 
     @Test
-    fun `null text`() {
-      assertThat(locationService.parseMainText(null)).isNull()
-    }
-
-    @Test
     fun `empty text`() {
       assertThat(locationService.parseMainText("")).isEqualTo("")
     }
@@ -82,11 +77,6 @@ internal class CaseNotesServiceTest {
     }
 
     @Test
-    fun `null text`() {
-      assertThat(locationService.parseAmendments(null)).isEmpty()
-    }
-
-    @Test
     fun `empty text`() {
       assertThat(locationService.parseAmendments("")).isEmpty()
     }
@@ -112,7 +102,8 @@ internal class CaseNotesServiceTest {
             "made a change",
             "JMORROW_GEN",
             12345L,
-            "First1 Last1",
+            "First1",
+            "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
           ),
         )
@@ -147,14 +138,16 @@ internal class CaseNotesServiceTest {
             "made a change",
             "JMORROW_GEN",
             12345L,
-            "First1 Last1",
+            "First1",
+            "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
           ),
           CaseNoteAmendment(
             "with more details",
             "PPHILLIPS_GEN",
             67890L,
-            "First2 Last2",
+            "First2",
+            "Last2",
             LocalDateTime.parse("2023-06-28T15:52:08"),
           ),
         )
@@ -181,7 +174,8 @@ internal class CaseNotesServiceTest {
             "",
             "JMORROW_GEN",
             12345L,
-            "First1 Last1",
+            "First1",
+            "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
           ),
         )
@@ -216,14 +210,16 @@ internal class CaseNotesServiceTest {
             "",
             "JMORROW_GEN",
             12345L,
-            "First1 Last1",
+            "First1",
+            "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
           ),
           CaseNoteAmendment(
             "with more details",
             "PPHILLIPS_GEN",
             67890L,
-            "First2 Last2",
+            "First2",
+            "Last2",
             LocalDateTime.parse("2023-06-28T15:52:08"),
           ),
         )
