@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -16,6 +17,7 @@ import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.SQLRestriction
+import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
 
 @Entity
@@ -90,14 +92,37 @@ data class Person(
   )
   val language: Language? = null,
 
+  @Column(name = "INTERPRETER_REQUIRED")
+  @Convert(converter = YesNoConverter::class)
+  val interpreterRequired: Boolean = false,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + MaritalStatus.MARITAL_STAT + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "MARITAL_STATUS", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val domesticStatus: MaritalStatus? = null,
+
   /* columns not mapped
   OCCUPATION_CODE - always null
   CRIMINAL_HISTORY_TEXT - always null
   NAME_TYPE - always null
   ALIAS_PERSON_ID - always null
   ROOT_PERSON_ID - always null
-
-
+  COMPREHEND_ENGLISH_FLAG - always default of N
+  BIRTH_PLACE - always null
+  EMPLOYER - always null
+  PROFILE_CODE - always null
+  PRIMARY_LANGUAGE_CODE - always null
+  MEMO_TEXT - always null
+  SUSPENDED_FLAG - always default of N
+  CITIZENSHIP = always null
    */
 
 ) {

@@ -41,6 +41,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           gender = "F",
           title = "DR",
           language = "VIE",
+          domesticStatus = "M",
         ) {
         }
       }
@@ -106,6 +107,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("gender").doesNotExist()
           .jsonPath("title").doesNotExist()
           .jsonPath("language").doesNotExist()
+          .jsonPath("domesticStatus").doesNotExist()
       }
 
       @Test
@@ -127,6 +129,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("title.description").isEqualTo("Dr")
           .jsonPath("language.code").isEqualTo("VIE")
           .jsonPath("language.description").isEqualTo("Vietnamese")
+          .jsonPath("domesticStatus.code").isEqualTo("M")
+          .jsonPath("domesticStatus.description").isEqualTo("Married or in civil partnership")
       }
     }
   }

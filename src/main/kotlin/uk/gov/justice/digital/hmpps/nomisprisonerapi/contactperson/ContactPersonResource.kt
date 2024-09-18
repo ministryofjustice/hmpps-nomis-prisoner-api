@@ -97,4 +97,8 @@ data class ContactPerson(
   val title: CodeDescription?,
   @Schema(description = "Language of the person")
   val language: CodeDescription?,
+  @Schema(description = "True if the person requires an interpreter")
+  val interpreterRequired: Boolean,
+  @Schema(description = "Domestic aka marital status of the person")
+  val domesticStatus: CodeDescription?,
 )
