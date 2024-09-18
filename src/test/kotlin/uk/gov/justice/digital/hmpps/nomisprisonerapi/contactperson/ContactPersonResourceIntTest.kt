@@ -190,5 +190,61 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("phoneNumbers[1].extension").isEqualTo("123")
       }
     }
+
+    @Nested
+    inner class Addresses {
+      private lateinit var person: Person
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            address()
+            address(type = "HOME") {
+              phone(phoneType = "MOB", phoneNo = "07399999999")
+              phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return addresses`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].addressId").isEqualTo(person.addresses[0].addressId)
+          .jsonPath("addresses[0].type").doesNotExist()
+          .jsonPath("addresses[1].addressId").isEqualTo(person.addresses[1].addressId)
+          .jsonPath("addresses[1].type.code").isEqualTo("HOME")
+          .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
+      }
+
+      @Test
+      fun `will return phone numbers associated with addresses`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(person.addresses[1].phones[0].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
+          .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(person.addresses[1].phones[1].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
+          .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
+          .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
+          .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
+      }
+    }
   }
 }
