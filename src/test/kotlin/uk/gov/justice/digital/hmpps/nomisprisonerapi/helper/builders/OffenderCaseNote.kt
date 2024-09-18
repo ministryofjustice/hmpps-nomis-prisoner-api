@@ -54,7 +54,7 @@ class OffenderCaseNoteBuilder(
     caseNoteSubType: String,
     date: LocalDateTime,
     author: Staff,
-    caseNoteText: String?,
+    caseNoteText: String,
     amendmentFlag: Boolean,
     noteSourceCode: NoteSourceCode,
   ): OffenderCaseNote = OffenderCaseNote(
@@ -72,6 +72,7 @@ class OffenderCaseNoteBuilder(
     timeCreation = date,
     auditModuleName = "A_MODULE",
     createdDatetime = date,
+    createdUserId = "username",
   )
     .let { repository.save(it) }
     .also { casenote = it }

@@ -24,8 +24,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-private const val AMEND_CASE_NOTE_FORMAT = "%s ...[%s updated the case notes on %s] %s"
-
 @Entity
 @Table(name = "OFFENDER_CASE_NOTES")
 @EntityOpen
@@ -41,10 +39,12 @@ class OffenderCaseNote(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "CONTACT_DATE")
-  val occurrenceDate: LocalDate? = null,
+  val occurrenceDate: LocalDate,
+  // Actually nullable but never null in prod data
 
   @Column(name = "CONTACT_TIME")
-  var occurrenceDateTime: LocalDateTime? = null,
+  var occurrenceDateTime: LocalDateTime,
+  // Actually nullable but never null in prod data
   // date part always the same as CONTACT_DATE
 
   @ManyToOne(optional = false)
@@ -86,8 +86,9 @@ class OffenderCaseNote(
   val agencyLocation: AgencyLocation? = null,
   // can be null pre c.2017
 
-  @Column(name = "CASE_NOTE_TEXT")
-  var caseNoteText: String? = null,
+  @Column(name = "CASE_NOTE_TEXT", nullable = false)
+  var caseNoteText: String,
+  // Actually nullable but never null in prod data
 
   @Column(name = "AMENDMENT_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
@@ -97,9 +98,10 @@ class OffenderCaseNote(
   // CHECK BOX 1 to 5 - not used
   // EVENT_ID - not used
 
-  @Column(name = "NOTE_SOURCE_CODE")
+  @Column(name = "NOTE_SOURCE_CODE", nullable = false)
   @Enumerated(EnumType.STRING)
-  var noteSourceCode: NoteSourceCode? = null,
+  var noteSourceCode: NoteSourceCode,
+  // Actually nullable but never null in prod data
 
   @Column(name = "DATE_CREATION", nullable = false)
   @CreatedDate
@@ -112,8 +114,11 @@ class OffenderCaseNote(
   var timeCreation: LocalDateTime? = null,
   // date part always the same as DATE_CREATION
 
-  @Column(name = "CREATE_DATETIME")
+  @Column(name = "CREATE_DATETIME", nullable = false)
   var createdDatetime: LocalDateTime,
+
+  @Column(name = "CREATE_USER_ID", nullable = false)
+  var createdUserId: String,
 
   val auditModuleName: String? = null,
 ) {
