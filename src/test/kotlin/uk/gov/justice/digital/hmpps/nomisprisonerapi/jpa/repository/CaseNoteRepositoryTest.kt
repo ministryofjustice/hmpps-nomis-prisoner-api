@@ -65,6 +65,7 @@ class CaseNoteRepositoryTest {
         dateCreation = timestamp.toLocalDate(),
         timeCreation = timestamp,
         createdDatetime = timestamp,
+        createdUserId = "my-user-name",
       ),
     )
 
@@ -76,6 +77,10 @@ class CaseNoteRepositoryTest {
       assertThat(agencyLocation?.id).isEqualTo("BXI")
       assertThat(author.lastName).isEqualTo("Bloggs")
       assertThat(caseNoteText).isEqualTo("A note")
+      assertThat(noteSourceCode).isEqualTo(NoteSourceCode.INST)
+      assertThat(timeCreation).isEqualTo(timestamp)
+      assertThat(createdDatetime).isEqualTo(timestamp)
+      assertThat(createdUserId).isEqualTo("my-user-name")
     }
   }
 }

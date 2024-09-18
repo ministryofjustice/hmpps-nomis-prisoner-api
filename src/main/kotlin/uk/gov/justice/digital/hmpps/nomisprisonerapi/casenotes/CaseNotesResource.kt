@@ -256,19 +256,23 @@ data class CaseNoteResponse(
   val authorStaffId: Long,
   @Schema(description = "Author username or login name")
   val authorUsername: String,
-  @Schema(description = "Free format text of person or department that created the case note (first and last names)")
-  val authorName: String,
+  @Schema(description = "Author first name")
+  val authorFirstName: String?,
+  @Schema(description = "Author last name")
+  val authorLastName: String,
 
   @Schema(description = "Prison id")
   val prisonId: String? = null,
   @Schema(description = "Free format text body of case note")
-  var caseNoteText: String? = null,
+  var caseNoteText: String,
 
   @Schema(description = "Amendments to the text")
   val amendments: List<CaseNoteAmendment> = mutableListOf(),
 
   @Schema(description = "Created timestamp")
   var createdDatetime: LocalDateTime,
+  @Schema(description = "Created username")
+  var createdUsername: String,
   @Schema(description = "Which screen (or DPS) created the case note", example = "false")
   val auditModuleName: String? = null,
 )
@@ -297,12 +301,14 @@ data class CreateCaseNoteRequest(
 data class CaseNoteAmendment(
   @Schema(description = "Free format text body of amendment")
   val text: String,
-  @Schema(description = "Author login name")
+  @Schema(description = "Author login name of person or department that added the amendment")
   val authorUsername: String,
   @Schema(description = "Author STAFF_ID")
-  val authorUserId: Long?,
-  @Schema(description = "Free format text of person or department that added the amendment")
-  val authorName: String?,
+  val authorStaffId: Long?,
+  @Schema(description = "Author first name")
+  val authorFirstName: String?,
+  @Schema(description = "Author last name")
+  val authorLastName: String?,
   @Schema(description = "Amendment created timestamp")
   val createdDateTime: LocalDateTime,
 )

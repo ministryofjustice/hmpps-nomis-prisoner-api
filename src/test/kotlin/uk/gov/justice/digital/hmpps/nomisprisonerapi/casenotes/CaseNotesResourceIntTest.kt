@@ -13,6 +13,7 @@ import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
@@ -125,13 +126,15 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseNoteSubType.code").isEqualTo("SA")
           .jsonPath("authorUsername").isEqualTo("JANE.NARK")
           .jsonPath("authorStaffId").isEqualTo(staff1.id)
-          .jsonPath("authorName").isEqualTo("JANE NARK")
+          .jsonPath("authorFirstName").isEqualTo("JANE")
+          .jsonPath("authorLastName").isEqualTo("NARK")
           .jsonPath("prisonId").isEqualTo("BXI")
           .jsonPath("caseNoteText").isEqualTo("A note")
           .jsonPath("amendments").isEmpty()
           .jsonPath("occurrenceDateTime").isEqualTo("2021-02-03T04:05:06")
           .jsonPath("noteSourceCode").isEqualTo("INST")
           .jsonPath("createdDatetime").isEqualTo("2021-02-03T04:05:06")
+          .jsonPath("createdUsername").isEqualTo("username")
           .jsonPath("auditModuleName").isEqualTo("A_MODULE")
       }
     }
@@ -306,7 +309,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           assertThat(newCaseNote.agencyLocation?.id).isEqualTo("BXI")
           assertThat(newCaseNote.caseNoteText).isEqualTo("the contents")
           assertThat(newCaseNote.amendmentFlag).isFalse()
-          assertThat(newCaseNote.noteSourceCode).isNull()
+          assertThat(newCaseNote.noteSourceCode).isEqualTo(NoteSourceCode.INST)
           assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate)
           assertThat(newCaseNote.timeCreation).isEqualTo(newCaseNote.occurrenceDateTime)
 
