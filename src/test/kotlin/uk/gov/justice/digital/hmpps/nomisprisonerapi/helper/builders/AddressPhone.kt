@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @DslMarker
 annotation class AddressPhoneDslMarker
@@ -11,11 +14,19 @@ annotation class AddressPhoneDslMarker
 interface AddressPhoneDsl
 
 @Component
-class AddressPhoneBuilderFactory {
-  fun builder() = AddressPhoneBuilderRepositoryBuilder()
+class AddressPhoneBuilderFactory(private val addressPhoneBuilderRepository: AddressPhoneBuilderRepository) {
+  fun builder() = AddressPhoneBuilderRepositoryBuilder(addressPhoneBuilderRepository = addressPhoneBuilderRepository)
 }
 
-class AddressPhoneBuilderRepositoryBuilder : AddressPhoneDsl {
+@Component
+class AddressPhoneBuilderRepository(
+  private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
+
+) {
+  fun phoneUsageOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))!!
+}
+
+class AddressPhoneBuilderRepositoryBuilder(private val addressPhoneBuilderRepository: AddressPhoneBuilderRepository) : AddressPhoneDsl {
   fun build(
     address: PersonAddress,
     phoneType: String,
@@ -25,7 +36,7 @@ class AddressPhoneBuilderRepositoryBuilder : AddressPhoneDsl {
     AddressPhone(
       address = address,
       phoneNo = phoneNo,
-      phoneType = phoneType,
+      phoneType = addressPhoneBuilderRepository.phoneUsageOf(phoneType),
       extNo = extNo,
     )
 }

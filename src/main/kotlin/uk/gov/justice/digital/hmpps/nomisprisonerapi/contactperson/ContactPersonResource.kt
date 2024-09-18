@@ -112,4 +112,19 @@ data class ContactPerson(
   val keepBiometrics: Boolean,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
+  @Schema(description = "List of phone numbers for the person")
+  val phoneNumbers: List<PhoneNumber>,
+)
+
+@Schema(description = "The data held in NOMIS about a phone number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PhoneNumber(
+  @Schema(description = "Unique NOMIS Id of number")
+  val phoneId: Long,
+  @Schema(description = "The number")
+  val number: String,
+  @Schema(description = "Extension")
+  val extension: String?,
+  @Schema(description = "Phone type")
+  val type: CodeDescription,
 )

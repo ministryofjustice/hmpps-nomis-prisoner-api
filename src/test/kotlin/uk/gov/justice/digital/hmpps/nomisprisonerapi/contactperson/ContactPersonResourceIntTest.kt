@@ -152,5 +152,43 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("audit.createDatetime").isNotEmpty
       }
     }
+
+    @Nested
+    inner class PhoneNumbers {
+      private lateinit var person: Person
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            phone(phoneType = "MOB", phoneNo = "07399999999")
+            phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+          }
+        }
+      }
+
+      @Test
+      fun `will return phone numbers`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(person.phones[0].phoneId)
+          .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Mobile")
+          .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("phoneNumbers[1].phoneId").isEqualTo(person.phones[1].phoneId)
+          .jsonPath("phoneNumbers[1].type.code").isEqualTo("HOME")
+          .jsonPath("phoneNumbers[1].type.description").isEqualTo("Home")
+          .jsonPath("phoneNumbers[1].number").isEqualTo("01142561919")
+          .jsonPath("phoneNumbers[1].extension").isEqualTo("123")
+      }
+    }
   }
 }

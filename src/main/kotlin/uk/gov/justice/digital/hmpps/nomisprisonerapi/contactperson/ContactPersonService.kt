@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.contactperson
 
+import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts.NomisAudit
@@ -8,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 
+@Transactional
 @Service
 class ContactPersonService(private val personRepository: PersonRepository) {
   fun getPerson(personId: Long): ContactPerson = personRepository.findByIdOrNull(personId)?.let {
@@ -41,6 +43,14 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         auditClientUserId = it.auditClientUserId,
         auditClientWorkstationName = it.auditClientWorkstationName,
       ),
+      phoneNumbers = it.phones.map { number ->
+        PhoneNumber(
+          phoneId = number.phoneId,
+          number = number.phoneNo,
+          type = number.phoneType.toCodeDescription(),
+          extension = number.extNo,
+        )
+      },
     )
   } ?: throw NotFoundException("Person not found $personId")
 }
