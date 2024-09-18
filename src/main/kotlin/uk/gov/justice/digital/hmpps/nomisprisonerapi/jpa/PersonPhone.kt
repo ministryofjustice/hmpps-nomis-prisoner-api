@@ -12,7 +12,7 @@ class PersonPhone(
   @JoinColumn(name = "OWNER_ID")
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   val person: Person,
-  phoneType: String,
+  phoneType: PhoneUsage,
   phoneNo: String,
   extNo: String? = null,
 ) : Phone(phoneType = phoneType, phoneNo = phoneNo, extNo = extNo) {

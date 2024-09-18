@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @DslMarker
 annotation class PersonPhoneDslMarker
@@ -11,11 +14,19 @@ annotation class PersonPhoneDslMarker
 interface PersonPhoneDsl
 
 @Component
-class PersonPhoneBuilderFactory {
-  fun builder() = PersonPhoneBuilder()
+class PersonPhoneBuilderFactory(private val personPhoneBuilderRepository: PersonPhoneBuilderRepository) {
+  fun builder() = PersonPhoneBuilder(personPhoneBuilderRepository = personPhoneBuilderRepository)
 }
 
-class PersonPhoneBuilder : PersonPhoneDsl {
+@Component
+class PersonPhoneBuilderRepository(
+  private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
+
+) {
+  fun phoneUsageOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))!!
+}
+
+class PersonPhoneBuilder(private val personPhoneBuilderRepository: PersonPhoneBuilderRepository) : PersonPhoneDsl {
 
   fun build(
     person: Person,
@@ -25,7 +36,7 @@ class PersonPhoneBuilder : PersonPhoneDsl {
   ): PersonPhone =
     PersonPhone(
       person = person,
-      phoneType = phoneType,
+      phoneType = personPhoneBuilderRepository.phoneUsageOf(phoneType),
       phoneNo = phoneNo,
       extNo = extNo,
     )

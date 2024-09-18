@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
@@ -124,7 +125,7 @@ internal class VisitResponseTest {
                 this.phones.add(
                   PersonPhone(
                     person = this,
-                    phoneType = "HOME",
+                    phoneType = PhoneUsage("HOME", "Home"),
                     phoneNo = "0123456789",
                     extNo = "ext: 876",
                   ),
@@ -149,14 +150,14 @@ internal class VisitResponseTest {
                 this.phones.add(
                   PersonPhone(
                     person = this,
-                    phoneType = "HOME",
+                    phoneType = PhoneUsage("HOME", "Home"),
                     phoneNo = "0123456789",
                   ),
                 )
                 this.phones.add(
                   PersonPhone(
                     person = this,
-                    phoneType = "MOBL",
+                    phoneType = PhoneUsage("MOBL", "Mobile"),
                     phoneNo = "07973 121212",
                   ),
                 )
@@ -180,14 +181,14 @@ internal class VisitResponseTest {
                 this.phones.add(
                   PersonPhone(
                     person = this,
-                    phoneType = "HOME",
+                    phoneType = PhoneUsage("HOME", "Home"),
                     phoneNo = "0123456789",
                   ),
                 )
                 this.phones.add(
                   PersonPhone(
                     person = this,
-                    phoneType = "MOBL",
+                    phoneType = PhoneUsage("MOBL", "Mobile"),
                     phoneNo = "07973 121212",
                     extNo = "x777",
                   ),
@@ -195,20 +196,20 @@ internal class VisitResponseTest {
                 this.addresses.add(
                   PersonAddress(person = this).apply {
                     phones.add(
-                      AddressPhone(this, "HOME", "1234567890", null),
+                      AddressPhone(this, PhoneUsage("HOME", "Home"), "1234567890", null),
                     )
                     phones.add(
-                      AddressPhone(this, "MOBL", "07973 333333", null),
+                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 333333", null),
                     )
                   },
                 )
                 this.addresses.add(
                   PersonAddress(person = this).apply {
                     phones.add(
-                      AddressPhone(this, "HOME", "2345678901", "x888"),
+                      AddressPhone(this, PhoneUsage("HOME", "Home"), "2345678901", "x888"),
                     )
                     phones.add(
-                      AddressPhone(this, "MOBL", "07973 444444", null),
+                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 444444", null),
                     )
                   },
                 )
@@ -239,14 +240,14 @@ internal class VisitResponseTest {
                 this.phones.add(
                   PersonPhone(
                     person = this,
-                    phoneType = "HOME",
+                    phoneType = PhoneUsage("HOME", "Home"),
                     phoneNo = "0123456789",
                   ),
                 )
                 this.phones.add(
                   PersonPhone(
                     person = this,
-                    phoneType = "MOBL",
+                    phoneType = PhoneUsage("MOBL", "Mobile"),
                     phoneNo = "07973 121212",
                     extNo = "x777",
                   ),
@@ -254,20 +255,20 @@ internal class VisitResponseTest {
                 this.addresses.add(
                   PersonAddress(person = this).apply {
                     phones.add(
-                      AddressPhone(this, "HOME", "1234567890", null),
+                      AddressPhone(this, PhoneUsage("HOME", "Home"), "1234567890", null),
                     )
                     phones.add(
-                      AddressPhone(this, "MOBL", "07973 333333", null),
+                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 333333", null),
                     )
                   },
                 )
                 this.addresses.add(
                   PersonAddress(person = this).apply {
                     phones.add(
-                      AddressPhone(this, "HOME", "2345678901", "x888"),
+                      AddressPhone(this, PhoneUsage("HOME", "Home"), "2345678901", "x888"),
                     )
                     phones.add(
-                      AddressPhone(this, "MOBL", "07973 444444", null),
+                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 444444", null),
                     )
                   },
                 )

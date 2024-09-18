@@ -6,9 +6,14 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.Inheritance
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import java.time.LocalDateTime
 
 @Entity
@@ -16,8 +21,18 @@ import java.time.LocalDateTime
 @DiscriminatorColumn(name = "OWNER_CLASS")
 @Inheritance
 abstract class Phone(
-  @Column(name = "PHONE_TYPE")
-  open val phoneType: String,
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + PhoneUsage.PHONE_USAGE + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "PHONE_TYPE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  open val phoneType: PhoneUsage,
   @Column(name = "PHONE_NO")
   open val phoneNo: String,
   @Column(name = "EXT_NO")
