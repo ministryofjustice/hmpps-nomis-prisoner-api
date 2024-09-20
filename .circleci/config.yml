@@ -1,13 +1,10 @@
 version: 2.1
-
 orbs:
   hmpps: ministryofjustice/hmpps@10
-
 parameters:
   alerts-slack-channel:
     type: string
     default: syscon-alerts-security
-
 jobs:
   validate:
     executor:
@@ -29,7 +26,6 @@ jobs:
           path: build/test-results
       - store_artifacts:
           path: build/reports
-
 workflows:
   version: 2
   build-test-and-deploy:
@@ -94,47 +90,3 @@ workflows:
             - hmpps-nomis-prisoner-api-prod
           requires:
             - request-prod-approval
-
-  security:
-    triggers:
-      - schedule:
-          cron: "17 4 * * 1-5"
-          filters:
-            branches:
-              only:
-                - main
-    jobs:
-      - hmpps/gradle_owasp_dependency_check:
-          cache_key: "v2_0"
-          jdk_tag: "21.0"
-          slack_channel: << pipeline.parameters.alerts-slack-channel >>
-          context:
-            - hmpps-common-vars
-      - hmpps/trivy_latest_scan:
-          slack_channel: << pipeline.parameters.alerts-slack-channel >>
-          context:
-            - hmpps-common-vars
-# Disable as failing, raised in #veracode. Need way to exclude previous failures
-#      - hmpps/veracode_pipeline_scan:
-#          jdk_tag: "21.0"
-#          slack_channel: << pipeline.parameters.alerts-slack-channel >>
-#          context:
-#            - veracode-credentials
-#            - hmpps-common-vars
-  security-weekly:
-    triggers:
-      - schedule:
-          cron: "48 4 * * 1"
-          filters:
-            branches:
-              only:
-                - main
-    jobs:
-      - hmpps/veracode_policy_scan:
-          jdk_tag: "21.0"
-          slack_channel: << pipeline.parameters.alerts-slack-channel >>
-          context:
-            - veracode-credentials
-            - hmpps-common-vars
-
-
