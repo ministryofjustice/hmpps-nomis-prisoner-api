@@ -34,6 +34,9 @@ interface PersonDsl {
     noFixedAddress: Boolean? = null,
     primaryAddress: Boolean = false,
     mailAddress: Boolean = false,
+    comment: String? = null,
+    startDate: String? = null,
+    endDate: String? = null,
     dsl: PersonAddressDsl.() -> Unit = {},
   ): PersonAddress
 
@@ -124,6 +127,9 @@ class PersonBuilder(
     noFixedAddress: Boolean?,
     primaryAddress: Boolean,
     mailAddress: Boolean,
+    comment: String?,
+    startDate: String?,
+    endDate: String?,
     dsl: PersonAddressDsl.() -> Unit,
   ): PersonAddress =
     personAddressBuilderFactory.builder().let { builder ->
@@ -142,6 +148,9 @@ class PersonBuilder(
         noFixedAddress = noFixedAddress,
         primaryAddress = primaryAddress,
         mailAddress = mailAddress,
+        comment = comment,
+        startDate = startDate?.let { LocalDate.parse(it) },
+        endDate = endDate?.let { LocalDate.parse(it) },
       )
         .also { person.addresses += it }
         .also { builder.apply(dsl) }

@@ -164,4 +164,10 @@ data class Address(
   val primaryAddress: Boolean,
   @Schema(description = "true if this is used for mail")
   val mailAddress: Boolean,
+  @Schema(description = "Free format comment about the address")
+  val comment: String?,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate?,
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate?,
 )

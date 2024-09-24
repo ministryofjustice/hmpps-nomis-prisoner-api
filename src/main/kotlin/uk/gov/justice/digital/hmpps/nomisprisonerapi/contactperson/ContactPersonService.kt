@@ -67,6 +67,9 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           primaryAddress = address.primaryAddress,
           noFixedAddress = address.noFixedAddress,
           mailAddress = address.mailAddress,
+          comment = address.comment,
+          startDate = address.startDate,
+          endDate = address.endDate,
           phoneNumbers = address.phones.map { number ->
             PhoneNumber(
               phoneId = number.phoneId,
