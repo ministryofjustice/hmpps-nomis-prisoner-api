@@ -156,4 +156,12 @@ data class Address(
   val country: CodeDescription?,
   @Schema(description = "List of phone numbers for the address")
   val phoneNumbers: List<PhoneNumber>,
+  @Schema(description = "true if address validated by Post Office Address file??")
+  val validatedPAF: Boolean,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean?,
+  @Schema(description = "true if this is the person's primary address")
+  val primaryAddress: Boolean,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean,
 )

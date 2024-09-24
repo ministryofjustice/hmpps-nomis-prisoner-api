@@ -30,6 +30,10 @@ interface PersonDsl {
     city: String? = null,
     county: String? = null,
     country: String? = null,
+    validatedPAF: Boolean = false,
+    noFixedAddress: Boolean? = null,
+    primaryAddress: Boolean = false,
+    mailAddress: Boolean = false,
     dsl: PersonAddressDsl.() -> Unit = {},
   ): PersonAddress
 
@@ -116,6 +120,10 @@ class PersonBuilder(
     city: String?,
     county: String?,
     country: String?,
+    validatedPAF: Boolean,
+    noFixedAddress: Boolean?,
+    primaryAddress: Boolean,
+    mailAddress: Boolean,
     dsl: PersonAddressDsl.() -> Unit,
   ): PersonAddress =
     personAddressBuilderFactory.builder().let { builder ->
@@ -130,6 +138,10 @@ class PersonBuilder(
         city = city,
         county = county,
         country = country,
+        validatedPAF = validatedPAF,
+        noFixedAddress = noFixedAddress,
+        primaryAddress = primaryAddress,
+        mailAddress = mailAddress,
       )
         .also { person.addresses += it }
         .also { builder.apply(dsl) }
