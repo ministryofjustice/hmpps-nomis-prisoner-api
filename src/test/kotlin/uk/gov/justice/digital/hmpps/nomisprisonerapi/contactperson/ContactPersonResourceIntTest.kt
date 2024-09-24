@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -202,8 +203,23 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            address(premise = null, street = null, locality = null, postcode = "S1 3GG")
-            address(type = "HOME", flat = "3B", premise = "Brown Court", street = "Scotland Street", locality = "Hunters Bar", postcode = "S1 3GG") {
+            address(
+              premise = null,
+              street = null,
+              locality = null,
+              postcode = "S1 3GG",
+            )
+            address(
+              type = "HOME",
+              flat = "3B",
+              premise = "Brown Court",
+              street = "Scotland Street",
+              locality = "Hunters Bar",
+              postcode = "S1 3GG",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+            ) {
               phone(phoneType = "MOB", phoneNo = "07399999999")
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
             }
@@ -225,6 +241,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[0].premise").doesNotExist()
           .jsonPath("addresses[0].street").doesNotExist()
           .jsonPath("addresses[0].locality").doesNotExist()
+          .jsonPath("addresses[0].city").doesNotExist()
+          .jsonPath("addresses[0].county").doesNotExist()
+          .jsonPath("addresses[0].country").doesNotExist()
           .jsonPath("addresses[1].addressId").isEqualTo(person.addresses[1].addressId)
           .jsonPath("addresses[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
@@ -233,6 +252,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
           .jsonPath("addresses[1].locality").isEqualTo("Hunters Bar")
           .jsonPath("addresses[1].postcode").isEqualTo("S1 3GG")
+          .jsonPath("addresses[1].city.code").isEqualTo("25343")
+          .jsonPath("addresses[1].city.description").isEqualTo("Sheffield")
+          .jsonPath("addresses[1].county.code").isEqualTo("S.YORKSHIRE")
+          .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
+          .jsonPath("addresses[1].country.code").isEqualTo("ENG")
+          .jsonPath("addresses[1].country.description").isEqualTo("England")
       }
 
       @Test

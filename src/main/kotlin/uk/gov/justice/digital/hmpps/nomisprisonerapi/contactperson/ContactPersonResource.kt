@@ -148,6 +148,12 @@ data class Address(
   val locality: String?,
   @Schema(description = "Post code", example = "MK15 2ST")
   val postcode: String?,
+  @Schema(description = "City")
+  val city: CodeDescription?,
+  @Schema(description = "County")
+  val county: CodeDescription?,
+  @Schema(description = "Country")
+  val country: CodeDescription?,
   @Schema(description = "List of phone numbers for the address")
   val phoneNumbers: List<PhoneNumber>,
 )

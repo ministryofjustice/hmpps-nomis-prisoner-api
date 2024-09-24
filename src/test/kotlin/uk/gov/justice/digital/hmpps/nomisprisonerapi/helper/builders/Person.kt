@@ -27,6 +27,9 @@ interface PersonDsl {
     locality: String? = "Sheffield",
     flat: String? = null,
     postcode: String? = null,
+    city: String? = null,
+    county: String? = null,
+    country: String? = null,
     dsl: PersonAddressDsl.() -> Unit = {},
   ): PersonAddress
 
@@ -110,6 +113,9 @@ class PersonBuilder(
     locality: String?,
     flat: String?,
     postcode: String?,
+    city: String?,
+    county: String?,
+    country: String?,
     dsl: PersonAddressDsl.() -> Unit,
   ): PersonAddress =
     personAddressBuilderFactory.builder().let { builder ->
@@ -121,6 +127,9 @@ class PersonBuilder(
         locality = locality,
         flat = flat,
         postcode = postcode,
+        city = city,
+        county = county,
+        country = country,
       )
         .also { person.addresses += it }
         .also { builder.apply(dsl) }
