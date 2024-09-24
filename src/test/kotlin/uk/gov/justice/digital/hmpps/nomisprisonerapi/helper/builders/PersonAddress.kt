@@ -73,6 +73,10 @@ class PersonAddressBuilder(
     city: String?,
     county: String?,
     country: String?,
+    validatedPAF: Boolean,
+    noFixedAddress: Boolean?,
+    primaryAddress: Boolean,
+    mailAddress: Boolean,
   ): PersonAddress =
     PersonAddress(
       addressType = personAddressBuilderRepository.addressTypeOf(type),
@@ -85,6 +89,10 @@ class PersonAddressBuilder(
       city = personAddressBuilderRepository.cityOf(city),
       county = personAddressBuilderRepository.countyOf(county),
       country = personAddressBuilderRepository.countryOf(country),
+      validatedPAF = validatedPAF,
+      noFixedAddress = noFixedAddress,
+      primaryAddress = primaryAddress,
+      mailAddress = mailAddress,
     )
       .also { address = it }
 

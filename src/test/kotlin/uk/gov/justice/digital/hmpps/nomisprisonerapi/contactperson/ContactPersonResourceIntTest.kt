@@ -219,10 +219,21 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               city = SHEFFIELD,
               county = "S.YORKSHIRE",
               country = "ENG",
+              validatedPAF = true,
+              noFixedAddress = false,
+              primaryAddress = true,
+              mailAddress = true,
             ) {
               phone(phoneType = "MOB", phoneNo = "07399999999")
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
             }
+            address(
+              noFixedAddress = true,
+              primaryAddress = false,
+              premise = null,
+              street = null,
+              locality = null,
+            )
           }
         }
       }
@@ -244,6 +255,10 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[0].city").doesNotExist()
           .jsonPath("addresses[0].county").doesNotExist()
           .jsonPath("addresses[0].country").doesNotExist()
+          .jsonPath("addresses[0].validatedPAF").isEqualTo(false)
+          .jsonPath("addresses[0].noFixedAddress").doesNotExist()
+          .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
+          .jsonPath("addresses[0].mailAddress").isEqualTo(false)
           .jsonPath("addresses[1].addressId").isEqualTo(person.addresses[1].addressId)
           .jsonPath("addresses[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
@@ -258,6 +273,11 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
           .jsonPath("addresses[1].country.code").isEqualTo("ENG")
           .jsonPath("addresses[1].country.description").isEqualTo("England")
+          .jsonPath("addresses[1].validatedPAF").isEqualTo(true)
+          .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
+          .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
+          .jsonPath("addresses[1].mailAddress").isEqualTo(true)
+          .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
       }
 
       @Test

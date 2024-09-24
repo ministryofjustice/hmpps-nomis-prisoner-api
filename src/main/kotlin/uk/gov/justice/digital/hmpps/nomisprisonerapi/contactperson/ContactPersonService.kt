@@ -63,6 +63,10 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           city = address.city?.toCodeDescription(),
           county = address.county?.toCodeDescription(),
           country = address.country?.toCodeDescription(),
+          validatedPAF = address.validatedPAF,
+          primaryAddress = address.primaryAddress,
+          noFixedAddress = address.noFixedAddress,
+          mailAddress = address.mailAddress,
           phoneNumbers = address.phones.map { number ->
             PhoneNumber(
               phoneId = number.phoneId,
