@@ -55,8 +55,8 @@ data class OffenderProfileDetail(
   )
   val profileCode: ProfileCode? = null,
 
-  @Column(name = "PROFILE_CODE", nullable = false)
-  val profileCodeId: String? = profileCode?.id?.code,
+  @Column(name = "PROFILE_CODE")
+  var profileCodeId: String? = profileCode?.id?.code,
 ) {
 
   @Column(name = "CREATE_DATETIME")

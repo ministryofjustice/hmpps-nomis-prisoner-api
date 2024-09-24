@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.roundToNearestSecond
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -25,19 +26,26 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var repository: Repository
 
+  @Autowired
+  private lateinit var offenderBookingRepository: OffenderBookingRepository
+
+  // TODO SDIT-2023 Remove this after switching to calling the upsert API
+  @Autowired
+  private lateinit var service: ProfileDetailsService
+
   @AfterEach
   fun cleanUp() {
     repository.deleteOffenders()
   }
 
+  // The DB column is a DATE type so truncates milliseconds, but bizarrely H2 uses half-up rounding so I have to emulate here or tests fail
+  val today = LocalDateTime.now().roundToNearestSecond()
+  val yesterday = today.minusDays(1)
+
   @Nested
   @DisplayName("GET /prisoners/{offenderNo}/profile-details")
   inner class GetProfileDetails {
     private lateinit var booking: OffenderBooking
-
-    // The DB column is a DATE type so truncates milliseconds, but bizarrely H2 uses half-up rounding so I have to emulate here or tests fail
-    val today = LocalDateTime.now().roundToNearestSecond()
-    val yesterday = today.minusDays(1)
 
     @Nested
     inner class Security {
@@ -309,5 +317,111 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody<PrisonerProfileDetailsResponse>()
+  }
+
+  @Nested
+  @DisplayName("PUT /prisoners/{offenderNo}/profile-details")
+  // TODO SDIT-2023 switch to calling the API once it's available
+  inner class UpsertProfileDetails {
+    private lateinit var booking: OffenderBooking
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should create profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday)
+          }
+        }
+
+        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+          .also {
+            assertThat(it.bookingId).isEqualTo(booking.bookingId)
+            assertThat(it.created).isTrue()
+          }
+
+        repository.runInTransaction {
+          with(offenderBookingRepository.findLatestByOffenderNomsId("A1234AA")!!.profiles.first()) {
+            assertThat(id.sequence).isEqualTo(1)
+            assertThat(profileDetails.size).isEqualTo(1)
+            with(profileDetails.first()) {
+              assertThat(id.profileType.type).isEqualTo("BUILD")
+              assertThat(profileCode!!.id.code).isEqualTo("SMALL")
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should update profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday) {
+              profile {
+                detail(profileType = "BUILD", profileCode = "MEDIUM")
+              }
+            }
+          }
+        }
+
+        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+          .also {
+            assertThat(it.bookingId).isEqualTo(booking.bookingId)
+            assertThat(it.created).isFalse()
+          }
+
+        repository.runInTransaction {
+          with(offenderBookingRepository.findLatestByOffenderNomsId("A1234AA")!!.profiles.first()) {
+            assertThat(id.sequence).isEqualTo(1)
+            assertThat(profileDetails.size).isEqualTo(1)
+            with(profileDetails.first()) {
+              assertThat(id.profileType.type).isEqualTo("BUILD")
+              assertThat(profileCode!!.id.code).isEqualTo("SMALL")
+            }
+          }
+        }
+      }
+
+      // TODO SDIT-2023 Implement all tests below
+      @Test
+      fun `should publish telemetry for creating profile details`() {}
+
+      @Test
+      fun `should publish telemetry for updating profile details`() {}
+
+      @Test
+      fun `should only update latest booking`() {}
+
+      @Test
+      fun `should only update active booking`() {}
+
+      @Test
+      fun `should ignore profile sequence greater than 1`() {}
+
+      @Test
+      fun `should only update requested profile type`() {}
+
+      @Test
+      fun `should allow create with null value`() {}
+
+      @Test
+      fun `should allow updates with null value`() {}
+    }
+
+    @Nested
+    inner class Errors {
+      @Test
+      fun `should reject if no offender`() {}
+
+      @Test
+      fun `should reject if no bookings`() {}
+
+      @Test
+      fun `should reject if unknown profile type`() {}
+
+      @Test
+      fun `should reject if unknown profile code`() {}
+    }
   }
 }
