@@ -22,6 +22,9 @@ class PersonAddress(
   addressType: AddressType? = null,
   flat: String? = null,
   postalCode: String? = null,
+  city: City? = null,
+  county: County? = null,
+  country: Country? = null,
 ) : Address(
   addressType = addressType,
   premise = premise,
@@ -32,6 +35,9 @@ class PersonAddress(
   phones = phones,
   flat = flat,
   postalCode = postalCode,
+  city = city,
+  county = county,
+  country = country,
 ) {
   companion object {
     const val ADDR_TYPE = "PER"

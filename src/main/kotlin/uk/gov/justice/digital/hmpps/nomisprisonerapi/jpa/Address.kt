@@ -66,6 +66,47 @@ abstract class Address(
   @Column(name = "POSTAL_CODE")
   open val postalCode: String? = null,
 
+  @ManyToOne
+  // COUNTY_CODE not always found for records created 2006-01-13 08:58:25.
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + County.COUNTY + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTY_CODE", referencedColumnName = "code")),
+    ],
+  )
+  open val county: County? = null,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + City.CITY + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "CITY_CODE", referencedColumnName = "code")),
+    ],
+  )
+  open val city: City? = null,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + Country.COUNTRY + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTRY_CODE", referencedColumnName = "code")),
+    ],
+  )
+  open val country: Country? = null,
+
 ) {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
@@ -84,48 +125,6 @@ abstract class Address(
 
   @Column(name = "END_DATE")
   open val endDate: LocalDate? = null
-
-  @ManyToOne
-  @NotFound(action = NotFoundAction.IGNORE)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + County.COUNTY + "'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTY_CODE", referencedColumnName = "code")),
-    ],
-  )
-  open val county: County? = null
-
-  @ManyToOne
-  @NotFound(action = NotFoundAction.IGNORE)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + City.CITY + "'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "CITY_CODE", referencedColumnName = "code")),
-    ],
-  )
-  open val city: City? = null
-
-  @ManyToOne
-  @NotFound(action = NotFoundAction.IGNORE)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + Country.COUNTRY + "'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTRY_CODE", referencedColumnName = "code")),
-    ],
-  )
-  open val country: Country? = null
 
   @OneToMany
   @JoinColumn(name = "ADDRESS_ID")

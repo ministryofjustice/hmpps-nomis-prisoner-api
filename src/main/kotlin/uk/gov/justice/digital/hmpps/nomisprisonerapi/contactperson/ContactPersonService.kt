@@ -60,6 +60,9 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           street = address.street,
           locality = address.locality,
           postcode = address.postalCode,
+          city = address.city?.toCodeDescription(),
+          county = address.county?.toCodeDescription(),
+          country = address.country?.toCodeDescription(),
           phoneNumbers = address.phones.map { number ->
             PhoneNumber(
               phoneId = number.phoneId,
