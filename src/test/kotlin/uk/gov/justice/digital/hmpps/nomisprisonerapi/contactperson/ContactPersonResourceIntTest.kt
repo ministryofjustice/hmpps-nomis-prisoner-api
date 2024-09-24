@@ -309,5 +309,37 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
       }
     }
+
+    @Nested
+    inner class EmailAddress {
+      private lateinit var person: Person
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            email(emailAddress = "john.bog@justice.gov.uk")
+            email(emailAddress = "john.bog@gmail.com")
+          }
+        }
+      }
+
+      @Test
+      fun `will return email address`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(person.internetAddresses[0].internetAddressId)
+          .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
+          .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(person.internetAddresses[1].internetAddressId)
+          .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
+      }
+    }
   }
 }

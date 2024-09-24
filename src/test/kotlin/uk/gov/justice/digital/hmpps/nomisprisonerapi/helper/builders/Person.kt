@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -47,6 +48,12 @@ interface PersonDsl {
     extNo: String? = null,
     dsl: PersonPhoneDsl.() -> Unit = {},
   ): PersonPhone
+
+  @PersonEmailDslMarker
+  fun email(
+    emailAddress: String,
+    dsl: PersonEmailDsl.() -> Unit = {},
+  ): PersonInternetAddress
 }
 
 @Component
@@ -54,8 +61,9 @@ class PersonBuilderFactory(
   private val repository: PersonBuilderRepository,
   private val personAddressBuilderFactory: PersonAddressBuilderFactory,
   private val personPhoneBuilderFactory: PersonPhoneBuilderFactory,
+  private val personEmailBuilderFactory: PersonEmailBuilderFactory,
 ) {
-  fun builder(): PersonBuilder = PersonBuilder(repository, personAddressBuilderFactory, personPhoneBuilderFactory)
+  fun builder(): PersonBuilder = PersonBuilder(repository, personAddressBuilderFactory, personPhoneBuilderFactory, personEmailBuilderFactory)
 }
 
 @Component
@@ -78,6 +86,7 @@ class PersonBuilder(
   private val repository: PersonBuilderRepository,
   private val personAddressBuilderFactory: PersonAddressBuilderFactory,
   private val personPhoneBuilderFactory: PersonPhoneBuilderFactory,
+  private val personEmailBuilderFactory: PersonEmailBuilderFactory,
 ) : PersonDsl {
   private lateinit var person: Person
 
@@ -170,6 +179,16 @@ class PersonBuilder(
         extNo = extNo,
       )
         .also { person.phones += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun email(emailAddress: String, dsl: PersonEmailDsl.() -> Unit): PersonInternetAddress =
+    personEmailBuilderFactory.builder().let { builder ->
+      builder.build(
+        person = person,
+        emailAddress = emailAddress,
+      )
+        .also { person.internetAddresses += it }
         .also { builder.apply(dsl) }
     }
 }

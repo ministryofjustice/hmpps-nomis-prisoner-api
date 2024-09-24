@@ -53,7 +53,7 @@ data class Person(
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${PersonInternetAddress.TYPE}'")
-  val internetAddresses: List<PersonInternetAddress> = ArrayList(),
+  val internetAddresses: MutableList<PersonInternetAddress> = mutableListOf(),
 
   @ManyToOne
   @JoinColumnsOrFormulas(
