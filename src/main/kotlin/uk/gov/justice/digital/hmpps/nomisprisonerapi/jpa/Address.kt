@@ -135,6 +135,7 @@ abstract class Address(
   SPECIAL_NEEDS_CODE - always null
   BUSINESS_HOUR - always null for personal addresses - may need mapping for corporate address
   CITY_NAME - always null
+  ADDRESS_USAGE - not used for personal addresses
    */
 ) {
   @Id
@@ -142,10 +143,6 @@ abstract class Address(
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
   open val addressId: Long = 0
-
-  @OneToMany
-  @JoinColumn(name = "ADDRESS_ID")
-  open val addressUsages: List<AddressUsage> = ArrayList()
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
