@@ -16,7 +16,8 @@ class PersonAddress(
   premise: String? = null,
   street: String? = null,
   locality: String? = null,
-  startDate: LocalDate = LocalDate.now(),
+  startDate: LocalDate? = null,
+  endDate: LocalDate? = null,
   phones: MutableList<AddressPhone> = mutableListOf(),
   addressType: AddressType? = null,
   flat: String? = null,
@@ -28,12 +29,14 @@ class PersonAddress(
   noFixedAddress: Boolean? = false,
   primaryAddress: Boolean = false,
   mailAddress: Boolean = false,
+  comment: String? = null,
 ) : Address(
   addressType = addressType,
   premise = premise,
   street = street,
   locality = locality,
   startDate = startDate,
+  endDate = endDate,
   noFixedAddress = noFixedAddress,
   phones = phones,
   flat = flat,
@@ -44,6 +47,7 @@ class PersonAddress(
   validatedPAF = validatedPAF,
   primaryAddress = primaryAddress,
   mailAddress = mailAddress,
+  comment = comment,
 ) {
   companion object {
     const val ADDR_TYPE = "PER"

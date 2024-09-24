@@ -223,6 +223,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               noFixedAddress = false,
               primaryAddress = true,
               mailAddress = true,
+              comment = "Not to be used",
+              startDate = "2024-10-01",
+              endDate = "2024-11-01",
             ) {
               phone(phoneType = "MOB", phoneNo = "07399999999")
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
@@ -259,6 +262,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[0].noFixedAddress").doesNotExist()
           .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
           .jsonPath("addresses[0].mailAddress").isEqualTo(false)
+          .jsonPath("addresses[0].comment").doesNotExist()
+          .jsonPath("addresses[0].startDate").doesNotExist()
+          .jsonPath("addresses[0].endDate").doesNotExist()
           .jsonPath("addresses[1].addressId").isEqualTo(person.addresses[1].addressId)
           .jsonPath("addresses[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
@@ -277,6 +283,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
           .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
           .jsonPath("addresses[1].mailAddress").isEqualTo(true)
+          .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
+          .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
+          .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
           .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
       }
 

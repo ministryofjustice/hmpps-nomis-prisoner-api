@@ -39,7 +39,10 @@ abstract class Address(
   open val locality: String? = null,
 
   @Column(name = "START_DATE")
-  open val startDate: LocalDate = LocalDate.now(),
+  open val startDate: LocalDate? = null,
+
+  @Column(name = "END_DATE")
+  open val endDate: LocalDate? = null,
 
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
   @Convert(converter = YesNoConverter::class)
@@ -122,18 +125,23 @@ abstract class Address(
   @Column(name = "MAIL_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   open val mailAddress: Boolean = false,
+
+  @Column(name = "COMMENT_TEXT")
+  open val comment: String? = null,
+
+  /* Not mapped
+  CAPACITY - always null
+  SERVICES_FLAG - always for N for personal addresses - may need mapping for corporate address
+  SPECIAL_NEEDS_CODE - always null
+  BUSINESS_HOUR - always null for personal addresses - may need mapping for corporate address
+  CITY_NAME - always null
+   */
 ) {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
   open val addressId: Long = 0
-
-  @Column(name = "COMMENT_TEXT")
-  open val commentText: String? = null
-
-  @Column(name = "END_DATE")
-  open val endDate: LocalDate? = null
 
   @OneToMany
   @JoinColumn(name = "ADDRESS_ID")
