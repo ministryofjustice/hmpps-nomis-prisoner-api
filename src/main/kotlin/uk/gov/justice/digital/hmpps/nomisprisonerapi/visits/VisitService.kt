@@ -42,6 +42,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderVisitorRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
@@ -71,6 +72,7 @@ class VisitService(
   private val visitTimeRepository: AgencyVisitTimeRepository,
   private val visitSlotRepository: AgencyVisitSlotRepository,
   private val internalLocationRepository: AgencyInternalLocationRepository,
+  private val visitOrderVisitorRepository: VisitOrderVisitorRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -235,6 +237,12 @@ class VisitService(
           person = personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist")),
           groupLeader = false,
         )
+      }
+
+      if (voVisitorsToRemove.isNotEmpty()) {
+        // wait for any locks in NOMIS
+        // NOMIS seems to lock visit order visitors when the Visit is highlighted
+        visitOrderVisitorRepository.findAllByIdIn(voVisitorsToRemove.map { it.id })
       }
       visitOrder.visitors.removeAll(voVisitorsToRemove)
       visitOrder.visitors.addAll(voVisitorsToAdd)
