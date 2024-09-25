@@ -7,14 +7,12 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -33,10 +31,6 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  // TODO SDIT-2023 Remove this after switching to calling the upsert API
-  @Autowired
-  private lateinit var service: ProfileDetailsService
 
   @AfterEach
   fun cleanUp() {
@@ -326,9 +320,42 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/profile-details")
-  // TODO SDIT-2023 switch to calling the API once it's available
   inner class UpsertProfileDetails {
     private lateinit var booking: OffenderBooking
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/prisoners/A1234AA/profile-details")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/profile-details")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/profile-details")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `not found if prisoner does not exist`() {
+        webTestClient.get().uri("/prisoners/A1234AA/profile-details")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
 
     @Nested
     inner class HappyPath {
@@ -340,13 +367,11 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        repository.runInTransaction {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
-            .also {
-              assertThat(it.bookingId).isEqualTo(booking.bookingId)
-              assertThat(it.created).isTrue()
-            }
-        }
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
+            assertThat(it.responseBody!!.created).isTrue()
+          }
 
         repository.runInTransaction {
           with(findBooking().profiles.first()) {
@@ -372,13 +397,11 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        repository.runInTransaction {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
-            .also {
-              assertThat(it.bookingId).isEqualTo(booking.bookingId)
-              assertThat(it.created).isFalse()
-            }
-        }
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
+            assertThat(it.responseBody!!.created).isFalse()
+          }
 
         repository.runInTransaction {
           with(findBooking().profiles.first()) {
@@ -400,7 +423,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         verify(telemetryClient).trackEvent(
           "profile-details-physical-attributes-created",
@@ -425,7 +448,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         verify(telemetryClient).trackEvent(
           "profile-details-physical-attributes-updated",
@@ -448,17 +471,16 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
                 detail(profileType = "BUILD", profileCode = "MEDIUM")
               }
             }
-            oldBooking = booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = yesterday.toLocalDate()) {
-              profile {
-                detail(profileType = "BUILD", profileCode = "HEAVY")
+            oldBooking =
+              booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = yesterday.toLocalDate()) {
+                profile {
+                  detail(profileType = "BUILD", profileCode = "HEAVY")
+                }
               }
-            }
           }
         }
 
-        repository.runInTransaction {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
-        }
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         repository.runInTransaction {
           // The new booking was updated
@@ -493,9 +515,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        repository.runInTransaction {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
-        }
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         repository.runInTransaction {
           val booking = findBooking()
@@ -511,77 +531,73 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
       }
-    }
 
-    @Test
-    fun `should only update requested profile type`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-            profile {
-              detail(profileType = "BUILD", profileCode = "MEDIUM")
-              detail(profileType = "SHOESIZE", profileCode = "8.5")
+      @Test
+      fun `should only update requested profile type`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
+              profile {
+                detail(profileType = "BUILD", profileCode = "MEDIUM")
+                detail(profileType = "SHOESIZE", profileCode = "8.5")
+              }
             }
           }
         }
-      }
 
-      repository.runInTransaction {
-        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
-      }
-
-      repository.runInTransaction {
-        with(findBooking().profiles.first()) {
-          profileDetails.find { it.id.profileType.type == "SHOESIZE" }!!
-            .also {
-              assertThat(it.profileCodeId).isEqualTo("8.5")
-            }
-        }
-      }
-    }
-
-    @Test
-    fun `should allow create with null value`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking(bookingSequence = 1, bookingBeginDate = yesterday)
-        }
-      }
-
-      repository.runInTransaction {
-        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
-      }
-
-      repository.runInTransaction {
-        val profiles = findBooking().profiles.first()
-        with(profiles.profileDetails.first()) {
-          assertThat(id.profileType.type).isEqualTo("BUILD")
-          assertThat(profileCode).isNull()
-          assertThat(profileCodeId).isNull()
-        }
-      }
-    }
-
-    @Test
-    fun `should allow updates with null value`() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234AA") {
-          booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-            profile {
-              detail(profileType = "BUILD", profileCode = "MEDIUM")
-            }
-          }
-        }
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         repository.runInTransaction {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
+          with(findBooking().profiles.first()) {
+            profileDetails.find { it.id.profileType.type == "SHOESIZE" }!!
+              .also {
+                assertThat(it.profileCodeId).isEqualTo("8.5")
+              }
+          }
+        }
+      }
+
+      @Test
+      fun `should allow create with null value`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday)
+          }
         }
 
-        val profiles = findBooking().profiles.first()
-        with(profiles.profileDetails.first()) {
-          assertThat(id.profileType.type).isEqualTo("BUILD")
-          assertThat(profileCode).isNull()
-          assertThat(profileCodeId).isNull()
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", null)
+
+        repository.runInTransaction {
+          val profiles = findBooking().profiles.first()
+          with(profiles.profileDetails.first()) {
+            assertThat(id.profileType.type).isEqualTo("BUILD")
+            assertThat(profileCode).isNull()
+            assertThat(profileCodeId).isNull()
+          }
+        }
+      }
+
+      @Test
+      fun `should allow updates with null value`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
+              profile {
+                detail(profileType = "BUILD", profileCode = "MEDIUM")
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", null)
+
+        repository.runInTransaction {
+          val profiles = findBooking().profiles.first()
+          with(profiles.profileDetails.first()) {
+            assertThat(id.profileType.type).isEqualTo("BUILD")
+            assertThat(profileCode).isNull()
+            assertThat(profileCodeId).isNull()
+          }
         }
       }
     }
@@ -590,9 +606,9 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
     inner class Errors {
       @Test
       fun `should reject if no offender`() {
-        assertThrows<NotFoundException> {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
-        }
+        webTestClient.upsertProfileDetails("A1234AA", "BUILD", "SMALL")
+          .expectStatus().isNotFound
+          .expectErrorContaining("A1234AA")
       }
 
       @Test
@@ -601,11 +617,9 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           offender(nomsId = "A1234AA")
         }
 
-        assertThrows<NotFoundException> {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
-        }.also {
-          assertThat(it.message).contains("A1234AA")
-        }
+        webTestClient.upsertProfileDetails("A1234AA", "BUILD", "SMALL")
+          .expectStatus().isNotFound
+          .expectErrorContaining("A1234AA")
       }
 
       @Test
@@ -616,13 +630,9 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        assertThrows<BadDataException> {
-          repository.runInTransaction {
-            service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("UNKNOWN_TYPE", "UNKNOWN_CODE"))
-          }
-        }.also {
-          assertThat(it.message).contains("UNKNOWN_TYPE")
-        }
+        webTestClient.upsertProfileDetails("A1234AA", "UNKNOWN_TYPE", "UNKNOWN_CODE")
+          .expectStatus().isBadRequest
+          .expectErrorContaining("UNKNOWN_TYPE")
       }
 
       @Test
@@ -633,14 +643,29 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        assertThrows<BadDataException> {
-          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "UNKNOWN_CODE"))
-        }.also {
-          assertThat(it.message).contains("UNKNOWN_CODE")
-        }
+        webTestClient.upsertProfileDetails("A1234AA", "BUILD", "UNKNOWN_CODE")
+          .expectStatus().isBadRequest
+          .expectErrorContaining("UNKNOWN_CODE")
       }
     }
 
     private fun findBooking(bookingId: Long = booking.bookingId) = offenderBookingRepository.findByIdOrNull(bookingId)!!
+
+    fun WebTestClient.upsertProfileDetailsOk(offenderNo: String, profileType: String, profileCode: String?) =
+      upsertProfileDetails(offenderNo, profileType, profileCode)
+        .expectStatus().isOk
+        .expectBody<UpsertProfileDetailsResponse>()
+
+    fun WebTestClient.upsertProfileDetails(offenderNo: String, profileType: String, profileCode: String?) =
+      put().uri("/prisoners/$offenderNo/profile-details")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+        .bodyValue(UpsertProfileDetailsRequest(profileType, profileCode))
+        .exchange()
+
+    fun WebTestClient.ResponseSpec.expectErrorContaining(partialMessage: String) =
+      expectBody<ErrorResponse>()
+        .consumeWith {
+          assertThat(it.responseBody!!.userMessage).contains(partialMessage)
+        }
   }
 }
