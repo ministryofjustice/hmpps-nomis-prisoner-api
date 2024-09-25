@@ -223,6 +223,11 @@ class VisitService(
       )
     }
 
+    if (visitorsToRemove.isNotEmpty()) {
+      // wait for any locks in NOMIS
+      // NOMIS seems to lock visit visitors when the Visit is highlighted
+      visitVisitorRepository.findAllByIdIn(visitorsToRemove.map { it.id })
+    }
     visit.visitors.removeAll(visitorsToRemove)
     visit.visitors.addAll(visitorsToAdd)
 
