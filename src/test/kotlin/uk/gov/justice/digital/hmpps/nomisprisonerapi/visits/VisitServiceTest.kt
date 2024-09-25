@@ -50,6 +50,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderVisitorRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.specification.VisitSpecification
@@ -86,6 +87,7 @@ internal class VisitServiceTest {
   private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason> = mock()
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val visitOrderVisitorRepository: VisitOrderVisitorRepository = mock()
 
   private val visitService: VisitService = VisitService(
     visitRepository,
@@ -107,6 +109,7 @@ internal class VisitServiceTest {
     visitTimeRepository,
     visitSlotRepository,
     internalLocationRepository,
+    visitOrderVisitorRepository,
   )
 
   val visitType = VisitType("SCON", "desc")
