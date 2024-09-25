@@ -68,7 +68,6 @@ class NomisData(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
 
 ) : NomisDataDsl {
-  @StaffDslMarker
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
     staffBuilderFactory!!.builder()
       .let { builder ->
@@ -78,7 +77,6 @@ class NomisData(
           }
       }
 
-  @AdjudicationIncidentDslMarker
   override fun adjudicationIncident(
     whenCreated: LocalDateTime,
     incidentDetails: String,
@@ -108,7 +106,6 @@ class NomisData(
         }
     }
 
-  @OffenderDslMarker
   override fun offender(
     nomsId: String,
     lastName: String,
@@ -125,7 +122,6 @@ class NomisData(
           }
       }
 
-  @ProgramServiceDslMarker
   override fun programService(
     programCode: String,
     programId: Long,
@@ -141,7 +137,6 @@ class NomisData(
           }
       }
 
-  @QuestionnaireDslMarker
   override fun questionnaire(
     code: String,
     description: String,
@@ -162,7 +157,6 @@ class NomisData(
           }
       }
 
-  @IncidentDslMarker
   override fun incident(
     title: String,
     description: String,
@@ -193,7 +187,6 @@ class NomisData(
           }
       }
 
-  @NonAssociationDslMarker
   override fun nonAssociation(
     offender1: Offender,
     offender2: Offender,
@@ -216,7 +209,6 @@ class NomisData(
           }
       }
 
-  @ExternalServiceDslMarker
   override fun externalService(
     serviceName: String,
     description: String,
@@ -233,7 +225,6 @@ class NomisData(
           }
       }
 
-  @AgencyInternalLocationDslMarker
   override fun agencyInternalLocation(
     locationCode: String,
     locationType: String,
@@ -272,7 +263,6 @@ class NomisData(
           }
       }
 
-  @IWPTemplateDslMarker
   override fun template(
     name: String,
     description: String?,
@@ -286,7 +276,6 @@ class NomisData(
           }
       }
 
-  @CorporateDslMarker
   override fun corporate(
     corporateName: String,
     caseloadId: String?,
@@ -536,6 +525,7 @@ interface NomisDataDsl {
     dsl: PersonDsl.() -> Unit = {},
   ): Person
 
+  @CorporateDslMarker
   fun corporate(
     corporateName: String,
     caseloadId: String? = null,
