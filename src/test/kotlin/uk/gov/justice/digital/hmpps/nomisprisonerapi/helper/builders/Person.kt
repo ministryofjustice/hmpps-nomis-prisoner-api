@@ -2,11 +2,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
@@ -54,6 +56,13 @@ interface PersonDsl {
     emailAddress: String,
     dsl: PersonEmailDsl.() -> Unit = {},
   ): PersonInternetAddress
+
+  @PersonEmploymentDslMarker
+  fun employment(
+    employerCorporate: Corporate? = null,
+    active: Boolean = true,
+    dsl: PersonEmploymentDsl.() -> Unit = {},
+  ): PersonEmployment
 }
 
 @Component
@@ -62,8 +71,15 @@ class PersonBuilderFactory(
   private val personAddressBuilderFactory: PersonAddressBuilderFactory,
   private val personPhoneBuilderFactory: PersonPhoneBuilderFactory,
   private val personEmailBuilderFactory: PersonEmailBuilderFactory,
+  private val personEmploymentBuilderFactory: PersonEmploymentBuilderFactory,
 ) {
-  fun builder(): PersonBuilder = PersonBuilder(repository, personAddressBuilderFactory, personPhoneBuilderFactory, personEmailBuilderFactory)
+  fun builder(): PersonBuilder = PersonBuilder(
+    repository,
+    personAddressBuilderFactory,
+    personPhoneBuilderFactory,
+    personEmailBuilderFactory,
+    personEmploymentBuilderFactory,
+  )
 }
 
 @Component
@@ -87,6 +103,7 @@ class PersonBuilder(
   private val personAddressBuilderFactory: PersonAddressBuilderFactory,
   private val personPhoneBuilderFactory: PersonPhoneBuilderFactory,
   private val personEmailBuilderFactory: PersonEmailBuilderFactory,
+  private val personEmploymentBuilderFactory: PersonEmploymentBuilderFactory,
 ) : PersonDsl {
   private lateinit var person: Person
 
@@ -189,6 +206,22 @@ class PersonBuilder(
         emailAddress = emailAddress,
       )
         .also { person.internetAddresses += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun employment(
+    employerCorporate: Corporate?,
+    active: Boolean,
+    dsl: PersonEmploymentDsl.() -> Unit,
+  ): PersonEmployment =
+    personEmploymentBuilderFactory.builder().let { builder ->
+      builder.build(
+        person = person,
+        sequence = person.employments.size + 1L,
+        employerCorporate = employerCorporate,
+        active = active,
+      )
+        .also { person.employments += it }
         .also { builder.apply(dsl) }
     }
 }
