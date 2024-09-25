@@ -46,6 +46,10 @@ data class OffenderProfileDetail(
   )
   val offenderProfile: OffenderProfile,
 
+  @Column(name = "PROFILE_CODE")
+  var profileCodeId: String?,
+) {
+
   @ManyToOne
   @JoinColumns(
     value = [
@@ -53,11 +57,7 @@ data class OffenderProfileDetail(
       JoinColumn(name = "PROFILE_CODE", referencedColumnName = "PROFILE_CODE", nullable = true, insertable = false, updatable = false),
     ],
   )
-  val profileCode: ProfileCode? = null,
-
-  @Column(name = "PROFILE_CODE")
-  var profileCodeId: String? = profileCode?.id?.code,
-) {
+  val profileCode: ProfileCode? = null
 
   @Column(name = "CREATE_DATETIME")
   @Generated

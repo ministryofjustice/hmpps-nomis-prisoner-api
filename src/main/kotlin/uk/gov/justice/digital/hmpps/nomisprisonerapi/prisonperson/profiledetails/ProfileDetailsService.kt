@@ -1,16 +1,18 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.profiledetails
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetailId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileCodeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileTypeRepository
@@ -22,9 +24,9 @@ import java.time.LocalDate
 class ProfileDetailsService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
-  private val offenderProfileRepository: OffenderProfileRepository,
   private val profileTypeRepository: ProfileTypeRepository,
   private val profileCodeRepository: ProfileCodeRepository,
+  private val telemetryClient: TelemetryClient,
 ) {
 
   fun getProfileDetails(offenderNo: String): PrisonerProfileDetailsResponse {
@@ -34,7 +36,7 @@ class ProfileDetailsService(
 
     return bookingRepository.findAllByOffenderNomsId(offenderNo)
       .filterNot { it.profiles.isEmpty() }
-      .map { booking ->
+      .mapNotNull { booking ->
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
           startDateTime = booking.bookingBeginDate,
@@ -54,24 +56,71 @@ class ProfileDetailsService(
             },
         ).takeIf { bookingResponse -> bookingResponse.profileDetails.isNotEmpty() }
       }
-      .filterNotNull()
       .let { PrisonerProfileDetailsResponse(offenderNo = offenderNo, bookings = it) }
   }
 
   fun upsertProfileDetails(offenderNo: String, request: UpsertProfileDetailsRequest): UpsertProfileDetailsResponse {
-    // TODO SDIT-2023 Rewrite this once all tests written. Specifically make it more readable and lose all the !!
-    var created = true
-    val profileType = profileTypeRepository.findByIdOrNull(request.profileType)!!
-    val profileCode = profileCodeRepository.findByIdOrNull(ProfileCodeId(request.profileType, request.profileCode!!))!!
-    val booking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
-    val profile = booking!!.profiles.firstOrNull()
-      ?: OffenderProfile(OffenderProfileId(booking, 1), LocalDate.now())
-    profile.profileDetails.find { it.id.profileType.type == request.profileType }
-      ?.apply { this.profileCodeId = profileCode.id.code }
-      ?.also { created = false }
-      ?: OffenderProfileDetail(OffenderProfileDetailId(booking, profile.id.sequence, profileType), 1L, profile, profileCode)
-        .also { profile.profileDetails += it }
-    offenderProfileRepository.save(profile)
+    validateProfileType(request.profileType)
+    validateProfileCode(request.profileType, request.profileCode)
+
+    val booking = findLatestBookingOrThrow(offenderNo)
+    val (profileDetails, created) = booking.getOrCreateProfile().getOrCreateProfileDetails(request)
+    profileDetails.profileCodeId = request.profileCode
+
     return UpsertProfileDetailsResponse(created, booking.bookingId)
+      .also {
+        telemetryClient.trackEvent(
+          """profile-details-physical-attributes-${if (created) "created" else "updated"}""",
+          mapOf(
+            "offenderNo" to offenderNo,
+            "bookingId" to booking.bookingId.toString(),
+            "profileType" to request.profileType,
+          ),
+          null,
+        )
+      }
   }
+
+  private fun OffenderProfile.getOrCreateProfileDetails(request: UpsertProfileDetailsRequest) =
+    profileDetails
+      .find { it.id.profileType.type == request.profileType }
+      ?.let { it to false }
+      ?: (createNewProfileDetails(request) to true)
+
+  private fun OffenderProfile.createNewProfileDetails(request: UpsertProfileDetailsRequest) =
+    OffenderProfileDetail(
+      id = OffenderProfileDetailId(
+        offenderBooking = this.id.offenderBooking,
+        sequence = this.id.sequence,
+        profileType = getProfileType(request.profileType),
+      ),
+      listSequence = 1L,
+      offenderProfile = this,
+      profileCodeId = request.profileCode,
+    )
+      .also { profileDetails += it }
+
+  private fun OffenderBooking.getOrCreateProfile() =
+    profiles.firstOrNull { it.id.sequence == 1L }
+      ?: OffenderProfile(OffenderProfileId(this, 1), LocalDate.now())
+        .also { profiles += it }
+
+  private fun validateProfileType(profileType: String) {
+    if (!profileTypeRepository.existsById(profileType)) {
+      throw BadDataException("Invalid profile type $profileType")
+    }
+  }
+
+  private fun getProfileType(profileType: String) = profileTypeRepository.findByIdOrNull(profileType)
+    ?: throw BadDataException("Invalid profile type $profileType")
+
+  private fun validateProfileCode(profileType: String, profileCode: String?) =
+    profileCode?.let {
+      if (!profileCodeRepository.existsById(ProfileCodeId(profileType, profileCode))) {
+        throw BadDataException("Invalid profile code $profileCode for profile type $profileType")
+      }
+    }
+
+  private fun findLatestBookingOrThrow(offenderNo: String) = bookingRepository.findLatestByOffenderNomsId(offenderNo)
+    ?: throw NotFoundException("No latest booking found for $offenderNo")
 }

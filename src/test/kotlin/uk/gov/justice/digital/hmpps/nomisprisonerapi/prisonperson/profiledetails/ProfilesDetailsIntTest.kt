@@ -7,9 +7,14 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -335,19 +340,21 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
-          .also {
-            assertThat(it.bookingId).isEqualTo(booking.bookingId)
-            assertThat(it.created).isTrue()
-          }
+        repository.runInTransaction {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+            .also {
+              assertThat(it.bookingId).isEqualTo(booking.bookingId)
+              assertThat(it.created).isTrue()
+            }
+        }
 
         repository.runInTransaction {
-          with(offenderBookingRepository.findLatestByOffenderNomsId("A1234AA")!!.profiles.first()) {
+          with(findBooking().profiles.first()) {
             assertThat(id.sequence).isEqualTo(1)
             assertThat(profileDetails.size).isEqualTo(1)
             with(profileDetails.first()) {
               assertThat(id.profileType.type).isEqualTo("BUILD")
-              assertThat(profileCode!!.id.code).isEqualTo("SMALL")
+              assertThat(profileCodeId).isEqualTo("SMALL")
             }
           }
         }
@@ -365,63 +372,275 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
-          .also {
-            assertThat(it.bookingId).isEqualTo(booking.bookingId)
-            assertThat(it.created).isFalse()
-          }
+        repository.runInTransaction {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+            .also {
+              assertThat(it.bookingId).isEqualTo(booking.bookingId)
+              assertThat(it.created).isFalse()
+            }
+        }
 
         repository.runInTransaction {
-          with(offenderBookingRepository.findLatestByOffenderNomsId("A1234AA")!!.profiles.first()) {
+          with(findBooking().profiles.first()) {
             assertThat(id.sequence).isEqualTo(1)
             assertThat(profileDetails.size).isEqualTo(1)
             with(profileDetails.first()) {
               assertThat(id.profileType.type).isEqualTo("BUILD")
-              assertThat(profileCode!!.id.code).isEqualTo("SMALL")
+              assertThat(profileCodeId).isEqualTo("SMALL")
             }
           }
         }
       }
 
-      // TODO SDIT-2023 Implement all tests below
       @Test
-      fun `should publish telemetry for creating profile details`() {}
+      fun `should publish telemetry for creating profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday)
+          }
+        }
+
+        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+
+        verify(telemetryClient).trackEvent(
+          "profile-details-physical-attributes-created",
+          mapOf(
+            "offenderNo" to "A1234AA",
+            "bookingId" to booking.bookingId.toString(),
+            "profileType" to "BUILD",
+          ),
+          null,
+        )
+      }
 
       @Test
-      fun `should publish telemetry for updating profile details`() {}
+      fun `should publish telemetry for updating profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday) {
+              profile {
+                detail(profileType = "BUILD", profileCode = "MEDIUM")
+              }
+            }
+          }
+        }
+
+        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+
+        verify(telemetryClient).trackEvent(
+          "profile-details-physical-attributes-updated",
+          mapOf(
+            "offenderNo" to "A1234AA",
+            "bookingId" to booking.bookingId.toString(),
+            "profileType" to "BUILD",
+          ),
+          null,
+        )
+      }
 
       @Test
-      fun `should only update latest booking`() {}
+      fun `should only update latest booking`() {
+        lateinit var oldBooking: OffenderBooking
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
+              profile {
+                detail(profileType = "BUILD", profileCode = "MEDIUM")
+              }
+            }
+            oldBooking = booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = yesterday.toLocalDate()) {
+              profile {
+                detail(profileType = "BUILD", profileCode = "HEAVY")
+              }
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+        }
+
+        repository.runInTransaction {
+          // The new booking was updated
+          with(findBooking().profiles.first()) {
+            with(profileDetails.first()) {
+              assertThat(id.profileType.type).isEqualTo("BUILD")
+              assertThat(profileCodeId).isEqualTo("SMALL")
+            }
+          }
+          // The old booking wasn't updated
+          with(findBooking(oldBooking.bookingId).profiles.first()) {
+            with(profileDetails.first()) {
+              assertThat(id.profileType.type).isEqualTo("BUILD")
+              assertThat(profileCodeId).isEqualTo("HEAVY")
+            }
+          }
+        }
+      }
 
       @Test
-      fun `should only update active booking`() {}
+      fun `should ignore profile sequence greater than 1`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
+              profile(sequence = 1) {
+                detail(profileType = "BUILD", profileCode = "MEDIUM")
+              }
+              profile(sequence = 2) {
+                detail(profileType = "BUILD", profileCode = "HEAVY")
+              }
+            }
+          }
+        }
 
-      @Test
-      fun `should ignore profile sequence greater than 1`() {}
+        repository.runInTransaction {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+        }
 
-      @Test
-      fun `should only update requested profile type`() {}
+        repository.runInTransaction {
+          val booking = findBooking()
+          // The new profile with sequence 1 was updated
+          with(booking.profiles.find { it.id.sequence == 1L }!!.profileDetails.first()) {
+            assertThat(id.profileType.type).isEqualTo("BUILD")
+            assertThat(profileCodeId).isEqualTo("SMALL")
+          }
+          // The profile with sequence 2 wasn't updated
+          with(booking.profiles.find { it.id.sequence == 2L }!!.profileDetails.first()) {
+            assertThat(id.profileType.type).isEqualTo("BUILD")
+            assertThat(profileCodeId).isEqualTo("HEAVY")
+          }
+        }
+      }
+    }
 
-      @Test
-      fun `should allow create with null value`() {}
+    @Test
+    fun `should only update requested profile type`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
+            profile {
+              detail(profileType = "BUILD", profileCode = "MEDIUM")
+              detail(profileType = "SHOESIZE", profileCode = "8.5")
+            }
+          }
+        }
+      }
 
-      @Test
-      fun `should allow updates with null value`() {}
+      repository.runInTransaction {
+        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "SMALL"))
+      }
+
+      repository.runInTransaction {
+        with(findBooking().profiles.first()) {
+          profileDetails.find { it.id.profileType.type == "SHOESIZE" }!!
+            .also {
+              assertThat(it.profileCodeId).isEqualTo("8.5")
+            }
+        }
+      }
+    }
+
+    @Test
+    fun `should allow create with null value`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          booking = booking(bookingSequence = 1, bookingBeginDate = yesterday)
+        }
+      }
+
+      repository.runInTransaction {
+        service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
+      }
+
+      repository.runInTransaction {
+        val profiles = findBooking().profiles.first()
+        with(profiles.profileDetails.first()) {
+          assertThat(id.profileType.type).isEqualTo("BUILD")
+          assertThat(profileCode).isNull()
+          assertThat(profileCodeId).isNull()
+        }
+      }
+    }
+
+    @Test
+    fun `should allow updates with null value`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
+            profile {
+              detail(profileType = "BUILD", profileCode = "MEDIUM")
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
+        }
+
+        val profiles = findBooking().profiles.first()
+        with(profiles.profileDetails.first()) {
+          assertThat(id.profileType.type).isEqualTo("BUILD")
+          assertThat(profileCode).isNull()
+          assertThat(profileCodeId).isNull()
+        }
+      }
     }
 
     @Nested
     inner class Errors {
       @Test
-      fun `should reject if no offender`() {}
+      fun `should reject if no offender`() {
+        assertThrows<NotFoundException> {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
+        }
+      }
 
       @Test
-      fun `should reject if no bookings`() {}
+      fun `should reject if no bookings`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA")
+        }
+
+        assertThrows<NotFoundException> {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", null))
+        }.also {
+          assertThat(it.message).contains("A1234AA")
+        }
+      }
 
       @Test
-      fun `should reject if unknown profile type`() {}
+      fun `should reject if unknown profile type`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
+          }
+        }
+
+        assertThrows<BadDataException> {
+          repository.runInTransaction {
+            service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("UNKNOWN_TYPE", "UNKNOWN_CODE"))
+          }
+        }.also {
+          assertThat(it.message).contains("UNKNOWN_TYPE")
+        }
+      }
 
       @Test
-      fun `should reject if unknown profile code`() {}
+      fun `should reject if unknown profile code`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
+          }
+        }
+
+        assertThrows<BadDataException> {
+          service.upsertProfileDetails("A1234AA", UpsertProfileDetailsRequest("BUILD", "UNKNOWN_CODE"))
+        }.also {
+          assertThat(it.message).contains("UNKNOWN_CODE")
+        }
+      }
     }
+
+    private fun findBooking(bookingId: Long = booking.bookingId) = offenderBookingRepository.findByIdOrNull(bookingId)!!
   }
 }
