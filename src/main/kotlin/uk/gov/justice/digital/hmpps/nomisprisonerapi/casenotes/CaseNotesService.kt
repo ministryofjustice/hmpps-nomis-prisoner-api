@@ -130,11 +130,14 @@ class CaseNotesService(
   )
 
   val pattern =
-    // "<text> ...[<username> updated the case notes on <date> <time>] <amend text>"
-    " \\.\\.\\.\\[([A-Za-z0-9_]+) updated the case notes on (\\d{4}/\\d{2}/\\d{2}) (\\d{2}:\\d{2}:\\d{2})] "
+    // "<text> ...[<username> updated the case note[s] on <date> <time>] <amend text>"
+    " \\.\\.\\.\\[(\\w+) updated the case notes? on (\\d{2,4}[/-]\\d{2}[/-]\\d{2,4}) (\\d{2}:\\d{2}:\\d{2})] "
       .toRegex()
 
-  val dateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
+  // Early e.g. ...[PQS23R updated the case note on 12/12/2006 07:32:39] letter sent 27/11/06
+  // Middle era ...[GQV81R updated the case notes on 18-08-2009 14:04:53] ViSOR ref number: 09/0196494. (from about 2009 and still occurring)
+  // late        ...[UQP87J updated the case notes on 2024/07/19 02:39:26] obs every hour (2018 onwards)
+  val dateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("[dd/MM/yyyy][dd-MM-yyyy][yyyy/MM/dd] HH:mm:ss")
 
   internal fun parseMainText(caseNoteText: String): String {
     return pattern
