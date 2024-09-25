@@ -71,6 +71,19 @@ internal class CaseNotesServiceTest {
   @Nested
   internal inner class ParseAmendments {
 
+    private val staffUserAccount1 = StaffUserAccount(
+      username = "JMORROW_GEN",
+      Staff(12345L, "First1", "Last1"),
+      "type",
+      "source",
+    )
+    private val staffUserAccount2 = StaffUserAccount(
+      username = "PPHILLIPS_GEN",
+      Staff(67890L, "First2", "Last2"),
+      "type",
+      "source",
+    )
+
     @Test
     fun `basic text has no amendments`() {
       assertThat(locationService.parseAmendments("basic text")).isEmpty()
@@ -83,14 +96,7 @@ internal class CaseNotesServiceTest {
 
     @Test
     fun `one amendment`() {
-      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(
-        StaffUserAccount(
-          username = "JMORROW_GEN",
-          Staff(12345L, "First1", "Last1"),
-          "type",
-          "source",
-        ),
-      )
+      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
 
       assertThat(
         locationService.parseAmendments(
@@ -110,23 +116,33 @@ internal class CaseNotesServiceTest {
     }
 
     @Test
+    fun `one old-style amendment`() {
+      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
+
+      assertThat(
+        locationService.parseAmendments(
+          "basic text ...[JMORROW_GEN updated the case note on 14/12/2006 07:32:39] made a change",
+        ),
+      )
+        .extracting("createdDateTime").containsExactly(LocalDateTime.parse("2006-12-14T07:32:39"))
+    }
+
+    @Test
+    fun `one middle-era-style amendment`() {
+      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
+
+      assertThat(
+        locationService.parseAmendments(
+          "basic text ...[JMORROW_GEN updated the case notes on 18-08-2009 14:04:53] made a change",
+        ),
+      )
+        .extracting("createdDateTime").containsExactly(LocalDateTime.parse("2009-08-18T14:04:53"))
+    }
+
+    @Test
     fun `multiple amendments`() {
-      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(
-        StaffUserAccount(
-          username = "JMORROW_GEN",
-          Staff(12345L, "First1", "Last1"),
-          "type",
-          "source",
-        ),
-      )
-      whenever(staffUserAccountRepository.findByUsername("PPHILLIPS_GEN")).thenReturn(
-        StaffUserAccount(
-          username = "PPHILLIPS_GEN",
-          Staff(67890L, "First2", "Last2"),
-          "type",
-          "source",
-        ),
-      )
+      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
+      whenever(staffUserAccountRepository.findByUsername("PPHILLIPS_GEN")).thenReturn(staffUserAccount2)
 
       assertThat(
         locationService.parseAmendments(
@@ -155,14 +171,7 @@ internal class CaseNotesServiceTest {
 
     @Test
     fun `one empty amendment`() {
-      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(
-        StaffUserAccount(
-          username = "JMORROW_GEN",
-          Staff(12345L, "First1", "Last1"),
-          "type",
-          "source",
-        ),
-      )
+      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
 
       assertThat(
         locationService.parseAmendments(
@@ -183,22 +192,8 @@ internal class CaseNotesServiceTest {
 
     @Test
     fun `multiple amendments includes empty`() {
-      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(
-        StaffUserAccount(
-          username = "JMORROW_GEN",
-          Staff(12345L, "First1", "Last1"),
-          "type",
-          "source",
-        ),
-      )
-      whenever(staffUserAccountRepository.findByUsername("PPHILLIPS_GEN")).thenReturn(
-        StaffUserAccount(
-          username = "PPHILLIPS_GEN",
-          Staff(67890L, "First2", "Last2"),
-          "type",
-          "source",
-        ),
-      )
+      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
+      whenever(staffUserAccountRepository.findByUsername("PPHILLIPS_GEN")).thenReturn(staffUserAccount2)
 
       assertThat(
         locationService.parseAmendments(
