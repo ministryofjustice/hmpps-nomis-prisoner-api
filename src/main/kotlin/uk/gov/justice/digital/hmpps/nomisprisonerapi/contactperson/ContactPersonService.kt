@@ -51,6 +51,12 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           extension = number.extNo,
         )
       },
+      emailAddresses = it.internetAddresses.map { address ->
+        EmailAddress(
+          emailAddressId = address.internetAddressId,
+          email = address.internetAddress,
+        )
+      },
       addresses = it.addresses.map { address ->
         Address(
           addressId = address.addressId,
@@ -63,6 +69,13 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           city = address.city?.toCodeDescription(),
           county = address.county?.toCodeDescription(),
           country = address.country?.toCodeDescription(),
+          validatedPAF = address.validatedPAF,
+          primaryAddress = address.primaryAddress,
+          noFixedAddress = address.noFixedAddress,
+          mailAddress = address.mailAddress,
+          comment = address.comment,
+          startDate = address.startDate,
+          endDate = address.endDate,
           phoneNumbers = address.phones.map { number ->
             PhoneNumber(
               phoneId = number.phoneId,

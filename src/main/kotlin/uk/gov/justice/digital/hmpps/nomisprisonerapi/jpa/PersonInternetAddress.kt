@@ -8,11 +8,15 @@ import jakarta.persistence.ManyToOne
 
 @Entity
 @DiscriminatorValue(PersonInternetAddress.TYPE)
-class PersonInternetAddress : InternetAddress() {
+class PersonInternetAddress(
   @JoinColumn(name = "OWNER_ID")
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  var person: Person? = null
-
+  val person: Person,
+  emailAddress: String,
+) : InternetAddress(
+  internetAddress = emailAddress,
+  internetAddressClass = "EMAIL",
+) {
   companion object {
     const val TYPE = "PER"
   }

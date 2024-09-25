@@ -219,10 +219,24 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               city = SHEFFIELD,
               county = "S.YORKSHIRE",
               country = "ENG",
+              validatedPAF = true,
+              noFixedAddress = false,
+              primaryAddress = true,
+              mailAddress = true,
+              comment = "Not to be used",
+              startDate = "2024-10-01",
+              endDate = "2024-11-01",
             ) {
               phone(phoneType = "MOB", phoneNo = "07399999999")
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
             }
+            address(
+              noFixedAddress = true,
+              primaryAddress = false,
+              premise = null,
+              street = null,
+              locality = null,
+            )
           }
         }
       }
@@ -244,6 +258,13 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[0].city").doesNotExist()
           .jsonPath("addresses[0].county").doesNotExist()
           .jsonPath("addresses[0].country").doesNotExist()
+          .jsonPath("addresses[0].validatedPAF").isEqualTo(false)
+          .jsonPath("addresses[0].noFixedAddress").doesNotExist()
+          .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
+          .jsonPath("addresses[0].mailAddress").isEqualTo(false)
+          .jsonPath("addresses[0].comment").doesNotExist()
+          .jsonPath("addresses[0].startDate").doesNotExist()
+          .jsonPath("addresses[0].endDate").doesNotExist()
           .jsonPath("addresses[1].addressId").isEqualTo(person.addresses[1].addressId)
           .jsonPath("addresses[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
@@ -258,6 +279,14 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
           .jsonPath("addresses[1].country.code").isEqualTo("ENG")
           .jsonPath("addresses[1].country.description").isEqualTo("England")
+          .jsonPath("addresses[1].validatedPAF").isEqualTo(true)
+          .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
+          .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
+          .jsonPath("addresses[1].mailAddress").isEqualTo(true)
+          .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
+          .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
+          .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
+          .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
       }
 
       @Test
@@ -278,6 +307,38 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
           .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
           .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
+      }
+    }
+
+    @Nested
+    inner class EmailAddress {
+      private lateinit var person: Person
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            email(emailAddress = "john.bog@justice.gov.uk")
+            email(emailAddress = "john.bog@gmail.com")
+          }
+        }
+      }
+
+      @Test
+      fun `will return email address`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(person.internetAddresses[0].internetAddressId)
+          .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
+          .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(person.internetAddresses[1].internetAddressId)
+          .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
       }
     }
   }

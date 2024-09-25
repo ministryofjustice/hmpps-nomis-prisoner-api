@@ -33,7 +33,7 @@ data class VisitOrderVisitor(
 
   @Column(name = "GROUP_LEADER_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val groupLeader: Boolean = false,
+  var groupLeader: Boolean = false,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -42,7 +42,5 @@ data class VisitOrderVisitor(
     return id == other.id
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(id)
-  }
+  override fun hashCode(): Int = Objects.hashCode(id)
 }

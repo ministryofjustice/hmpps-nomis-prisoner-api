@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @DslMarker
 annotation class PersonAddressDslMarker
@@ -73,6 +74,13 @@ class PersonAddressBuilder(
     city: String?,
     county: String?,
     country: String?,
+    validatedPAF: Boolean,
+    noFixedAddress: Boolean?,
+    primaryAddress: Boolean,
+    mailAddress: Boolean,
+    comment: String?,
+    startDate: LocalDate?,
+    endDate: LocalDate?,
   ): PersonAddress =
     PersonAddress(
       addressType = personAddressBuilderRepository.addressTypeOf(type),
@@ -85,6 +93,13 @@ class PersonAddressBuilder(
       city = personAddressBuilderRepository.cityOf(city),
       county = personAddressBuilderRepository.countyOf(county),
       country = personAddressBuilderRepository.countryOf(country),
+      validatedPAF = validatedPAF,
+      noFixedAddress = noFixedAddress,
+      primaryAddress = primaryAddress,
+      mailAddress = mailAddress,
+      comment = comment,
+      startDate = startDate,
+      endDate = endDate,
     )
       .also { address = it }
 

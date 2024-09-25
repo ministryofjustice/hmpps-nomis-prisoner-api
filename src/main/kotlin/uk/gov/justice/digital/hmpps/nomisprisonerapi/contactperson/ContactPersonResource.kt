@@ -116,6 +116,8 @@ data class ContactPerson(
   val phoneNumbers: List<PhoneNumber>,
   @Schema(description = "List of addresses for the person")
   val addresses: List<Address>,
+  @Schema(description = "List of email addresses for the person")
+  val emailAddresses: List<EmailAddress>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -156,4 +158,27 @@ data class Address(
   val country: CodeDescription?,
   @Schema(description = "List of phone numbers for the address")
   val phoneNumbers: List<PhoneNumber>,
+  @Schema(description = "true if address validated by Post Office Address file??")
+  val validatedPAF: Boolean,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean?,
+  @Schema(description = "true if this is the person's primary address")
+  val primaryAddress: Boolean,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean,
+  @Schema(description = "Free format comment about the address")
+  val comment: String?,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate?,
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate?,
+)
+
+@Schema(description = "The data held in NOMIS about a email address")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class EmailAddress(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val emailAddressId: Long,
+  @Schema(description = "The email address", example = "john.smith@internet.co.uk")
+  val email: String,
 )

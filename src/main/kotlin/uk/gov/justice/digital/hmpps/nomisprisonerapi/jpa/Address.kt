@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.DiscriminatorColumn
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -20,6 +21,7 @@ import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import org.hibernate.annotations.SQLRestriction
+import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
 
 @Entity
@@ -37,10 +39,19 @@ abstract class Address(
   open val locality: String? = null,
 
   @Column(name = "START_DATE")
-  open val startDate: LocalDate = LocalDate.now(),
+  open val startDate: LocalDate? = null,
+
+  @Column(name = "END_DATE")
+  open val endDate: LocalDate? = null,
 
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
-  open val noFixedAddressFlag: String = "N",
+  @Convert(converter = YesNoConverter::class)
+  // null for a handful of addresses
+  open val noFixedAddress: Boolean? = false,
+
+  @Column(name = "PRIMARY_FLAG", nullable = false)
+  @Convert(converter = YesNoConverter::class)
+  open val primaryAddress: Boolean = false,
 
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @SQLRestriction("OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
@@ -107,38 +118,31 @@ abstract class Address(
   )
   open val country: Country? = null,
 
+  @Column(name = "VALIDATED_PAF_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  open val validatedPAF: Boolean = false,
+
+  @Column(name = "MAIL_FLAG", nullable = false)
+  @Convert(converter = YesNoConverter::class)
+  open val mailAddress: Boolean = false,
+
+  @Column(name = "COMMENT_TEXT")
+  open val comment: String? = null,
+
+  /* Not mapped
+  CAPACITY - always null
+  SERVICES_FLAG - always for N for personal addresses - may need mapping for corporate address
+  SPECIAL_NEEDS_CODE - always null
+  BUSINESS_HOUR - always null for personal addresses - may need mapping for corporate address
+  CITY_NAME - always null
+  ADDRESS_USAGE - not used for personal addresses
+   */
 ) {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
   open val addressId: Long = 0
-
-  @Column(name = "PRIMARY_FLAG", nullable = false)
-  open val primaryFlag = "N"
-
-  @Column(name = "MAIL_FLAG", nullable = false)
-  open val mailFlag = "N"
-
-  @Column(name = "COMMENT_TEXT")
-  open val commentText: String? = null
-
-  @Column(name = "END_DATE")
-  open val endDate: LocalDate? = null
-
-  @OneToMany
-  @JoinColumn(name = "ADDRESS_ID")
-  open val addressUsages: List<AddressUsage> = ArrayList()
-
-  fun removePhone(phone: AddressPhone) {
-    phones.remove(phone)
-  }
-
-  fun addPhone(phone: AddressPhone): AddressPhone {
-    phone.address = this
-    phones.add(phone)
-    return phone
-  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
