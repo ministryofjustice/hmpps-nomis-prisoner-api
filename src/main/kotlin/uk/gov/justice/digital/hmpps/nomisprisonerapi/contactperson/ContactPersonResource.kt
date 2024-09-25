@@ -118,6 +118,8 @@ data class ContactPerson(
   val addresses: List<Address>,
   @Schema(description = "List of email addresses for the person")
   val emailAddresses: List<EmailAddress>,
+  @Schema(description = "List of employments for the person")
+  val employments: List<Employment>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -181,4 +183,24 @@ data class EmailAddress(
   val emailAddressId: Long,
   @Schema(description = "The email address", example = "john.smith@internet.co.uk")
   val email: String,
+)
+
+@Schema(description = "The data held in NOMIS about a person's employment")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Employment(
+  @Schema(description = "Unique NOMIS sequence for this employment for this person")
+  val sequence: Long,
+  @Schema(description = "The entity the person is employed by")
+  val corporate: Corporate?,
+  @Schema(description = "True is employment is active")
+  val active: Boolean,
+)
+
+@Schema(description = "The data held in NOMIS about a corporate entity")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Corporate(
+  @Schema(description = "Unique NOMIS Id of corporate address")
+  val id: Long,
+  @Schema(description = "The corporate name", example = "Police")
+  val name: String?,
 )

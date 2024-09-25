@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
@@ -32,6 +33,7 @@ class NomisDataBuilder(
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
   private val personBuilderFactory: PersonBuilderFactory? = null,
+  private val corporateBuilderFactory: CorporateBuilderFactory? = null,
 ) {
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
@@ -46,6 +48,7 @@ class NomisDataBuilder(
     mergeTransactionBuilderFactory,
     templateBuilderFactory,
     personBuilderFactory,
+    corporateBuilderFactory,
   ).apply(dsl)
 }
 
@@ -62,6 +65,7 @@ class NomisData(
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
   private val personBuilderFactory: PersonBuilderFactory? = null,
+  private val corporateBuilderFactory: CorporateBuilderFactory? = null,
 
 ) : NomisDataDsl {
   @StaffDslMarker
@@ -277,6 +281,37 @@ class NomisData(
     templateBuilderFactory!!.builder()
       .let { builder ->
         builder.build(name, description)
+          .also {
+            builder.apply(dsl)
+          }
+      }
+
+  @CorporateDslMarker
+  override fun corporate(
+    corporateName: String,
+    caseloadId: String?,
+    createdDate: LocalDateTime,
+    commentText: String?,
+    suspended: Boolean,
+    feiNumber: String?,
+    active: Boolean,
+    expiryDate: LocalDate?,
+    taxNo: String?,
+    dsl: CorporateDsl.() -> Unit,
+  ): Corporate =
+    corporateBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          corporateName = corporateName,
+          caseloadId = caseloadId,
+          createdDate = createdDate,
+          commentText = commentText,
+          suspended = suspended,
+          feiNumber = feiNumber,
+          active = active,
+          expiryDate = expiryDate,
+          taxNo = taxNo,
+        )
           .also {
             builder.apply(dsl)
           }
@@ -500,6 +535,19 @@ interface NomisDataDsl {
     keepBiometrics: Boolean = false,
     dsl: PersonDsl.() -> Unit = {},
   ): Person
+
+  fun corporate(
+    corporateName: String,
+    caseloadId: String? = null,
+    createdDate: LocalDateTime = LocalDateTime.now(),
+    commentText: String? = null,
+    suspended: Boolean = false,
+    feiNumber: String? = null,
+    active: Boolean = true,
+    expiryDate: LocalDate? = null,
+    taxNo: String? = null,
+    dsl: CorporateDsl.() -> Unit = {},
+  ): Corporate
 }
 
 @DslMarker

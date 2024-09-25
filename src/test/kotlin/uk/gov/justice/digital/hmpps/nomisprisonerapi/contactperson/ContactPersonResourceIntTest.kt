@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 
@@ -339,6 +340,43 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
           .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(person.internetAddresses[1].internetAddressId)
           .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
+      }
+    }
+
+    @Nested
+    inner class Employments {
+      private lateinit var person: Person
+      private lateinit var corporate: Corporate
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate = corporate(corporateName = "Police")
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            employment(employerCorporate = corporate)
+            employment(active = false)
+          }
+        }
+      }
+
+      @Test
+      fun `will return employments`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("employments[0].sequence").isEqualTo(1)
+          .jsonPath("employments[0].corporate.id").isEqualTo(corporate.id)
+          .jsonPath("employments[0].active").isEqualTo(true)
+          .jsonPath("employments[0].corporate.name").isEqualTo("Police")
+          .jsonPath("employments[1].sequence").isEqualTo(2)
+          .jsonPath("employments[1].corporate").doesNotExist()
+          .jsonPath("employments[1].active").isEqualTo(false)
       }
     }
   }

@@ -57,6 +57,18 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           email = address.internetAddress,
         )
       },
+      employments = it.employments.map { employment ->
+        Employment(
+          sequence = employment.id.sequence,
+          active = employment.active,
+          corporate = employment.employerCorporate?.let { corporate ->
+            Corporate(
+              id = corporate.id,
+              name = corporate.corporateName,
+            )
+          },
+        )
+      },
       addresses = it.addresses.map { address ->
         Address(
           addressId = address.addressId,
