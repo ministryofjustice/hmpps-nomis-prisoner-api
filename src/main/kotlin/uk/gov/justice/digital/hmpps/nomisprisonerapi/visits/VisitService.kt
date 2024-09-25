@@ -224,19 +224,25 @@ class VisitService(
     visit.visitors.removeAll(visitorsToRemove)
     visit.visitors.addAll(visitorsToAdd)
 
-    // copy the visitors to the visit order, ignoring the dummy visitor entry
-    visit.visitOrder?.let { visitOrder ->
-      visitOrder.visitors.clear()
-      visitOrder.visitors.addAll(
-        visit.visitors
-          .filter { it.person != null }.mapIndexed { index, visitor ->
-            VisitOrderVisitor(
-              person = visitor.person!!,
-              groupLeader = index == 0,
-              visitOrder = visitOrder,
-            )
-          },
-      )
+    visit.visitOrder?.also { visitOrder ->
+      // copy the visitors to the visit order, ignoring the dummy visitor entry
+      val existingVoVisitorsPersonIds = visitOrder.visitors.map { it.person.id }.toSet()
+      val voVisitorsToRemove =
+        visitOrder.visitors.filter { it.person.id !in updateVisitRequest.visitorPersonIds }
+      val voVisitorsToAdd = (updateVisitRequest.visitorPersonIds - existingVoVisitorsPersonIds).map {
+        VisitOrderVisitor(
+          visitOrder = visitOrder,
+          person = personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist")),
+          groupLeader = false,
+        )
+      }
+      visitOrder.visitors.removeAll(voVisitorsToRemove)
+      visitOrder.visitors.addAll(voVisitorsToAdd)
+
+      // if the group leader was removed just reset to first item
+      if (!visitOrder.visitors.any { it.groupLeader }) {
+        visitOrder.visitors.first().groupLeader = true
+      }
     }
 
     val endDateTime = LocalDateTime.of(LocalDate.from(updateVisitRequest.startDateTime), updateVisitRequest.endTime)
