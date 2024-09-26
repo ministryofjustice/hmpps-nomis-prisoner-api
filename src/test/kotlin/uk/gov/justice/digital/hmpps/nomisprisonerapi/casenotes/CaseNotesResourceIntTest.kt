@@ -323,7 +323,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("PUT /casenotes/{caseNoteId}")
   @Nested
-  inner class AmendCaseNote {
+  inner class UpdateCaseNote {
     private val validCaseNote = UpdateCaseNoteRequest(
       text = "An amended note",
     )
