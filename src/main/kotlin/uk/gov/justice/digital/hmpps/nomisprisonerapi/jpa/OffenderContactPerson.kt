@@ -14,9 +14,8 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction.IGNORE
 import org.hibernate.type.YesNoConverter
+import java.time.LocalDate
 
 @Entity
 @Table(name = "OFFENDER_CONTACT_PERSONS")
@@ -35,12 +34,15 @@ data class OffenderContactPerson(
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
   val offenderBooking: OffenderBooking,
 
-  @ManyToOne(optional = false, fetch = LAZY)
+  @ManyToOne(optional = true, fetch = LAZY)
   @JoinColumn(name = "PERSON_ID")
-  val person: Person,
+  val person: Person?,
 
-  @ManyToOne
-  @NotFound(action = IGNORE)
+  @ManyToOne(optional = true, fetch = LAZY)
+  @JoinColumn(name = "CONTACT_ROOT_OFFENDER_ID")
+  val rootOffender: Offender?,
+
+  @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -53,8 +55,7 @@ data class OffenderContactPerson(
   )
   val relationshipType: RelationshipType,
 
-  @ManyToOne
-  @NotFound(action = IGNORE)
+  @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -62,13 +63,7 @@ data class OffenderContactPerson(
           value = "'" + ContactType.CONTACTS + "'",
           referencedColumnName = "domain",
         ),
-      ), JoinColumnOrFormula(
-        column = JoinColumn(
-          name = "CONTACT_TYPE",
-          referencedColumnName = "code",
-          nullable = true,
-        ),
-      ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "CONTACT_TYPE", referencedColumnName = "code", nullable = true)),
     ],
   )
   val contactType: ContactType,
@@ -85,13 +80,24 @@ data class OffenderContactPerson(
   @Convert(converter = YesNoConverter::class)
   val emergencyContact: Boolean = false,
 
+  // handful of null values
   @Column(name = "APPROVED_VISITOR_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val approvedVisitor: Boolean = false,
+  val approvedVisitor: Boolean? = false,
 
   @Column(name = "COMMENT_TEXT")
   val comment: String? = null,
 
+  @Column(name = "EXPIRY_DATE")
+  val expiryDate: LocalDate? = null,
+
+  /*
+  Not mapped:
+  CASELOAD_TYPE - always null
+  CASE_INFO_NUMBER - always null
+  AWARE_OF_CHARGES_FLAG - always default of N
+  CAN_BE_CONTACTED_FLAG - always default of N
+   */
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -104,7 +110,5 @@ data class OffenderContactPerson(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(id = $id )"
-  }
+  override fun toString(): String = this::class.simpleName + "(id = $id )"
 }

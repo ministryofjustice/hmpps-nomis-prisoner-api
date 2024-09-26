@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @DslMarker
 annotation class OffenderContactPersonDslMarker
@@ -46,10 +47,12 @@ class OffenderContactPersonBuilderRepositoryBuilder(private val repository: Offe
     emergencyContact: Boolean,
     approvedVisitor: Boolean,
     comment: String?,
+    expiryDate: LocalDate?,
   ): OffenderContactPerson =
     OffenderContactPerson(
       offenderBooking = offenderBooking,
       person = person,
+      rootOffender = null,
       relationshipType = repository.lookupRelationshipType(relationshipType),
       contactType = repository.lookupContactType(contactType),
       active = active,
@@ -57,6 +60,7 @@ class OffenderContactPersonBuilderRepositoryBuilder(private val repository: Offe
       emergencyContact = emergencyContact,
       approvedVisitor = approvedVisitor,
       comment = comment,
+      expiryDate = expiryDate,
     )
       .let { repository.save(it) }
 }

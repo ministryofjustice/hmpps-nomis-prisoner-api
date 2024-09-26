@@ -106,6 +106,27 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           },
         )
       },
+      contacts = it.contacts.map { contact ->
+        PersonContact(
+          id = contact.id,
+          contactType = contact.contactType.toCodeDescription(),
+          relationshipType = contact.relationshipType.toCodeDescription(),
+          active = contact.active,
+          approvedVisitor = contact.approvedVisitor ?: false,
+          emergencyContact = contact.emergencyContact,
+          nextOfKin = contact.nextOfKin,
+          expiryDate = contact.expiryDate,
+          comment = contact.comment,
+          prisoner = contact.offenderBooking.let { booking ->
+            ContactForPrisoner(
+              bookingId = booking.bookingId,
+              offenderNo = booking.offender.nomsId,
+              lastName = booking.offender.lastName,
+              firstName = booking.offender.firstName,
+            )
+          },
+        )
+      },
     )
   } ?: throw NotFoundException("Person not found $personId")
 }

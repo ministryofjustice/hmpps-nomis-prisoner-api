@@ -124,7 +124,7 @@ private fun booking(bookingSequence: Int = 1): OffenderBooking =
   OffenderBooking(
     bookingSequence = bookingSequence,
     bookingBeginDate = LocalDateTime.now(),
-    offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH"),
+    offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),
   )
 
 private fun alert(
