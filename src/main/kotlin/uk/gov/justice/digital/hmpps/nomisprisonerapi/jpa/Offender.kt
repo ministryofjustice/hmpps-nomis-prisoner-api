@@ -31,7 +31,7 @@ data class Offender(
   @Column(name = "OFFENDER_ID_DISPLAY", nullable = false)
   val nomsId: String,
 
-  @Column(name = "LAST_NAME", nullable = true)
+  @Column(name = "LAST_NAME", nullable = false)
   val lastName: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -56,7 +56,7 @@ data class Offender(
   @Column(name = "CASELOAD_TYPE")
   val caseloadType: String? = "INST",
 
-  @Column(name = "FIRST_NAME", nullable = false)
+  @Column(name = "FIRST_NAME", nullable = true)
   val firstName: String,
 
   @Column(name = "MIDDLE_NAME")
