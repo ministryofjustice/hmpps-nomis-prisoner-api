@@ -25,7 +25,7 @@ internal class CaseNotesServiceTest {
   private val taskTypeRepository: ReferenceCodeRepository<TaskType> = mock()
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType> = mock()
 
-  private val locationService = CaseNotesService(
+  private val caseNotesService = CaseNotesService(
     offenderRepository,
     offenderBookingRepository,
     offenderCaseNoteRepository,
@@ -39,18 +39,18 @@ internal class CaseNotesServiceTest {
 
     @Test
     fun `basic text is copied correctly`() {
-      assertThat(locationService.parseMainText("basic text")).isEqualTo("basic text")
+      assertThat(caseNotesService.parseMainText("basic text")).isEqualTo("basic text")
     }
 
     @Test
     fun `empty text`() {
-      assertThat(locationService.parseMainText("")).isEqualTo("")
+      assertThat(caseNotesService.parseMainText("")).isEqualTo("")
     }
 
     @Test
     fun `text truncated before amendment`() {
       assertThat(
-        locationService.parseMainText(
+        caseNotesService.parseMainText(
           "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change",
         ),
       )
@@ -60,7 +60,7 @@ internal class CaseNotesServiceTest {
     @Test
     fun `text truncated before multiple amendments`() {
       assertThat(
-        locationService.parseMainText(
+        caseNotesService.parseMainText(
           "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change ...[PPHILLIPS_GEN updated the case notes on 2023/06/28 15:52:08] with more details",
         ),
       )
@@ -86,12 +86,12 @@ internal class CaseNotesServiceTest {
 
     @Test
     fun `basic text has no amendments`() {
-      assertThat(locationService.parseAmendments("basic text")).isEmpty()
+      assertThat(caseNotesService.parseAmendments("basic text")).isEmpty()
     }
 
     @Test
     fun `empty text`() {
-      assertThat(locationService.parseAmendments("")).isEmpty()
+      assertThat(caseNotesService.parseAmendments("")).isEmpty()
     }
 
     @Test
@@ -99,7 +99,7 @@ internal class CaseNotesServiceTest {
       whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
 
       assertThat(
-        locationService.parseAmendments(
+        caseNotesService.parseAmendments(
           "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change",
         ),
       )
@@ -120,7 +120,7 @@ internal class CaseNotesServiceTest {
       whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
 
       assertThat(
-        locationService.parseAmendments(
+        caseNotesService.parseAmendments(
           "basic text ...[JMORROW_GEN updated the case note on 14/12/2006 07:32:39] made a change",
         ),
       )
@@ -132,7 +132,7 @@ internal class CaseNotesServiceTest {
       whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
 
       assertThat(
-        locationService.parseAmendments(
+        caseNotesService.parseAmendments(
           "basic text ...[JMORROW_GEN updated the case notes on 18-08-2009 14:04:53] made a change",
         ),
       )
@@ -145,7 +145,7 @@ internal class CaseNotesServiceTest {
       whenever(staffUserAccountRepository.findByUsername("PPHILLIPS_GEN")).thenReturn(staffUserAccount2)
 
       assertThat(
-        locationService.parseAmendments(
+        caseNotesService.parseAmendments(
           "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change ...[PPHILLIPS_GEN updated the case notes on 2023/06/28 15:52:08] with more details",
         ),
       )
@@ -174,7 +174,7 @@ internal class CaseNotesServiceTest {
       whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
 
       assertThat(
-        locationService.parseAmendments(
+        caseNotesService.parseAmendments(
           "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] ",
         ),
       )
@@ -196,7 +196,7 @@ internal class CaseNotesServiceTest {
       whenever(staffUserAccountRepository.findByUsername("PPHILLIPS_GEN")).thenReturn(staffUserAccount2)
 
       assertThat(
-        locationService.parseAmendments(
+        caseNotesService.parseAmendments(
           "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41]  ...[PPHILLIPS_GEN updated the case notes on 2023/06/28 15:52:08] with more details",
         ),
       )
@@ -218,6 +218,101 @@ internal class CaseNotesServiceTest {
             LocalDateTime.parse("2023-06-28T15:52:08"),
           ),
         )
+    }
+  }
+
+  @Nested
+  internal inner class ReconstructText {
+    @Test
+    fun `plain unamended text`() {
+      assertThat(
+        caseNotesService.reconstructText(
+          UpdateCaseNoteRequest(
+            text = "some text",
+            amendments = emptyList(),
+          ),
+        ),
+      ).isEqualTo("some text")
+    }
+
+    @Test
+    fun `one amendment`() {
+      assertThat(
+        caseNotesService.reconstructText(
+          UpdateCaseNoteRequest(
+            text = "some text",
+            amendments = listOf(
+              UpdateAmendment(
+                text = "change",
+                authorUsername = "STEVER",
+                createdDateTime = LocalDateTime.parse("2024-05-06T07:08:09"),
+              ),
+            ),
+          ),
+        ),
+      ).isEqualTo("some text ...[STEVER updated the case notes on 2024/05/06 07:08:09] change")
+    }
+
+    @Test
+    fun `multiple amendments`() {
+      assertThat(
+        caseNotesService.reconstructText(
+          UpdateCaseNoteRequest(
+            text = "some text",
+            amendments = listOf(
+              UpdateAmendment(
+                text = "change",
+                authorUsername = "STEVER",
+                createdDateTime = LocalDateTime.parse("2024-05-06T07:08:09"),
+              ),
+              UpdateAmendment(
+                text = "another",
+                authorUsername = "STEREN",
+                createdDateTime = LocalDateTime.parse("2024-05-07T07:08:10"),
+              ),
+            ),
+          ),
+        ),
+      ).isEqualTo("some text ...[STEVER updated the case notes on 2024/05/06 07:08:09] change ...[STEREN updated the case notes on 2024/05/07 07:08:10] another")
+    }
+
+    @Test
+    fun `truncation without amendments`() {
+      assertThat(
+        caseNotesService.reconstructText(
+          UpdateCaseNoteRequest(
+            text = "s".repeat(4000),
+            amendments = emptyList(),
+          ),
+        ),
+      ).isEqualTo("s".repeat(4000))
+
+      assertThat(
+        caseNotesService.reconstructText(
+          UpdateCaseNoteRequest(
+            text = "s".repeat(4001),
+            amendments = emptyList(),
+          ),
+        ),
+      ).isEqualTo("${"s".repeat(3975)}... see DPS for full text")
+    }
+
+    @Test
+    fun `truncation with amendments`() {
+      assertThat(
+        caseNotesService.reconstructText(
+          UpdateCaseNoteRequest(
+            text = "s".repeat(3960),
+            amendments = listOf(
+              UpdateAmendment(
+                text = "change",
+                authorUsername = "STEVER",
+                createdDateTime = LocalDateTime.parse("2024-05-06T07:08:09"),
+              ),
+            ),
+          ),
+        ),
+      ).isEqualTo("${"s".repeat(3960)} ...[STEVER upd... see DPS for full text")
     }
   }
 }

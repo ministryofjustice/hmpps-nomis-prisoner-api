@@ -31,6 +31,20 @@ class CaseNotesService(
   private val taskTypeRepository: ReferenceCodeRepository<TaskType>,
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType>,
 ) {
+  private val seeDps = "... see DPS for full text"
+  private val amendmentDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
+
+  private val pattern =
+    // "<text> ...[<username> updated the case note[s] on <date> <time>] <amend text>"
+    " \\.\\.\\.\\[(\\w+) updated the case notes? on (\\d{2,4}[/-]\\d{2}[/-]\\d{2,4}) (\\d{2}:\\d{2}:\\d{2})] "
+      .toRegex()
+
+  // Early e.g. ...[PQS23R updated the case note on 12/12/2006 07:32:39] letter sent 27/11/06
+  // Middle era ...[GQV81R updated the case notes on 18-08-2009 14:04:53] ViSOR ref number: 09/0196494. (from about 2009 and still occurring)
+  // late        ...[UQP87J updated the case notes on 2024/07/19 02:39:26] obs every hour (2018 onwards)
+  private val dateTimeFormat: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("[dd/MM/yyyy][dd-MM-yyyy][yyyy/MM/dd] HH:mm:ss")
+
   fun getCaseNote(caseNoteId: Long): CaseNoteResponse =
     offenderCaseNoteRepository.findByIdOrNull(caseNoteId)?.toCaseNoteResponse()
       ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
@@ -77,27 +91,12 @@ class CaseNotesService(
   }
 
   @Audit
-  fun amendCaseNote(caseNoteId: Long, request: AmendCaseNoteRequest): CaseNoteResponse {
-    validateTextLength(request.caseNoteText)
-
-    val caseNote = offenderCaseNoteRepository.findByIdOrNull(caseNoteId)
+  fun updateCaseNote(caseNoteId: Long, request: UpdateCaseNoteRequest) {
+    offenderCaseNoteRepository.findByIdOrNull<OffenderCaseNote, Long>(caseNoteId)
+      ?.apply {
+        caseNoteText = reconstructText(request)
+      }
       ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
-
-    val caseNoteType = taskTypeRepository.findByIdOrNull(TaskType.pk(request.caseNoteType))
-      ?: throw BadDataException("CaseNote caseNoteType ${request.caseNoteType} is not valid")
-
-    val caseNoteSubType = taskSubTypeRepository.findByIdOrNull(TaskSubType.pk(request.caseNoteSubType))
-      ?: throw BadDataException("CaseNote caseNoteSubType ${request.caseNoteSubType} is not valid")
-
-    validateTypes(caseNoteType, caseNoteSubType)
-
-    staffUserAccountRepository.findByUsername(request.authorUsername)
-      ?: throw BadDataException("Username ${request.authorUsername} not found")
-
-    caseNote.caseNoteText = request.caseNoteText
-    // TODO do we want to do an 'amend' as in appending text as at present?
-
-    return caseNote.toCaseNoteResponse()
   }
 
   @Audit
@@ -128,16 +127,6 @@ class CaseNotesService(
     createdUsername = createdUserId,
     auditModuleName = auditModuleName,
   )
-
-  val pattern =
-    // "<text> ...[<username> updated the case note[s] on <date> <time>] <amend text>"
-    " \\.\\.\\.\\[(\\w+) updated the case notes? on (\\d{2,4}[/-]\\d{2}[/-]\\d{2,4}) (\\d{2}:\\d{2}:\\d{2})] "
-      .toRegex()
-
-  // Early e.g. ...[PQS23R updated the case note on 12/12/2006 07:32:39] letter sent 27/11/06
-  // Middle era ...[GQV81R updated the case notes on 18-08-2009 14:04:53] ViSOR ref number: 09/0196494. (from about 2009 and still occurring)
-  // late        ...[UQP87J updated the case notes on 2024/07/19 02:39:26] obs every hour (2018 onwards)
-  val dateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("[dd/MM/yyyy][dd-MM-yyyy][yyyy/MM/dd] HH:mm:ss")
 
   internal fun parseMainText(caseNoteText: String): String {
     return pattern
@@ -231,6 +220,20 @@ class CaseNotesService(
           AND COALESCE(RC2.PARENT_DOMAIN, 'TASK_TYPE') = 'TASK_TYPE'
       ORDER BY WKS.WORK_TYPE, WKS.WORK_SUB_TYPE
      */
+  }
+
+  internal fun reconstructText(request: UpdateCaseNoteRequest): String {
+    var text = request.text
+    request.amendments.forEach { amendment ->
+      val timestamp = amendment.createdDateTime.format(amendmentDateTimeFormat)
+      text += " ...[${amendment.authorUsername} updated the case notes on $timestamp] ${amendment.text}"
+    }
+
+    return if (text.length <= MAX_CASENOTE_LENGTH_BYTES) {
+      text
+    } else {
+      text.substring(0, MAX_CASENOTE_LENGTH_BYTES - seeDps.length) + seeDps
+    }
   }
 }
 

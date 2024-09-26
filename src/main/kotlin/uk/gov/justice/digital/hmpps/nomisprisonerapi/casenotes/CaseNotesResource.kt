@@ -115,7 +115,7 @@ class CaseNotesResource(
 
   @PutMapping("/casenotes/{caseNoteId}")
   @Operation(
-    summary = "Amends a case note on a prisoner",
+    summary = "Updates a case note on a prisoner",
     description = "Updates the specified case note. Requires ROLE_NOMIS_CASENOTES",
     responses = [
       ApiResponse(
@@ -147,13 +147,15 @@ class CaseNotesResource(
       ),
     ],
   )
-  fun amendCaseNote(
+  fun updateCaseNote(
     @Schema(description = "Case note id", example = "1234567")
     @PathVariable
     caseNoteId: Long,
     @RequestBody @Valid
-    request: AmendCaseNoteRequest,
-  ): CaseNoteResponse = caseNotesService.amendCaseNote(caseNoteId, request)
+    request: UpdateCaseNoteRequest,
+  ) {
+    caseNotesService.updateCaseNote(caseNoteId, request)
+  }
 
   @DeleteMapping("/casenotes/{caseNoteId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -283,14 +285,18 @@ data class CreateCaseNoteRequest(
   @NotBlank
   @Schema(description = "The case note type")
   val caseNoteType: String,
+
   @NotBlank
   @Schema(description = "The case note subtype")
   val caseNoteSubType: String,
+
   @Schema(description = "Date case note occurred")
   val occurrenceDateTime: LocalDateTime,
+
   @NotBlank
   @Schema(description = "Free format text of person or department that created the case note")
   val authorUsername: String,
+
   @NotBlank
   @Size(max = 4000) // For Swagger - custom annotations not well-supported
   @Schema(description = "Free format text body of case note")
@@ -301,14 +307,19 @@ data class CreateCaseNoteRequest(
 data class CaseNoteAmendment(
   @Schema(description = "Free format text body of amendment")
   val text: String,
+
   @Schema(description = "Author login name of person or department that added the amendment")
   val authorUsername: String,
+
   @Schema(description = "Author STAFF_ID")
   val authorStaffId: Long?,
+
   @Schema(description = "Author first name")
   val authorFirstName: String?,
+
   @Schema(description = "Author last name")
   val authorLastName: String?,
+
   @Schema(description = "Amendment created timestamp")
   val createdDateTime: LocalDateTime,
 )
@@ -318,26 +329,30 @@ data class CaseNoteAmendment(
 data class CreateCaseNoteResponse(
   @Schema(description = "The id of this case note")
   val id: Long,
+
   @Schema(description = "The booking id of this case note (which is the prisoner's latest at creation time)")
   val bookingId: Long,
 )
 
 @Schema(description = "A request to amend a case note in NOMIS")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class AmendCaseNoteRequest(
+data class UpdateCaseNoteRequest(
   @NotBlank
-  @Schema(description = "The case note type")
-  val caseNoteType: String,
-  @NotBlank
-  @Schema(description = "The case note subtype")
-  val caseNoteSubType: String,
-  @Schema(description = "Date case note occurred")
-  val occurrenceDateTime: LocalDateTime,
-  @NotBlank
-  @Schema(description = "Free format text of person or department that created the case note")
+  @Schema(description = "Free format text body of the amendment")
+  val text: String,
+
+  @Schema(description = "Amendments to the text")
+  val amendments: List<UpdateAmendment> = mutableListOf(),
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateAmendment(
+  @Schema(description = "Free format text body of amendment")
+  val text: String,
+
+  @Schema(description = "Author login name of person or department that added the amendment")
   val authorUsername: String,
-  @NotBlank
-  @Size(max = 4000)
-  @Schema(description = "Free format text body of case note")
-  val caseNoteText: String,
+
+  @Schema(description = "Amendment created timestamp")
+  val createdDateTime: LocalDateTime,
 )
