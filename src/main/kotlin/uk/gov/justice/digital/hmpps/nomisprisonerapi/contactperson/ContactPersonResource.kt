@@ -120,6 +120,8 @@ data class ContactPerson(
   val emailAddresses: List<EmailAddress>,
   @Schema(description = "List of employments for the person")
   val employments: List<Employment>,
+  @Schema(description = "List of identifiers for the person")
+  val identifiers: List<Identifier>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -203,4 +205,17 @@ data class Corporate(
   val id: Long,
   @Schema(description = "The corporate name", example = "Police")
   val name: String?,
+)
+
+@Schema(description = "The data held in NOMIS about a person's identifiers")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Identifier(
+  @Schema(description = "Unique NOMIS sequence for this identifier for this person")
+  val sequence: Long,
+  @Schema(description = "The identifier type")
+  val type: CodeDescription,
+  @Schema(description = "The identifier value", example = "NE121212T")
+  val identifier: String,
+  @Schema(description = "The issued authority", example = "Police")
+  val issuedAuthority: String?,
 )
