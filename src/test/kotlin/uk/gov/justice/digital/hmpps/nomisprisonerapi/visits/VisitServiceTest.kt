@@ -113,7 +113,7 @@ internal class VisitServiceTest {
   )
 
   val visitType = VisitType("SCON", "desc")
-  val defaultOffender = Offender(nomsId = OFFENDER_NO, lastName = "Smith", gender = Gender("MALE", "Male"))
+  val defaultOffender = Offender(nomsId = OFFENDER_NO, lastName = "Smith", firstName = "John", gender = Gender("MALE", "Male"))
   private val defaultOffenderBooking = OffenderBooking(
     bookingId = OFFENDER_BOOKING_ID,
     offender = defaultOffender,

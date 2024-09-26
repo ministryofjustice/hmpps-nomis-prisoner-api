@@ -11,7 +11,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
-import org.apache.commons.lang3.StringUtils
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
@@ -57,8 +56,8 @@ data class Offender(
   @Column(name = "CASELOAD_TYPE")
   val caseloadType: String? = "INST",
 
-  @Column(name = "FIRST_NAME", nullable = false)
-  val firstName: String? = null,
+  @Column(name = "FIRST_NAME", nullable = true)
+  val firstName: String,
 
   @Column(name = "MIDDLE_NAME")
   val middleName: String? = null,
@@ -92,8 +91,6 @@ data class Offender(
   @Column(name = "LAST_NAME_ALPHA_KEY")
   val lastNameAlphaKey: String? = null,
 ) {
-  val middleNames: String
-    get() = StringUtils.trimToNull(StringUtils.trimToEmpty(middleName) + " " + StringUtils.trimToEmpty(middleName2))
 
   fun getAllBookings(): MutableList<OffenderBooking>? = rootOffender?.allBookings
 

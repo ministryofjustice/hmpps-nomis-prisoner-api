@@ -64,6 +64,7 @@ internal class IncentiveServiceTest {
   private val defaultOffender = Offender(
     nomsId = OFFENDER_NO,
     lastName = "Smith",
+    firstName = "John",
     gender = Gender("MALE", "Male"),
   )
   private val defaultOffenderBooking = OffenderBooking(

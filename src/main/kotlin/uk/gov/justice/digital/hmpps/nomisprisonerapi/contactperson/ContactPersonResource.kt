@@ -122,6 +122,8 @@ data class ContactPerson(
   val employments: List<Employment>,
   @Schema(description = "List of identifiers for the person")
   val identifiers: List<Identifier>,
+  @Schema(description = "List of prisoner contacts this person is related to")
+  val contacts: List<PersonContact>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -218,4 +220,42 @@ data class Identifier(
   val identifier: String,
   @Schema(description = "The issued authority", example = "Police")
   val issuedAuthority: String?,
+)
+
+@Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PersonContact(
+  @Schema(description = "Unique NOMIS sequence for this identifier for this contact")
+  val id: Long,
+  @Schema(description = "The contact type")
+  val contactType: CodeDescription,
+  @Schema(description = "The relationship type")
+  val relationshipType: CodeDescription,
+  @Schema(description = "True if active")
+  val active: Boolean,
+  @Schema(description = "Date contact is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "True if approved to visit the prisoner")
+  val approvedVisitor: Boolean,
+  @Schema(description = "True if next of kin to the prisoner")
+  val nextOfKin: Boolean,
+  @Schema(description = "True if emergency contact for the prisoner")
+  val emergencyContact: Boolean,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
+  @Schema(description = "The prisoner this person is a contact for")
+  val prisoner: ContactForPrisoner,
+)
+
+@Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ContactForPrisoner(
+  @Schema(description = "Unique NOMIS Id of booking associated with the prisoner")
+  val bookingId: Long,
+  @Schema(description = "Offender no aka prisoner number", example = "A1234AA")
+  val offenderNo: String,
+  @Schema(description = "Last name of the prisoner", example = "Smith")
+  val lastName: String,
+  @Schema(description = "First name of the prisoner", example = "John")
+  val firstName: String,
 )

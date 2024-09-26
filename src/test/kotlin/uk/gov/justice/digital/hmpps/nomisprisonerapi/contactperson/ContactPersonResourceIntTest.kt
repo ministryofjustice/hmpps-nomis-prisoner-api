@@ -10,8 +10,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import java.time.LocalDateTime
 
 class ContactPersonResourceIntTest : IntegrationTestBase() {
 
@@ -413,6 +416,155 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("identifiers[1].type.code").isEqualTo("STAFF")
           .jsonPath("identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
           .jsonPath("identifiers[1].issuedAuthority").doesNotExist()
+      }
+    }
+
+    @Nested
+    inner class Contacts {
+      private lateinit var person: Person
+      private lateinit var prisonerA1234AA: Offender
+      private var prisonerA1234AABookingId: Long = 0
+      private var prisonerA1234AAOldBookingId: Long = 0
+      private lateinit var prisonerA1234BB: Offender
+      private var prisonerA1234BBBookingId: Long = 0
+      private lateinit var nextOfKinContactToA1234AA: OffenderContactPerson
+      private lateinit var visitorContactToA1234AA: OffenderContactPerson
+      private lateinit var oldContactToA1234AA: OffenderContactPerson
+      private lateinit var contactToA1234BB: OffenderContactPerson
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            identifier(type = "PNC", identifier = "20/0071818T", issuedAuthority = "Met Police")
+            identifier(type = "STAFF", identifier = "123")
+          }
+          prisonerA1234AA = offender(nomsId = "A1234AA", firstName = "JOHN", lastName = "SMITH") {
+            prisonerA1234AABookingId = booking {
+              nextOfKinContactToA1234AA = contact(
+                person = person,
+                contactType = "S",
+                relationshipType = "BRO",
+                active = true,
+                nextOfKin = true,
+                emergencyContact = true,
+                approvedVisitor = false,
+                comment = "Brother is next to kin",
+              )
+              // same person can be contact twice so long as there is a different relationship
+              visitorContactToA1234AA = contact(
+                person = person,
+                contactType = "S",
+                relationshipType = "FRI",
+                active = true,
+                nextOfKin = false,
+                emergencyContact = false,
+                approvedVisitor = true,
+                comment = "Friend can visit",
+              )
+            }.bookingId
+            prisonerA1234AAOldBookingId = booking {
+              release(date = LocalDateTime.now().minusYears(10))
+              oldContactToA1234AA = contact(
+                person = person,
+                contactType = "S",
+                relationshipType = "FRI",
+                active = true,
+                nextOfKin = false,
+                emergencyContact = false,
+                approvedVisitor = true,
+                comment = "Friend can visit sometimes",
+              )
+            }.bookingId
+          }
+          prisonerA1234BB = offender(nomsId = "A1234BB", firstName = "KWAME", lastName = "KOBI") {
+            prisonerA1234BBBookingId = booking {
+              contactToA1234BB = contact(
+                person = person,
+                contactType = "O",
+                relationshipType = "POL",
+                active = false,
+                nextOfKin = false,
+                emergencyContact = false,
+                approvedVisitor = false,
+                expiryDate = "2022-02-12",
+              )
+            }.bookingId
+          }
+        }
+      }
+
+      @Test
+      fun `will return contact details`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("contacts[0].id").isEqualTo(nextOfKinContactToA1234AA.id)
+          .jsonPath("contacts[0].contactType.code").isEqualTo("S")
+          .jsonPath("contacts[0].contactType.description").isEqualTo("Social/Family")
+          .jsonPath("contacts[0].relationshipType.code").isEqualTo("BRO")
+          .jsonPath("contacts[0].relationshipType.description").isEqualTo("Brother")
+          .jsonPath("contacts[0].active").isEqualTo(true)
+          .jsonPath("contacts[0].approvedVisitor").isEqualTo(false)
+          .jsonPath("contacts[0].nextOfKin").isEqualTo(true)
+          .jsonPath("contacts[0].emergencyContact").isEqualTo(true)
+          .jsonPath("contacts[0].comment").isEqualTo("Brother is next to kin")
+          .jsonPath("contacts[0].prisoner.bookingId").isEqualTo(prisonerA1234AABookingId)
+          .jsonPath("contacts[0].prisoner.offenderNo").isEqualTo("A1234AA")
+          .jsonPath("contacts[0].prisoner.lastName").isEqualTo("SMITH")
+          .jsonPath("contacts[0].prisoner.firstName").isEqualTo("JOHN")
+          .jsonPath("contacts[0].expiryDate").doesNotExist()
+          .jsonPath("contacts[1].id").isEqualTo(visitorContactToA1234AA.id)
+          .jsonPath("contacts[1].contactType.code").isEqualTo("S")
+          .jsonPath("contacts[1].contactType.description").isEqualTo("Social/Family")
+          .jsonPath("contacts[1].relationshipType.code").isEqualTo("FRI")
+          .jsonPath("contacts[1].relationshipType.description").isEqualTo("Friend")
+          .jsonPath("contacts[1].active").isEqualTo(true)
+          .jsonPath("contacts[1].approvedVisitor").isEqualTo(true)
+          .jsonPath("contacts[1].nextOfKin").isEqualTo(false)
+          .jsonPath("contacts[1].emergencyContact").isEqualTo(false)
+          .jsonPath("contacts[1].comment").isEqualTo("Friend can visit")
+          .jsonPath("contacts[1].expiryDate").doesNotExist()
+          .jsonPath("contacts[1].prisoner.offenderNo").isEqualTo("A1234AA")
+          .jsonPath("contacts[1].prisoner.bookingId").isEqualTo(prisonerA1234AABookingId)
+          .jsonPath("contacts[1].prisoner.lastName").isEqualTo("SMITH")
+          .jsonPath("contacts[1].prisoner.firstName").isEqualTo("JOHN")
+          .jsonPath("contacts[2].id").isEqualTo(oldContactToA1234AA.id)
+          .jsonPath("contacts[2].contactType.code").isEqualTo("S")
+          .jsonPath("contacts[2].contactType.description").isEqualTo("Social/Family")
+          .jsonPath("contacts[2].relationshipType.code").isEqualTo("FRI")
+          .jsonPath("contacts[2].relationshipType.description").isEqualTo("Friend")
+          .jsonPath("contacts[2].active").isEqualTo(true)
+          .jsonPath("contacts[2].approvedVisitor").isEqualTo(true)
+          .jsonPath("contacts[2].nextOfKin").isEqualTo(false)
+          .jsonPath("contacts[2].emergencyContact").isEqualTo(false)
+          .jsonPath("contacts[2].comment").isEqualTo("Friend can visit sometimes")
+          .jsonPath("contacts[2].expiryDate").doesNotExist()
+          .jsonPath("contacts[2].prisoner.bookingId").isEqualTo(prisonerA1234AAOldBookingId)
+          .jsonPath("contacts[2].prisoner.offenderNo").isEqualTo("A1234AA")
+          .jsonPath("contacts[2].prisoner.lastName").isEqualTo("SMITH")
+          .jsonPath("contacts[2].prisoner.firstName").isEqualTo("JOHN")
+          .jsonPath("contacts[3].id").isEqualTo(contactToA1234BB.id)
+          .jsonPath("contacts[3].contactType.code").isEqualTo("O")
+          .jsonPath("contacts[3].contactType.description").isEqualTo("Official")
+          .jsonPath("contacts[3].relationshipType.code").isEqualTo("POL")
+          .jsonPath("contacts[3].relationshipType.description").isEqualTo("Police Officer")
+          .jsonPath("contacts[3].active").isEqualTo(false)
+          .jsonPath("contacts[3].approvedVisitor").isEqualTo(false)
+          .jsonPath("contacts[3].nextOfKin").isEqualTo(false)
+          .jsonPath("contacts[3].emergencyContact").isEqualTo(false)
+          .jsonPath("contacts[3].comment").doesNotExist()
+          .jsonPath("contacts[3].expiryDate").isEqualTo("2022-02-12")
+          .jsonPath("contacts[3].prisoner.bookingId").isEqualTo(prisonerA1234BBBookingId)
+          .jsonPath("contacts[3].prisoner.offenderNo").isEqualTo("A1234BB")
+          .jsonPath("contacts[3].prisoner.lastName").isEqualTo("KOBI")
+          .jsonPath("contacts[3].prisoner.firstName").isEqualTo("KWAME")
       }
     }
   }

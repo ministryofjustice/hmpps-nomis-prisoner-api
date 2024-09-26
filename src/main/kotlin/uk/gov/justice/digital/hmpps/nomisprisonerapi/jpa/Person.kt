@@ -61,6 +61,9 @@ data class Person(
   @OneToMany(mappedBy = "id.person", cascade = [CascadeType.ALL], fetch = LAZY)
   val identifiers: MutableList<PersonIdentifier> = mutableListOf(),
 
+  @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = LAZY)
+  val contacts: MutableList<OffenderContactPerson> = mutableListOf(),
+
   @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
