@@ -31,14 +31,26 @@ class CaseNotesService(
   private val taskTypeRepository: ReferenceCodeRepository<TaskType>,
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType>,
 ) {
+  private val seeDps = "... see DPS for full text"
+  private val amendmentDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
+
+  private val pattern =
+    // "<text> ...[<username> updated the case note[s] on <date> <time>] <amend text>"
+    " \\.\\.\\.\\[(\\w+) updated the case notes? on (\\d{2,4}[/-]\\d{2}[/-]\\d{2,4}) (\\d{2}:\\d{2}:\\d{2})] "
+      .toRegex()
+
+  // Early e.g. ...[PQS23R updated the case note on 12/12/2006 07:32:39] letter sent 27/11/06
+  // Middle era ...[GQV81R updated the case notes on 18-08-2009 14:04:53] ViSOR ref number: 09/0196494. (from about 2009 and still occurring)
+  // late        ...[UQP87J updated the case notes on 2024/07/19 02:39:26] obs every hour (2018 onwards)
+  private val dateTimeFormat: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("[dd/MM/yyyy][dd-MM-yyyy][yyyy/MM/dd] HH:mm:ss")
+
   fun getCaseNote(caseNoteId: Long): CaseNoteResponse =
     offenderCaseNoteRepository.findByIdOrNull(caseNoteId)?.toCaseNoteResponse()
       ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
 
   @Audit
   fun createCaseNote(offenderNo: String, request: CreateCaseNoteRequest): CreateCaseNoteResponse {
-    validateTextLength(request.caseNoteText)
-
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
 
@@ -63,7 +75,7 @@ class CaseNotesService(
         occurrenceDateTime = request.occurrenceDateTime,
         author = staffUserAccount.staff,
         agencyLocation = offenderBooking.location,
-        caseNoteText = request.caseNoteText,
+        caseNoteText = request.caseNoteText.truncate(),
         amendmentFlag = false,
         // Use date/timeCreation rather than createdDatetime. both provided for now
         dateCreation = request.occurrenceDateTime.toLocalDate(),
@@ -77,27 +89,12 @@ class CaseNotesService(
   }
 
   @Audit
-  fun amendCaseNote(caseNoteId: Long, request: AmendCaseNoteRequest): CaseNoteResponse {
-    validateTextLength(request.caseNoteText)
-
-    val caseNote = offenderCaseNoteRepository.findByIdOrNull(caseNoteId)
+  fun updateCaseNote(caseNoteId: Long, request: UpdateCaseNoteRequest) {
+    offenderCaseNoteRepository.findByIdOrNull<OffenderCaseNote, Long>(caseNoteId)
+      ?.apply {
+        caseNoteText = reconstructText(request)
+      }
       ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
-
-    val caseNoteType = taskTypeRepository.findByIdOrNull(TaskType.pk(request.caseNoteType))
-      ?: throw BadDataException("CaseNote caseNoteType ${request.caseNoteType} is not valid")
-
-    val caseNoteSubType = taskSubTypeRepository.findByIdOrNull(TaskSubType.pk(request.caseNoteSubType))
-      ?: throw BadDataException("CaseNote caseNoteSubType ${request.caseNoteSubType} is not valid")
-
-    validateTypes(caseNoteType, caseNoteSubType)
-
-    staffUserAccountRepository.findByUsername(request.authorUsername)
-      ?: throw BadDataException("Username ${request.authorUsername} not found")
-
-    caseNote.caseNoteText = request.caseNoteText
-    // TODO do we want to do an 'amend' as in appending text as at present?
-
-    return caseNote.toCaseNoteResponse()
   }
 
   @Audit
@@ -128,16 +125,6 @@ class CaseNotesService(
     createdUsername = createdUserId,
     auditModuleName = auditModuleName,
   )
-
-  val pattern =
-    // "<text> ...[<username> updated the case note[s] on <date> <time>] <amend text>"
-    " \\.\\.\\.\\[(\\w+) updated the case notes? on (\\d{2,4}[/-]\\d{2}[/-]\\d{2,4}) (\\d{2}:\\d{2}:\\d{2})] "
-      .toRegex()
-
-  // Early e.g. ...[PQS23R updated the case note on 12/12/2006 07:32:39] letter sent 27/11/06
-  // Middle era ...[GQV81R updated the case notes on 18-08-2009 14:04:53] ViSOR ref number: 09/0196494. (from about 2009 and still occurring)
-  // late        ...[UQP87J updated the case notes on 2024/07/19 02:39:26] obs every hour (2018 onwards)
-  val dateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("[dd/MM/yyyy][dd-MM-yyyy][yyyy/MM/dd] HH:mm:ss")
 
   internal fun parseMainText(caseNoteText: String): String {
     return pattern
@@ -188,12 +175,6 @@ class CaseNotesService(
     )
   }
 
-  private fun validateTextLength(value: String) {
-    if (value.length >= CHECK_THRESHOLD || Utf8.encodedLength(value) > MAX_CASENOTE_LENGTH_BYTES) {
-      throw BadDataException("Case note text too long")
-    }
-  }
-
   private fun validateTypes(type: TaskType, subType: TaskSubType) {
     if (subType.parentCode != type.code) {
       throw BadDataException("CaseNote (type,subtype)=(${type.code},${subType.code}) does not exist")
@@ -232,7 +213,24 @@ class CaseNotesService(
       ORDER BY WKS.WORK_TYPE, WKS.WORK_SUB_TYPE
      */
   }
+
+  internal fun reconstructText(request: UpdateCaseNoteRequest): String {
+    var text = request.text
+    request.amendments.forEach { amendment ->
+      val timestamp = amendment.createdDateTime.format(amendmentDateTimeFormat)
+      text += " ...[${amendment.authorUsername} updated the case notes on $timestamp] ${amendment.text}"
+    }
+
+    return text.truncate()
+  }
+
+  private fun String.truncate(): String =
+    // encodedLength always >= length
+    if (Utf8.encodedLength(this) <= MAX_CASENOTE_LENGTH_BYTES) {
+      this
+    } else {
+      substring(0, MAX_CASENOTE_LENGTH_BYTES - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
+    }
 }
 
-private const val CHECK_THRESHOLD: Int = 3900
 private const val MAX_CASENOTE_LENGTH_BYTES: Int = 4000
