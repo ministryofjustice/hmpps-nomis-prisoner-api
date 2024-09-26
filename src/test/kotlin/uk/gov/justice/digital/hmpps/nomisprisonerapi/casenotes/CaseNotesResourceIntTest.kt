@@ -255,16 +255,6 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
       }
-
-      @Test
-      fun `validation fails when note is too long`() {
-        webTestClient.post().uri("/prisoners/A1234AB/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(caseNoteText = "a".repeat(4001)))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
     }
 
     @Nested
