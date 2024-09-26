@@ -255,16 +255,6 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isBadRequest
       }
-
-      @Test
-      fun `validation fails when note is too long`() {
-        webTestClient.post().uri("/prisoners/A1234AB/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(caseNoteText = "a".repeat(4001)))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
     }
 
     @Nested
@@ -312,6 +302,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           assertThat(newCaseNote.noteSourceCode).isEqualTo(NoteSourceCode.INST)
           assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate)
           assertThat(newCaseNote.timeCreation).isEqualTo(newCaseNote.occurrenceDateTime)
+          assertThat(newCaseNote.createdDatetime).isEqualTo(newCaseNote.occurrenceDateTime)
+          assertThat(newCaseNote.createdUserId).isEqualTo("JANE.NARK")
 
           repository.delete(newCaseNote)
         }
@@ -321,13 +313,9 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("PUT /casenotes/{caseNoteId}")
   @Nested
-  inner class AmendCaseNote {
-    private val validCaseNote = AmendCaseNoteRequest(
-      caseNoteType = "ALL",
-      caseNoteSubType = "SA",
-      occurrenceDateTime = now,
-      authorUsername = "JANE.PEEL",
-      caseNoteText = "An amended note",
+  inner class UpdateCaseNote {
+    private val validCaseNote = UpdateCaseNoteRequest(
+      text = "An amended note",
     )
 
     @BeforeEach
@@ -395,56 +383,6 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
       }
-
-      @Test
-      fun `validation fails when type is not valid`() {
-        webTestClient.put().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(caseNoteType = "NNNNN"))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `validation fails when subtype is not valid`() {
-        webTestClient.put().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(caseNoteSubType = "NNNNN"))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `validation fails when subtype is not a child of type`() {
-        webTestClient.put().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(caseNoteType = "ACP"))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `validation fails when author does not exist`() {
-        webTestClient.put().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(authorUsername = "another"))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `validation fails when note is too long`() {
-        webTestClient.put().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(caseNoteText = "a".repeat(4001)))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
     }
 
     @Nested
@@ -463,10 +401,6 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
           assertThat(newCaseNote.occurrenceDate).isEqualTo(now.toLocalDate())
           assertThat(newCaseNote.occurrenceDateTime).isCloseTo(now, within(2, ChronoUnit.MINUTES))
-//          assertThat(newCaseNote.caseNoteType.code).isEqualTo("SA")
-//          assertThat(newCaseNote.caseNoteSubType.code).isEqualTo("TB")
-//          assertThat(newCaseNote.author.lastName).isEqualTo("PEEL")
-          // TODO not clear yet what fields it is valid to update
           assertThat(newCaseNote.caseNoteText).isEqualTo("An amended note")
           assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate)
           assertThat(newCaseNote.timeCreation).isEqualTo(newCaseNote.occurrenceDateTime)
