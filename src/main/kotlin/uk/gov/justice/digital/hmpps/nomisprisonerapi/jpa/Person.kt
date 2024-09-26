@@ -58,6 +58,9 @@ data class Person(
   @OneToMany(mappedBy = "id.person", cascade = [CascadeType.ALL], fetch = LAZY)
   val employments: MutableList<PersonEmployment> = mutableListOf(),
 
+  @OneToMany(mappedBy = "id.person", cascade = [CascadeType.ALL], fetch = LAZY)
+  val identifiers: MutableList<PersonIdentifier> = mutableListOf(),
+
   @ManyToOne
   @JoinColumnsOrFormulas(
     value = [

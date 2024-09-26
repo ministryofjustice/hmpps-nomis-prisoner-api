@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
@@ -63,6 +64,14 @@ interface PersonDsl {
     active: Boolean = true,
     dsl: PersonEmploymentDsl.() -> Unit = {},
   ): PersonEmployment
+
+  @PersonIdentifierDslMarker
+  fun identifier(
+    type: String = "NINO",
+    identifier: String = "NE112233T",
+    issuedAuthority: String? = null,
+    dsl: PersonIdentifierDsl.() -> Unit = {},
+  ): PersonIdentifier
 }
 
 @Component
@@ -72,6 +81,7 @@ class PersonBuilderFactory(
   private val personPhoneBuilderFactory: PersonPhoneBuilderFactory,
   private val personEmailBuilderFactory: PersonEmailBuilderFactory,
   private val personEmploymentBuilderFactory: PersonEmploymentBuilderFactory,
+  private val personIdentifierBuilderFactory: PersonIdentifierBuilderFactory,
 ) {
   fun builder(): PersonBuilder = PersonBuilder(
     repository,
@@ -79,6 +89,7 @@ class PersonBuilderFactory(
     personPhoneBuilderFactory,
     personEmailBuilderFactory,
     personEmploymentBuilderFactory,
+    personIdentifierBuilderFactory,
   )
 }
 
@@ -104,6 +115,7 @@ class PersonBuilder(
   private val personPhoneBuilderFactory: PersonPhoneBuilderFactory,
   private val personEmailBuilderFactory: PersonEmailBuilderFactory,
   private val personEmploymentBuilderFactory: PersonEmploymentBuilderFactory,
+  private val personIdentifierBuilderFactory: PersonIdentifierBuilderFactory,
 ) : PersonDsl {
   private lateinit var person: Person
 
@@ -222,6 +234,24 @@ class PersonBuilder(
         active = active,
       )
         .also { person.employments += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun identifier(
+    type: String,
+    identifier: String,
+    issuedAuthority: String?,
+    dsl: PersonIdentifierDsl.() -> Unit,
+  ): PersonIdentifier =
+    personIdentifierBuilderFactory.builder().let { builder ->
+      builder.build(
+        person = person,
+        sequence = person.identifiers.size + 1L,
+        type = type,
+        identifier = identifier,
+        issuedAuthority = issuedAuthority,
+      )
+        .also { person.identifiers += it }
         .also { builder.apply(dsl) }
     }
 }

@@ -379,5 +379,41 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("employments[1].active").isEqualTo(false)
       }
     }
+
+    @Nested
+    inner class Identifiers {
+      private lateinit var person: Person
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            identifier(type = "PNC", identifier = "20/0071818T", issuedAuthority = "Met Police")
+            identifier(type = "STAFF", identifier = "123")
+          }
+        }
+      }
+
+      @Test
+      fun `will return identifiers`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("identifiers[0].type.code").isEqualTo("PNC")
+          .jsonPath("identifiers[0].type.description").isEqualTo("PNC Number")
+          .jsonPath("identifiers[0].issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("identifiers[1].sequence").isEqualTo(2)
+          .jsonPath("identifiers[1].type.code").isEqualTo("STAFF")
+          .jsonPath("identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("identifiers[1].issuedAuthority").doesNotExist()
+      }
+    }
   }
 }
