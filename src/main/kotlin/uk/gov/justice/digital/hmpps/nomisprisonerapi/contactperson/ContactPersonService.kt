@@ -69,6 +69,14 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           },
         )
       },
+      identifiers = it.identifiers.map { personIdentifier ->
+        Identifier(
+          sequence = personIdentifier.id.sequence,
+          type = personIdentifier.identifierType.toCodeDescription(),
+          identifier = personIdentifier.identifier,
+          issuedAuthority = personIdentifier.issuedAuthority,
+        )
+      },
       addresses = it.addresses.map { address ->
         Address(
           addressId = address.addressId,
