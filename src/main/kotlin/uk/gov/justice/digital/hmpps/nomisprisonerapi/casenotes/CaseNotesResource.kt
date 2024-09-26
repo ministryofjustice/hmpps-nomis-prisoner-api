@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -298,7 +297,6 @@ data class CreateCaseNoteRequest(
   val authorUsername: String,
 
   @NotBlank
-  @Size(max = 4000) // For Swagger - custom annotations not well-supported
   @Schema(description = "Free format text body of case note")
   val caseNoteText: String,
 )
@@ -347,9 +345,11 @@ data class UpdateCaseNoteRequest(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateAmendment(
+  @NotBlank
   @Schema(description = "Free format text body of amendment")
   val text: String,
 
+  @NotBlank
   @Schema(description = "Author login name of person or department that added the amendment")
   val authorUsername: String,
 

@@ -51,8 +51,6 @@ class CaseNotesService(
 
   @Audit
   fun createCaseNote(offenderNo: String, request: CreateCaseNoteRequest): CreateCaseNoteResponse {
-    validateTextLength(request.caseNoteText)
-
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
 
@@ -77,7 +75,7 @@ class CaseNotesService(
         occurrenceDateTime = request.occurrenceDateTime,
         author = staffUserAccount.staff,
         agencyLocation = offenderBooking.location,
-        caseNoteText = request.caseNoteText,
+        caseNoteText = request.caseNoteText.truncate(),
         amendmentFlag = false,
         // Use date/timeCreation rather than createdDatetime. both provided for now
         dateCreation = request.occurrenceDateTime.toLocalDate(),
@@ -177,12 +175,6 @@ class CaseNotesService(
     )
   }
 
-  private fun validateTextLength(value: String) {
-    if (value.length >= CHECK_THRESHOLD || Utf8.encodedLength(value) > MAX_CASENOTE_LENGTH_BYTES) {
-      throw BadDataException("Case note text too long")
-    }
-  }
-
   private fun validateTypes(type: TaskType, subType: TaskSubType) {
     if (subType.parentCode != type.code) {
       throw BadDataException("CaseNote (type,subtype)=(${type.code},${subType.code}) does not exist")
@@ -229,13 +221,16 @@ class CaseNotesService(
       text += " ...[${amendment.authorUsername} updated the case notes on $timestamp] ${amendment.text}"
     }
 
-    return if (text.length <= MAX_CASENOTE_LENGTH_BYTES) {
-      text
-    } else {
-      text.substring(0, MAX_CASENOTE_LENGTH_BYTES - seeDps.length) + seeDps
-    }
+    return text.truncate()
   }
+
+  private fun String.truncate(): String =
+    // encodedLength always >= length
+    if (Utf8.encodedLength(this) <= MAX_CASENOTE_LENGTH_BYTES) {
+      this
+    } else {
+      substring(0, MAX_CASENOTE_LENGTH_BYTES - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
+    }
 }
 
-private const val CHECK_THRESHOLD: Int = 3900
 private const val MAX_CASENOTE_LENGTH_BYTES: Int = 4000

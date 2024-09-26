@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.casenotes
 
+import com.google.common.base.Utf8
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -15,6 +16,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDateTime
+
+private val TWO_UNICODE_CHARS = "⌘⌥"
 
 internal class CaseNotesServiceTest {
 
@@ -313,6 +316,45 @@ internal class CaseNotesServiceTest {
           ),
         ),
       ).isEqualTo("${"s".repeat(3960)} ...[STEVER upd... see DPS for full text")
+    }
+
+    @Test
+    fun `truncation with unicode length ok`() {
+      val textOk = "s".repeat(3994) + TWO_UNICODE_CHARS
+      assertThat(
+        caseNotesService.reconstructText(
+          UpdateCaseNoteRequest(
+            text = textOk,
+            amendments = emptyList(),
+          ),
+        ),
+      ).isEqualTo(textOk)
+    }
+
+    @Test
+    fun `truncation with unicode too long unicode at end`() {
+      val textTooLong = "s".repeat(3995) + TWO_UNICODE_CHARS
+      val result = caseNotesService.reconstructText(
+        UpdateCaseNoteRequest(
+          text = textTooLong,
+          amendments = emptyList(),
+        ),
+      )
+      assertThat(result).isEqualTo("${"s".repeat(3971)}... see DPS for full text")
+      assertThat(Utf8.encodedLength(result)).isEqualTo(3996) // shorter than 4000 because some unicode has been truncated
+    }
+
+    @Test
+    fun `truncation with unicode too long unicode at start`() {
+      val textTooLongUnicodeAtStart = TWO_UNICODE_CHARS + "s".repeat(3995)
+      val result = caseNotesService.reconstructText(
+        UpdateCaseNoteRequest(
+          text = textTooLongUnicodeAtStart,
+          amendments = emptyList(),
+        ),
+      )
+      assertThat(result).isEqualTo("${textTooLongUnicodeAtStart.substring(0..3970)}... see DPS for full text")
+      assertThat(Utf8.encodedLength(result)).isEqualTo(4000)
     }
   }
 }
