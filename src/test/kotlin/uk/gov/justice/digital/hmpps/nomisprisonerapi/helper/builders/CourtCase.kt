@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -45,6 +46,13 @@ interface CourtCaseDsl {
     createDatetime: LocalDateTime = LocalDateTime.now(),
   )
 
+  @OffenderCaseIdentifierDslMarker
+  fun offenderCaseIdentifier(
+    reference: String = "caseRef1",
+    type: String = "CASE/INFO#",
+    dsl: OffenderCaseIdentifierDsl.() -> Unit = {},
+  ): OffenderCaseIdentifier
+
   @OffenderChargeDslMarker
   fun offenderCharge(
     offenceDate: LocalDate = LocalDate.of(2023, 1, 1),
@@ -70,9 +78,10 @@ class CourtCaseBuilderFactory(
   private val repository: CourtCaseBuilderRepository,
   private val courtEventBuilderFactory: CourtEventBuilderFactory,
   private val offenderChargeBuilderFactory: OffenderChargeBuilderFactory,
+  private val offenderCaseIdentifierBuilderFactory: OffenderCaseIdentifierBuilderFactory,
 ) {
   fun builder(): CourtCaseBuilder {
-    return CourtCaseBuilder(repository, courtEventBuilderFactory, offenderChargeBuilderFactory)
+    return CourtCaseBuilder(repository, courtEventBuilderFactory, offenderChargeBuilderFactory, offenderCaseIdentifierBuilderFactory)
   }
 }
 
@@ -118,6 +127,7 @@ class CourtCaseBuilder(
   private val repository: CourtCaseBuilderRepository,
   private val courtEventBuilderFactory: CourtEventBuilderFactory,
   private val offenderChargeBuilderFactory: OffenderChargeBuilderFactory,
+  private val offenderCaseIdentifierBuilderFactory: OffenderCaseIdentifierBuilderFactory,
 ) : CourtCaseDsl {
   private lateinit var courtCase: CourtCase
   private lateinit var whenCreated: LocalDateTime
@@ -141,7 +151,7 @@ class CourtCaseBuilder(
     lidsCombinedCaseId: Int?,
   ): CourtCase = CourtCase(
     beginDate = beginDate,
-    caseInfoNumber = caseInfoNumber,
+    primaryCaseInfoNumber = caseInfoNumber,
     caseSequence = caseSequence,
     caseStatus = repository.lookupCaseStatus(caseStatus),
     legalCaseType = repository.lookupCaseType(legalCaseType),
@@ -199,6 +209,20 @@ class CourtCaseBuilder(
         .also { courtCase.offenderCharges += it }
         .also { builder.apply(dsl) }
     }
+
+  override fun offenderCaseIdentifier(
+    reference: String,
+    type: String,
+    dsl: OffenderCaseIdentifierDsl.() -> Unit,
+  ) = offenderCaseIdentifierBuilderFactory.builder().let { builder ->
+    builder.build(
+      reference = reference,
+      type = type,
+      courtCase = courtCase,
+    )
+      .also { courtCase.caseInfoNumbers += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun courtEvent(
     commentText: String?,

@@ -79,7 +79,8 @@ class CourtCase(
   )
   val caseStatus: CaseStatus,
 
-  val caseInfoNumber: String? = null,
+  @Column(name = "CASE_INFO_NUMBER")
+  val primaryCaseInfoNumber: String? = null,
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "COMBINED_CASE_ID")
@@ -110,6 +111,9 @@ class CourtCase(
 
   @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderCharges: MutableList<OffenderCharge> = mutableListOf(),
+
+  @OneToMany(mappedBy = "id.courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
+  var caseInfoNumbers: MutableList<OffenderCaseIdentifier> = mutableListOf(),
 
   @Column(name = "CREATE_DATETIME")
   @Generated

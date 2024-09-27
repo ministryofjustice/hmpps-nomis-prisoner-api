@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCharge
@@ -136,7 +137,7 @@ class SentencingService(
           caseStatus = lookupCaseStatus(request.status),
           court = lookupEstablishment(request.courtId),
           caseSequence = courtCaseRepository.getNextCaseSequence(booking),
-          caseInfoNumber = request.caseReference,
+          primaryCaseInfoNumber = request.caseReference,
         ),
       )
       val mandatoryCourtAppearanceRequest = request.courtAppearance!!
@@ -981,7 +982,7 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   id = this.id,
   offenderNo = this.offenderBooking.offender.nomsId,
   bookingId = this.offenderBooking.bookingId,
-  caseInfoNumber = this.caseInfoNumber,
+  primaryCaseInfoNumber = this.primaryCaseInfoNumber,
   caseSequence = this.caseSequence,
   caseStatus = this.caseStatus.toCodeDescription(),
   legalCaseType = this.legalCaseType.toCodeDescription(),
@@ -999,6 +1000,15 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   createdByUsername = this.createUsername,
   courtEvents = this.courtEvents.map { it.toCourtEvent() },
   offenderCharges = this.offenderCharges.map { it.toOffenderCharge() },
+  caseInfoNumbers = this.caseInfoNumbers.filter { it.isCaseInfoNumber() }.map { it.toCaseIdentifier() },
+)
+
+private fun OffenderCaseIdentifier.toCaseIdentifier(): CaseIdentifierResponse = CaseIdentifierResponse(
+  reference = this.id.reference,
+  type = this.id.identifierType,
+  createDateTime = this.createDatetime,
+  auditModuleName = this.auditModuleName,
+  modifiedDateTime = this.modifyDatetime,
 )
 
 private fun OffenderCharge.toOffenderCharge(): OffenderChargeResponse = OffenderChargeResponse(
