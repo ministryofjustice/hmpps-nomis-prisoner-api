@@ -12,7 +12,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitorRestriction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -72,6 +74,16 @@ interface PersonDsl {
     issuedAuthority: String? = null,
     dsl: PersonIdentifierDsl.() -> Unit = {},
   ): PersonIdentifier
+
+  @VisitorRestrictsDslMarker
+  fun restriction(
+    restrictionType: String = "BAN",
+    enteredStaff: Staff,
+    comment: String? = null,
+    effectiveDate: String = LocalDate.now().toString(),
+    expiryDate: String? = null,
+    dsl: VisitorRestrictsDsl.() -> Unit = {},
+  ): VisitorRestriction
 }
 
 @Component
@@ -82,6 +94,7 @@ class PersonBuilderFactory(
   private val personEmailBuilderFactory: PersonEmailBuilderFactory,
   private val personEmploymentBuilderFactory: PersonEmploymentBuilderFactory,
   private val personIdentifierBuilderFactory: PersonIdentifierBuilderFactory,
+  private val visitorRestrictsBuilderFactory: VisitorRestrictsBuilderFactory,
 ) {
   fun builder(): PersonBuilder = PersonBuilder(
     repository,
@@ -90,6 +103,7 @@ class PersonBuilderFactory(
     personEmailBuilderFactory,
     personEmploymentBuilderFactory,
     personIdentifierBuilderFactory,
+    visitorRestrictsBuilderFactory,
   )
 }
 
@@ -116,6 +130,7 @@ class PersonBuilder(
   private val personEmailBuilderFactory: PersonEmailBuilderFactory,
   private val personEmploymentBuilderFactory: PersonEmploymentBuilderFactory,
   private val personIdentifierBuilderFactory: PersonIdentifierBuilderFactory,
+  private val visitorRestrictsBuilderFactory: VisitorRestrictsBuilderFactory,
 ) : PersonDsl {
   private lateinit var person: Person
 
@@ -252,6 +267,27 @@ class PersonBuilder(
         issuedAuthority = issuedAuthority,
       )
         .also { person.identifiers += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun restriction(
+    restrictionType: String,
+    enteredStaff: Staff,
+    comment: String?,
+    effectiveDate: String,
+    expiryDate: String?,
+    dsl: VisitorRestrictsDsl.() -> Unit,
+  ): VisitorRestriction =
+    visitorRestrictsBuilderFactory.builder().let { builder ->
+      builder.build(
+        person = person,
+        restrictionType = restrictionType,
+        enteredStaff = enteredStaff,
+        comment = comment,
+        effectiveDate = LocalDate.parse(effectiveDate),
+        expiryDate = expiryDate?.let { LocalDate.parse(it) },
+      )
+        .also { person.restrictions += it }
         .also { builder.apply(dsl) }
     }
 }

@@ -124,6 +124,8 @@ data class ContactPerson(
   val identifiers: List<Identifier>,
   @Schema(description = "List of prisoner contacts this person is related to")
   val contacts: List<PersonContact>,
+  @Schema(description = "List of restrictions between all prisoners and this person")
+  val restrictions: List<ContactRestriction>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -245,6 +247,8 @@ data class PersonContact(
   val comment: String?,
   @Schema(description = "The prisoner this person is a contact for")
   val prisoner: ContactForPrisoner,
+  @Schema(description = "List of restrictions specifically between the prisoner and this contact")
+  val restrictions: List<ContactRestriction>,
 )
 
 @Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
@@ -258,4 +262,27 @@ data class ContactForPrisoner(
   val lastName: String,
   @Schema(description = "First name of the prisoner", example = "John")
   val firstName: String,
+)
+
+@Schema(description = "The data held in NOMIS about a person's restriction with a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ContactRestriction(
+  @Schema(description = "Unique NOMIS Id of the restriction")
+  val id: Long,
+  @Schema(description = "Restriction type")
+  val type: CodeDescription,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
+  @Schema(description = "Date restriction became active")
+  val effectiveDate: LocalDate,
+  @Schema(description = "Date restriction is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "Staff member who created the restriction")
+  val enteredStaff: Staff,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Staff(
+  @Schema(description = "NOMIS staff id")
+  val staffId: Long,
 )

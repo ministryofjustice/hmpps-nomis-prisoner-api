@@ -13,13 +13,13 @@ import org.hibernate.annotations.DiscriminatorFormula
 abstract class ProfileType(
   @Id
   @Column(name = "PROFILE_TYPE")
-  val type: String,
+  open val type: String,
 
   @Column(name = "PROFILE_CATEGORY")
-  val category: String? = null,
+  open val category: String? = null,
 
   @Column
-  val description: String,
+  open val description: String,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

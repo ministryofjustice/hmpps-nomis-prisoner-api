@@ -135,6 +135,7 @@ class Repository(
   fun delete(offender: Offender) = offenderRepository.deleteById(offender.id)
   fun delete(vararg offender: Offender) = offender.forEach { offenderRepository.deleteById(it.id) }
   fun deleteOffenders() = offenderRepository.deleteAll()
+  fun deleteAllCSIPReports() = csipReportRepository.deleteAll()
   fun deleteMergeTransactions() = mergeTransactionRepository.deleteAll()
 
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
