@@ -46,13 +46,13 @@ class CSIPReport(
 
   // ------------------------- Referral Details -------------------------//
   @Column(name = "CSIP_SEQ")
-  val logNumber: String? = null,
+  var logNumber: String? = null,
 
   @Column(name = "RFR_INCIDENT_DATE", nullable = false)
-  val incidentDate: LocalDate = LocalDate.now(),
+  var incidentDate: LocalDate = LocalDate.now(),
 
   @Column(name = "RFR_INCIDENT_TIME")
-  val incidentTime: LocalDateTime? = null,
+  var incidentTime: LocalDateTime? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -65,7 +65,7 @@ class CSIPReport(
       ), JoinColumnOrFormula(column = JoinColumn(name = "RFR_INCIDENT_TYPE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val type: CSIPIncidentType,
+  var type: CSIPIncidentType,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -78,7 +78,7 @@ class CSIPReport(
       ), JoinColumnOrFormula(column = JoinColumn(name = "RFR_INCIDENT_LOCATION", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val location: CSIPIncidentLocation,
+  var location: CSIPIncidentLocation,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -91,24 +91,24 @@ class CSIPReport(
       ), JoinColumnOrFormula(column = JoinColumn(name = "RFR_CSIP_FUNCTION", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val areaOfWork: CSIPAreaOfWork,
+  var areaOfWork: CSIPAreaOfWork,
 
   @Column(name = "RFR_REPORTED_BY")
-  val reportedBy: String,
+  var reportedBy: String,
 
   @Column(name = "RFR_DATE_REPORTED", nullable = false)
-  val reportedDate: LocalDate = LocalDate.now(),
+  var reportedDate: LocalDate = LocalDate.now(),
 
   @Column(name = "RFR_PROACTIVE_RESPONSE")
   @Convert(converter = YesNoConverter::class)
-  val proActiveReferral: Boolean = false,
+  var proActiveReferral: Boolean = false,
 
   @Column(name = "RFR_STAFF_ASSAULTED")
   @Convert(converter = YesNoConverter::class)
-  val staffAssaulted: Boolean = false,
+  var staffAssaulted: Boolean = false,
 
   @Column(name = "RFR_STAFF_NAME")
-  val staffAssaultedName: String? = null,
+  var staffAssaultedName: String? = null,
 
   // ------------------ Additional Referral Details ---------------------//
 
