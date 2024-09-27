@@ -94,7 +94,7 @@ data class OffenderContactPerson(
   val expiryDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "contactPerson", cascade = [CascadeType.ALL], fetch = LAZY)
-  val restrictions: MutableList<OffenderPersonRestricts> = mutableListOf(),
+  val restrictions: MutableList<OffenderPersonRestrict> = mutableListOf(),
 
   /*
   Not mapped:

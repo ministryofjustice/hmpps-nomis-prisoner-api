@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestricts
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestrict
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
@@ -28,7 +28,7 @@ interface OffenderContactPersonDsl {
     effectiveDate: String = LocalDate.now().toString(),
     expiryDate: String? = null,
     dsl: OffenderPersonRestrictsDsl.() -> Unit = {},
-  ): OffenderPersonRestricts
+  ): OffenderPersonRestrict
 }
 
 @Component
@@ -91,7 +91,7 @@ class OffenderContactPersonBuilderRepositoryBuilder(
     effectiveDate: String,
     expiryDate: String?,
     dsl: OffenderPersonRestrictsDsl.() -> Unit,
-  ): OffenderPersonRestricts =
+  ): OffenderPersonRestrict =
     offenderPersonRestrictsBuilderFactory.builder().let { builder ->
       builder.build(
         contactPerson = contact,

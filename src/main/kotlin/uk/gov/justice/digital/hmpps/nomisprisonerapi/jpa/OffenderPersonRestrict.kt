@@ -17,7 +17,7 @@ import java.time.LocalDate
 
 @Entity
 @Table(name = "OFFENDER_PERSON_RESTRICTS")
-data class OffenderPersonRestricts(
+data class OffenderPersonRestrict(
   @Id
   @SequenceGenerator(
     name = "OFFENDER_PERSON_RESTRICT_ID",
@@ -66,7 +66,7 @@ data class OffenderPersonRestricts(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    other as OffenderPersonRestricts
+    other as OffenderPersonRestrict
 
     return id == other.id
   }
