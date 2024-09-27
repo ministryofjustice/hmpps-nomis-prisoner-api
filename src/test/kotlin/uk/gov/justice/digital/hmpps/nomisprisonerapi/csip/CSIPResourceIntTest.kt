@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -27,7 +28,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   private var document1Id: Long = 0
 
   @BeforeEach
-  internal fun createCSIPReports() {
+  internal fun createTestCSIPReports() {
     nomisDataBuilder.build {
       staff(firstName = "FRED", lastName = "JAMES") {
         account(username = "FRED.JAMES")
@@ -77,9 +78,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   internal fun deleteCSIPReports() {
-    repository.delete(csip1)
-    repository.delete(csip2)
-    repository.delete(csip3)
+    repository.deleteAllCSIPReports()
     repository.deleteOffenders()
     repository.deleteTemplates()
   }
@@ -475,6 +474,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class DeleteCsip {
     private lateinit var csipToDelete: CSIPReport
+    private lateinit var csipWithChildrenToDelete: CSIPReport
 
     @BeforeEach
     fun setUp() {
@@ -482,14 +482,17 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         offender(nomsId = "A1234YY", firstName = "Jim", lastName = "Jones") {
           booking(agencyLocationId = "MDI") {
             csipToDelete = csipReport()
+            csipWithChildrenToDelete =
+              csipReport {
+                factor()
+                interview()
+                decision()
+                plan()
+                review { attendee() }
+              }
           }
         }
       }
-    }
-
-    @AfterEach
-    fun tearDown() {
-      repository.delete(csipToDelete)
     }
 
     @Nested
@@ -627,6 +630,426 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offenderCSIPs.size()").isEqualTo(0)
+      }
+    }
+  }
+
+  @DisplayName("PUT /csip create")
+  @Nested
+  inner class CreateCSIP {
+    private val validCSIP = UpsertCSIPRequest(
+      offenderNo = "A1234TT",
+      incidentDate = LocalDate.parse("2023-12-23"),
+      typeCode = "INT",
+      locationCode = "LIB",
+      areaOfWorkCode = "EDU",
+      reportedBy = "Jane Reporter",
+      reportedDate = LocalDate.now(),
+      createUsername = "FRED.JAMES",
+    )
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/csip")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `validation fails when prisoner does not exist`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "Z1234ZZ",
+                "logNumber": "WCI-1234",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `validation fails when offender No is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+             {
+                "logNumber": "WCI-1234",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("offenderNo")
+          }
+      }
+
+      @Test
+      fun `validation fails when incident date is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("incidentDate")
+          }
+      }
+
+      @Test
+      fun `validation fails when typeCode is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "incidentDate": "2023-12-23",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("typeCode")
+          }
+      }
+
+      @Test
+      fun `validation fails when locationCode is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("locationCode")
+          }
+      }
+
+      @Test
+      fun `validation fails when areaOfWorkCode is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("areaOfWorkCode")
+          }
+      }
+
+      @Test
+      fun `validation fails when reportedBy is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("reportedBy")
+          }
+      }
+
+      @Test
+      fun `validation fails when reportedDate is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("reportedDate")
+          }
+      }
+
+      @Test
+      fun `validation fails when create username is not present`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("createUsername")
+          }
+      }
+
+      @Test
+      fun `validation fails when incident type code is not valid`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "incidentDate": "2023-12-23",
+                "typeCode": "XXX",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Incident type")
+          }
+      }
+
+      @Test
+      fun `validation fails when location code is not valid`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "logNumber": "WCI-1234",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"XXX",
+                "areaOfWorkCode":"EDU",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Location type")
+          }
+      }
+
+      @Test
+      fun `validation fails when areaOfWork code is not valid`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "offenderNo": "A1234TT",
+                "logNumber": "WCI-1234",
+                "incidentDate": "2023-12-23",
+                "typeCode": "INT",
+                "locationCode":"LIB",
+                "areaOfWorkCode":"XXX",
+                "reportedBy": "Jane Reporter",
+                "reportedDate": "2023-12-23",
+                "createUsername": "FRED.JAMES"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).contains("Area of work type")
+          }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `creating a csip with minimal data will return basic data`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody()
+          .jsonPath("nomisCSIPReportId").isNotEmpty
+          .jsonPath("offenderNo").isEqualTo("A1234TT")
+          .jsonPath("created").isEqualTo("true")
+      }
+    }
+  }
+
+  @DisplayName("PUT /csip update")
+  @Nested
+  inner class UpdateCSIP {
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `update an csip with minimal data will return basic data`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            UpsertCSIPRequest(
+              id = csip1.id,
+              offenderNo = "A1234TT",
+              incidentDate = LocalDate.parse("2023-12-15"),
+              typeCode = "VPA",
+              locationCode = "EXY",
+              areaOfWorkCode = "KIT",
+              reportedBy = "Jill Reporter",
+              reportedDate = LocalDate.parse("2024-05-12"),
+              createUsername = "FRED.JAMES",
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody()
+          .jsonPath("nomisCSIPReportId").isNotEmpty
+          .jsonPath("offenderNo").isEqualTo("A1234TT")
+          .jsonPath("created").isEqualTo("false")
       }
     }
   }
