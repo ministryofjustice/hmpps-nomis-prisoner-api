@@ -5,9 +5,11 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestricts
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -16,7 +18,18 @@ import java.time.LocalDate
 annotation class OffenderContactPersonDslMarker
 
 @NomisDataDslMarker
-interface OffenderContactPersonDsl
+interface OffenderContactPersonDsl {
+
+  @OffenderPersonRestrictsDslMarker
+  fun restriction(
+    restrictionType: String = "BAN",
+    enteredStaff: Staff,
+    comment: String? = null,
+    effectiveDate: String = LocalDate.now().toString(),
+    expiryDate: String? = null,
+    dsl: OffenderPersonRestrictsDsl.() -> Unit = {},
+  ): OffenderPersonRestricts
+}
 
 @Component
 class OffenderContactPersonBuilderRepository(
@@ -32,11 +45,17 @@ class OffenderContactPersonBuilderRepository(
 @Component
 class OffenderContactPersonBuilderFactory(
   private val repository: OffenderContactPersonBuilderRepository,
+  private val offenderPersonRestrictsBuilderFactory: OffenderPersonRestrictsBuilderFactory,
 ) {
-  fun builder() = OffenderContactPersonBuilderRepositoryBuilder(repository)
+  fun builder() = OffenderContactPersonBuilderRepositoryBuilder(repository, offenderPersonRestrictsBuilderFactory)
 }
 
-class OffenderContactPersonBuilderRepositoryBuilder(private val repository: OffenderContactPersonBuilderRepository) : OffenderContactPersonDsl {
+class OffenderContactPersonBuilderRepositoryBuilder(
+  private val repository: OffenderContactPersonBuilderRepository,
+  private val offenderPersonRestrictsBuilderFactory: OffenderPersonRestrictsBuilderFactory,
+) : OffenderContactPersonDsl {
+  private lateinit var contact: OffenderContactPerson
+
   fun build(
     offenderBooking: OffenderBooking,
     person: Person,
@@ -63,4 +82,26 @@ class OffenderContactPersonBuilderRepositoryBuilder(private val repository: Offe
       expiryDate = expiryDate,
     )
       .let { repository.save(it) }
+      .also { contact = it }
+
+  override fun restriction(
+    restrictionType: String,
+    enteredStaff: Staff,
+    comment: String?,
+    effectiveDate: String,
+    expiryDate: String?,
+    dsl: OffenderPersonRestrictsDsl.() -> Unit,
+  ): OffenderPersonRestricts =
+    offenderPersonRestrictsBuilderFactory.builder().let { builder ->
+      builder.build(
+        contactPerson = contact,
+        restrictionType = restrictionType,
+        enteredStaff = enteredStaff,
+        comment = comment,
+        effectiveDate = LocalDate.parse(effectiveDate),
+        expiryDate = expiryDate?.let { LocalDate.parse(it) },
+      )
+        .also { contact.restrictions += it }
+        .also { builder.apply(dsl) }
+    }
 }

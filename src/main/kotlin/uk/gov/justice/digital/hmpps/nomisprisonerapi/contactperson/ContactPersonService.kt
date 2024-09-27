@@ -125,6 +125,16 @@ class ContactPersonService(private val personRepository: PersonRepository) {
               firstName = booking.offender.firstName,
             )
           },
+          restrictions = contact.restrictions.map { restriction ->
+            ContactRestriction(
+              id = restriction.id,
+              type = restriction.restrictionType.toCodeDescription(),
+              comment = restriction.comment,
+              effectiveDate = restriction.effectiveDate,
+              expiryDate = restriction.expiryDate,
+              enteredStaff = Staff(staffId = restriction.enteredStaff.id),
+            )
+          },
         )
       },
     )

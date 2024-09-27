@@ -13,7 +13,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ContactPersonResourceIntTest : IntegrationTestBase() {
@@ -565,6 +567,66 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("contacts[3].prisoner.offenderNo").isEqualTo("A1234BB")
           .jsonPath("contacts[3].prisoner.lastName").isEqualTo("KOBI")
           .jsonPath("contacts[3].prisoner.firstName").isEqualTo("KWAME")
+      }
+    }
+
+    @Nested
+    inner class ContactRestrictions {
+      private lateinit var person: Person
+      private lateinit var prisoner: Offender
+      private lateinit var contact: OffenderContactPerson
+      private lateinit var staff: Staff
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff = staff(firstName = "JANE", lastName = "STAFF")
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          )
+          prisoner = offender {
+            booking {
+              contact = contact(
+                person = person,
+              ) {
+                restriction(
+                  restrictionType = "BAN",
+                  enteredStaff = staff,
+                  comment = "Banned for life!",
+                  effectiveDate = "2020-01-01",
+                  expiryDate = "2023-02-02",
+                )
+                restriction(
+                  restrictionType = "CCTV",
+                  enteredStaff = staff,
+                )
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return contact restriction details`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("contacts[0].restrictions[0].type.code").isEqualTo("BAN")
+          .jsonPath("contacts[0].restrictions[0].type.description").isEqualTo("Banned")
+          .jsonPath("contacts[0].restrictions[0].comment").isEqualTo("Banned for life!")
+          .jsonPath("contacts[0].restrictions[0].effectiveDate").isEqualTo("2020-01-01")
+          .jsonPath("contacts[0].restrictions[0].expiryDate").isEqualTo("2023-02-02")
+          .jsonPath("contacts[0].restrictions[0].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("contacts[0].restrictions[1].type.code").isEqualTo("CCTV")
+          .jsonPath("contacts[0].restrictions[1].type.description").isEqualTo("CCTV")
+          .jsonPath("contacts[0].restrictions[1].comment").doesNotExist()
+          .jsonPath("contacts[0].restrictions[1].effectiveDate").isEqualTo(LocalDate.now().toString())
+          .jsonPath("contacts[0].restrictions[1].expiryDate").doesNotExist()
+          .jsonPath("contacts[0].restrictions[1].enteredStaff.staffId").isEqualTo(staff.id)
       }
     }
   }

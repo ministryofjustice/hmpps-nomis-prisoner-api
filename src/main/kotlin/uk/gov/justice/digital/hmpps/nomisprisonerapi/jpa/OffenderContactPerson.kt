@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
@@ -8,6 +9,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -90,6 +92,9 @@ data class OffenderContactPerson(
 
   @Column(name = "EXPIRY_DATE")
   val expiryDate: LocalDate? = null,
+
+  @OneToMany(mappedBy = "contactPerson", cascade = [CascadeType.ALL], fetch = LAZY)
+  val restrictions: MutableList<OffenderPersonRestricts> = mutableListOf(),
 
   /*
   Not mapped:
