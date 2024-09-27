@@ -1418,7 +1418,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(offenderNo)
           .jsonPath("caseSequence").isEqualTo(1)
-          .jsonPath("caseInfoNumber").isEqualTo("TT33333333")
+          .jsonPath("primaryCaseInfoNumber").isEqualTo("TT33333333")
           .jsonPath("courtId").isEqualTo("COURT1")
           .jsonPath("caseStatus.code").isEqualTo("A")
           .jsonPath("caseStatus.description").isEqualTo("Active")
