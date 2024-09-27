@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
@@ -15,6 +17,8 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -29,6 +33,56 @@ import java.time.LocalTime
 @Validated
 @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
 class CSIPResource(private val csipService: CSIPService) {
+
+  @PutMapping("/csip")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Creates or updates a csip",
+    description = "Creates or updates a csip report and its children. Requires ROLE_NOMIS_CSIP",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "CSIP Updated or created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = UpsertCSIPResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun upsertCSIP(@RequestBody @Valid request: UpsertCSIPRequest) = csipService.upsertCSIP(request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
   @GetMapping("/prisoners/{offenderNo}/csip/to-migrate")
@@ -337,6 +391,20 @@ data class CSIPResponse(
   val lastModifiedByDisplayName: String?,
 )
 
+@Schema(description = "A response after a csip has been upserted in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpsertCSIPResponse(
+  @Schema(description = "The nomis csip id")
+  val nomisCSIPReportId: Long,
+
+  @Schema(description = "The prisoner nomis Id relating to this csip")
+  val offenderNo: String,
+
+  @Schema(description = "Whether or not the csip was created")
+  @NotNull
+  val created: Boolean,
+)
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class SaferCustodyScreening(
   @Schema(description = "Result of the Safer Custody Screening")
@@ -442,7 +510,7 @@ data class Decision(
   @Schema(description = "Other information to take into consideration")
   var otherDetails: String?,
   @Schema(description = "Action list")
-  val actions: Actions,
+  val actions: Actions? = null,
 )
 
 data class Actions(
