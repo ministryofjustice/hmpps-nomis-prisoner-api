@@ -190,7 +190,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("legalCaseType.code").isEqualTo("A")
           .jsonPath("legalCaseType.description").isEqualTo("Adult")
           .jsonPath("beginDate").isEqualTo(aDateString)
-          .jsonPath("caseInfoNumber").isEqualTo("AB1")
+          .jsonPath("primaryCaseInfoNumber").isEqualTo("AB1")
           .jsonPath("statusUpdateComment").isEqualTo("a comment")
           .jsonPath("statusUpdateReason").isEqualTo("a reason")
           .jsonPath("statusUpdateDate").isEqualTo(aDateString)
@@ -281,7 +281,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("legalCaseType.code").isEqualTo("A")
           .jsonPath("legalCaseType.description").isEqualTo("Adult")
           .jsonPath("beginDate").isEqualTo(aLaterDateString)
-          .jsonPath("caseInfoNumber").isEqualTo("AB1")
+          .jsonPath("primaryCaseInfoNumber").isEqualTo("AB1")
           .jsonPath("statusUpdateComment").doesNotExist()
           .jsonPath("statusUpdateReason").doesNotExist()
           .jsonPath("statusUpdateDate").doesNotExist()
@@ -341,6 +341,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateDate = LocalDate.parse(aDateString),
                 statusUpdateStaff = staff,
               ) {
+                offenderCaseIdentifier(reference = "caseRef1")
+                offenderCaseIdentifier(reference = "caseRef2")
+                offenderCaseIdentifier(reference = "caseRef3", type = "notOne")
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 val offenderCharge2 = offenderCharge()
                 courtEvent {
@@ -446,7 +449,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("legalCaseType.code").isEqualTo("A")
           .jsonPath("legalCaseType.description").isEqualTo("Adult")
           .jsonPath("beginDate").isEqualTo(aDateString)
-          .jsonPath("caseInfoNumber").isEqualTo("AB1")
+          .jsonPath("primaryCaseInfoNumber").isEqualTo("AB1")
           .jsonPath("statusUpdateComment").isEqualTo("a comment")
           .jsonPath("statusUpdateReason").isEqualTo("a reason")
           .jsonPath("statusUpdateDate").isEqualTo(aDateString)
@@ -520,6 +523,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[0].lidsOffenceNumber").isEqualTo(11)
+          .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef1")
+          .jsonPath("caseInfoNumbers[1].reference").isEqualTo("caseRef2")
+          .jsonPath("caseInfoNumbers[2]").doesNotExist()
       }
     }
 

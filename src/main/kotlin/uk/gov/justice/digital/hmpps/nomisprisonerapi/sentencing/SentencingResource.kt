@@ -933,7 +933,7 @@ data class CourtCaseResponse(
   val id: Long,
   val offenderNo: String,
   val bookingId: Long,
-  val caseInfoNumber: String?,
+  val primaryCaseInfoNumber: String?,
   val caseSequence: Int,
   val caseStatus: CodeDescription,
   val legalCaseType: CodeDescription,
@@ -951,6 +951,7 @@ data class CourtCaseResponse(
   val createdByUsername: String,
   val courtEvents: List<CourtEventResponse>,
   val offenderCharges: List<OffenderChargeResponse>,
+  val caseInfoNumbers: List<CaseIdentifierResponse>,
 )
 
 @Schema(description = "Court Event")
@@ -1295,4 +1296,19 @@ data class SentenceTermRequest(
   val hours: Int? = null,
   val sentenceTermType: String,
   val lifeSentenceFlag: Boolean = false,
+)
+
+@Schema(description = "Case related reference")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CaseIdentifierResponse(
+  @Schema(description = "The type of case identifier", example = "CASE/INFO#")
+  val type: String,
+  @Schema(description = "The value of the case identifier", example = "asd/123")
+  val reference: String,
+  @Schema(description = "The time the case identifier was created", example = "2020-07-17T12:34:56")
+  val createDateTime: LocalDateTime,
+  @Schema(description = "The time the case identifier was last changed", example = "2021-07-16T12:34:56")
+  val modifiedDateTime: LocalDateTime?,
+  @Schema(description = "The name of the module that last changed it, indicates if this was NOMIS or the synchronisation service", example = "DPS_SYNCHRONISATION")
+  val auditModuleName: String?,
 )
