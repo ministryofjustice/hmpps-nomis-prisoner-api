@@ -629,5 +629,56 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("contacts[0].restrictions[1].enteredStaff.staffId").isEqualTo(staff.id)
       }
     }
+
+    @Nested
+    inner class GlobalRestrictions {
+      private lateinit var person: Person
+      private lateinit var staff: Staff
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff = staff(firstName = "JANE", lastName = "STAFF")
+          person = person(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            restriction(
+              restrictionType = "BAN",
+              enteredStaff = staff,
+              comment = "Banned for life!",
+              effectiveDate = "2020-01-01",
+              expiryDate = "2023-02-02",
+            )
+            restriction(
+              restrictionType = "CCTV",
+              enteredStaff = staff,
+            )
+          }
+        }
+      }
+
+      @Test
+      fun `will return global restriction details`() {
+        webTestClient.get().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("restrictions[0].type.code").isEqualTo("BAN")
+          .jsonPath("restrictions[0].type.description").isEqualTo("Banned")
+          .jsonPath("restrictions[0].comment").isEqualTo("Banned for life!")
+          .jsonPath("restrictions[0].effectiveDate").isEqualTo("2020-01-01")
+          .jsonPath("restrictions[0].expiryDate").isEqualTo("2023-02-02")
+          .jsonPath("restrictions[0].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("restrictions[1].type.code").isEqualTo("CCTV")
+          .jsonPath("restrictions[1].type.description").isEqualTo("CCTV")
+          .jsonPath("restrictions[1].comment").doesNotExist()
+          .jsonPath("restrictions[1].effectiveDate").isEqualTo(LocalDate.now().toString())
+          .jsonPath("restrictions[1].expiryDate").doesNotExist()
+          .jsonPath("restrictions[1].enteredStaff.staffId").isEqualTo(staff.id)
+      }
+    }
   }
 }

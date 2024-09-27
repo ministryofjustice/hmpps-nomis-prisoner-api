@@ -2,44 +2,44 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestrict
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RestrictionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitorRestriction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
 @DslMarker
-annotation class OffenderPersonRestrictsDslMarker
+annotation class VisitorRestrictsDslMarker
 
 @NomisDataDslMarker
-interface OffenderPersonRestrictsDsl
+interface VisitorRestrictsDsl
 
 @Component
-class OffenderPersonRestrictsBuilderRepository(
+class VisitorRestrictsBuilderRepository(
   private val restrictionTypeRepository: ReferenceCodeRepository<RestrictionType>,
 ) {
   fun restrictionTypeOf(code: String): RestrictionType = restrictionTypeRepository.findByIdOrNull(RestrictionType.pk(code))!!
 }
 
 @Component
-class OffenderPersonRestrictsBuilderFactory(
-  private val repository: OffenderPersonRestrictsBuilderRepository,
+class VisitorRestrictsBuilderFactory(
+  private val repository: VisitorRestrictsBuilderRepository,
 ) {
-  fun builder() = OffenderPersonRestrictsBuilderRepositoryBuilder(repository)
+  fun builder() = VisitorRestrictsBuilderRepositoryBuilder(repository)
 }
 
-class OffenderPersonRestrictsBuilderRepositoryBuilder(private val repository: OffenderPersonRestrictsBuilderRepository) : OffenderPersonRestrictsDsl {
+class VisitorRestrictsBuilderRepositoryBuilder(private val repository: VisitorRestrictsBuilderRepository) : VisitorRestrictsDsl {
   fun build(
-    contactPerson: OffenderContactPerson,
+    person: Person,
     restrictionType: String,
     enteredStaff: Staff,
     comment: String?,
     effectiveDate: LocalDate,
     expiryDate: LocalDate?,
-  ): OffenderPersonRestrict =
-    OffenderPersonRestrict(
-      contactPerson = contactPerson,
+  ): VisitorRestriction =
+    VisitorRestriction(
+      person = person,
       restrictionType = repository.restrictionTypeOf(restrictionType),
       enteredStaff = enteredStaff,
       comment = comment,
