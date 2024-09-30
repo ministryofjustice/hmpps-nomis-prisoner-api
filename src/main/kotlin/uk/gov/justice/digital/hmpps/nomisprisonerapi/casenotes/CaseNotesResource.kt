@@ -117,13 +117,7 @@ class CaseNotesResource(
     summary = "Updates a case note on a prisoner",
     description = "Updates the specified case note. Requires ROLE_NOMIS_CASENOTES",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "CaseNote Updated",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CaseNoteResponse::class)),
-        ],
-      ),
+      ApiResponse(responseCode = "200", description = "CaseNote Updated"),
       ApiResponse(
         responseCode = "400",
         description = "One or more fields in the request contains invalid data",
@@ -162,13 +156,7 @@ class CaseNotesResource(
     summary = "Deletes a case note",
     description = "Deletes the specified case note. Requires ROLE_NOMIS_CASENOTES",
     responses = [
-      ApiResponse(
-        responseCode = "201",
-        description = "CaseNote Deleted",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = CaseNoteResponse::class)),
-        ],
-      ),
+      ApiResponse(responseCode = "201", description = "CaseNote Deleted"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
