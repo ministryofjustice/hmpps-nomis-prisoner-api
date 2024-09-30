@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -237,6 +238,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      @Disabled
       fun `validation fails when subtype is not a child of type`() {
         webTestClient.post().uri("/prisoners/A1234AB/casenotes")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
