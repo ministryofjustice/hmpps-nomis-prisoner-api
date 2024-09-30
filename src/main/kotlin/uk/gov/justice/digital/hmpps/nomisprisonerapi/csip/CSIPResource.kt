@@ -510,7 +510,7 @@ data class Decision(
   @Schema(description = "Other information to take into consideration")
   var otherDetails: String?,
   @Schema(description = "Action list")
-  val actions: Actions? = null,
+  val actions: Actions,
 )
 
 data class Actions(
