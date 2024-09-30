@@ -60,7 +60,7 @@ class CaseNotesService(
     val caseNoteSubType = taskSubTypeRepository.findByIdOrNull(TaskSubType.pk(request.caseNoteSubType))
       ?: throw BadDataException("CaseNote caseNoteSubType ${request.caseNoteSubType} is not valid")
 
-    validateTypes(caseNoteType, caseNoteSubType)
+    // validateTypes(caseNoteType, caseNoteSubType)
 
     val staffUserAccount =
       staffUserAccountRepository.findByUsername(request.authorUsername)
