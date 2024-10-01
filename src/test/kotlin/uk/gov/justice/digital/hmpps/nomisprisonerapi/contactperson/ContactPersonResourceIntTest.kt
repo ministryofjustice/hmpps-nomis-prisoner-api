@@ -712,6 +712,11 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             whenCreated = LocalDateTime.parse("2024-01-01T10:00").minusMinutes(it.toLong()),
           )
         }.last().id
+        person(
+          firstName = "JOHN",
+          lastName = "BOG",
+          whenCreated = LocalDateTime.parse("2020-01-02T00:00"),
+        )
       }
     }
 
@@ -758,10 +763,10 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(60)
+          .jsonPath("totalElements").isEqualTo(61)
           .jsonPath("numberOfElements").isEqualTo(20)
           .jsonPath("number").isEqualTo(0)
-          .jsonPath("totalPages").isEqualTo(3)
+          .jsonPath("totalPages").isEqualTo(4)
           .jsonPath("size").isEqualTo(20)
       }
 
@@ -776,10 +781,10 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(60)
+          .jsonPath("totalElements").isEqualTo(61)
           .jsonPath("numberOfElements").isEqualTo(1)
           .jsonPath("number").isEqualTo(0)
-          .jsonPath("totalPages").isEqualTo(60)
+          .jsonPath("totalPages").isEqualTo(61)
           .jsonPath("size").isEqualTo(1)
       }
     }
@@ -795,10 +800,10 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(40)
+        .jsonPath("totalElements").isEqualTo(41)
         .jsonPath("numberOfElements").isEqualTo(20)
         .jsonPath("number").isEqualTo(0)
-        .jsonPath("totalPages").isEqualTo(2)
+        .jsonPath("totalPages").isEqualTo(3)
         .jsonPath("size").isEqualTo(20)
     }
 
@@ -813,10 +818,10 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(20)
+        .jsonPath("totalElements").isEqualTo(21)
         .jsonPath("numberOfElements").isEqualTo(20)
         .jsonPath("number").isEqualTo(0)
-        .jsonPath("totalPages").isEqualTo(1)
+        .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(20)
     }
 
@@ -832,10 +837,10 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(20)
+        .jsonPath("totalElements").isEqualTo(21)
         .jsonPath("numberOfElements").isEqualTo(20)
         .jsonPath("number").isEqualTo(0)
-        .jsonPath("totalPages").isEqualTo(1)
+        .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(20)
     }
 
