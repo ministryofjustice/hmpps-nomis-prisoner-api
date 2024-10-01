@@ -19,7 +19,7 @@ data class UpsertCSIPRequest(
 
   @Schema(description = "Date/Time incident occurred", example = "2023-04-03", required = true)
   val incidentDate: LocalDate,
-  @Schema(description = "Date/Time incident occurred", example = "10:00", required = true)
+  @Schema(description = "Date/Time incident occurred", example = "10:00")
   val incidentTime: LocalTime? = null,
 
   @Schema(description = "Type of incident")
