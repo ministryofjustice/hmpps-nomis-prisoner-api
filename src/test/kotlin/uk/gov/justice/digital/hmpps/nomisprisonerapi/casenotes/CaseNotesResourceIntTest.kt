@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -200,8 +199,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Validation {
       private val validCaseNote = CreateCaseNoteRequest(
-        caseNoteType = "ALL",
-        caseNoteSubType = "SEN",
+        caseNoteType = "GEN",
+        caseNoteSubType = "HIS",
         occurrenceDateTime = LocalDateTime.now(),
         authorUsername = "JANE.NARK",
         caseNoteText = "the contents",
@@ -238,14 +237,16 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      @Disabled
-      fun `validation fails when subtype is not a child of type`() {
+      fun `validation fails when type-subtype combo is not in WORKS`() {
         webTestClient.post().uri("/prisoners/A1234AB/casenotes")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(validCaseNote.copy(caseNoteType = "ACP"))
+          .bodyValue(validCaseNote.copy(caseNoteSubType = "SOU"))
           .exchange()
           .expectStatus().isBadRequest
+          .expectBody().jsonPath("$.userMessage").value<String> {
+            assertThat(it).isEqualTo("Bad request: CNOTE (type,subtype)=(GEN,SOU) does not exist in the Works table")
+          }
       }
 
       @Test
@@ -270,8 +271,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
             //language=JSON
             """
               {
-                "caseNoteType": "ALL",
-                 "caseNoteSubType": "SEN",
+                "caseNoteType": "ACP",
+                 "caseNoteSubType": "SOU",
                  "occurrenceDateTime": "2024-06-01T15:00",
                  "authorUsername": "JANE.NARK",
                  "caseNoteText": "the contents"
@@ -295,8 +296,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           assertThat(newCaseNote.offenderBooking.bookingId).isEqualTo(booking.bookingId)
           assertThat(newCaseNote.occurrenceDate).isEqualTo(LocalDate.parse("2024-06-01"))
           assertThat(newCaseNote.occurrenceDateTime).isEqualTo(LocalDateTime.parse("2024-06-01T15:00"))
-          assertThat(newCaseNote.caseNoteType.code).isEqualTo("ALL")
-          assertThat(newCaseNote.caseNoteSubType.code).isEqualTo("SEN")
+          assertThat(newCaseNote.caseNoteType.code).isEqualTo("ACP")
+          assertThat(newCaseNote.caseNoteSubType.code).isEqualTo("SOU")
           assertThat(newCaseNote.author.lastName).isEqualTo("NARK")
           assertThat(newCaseNote.agencyLocation?.id).isEqualTo("BXI")
           assertThat(newCaseNote.caseNoteText).isEqualTo("the contents")

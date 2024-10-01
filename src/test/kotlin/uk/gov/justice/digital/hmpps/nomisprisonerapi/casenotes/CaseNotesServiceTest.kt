@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.WorkRepository
 import java.time.LocalDateTime
 
 private val TWO_UNICODE_CHARS = "⌘⌥"
@@ -27,6 +28,7 @@ internal class CaseNotesServiceTest {
   private val staffUserAccountRepository: StaffUserAccountRepository = mock()
   private val taskTypeRepository: ReferenceCodeRepository<TaskType> = mock()
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType> = mock()
+  private val workRepository: WorkRepository = mock()
 
   private val caseNotesService = CaseNotesService(
     offenderRepository,
@@ -35,6 +37,7 @@ internal class CaseNotesServiceTest {
     staffUserAccountRepository,
     taskTypeRepository,
     taskSubTypeRepository,
+    workRepository,
   )
 
   @Nested
