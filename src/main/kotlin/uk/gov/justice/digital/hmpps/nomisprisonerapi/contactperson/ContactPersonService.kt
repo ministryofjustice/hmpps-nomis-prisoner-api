@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.contactperson
 
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts.NomisAudit
@@ -8,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import java.time.LocalDate
 
 @Transactional
 @Service
@@ -149,6 +152,27 @@ class ContactPersonService(private val personRepository: PersonRepository) {
       },
     )
   } ?: throw NotFoundException("Person not found $personId")
+
+  fun findPersonIdsByFilter(
+    pageRequest: Pageable,
+    personFilter: PersonFilter,
+  ): Page<PersonIdResponse> =
+    if (personFilter.toDate == null && personFilter.fromDate == null) {
+      personRepository.findAllPersonIds(
+        pageRequest,
+      )
+    } else {
+      personRepository.findAllPersonIds(
+        fromDate = personFilter.fromDate?.atStartOfDay(),
+        toDate = personFilter.toDate?.plusDays(1)?.atStartOfDay(),
+        pageRequest,
+      )
+    }.map { PersonIdResponse(personId = it.personId) }
 }
 
 private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }
+
+data class PersonFilter(
+  val fromDate: LocalDate?,
+  val toDate: LocalDate?,
+)
