@@ -426,7 +426,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         verify(telemetryClient).trackEvent(
-          "profile-details-physical-attributes-created",
+          "physical-attributes-profile-details-created",
           mapOf(
             "offenderNo" to "A1234AA",
             "bookingId" to booking.bookingId.toString(),
@@ -451,7 +451,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         verify(telemetryClient).trackEvent(
-          "profile-details-physical-attributes-updated",
+          "physical-attributes-profile-details-updated",
           mapOf(
             "offenderNo" to "A1234AA",
             "bookingId" to booking.bookingId.toString(),
