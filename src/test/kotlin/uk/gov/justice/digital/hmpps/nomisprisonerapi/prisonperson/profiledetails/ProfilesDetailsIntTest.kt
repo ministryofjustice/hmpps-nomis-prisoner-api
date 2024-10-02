@@ -426,7 +426,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         verify(telemetryClient).trackEvent(
-          "profile-details-physical-attributes-created",
+          "physical-attributes-profile-details-created",
           mapOf(
             "offenderNo" to "A1234AA",
             "bookingId" to booking.bookingId.toString(),
@@ -451,7 +451,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         verify(telemetryClient).trackEvent(
-          "profile-details-physical-attributes-updated",
+          "physical-attributes-profile-details-updated",
           mapOf(
             "offenderNo" to "A1234AA",
             "bookingId" to booking.bookingId.toString(),
@@ -597,6 +597,26 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCode).isNull()
             assertThat(profileCodeId).isNull()
+          }
+        }
+      }
+
+      @Test
+      fun `should allow update of free text profile codes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday)
+          }
+        }
+
+        webTestClient.upsertProfileDetailsOk("A1234AA", "SHOESIZE", "8.5")
+
+        repository.runInTransaction {
+          val profiles = findBooking().profiles.first()
+          with(profiles.profileDetails.first()) {
+            assertThat(id.profileType.type).isEqualTo("SHOESIZE")
+            assertThat(profileCode).isNull()
+            assertThat(profileCodeId).isEqualTo("8.5")
           }
         }
       }
