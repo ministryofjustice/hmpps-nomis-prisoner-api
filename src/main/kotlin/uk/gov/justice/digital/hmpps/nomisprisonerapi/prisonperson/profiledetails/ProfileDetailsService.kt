@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetailId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileCodeId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileTypeCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
@@ -70,7 +71,7 @@ class ProfileDetailsService(
     return UpsertProfileDetailsResponse(created, booking.bookingId)
       .also {
         telemetryClient.trackEvent(
-          """profile-details-physical-attributes-${if (created) "created" else "updated"}""",
+          """physical-attributes-profile-details-${if (created) "created" else "updated"}""",
           mapOf(
             "offenderNo" to offenderNo,
             "bookingId" to booking.bookingId.toString(),
@@ -114,12 +115,15 @@ class ProfileDetailsService(
   private fun getProfileType(profileType: String) = profileTypeRepository.findByIdOrNull(profileType)
     ?: throw BadDataException("Invalid profile type $profileType")
 
-  private fun validateProfileCode(profileType: String, profileCode: String?) =
-    profileCode?.let {
-      if (!profileCodeRepository.existsById(ProfileCodeId(profileType, profileCode))) {
-        throw BadDataException("Invalid profile code $profileCode for profile type $profileType")
+  private fun validateProfileCode(profileType: String, profileCode: String?) {
+    profileCode
+      ?.takeIf { getProfileType(profileType) is ProfileTypeCode }
+      ?.also {
+        if (!profileCodeRepository.existsById(ProfileCodeId(profileType, profileCode))) {
+          throw BadDataException("Invalid profile code $profileCode for profile type $profileType")
+        }
       }
-    }
+  }
 
   private fun findLatestBookingOrThrow(offenderNo: String) = bookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("No latest booking found for $offenderNo")
