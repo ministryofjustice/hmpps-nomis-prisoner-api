@@ -698,11 +698,11 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             whenCreated = LocalDateTime.parse("2020-01-01T10:00").minusMinutes(it.toLong()),
           )
         }.first().id
-        (1..20).forEach {
+        (1..20).forEach { _ ->
           person(
             firstName = "JOHN",
             lastName = "BOG",
-            whenCreated = LocalDateTime.parse("2022-01-01T10:00").minusMinutes(it.toLong()),
+            whenCreated = LocalDateTime.parse("2022-01-01T00:00"),
           )
         }
         highestPersonId = (1..20).map {
@@ -837,6 +837,69 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         .jsonPath("number").isEqualTo(0)
         .jsonPath("totalPages").isEqualTo(1)
         .jsonPath("size").isEqualTo(20)
+    }
+
+    @Test
+    fun `will return person Ids create at midnight on the day matching the filter `() {
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("fromDate", "2021-12-31")
+          .queryParam("toDate", "2022-01-01")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("fromDate", "2021-12-31")
+          .queryParam("toDate", "2021-12-31")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(0)
+
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("fromDate", "2022-01-01")
+          .queryParam("toDate", "2022-01-01")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("fromDate", "2022-01-01")
+          .queryParam("toDate", "2022-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("fromDate", "2022-01-02")
+          .queryParam("toDate", "2022-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(0)
     }
 
     @Test
