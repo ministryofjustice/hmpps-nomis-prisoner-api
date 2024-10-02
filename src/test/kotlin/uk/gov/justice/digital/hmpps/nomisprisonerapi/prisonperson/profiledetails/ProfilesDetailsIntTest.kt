@@ -600,6 +600,26 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
       }
+
+      @Test
+      fun `should allow update of free text profile codes`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday)
+          }
+        }
+
+        webTestClient.upsertProfileDetailsOk("A1234AA", "SHOESIZE", "8.5")
+
+        repository.runInTransaction {
+          val profiles = findBooking().profiles.first()
+          with(profiles.profileDetails.first()) {
+            assertThat(id.profileType.type).isEqualTo("SHOESIZE")
+            assertThat(profileCode).isNull()
+            assertThat(profileCodeId).isEqualTo("8.5")
+          }
+        }
+      }
     }
 
     @Nested
