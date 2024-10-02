@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitorRestriction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class PersonDslMarker
@@ -114,13 +116,17 @@ class PersonBuilderRepository(
   private val titleRepository: ReferenceCodeRepository<Title>,
   private val languageRepository: ReferenceCodeRepository<Language>,
   private val maritalStatusRepository: ReferenceCodeRepository<MaritalStatus>,
+  private val jdbcTemplate: JdbcTemplate,
 
 ) {
-  fun save(person: Person): Person = personRepository.save(person)
+  fun save(person: Person): Person = personRepository.saveAndFlush(person)
   fun genderOf(code: String?): Gender? = code?.let { genderRepository.findByIdOrNull(Gender.pk(it)) }
   fun titleOf(code: String?): Title? = code?.let { titleRepository.findByIdOrNull(Title.pk(it)) }
   fun languageOf(code: String?): Language? = code?.let { languageRepository.findByIdOrNull(Language.pk(it)) }
   fun martialStatusOf(code: String?): MaritalStatus? = code?.let { maritalStatusRepository.findByIdOrNull(MaritalStatus.pk(it)) }
+  fun updateCreateDatetime(person: Person, whenCreated: LocalDateTime) {
+    jdbcTemplate.update("update PERSONS set CREATE_DATETIME = ? where PERSON_ID = ?", whenCreated, person.id)
+  }
 }
 
 class PersonBuilder(
@@ -148,6 +154,7 @@ class PersonBuilder(
     isStaff: Boolean?,
     isRemitter: Boolean?,
     keepBiometrics: Boolean,
+    whenCreated: LocalDateTime?,
   ): Person = Person(
     lastName = lastName,
     firstName = firstName,
@@ -164,6 +171,11 @@ class PersonBuilder(
     keepBiometrics = keepBiometrics,
   )
     .let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
+      }
+    }
     .also { person = it }
 
   override fun address(

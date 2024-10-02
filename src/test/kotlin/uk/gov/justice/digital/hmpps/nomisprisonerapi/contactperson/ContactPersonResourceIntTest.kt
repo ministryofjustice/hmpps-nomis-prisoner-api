@@ -77,7 +77,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.get().uri("/persons/${personMinimal.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -95,7 +95,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when person not found`() {
         webTestClient.get().uri("/persons/99999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -106,7 +106,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return basic person data`() {
         webTestClient.get().uri("/persons/${personMinimal.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -132,7 +132,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return full person data`() {
         webTestClient.get().uri("/persons/${personFull.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -180,7 +180,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return phone numbers`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -250,7 +250,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return addresses`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -298,7 +298,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return phone numbers associated with addresses`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -336,7 +336,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return email address`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -370,7 +370,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return employments`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -405,7 +405,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return identifiers`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -502,7 +502,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return contact details`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -610,7 +610,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return contact restriction details`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -661,7 +661,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return global restriction details`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
@@ -679,6 +679,180 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("restrictions[1].expiryDate").doesNotExist()
           .jsonPath("restrictions[1].enteredStaff.staffId").isEqualTo(staff.id)
       }
+    }
+  }
+
+  @DisplayName("GET /persons/ids")
+  @Nested
+  inner class GetPersonIds {
+    private var lowestPersonId = 0L
+    private var highestPersonId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        lowestPersonId = (1..20).map {
+          person(
+            firstName = "JOHN",
+            lastName = "BOG",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00").minusMinutes(it.toLong()),
+          )
+        }.first().id
+        (1..20).forEach {
+          person(
+            firstName = "JOHN",
+            lastName = "BOG",
+            whenCreated = LocalDateTime.parse("2022-01-01T10:00").minusMinutes(it.toLong()),
+          )
+        }
+        highestPersonId = (1..20).map {
+          person(
+            firstName = "JOHN",
+            lastName = "BOG",
+            whenCreated = LocalDateTime.parse("2024-01-01T10:00").minusMinutes(it.toLong()),
+          )
+        }.last().id
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/persons/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/persons/ids")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/persons/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return first 20 or all persons`() {
+        webTestClient.get().uri {
+          it.path("/persons/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(60)
+          .jsonPath("numberOfElements").isEqualTo(20)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(3)
+          .jsonPath("size").isEqualTo(20)
+      }
+
+      @Test
+      fun `can set page size`() {
+        webTestClient.get().uri {
+          it.path("/persons/ids")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(60)
+          .jsonPath("numberOfElements").isEqualTo(1)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(60)
+          .jsonPath("size").isEqualTo(1)
+      }
+    }
+
+    @Test
+    fun `can filter by fromDate`() {
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("fromDate", "2020-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(40)
+        .jsonPath("numberOfElements").isEqualTo(20)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(2)
+        .jsonPath("size").isEqualTo(20)
+    }
+
+    @Test
+    fun `can filter by toDate`() {
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("toDate", "2020-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+        .jsonPath("numberOfElements").isEqualTo(20)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(1)
+        .jsonPath("size").isEqualTo(20)
+    }
+
+    @Test
+    fun `can filter by fromDate and toDate`() {
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("fromDate", "2020-01-02")
+          .queryParam("toDate", "2022-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+        .jsonPath("numberOfElements").isEqualTo(20)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(1)
+        .jsonPath("size").isEqualTo(20)
+    }
+
+    @Test
+    fun `will order by personId ascending`() {
+      webTestClient.get().uri {
+        it.path("/persons/ids")
+          .queryParam("size", "60")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("numberOfElements").isEqualTo(60)
+        .jsonPath("content[0].personId").isEqualTo(lowestPersonId)
+        .jsonPath("content[59].personId").isEqualTo(highestPersonId)
     }
   }
 }
