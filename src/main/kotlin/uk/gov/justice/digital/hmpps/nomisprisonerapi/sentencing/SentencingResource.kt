@@ -925,6 +925,78 @@ class SentencingResource(private val sentencingService: SentencingService) {
         fromDateTime = fromDate?.atStartOfDay(),
       ),
     )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/case_identifiers")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Refreshes the list of Case identifiers associated with the case",
+    description = "Required role NOMIS_SENTENCING Refreshes the list of Case identifiers associated with the case (identifier type CASE/INFO#)",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CourtAppearanceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Case Identifiers Refreshed",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court case does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun refreshCaseIdentifiers(
+    @Schema(description = "Offender no", example = "AB1234A", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "34565", required = true)
+    @PathVariable
+    caseId: Long,
+    @RequestBody @Valid
+    request: CaseIdentifierRequest,
+  ) = sentencingService.refreshCaseIdentifiers(offenderNo, caseId, request)
 }
 
 @Schema(description = "Court Case")
@@ -1296,6 +1368,17 @@ data class SentenceTermRequest(
   val hours: Int? = null,
   val sentenceTermType: String,
   val lifeSentenceFlag: Boolean = false,
+)
+
+@Schema(description = "Court case associated reference")
+data class CaseIdentifier(
+  val reference: String,
+  val createdDate: LocalDateTime,
+)
+
+@Schema(description = "Case identifier list")
+data class CaseIdentifierRequest(
+  val caseIdentifiers: List<CaseIdentifier>,
 )
 
 @Schema(description = "Case related reference")

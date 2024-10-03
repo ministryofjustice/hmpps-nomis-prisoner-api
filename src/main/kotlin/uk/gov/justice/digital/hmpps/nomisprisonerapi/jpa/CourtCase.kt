@@ -124,6 +124,10 @@ class CourtCase(
    */
 
 ) {
+
+  fun getDpsCaseInfoNumbers(): List<OffenderCaseIdentifier> =
+    caseInfoNumbers.filter { it.isDpsCaseInfoNumber() }
+
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
