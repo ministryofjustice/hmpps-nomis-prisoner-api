@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseIdentifierType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ChargeStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCharge
@@ -47,6 +49,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtOrderRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceTermRepository
@@ -82,6 +85,7 @@ class SentencingService(
   private val courtOrderRepository: CourtOrderRepository,
   private val storedProcedureRepository: StoredProcedureRepository,
   private val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
+  private val caseIdentifierRepository: OffenderCaseIdentifierRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -187,7 +191,11 @@ class SentencingService(
 
       request.courtAppearance.nextEventDateTime?.let {
         courtCase.courtEvents.add(
-          createNextCourtEvent(booking, courtCase.courtEvents[0], mandatoryCourtAppearanceRequest).also { nextCourtEvent ->
+          createNextCourtEvent(
+            booking,
+            courtCase.courtEvents[0],
+            mandatoryCourtAppearanceRequest,
+          ).also { nextCourtEvent ->
             nextCourtEvent.initialiseCourtEventCharges()
           },
         )
@@ -438,23 +446,24 @@ class SentencingService(
             courtAppearance,
           )
 
-          val deletedOffenderCharges = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
-            orphanedOffenderCharges.forEach {
-              courtCase.offenderCharges.remove(it)
-              log.debug("Offender charge deleted: ${it.id}")
-              telemetryClient.trackEvent(
-                "offender-charge-deleted",
-                mapOf(
-                  "courtCaseId" to caseId.toString(),
-                  "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-                  "offenderNo" to offenderNo,
-                  "offenderChargeId" to it.id.toString(),
-                  "courtEventId" to eventId.toString(),
-                ),
-                null,
-              )
+          val deletedOffenderCharges =
+            courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
+              orphanedOffenderCharges.forEach {
+                courtCase.offenderCharges.remove(it)
+                log.debug("Offender charge deleted: ${it.id}")
+                telemetryClient.trackEvent(
+                  "offender-charge-deleted",
+                  mapOf(
+                    "courtCaseId" to caseId.toString(),
+                    "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+                    "offenderNo" to offenderNo,
+                    "offenderChargeId" to it.id.toString(),
+                    "courtEventId" to eventId.toString(),
+                  ),
+                  null,
+                )
+              }
             }
-          }
 
           courtEventRepository.saveAndFlush(courtAppearance).also {
             refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
@@ -889,6 +898,32 @@ class SentencingService(
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
   }
 
+  fun refreshCaseIdentifiers(offenderNo: String, caseId: Long, request: CaseIdentifierRequest) {
+    val courtCase = courtCaseRepository.findByIdOrNull(caseId)
+      ?: throw NotFoundException("Court case $caseId not found")
+    val existingDpsCaseIdentifiers = courtCase.getDpsCaseInfoNumbers()
+    val requestCaseIdentifierReferences = request.caseIdentifiers.map { it.reference }
+
+    val caseIdentifiersToRemove =
+      existingDpsCaseIdentifiers.filter { it.id.reference !in request.caseIdentifiers.map { it.reference } }
+    val caseIdentifiersToAdd =
+      (requestCaseIdentifierReferences - existingDpsCaseIdentifiers.map { it.id.reference }).map {
+        OffenderCaseIdentifier(
+          id = OffenderCaseIdentifierPK(
+            identifierType = CaseIdentifierType.DPS_CASE_REFERENCE,
+            courtCase = courtCase,
+            reference = it,
+          ),
+
+        )
+      }
+
+    log.info("Removing case identifiers for offender $offenderNo: ${caseIdentifiersToRemove.map { it.id }}")
+    log.info("Adding case identifiers offender $offenderNo: ${caseIdentifiersToAdd.map { it.id }}")
+    courtCase.caseInfoNumbers.removeAll(caseIdentifiersToRemove)
+    courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
+  }
+
   private fun findLatestBooking(offenderNo: String): OffenderBooking =
     offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
@@ -1000,7 +1035,7 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   createdByUsername = this.createUsername,
   courtEvents = this.courtEvents.map { it.toCourtEvent() },
   offenderCharges = this.offenderCharges.map { it.toOffenderCharge() },
-  caseInfoNumbers = this.caseInfoNumbers.filter { it.isCaseInfoNumber() }.map { it.toCaseIdentifier() },
+  caseInfoNumbers = this.caseInfoNumbers.filter { it.isDpsCaseInfoNumber() }.map { it.toCaseIdentifier() },
 )
 
 private fun OffenderCaseIdentifier.toCaseIdentifier(): CaseIdentifierResponse = CaseIdentifierResponse(

@@ -8,7 +8,7 @@ import jakarta.persistence.Entity
 class CaseIdentifierType(code: String, description: String) : ReferenceCode(CASE_ID_TYPE, code, description) {
   companion object {
     const val CASE_ID_TYPE = "CASE_ID_TYPE"
-    const val CASE_REFERENCE = "CASE/INFO#"
+    const val DPS_CASE_REFERENCE = "CASE/INFO#"
     fun pk(code: String): Pk = Pk(CASE_ID_TYPE, code)
   }
 }
