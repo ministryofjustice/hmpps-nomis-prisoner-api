@@ -41,8 +41,8 @@ class CSIPService(
 
   fun upsertCSIP(request: UpsertCSIPRequest): UpsertCSIPResponse {
     log.debug("Received upsert request {}", request)
-    val created = request.id == 0L
-    val csipReport = if (created) {
+    val toCreate = request.id == null
+    val csipReport = if (toCreate) {
       request.toCreateCSIPReport()
     } else {
       updateCSIPReport(request)
@@ -53,15 +53,15 @@ class CSIPService(
         UpsertCSIPResponse(
           nomisCSIPReportId = it.id,
           offenderNo = it.offenderBooking.offender.nomsId,
-          created = created,
+          created = toCreate,
         )
       }.also {
         telemetryClient.trackEvent(
-          "csip-${if (created) "created" else "updated"}",
+          "csip-${if (toCreate) "created" else "updated"}",
           mapOf(
             "nomisCSIPReportId" to it.nomisCSIPReportId,
             "offenderNo" to request.offenderNo,
-            "upsert" to if (created) "created" else "updated",
+            "upsert" to if (toCreate) "created" else "updated",
           ),
         )
       }

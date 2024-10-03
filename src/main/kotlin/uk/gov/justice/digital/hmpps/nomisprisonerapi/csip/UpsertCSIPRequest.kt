@@ -10,7 +10,7 @@ import java.time.LocalTime
 data class UpsertCSIPRequest(
 
   @Schema(description = "The csip id", example = "1234")
-  val id: Long? = 0,
+  val id: Long? = null,
   @Schema(description = "The offender No", example = "A11235BC", required = true)
   val offenderNo: String,
 
