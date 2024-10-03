@@ -34,6 +34,11 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
     aLocationInMoorland = repository.getInternalLocationByDescription("MDI-1-1-001", "MDI").locationId
   }
 
+  @AfterEach
+  fun tearDown() {
+    repository.deleteOffenders()
+  }
+
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Nested
   inner class GetCourtCase {
