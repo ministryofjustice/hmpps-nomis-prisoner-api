@@ -1072,7 +1072,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
           .jsonPath("offender.firstName").isEqualTo("Bob")
           .jsonPath("offender.lastName").isEqualTo("Smith")
-          .jsonPath("originalAgencyId").isEqualTo("WWI")
+          .jsonPath("originalAgencyId").isEqualTo("RNI")
           .jsonPath("logNumber").isEqualTo("ASI-001")
           .jsonPath("bookingId").isEqualTo(csip1.offenderBooking.bookingId)
       }
@@ -1136,7 +1136,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       offenderNo = "A1234TT",
       incidentDate = LocalDate.parse("2023-12-23"),
       incidentTime = LocalTime.parse("10:32:12"),
-      prisonCodeWhenRecorded = "WWI",
+      prisonCodeWhenRecorded = "RNI",
       typeCode = "INT",
       locationCode = "LIB",
       areaOfWorkCode = "EDU",
