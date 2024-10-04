@@ -14,7 +14,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInvolvement
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPSignedOffRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -30,9 +33,12 @@ class CSIPService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val telemetryClient: TelemetryClient,
-  val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
-  val locationRepository: ReferenceCodeRepository<CSIPIncidentLocation>,
   val areaOfWorkRepository: ReferenceCodeRepository<CSIPAreaOfWork>,
+  val involvementRepository: ReferenceCodeRepository<CSIPInvolvement>,
+  val locationRepository: ReferenceCodeRepository<CSIPIncidentLocation>,
+  val signedOffRoleRepository: ReferenceCodeRepository<CSIPSignedOffRole>,
+  val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
+  val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -125,13 +131,13 @@ class CSIPService(
 
   private fun UpsertCSIPRequest.toCreateCSIPReport(): CSIPReport {
     val latestBooking = findLatestBooking(offenderNo)
-    return CSIPReport(
+    val report = CSIPReport(
       offenderBooking = latestBooking,
-      originalAgencyId = latestBooking.location?.id,
+      originalAgencyId = prisonCodeWhenRecorded,
       rootOffender = latestBooking.rootOffender,
       incidentDate = incidentDate,
-      // TODO Check that the incident Date is also set on this field - or it is just 000000 date?
       incidentTime = incidentTime?.atDate(incidentDate),
+
       type = lookupIncidentType(typeCode),
       location = lookupLocation(locationCode),
       areaOfWork = lookupAreaOfWork(areaOfWorkCode),
@@ -141,8 +147,67 @@ class CSIPService(
       proActiveReferral = proActiveReferral,
       staffAssaulted = staffAssaulted,
       staffAssaultedName = staffAssaultedName,
-      createUsername = createUsername,
-    )
+      createUsername = auditDetails.createUsername,
+    ).apply {
+      // Non-mandatory fields
+      // TODO Add release date -> Confirmed Release Date (from External Movements)
+      // releaseDate = latestBooking.releaseDetail.releaseDate,
+      reportDetailRequest?.let {
+        involvement = reportDetailRequest.involvementCode?.let { lookupInvolvement(it) }
+        concernDescription = reportDetailRequest.concern
+        knownReasons = reportDetailRequest.knownReasons
+        otherInformation = reportDetailRequest.otherInformation
+        saferCustodyTeamInformed = reportDetailRequest.saferCustodyTeamInformed
+        referralComplete = reportDetailRequest.referralComplete
+        referralCompletedBy = reportDetailRequest.referralCompletedBy
+        referralCompletedDate = reportDetailRequest.referralCompletedDate
+      }
+      // factors = mutableListOf()
+      saferCustodyScreening?.let {
+        outcome = lookupOutcome(saferCustodyScreening.scsOutcomeCode)
+        reasonForDecision = saferCustodyScreening.reasonForDecision
+        outcomeCreateUsername = saferCustodyScreening.recordedBy
+        outcomeCreateDate = saferCustodyScreening.recordedDate
+      }
+
+      investigation?.let {
+        staffInvolved = investigation.staffInvolved
+        evidenceSecured = investigation.evidenceSecured
+        reasonOccurred = investigation.reasonOccurred
+        usualBehaviour = investigation.usualBehaviour
+        trigger = investigation.trigger
+        protectiveFactors = investigation.protectiveFactors
+        // interviews = mutableListOf()
+      }
+      decision?.let { setDecisionData(decision) }
+
+      caseManager = caseManager
+      reasonForPlan = planReason
+      firstCaseReviewDate = firstCaseReviewDate
+      // plans = mutableListOf()
+      // reviews = mutableListOf()
+
+      lastModifiedUsername = auditDetails.modifyUserId
+      lastModifiedDateTime = auditDetails.modifyDatetime
+    }
+    return report
+  }
+
+  private fun CSIPReport.setDecisionData(decision: DecisionRequest) {
+    conclusion = decision.conclusion
+    decisionOutcome = decision.decisionOutcomeCode?.let { lookupOutcome(it) }
+    signedOffRole = decision.signedOffRoleCode?.let { lookupSignedOffRole(it) }
+    recordedBy = decision.recordedBy
+    recordedDate = decision.recordedDate
+    nextSteps = decision.nextSteps
+    otherDetails = decision.otherDetails
+    openCSIPAlert = decision.actions.openCSIPAlert
+    nonAssociationsUpdated = decision.actions.nonAssociationsUpdated
+    observationBook = decision.actions.observationBook
+    unitOrCellMove = decision.actions.unitOrCellMove
+    csraOrRsraReview = decision.actions.csraOrRsraReview
+    serviceReferral = decision.actions.serviceReferral
+    simReferral = decision.actions.simReferral
   }
 
   private fun updateCSIPReport(request: UpsertCSIPRequest): CSIPReport =
@@ -160,10 +225,16 @@ class CSIPService(
       staffAssaultedName = request.staffAssaultedName
     } ?: throw NotFoundException("CSIP Report with id=${request.id} does not exist")
 
-  fun lookupIncidentType(code: String) =
-    typeRepository.findByIdOrNull(CSIPIncidentType.pk(code)) ?: throw BadDataException("Incident type $code not found")
-  fun lookupLocation(code: String) =
-    locationRepository.findByIdOrNull(CSIPIncidentLocation.pk(code)) ?: throw BadDataException("Location type $code not found")
   fun lookupAreaOfWork(code: String) =
     areaOfWorkRepository.findByIdOrNull(CSIPAreaOfWork.pk(code)) ?: throw BadDataException("Area of work type $code not found")
+  fun lookupIncidentType(code: String) =
+    typeRepository.findByIdOrNull(CSIPIncidentType.pk(code)) ?: throw BadDataException("Incident type $code not found")
+  fun lookupInvolvement(code: String) =
+    involvementRepository.findByIdOrNull(CSIPInvolvement.pk(code)) ?: throw BadDataException("Involvement type $code not found")
+  fun lookupLocation(code: String) =
+    locationRepository.findByIdOrNull(CSIPIncidentLocation.pk(code)) ?: throw BadDataException("Location type $code not found")
+  fun lookupOutcome(code: String) = outcomeRepository.findByIdOrNull(CSIPOutcome.pk(code))
+    ?: throw BadDataException("Outcome type $code not found")
+  fun lookupSignedOffRole(code: String) = signedOffRoleRepository.findByIdOrNull(CSIPSignedOffRole.pk(code))
+    ?: throw BadDataException("Signed off role type $code not found")
 }

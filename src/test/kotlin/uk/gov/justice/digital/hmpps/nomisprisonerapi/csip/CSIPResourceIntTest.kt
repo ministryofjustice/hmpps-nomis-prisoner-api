@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 class CSIPResourceIntTest : IntegrationTestBase() {
@@ -637,19 +638,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @DisplayName("PUT /csip create")
   @Nested
   inner class CreateCSIP {
-    private val validCSIP = UpsertCSIPRequest(
-      offenderNo = "A1234TT",
-      incidentDate = LocalDate.parse("2023-12-23"),
-      typeCode = "INT",
-      locationCode = "LIB",
-      areaOfWorkCode = "EDU",
-      reportedBy = "Jane Reporter",
-      reportedDate = LocalDate.now(),
-      createUsername = "FRED.JAMES",
-    )
 
     @Nested
     inner class Security {
+      private val validCSIP = createUpsertCSIPRequestMinimalData()
 
       @Test
       fun `access forbidden when no role`() {
@@ -696,13 +688,16 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "offenderNo": "Z1234ZZ",
                 "logNumber": "WCI-1234",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -725,8 +720,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -747,12 +744,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "typeCode": "INT",
+                "prisonCodeWhenRecorded": "MDI",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -773,12 +773,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -799,12 +802,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -825,12 +831,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -851,12 +860,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -877,12 +889,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -903,11 +918,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23"
+                "reportedDate": "2023-12-23",
+                "auditDetails": {
+                  "createDatetime": "2024-12-12T12:15:34"
+                }
             }
             """.trimIndent(),
           )
@@ -929,12 +948,16 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               {
                 "offenderNo": "A1234TT",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "XXX",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }
             }
             """.trimIndent(),
           )
@@ -957,13 +980,16 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "offenderNo": "A1234TT",
                 "logNumber": "WCI-1234",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "locationCode":"XXX",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
 
           )
@@ -986,13 +1012,16 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "offenderNo": "A1234TT",
                 "logNumber": "WCI-1234",
                 "incidentDate": "2023-12-23",
+                "prisonCodeWhenRecorded": "MDI",
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"XXX",
                 "reportedBy": "Jane Reporter",
                 "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "auditDetails": {
+                  "createUsername": "FRED.JAMES",
+                  "createDatetime": "2024-12-12T12:15:34"
+                }            }
             """.trimIndent(),
           )
           .exchange()
@@ -1005,8 +1034,11 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
+
       @Test
       fun `creating a csip with minimal data will return basic data`() {
+        val validCSIP = createUpsertCSIPRequestMinimalData()
+
         webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1017,6 +1049,32 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .jsonPath("nomisCSIPReportId").isNotEmpty
           .jsonPath("offenderNo").isEqualTo("A1234TT")
           .jsonPath("created").isEqualTo("true")
+      }
+
+      @Test
+      fun `creates a csip with full data`() {
+        val validCSIP = createUpsertCSIPRequest()
+
+        val createdCsip = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody
+
+        webTestClient.get().uri("/csip/${createdCsip.nomisCSIPReportId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
+          .jsonPath("offender.firstName").isEqualTo("Bob")
+          .jsonPath("offender.lastName").isEqualTo("Smith")
+          .jsonPath("originalAgencyId").isEqualTo("RNI")
+          .jsonPath("logNumber").isEqualTo("ASI-001")
+          .jsonPath("bookingId").isEqualTo(csip1.offenderBooking.bookingId)
       }
     }
   }
@@ -1035,13 +1093,14 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             UpsertCSIPRequest(
               id = csip1.id,
               offenderNo = "A1234TT",
+              prisonCodeWhenRecorded = "MDI",
               incidentDate = LocalDate.parse("2023-12-15"),
               typeCode = "VPA",
               locationCode = "EXY",
               areaOfWorkCode = "KIT",
               reportedBy = "Jill Reporter",
               reportedDate = LocalDate.parse("2024-05-12"),
-              createUsername = "FRED.JAMES",
+              auditDetails = auditDetailsRequest,
             ),
           )
           .exchange()
@@ -1053,4 +1112,146 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  private val auditDetailsRequest = AuditDetailsRequest(
+    createUsername = "FRED.JAMES",
+    createDatetime = LocalDateTime.now(),
+  )
+  private fun createUpsertCSIPRequestMinimalData(csipReportId: Long? = null) =
+    UpsertCSIPRequest(
+      id = csipReportId,
+      offenderNo = "A1234TT",
+      incidentDate = LocalDate.parse("2023-12-15"),
+      prisonCodeWhenRecorded = "MDI",
+      typeCode = "VPA",
+      locationCode = "EXY",
+      areaOfWorkCode = "KIT",
+      reportedBy = "Jill Reporter",
+      reportedDate = LocalDate.parse("2024-05-12"),
+      auditDetails = auditDetailsRequest,
+    )
+
+  private fun createUpsertCSIPRequest() =
+    UpsertCSIPRequest(
+      offenderNo = "A1234TT",
+      incidentDate = LocalDate.parse("2023-12-23"),
+      incidentTime = LocalTime.parse("10:32:12"),
+      prisonCodeWhenRecorded = "RNI",
+      typeCode = "INT",
+      locationCode = "LIB",
+      areaOfWorkCode = "EDU",
+      reportedBy = "Jane Reporter",
+      reportedDate = LocalDate.now(),
+      auditDetails = auditDetailsRequest,
+      logNumber = "ASI-001",
+      proActiveReferral = false,
+      staffAssaulted = true,
+      staffAssaultedName = "Assaulted Person",
+      reportDetailRequest = reportDetailRequest,
+      saferCustodyScreening = saferCustodyScreeningRequest,
+      investigation = investigationDetailRequest,
+      caseManager = "A CaseManager",
+      decision = decisionRequest,
+      planReason = "helper",
+      firstCaseReviewDate = LocalDate.parse("2024-04-15"),
+      plans = listOf(planRequest),
+      reviews = listOf(reviewRequest),
+    )
+
+  private val factorRequest = CSIPFactorRequest(
+    //   id = TODO(),
+    typeCode = "BUL",
+    comment = "Offender causes trouble",
+    auditDetails = auditDetailsRequest,
+  )
+  private val reportDetailRequest = UpsertReportDetailsRequest(
+    involvementCode = "PER",
+    concern = "There was a worry about the offender",
+    knownReasons = "known reasons details go in here",
+    otherInformation = "other information goes in here",
+    saferCustodyTeamInformed = false,
+    referralComplete = true,
+    referralCompletedBy = "JIM_ADM",
+    referralCompletedDate = LocalDate.parse("2024-04-04"),
+    factors = listOf(factorRequest),
+  )
+  private val interviewRequest = InterviewDetailRequest(
+    // id = 3343,
+    interviewee = "Bill Black",
+    date = LocalDate.parse("2024-06-06"),
+    roleCode = "WITNESS",
+    comments = "Saw a pipe in his hand",
+    auditDetails = auditDetailsRequest,
+  )
+
+  private val investigationDetailRequest = InvestigationDetailRequest(
+    staffInvolved = "some people",
+    evidenceSecured = "A piece of pipe",
+    reasonOccurred = "bad behaviour",
+    usualBehaviour = "Good person",
+    trigger = "missed meal",
+    protectiveFactors = "ensure taken to canteen",
+    interviews = listOf(interviewRequest),
+  )
+  private val saferCustodyScreeningRequest = SaferCustodyScreeningRequest(
+    scsOutcomeCode = "CUR",
+    recordedBy = "FRED_ADM",
+    recordedDate = LocalDate.parse("2024-04-08"),
+    reasonForDecision = "There is a reason for the decision - it goes here",
+  )
+
+  private val actionsRequest = ActionsRequest(
+    openCSIPAlert = true,
+    nonAssociationsUpdated = false,
+    observationBook = true,
+    unitOrCellMove = true,
+    csraOrRsraReview = false,
+    serviceReferral = true,
+    simReferral = false,
+  )
+  private val decisionRequest = DecisionRequest(
+    conclusion = "The end result",
+    decisionOutcomeCode = "OPE",
+    signedOffRoleCode = "CUSTMAN",
+    recordedBy = "FRED.JAMES",
+    recordedDate = LocalDate.parse("2024-08-12"),
+    nextSteps = "provide help",
+    otherDetails = "Support and assistance needed",
+    actions = actionsRequest,
+  )
+  private val planRequest = PlanRequest(
+    // id = TODO(),
+    identifiedNeed = "they need help",
+    intervention = "dd",
+    progression = "there was some improvement",
+    referredBy = "Jason",
+    createdDate = LocalDate.parse("2024-04-16"),
+    targetDate = LocalDate.parse("2024-08-20"),
+    closedDate = LocalDate.parse("2024-04-17"),
+    auditDetails = auditDetailsRequest,
+  )
+  private val attendeeRequest = AttendeeRequest(
+    // id = TODO(),
+    name = "same jones",
+    role = "person",
+    attended = true,
+    contribution = "talked about things",
+    auditDetails = auditDetailsRequest,
+  )
+  private val reviewRequest = ReviewRequest(
+    // id = TODO(),
+    remainOnCSIP = true,
+    csipUpdated = false,
+    caseNote = false,
+    closeCSIP = true,
+    peopleInformed = false,
+    summary = "More help needed",
+    nextReviewDate = LocalDate.parse("2024-08-01"),
+    closeDate = LocalDate.parse("2024-04-16"),
+    recordedBy = "FRED.JAMES",
+    // reviewSequence = TODO(),
+    attendees = listOf(attendeeRequest),
+    recordedDate = LocalDate.parse("2024-04-01"),
+    auditDetails = auditDetailsRequest,
+  )
 }
