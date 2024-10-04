@@ -12,4 +12,18 @@ data class PrisonPersonReconciliationResponse(
   val height: Int? = null,
   @Schema(description = "The weight of the prisoner in kilograms", example = "80")
   val weight: Int? = null,
+  @Schema(description = "Shape of face", example = "ROUND")
+  val face: String? = null,
+  @Schema(description = "Build", example = "SLIM")
+  val build: String? = null,
+  @Schema(description = "Facial hair", example = "CLEAN_SHAVEN")
+  val facialHair: String? = null,
+  @Schema(description = "Hair colour", example = "BLACK")
+  val hair: String? = null,
+  @Schema(description = "Left eye colour", example = "BLUE")
+  val leftEyeColour: String? = null,
+  @Schema(description = "Right eye colour", example = "BROWN")
+  val rightEyeColour: String? = null,
+  @Schema(description = "Shoe size", example = "8.5")
+  val shoeSize: String? = null,
 )
