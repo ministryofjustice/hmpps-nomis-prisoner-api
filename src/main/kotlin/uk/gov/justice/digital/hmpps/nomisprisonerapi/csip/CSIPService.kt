@@ -12,6 +12,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactor
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactorType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInvolvement
@@ -39,6 +41,7 @@ class CSIPService(
   val signedOffRoleRepository: ReferenceCodeRepository<CSIPSignedOffRole>,
   val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
   val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
+  val factorRepository: ReferenceCodeRepository<CSIPFactorType>,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -131,7 +134,7 @@ class CSIPService(
 
   private fun UpsertCSIPRequest.toCreateCSIPReport(): CSIPReport {
     val latestBooking = findLatestBooking(offenderNo)
-    val report = CSIPReport(
+    return CSIPReport(
       offenderBooking = latestBooking,
       originalAgencyId = prisonCodeWhenRecorded,
       rootOffender = latestBooking.rootOffender,
@@ -149,48 +152,78 @@ class CSIPService(
       staffAssaultedName = staffAssaultedName,
       createUsername = auditDetails.createUsername,
     ).apply {
-      // Non-mandatory fields
-      // TODO Add release date -> Confirmed Release Date (from External Movements)
-      // releaseDate = latestBooking.releaseDetail.releaseDate,
-      reportDetailRequest?.let {
-        involvement = reportDetailRequest.involvementCode?.let { lookupInvolvement(it) }
-        concernDescription = reportDetailRequest.concern
-        knownReasons = reportDetailRequest.knownReasons
-        otherInformation = reportDetailRequest.otherInformation
-        saferCustodyTeamInformed = reportDetailRequest.saferCustodyTeamInformed
-        referralComplete = reportDetailRequest.referralComplete
-        referralCompletedBy = reportDetailRequest.referralCompletedBy
-        referralCompletedDate = reportDetailRequest.referralCompletedDate
-      }
-      // factors = mutableListOf()
-      saferCustodyScreening?.let {
-        outcome = lookupOutcome(saferCustodyScreening.scsOutcomeCode)
-        reasonForDecision = saferCustodyScreening.reasonForDecision
-        outcomeCreateUsername = saferCustodyScreening.recordedBy
-        outcomeCreateDate = saferCustodyScreening.recordedDate
-      }
-
-      investigation?.let {
-        staffInvolved = investigation.staffInvolved
-        evidenceSecured = investigation.evidenceSecured
-        reasonOccurred = investigation.reasonOccurred
-        usualBehaviour = investigation.usualBehaviour
-        trigger = investigation.trigger
-        protectiveFactors = investigation.protectiveFactors
-        // interviews = mutableListOf()
-      }
-      decision?.let { setDecisionData(decision) }
-
-      caseManager = caseManager
-      reasonForPlan = planReason
-      firstCaseReviewDate = firstCaseReviewDate
-      // plans = mutableListOf()
-      // reviews = mutableListOf()
-
-      lastModifiedUsername = auditDetails.modifyUserId
-      lastModifiedDateTime = auditDetails.modifyDatetime
+      addNonMandatoryFields(this@toCreateCSIPReport)
     }
-    return report
+  }
+
+  private fun CSIPReport.addNonMandatoryFields(currentRequest: UpsertCSIPRequest) {
+    // TODO Add release date -> Confirmed Release Date (from External Movements)
+    // releaseDate = latestBooking.releaseDetail.releaseDate,
+    currentRequest.reportDetailRequest?.let { reportDetailRequest ->
+      involvement = reportDetailRequest.involvementCode?.let { lookupInvolvement(it) }
+      concernDescription = reportDetailRequest.concern
+      knownReasons = reportDetailRequest.knownReasons
+      otherInformation = reportDetailRequest.otherInformation
+      saferCustodyTeamInformed = reportDetailRequest.saferCustodyTeamInformed
+      referralComplete = reportDetailRequest.referralComplete
+      referralCompletedBy = reportDetailRequest.referralCompletedBy
+      referralCompletedDate = reportDetailRequest.referralCompletedDate
+      if (reportDetailRequest.factors.isNotEmpty()) {
+        addOrInsertFactor(request = currentRequest)
+      }
+    }
+
+    currentRequest.saferCustodyScreening?.let { saferCustodyScreening ->
+      outcome = lookupOutcome(saferCustodyScreening.scsOutcomeCode)
+      reasonForDecision = saferCustodyScreening.reasonForDecision
+      outcomeCreateUsername = saferCustodyScreening.recordedBy
+      outcomeCreateDate = saferCustodyScreening.recordedDate
+    }
+
+    currentRequest.investigation?.let { investigation ->
+      staffInvolved = investigation.staffInvolved
+      evidenceSecured = investigation.evidenceSecured
+      reasonOccurred = investigation.reasonOccurred
+      usualBehaviour = investigation.usualBehaviour
+      trigger = investigation.trigger
+      protectiveFactors = investigation.protectiveFactors
+      // TODO interviews = mutableListOf()
+    }
+    currentRequest.decision?.let { setDecisionData(currentRequest.decision) }
+
+    caseManager = currentRequest.caseManager
+    reasonForPlan = currentRequest.planReason
+    firstCaseReviewDate = currentRequest.firstCaseReviewDate
+    // TODO plans = mutableListOf()
+    // TODO reviews = mutableListOf() and attendees
+
+    lastModifiedUsername = currentRequest.auditDetails.modifyUsername
+    lastModifiedDateTime = currentRequest.auditDetails.modifyDatetime
+  }
+
+  private fun CSIPReport.addOrInsertFactor(request: UpsertCSIPRequest) {
+    request.reportDetailRequest?.factors?.forEach { factorRequest ->
+      factorRequest.id?.let {
+        factors.find { it.id == factorRequest.id }
+          ?.also {
+            it.type = lookupFactorType(factorRequest.typeCode)
+            it.comment = factorRequest.comment
+            it.createUsername = factorRequest.auditDetails.createUsername
+          }
+          ?: {
+            throw BadDataException("Attempting to update csip report $id with a csip factor id (${factorRequest.id}) that does not exist")
+          }
+      } ?: apply {
+        val factor = CSIPFactor(
+          csipReport = this,
+          type = lookupFactorType(factorRequest.typeCode),
+          comment = factorRequest.comment,
+          createUsername = factorRequest.auditDetails.createUsername,
+        )
+
+        factors.add(factor)
+      }
+    }
   }
 
   private fun CSIPReport.setDecisionData(decision: DecisionRequest) {
@@ -237,4 +270,6 @@ class CSIPService(
     ?: throw BadDataException("Outcome type $code not found")
   fun lookupSignedOffRole(code: String) = signedOffRoleRepository.findByIdOrNull(CSIPSignedOffRole.pk(code))
     ?: throw BadDataException("Signed off role type $code not found")
+  fun lookupFactorType(code: String) = factorRepository.findByIdOrNull(CSIPFactorType.pk(code))
+    ?: throw BadDataException("Factor type $code not found")
 }

@@ -17,9 +17,6 @@ data class UpsertCSIPRequest(
   @Schema(description = "Log number")
   val logNumber: String? = null,
 
-  @Schema(description = "Originating Prison Id")
-  val prisonCodeWhenRecorded: String,
-
   @Schema(description = "Date/Time incident occurred", example = "2023-04-03", required = true)
   val incidentDate: LocalDate,
   @Schema(description = "Date/Time incident occurred", example = "10:00")
@@ -46,6 +43,9 @@ data class UpsertCSIPRequest(
 
   @Schema(description = "Audit detail info")
   val auditDetails: AuditDetailsRequest,
+
+  @Schema(description = "Originating Prison Id")
+  val prisonCodeWhenRecorded: String? = null,
 
   @Schema(description = "Additional information for the CSIP Report")
   val reportDetailRequest: UpsertReportDetailsRequest? = null,
@@ -89,8 +89,7 @@ data class UpsertReportDetailsRequest(
   val referralComplete: Boolean = false,
   @Schema(description = "Who completed the referral")
   val referralCompletedBy: String? = null,
-  @Schema(description = "Real name of the person who completed the referral")
-  val referralCompletedByDisplayName: String? = null,
+
   @Schema(description = "Date the referral was completed")
   val referralCompletedDate: LocalDate? = null,
 
@@ -104,12 +103,10 @@ data class SaferCustodyScreeningRequest(
   val scsOutcomeCode: String,
   @Schema(description = "The username of the person who recorded the data")
   val recordedBy: String,
-  // @Schema(description = "Real name of who recorded the data")
-  // val recordedByDisplayName: String,
   @Schema(description = "When the the SCS occurred")
   val recordedDate: LocalDate,
   @Schema(description = "Why the decision was made")
-  val reasonForDecision: String,
+  val reasonForDecision: String? = null,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -171,8 +168,6 @@ data class DecisionRequest(
   var signedOffRoleCode: String?,
   @Schema(description = "The username of the person who recorded the decision")
   var recordedBy: String?,
-  // @Schema(description = "Real name of who recorded the decision")
-  // var recordedByDisplayName: String?,
   @Schema(description = "Recorded Date")
   var recordedDate: LocalDate?,
   @Schema(description = "What to do next")
@@ -197,9 +192,9 @@ data class ActionsRequest(
 data class PlanRequest(
   @Schema(description = "Plan Id")
   val id: Long? = null,
-  @Schema(description = "Details of the need")
+  @Schema(description = "Details of the need", required = true)
   val identifiedNeed: String,
-  @Schema(description = "Intervention plan")
+  @Schema(description = "Intervention plan", required = true)
   val intervention: String,
   @Schema(description = "Information regarding progression of plan")
   val progression: String?,
@@ -207,7 +202,7 @@ data class PlanRequest(
   val referredBy: String?,
   @Schema(description = "When created")
   val createdDate: LocalDate,
-  @Schema(description = "Target date of plan")
+  @Schema(description = "Target date of plan", required = true)
   val targetDate: LocalDate,
   @Schema(description = "Plan closed date")
   val closedDate: LocalDate?,
@@ -223,7 +218,7 @@ data class ReviewRequest(
   // @Schema(description = "Sequence number")
   // val reviewSequence: Int,
   @Schema(description = "Attendees to the review")
-  val attendees: List<AttendeeRequest>,
+  val attendees: List<AttendeeRequest>?,
   @Schema(description = "Whether to remain on CSIP")
   val remainOnCSIP: Boolean,
   @Schema(description = "If the csip has been updated")
@@ -244,8 +239,6 @@ data class ReviewRequest(
   val recordedDate: LocalDate,
   @Schema(description = "The username of the person who recorded the review")
   val recordedBy: String,
-  // @Schema(description = "Real name of who recorded the review")
-  // val recordedByDisplayName: String?,
 
   @Schema(description = "Audit information for the CSIP Review")
   val auditDetails: AuditDetailsRequest,
@@ -272,27 +265,12 @@ data class AttendeeRequest(
 @Schema(description = "Common Audit request details")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AuditDetailsRequest(
-  @Schema(description = "Date time record was created")
-  override var createDatetime: LocalDateTime,
-  @Schema(description = "Username of person that created the record (might also be a system) ")
-  override var createUsername: String,
-//  @Schema(description = "Real name of person that created the record (might by null for system users)")
-  // override var createdByDisplayName: String?,
+  @Schema(description = "Username of person that created the record (might also be a system)", required = true)
+  val createUsername: String,
 
   @Schema(description = "Username of person that last modified the record (might also be a system)")
-  override var modifyUserId: String? = null,
-//  @Schema(description = "Real name of person that modified the record (might by null for system users)")
-//  override var modifyDisplayName: String?,
+  val modifyUsername: String? = null,
+
   @Schema(description = "Date time record was last modified")
-  override var modifyDatetime: LocalDateTime? = null,
-) : AuditDetails
-
-interface AuditDetails {
-  var createDatetime: LocalDateTime
-  var createUsername: String
-  // var createdByDisplayName: String?
-
-  var modifyDatetime: LocalDateTime?
-  var modifyUserId: String?
-//  var modifyDisplayName: String?
-}
+  val modifyDatetime: LocalDateTime? = null,
+)

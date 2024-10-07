@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -42,13 +43,16 @@ class CSIPFactor(
       ), JoinColumnOrFormula(column = JoinColumn(name = "CSIP_FACTOR", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val type: CSIPFactorType,
+  var type: CSIPFactorType,
 
   @Column(name = "COMMENTS")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @Column
   var auditModuleName: String? = null,
+
+  @Column(name = "CREATE_USER_ID")
+  var createUsername: String,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
@@ -69,9 +73,6 @@ class CSIPFactor(
   // ---- NOT MAPPED columns ---- //
   // All AUDIT data except auditModuleName
 ) {
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
