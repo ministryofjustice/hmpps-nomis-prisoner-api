@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.csip
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -40,9 +39,6 @@ data class UpsertCSIPRequest(
   val staffAssaulted: Boolean = false,
   @Schema(description = "If assaulted, the staff member name")
   val staffAssaultedName: String? = null,
-
-  @Schema(description = "Audit detail info")
-  val auditDetails: AuditDetailsRequest,
 
   @Schema(description = "Originating Prison Id")
   val prisonCodeWhenRecorded: String? = null,
@@ -111,15 +107,14 @@ data class SaferCustodyScreeningRequest(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CSIPFactorRequest(
-  @Schema(description = "Factor type id")
+  @Schema(description = "Contributory Factor id")
   val id: Long? = null,
+  @Schema(description = "DPS Factor id")
+  val dpsId: String,
   @Schema(description = "Contributory Factor")
   val typeCode: String,
   @Schema(description = "Factor comment")
   val comment: String?,
-
-  @Schema(description = "Audit information for the CSIP Factor")
-  val auditDetails: AuditDetailsRequest,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -142,8 +137,10 @@ data class InvestigationDetailRequest(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InterviewDetailRequest(
-  // @Schema(description = "Interview Id")
-  // val id: Long,
+  @Schema(description = "Interview Id")
+  val id: Long? = null,
+  @Schema(description = "DPS Interview id")
+  val dpsId: String,
   @Schema(description = "Person being interviewed")
   val interviewee: String,
   @Schema(description = "date of interview")
@@ -152,10 +149,6 @@ data class InterviewDetailRequest(
   val roleCode: String,
   @Schema(description = "Additional data regarding the interview")
   val comments: String? = null,
-
-  @Schema(description = "Audit information for the Interview")
-  val auditDetails: AuditDetailsRequest,
-
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -192,29 +185,30 @@ data class ActionsRequest(
 data class PlanRequest(
   @Schema(description = "Plan Id")
   val id: Long? = null,
+  @Schema(description = "DPS Plan/IdentifiedNeed id")
+  val dpsId: String,
   @Schema(description = "Details of the need", required = true)
   val identifiedNeed: String,
   @Schema(description = "Intervention plan", required = true)
   val intervention: String,
   @Schema(description = "Information regarding progression of plan")
   val progression: String?,
-  @Schema(description = "The person reporting - free text")
-  val referredBy: String?,
+  @Schema(description = "The person reporting - free text", required = true)
+  val referredBy: String,
   @Schema(description = "When created")
   val createdDate: LocalDate,
   @Schema(description = "Target date of plan", required = true)
   val targetDate: LocalDate,
   @Schema(description = "Plan closed date")
-  val closedDate: LocalDate?,
-
-  @Schema(description = "Audit information for the CSIP Plan")
-  val auditDetails: AuditDetailsRequest,
+  val closedDate: LocalDate? = null,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ReviewRequest(
   @Schema(description = "Review Id")
   val id: Long? = null,
+  @Schema(description = "DPS Review id")
+  val dpsId: String,
   // @Schema(description = "Sequence number")
   // val reviewSequence: Int,
   @Schema(description = "Attendees to the review")
@@ -239,16 +233,14 @@ data class ReviewRequest(
   val recordedDate: LocalDate,
   @Schema(description = "The username of the person who recorded the review")
   val recordedBy: String,
-
-  @Schema(description = "Audit information for the CSIP Review")
-  val auditDetails: AuditDetailsRequest,
-
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AttendeeRequest(
-  // @Schema(description = "Review Attendee/Contributor Id")
-  // val id: Long,
+  @Schema(description = "Review Attendee/Contributor Id")
+  val id: Long? = null,
+  @Schema(description = "DPS Attendee id")
+  val dpsId: String,
   @Schema(description = "Name of attendee/contributor")
   val name: String?,
   @Schema(description = "Role of attendee/contributor")
@@ -257,20 +249,4 @@ data class AttendeeRequest(
   val attended: Boolean,
   @Schema(description = "Contribution")
   val contribution: String? = null,
-
-  @Schema(description = "Audit information for the CSIP Attendee")
-  val auditDetails: AuditDetailsRequest,
-)
-
-@Schema(description = "Common Audit request details")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class AuditDetailsRequest(
-  @Schema(description = "Username of person that created the record (might also be a system)", required = true)
-  val createUsername: String,
-
-  @Schema(description = "Username of person that last modified the record (might also be a system)")
-  val modifyUsername: String? = null,
-
-  @Schema(description = "Date time record was last modified")
-  val modifyDatetime: LocalDateTime? = null,
 )

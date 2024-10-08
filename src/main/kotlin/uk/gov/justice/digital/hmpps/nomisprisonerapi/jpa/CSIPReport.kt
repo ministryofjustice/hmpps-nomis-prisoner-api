@@ -319,9 +319,6 @@ class CSIPReport(
   @Column
   var auditModuleName: String? = null,
 
-  @Column(name = "CREATE_USER_ID")
-  val createUsername: String,
-
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
   val createdByStaffUserAccount: StaffUserAccount? = null,
@@ -343,6 +340,10 @@ class CSIPReport(
   // INV_NAME VARCHAR2(100),  = all null in prod
   // All AUDIT data except auditModuleName
 ) {
+
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
