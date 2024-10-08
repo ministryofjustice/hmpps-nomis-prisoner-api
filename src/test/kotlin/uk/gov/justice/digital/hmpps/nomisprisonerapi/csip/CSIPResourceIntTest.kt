@@ -258,8 +258,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.serviceReferral").isEqualTo(false)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
         .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isEqualTo("FRED.JAMES")
-        .jsonPath("createdByDisplayName").isEqualTo("FRED JAMES")
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -290,8 +290,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("staffAssaulted").isEqualTo(true)
         .jsonPath("staffAssaultedName").isEqualTo("Assaulted Person")
         .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isEqualTo("FRED.JAMES")
-        .jsonPath("createdByDisplayName").isEqualTo("FRED JAMES")
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -357,9 +357,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
         .jsonPath("plans[0].createdDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
-        .jsonPath("plans[0].closedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("plans[0].closedDate").doesNotExist()
         .jsonPath("plans[0].createDateTime").isNotEmpty
-        .jsonPath("plans[0].createdBy").isNotEmpty
+        .jsonPath("plans[0].createdBy").isEqualTo("SA")
         .jsonPath("plans[0].createdByDisplayName").doesNotExist()
     }
 
@@ -703,10 +703,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }            }
+                "reportedDate": "2023-12-23"
+                }
             """.trimIndent(),
           )
           .exchange()
@@ -728,10 +726,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }            }
+                "reportedDate": "2023-12-23"
+                }
             """.trimIndent(),
           )
           .exchange()
@@ -755,10 +751,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }
+                "reportedDate": "2023-12-23"
               }
             """.trimIndent(),
           )
@@ -783,10 +776,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -810,10 +801,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }            }
+                "reportedDate": "2023-12-23"
+                }
             """.trimIndent(),
           )
           .exchange()
@@ -837,10 +826,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -864,10 +851,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }
+                "reportedDate": "2023-12-23"
               }
             """.trimIndent(),
           )
@@ -892,10 +876,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
-                "reportedBy": "Jane Reporter",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }
+                "reportedBy": "Jane Reporter"
               }
             """.trimIndent(),
           )
@@ -903,34 +884,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
             assertThat(it).contains("reportedDate")
-          }
-      }
-
-      @Test
-      fun `validation fails when create username is not present`() {
-        webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(
-            //language=JSON
-            """
-              {
-                "offenderNo": "A1234TT",
-                "incidentDate": "2023-12-23",
-                "typeCode": "INT",
-                "locationCode":"LIB",
-                "areaOfWorkCode":"EDU",
-                "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                }
-            }
-            """.trimIndent(),
-          )
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("createUsername")
           }
       }
 
@@ -949,11 +902,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -979,11 +929,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"XXX",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }
-}
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
 
           )
@@ -1010,10 +957,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"XXX",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "auditDetails": {
-                  "createUsername": "FRED.JAMES"
-                }
+                "reportedDate": "2023-12-23"
               }
             """.trimIndent(),
           )
@@ -1106,7 +1050,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.staffAssaulted).isEqualTo(true)
           assertThat(newCsip.staffAssaultedName).isEqualTo("Assaulted Person")
           assertThat(newCsip.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(newCsip.createUsername).isEqualTo("FRED.JAMES")
+          assertThat(newCsip.createUsername).isEqualTo("SA")
 
           assertThat(newCsip.caseManager).isEqualTo("A CaseManager")
           assertThat(newCsip.reasonForPlan).isEqualTo("helper")
@@ -1128,7 +1072,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.factors.size).isEqualTo(1)
           assertThat(newCsip.factors[0].type.code).isEqualTo("BUL")
           assertThat(newCsip.factors[0].comment).isEqualTo("Offender causes trouble")
-          assertThat(newCsip.factors[0].createUsername).isEqualTo("FRED.JAMES")
+          assertThat(newCsip.factors[0].createUsername).isEqualTo("SA")
 
           // SaferCustodyScreening
           assertThat(newCsip.outcome!!.code).isEqualTo("CUR")
@@ -1136,10 +1080,74 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.outcomeCreateDate).isEqualTo(LocalDate.parse("2024-04-08"))
           assertThat(newCsip.reasonForDecision).isEqualTo("There is a reason for the decision - it goes here")
 
-          // TODO check investigation & interviews
-          // TODO check decision and actions
-          // TODO check plans
-          // TODO check reviews
+          // Investigation & interviews
+          assertThat(newCsip.staffInvolved).isEqualTo("some people")
+          assertThat(newCsip.evidenceSecured).isEqualTo("A piece of pipe")
+          assertThat(newCsip.reasonOccurred).isEqualTo("bad behaviour")
+          assertThat(newCsip.usualBehaviour).isEqualTo("Good person")
+          assertThat(newCsip.trigger).isEqualTo("missed meal")
+          assertThat(newCsip.protectiveFactors).isEqualTo("ensure taken to canteen")
+          assertThat(newCsip.interviews.size).isEqualTo(0)
+
+          /* TODO ADD in when set
+          assertThat(newCsip.interviews[0].interviewee).isEqualTo("Bill Black")
+          assertThat(newCsip.interviews[0].interviewDate).isEqualTo("2024-06-06")
+          assertThat(newCsip.interviews[0].role.code).isEqualTo("WITNESS")
+          assertThat(newCsip.interviews[0].comments).isEqualTo("Saw a pipe in his hand")
+          assertThat(newCsip.interviews[0].createUsername).isEqualTo("FRED_ADM")
+           */
+
+          // Decision and actions
+          assertThat(newCsip.conclusion).isEqualTo("The end result")
+          assertThat(newCsip.decisionOutcome!!.code).isEqualTo("OPE")
+          assertThat(newCsip.signedOffRole!!.code).isEqualTo("CUSTMAN")
+          assertThat(newCsip.recordedBy).isEqualTo("FRED.JAMES")
+          assertThat(newCsip.recordedDate).isEqualTo(LocalDate.parse("2024-08-12"))
+          assertThat(newCsip.nextSteps).isEqualTo("provide help")
+          assertThat(newCsip.otherDetails).isEqualTo("Support and assistance needed")
+
+          assertThat(newCsip.openCSIPAlert).isEqualTo(true)
+          assertThat(newCsip.nonAssociationsUpdated).isEqualTo(false)
+          assertThat(newCsip.observationBook).isEqualTo(true)
+          assertThat(newCsip.unitOrCellMove).isEqualTo(true)
+          assertThat(newCsip.csraOrRsraReview).isEqualTo(false)
+          assertThat(newCsip.serviceReferral).isEqualTo(true)
+          assertThat(newCsip.simReferral).isEqualTo(false)
+
+          // Plans
+          assertThat(newCsip.plans.size).isEqualTo(1)
+          assertThat(newCsip.plans[0].identifiedNeed).isEqualTo("they need help")
+          assertThat(newCsip.plans[0].intervention).isEqualTo("dd")
+          assertThat(newCsip.plans[0].progression).isEqualTo("there was some improvement")
+          assertThat(newCsip.plans[0].referredBy).isEqualTo("Jason")
+          assertThat(newCsip.plans[0].targetDate).isEqualTo(LocalDate.parse("2024-08-20"))
+          assertThat(newCsip.plans[0].closedDate).isEqualTo(LocalDate.parse("2024-04-17"))
+          assertThat(newCsip.plans[0].createDate).isEqualTo(LocalDate.parse("2024-10-08"))
+          assertThat(newCsip.plans[0].createUsername).isEqualTo("SA")
+
+          // Check reviews
+          // TODO Add in when set
+          assertThat(newCsip.reviews.size).isEqualTo(0)
+          /*
+          assertThat(newCsip.reviews[0].remainOnCSIP).isEqualTo(true)
+          assertThat(newCsip.reviews[0].csipUpdated).isEqualTo(false)
+          assertThat(newCsip.reviews[0].caseNote).isEqualTo(false)
+          assertThat(newCsip.reviews[0].closeCSIP).isEqualTo(true)
+          assertThat(newCsip.reviews[0].peopleInformed).isEqualTo(false)
+          assertThat(newCsip.reviews[0].summary).isEqualTo("More help needed")
+          assertThat(newCsip.reviews[0].nextReviewDate).isEqualTo( LocalDate.parse("2024-08-01"))
+          assertThat(newCsip.reviews[0].closeDate).isEqualTo(LocalDate.parse("2024-04-16"))
+          assertThat(newCsip.reviews[0].recordedUser).isEqualTo("FRED.JAMES")
+          assertThat(newCsip.reviews[0].recordedDate).isEqualTo(LocalDate.parse("2024-04-01"))
+
+          // Check attendees
+          assertThat(newCsip.reviews[0].attendees.size).isEqualTo(0)
+          assertThat(newCsip.reviews[0].attendees[0].name).isEqualTo("sam jones")
+          assertThat(newCsip.reviews[0].attendees[0].role).isEqualTo("person")
+          assertThat(newCsip.reviews[0].attendees[0].attended).isEqualTo(true)
+          assertThat(newCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
+
+           */
         }
       }
     }
@@ -1165,7 +1173,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               areaOfWorkCode = "KIT",
               reportedBy = "Jill Reporter",
               reportedDate = LocalDate.parse("2024-05-12"),
-              auditDetails = auditDetailsRequest,
             ),
           )
           .exchange()
@@ -1178,9 +1185,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private val auditDetailsRequest = AuditDetailsRequest(
-    createUsername = "FRED.JAMES",
-  )
   private fun createUpsertCSIPRequestMinimalData(csipReportId: Long? = null) =
     UpsertCSIPRequest(
       id = csipReportId,
@@ -1191,7 +1195,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       areaOfWorkCode = "KIT",
       reportedBy = "Jill Reporter",
       reportedDate = LocalDate.parse("2024-05-12"),
-      auditDetails = auditDetailsRequest,
     )
 
   private fun createUpsertCSIPRequest() =
@@ -1205,7 +1208,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       areaOfWorkCode = "EDU",
       reportedBy = "Jane Reporter",
       reportedDate = LocalDate.now(),
-      auditDetails = auditDetailsRequest,
       logNumber = "RNI-001",
       proActiveReferral = false,
       staffAssaulted = true,
@@ -1222,10 +1224,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     )
 
   private val factorRequest = CSIPFactorRequest(
-    //   id = TODO(),
+    id = null,
+    dpsId = "00998877",
     typeCode = "BUL",
     comment = "Offender causes trouble",
-    auditDetails = auditDetailsRequest,
   )
   private val reportDetailRequest = UpsertReportDetailsRequest(
     involvementCode = "PER",
@@ -1240,11 +1242,11 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   )
   private val interviewRequest = InterviewDetailRequest(
     // id = 3343,
+    dpsId = "00998877",
     interviewee = "Bill Black",
     date = LocalDate.parse("2024-06-06"),
     roleCode = "WITNESS",
     comments = "Saw a pipe in his hand",
-    auditDetails = auditDetailsRequest,
   )
 
   private val investigationDetailRequest = InvestigationDetailRequest(
@@ -1284,6 +1286,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   )
   private val planRequest = PlanRequest(
     // id = TODO(),
+    dpsId = "00998877",
     identifiedNeed = "they need help",
     intervention = "dd",
     progression = "there was some improvement",
@@ -1291,18 +1294,18 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     createdDate = LocalDate.parse("2024-04-16"),
     targetDate = LocalDate.parse("2024-08-20"),
     closedDate = LocalDate.parse("2024-04-17"),
-    auditDetails = auditDetailsRequest,
   )
   private val attendeeRequest = AttendeeRequest(
     // id = TODO(),
-    name = "same jones",
+    dpsId = "00998877",
+    name = "sam jones",
     role = "person",
     attended = true,
     contribution = "talked about things",
-    auditDetails = auditDetailsRequest,
   )
   private val reviewRequest = ReviewRequest(
     // id = TODO(),
+    dpsId = "00998877",
     remainOnCSIP = true,
     csipUpdated = false,
     caseNote = false,
@@ -1315,6 +1318,5 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     // reviewSequence = TODO(),
     attendees = listOf(attendeeRequest),
     recordedDate = LocalDate.parse("2024-04-01"),
-    auditDetails = auditDetailsRequest,
   )
 }
