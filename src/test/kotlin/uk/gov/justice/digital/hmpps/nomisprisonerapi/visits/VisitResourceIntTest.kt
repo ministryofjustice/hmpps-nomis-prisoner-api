@@ -356,6 +356,40 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    internal fun `will create visit with outcome marked as attended for primary visit record and all visitors`() {
+      val personIds: String = threePeople.map { it.id }.joinToString(",")
+      val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "visitType"         : "SCON",
+            "startDateTime"     : "2021-11-04T12:05",
+            "endTime"           : "13:04",
+            "prisonId"          : "$PRISON_ID",
+            "visitorPersonIds"  : [$personIds],
+            "issueDate"         : "2021-11-02",
+            "visitComment"      : "VSIP Ref: asd-fff-ddd",
+            "visitOrderComment" : "VSIP Order Ref: asd-fff-ddd",
+            "room"              : "Main visit room",
+            "openClosedStatus"  : "OPEN"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(CreateVisitResponse::class.java)
+        .returnResult().responseBody
+      assertThat(response?.visitId).isGreaterThan(0)
+
+      // Spot check that the database has been populated.
+      val visit = repository.getVisit(response?.visitId)
+
+      assertThat(visit.visitors.map { it.eventOutcome?.code }).containsOnly("ATT").hasSize(4)
+    }
+
+    @Test
     internal fun `room description defaults to VISITS when no visit parent area exists`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
