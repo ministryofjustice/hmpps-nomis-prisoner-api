@@ -174,8 +174,6 @@ class SentencingService(
                   offence = lookupOffence(offenderChargeRequest.offenceCode),
                   offenceDate = offenderChargeRequest.offenceDate,
                   offenceEndDate = offenderChargeRequest.offenceEndDate,
-                  // OCDCCASE offences taken into consideration
-                  offencesCount = offenderChargeRequest.offencesCount,
                   resultCode1 = resultCode,
                   resultCode1Indicator = resultCode?.dispositionCode,
                   chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) },
@@ -384,7 +382,6 @@ class SentencingService(
             offenceDate = offenderCharge.offenceDate,
             offenceEndDate = offenderCharge.offenceEndDate,
             mostSeriousFlag = offenderCharge.mostSeriousFlag,
-            offencesCount = offenderCharge.offencesCount,
             resultCode1 = resultCode,
             resultCode1Indicator = resultCode?.dispositionCode,
           ),
@@ -666,7 +663,6 @@ class SentencingService(
         val resultCode = offenderChargeRequest.resultCode1?.let { rs -> lookupOffenceResultCode(rs) }
         courtEventCharge.offenceDate = offenderChargeRequest.offenceDate
         courtEventCharge.offenceEndDate = offenderChargeRequest.offenceEndDate
-        courtEventCharge.offencesCount = offenderChargeRequest.offencesCount
         courtEventCharge.resultCode1 = resultCode
         courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
         if (courtAppearance.isLatestAppearance()) {
@@ -692,7 +688,6 @@ class SentencingService(
         OffenderCharge(
           offenceDate = newCharge.offenceDate,
           offenceEndDate = newCharge.offenceEndDate,
-          offencesCount = newCharge.offencesCount,
           offenderBooking = offenderBooking,
           resultCode1 = resultCode,
           resultCode1Indicator = resultCode?.dispositionCode,
@@ -706,7 +701,6 @@ class SentencingService(
           id = CourtEventChargeId(offenderCharge = offenderCharge, courtEvent = courtAppearance),
           offenceDate = newCharge.offenceDate,
           offenceEndDate = newCharge.offenceEndDate,
-          offencesCount = newCharge.offencesCount,
           resultCode1 = resultCode,
           resultCode1Indicator = resultCode?.dispositionCode,
         ).let {
@@ -729,7 +723,6 @@ class SentencingService(
       resultCode1 = resultCode
       resultCode1Indicator = resultCode?.dispositionCode
       chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
-      offencesCount = offenderChargeRequest.offencesCount
     }
   }
 
