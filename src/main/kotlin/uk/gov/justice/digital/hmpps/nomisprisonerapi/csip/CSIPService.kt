@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -64,7 +63,7 @@ class CSIPService(
         UpsertCSIPResponse(
           nomisCSIPReportId = it.id,
           offenderNo = it.offenderBooking.offender.nomsId,
-          created = toCreate,
+          mappings = it.identifyNewMappings(request),
         )
       }.also {
         telemetryClient.trackEvent(
@@ -72,7 +71,6 @@ class CSIPService(
           mapOf(
             "nomisCSIPReportId" to it.nomisCSIPReportId,
             "offenderNo" to request.offenderNo,
-            "upsert" to if (toCreate) "created" else "updated",
           ),
         )
       }
@@ -134,19 +132,20 @@ class CSIPService(
       ?: log.info("CSIP deletion request for: $csipId ignored. CSIP does not exist")
   }
 
-  @Audit
   private fun UpsertCSIPRequest.toCreateCSIPReport(): CSIPReport {
     val latestBooking = findLatestBooking(offenderNo)
     return CSIPReport(
       offenderBooking = latestBooking,
       originalAgencyId = prisonCodeWhenRecorded,
       rootOffender = latestBooking.rootOffender,
+
       incidentDate = incidentDate,
       incidentTime = incidentTime?.atDate(incidentDate),
 
       type = lookupIncidentType(typeCode),
       location = lookupLocation(locationCode),
       areaOfWork = lookupAreaOfWork(areaOfWorkCode),
+
       reportedBy = reportedBy,
       reportedDate = reportedDate,
       logNumber = logNumber,
@@ -157,6 +156,24 @@ class CSIPService(
       addNonMandatoryFields(this@toCreateCSIPReport)
     }
   }
+
+  private fun updateCSIPReport(request: UpsertCSIPRequest): CSIPReport =
+    csipRepository.findByIdOrNull(request.id!!)?.apply {
+      incidentDate = request.incidentDate
+      incidentTime = request.incidentTime?.atDate(incidentDate)
+
+      type = lookupIncidentType(request.typeCode)
+      location = lookupLocation(request.locationCode)
+      areaOfWork = lookupAreaOfWork(request.areaOfWorkCode)
+
+      reportedBy = request.reportedBy
+      reportedDate = request.reportedDate
+      logNumber = request.logNumber
+      proActiveReferral = request.proActiveReferral
+      staffAssaulted = request.staffAssaulted
+      staffAssaultedName = request.staffAssaultedName
+      addNonMandatoryFields(request)
+    } ?: throw NotFoundException("CSIP Report with id=${request.id} does not exist")
 
   private fun CSIPReport.addNonMandatoryFields(currentRequest: UpsertCSIPRequest) {
     // TODO Add release date -> Confirmed Release Date (from External Movements)
@@ -202,6 +219,7 @@ class CSIPService(
   }
 
   private fun CSIPReport.addOrUpdateFactors(factorRequests: List<CSIPFactorRequest>) {
+    val newFactorList = mutableListOf<CSIPFactor>()
     factorRequests.forEach { factorRequest ->
       // Factor request has an id so find the equivalent in the report
       factorRequest.id?.let {
@@ -209,6 +227,7 @@ class CSIPService(
           ?.also {
             it.type = lookupFactorType(factorRequest.typeCode)
             it.comment = factorRequest.comment
+            newFactorList.add(it)
           }
           ?: {
             throw BadDataException("Attempting to update csip report $id with a csip factor id (${factorRequest.id}) that does not exist")
@@ -219,9 +238,11 @@ class CSIPService(
           type = lookupFactorType(factorRequest.typeCode),
           comment = factorRequest.comment,
         )
-        factors.add(factor)
+        newFactorList.add(factor)
       }
     }
+    factors.clear()
+    factors.addAll(newFactorList)
   }
 
   private fun CSIPReport.addOrUpdatePlans(planRequests: List<PlanRequest>) {
@@ -272,21 +293,6 @@ class CSIPService(
     simReferral = decision.actions.simReferral
   }
 
-  private fun updateCSIPReport(request: UpsertCSIPRequest): CSIPReport =
-    csipRepository.findByIdOrNull(request.id!!)?.apply {
-      incidentDate = request.incidentDate
-      incidentTime = request.incidentTime?.atDate(incidentDate)
-      type = lookupIncidentType(request.typeCode)
-      location = lookupLocation(request.locationCode)
-      areaOfWork = lookupAreaOfWork(request.areaOfWorkCode)
-      reportedBy = request.reportedBy
-      reportedDate = request.reportedDate
-      logNumber = request.logNumber
-      proActiveReferral = request.proActiveReferral
-      staffAssaulted = request.staffAssaulted
-      staffAssaultedName = request.staffAssaultedName
-    } ?: throw NotFoundException("CSIP Report with id=${request.id} does not exist")
-
   fun lookupAreaOfWork(code: String) = areaOfWorkRepository.findByIdOrNull(CSIPAreaOfWork.pk(code))
     ?: throw BadDataException("Area of work type $code not found")
   fun lookupIncidentType(code: String) = typeRepository.findByIdOrNull(CSIPIncidentType.pk(code))
@@ -301,4 +307,25 @@ class CSIPService(
     ?: throw BadDataException("Signed off role type $code not found")
   fun lookupFactorType(code: String) = factorRepository.findByIdOrNull(CSIPFactorType.pk(code))
     ?: throw BadDataException("Factor type $code not found")
+}
+
+fun CSIPReport.identifyNewMappings(request: UpsertCSIPRequest) =
+  identifyNewFactorMappings(request)
+
+fun CSIPReport.identifyNewFactorMappings(request: UpsertCSIPRequest): List<ResponseMapping> {
+  val factorMappings = mutableListOf<ResponseMapping>()
+  request.reportDetailRequest?.factors?.let {
+    request.reportDetailRequest.factors.onEachIndexed { index, requestFactor ->
+      requestFactor.id ?: let {
+        factorMappings.add(
+          ResponseMapping(
+            ResponseMapping.Component.FACTOR,
+            this.factors[index].id,
+            requestFactor.dpsId,
+          ),
+        )
+      }
+    }
+  }
+  return factorMappings
 }
