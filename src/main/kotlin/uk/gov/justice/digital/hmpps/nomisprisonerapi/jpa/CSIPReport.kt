@@ -132,35 +132,35 @@ class CSIPReport(
       ),
     ],
   )
-  val involvement: CSIPInvolvement? = null,
+  var involvement: CSIPInvolvement? = null,
 
   @Column(name = "CDR_CONCERN_DESCRIPTION")
-  val concernDescription: String? = null,
+  var concernDescription: String? = null,
 
   @OneToMany(mappedBy = "csipReport", cascade = [CascadeType.ALL], orphanRemoval = true)
   val factors: MutableList<CSIPFactor> = mutableListOf(),
 
   @Column(name = "INV_KNOWN_REASONS")
-  val knownReasons: String? = null,
+  var knownReasons: String? = null,
 
   @Column(name = "CDR_OTHER_INFORMATION")
-  val otherInformation: String? = null,
+  var otherInformation: String? = null,
 
   @Column(name = "CDR_SENT_DENT")
   @Convert(converter = YesNoConverter::class)
-  val saferCustodyTeamInformed: Boolean = false,
+  var saferCustodyTeamInformed: Boolean = false,
   @Column(name = "REFERRAL_COMPLETE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val referralComplete: Boolean = false,
+  var referralComplete: Boolean = false,
   @Column(name = "REFERRAL_COMPLETED_BY")
-  val referralCompletedBy: String? = null,
+  var referralCompletedBy: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REFERRAL_COMPLETED_BY", insertable = false, updatable = false)
-  val referralCompletedByStaffUserAccount: StaffUserAccount? = null,
+  var referralCompletedByStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "REFERRAL_COMPLETED_DATE")
-  val referralCompletedDate: LocalDate? = null,
+  var referralCompletedDate: LocalDate? = null,
 
   // -------------------- Safer Custody Screening -----------------------//
 
@@ -319,9 +319,6 @@ class CSIPReport(
   @Column
   var auditModuleName: String? = null,
 
-  @Column(name = "CREATE_USER_ID")
-  val createUsername: String,
-
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
   val createdByStaffUserAccount: StaffUserAccount? = null,
@@ -343,6 +340,10 @@ class CSIPReport(
   // INV_NAME VARCHAR2(100),  = all null in prod
   // All AUDIT data except auditModuleName
 ) {
+
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @Generated
+  lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated

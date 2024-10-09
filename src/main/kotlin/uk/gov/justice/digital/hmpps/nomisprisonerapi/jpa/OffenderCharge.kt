@@ -59,7 +59,7 @@ class OffenderCharge(
   var offence: Offence,
 
   @Column(name = "NO_OF_OFFENCES")
-  var offencesCount: Int? = 0,
+  var offencesCount: Int? = null,
 
   var offenceDate: LocalDate? = null,
 

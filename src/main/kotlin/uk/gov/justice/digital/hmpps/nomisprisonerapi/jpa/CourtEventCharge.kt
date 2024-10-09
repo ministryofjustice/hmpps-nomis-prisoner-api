@@ -41,7 +41,7 @@ class CourtEventCharge(
 
   // offences taken into consideration button on OCDCCASE
   @Column(name = "NO_OF_OFFENCES")
-  var offencesCount: Int? = 0,
+  var offencesCount: Int? = null,
 
   var offenceDate: LocalDate? = null,
 

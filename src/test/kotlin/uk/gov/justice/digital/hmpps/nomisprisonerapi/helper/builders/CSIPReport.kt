@@ -75,6 +75,7 @@ interface CSIPReportDsl {
     intervention: String = "Support their work",
     progression: String? = null,
     referredBy: String = "Fred Bloggs",
+    targetDate: LocalDate = LocalDate.now(),
     dsl: CSIPPlanDsl.() -> Unit = {},
   ): CSIPPlan
 
@@ -211,7 +212,6 @@ class CSIPReportBuilder(
       reasonForPlan = planReason,
       firstCaseReviewDate = firstCaseReviewDate,
       logNumber = logNumber,
-      createUsername = createUsername,
     )
       .let { repository.save(it) }
       .also { csipReport = it }
@@ -287,6 +287,7 @@ class CSIPReportBuilder(
     intervention: String,
     progression: String?,
     referredBy: String,
+    targetDate: LocalDate,
     dsl: CSIPPlanDsl.() -> Unit,
   ): CSIPPlan = csipPlanBuilderFactory.builder()
     .let { builder ->
@@ -296,6 +297,7 @@ class CSIPReportBuilder(
         intervention = intervention,
         progression = progression,
         referredBy = referredBy,
+        targetDate = targetDate,
       )
         .also { csipReport.plans += it }
         .also { builder.apply(dsl) }

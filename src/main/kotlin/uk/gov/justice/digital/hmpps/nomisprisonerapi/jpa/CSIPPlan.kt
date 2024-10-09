@@ -30,25 +30,25 @@ class CSIPPlan(
   val csipReport: CSIPReport,
 
   @Column(name = "IDENTIFIED_NEED", nullable = false)
-  val identifiedNeed: String,
+  var identifiedNeed: String,
 
   @Column(name = "BY_WHOM", nullable = false)
-  val referredBy: String,
+  var referredBy: String,
 
   @Column(name = "CREATE_DATE", nullable = false)
   val createDate: LocalDate = LocalDate.now(),
 
   @Column(name = "TARGET_DATE", nullable = false)
-  val targetDate: LocalDate = LocalDate.now(),
+  var targetDate: LocalDate,
 
   @Column(name = "CLOSED_DATE")
-  val closedDate: LocalDate = LocalDate.now(),
+  var closedDate: LocalDate? = null,
 
   @Column(name = "INTERVENTION", nullable = false)
-  val intervention: String,
+  var intervention: String,
 
   @Column(name = "PROGRESSION")
-  val progression: String?,
+  var progression: String?,
 
   @Column
   var auditModuleName: String? = null,

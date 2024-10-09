@@ -164,7 +164,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
     } else {
       personRepository.findAllPersonIds(
         fromDate = personFilter.fromDate?.atStartOfDay(),
-        toDate = personFilter.toDate?.plusDays(1)?.atStartOfDay(),
+        toDate = personFilter.toDate?.atStartOfDay(),
         pageRequest,
       )
     }.map { PersonIdResponse(personId = it.personId) }

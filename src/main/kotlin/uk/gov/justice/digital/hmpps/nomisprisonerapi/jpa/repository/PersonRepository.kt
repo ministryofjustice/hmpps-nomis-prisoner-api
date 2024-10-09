@@ -30,8 +30,8 @@ interface PersonRepository :
         p.id as personId
       from Person p 
         where 
-          (:fromDate is null or p.createDatetime > :fromDate) and 
-          (:toDate is null or p.createDatetime < :toDate) 
+          (:fromDate is null or p.createDatetime >= :fromDate) and 
+          (:toDate is null or p.createDatetime <= :toDate) 
     """,
   )
   fun findAllPersonIds(

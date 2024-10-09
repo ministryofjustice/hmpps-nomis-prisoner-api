@@ -24,7 +24,11 @@ class OffenderCaseIdentifierPK(
   @JoinColumn(name = "CASE_ID", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   val courtCase: CourtCase,
-) : Serializable
+) : Serializable {
+  override fun toString(): String {
+    return "OffenderCaseIdentifierPK(identifierType='$identifierType', reference='$reference', courtCase=$courtCase)"
+  }
+}
 
 @Entity
 @Table(name = "OFFENDER_CASE_IDENTIFIERS")
@@ -33,8 +37,8 @@ class OffenderCaseIdentifier(
   val id: OffenderCaseIdentifierPK,
 ) {
 
-  fun isCaseInfoNumber(): Boolean {
-    return CaseIdentifierType.CASE_REFERENCE.equals(id.identifierType)
+  fun isDpsCaseInfoNumber(): Boolean {
+    return CaseIdentifierType.DPS_CASE_REFERENCE.equals(id.identifierType)
   }
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)

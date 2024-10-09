@@ -312,6 +312,188 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
       }
     }
 
+    @Nested
+    inner class PhysicalAttributesProfileDetails {
+      val today: LocalDateTime = LocalDateTime.now()
+      val yesterday: LocalDateTime = today.minusDays(1)
+
+      @Test
+      fun `should return profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday) {
+              profile {
+                detail(profileType = "FACE", profileCode = "ROUND")
+                detail(profileType = "BUILD", profileCode = "SLIM")
+                detail(profileType = "FACIAL_HAIR", profileCode = "CLEAN_SHAVEN")
+                detail(profileType = "HAIR", profileCode = "BLACK")
+                detail(profileType = "L_EYE_C", profileCode = "BLUE")
+                detail(profileType = "R_EYE_C", profileCode = "BROWN")
+                detail(profileType = "SHOESIZE", profileCode = "8.5")
+              }
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(offenderNo).isEqualTo("A1234AA")
+              assertThat(face).isEqualTo("ROUND")
+              assertThat(build).isEqualTo("SLIM")
+              assertThat(facialHair).isEqualTo("CLEAN_SHAVEN")
+              assertThat(hair).isEqualTo("BLACK")
+              assertThat(leftEyeColour).isEqualTo("BLUE")
+              assertThat(rightEyeColour).isEqualTo("BROWN")
+              assertThat(shoeSize).isEqualTo("8.5")
+            }
+          }
+      }
+
+      @Test
+      fun `should return nulls if no profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(face).isNull()
+              assertThat(build).isNull()
+              assertThat(facialHair).isNull()
+              assertThat(hair).isNull()
+              assertThat(leftEyeColour).isNull()
+              assertThat(rightEyeColour).isNull()
+              assertThat(shoeSize).isNull()
+            }
+          }
+      }
+
+      @Test
+      fun `should return first profile sequence from active booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              profile(sequence = 1) {
+                detail(profileType = "FACE", profileCode = "ROUND")
+              }
+              profile(sequence = 2) {
+                detail(profileType = "FACE", profileCode = "SQUARE")
+              }
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(face).isEqualTo("ROUND")
+            }
+          }
+      }
+
+      @Test
+      fun `should return first profile sequence from active booking even if not seq=1`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              profile(sequence = 2) {
+                detail(profileType = "FACE", profileCode = "ROUND")
+              }
+              profile(sequence = 3) {
+                detail(profileType = "FACE", profileCode = "SQUARE")
+              }
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(face).isEqualTo("ROUND")
+            }
+          }
+      }
+
+      @Test
+      fun `should return profile details from latest booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile {
+                detail(profileType = "FACE", profileCode = "ROUND")
+              }
+            }
+            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              profile {
+                detail(profileType = "FACE", profileCode = "SQUARE")
+              }
+              release(date = yesterday)
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(face).isEqualTo("ROUND")
+            }
+          }
+      }
+
+      @Test
+      fun `should return null if no profile details on active booking`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              // no profile details on active booking
+            }
+            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              profile {
+                detail(profileType = "FACE", profileCode = "SQUARE")
+              }
+              release(date = yesterday)
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(face).isNull()
+            }
+          }
+      }
+
+      @Test
+      fun `should return profile details from lowest booking sequence if multiple bookings have null end date`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              profile {
+                detail(profileType = "FACE", profileCode = "SQUARE")
+              }
+            }
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile {
+                detail(profileType = "FACE", profileCode = "ROUND")
+              }
+            }
+          }
+        }
+
+        webTestClient.getReconciliationOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(face).isEqualTo("ROUND")
+            }
+          }
+      }
+    }
+
     fun WebTestClient.getReconciliationOk(offenderNo: String) =
       this.get().uri("/prisoners/$offenderNo/prison-person/reconciliation")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
