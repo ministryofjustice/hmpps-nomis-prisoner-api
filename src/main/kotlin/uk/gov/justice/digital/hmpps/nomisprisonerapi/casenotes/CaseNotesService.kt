@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.WorkRepository
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -30,6 +31,7 @@ class CaseNotesService(
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val taskTypeRepository: ReferenceCodeRepository<TaskType>,
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType>,
+  private val workRepository: WorkRepository,
 ) {
   private val seeDps = "... see DPS for full text"
   private val amendmentDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
@@ -60,7 +62,7 @@ class CaseNotesService(
     val caseNoteSubType = taskSubTypeRepository.findByIdOrNull(TaskSubType.pk(request.caseNoteSubType))
       ?: throw BadDataException("CaseNote caseNoteSubType ${request.caseNoteSubType} is not valid")
 
-    // validateTypes(caseNoteType, caseNoteSubType)
+    validateTypes(caseNoteType, caseNoteSubType)
 
     val staffUserAccount =
       staffUserAccountRepository.findByUsername(request.authorUsername)
@@ -176,42 +178,8 @@ class CaseNotesService(
   }
 
   private fun validateTypes(type: TaskType, subType: TaskSubType) {
-    if (subType.parentCode != type.code) {
-      throw BadDataException("CaseNote (type,subtype)=(${type.code},${subType.code}) does not exist")
-    }
-    // TODO do we need to validate the user's caseload in table WORKS? see CaseNoteTypeSubTypeValidator in prison-api
-    /*
-        SELECT CL.CASELOAD_ID CASE_LOAD_ID,
-        CL.DESCRIPTION,
-        CL.CASELOAD_TYPE "TYPE",
-        CL.CASELOAD_FUNCTION
-        FROM CASELOADS CL JOIN STAFF_USER_ACCOUNTS SUA on CL.CASELOAD_ID = SUA.WORKING_CASELOAD_ID
-                WHERE SUA.USERNAME = :username
-     */
-
-    /*
-    SELECT WKS.WORK_TYPE CODE,
-        RC1.DOMAIN,
-        RC1.DESCRIPTION,
-        NULL PARENT_DOMAIN,
-        NULL PARENT_CODE,
-        'Y' ACTIVE_FLAG,
-        WKS.WORK_SUB_TYPE SUB_CODE,
-        RC2.DOMAIN SUB_DOMAIN,
-        RC2.DESCRIPTION SUB_DESCRIPTION,
-        'Y' SUB_ACTIVE_FLAG
-      FROM (SELECT W.WORK_TYPE,
-                   W.WORK_SUB_TYPE
-            FROM WORKS W
-            WHERE W.WORKFLOW_TYPE = 'CNOTE'
-              AND W.CASELOAD_TYPE IN ((:caseLoadType),'BOTH')
-          AND W.MANUAL_SELECT_FLAG = :active_flag
-          AND W.ACTIVE_FLAG = :active_flag) WKS
-        INNER JOIN REFERENCE_CODES RC1 ON RC1.CODE = WKS.WORK_TYPE AND RC1.DOMAIN = 'TASK_TYPE'
-        INNER JOIN REFERENCE_CODES RC2 ON RC2.CODE = WKS.WORK_SUB_TYPE AND RC2.DOMAIN = 'TASK_SUBTYPE'
-          AND COALESCE(RC2.PARENT_DOMAIN, 'TASK_TYPE') = 'TASK_TYPE'
-      ORDER BY WKS.WORK_TYPE, WKS.WORK_SUB_TYPE
-     */
+    workRepository.findByWorkflowTypeAndWorkTypeAndWorkSubType("CNOTE", type.code, subType.code)
+      ?: throw BadDataException("CNOTE (type,subtype)=(${type.code},${subType.code}) does not exist in the Works table")
   }
 
   internal fun reconstructText(request: UpdateCaseNoteRequest): String {
