@@ -29,12 +29,12 @@ interface CourtEventDsl {
   @CourtEventChargeDslMarker
   fun courtEventCharge(
     offenderCharge: OffenderCharge,
-    offencesCount: Int? = 1,
+    offencesCount: Int? = null,
     offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
     offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 5),
     plea: String? = "G",
-    propertyValue: BigDecimal? = BigDecimal(3.2),
-    totalPropertyValue: BigDecimal? = BigDecimal(10),
+    propertyValue: BigDecimal? = null,
+    totalPropertyValue: BigDecimal? = null,
     cjitCode1: String? = "cj1",
     cjitCode2: String? = "cj2",
     cjitCode3: String? = "cj3",

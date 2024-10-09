@@ -1304,7 +1304,6 @@ data class CreateCourtAppearanceRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderChargeRequest(
   val offenceCode: String,
-  val offencesCount: Int?,
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
@@ -1312,6 +1311,7 @@ data class OffenderChargeRequest(
   /*
   val plea: String?,
   val propertyValue: BigDecimal?,
+  val offencesCount: Long?,
   val totalPropertyValue: BigDecimal?,
   val cjitCode1: String?,
   val cjitCode2: String?,
@@ -1331,7 +1331,6 @@ data class OffenderChargeRequest(
 data class ExistingOffenderChargeRequest(
   val offenderChargeId: Long,
   val offenceCode: String,
-  val offencesCount: Int?,
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
