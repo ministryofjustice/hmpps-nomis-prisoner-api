@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventOutcome.Companion.ATT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.SCHEDULED_APPROVED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
@@ -430,6 +431,7 @@ class VisitService(
     visitDto: CreateVisitRequest,
   ) {
     val scheduledEventStatus = eventStatusRepository.findById(SCHEDULED_APPROVED).orElseThrow()
+    val eventOutcome = eventOutcomeRepository.findById(ATT).orElseThrow()
 
     //  Add dummy visitor row for the offender_booking as is required by the P-Nomis view
 
@@ -439,13 +441,14 @@ class VisitService(
         offenderBooking = offenderBooking,
         eventStatus = scheduledEventStatus,
         eventId = getNextEvent(),
+        eventOutcome = eventOutcome,
       ),
     )
 
     visitDto.visitorPersonIds.forEach {
       val person = personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist"))
       visit.visitors.add(
-        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus),
+        VisitVisitor(visit = visit, person = person, eventStatus = scheduledEventStatus, eventOutcome = eventOutcome),
       )
     }
   }
