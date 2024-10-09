@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import java.time.LocalDate
 
 @DslMarker
 annotation class CSIPPlanDslMarker
@@ -22,6 +23,7 @@ class CSIPPlanBuilder : CSIPPlanDsl {
     intervention: String,
     progression: String?,
     referredBy: String,
+    targetDate: LocalDate,
   ): CSIPPlan =
     CSIPPlan(
       csipReport = csipReport,
@@ -29,5 +31,6 @@ class CSIPPlanBuilder : CSIPPlanDsl {
       intervention = intervention,
       progression = progression,
       referredBy = referredBy,
+      targetDate = targetDate,
     )
 }

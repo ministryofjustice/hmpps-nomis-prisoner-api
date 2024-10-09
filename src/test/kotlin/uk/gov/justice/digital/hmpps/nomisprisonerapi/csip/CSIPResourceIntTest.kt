@@ -1,23 +1,35 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.csip
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit.SECONDS
 
 class CSIPResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var csipRepository: CSIPReportRepository
+
+  @Autowired
+  private lateinit var offenderBookingRepository: OffenderBookingRepository
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -246,8 +258,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.serviceReferral").isEqualTo(false)
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
         .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isEqualTo("FRED.JAMES")
-        .jsonPath("createdByDisplayName").isEqualTo("FRED JAMES")
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -278,8 +290,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("staffAssaulted").isEqualTo(true)
         .jsonPath("staffAssaultedName").isEqualTo("Assaulted Person")
         .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isEqualTo("FRED.JAMES")
-        .jsonPath("createdByDisplayName").isEqualTo("FRED JAMES")
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -345,9 +357,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
         .jsonPath("plans[0].createdDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
-        .jsonPath("plans[0].closedDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("plans[0].closedDate").doesNotExist()
         .jsonPath("plans[0].createDateTime").isNotEmpty
-        .jsonPath("plans[0].createdBy").isNotEmpty
+        .jsonPath("plans[0].createdBy").isEqualTo("SA")
         .jsonPath("plans[0].createdByDisplayName").doesNotExist()
     }
 
@@ -637,19 +649,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   @DisplayName("PUT /csip create")
   @Nested
   inner class CreateCSIP {
-    private val validCSIP = UpsertCSIPRequest(
-      offenderNo = "A1234TT",
-      incidentDate = LocalDate.parse("2023-12-23"),
-      typeCode = "INT",
-      locationCode = "LIB",
-      areaOfWorkCode = "EDU",
-      reportedBy = "Jane Reporter",
-      reportedDate = LocalDate.now(),
-      createUsername = "FRED.JAMES",
-    )
 
     @Nested
     inner class Security {
+      private val validCSIP = createUpsertCSIPRequestMinimalData()
 
       @Test
       fun `access forbidden when no role`() {
@@ -700,9 +703,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+                }
             """.trimIndent(),
           )
           .exchange()
@@ -724,9 +726,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+                }
             """.trimIndent(),
           )
           .exchange()
@@ -750,9 +751,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -776,9 +776,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -802,9 +801,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+                }
             """.trimIndent(),
           )
           .exchange()
@@ -828,9 +826,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -854,9 +851,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -880,41 +876,14 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "typeCode": "INT",
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
-                "reportedBy": "Jane Reporter",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedBy": "Jane Reporter"
+              }
             """.trimIndent(),
           )
           .exchange()
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
             assertThat(it).contains("reportedDate")
-          }
-      }
-
-      @Test
-      fun `validation fails when create username is not present`() {
-        webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(
-            //language=JSON
-            """
-              {
-                "offenderNo": "A1234TT",
-                "incidentDate": "2023-12-23",
-                "typeCode": "INT",
-                "locationCode":"LIB",
-                "areaOfWorkCode":"EDU",
-                "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23"
-            }
-            """.trimIndent(),
-          )
-          .exchange()
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("createUsername")
           }
       }
 
@@ -933,9 +902,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -961,9 +929,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"XXX",
                 "areaOfWorkCode":"EDU",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
 
           )
@@ -990,9 +957,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                 "locationCode":"LIB",
                 "areaOfWorkCode":"XXX",
                 "reportedBy": "Jane Reporter",
-                "reportedDate": "2023-12-23",
-                "createUsername": "FRED.JAMES"
-            }
+                "reportedDate": "2023-12-23"
+              }
             """.trimIndent(),
           )
           .exchange()
@@ -1005,8 +971,11 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
+
       @Test
       fun `creating a csip with minimal data will return basic data`() {
+        val validCSIP = createUpsertCSIPRequestMinimalData()
+
         webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1017,6 +986,169 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .jsonPath("nomisCSIPReportId").isNotEmpty
           .jsonPath("offenderNo").isEqualTo("A1234TT")
           .jsonPath("created").isEqualTo("true")
+      }
+
+      @Test
+      fun `creates a csip with full data`() {
+        val validCSIP = createUpsertCSIPRequest()
+
+        val createdCsip = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/csip/${createdCsip.nomisCSIPReportId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offender.offenderNo").isEqualTo("A1234TT")
+          .jsonPath("offender.firstName").isEqualTo("Bob")
+          .jsonPath("offender.lastName").isEqualTo("Smith")
+          .jsonPath("originalAgencyId").isEqualTo("RNI")
+          .jsonPath("logNumber").isEqualTo("RNI-001")
+          .jsonPath("bookingId").isEqualTo(csip1.offenderBooking.bookingId)
+      }
+
+      @Test
+      fun `creating a csip with full data will allow the data to be retrieved`() {
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest()
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val newCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          // TODO check release date
+          assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(newCsip.originalAgencyId).isEqualTo("RNI")
+          assertThat(newCsip.logNumber).isEqualTo("RNI-001")
+          assertThat(newCsip.offenderBooking.bookingId).isEqualTo(booking.bookingId)
+          assertThat(newCsip.incidentDate).isEqualTo(LocalDate.parse("2023-12-23"))
+          assertThat(newCsip.incidentTime).isEqualTo(LocalDate.parse("2023-12-23").atTime(LocalTime.parse("10:32:12")))
+          assertThat(newCsip.type.code).isEqualTo("INT")
+          assertThat(newCsip.type.description).isEqualTo("Intimidation")
+          assertThat(newCsip.location.code).isEqualTo("LIB")
+          assertThat(newCsip.location.description).isEqualTo("Library")
+          assertThat(newCsip.areaOfWork.code).isEqualTo("EDU")
+          assertThat(newCsip.areaOfWork.description).isEqualTo("Education")
+          assertThat(newCsip.reportedBy).isEqualTo("Jane Reporter")
+          assertThat(newCsip.reportedDate).isEqualTo(LocalDate.now().toString())
+          assertThat(newCsip.proActiveReferral).isEqualTo(false)
+          assertThat(newCsip.staffAssaulted).isEqualTo(true)
+          assertThat(newCsip.staffAssaultedName).isEqualTo("Assaulted Person")
+          assertThat(newCsip.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newCsip.createUsername).isEqualTo("SA")
+
+          assertThat(newCsip.caseManager).isEqualTo("A CaseManager")
+          assertThat(newCsip.reasonForPlan).isEqualTo("helper")
+          assertThat(newCsip.firstCaseReviewDate).isEqualTo(LocalDate.parse("2024-04-15"))
+          assertThat(newCsip.lastModifiedUsername).isNull()
+          assertThat(newCsip.lastModifiedDateTime).isNull()
+
+          // Request Details data
+          assertThat(newCsip.involvement!!.code).isEqualTo("PER")
+          assertThat(newCsip.concernDescription).isEqualTo("There was a worry about the offender")
+          assertThat(newCsip.knownReasons).isEqualTo("known reasons details go in here")
+          assertThat(newCsip.otherInformation).isEqualTo("other information goes in here")
+          assertThat(newCsip.saferCustodyTeamInformed).isEqualTo(false)
+          assertThat(newCsip.referralComplete).isEqualTo(true)
+          assertThat(newCsip.referralCompletedBy).isEqualTo("JIM_ADM")
+          assertThat(newCsip.referralCompletedDate).isEqualTo(LocalDate.parse("2024-04-04"))
+
+          // Contributory factors
+          assertThat(newCsip.factors.size).isEqualTo(1)
+          assertThat(newCsip.factors[0].type.code).isEqualTo("BUL")
+          assertThat(newCsip.factors[0].comment).isEqualTo("Offender causes trouble")
+          assertThat(newCsip.factors[0].createUsername).isEqualTo("SA")
+
+          // SaferCustodyScreening
+          assertThat(newCsip.outcome!!.code).isEqualTo("CUR")
+          assertThat(newCsip.outcomeCreateUsername).isEqualTo("FRED_ADM")
+          assertThat(newCsip.outcomeCreateDate).isEqualTo(LocalDate.parse("2024-04-08"))
+          assertThat(newCsip.reasonForDecision).isEqualTo("There is a reason for the decision - it goes here")
+
+          // Investigation & interviews
+          assertThat(newCsip.staffInvolved).isEqualTo("some people")
+          assertThat(newCsip.evidenceSecured).isEqualTo("A piece of pipe")
+          assertThat(newCsip.reasonOccurred).isEqualTo("bad behaviour")
+          assertThat(newCsip.usualBehaviour).isEqualTo("Good person")
+          assertThat(newCsip.trigger).isEqualTo("missed meal")
+          assertThat(newCsip.protectiveFactors).isEqualTo("ensure taken to canteen")
+          assertThat(newCsip.interviews.size).isEqualTo(0)
+
+          /* TODO ADD in when set
+          assertThat(newCsip.interviews[0].interviewee).isEqualTo("Bill Black")
+          assertThat(newCsip.interviews[0].interviewDate).isEqualTo("2024-06-06")
+          assertThat(newCsip.interviews[0].role.code).isEqualTo("WITNESS")
+          assertThat(newCsip.interviews[0].comments).isEqualTo("Saw a pipe in his hand")
+          assertThat(newCsip.interviews[0].createUsername).isEqualTo("FRED_ADM")
+           */
+
+          // Decision and actions
+          assertThat(newCsip.conclusion).isEqualTo("The end result")
+          assertThat(newCsip.decisionOutcome!!.code).isEqualTo("OPE")
+          assertThat(newCsip.signedOffRole!!.code).isEqualTo("CUSTMAN")
+          assertThat(newCsip.recordedBy).isEqualTo("FRED.JAMES")
+          assertThat(newCsip.recordedDate).isEqualTo(LocalDate.parse("2024-08-12"))
+          assertThat(newCsip.nextSteps).isEqualTo("provide help")
+          assertThat(newCsip.otherDetails).isEqualTo("Support and assistance needed")
+
+          assertThat(newCsip.openCSIPAlert).isEqualTo(true)
+          assertThat(newCsip.nonAssociationsUpdated).isEqualTo(false)
+          assertThat(newCsip.observationBook).isEqualTo(true)
+          assertThat(newCsip.unitOrCellMove).isEqualTo(true)
+          assertThat(newCsip.csraOrRsraReview).isEqualTo(false)
+          assertThat(newCsip.serviceReferral).isEqualTo(true)
+          assertThat(newCsip.simReferral).isEqualTo(false)
+
+          // Plans
+          assertThat(newCsip.plans.size).isEqualTo(1)
+          assertThat(newCsip.plans[0].identifiedNeed).isEqualTo("they need help")
+          assertThat(newCsip.plans[0].intervention).isEqualTo("dd")
+          assertThat(newCsip.plans[0].progression).isEqualTo("there was some improvement")
+          assertThat(newCsip.plans[0].referredBy).isEqualTo("Jason")
+          assertThat(newCsip.plans[0].targetDate).isEqualTo(LocalDate.parse("2024-08-20"))
+          assertThat(newCsip.plans[0].closedDate).isEqualTo(LocalDate.parse("2024-04-17"))
+          assertThat(newCsip.plans[0].createDate).isEqualTo(LocalDate.now())
+          assertThat(newCsip.plans[0].createUsername).isEqualTo("SA")
+
+          // Check reviews
+          // TODO Add in when set
+          assertThat(newCsip.reviews.size).isEqualTo(0)
+          /*
+          assertThat(newCsip.reviews[0].remainOnCSIP).isEqualTo(true)
+          assertThat(newCsip.reviews[0].csipUpdated).isEqualTo(false)
+          assertThat(newCsip.reviews[0].caseNote).isEqualTo(false)
+          assertThat(newCsip.reviews[0].closeCSIP).isEqualTo(true)
+          assertThat(newCsip.reviews[0].peopleInformed).isEqualTo(false)
+          assertThat(newCsip.reviews[0].summary).isEqualTo("More help needed")
+          assertThat(newCsip.reviews[0].nextReviewDate).isEqualTo( LocalDate.parse("2024-08-01"))
+          assertThat(newCsip.reviews[0].closeDate).isEqualTo(LocalDate.parse("2024-04-16"))
+          assertThat(newCsip.reviews[0].recordedUser).isEqualTo("FRED.JAMES")
+          assertThat(newCsip.reviews[0].recordedDate).isEqualTo(LocalDate.parse("2024-04-01"))
+
+          // Check attendees
+          assertThat(newCsip.reviews[0].attendees.size).isEqualTo(0)
+          assertThat(newCsip.reviews[0].attendees[0].name).isEqualTo("sam jones")
+          assertThat(newCsip.reviews[0].attendees[0].role).isEqualTo("person")
+          assertThat(newCsip.reviews[0].attendees[0].attended).isEqualTo(true)
+          assertThat(newCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
+
+           */
+        }
       }
     }
   }
@@ -1041,7 +1173,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               areaOfWorkCode = "KIT",
               reportedBy = "Jill Reporter",
               reportedDate = LocalDate.parse("2024-05-12"),
-              createUsername = "FRED.JAMES",
             ),
           )
           .exchange()
@@ -1053,4 +1184,139 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  private fun createUpsertCSIPRequestMinimalData(csipReportId: Long? = null) =
+    UpsertCSIPRequest(
+      id = csipReportId,
+      offenderNo = "A1234TT",
+      incidentDate = LocalDate.parse("2023-12-15"),
+      typeCode = "VPA",
+      locationCode = "EXY",
+      areaOfWorkCode = "KIT",
+      reportedBy = "Jill Reporter",
+      reportedDate = LocalDate.parse("2024-05-12"),
+    )
+
+  private fun createUpsertCSIPRequest() =
+    UpsertCSIPRequest(
+      offenderNo = "A1234TT",
+      incidentDate = LocalDate.parse("2023-12-23"),
+      incidentTime = LocalTime.parse("10:32:12"),
+      prisonCodeWhenRecorded = "RNI",
+      typeCode = "INT",
+      locationCode = "LIB",
+      areaOfWorkCode = "EDU",
+      reportedBy = "Jane Reporter",
+      reportedDate = LocalDate.now(),
+      logNumber = "RNI-001",
+      proActiveReferral = false,
+      staffAssaulted = true,
+      staffAssaultedName = "Assaulted Person",
+      reportDetailRequest = reportDetailRequest,
+      saferCustodyScreening = saferCustodyScreeningRequest,
+      investigation = investigationDetailRequest,
+      caseManager = "A CaseManager",
+      decision = decisionRequest,
+      planReason = "helper",
+      firstCaseReviewDate = LocalDate.parse("2024-04-15"),
+      plans = listOf(planRequest),
+      reviews = listOf(reviewRequest),
+    )
+
+  private val factorRequest = CSIPFactorRequest(
+    id = null,
+    dpsId = "00998877",
+    typeCode = "BUL",
+    comment = "Offender causes trouble",
+  )
+  private val reportDetailRequest = UpsertReportDetailsRequest(
+    involvementCode = "PER",
+    concern = "There was a worry about the offender",
+    knownReasons = "known reasons details go in here",
+    otherInformation = "other information goes in here",
+    saferCustodyTeamInformed = false,
+    referralComplete = true,
+    referralCompletedBy = "JIM_ADM",
+    referralCompletedDate = LocalDate.parse("2024-04-04"),
+    factors = listOf(factorRequest),
+  )
+  private val interviewRequest = InterviewDetailRequest(
+    // id = 3343,
+    dpsId = "00998877",
+    interviewee = "Bill Black",
+    date = LocalDate.parse("2024-06-06"),
+    roleCode = "WITNESS",
+    comments = "Saw a pipe in his hand",
+  )
+
+  private val investigationDetailRequest = InvestigationDetailRequest(
+    staffInvolved = "some people",
+    evidenceSecured = "A piece of pipe",
+    reasonOccurred = "bad behaviour",
+    usualBehaviour = "Good person",
+    trigger = "missed meal",
+    protectiveFactors = "ensure taken to canteen",
+    interviews = listOf(interviewRequest),
+  )
+  private val saferCustodyScreeningRequest = SaferCustodyScreeningRequest(
+    scsOutcomeCode = "CUR",
+    recordedBy = "FRED_ADM",
+    recordedDate = LocalDate.parse("2024-04-08"),
+    reasonForDecision = "There is a reason for the decision - it goes here",
+  )
+
+  private val actionsRequest = ActionsRequest(
+    openCSIPAlert = true,
+    nonAssociationsUpdated = false,
+    observationBook = true,
+    unitOrCellMove = true,
+    csraOrRsraReview = false,
+    serviceReferral = true,
+    simReferral = false,
+  )
+  private val decisionRequest = DecisionRequest(
+    conclusion = "The end result",
+    decisionOutcomeCode = "OPE",
+    signedOffRoleCode = "CUSTMAN",
+    recordedBy = "FRED.JAMES",
+    recordedDate = LocalDate.parse("2024-08-12"),
+    nextSteps = "provide help",
+    otherDetails = "Support and assistance needed",
+    actions = actionsRequest,
+  )
+  private val planRequest = PlanRequest(
+    // id = TODO(),
+    dpsId = "00998877",
+    identifiedNeed = "they need help",
+    intervention = "dd",
+    progression = "there was some improvement",
+    referredBy = "Jason",
+    createdDate = LocalDate.parse("2024-04-16"),
+    targetDate = LocalDate.parse("2024-08-20"),
+    closedDate = LocalDate.parse("2024-04-17"),
+  )
+  private val attendeeRequest = AttendeeRequest(
+    // id = TODO(),
+    dpsId = "00998877",
+    name = "sam jones",
+    role = "person",
+    attended = true,
+    contribution = "talked about things",
+  )
+  private val reviewRequest = ReviewRequest(
+    // id = TODO(),
+    dpsId = "00998877",
+    remainOnCSIP = true,
+    csipUpdated = false,
+    caseNote = false,
+    closeCSIP = true,
+    peopleInformed = false,
+    summary = "More help needed",
+    nextReviewDate = LocalDate.parse("2024-08-01"),
+    closeDate = LocalDate.parse("2024-04-16"),
+    recordedBy = "FRED.JAMES",
+    // reviewSequence = TODO(),
+    attendees = listOf(attendeeRequest),
+    recordedDate = LocalDate.parse("2024-04-01"),
+  )
 }

@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.reconciliatio
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.physicalattributes.getHeightInCentimetres
@@ -23,14 +24,23 @@ class PrisonPersonReconService(
     val latestBooking = bookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("No bookings found for $offenderNo")
 
-    return latestBooking.physicalAttributes.minByOrNull { it.id.sequence }
-      ?.let {
-        PrisonPersonReconciliationResponse(
-          offenderNo = offenderNo,
-          height = it.getHeightInCentimetres(),
-          weight = it.getWeightInKilograms(),
-        )
-      }
-      ?: PrisonPersonReconciliationResponse(offenderNo = offenderNo)
+    val physicalAttributes = latestBooking.physicalAttributes.minByOrNull { it.id.sequence }
+    val profileDetails = latestBooking.profiles.minByOrNull { it.id.sequence }?.profileDetails
+
+    return PrisonPersonReconciliationResponse(
+      offenderNo = offenderNo,
+      height = physicalAttributes?.getHeightInCentimetres(),
+      weight = physicalAttributes?.getWeightInKilograms(),
+      face = profileDetails?.findProfileCode("FACE"),
+      build = profileDetails?.findProfileCode("BUILD"),
+      facialHair = profileDetails?.findProfileCode("FACIAL_HAIR"),
+      hair = profileDetails?.findProfileCode("HAIR"),
+      leftEyeColour = profileDetails?.findProfileCode("L_EYE_C"),
+      rightEyeColour = profileDetails?.findProfileCode("R_EYE_C"),
+      shoeSize = profileDetails?.findProfileCode("SHOESIZE"),
+    )
   }
+
+  private fun MutableList<OffenderProfileDetail>.findProfileCode(profileType: String) =
+    find { it.id.profileType.type == profileType }?.profileCodeId
 }

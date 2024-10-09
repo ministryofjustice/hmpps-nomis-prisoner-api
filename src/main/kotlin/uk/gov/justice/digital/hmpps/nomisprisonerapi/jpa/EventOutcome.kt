@@ -9,6 +9,7 @@ class EventOutcome(code: String, description: String) : ReferenceCode(EVENT_OUTC
   companion object {
     const val EVENT_OUTCOME = "OUTCOMES"
     val ABS = pk("ABS")
+    val ATT = pk("ATT")
     fun pk(code: String): Pk = Pk(EVENT_OUTCOME, code)
   }
 }
