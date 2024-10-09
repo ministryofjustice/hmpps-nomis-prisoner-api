@@ -110,7 +110,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     pageRequest: Pageable,
   ): Page<PrisonerIds> = prisonerService.findAllActivePrisoners(pageRequest)
 
-  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING', 'ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING', 'ROLE_NOMIS_ALERTS', 'ROLE_NOMIS_PRISON_PERSON')")
   @GetMapping("/prisoners/ids/all")
   @Operation(
     summary = "Gets the identifier for all prisoners.",
