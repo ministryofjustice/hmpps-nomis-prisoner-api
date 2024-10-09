@@ -1122,7 +1122,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.plans[0].referredBy).isEqualTo("Jason")
           assertThat(newCsip.plans[0].targetDate).isEqualTo(LocalDate.parse("2024-08-20"))
           assertThat(newCsip.plans[0].closedDate).isEqualTo(LocalDate.parse("2024-04-17"))
-          assertThat(newCsip.plans[0].createDate).isEqualTo(LocalDate.parse("2024-10-08"))
+          assertThat(newCsip.plans[0].createDate).isEqualTo(LocalDate.now())
           assertThat(newCsip.plans[0].createUsername).isEqualTo("SA")
 
           // Check reviews
