@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
-import jakarta.validation.constraints.NotNull
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.format.annotation.DateTimeFormat
@@ -400,10 +399,25 @@ data class UpsertCSIPResponse(
   @Schema(description = "The prisoner nomis Id relating to this csip")
   val offenderNo: String,
 
-  @Schema(description = "Whether or not the csip was created")
-  @NotNull
-  val created: Boolean,
+  @Schema(description = "Any new CSIP components that were created")
+  val mappings: List<ResponseMapping>,
 )
+data class ResponseMapping(
+  @Schema(description = "The child component created")
+  val component: Component,
+  @Schema(description = "The nomisId of the created component")
+  val nomisId: Long,
+  @Schema(description = "The dpsId of the created component")
+  val dpsId: String,
+) {
+  enum class Component {
+    ATTENDEE,
+    FACTOR,
+    INTERVIEW,
+    PLAN,
+    REVIEW,
+  }
+}
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class SaferCustodyScreening(

@@ -195,8 +195,6 @@ data class PlanRequest(
   val progression: String?,
   @Schema(description = "The person reporting - free text", required = true)
   val referredBy: String,
-  @Schema(description = "When created")
-  val createdDate: LocalDate,
   @Schema(description = "Target date of plan", required = true)
   val targetDate: LocalDate,
   @Schema(description = "Plan closed date")
