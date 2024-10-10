@@ -178,15 +178,15 @@ data class ContactPerson(
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
   @Schema(description = "List of phone numbers for the person")
-  val phoneNumbers: List<PhoneNumber>,
+  val phoneNumbers: List<PersonPhoneNumber>,
   @Schema(description = "List of addresses for the person")
-  val addresses: List<Address>,
+  val addresses: List<PersonAddress>,
   @Schema(description = "List of email addresses for the person")
-  val emailAddresses: List<EmailAddress>,
+  val emailAddresses: List<PersonEmailAddress>,
   @Schema(description = "List of employments for the person")
-  val employments: List<Employment>,
+  val employments: List<PersonEmployment>,
   @Schema(description = "List of identifiers for the person")
-  val identifiers: List<Identifier>,
+  val identifiers: List<PersonIdentifier>,
   @Schema(description = "List of prisoner contacts this person is related to")
   val contacts: List<PersonContact>,
   @Schema(description = "List of restrictions between all prisoners and this person")
@@ -195,7 +195,7 @@ data class ContactPerson(
 
 @Schema(description = "The data held in NOMIS about a phone number")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class PhoneNumber(
+data class PersonPhoneNumber(
   @Schema(description = "Unique NOMIS Id of number")
   val phoneId: Long,
   @Schema(description = "The number")
@@ -208,7 +208,7 @@ data class PhoneNumber(
 
 @Schema(description = "The data held in NOMIS about a address number")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Address(
+data class PersonAddress(
   @Schema(description = "Unique NOMIS Id of number")
   val addressId: Long,
   @Schema(description = "Address type")
@@ -230,7 +230,7 @@ data class Address(
   @Schema(description = "Country")
   val country: CodeDescription?,
   @Schema(description = "List of phone numbers for the address")
-  val phoneNumbers: List<PhoneNumber>,
+  val phoneNumbers: List<PersonPhoneNumber>,
   @Schema(description = "true if address validated by Post Office Address file??")
   val validatedPAF: Boolean,
   @Schema(description = "true if address not fixed. for example homeless")
@@ -249,7 +249,7 @@ data class Address(
 
 @Schema(description = "The data held in NOMIS about a email address")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class EmailAddress(
+data class PersonEmailAddress(
   @Schema(description = "Unique NOMIS Id of email address")
   val emailAddressId: Long,
   @Schema(description = "The email address", example = "john.smith@internet.co.uk")
@@ -258,18 +258,18 @@ data class EmailAddress(
 
 @Schema(description = "The data held in NOMIS about a person's employment")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Employment(
+data class PersonEmployment(
   @Schema(description = "Unique NOMIS sequence for this employment for this person")
   val sequence: Long,
   @Schema(description = "The entity the person is employed by")
-  val corporate: Corporate?,
+  val corporate: PersonEmploymentCorporate?,
   @Schema(description = "True is employment is active")
   val active: Boolean,
 )
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Corporate(
+data class PersonEmploymentCorporate(
   @Schema(description = "Unique NOMIS Id of corporate address")
   val id: Long,
   @Schema(description = "The corporate name", example = "Police")
@@ -278,7 +278,7 @@ data class Corporate(
 
 @Schema(description = "The data held in NOMIS about a person's identifiers")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Identifier(
+data class PersonIdentifier(
   @Schema(description = "Unique NOMIS sequence for this identifier for this person")
   val sequence: Long,
   @Schema(description = "The identifier type")
@@ -343,11 +343,11 @@ data class ContactRestriction(
   @Schema(description = "Date restriction is no longer active")
   val expiryDate: LocalDate?,
   @Schema(description = "Staff member who created the restriction")
-  val enteredStaff: Staff,
+  val enteredStaff: ContactRestrictionEnteredStaff,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Staff(
+data class ContactRestrictionEnteredStaff(
   @Schema(description = "NOMIS staff id")
   val staffId: Long,
 )
