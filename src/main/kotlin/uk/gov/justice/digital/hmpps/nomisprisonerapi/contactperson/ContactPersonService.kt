@@ -47,7 +47,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         auditClientWorkstationName = it.auditClientWorkstationName,
       ),
       phoneNumbers = it.phones.map { number ->
-        PhoneNumber(
+        PersonPhoneNumber(
           phoneId = number.phoneId,
           number = number.phoneNo,
           type = number.phoneType.toCodeDescription(),
@@ -55,17 +55,17 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         )
       },
       emailAddresses = it.internetAddresses.map { address ->
-        EmailAddress(
+        PersonEmailAddress(
           emailAddressId = address.internetAddressId,
           email = address.internetAddress,
         )
       },
       employments = it.employments.map { employment ->
-        Employment(
+        PersonEmployment(
           sequence = employment.id.sequence,
           active = employment.active,
           corporate = employment.employerCorporate?.let { corporate ->
-            Corporate(
+            PersonEmploymentCorporate(
               id = corporate.id,
               name = corporate.corporateName,
             )
@@ -73,7 +73,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         )
       },
       identifiers = it.identifiers.map { personIdentifier ->
-        Identifier(
+        PersonIdentifier(
           sequence = personIdentifier.id.sequence,
           type = personIdentifier.identifierType.toCodeDescription(),
           identifier = personIdentifier.identifier,
@@ -81,7 +81,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         )
       },
       addresses = it.addresses.map { address ->
-        Address(
+        PersonAddress(
           addressId = address.addressId,
           type = address.addressType?.toCodeDescription(),
           flat = address.flat,
@@ -100,7 +100,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           startDate = address.startDate,
           endDate = address.endDate,
           phoneNumbers = address.phones.map { number ->
-            PhoneNumber(
+            PersonPhoneNumber(
               phoneId = number.phoneId,
               number = number.phoneNo,
               type = number.phoneType.toCodeDescription(),
@@ -116,7 +116,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           comment = restriction.comment,
           effectiveDate = restriction.effectiveDate,
           expiryDate = restriction.expiryDate,
-          enteredStaff = Staff(staffId = restriction.enteredStaff.id),
+          enteredStaff = ContactRestrictionEnteredStaff(staffId = restriction.enteredStaff.id),
         )
       },
       contacts = it.contacts.map { contact ->
@@ -145,7 +145,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
               comment = restriction.comment,
               effectiveDate = restriction.effectiveDate,
               expiryDate = restriction.expiryDate,
-              enteredStaff = Staff(staffId = restriction.enteredStaff.id),
+              enteredStaff = ContactRestrictionEnteredStaff(staffId = restriction.enteredStaff.id),
             )
           },
         )

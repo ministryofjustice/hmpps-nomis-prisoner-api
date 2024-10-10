@@ -161,7 +161,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class PhoneNumbers {
+    inner class PersonPhoneNumbers {
       private lateinit var person: Person
 
       @BeforeEach
@@ -317,7 +317,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class EmailAddress {
+    inner class PersonEmailPersonAddress {
       private lateinit var person: Person
 
       @BeforeEach
