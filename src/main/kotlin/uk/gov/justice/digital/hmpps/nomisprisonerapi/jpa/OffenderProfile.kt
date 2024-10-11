@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
@@ -8,7 +7,6 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import java.io.Serializable
@@ -32,10 +30,6 @@ data class OffenderProfile(
 
   @Column(name = "CHECK_DATE")
   var checkDate: LocalDate,
-
-  @Column
-  @OneToMany(mappedBy = "offenderProfile", cascade = [CascadeType.ALL])
-  val profileDetails: MutableList<OffenderProfileDetail> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

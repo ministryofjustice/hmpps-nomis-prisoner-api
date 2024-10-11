@@ -322,15 +322,14 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingBeginDate = yesterday) {
-              profile {
-                detail(profileType = "FACE", profileCode = "ROUND")
-                detail(profileType = "BUILD", profileCode = "SLIM")
-                detail(profileType = "FACIAL_HAIR", profileCode = "CLEAN_SHAVEN")
-                detail(profileType = "HAIR", profileCode = "BLACK")
-                detail(profileType = "L_EYE_C", profileCode = "BLUE")
-                detail(profileType = "R_EYE_C", profileCode = "BROWN")
-                detail(profileType = "SHOESIZE", profileCode = "8.5")
-              }
+              profile()
+              profileDetail(profileType = "FACE", profileCode = "ROUND")
+              profileDetail(profileType = "BUILD", profileCode = "SLIM")
+              profileDetail(profileType = "FACIAL_HAIR", profileCode = "CLEAN_SHAVEN")
+              profileDetail(profileType = "HAIR", profileCode = "BLACK")
+              profileDetail(profileType = "L_EYE_C", profileCode = "BLUE")
+              profileDetail(profileType = "R_EYE_C", profileCode = "BROWN")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
             }
           }
         }
@@ -377,35 +376,10 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking {
-              profile(sequence = 1) {
-                detail(profileType = "FACE", profileCode = "ROUND")
-              }
-              profile(sequence = 2) {
-                detail(profileType = "FACE", profileCode = "SQUARE")
-              }
-            }
-          }
-        }
-
-        webTestClient.getReconciliationOk("A1234AA")
-          .consumeWith {
-            with(it.responseBody!!) {
-              assertThat(face).isEqualTo("ROUND")
-            }
-          }
-      }
-
-      @Test
-      fun `should return first profile sequence from active booking even if not seq=1`() {
-        nomisDataBuilder.build {
-          offender(nomsId = "A1234AA") {
-            booking = booking {
-              profile(sequence = 2) {
-                detail(profileType = "FACE", profileCode = "ROUND")
-              }
-              profile(sequence = 3) {
-                detail(profileType = "FACE", profileCode = "SQUARE")
-              }
+              profile(sequence = 1L)
+              profileDetail(sequence = 1L, profileType = "FACE", profileCode = "ROUND")
+              profile(sequence = 2L)
+              profileDetail(sequence = 2L, profileType = "FACE", profileCode = "SQUARE")
             }
           }
         }
@@ -423,14 +397,12 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = today) {
-              profile {
-                detail(profileType = "FACE", profileCode = "ROUND")
-              }
+              profile()
+              profileDetail(profileType = "FACE", profileCode = "ROUND")
             }
             booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
-              profile {
-                detail(profileType = "FACE", profileCode = "SQUARE")
-              }
+              profile()
+              profileDetail(profileType = "FACE", profileCode = "SQUARE")
               release(date = yesterday)
             }
           }
@@ -452,9 +424,8 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
               // no profile details on active booking
             }
             booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
-              profile {
-                detail(profileType = "FACE", profileCode = "SQUARE")
-              }
+              profile()
+              profileDetail(profileType = "FACE", profileCode = "SQUARE")
               release(date = yesterday)
             }
           }
@@ -473,14 +444,12 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
-              profile {
-                detail(profileType = "FACE", profileCode = "SQUARE")
-              }
+              profile()
+              profileDetail(profileType = "FACE", profileCode = "SQUARE")
             }
             booking = booking(bookingSequence = 1, bookingBeginDate = today) {
-              profile {
-                detail(profileType = "FACE", profileCode = "ROUND")
-              }
+              profile()
+              profileDetail(profileType = "FACE", profileCode = "ROUND")
             }
           }
         }

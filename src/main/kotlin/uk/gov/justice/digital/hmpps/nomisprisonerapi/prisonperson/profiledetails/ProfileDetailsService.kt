@@ -36,14 +36,14 @@ class ProfileDetailsService(
     }
 
     return bookingRepository.findAllByOffenderNomsId(offenderNo)
-      .filterNot { it.profiles.isEmpty() }
       .mapNotNull { booking ->
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
           startDateTime = booking.bookingBeginDate,
           endDateTime = booking.getReleaseTimer(),
           latestBooking = booking.bookingSequence == 1,
-          profileDetails = booking.profiles.first().profileDetails
+          profileDetails = booking.profileDetails
+            .filter { it.id.sequence == 1L }
             .map { pd ->
               ProfileDetailsResponse(
                 type = pd.id.profileType.type,
@@ -65,7 +65,10 @@ class ProfileDetailsService(
     validateProfileCode(request.profileType, request.profileCode)
 
     val booking = findLatestBookingOrThrow(offenderNo)
-    val (profileDetails, created) = booking.getOrCreateProfile().getOrCreateProfileDetails(request)
+    val (profileDetails, created) =
+      booking
+        .also { it.getOrCreateProfile() }
+        .getOrCreateProfileDetails(request)
     profileDetails.profileCodeId = request.profileCode
 
     return UpsertProfileDetailsResponse(created, booking.bookingId)
@@ -82,28 +85,27 @@ class ProfileDetailsService(
       }
   }
 
-  private fun OffenderProfile.getOrCreateProfileDetails(request: UpsertProfileDetailsRequest) =
+  private fun OffenderBooking.getOrCreateProfileDetails(request: UpsertProfileDetailsRequest) =
     profileDetails
       .find { it.id.profileType.type == request.profileType }
       ?.let { it to false }
       ?: (createNewProfileDetails(request) to true)
 
-  private fun OffenderProfile.createNewProfileDetails(request: UpsertProfileDetailsRequest) =
+  private fun OffenderBooking.createNewProfileDetails(request: UpsertProfileDetailsRequest) =
     OffenderProfileDetail(
       id = OffenderProfileDetailId(
-        offenderBooking = this.id.offenderBooking,
-        sequence = this.id.sequence,
+        offenderBooking = this,
+        sequence = 1L,
         profileType = getProfileType(request.profileType),
       ),
       listSequence = 1L,
-      offenderProfile = this,
       profileCodeId = request.profileCode,
     )
       .also { profileDetails += it }
 
   private fun OffenderBooking.getOrCreateProfile() =
     profiles.firstOrNull { it.id.sequence == 1L }
-      ?: OffenderProfile(OffenderProfileId(this, 1), LocalDate.now())
+      ?: OffenderProfile(OffenderProfileId(this, 1L), LocalDate.now())
         .also { profiles += it }
 
   private fun validateProfileType(profileType: String) {

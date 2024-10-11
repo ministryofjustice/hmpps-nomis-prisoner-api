@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
@@ -238,6 +239,14 @@ interface BookingDsl {
     dsl: OffenderProfileDsl.() -> Unit = {},
   ): OffenderProfile
 
+  @OffenderProfileDetailDslMarker
+  fun profileDetail(
+    listSequence: Long = 99,
+    profileType: String = "BUILD",
+    profileCode: String? = "SMALL",
+    sequence: Long = 1L,
+  ): OffenderProfileDetail
+
   @OffenderExternalMovementDslMarker
   fun prisonTransfer(
     from: String = "BXI",
@@ -319,6 +328,7 @@ class BookingBuilderFactory(
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
+  private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -338,6 +348,7 @@ class BookingBuilderFactory(
     visitBalanceBuilderFactory,
     offenderContactPersonBuilderFactory,
     visitBuilderFactory,
+    profileDetailBuilderFactory,
   )
 }
 
@@ -359,6 +370,7 @@ class BookingBuilder(
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
+  private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -723,6 +735,22 @@ class BookingBuilder(
         offenderBooking.profiles += it
         builder.apply(dsl)
       }
+    }
+
+  override fun profileDetail(
+    listSequence: Long,
+    profileType: String,
+    profileCode: String?,
+    sequence: Long,
+  ): OffenderProfileDetail =
+    profileDetailBuilderFactory.builder().build(
+      listSequence = listSequence,
+      profileTypeId = profileType,
+      profileCodeId = profileCode,
+      offenderBooking = offenderBooking,
+      sequence = sequence,
+    ).also {
+      offenderBooking.profileDetails += it
     }
 
   override fun prisonTransfer(

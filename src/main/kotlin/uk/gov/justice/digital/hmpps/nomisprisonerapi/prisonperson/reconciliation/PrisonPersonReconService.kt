@@ -25,22 +25,22 @@ class PrisonPersonReconService(
       ?: throw NotFoundException("No bookings found for $offenderNo")
 
     val physicalAttributes = latestBooking.physicalAttributes.minByOrNull { it.id.sequence }
-    val profileDetails = latestBooking.profiles.minByOrNull { it.id.sequence }?.profileDetails
+    val profileDetails = latestBooking.profileDetails.filter { it.id.sequence == 1L }
 
     return PrisonPersonReconciliationResponse(
       offenderNo = offenderNo,
       height = physicalAttributes?.getHeightInCentimetres(),
       weight = physicalAttributes?.getWeightInKilograms(),
-      face = profileDetails?.findProfileCode("FACE"),
-      build = profileDetails?.findProfileCode("BUILD"),
-      facialHair = profileDetails?.findProfileCode("FACIAL_HAIR"),
-      hair = profileDetails?.findProfileCode("HAIR"),
-      leftEyeColour = profileDetails?.findProfileCode("L_EYE_C"),
-      rightEyeColour = profileDetails?.findProfileCode("R_EYE_C"),
-      shoeSize = profileDetails?.findProfileCode("SHOESIZE"),
+      face = profileDetails.findProfileCode("FACE"),
+      build = profileDetails.findProfileCode("BUILD"),
+      facialHair = profileDetails.findProfileCode("FACIAL_HAIR"),
+      hair = profileDetails.findProfileCode("HAIR"),
+      leftEyeColour = profileDetails.findProfileCode("L_EYE_C"),
+      rightEyeColour = profileDetails.findProfileCode("R_EYE_C"),
+      shoeSize = profileDetails.findProfileCode("SHOESIZE"),
     )
   }
 
-  private fun MutableList<OffenderProfileDetail>.findProfileCode(profileType: String) =
+  private fun List<OffenderProfileDetail>.findProfileCode(profileType: String) =
     find { it.id.profileType.type == profileType }?.profileCodeId
 }
