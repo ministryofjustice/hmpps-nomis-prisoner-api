@@ -393,27 +393,6 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should return first profile sequence from active booking even if not seq=1`() {
-        nomisDataBuilder.build {
-          offender(nomsId = "A1234AA") {
-            booking = booking {
-              profile(sequence = 2L)
-              profileDetail(sequence = 2L, profileType = "FACE", profileCode = "ROUND")
-              profile(sequence = 3L)
-              profileDetail(sequence = 3L, profileType = "FACE", profileCode = "SQUARE")
-            }
-          }
-        }
-
-        webTestClient.getReconciliationOk("A1234AA")
-          .consumeWith {
-            with(it.responseBody!!) {
-              assertThat(face).isEqualTo("ROUND")
-            }
-          }
-      }
-
-      @Test
       fun `should return profile details from latest booking`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {

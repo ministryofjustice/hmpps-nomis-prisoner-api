@@ -43,7 +43,7 @@ class ProfileDetailsService(
           endDateTime = booking.getReleaseTimer(),
           latestBooking = booking.bookingSequence == 1,
           profileDetails = booking.profileDetails
-            .filter { it.id.sequence == booking.profileDetails.minOf { it.id.sequence } }
+            .filter { it.id.sequence == 1L }
             .map { pd ->
               ProfileDetailsResponse(
                 type = pd.id.profileType.type,
