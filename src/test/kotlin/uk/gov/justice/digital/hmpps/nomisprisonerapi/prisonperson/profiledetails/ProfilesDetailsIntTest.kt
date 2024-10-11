@@ -87,10 +87,9 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingBeginDate = yesterday) {
-              profile {
-                detail(profileType = "L_EYE_C", profileCode = "RED")
-                detail(profileType = "SHOESIZE", profileCode = "8.5")
-              }
+              profile()
+              profileDetail(profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
             }
           }
         }
@@ -113,14 +112,36 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should return profile details where there is no profile`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking {
+              profileDetail(profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("L_EYE_C", "RED"),
+                  tuple("SHOESIZE", "8.5"),
+                )
+            }
+          }
+      }
+
+      @Test
       fun `should return null profile details`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking {
-              profile {
-                detail(profileType = "L_EYE_C", profileCode = "RED")
-                detail(profileType = "SHOESIZE", profileCode = null)
-              }
+              profile()
+              profileDetail(profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(profileType = "SHOESIZE", profileCode = null)
             }
           }
         }
@@ -172,10 +193,9 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking {
-              profile {
-                detail(profileType = "L_EYE_C", profileCode = null)
-                detail(profileType = "SHOESIZE", profileCode = null)
-              }
+              profile()
+              profileDetail(profileType = "L_EYE_C", profileCode = null)
+              profileDetail(profileType = "SHOESIZE", profileCode = null)
             }
           }
         }
@@ -198,14 +218,37 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking {
-              profile(sequence = 1) {
-                detail(profileType = "L_EYE_C", profileCode = "RED")
-                detail(profileType = "SHOESIZE", profileCode = "8.5")
-              }
-              profile(sequence = 2) {
-                detail(profileType = "R_EYE_C", profileCode = "BLUE")
-                detail(profileType = "BUILD", profileCode = "SLIM")
-              }
+              profile(sequence = 1L)
+              profileDetail(sequence = 1L, profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(sequence = 1L, profileType = "SHOESIZE", profileCode = "8.5")
+              profile(sequence = 2L)
+              profileDetail(sequence = 2L, profileType = "R_EYE_C", profileCode = "BLUE")
+              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "SLIM")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("L_EYE_C", "RED"),
+                  tuple("SHOESIZE", "8.5"),
+                )
+            }
+          }
+      }
+
+      @Test
+      fun `should only return the first profile details where there are no profile records`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking {
+              profileDetail(sequence = 1L, profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(sequence = 1L, profileType = "SHOESIZE", profileCode = "8.5")
+              profileDetail(sequence = 2L, profileType = "R_EYE_C", profileCode = "BLUE")
+              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "SLIM")
             }
           }
         }
@@ -228,16 +271,52 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = today) {
-              profile {
-                detail(profileType = "HAIR", profileCode = "BROWN")
-                detail(profileType = "FACIAL_HAIR", profileCode = "CLEAN SHAVEN")
-              }
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BROWN")
+              profileDetail(profileType = "FACIAL_HAIR", profileCode = "CLEAN SHAVEN")
             }
             oldBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
-              profile {
-                detail(profileType = "HAIR", profileCode = "BALD")
-                detail(profileType = "FACIAL_HAIR", profileCode = "BEARDED")
-              }
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BALD")
+              profileDetail(profileType = "FACIAL_HAIR", profileCode = "BEARDED")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk("A1234AA")
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
+                .containsExactly(
+                  tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true),
+                  tuple(oldBooking.bookingId, oldBooking.bookingBeginDate, oldBooking.bookingEndDate, false),
+                )
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("HAIR", "BROWN"),
+                  tuple("FACIAL_HAIR", "CLEAN SHAVEN"),
+                )
+              assertThat(bookings[1].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("HAIR", "BALD"),
+                  tuple("FACIAL_HAIR", "BEARDED"),
+                )
+            }
+          }
+      }
+
+      @Test
+      fun `should return profile details from old bookings where there are no profile records`() {
+        lateinit var oldBooking: OffenderBooking
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profileDetail(profileType = "HAIR", profileCode = "BROWN")
+              profileDetail(profileType = "FACIAL_HAIR", profileCode = "CLEAN SHAVEN")
+            }
+            oldBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              profileDetail(profileType = "HAIR", profileCode = "BALD")
+              profileDetail(profileType = "FACIAL_HAIR", profileCode = "BEARDED")
             }
           }
         }
@@ -270,17 +349,15 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = today) {
-              profile {
-                detail(profileType = "HAIR", profileCode = "BROWN")
-                detail(profileType = "FACIAL_HAIR", profileCode = "CLEAN SHAVEN")
-              }
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BROWN")
+              profileDetail(profileType = "FACIAL_HAIR", profileCode = "CLEAN SHAVEN")
             }
             alias {
               aliasBooking = booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
-                profile {
-                  detail(profileType = "HAIR", profileCode = "BALD")
-                  detail(profileType = "FACIAL_HAIR", profileCode = "BEARDED")
-                }
+                profile()
+                profileDetail(profileType = "HAIR", profileCode = "BALD")
+                profileDetail(profileType = "FACIAL_HAIR", profileCode = "BEARDED")
                 release(date = yesterday)
               }
             }
@@ -374,12 +451,12 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
 
         repository.runInTransaction {
-          with(findBooking().profiles.first()) {
-            assertThat(id.sequence).isEqualTo(1)
-            assertThat(profileDetails.size).isEqualTo(1)
-            with(profileDetails.first()) {
+          with(findBooking().profileDetails) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
               assertThat(id.profileType.type).isEqualTo("BUILD")
               assertThat(profileCodeId).isEqualTo("SMALL")
+              assertThat(offenderProfile?.id?.sequence).isEqualTo(1)
             }
           }
         }
@@ -390,9 +467,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingBeginDate = yesterday) {
-              profile {
-                detail(profileType = "BUILD", profileCode = "MEDIUM")
-              }
+              profile()
+              profileDetail(profileType = "BUILD", profileCode = "MEDIUM")
             }
           }
         }
@@ -404,10 +480,36 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
 
         repository.runInTransaction {
-          with(findBooking().profiles.first()) {
-            assertThat(id.sequence).isEqualTo(1)
-            assertThat(profileDetails.size).isEqualTo(1)
-            with(profileDetails.first()) {
+          with(findBooking().profileDetails) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
+              assertThat(id.profileType.type).isEqualTo("BUILD")
+              assertThat(profileCodeId).isEqualTo("SMALL")
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should update profile details where there is no profile record`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday) {
+              profileDetail(profileType = "BUILD", profileCode = "MEDIUM")
+            }
+          }
+        }
+
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
+          .consumeWith {
+            assertThat(it.responseBody!!.bookingId).isEqualTo(booking.bookingId)
+            assertThat(it.responseBody!!.created).isFalse()
+          }
+
+        repository.runInTransaction {
+          with(findBooking().profileDetails) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
               assertThat(id.profileType.type).isEqualTo("BUILD")
               assertThat(profileCodeId).isEqualTo("SMALL")
             }
@@ -441,9 +543,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingBeginDate = yesterday) {
-              profile {
-                detail(profileType = "BUILD", profileCode = "MEDIUM")
-              }
+              profile()
+              profileDetail(profileType = "BUILD", profileCode = "MEDIUM")
             }
           }
         }
@@ -467,15 +568,13 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-              profile {
-                detail(profileType = "BUILD", profileCode = "MEDIUM")
-              }
+              profile()
+              profileDetail(profileType = "BUILD", profileCode = "MEDIUM")
             }
             oldBooking =
               booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = yesterday.toLocalDate()) {
-                profile {
-                  detail(profileType = "BUILD", profileCode = "HEAVY")
-                }
+                profile()
+                profileDetail(profileType = "BUILD", profileCode = "HEAVY")
               }
           }
         }
@@ -484,18 +583,16 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
 
         repository.runInTransaction {
           // The new booking was updated
-          with(findBooking().profiles.first()) {
-            with(profileDetails.first()) {
+          with(findBooking().profileDetails) {
+            with(first()) {
               assertThat(id.profileType.type).isEqualTo("BUILD")
               assertThat(profileCodeId).isEqualTo("SMALL")
             }
           }
           // The old booking wasn't updated
-          with(findBooking(oldBooking.bookingId).profiles.first()) {
-            with(profileDetails.first()) {
-              assertThat(id.profileType.type).isEqualTo("BUILD")
-              assertThat(profileCodeId).isEqualTo("HEAVY")
-            }
+          with(findBooking(oldBooking.bookingId).profileDetails.first()) {
+            assertThat(id.profileType.type).isEqualTo("BUILD")
+            assertThat(profileCodeId).isEqualTo("HEAVY")
           }
         }
       }
@@ -505,12 +602,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-              profile(sequence = 1) {
-                detail(profileType = "BUILD", profileCode = "MEDIUM")
-              }
-              profile(sequence = 2) {
-                detail(profileType = "BUILD", profileCode = "HEAVY")
-              }
+              profile(sequence = 1L)
+              profileDetail(sequence = 1L, profileType = "BUILD", profileCode = "MEDIUM")
+              profile(sequence = 2L)
+              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "HEAVY")
             }
           }
         }
@@ -520,12 +615,40 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         repository.runInTransaction {
           val booking = findBooking()
           // The new profile with sequence 1 was updated
-          with(booking.profiles.find { it.id.sequence == 1L }!!.profileDetails.first()) {
+          with(booking.profileDetails.first { it.id.sequence == 1L }) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCodeId).isEqualTo("SMALL")
           }
           // The profile with sequence 2 wasn't updated
-          with(booking.profiles.find { it.id.sequence == 2L }!!.profileDetails.first()) {
+          with(booking.profileDetails.first { it.id.sequence == 2L }) {
+            assertThat(id.profileType.type).isEqualTo("BUILD")
+            assertThat(profileCodeId).isEqualTo("HEAVY")
+          }
+        }
+      }
+
+      @Test
+      fun `should ignore profile sequence greater than 1 where there are no profile records`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
+              profileDetail(sequence = 1L, profileType = "BUILD", profileCode = "MEDIUM")
+              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "HEAVY")
+            }
+          }
+        }
+
+        webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
+
+        repository.runInTransaction {
+          val booking = findBooking()
+          // The new profile with sequence 1 was updated
+          with(booking.profileDetails.first { it.id.sequence == 1L }) {
+            assertThat(id.profileType.type).isEqualTo("BUILD")
+            assertThat(profileCodeId).isEqualTo("SMALL")
+          }
+          // The profile with sequence 2 wasn't updated
+          with(booking.profileDetails.first { it.id.sequence == 2L }) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCodeId).isEqualTo("HEAVY")
           }
@@ -537,10 +660,9 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-              profile {
-                detail(profileType = "BUILD", profileCode = "MEDIUM")
-                detail(profileType = "SHOESIZE", profileCode = "8.5")
-              }
+              profile()
+              profileDetail(profileType = "BUILD", profileCode = "MEDIUM")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
             }
           }
         }
@@ -548,7 +670,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", "SMALL")
 
         repository.runInTransaction {
-          with(findBooking().profiles.first()) {
+          with(findBooking()) {
             profileDetails.find { it.id.profileType.type == "SHOESIZE" }!!
               .also {
                 assertThat(it.profileCodeId).isEqualTo("8.5")
@@ -568,8 +690,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", null)
 
         repository.runInTransaction {
-          val profiles = findBooking().profiles.first()
-          with(profiles.profileDetails.first()) {
+          with(findBooking().profileDetails.first()) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCode).isNull()
             assertThat(profileCodeId).isNull()
@@ -582,9 +703,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-              profile {
-                detail(profileType = "BUILD", profileCode = "MEDIUM")
-              }
+              profile()
+              profileDetail(profileType = "BUILD", profileCode = "MEDIUM")
             }
           }
         }
@@ -592,8 +712,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "BUILD", null)
 
         repository.runInTransaction {
-          val profiles = findBooking().profiles.first()
-          with(profiles.profileDetails.first()) {
+          with(findBooking().profileDetails.first()) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCode).isNull()
             assertThat(profileCodeId).isNull()
@@ -612,8 +731,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.upsertProfileDetailsOk("A1234AA", "SHOESIZE", "8.5")
 
         repository.runInTransaction {
-          val profiles = findBooking().profiles.first()
-          with(profiles.profileDetails.first()) {
+          with(findBooking().profileDetails.first()) {
             assertThat(id.profileType.type).isEqualTo("SHOESIZE")
             assertThat(profileCode).isNull()
             assertThat(profileCodeId).isEqualTo("8.5")
