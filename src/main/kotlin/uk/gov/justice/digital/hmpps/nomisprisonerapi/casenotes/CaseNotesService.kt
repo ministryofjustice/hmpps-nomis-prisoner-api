@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.WorkReposito
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import kotlin.collections.contains
 
 @Service
 @Transactional
@@ -35,6 +36,7 @@ class CaseNotesService(
 ) {
   private val seeDps = "... see DPS for full text"
   private val amendmentDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
+  private val dpsModules = listOf("PRISON_API", "ELITE2_API")
 
   private val pattern =
     // "<text> ...[<username> updated the case note[s] on <date> <time>] <amend text>"
@@ -82,8 +84,6 @@ class CaseNotesService(
         // Use date/timeCreation rather than createdDatetime. both provided for now
         dateCreation = request.occurrenceDateTime.toLocalDate(),
         timeCreation = request.occurrenceDateTime,
-        createdDatetime = request.occurrenceDateTime,
-        createdUserId = staffUserAccount.username,
         noteSourceCode = NoteSourceCode.INST,
       ),
     )
@@ -121,11 +121,16 @@ class CaseNotesService(
     authorLastName = author.lastName,
     prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
     caseNoteText = parseMainText(caseNoteText),
-    amendments = parseAmendments(caseNoteText),
+    amendments = parseAmendments(this),
     noteSourceCode = noteSourceCode,
     createdDatetime = LocalDateTime.of(dateCreation, timeCreation?.toLocalTime() ?: LocalTime.MIDNIGHT),
-    createdUsername = createdUserId,
+    createdUsername = createdUserId!!,
     auditModuleName = auditModuleName,
+    sourceSystem = if (auditModuleName in dpsModules && (modifiedUserId == null || modifiedUserId == createdUserId)) {
+      SourceSystem.DPS
+    } else {
+      SourceSystem.NOMIS
+    },
   )
 
   internal fun parseMainText(caseNoteText: String): String {
@@ -135,7 +140,8 @@ class CaseNotesService(
       ?: caseNoteText
   }
 
-  internal fun parseAmendments(caseNoteText: String): List<CaseNoteAmendment> {
+  internal fun parseAmendments(caseNote: OffenderCaseNote): List<CaseNoteAmendment> {
+    val caseNoteText = caseNote.caseNoteText
     val matchResults = pattern.findAll(caseNoteText)
     val matchLastIndex = matchResults.count() - 1
 
@@ -158,6 +164,11 @@ class CaseNotesService(
         authorFirstName = staff?.firstName,
         authorLastName = staff?.lastName,
         createdDateTime = LocalDateTime.parse("$date $time", dateTimeFormat),
+        sourceSystem = if (caseNote.auditModuleName in dpsModules && (caseNote.modifiedDatetime != null)) {
+          SourceSystem.DPS
+        } else {
+          SourceSystem.NOMIS
+        },
       )
     }.toList()
   }
