@@ -55,7 +55,13 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     // assert that entities returned from DSL are correct
 
     with(rootOffender) {
-      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+      assertThat(getAllBookings()).extracting(
+        "bookingId",
+        "offender.id",
+        "rootOffender.id",
+        "bookingSequence",
+        "active",
+      )
         .containsExactlyInAnyOrder(
           Tuple(activeBooking.bookingId, rootOffender.id, rootOffender.id, 1, true),
           Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
@@ -91,7 +97,13 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     val alias2 = repository.getOffender(aliasOffender2.id)!!
     with(root) {
       assertThat(id).isEqualTo(rootOffender.id)
-      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+      assertThat(getAllBookings()).extracting(
+        "bookingId",
+        "offender.id",
+        "rootOffender.id",
+        "bookingSequence",
+        "active",
+      )
         .containsExactlyInAnyOrder(
           Tuple(activeBooking.bookingId, rootOffender.id, rootOffender.id, 1, true),
           Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
@@ -148,7 +160,13 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     // assert that entities returned from DSL are correct
 
     with(rootOffender) {
-      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+      assertThat(getAllBookings()).extracting(
+        "bookingId",
+        "offender.id",
+        "rootOffender.id",
+        "bookingSequence",
+        "active",
+      )
         .containsExactlyInAnyOrder(
           Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
           Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
@@ -169,7 +187,13 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     val alias1 = repository.getOffender(aliasOffender1.id)!!
     with(root) {
       assertThat(id).isEqualTo(rootOffender.id)
-      assertThat(getAllBookings()).extracting("bookingId", "offender.id", "rootOffender.id", "bookingSequence", "active")
+      assertThat(getAllBookings()).extracting(
+        "bookingId",
+        "offender.id",
+        "rootOffender.id",
+        "bookingSequence",
+        "active",
+      )
         .containsExactlyInAnyOrder(
           Tuple(activeBooking.bookingId, aliasOffender1.id, rootOffender.id, 1, true),
           Tuple(oldBooking.bookingId, rootOffender.id, rootOffender.id, 2, false),
@@ -557,6 +581,91 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .jsonPath("$.content[1].offenderNo").isEqualTo("A1234SS")
           .jsonPath("$.content[2].offenderNo").isEqualTo("A1234WW")
           .jsonPath("$.content[3].offenderNo").isEqualTo("A1234YY")
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /prisoners/ids/all-from-id")
+  inner class GetAllPrisonersFromId {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/ids/all-from-id")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed for SYNCHRONISATION_REPORTING`() {
+        webTestClient.get().uri("/prisoners/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private var id1: Long = 0
+      private var id2: Long = 0
+      private var id3: Long = 0
+      private var id4: Long = 0
+
+      @BeforeEach
+      internal fun createPrisoners() {
+        nomisDataBuilder.build {
+          id1 = offender(nomsId = "A1234TT").id
+          id2 = offender(nomsId = "A1234SS") {
+            alias()
+            alias()
+          }.id
+          id3 = offender(nomsId = "A1234WW") {
+            alias()
+          }.id
+          id4 = offender(nomsId = "A1234YY").id
+        }
+      }
+
+      @Test
+      fun `will return first page of prisoners ordered by rootOffenderId ASC`() {
+        webTestClient.get().uri("/prisoners/ids/all-from-id?pageSize=2")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.ids[0].offenderNo").isEqualTo("A1234TT")
+          .jsonPath("$.ids[1].offenderNo").isEqualTo("A1234SS")
+          .jsonPath("$.lastId").isEqualTo(id2.toString())
+      }
+
+      @Test
+      fun `will return second page of prisoners ordered by rootOffenderId ASC`() {
+        webTestClient.get().uri("/prisoners/ids/all-from-id?pageSize=2&offenderId=$id2")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.ids[0].offenderNo").isEqualTo("A1234WW")
+          .jsonPath("$.ids[1].offenderNo").isEqualTo("A1234YY")
+          .jsonPath("$.lastId").isEqualTo(id4.toString())
       }
     }
   }

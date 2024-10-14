@@ -33,13 +33,10 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING', 'ROLE_NOMIS_ALERTS')")
   @GetMapping("/prisoners/ids")
   @Operation(
-    summary = "Gets the identifiers for all prisoners. By default only active prisoners will be return unless active=false",
-    description = "Requires role SYNCHRONISATION_REPORTING.",
+    summary = "Gets the identifiers for all prisoners. By default only active prisoners will be returned unless active=false",
+    description = "Requires role SYNCHRONISATION_REPORTING or ROLE_NOMIS_ALERTS.",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "paged list of prisoner ids",
-      ),
+      ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
@@ -71,7 +68,12 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
       description = "When true only return active prisoners currently in prison else all prisoners that at some point has been in prison are returned",
     )
     active: Boolean = false,
-  ): Page<PrisonerIds> = if (active) prisonerService.findAllActivePrisoners(pageRequest) else prisonerService.findAllPrisonersWithBookings(pageRequest)
+  ): Page<PrisonerIds> =
+    if (active) {
+      prisonerService.findAllActivePrisoners(pageRequest)
+    } else {
+      prisonerService.findAllPrisonersWithBookings(pageRequest)
+    }
 
   @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING')")
   @GetMapping("/prisoners/ids/active")
@@ -79,10 +81,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     summary = "Gets the identifiers for all active prisoners",
     description = "Requires role SYNCHRONISATION_REPORTING.",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "paged list of prisoner ids",
-      ),
+      ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
@@ -114,30 +113,19 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @GetMapping("/prisoners/ids/all")
   @Operation(
     summary = "Gets the identifier for all prisoners.",
-    description = "Requires role SYNCHRONISATION_REPORTING.",
+    description = "Requires role SYNCHRONISATION_REPORTING, NOMIS_ALERTS or NOMIS_PRISON_PERSON.",
     responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "paged list of prisoner ids",
-      ),
+      ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden to access this endpoint when role SYNCHRONISATION_REPORTING or ROLE_NOMIS_ALERTS not present",
         content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
       ),
     ],
@@ -146,6 +134,38 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     @PageableDefault(sort = ["rootOffenderId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
   ): Page<PrisonerId> = prisonerService.findAllPrisoners(pageRequest)
+
+  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING','ROLE_NOMIS_CASENOTES')")
+  @GetMapping("/prisoners/ids/all-from-id")
+  @Operation(
+    summary = "Gets the identifier for all prisoners.",
+    description = """Gets the specified number of prisoners starting after the given id number.
+      Clients can iterate through all prisoners by calling this endpoint using the id from the last call (omit for first call).
+      Requires role SYNCHRONISATION_REPORTING or NOMIS_CASENOTES.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of prisoner ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role SYNCHRONISATION_REPORTING or ROLE_NOMIS_ALERTS not present",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getAllPrisonersFromId(
+    @Schema(description = "If supplied get offenders starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "offenderId", defaultValue = "0")
+    offenderId: Long,
+    @Schema(description = "Number of offenders to get", required = false, defaultValue = "10")
+    @RequestParam(value = "pageSize", defaultValue = "10")
+    pageSize: Int,
+  ): PrisonerNosWithLast = prisonerService.findAllPrisonersFromId(offenderId, pageSize)
 
   @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
   @PostMapping("/prisoners/bookings")
