@@ -651,9 +651,10 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("$.ids[0].offenderNo").isEqualTo("A1234TT")
-          .jsonPath("$.ids[1].offenderNo").isEqualTo("A1234SS")
-          .jsonPath("$.lastId").isEqualTo(id2.toString())
+          .jsonPath("$.prisonerIds.size()").isEqualTo("2")
+          .jsonPath("$.prisonerIds[0].offenderNo").isEqualTo("A1234TT")
+          .jsonPath("$.prisonerIds[1].offenderNo").isEqualTo("A1234SS")
+          .jsonPath("$.lastOffenderId").isEqualTo(id2.toString())
       }
 
       @Test
@@ -663,9 +664,10 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("$.ids[0].offenderNo").isEqualTo("A1234WW")
-          .jsonPath("$.ids[1].offenderNo").isEqualTo("A1234YY")
-          .jsonPath("$.lastId").isEqualTo(id4.toString())
+          .jsonPath("$.prisonerIds.size()").isEqualTo("2")
+          .jsonPath("$.prisonerIds[0].offenderNo").isEqualTo("A1234WW")
+          .jsonPath("$.prisonerIds[1].offenderNo").isEqualTo("A1234YY")
+          .jsonPath("$.lastOffenderId").isEqualTo(id4.toString())
       }
     }
   }

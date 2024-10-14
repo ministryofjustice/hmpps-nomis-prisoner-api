@@ -48,7 +48,7 @@ interface OffenderRepository :
     """
       select /*+ INDEX (OFFENDERS OFFENDERS_PK) */
        offender_id_display as prisonerid, 
-       offender_id as offenderid
+       offender_id         as offenderid
       from offenders
       where root_offender_id = offender_id
         and offender_id > :offenderId
