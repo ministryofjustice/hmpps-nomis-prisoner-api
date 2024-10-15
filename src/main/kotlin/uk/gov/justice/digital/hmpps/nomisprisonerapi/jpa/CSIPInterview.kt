@@ -26,7 +26,7 @@ class CSIPInterview(
   @Column(name = "CSIP_INTVW_ID")
   @SequenceGenerator(name = "CSIP_INTVW_ID", sequenceName = "CSIP_INTVW_ID", allocationSize = 1)
   @GeneratedValue(generator = "CSIP_INTVW_ID")
-  val id: Long = 0,
+  override val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CSIP_ID")
@@ -75,7 +75,7 @@ class CSIPInterview(
 
   // ---- NOT MAPPED columns ---- //
   // All AUDIT data except auditModuleName
-) {
+) : CSIPChild {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
