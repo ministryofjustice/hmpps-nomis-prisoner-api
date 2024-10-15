@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.ATTENDEE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.FACTOR
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.INTERVIEW
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.PLAN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.REVIEW
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
@@ -44,6 +46,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   private var factor31Id: Long = 0
   private var plan31Id: Long = 0
   private var review31Id: Long = 0
+  private var attendee31Id: Long = 0
+  private var interview31Id: Long = 0
 
   @BeforeEach
   internal fun createTestCSIPReports() {
@@ -99,7 +103,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           csip3 = csipReport {
             factor()
             plan()
-            review()
+            review {
+              attendee()
+            }
+            interview()
           }
         }
       }
@@ -107,6 +114,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     factor31Id = csip3.factors[0].id
     plan31Id = csip3.plans[0].id
     review31Id = csip3.reviews[0].id
+    attendee31Id = csip3.reviews[0].attendees[0].id
+    interview31Id = csip3.interviews[0].id
 
     document1Id = csip1.offenderBooking.documents[0].id
   }
@@ -1024,16 +1033,22 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("nomisCSIPReportId").isNotEmpty
           .jsonPath("offenderNo").isEqualTo("A1234TT")
-          .jsonPath("components.size()").isEqualTo(3)
+          .jsonPath("components.size()").isEqualTo(5)
           .jsonPath("components[0].component").isEqualTo(FACTOR.name)
           .jsonPath("components[0].nomisId").isNotEmpty
           .jsonPath("components[0].dpsId").isEqualTo("00998877")
           .jsonPath("components[1].component").isEqualTo(PLAN.name)
           .jsonPath("components[1].nomisId").isNotEmpty
           .jsonPath("components[1].dpsId").isEqualTo("00998899")
-          .jsonPath("components[2].component").isEqualTo(REVIEW.name)
+          .jsonPath("components[2].component").isEqualTo(INTERVIEW.name)
           .jsonPath("components[2].nomisId").isNotEmpty
-          .jsonPath("components[2].dpsId").isEqualTo("00998811")
+          .jsonPath("components[2].dpsId").isEqualTo("00998888")
+          .jsonPath("components[3].component").isEqualTo(REVIEW.name)
+          .jsonPath("components[3].nomisId").isNotEmpty
+          .jsonPath("components[3].dpsId").isEqualTo("00998811")
+          .jsonPath("components[4].component").isEqualTo(ATTENDEE.name)
+          .jsonPath("components[4].nomisId").isNotEmpty
+          .jsonPath("components[4].dpsId").isEqualTo("00998800")
       }
 
       @Test
@@ -1172,7 +1187,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
           // Reviews
           assertThat(newCsip.reviews.size).isEqualTo(1)
-
           assertThat(newCsip.reviews[0].remainOnCSIP).isEqualTo(true)
           assertThat(newCsip.reviews[0].csipUpdated).isEqualTo(false)
           assertThat(newCsip.reviews[0].caseNote).isEqualTo(false)
@@ -1258,6 +1272,91 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             .jsonPath("components.size()").isEqualTo(3)
         }
       }
+
+      @Nested
+      inner class HappyPathMultipleInterviews {
+        @Test
+        fun `creating a csip with minimal data and interviews will return basic data`() {
+          val validCSIP = createUpsertCSIPRequestMinimalData().copy(
+            investigation = investigationDetailRequest.copy(
+              interviews =
+              listOf(
+                interviewRequest,
+                interviewRequest.copy(dpsId = "123456", comments = "interview 2"),
+                interviewRequest.copy(dpsId = "345678", comments = "interview 3"),
+              ),
+            ),
+          )
+
+          webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(validCSIP)
+            .exchange()
+            .expectStatus().isEqualTo(200)
+            .expectBody()
+            .jsonPath("nomisCSIPReportId").isNotEmpty
+            .jsonPath("offenderNo").isEqualTo("A1234TT")
+            .jsonPath("components.size()").isEqualTo(3)
+        }
+      }
+
+      @Nested
+      inner class HappyPathMultipleReviews {
+        @Test
+        fun `creating a csip with minimal data and reviews will return basic data`() {
+          val validCSIP = createUpsertCSIPRequestMinimalData().copy(
+            reviews =
+            listOf(
+              reviewRequest.copy(attendees = null),
+              reviewRequest.copy(attendees = null, dpsId = "123456", summary = "Rev Summary 2"),
+              reviewRequest.copy(attendees = null, dpsId = "345678", summary = "Rev Summary 3"),
+            ),
+          )
+
+          webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(validCSIP)
+            .exchange()
+            .expectStatus().isEqualTo(200)
+            .expectBody()
+            .jsonPath("nomisCSIPReportId").isNotEmpty
+            .jsonPath("offenderNo").isEqualTo("A1234TT")
+            .jsonPath("components.size()").isEqualTo(3)
+        }
+      }
+
+      @Nested
+      inner class HappyPathMultipleAttendees {
+        @Test
+        fun `creating a csip with minimal data and attendees will return basic data`() {
+          val validCSIP = createUpsertCSIPRequestMinimalData().copy(
+            reviews =
+            listOf(
+              reviewRequest.copy(
+                attendees =
+                listOf(
+                  attendeeRequest,
+                  attendeeRequest.copy(dpsId = "123456", contribution = "attend 2"),
+                  attendeeRequest.copy(dpsId = "345678", contribution = "attend 3"),
+                ),
+              ),
+            ),
+          )
+
+          webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(validCSIP)
+            .exchange()
+            .expectStatus().isEqualTo(200)
+            .expectBody()
+            .jsonPath("nomisCSIPReportId").isNotEmpty
+            .jsonPath("offenderNo").isEqualTo("A1234TT")
+            .jsonPath("components.size()").isEqualTo(4)
+        }
+      }
     }
   }
 
@@ -1307,7 +1406,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
         repository.runInTransaction {
           val updatedCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
-          // TODO check release date
           assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
           assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
           // Note - originalAgencyId can not be updated
@@ -1480,15 +1578,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(response.components[1].dpsId).isEqualTo("112277")
 
           repository.runInTransaction {
-            val newCsip = csipRepository.findByIdOrNull(csip3.id)!!
-            assertThat(newCsip.factors[0].id).isEqualTo(factor31Id)
-            assertThat(newCsip.factors[0].comment).isEqualTo("Offender causes trouble3")
+            val updatedCsip = csipRepository.findByIdOrNull(csip3.id)!!
+            assertThat(updatedCsip.factors[0].id).isEqualTo(factor31Id)
+            assertThat(updatedCsip.factors[0].comment).isEqualTo("Offender causes trouble3")
 
-            assertThat(newCsip.factors[1].id).isEqualTo(response.components[0].nomisId)
-            assertThat(newCsip.factors[1].comment).isEqualTo("Offender causes trouble1")
+            assertThat(updatedCsip.factors[1].id).isEqualTo(response.components[0].nomisId)
+            assertThat(updatedCsip.factors[1].comment).isEqualTo("Offender causes trouble1")
 
-            assertThat(newCsip.factors[2].id).isEqualTo(response.components[1].nomisId)
-            assertThat(newCsip.factors[2].comment).isEqualTo("Offender causes trouble4")
+            assertThat(updatedCsip.factors[2].id).isEqualTo(response.components[1].nomisId)
+            assertThat(updatedCsip.factors[2].comment).isEqualTo("Offender causes trouble4")
           }
         }
       }
@@ -1538,15 +1636,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(response.components[1].dpsId).isEqualTo("009988011")
 
           repository.runInTransaction {
-            val newCsip = csipRepository.findByIdOrNull(csip3.id)!!
-            assertThat(newCsip.plans[0].id).isEqualTo(plan31Id)
-            assertThat(newCsip.plans[0].identifiedNeed).isEqualTo("Help1")
+            val updatedCsip = csipRepository.findByIdOrNull(csip3.id)!!
+            assertThat(updatedCsip.plans[0].id).isEqualTo(plan31Id)
+            assertThat(updatedCsip.plans[0].identifiedNeed).isEqualTo("Help1")
 
-            assertThat(newCsip.plans[1].id).isEqualTo(response.components[0].nomisId)
-            assertThat(newCsip.plans[1].identifiedNeed).isEqualTo("Help2")
+            assertThat(updatedCsip.plans[1].id).isEqualTo(response.components[0].nomisId)
+            assertThat(updatedCsip.plans[1].identifiedNeed).isEqualTo("Help2")
 
-            assertThat(newCsip.plans[2].id).isEqualTo(response.components[1].nomisId)
-            assertThat(newCsip.plans[2].identifiedNeed).isEqualTo("Help3")
+            assertThat(updatedCsip.plans[2].id).isEqualTo(response.components[1].nomisId)
+            assertThat(updatedCsip.plans[2].identifiedNeed).isEqualTo("Help3")
           }
         }
       }
@@ -1602,15 +1700,162 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(response.components[1].dpsId).isEqualTo("0099881111")
 
           repository.runInTransaction {
-            val newCsip = csipRepository.findByIdOrNull(csip3.id)!!
-            assertThat(newCsip.reviews[0].id).isEqualTo(review31Id)
-            assertThat(newCsip.reviews[0].summary).isEqualTo("Help1")
+            val updatedCsip = csipRepository.findByIdOrNull(csip3.id)!!
+            assertThat(updatedCsip.reviews[0].id).isEqualTo(review31Id)
+            assertThat(updatedCsip.reviews[0].summary).isEqualTo("Help1")
 
-            assertThat(newCsip.reviews[1].id).isEqualTo(response.components[0].nomisId)
-            assertThat(newCsip.reviews[1].summary).isEqualTo("Help2")
+            assertThat(updatedCsip.reviews[1].id).isEqualTo(response.components[0].nomisId)
+            assertThat(updatedCsip.reviews[1].summary).isEqualTo("Help2")
 
-            assertThat(newCsip.reviews[2].id).isEqualTo(response.components[1].nomisId)
-            assertThat(newCsip.reviews[2].summary).isEqualTo("Help3")
+            assertThat(updatedCsip.reviews[2].id).isEqualTo(response.components[1].nomisId)
+            assertThat(updatedCsip.reviews[2].summary).isEqualTo("Help3")
+          }
+        }
+      }
+
+      @Nested
+      inner class HappyPathMultipleAttendees {
+        @Test
+        fun `Updating a csip with multiple attendees will successfully save along with existing`() {
+          // Update with 2 more reviews
+          val response = webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+              UpsertCSIPRequest(
+                id = csip3.id,
+                offenderNo = "A1234TT",
+                incidentDate = LocalDate.parse("2023-12-15"),
+                typeCode = "VPA",
+                locationCode = "EXY",
+                areaOfWorkCode = "KIT",
+                reportedBy = "Jill Reporter",
+                reportedDate = LocalDate.parse("2024-05-12"),
+                reviews = listOf(
+                  reviewRequest.copy(
+                    dpsId = "0099881100",
+                    summary = "Help2",
+                    attendees = listOf(attendeeRequest.copy(dpsId = "8877", contribution = "Attendee 1")),
+                  ),
+                  ReviewRequest(
+                    id = review31Id,
+                    dpsId = "112233",
+                    summary = "Help1",
+                    remainOnCSIP = true,
+                    csipUpdated = true,
+                    caseNote = false,
+                    closeCSIP = false,
+                    peopleInformed = false,
+                    nextReviewDate = LocalDate.parse("2024-08-02"),
+                    closeDate = LocalDate.parse("2024-04-18"),
+                    recordedBy = "FRED.JAMES",
+                    attendees = listOf(
+                      attendeeRequest.copy(id = attendee31Id, contribution = "existing1"),
+                      attendeeRequest.copy(dpsId = "7766", contribution = "Attendee 2"),
+                    ),
+                    recordedDate = LocalDate.parse("2024-04-01"),
+                  ),
+                  reviewRequest.copy(dpsId = "0099881111", summary = "Help3"),
+                ),
+              ),
+            )
+            .exchange()
+            .expectStatus().isEqualTo(200)
+            .expectBody(UpsertCSIPResponse::class.java)
+            .returnResult().responseBody!!
+
+          assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
+          assertThat(response.components.size).isEqualTo(5)
+          assertThat(response.components[0].component).isEqualTo(REVIEW)
+          assertThat(response.components[0].dpsId).isEqualTo("0099881100")
+          assertThat(response.components[1].component).isEqualTo(REVIEW)
+          assertThat(response.components[1].dpsId).isEqualTo("0099881111")
+
+          assertThat(response.components[2].component).isEqualTo(ATTENDEE)
+          assertThat(response.components[2].dpsId).isEqualTo("8877")
+          assertThat(response.components[3].component).isEqualTo(ATTENDEE)
+          assertThat(response.components[3].dpsId).isEqualTo("7766")
+          assertThat(response.components[4].component).isEqualTo(ATTENDEE)
+          assertThat(response.components[4].dpsId).isEqualTo("00998800")
+
+          repository.runInTransaction {
+            val updatedCsip = csipRepository.findByIdOrNull(csip3.id)!!
+            assertThat(updatedCsip.reviews[0].id).isEqualTo(review31Id)
+            assertThat(updatedCsip.reviews[0].summary).isEqualTo("Help1")
+            assertThat(updatedCsip.reviews[1].id).isEqualTo(response.components[0].nomisId)
+            assertThat(updatedCsip.reviews[1].summary).isEqualTo("Help2")
+            assertThat(updatedCsip.reviews[2].id).isEqualTo(response.components[1].nomisId)
+            assertThat(updatedCsip.reviews[2].summary).isEqualTo("Help3")
+
+            assertThat(updatedCsip.reviews[0].attendees[0].id).isEqualTo(attendee31Id)
+            assertThat(updatedCsip.reviews[0].attendees[0].contribution).isEqualTo("existing1")
+            assertThat(updatedCsip.reviews[0].attendees[1].id).isEqualTo(response.components[3].nomisId)
+            assertThat(updatedCsip.reviews[0].attendees[1].contribution).isEqualTo("Attendee 2")
+            assertThat(updatedCsip.reviews[1].attendees[0].id).isEqualTo(response.components[2].nomisId)
+            assertThat(updatedCsip.reviews[1].attendees[0].contribution).isEqualTo("Attendee 1")
+            assertThat(updatedCsip.reviews[2].attendees[0].id).isEqualTo(response.components[4].nomisId)
+            assertThat(updatedCsip.reviews[2].attendees[0].contribution).isEqualTo("talked about things")
+          }
+        }
+      }
+
+      @Nested
+      inner class HappyPathMultipleInterviews {
+
+        @Test
+        fun `Updating a csip with multiple interviews will successfully save along with existing`() {
+          // Update with 2 more interviews
+          val response = webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+              UpsertCSIPRequest(
+                id = csip3.id,
+                offenderNo = "A1234TT",
+                incidentDate = LocalDate.parse("2023-12-15"),
+                typeCode = "VPA",
+                locationCode = "EXY",
+                areaOfWorkCode = "KIT",
+                reportedBy = "Jill Reporter",
+                reportedDate = LocalDate.parse("2024-05-12"),
+                investigation = InvestigationDetailRequest(
+                  staffInvolved = "Bob",
+                  interviews = listOf(
+                    interviewRequest.copy(dpsId = "0099881100", comments = "Interview2"),
+                    InterviewDetailRequest(
+                      id = interview31Id,
+                      dpsId = "445566",
+                      interviewee = "Ruby Red",
+                      date = LocalDate.parse("2024-08-06"),
+                      roleCode = "WITNESS",
+                      comments = "Interview1",
+                    ),
+                    interviewRequest.copy(dpsId = "0099881111", comments = "Interview3"),
+                  ),
+                ),
+              ),
+            )
+            .exchange()
+            .expectStatus().isEqualTo(200)
+            .expectBody(UpsertCSIPResponse::class.java)
+            .returnResult().responseBody!!
+
+          assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
+          assertThat(response.components[0].component).isEqualTo(INTERVIEW)
+          assertThat(response.components[0].dpsId).isEqualTo("0099881100")
+          assertThat(response.components[1].component).isEqualTo(INTERVIEW)
+          assertThat(response.components[1].dpsId).isEqualTo("0099881111")
+
+          repository.runInTransaction {
+            val updatedCsip = csipRepository.findByIdOrNull(csip3.id)!!
+            assertThat(updatedCsip.interviews[0].id).isEqualTo(interview31Id)
+            assertThat(updatedCsip.interviews[0].comments).isEqualTo("Interview1")
+
+            assertThat(updatedCsip.interviews[1].id).isEqualTo(response.components[0].nomisId)
+            assertThat(updatedCsip.interviews[1].comments).isEqualTo("Interview2")
+
+            assertThat(updatedCsip.interviews[2].id).isEqualTo(response.components[1].nomisId)
+            assertThat(updatedCsip.interviews[2].comments).isEqualTo("Interview3")
           }
         }
       }
@@ -1675,7 +1920,6 @@ private val reportDetailRequest = UpsertReportDetailsRequest(
   factors = listOf(factorRequest),
 )
 private val interviewRequest = InterviewDetailRequest(
-// id = 3343,
   dpsId = "00998888",
   interviewee = "Bill Black",
   date = LocalDate.parse("2024-06-06"),
