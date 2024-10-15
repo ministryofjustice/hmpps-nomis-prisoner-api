@@ -24,7 +24,7 @@ class CSIPAttendee(
   @Column(name = "ATTENDEE_ID")
   @SequenceGenerator(name = "ATTENDEE_ID", sequenceName = "ATTENDEE_ID", allocationSize = 1)
   @GeneratedValue(generator = "ATTENDEE_ID")
-  val id: Long = 0,
+  override val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REVIEW_ID")
@@ -64,7 +64,7 @@ class CSIPAttendee(
 
   // ---- NOT MAPPED columns ---- //
   // All AUDIT data except auditModuleName
-) {
+) : CSIPChild {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String

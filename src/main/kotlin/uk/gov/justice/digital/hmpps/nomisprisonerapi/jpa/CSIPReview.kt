@@ -27,7 +27,7 @@ class CSIPReview(
   @Column(name = "REVIEW_ID")
   @SequenceGenerator(name = "REVIEW_ID", sequenceName = "REVIEW_ID", allocationSize = 1)
   @GeneratedValue(generator = "REVIEW_ID")
-  val id: Long = 0,
+  override val id: Long = 0,
 
   @Column(name = "REVIEW_SEQ", nullable = false)
   val reviewSequence: Int,
@@ -98,7 +98,7 @@ class CSIPReview(
 
   // ---- NOT MAPPED columns ---- //
   // All AUDIT data except auditModuleName
-) {
+) : CSIPChild {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String

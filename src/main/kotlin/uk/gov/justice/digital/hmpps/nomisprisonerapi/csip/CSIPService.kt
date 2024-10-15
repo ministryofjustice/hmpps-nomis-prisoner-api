@@ -8,11 +8,15 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.FACTOR
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.PLAN
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.REVIEW
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPChild
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactorType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
@@ -418,36 +422,18 @@ class CSIPService(
 }
 
 fun CSIPReport.identifyNewComponents(request: UpsertCSIPRequest) =
-  identifyNewFactors(request) +
-    identifyNewPlans(request)
-// + identifyNewReviews(request)
-// + identifyNewInterviews(request)
-// + identifyNewAttendees(request)
+  identifyNewChildComponents(request.reportDetailRequest?.factors, factors, FACTOR) +
+    identifyNewChildComponents(request.plans, plans, PLAN) +
+    identifyNewChildComponents(request.reviews, reviews, REVIEW)
+//  identifyNewChildComponents(request.investigation?.interviews, interviews, INTERVIEW) +
+// request.reviews?.zip(reviews) { req, exist ->
+//   identifyNewChildComponents(req.attendees, exist.attendees, ATTENDEE)
+// }
 
-fun CSIPReport.identifyNewFactors(request: UpsertCSIPRequest): List<CSIPComponent> {
-  val newFactors = mutableListOf<CSIPComponent>()
-  request.reportDetailRequest?.factors?.onEachIndexed { index, requestFactor ->
-    requestFactor.id ?: newFactors.add(
-      CSIPComponent(
-        CSIPComponent.Component.FACTOR,
-        factors[index].id,
-        requestFactor.dpsId,
-      ),
-    )
+fun identifyNewChildComponents(requestList: List<CSIPChildRequest>?, existingList: List<CSIPChild>, component: CSIPComponent.Component): List<CSIPComponent> {
+  val componentsList = mutableListOf<CSIPComponent>()
+  requestList?.onEachIndexed { index, requestItem ->
+    requestItem.id ?: componentsList.add(CSIPComponent(component, existingList[index].id, requestItem.dpsId))
   }
-  return newFactors
-}
-
-fun CSIPReport.identifyNewPlans(request: UpsertCSIPRequest): List<CSIPComponent> {
-  val newPlans = mutableListOf<CSIPComponent>()
-  request.plans?.onEachIndexed { index, requestPlan ->
-    requestPlan.id ?: newPlans.add(
-      CSIPComponent(
-        CSIPComponent.Component.PLAN,
-        plans[index].id,
-        requestPlan.dpsId,
-      ),
-    )
-  }
-  return newPlans
+  return componentsList
 }
