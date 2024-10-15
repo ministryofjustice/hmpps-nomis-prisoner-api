@@ -4,7 +4,6 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
@@ -33,7 +32,7 @@ class CSIPReport(
   @GeneratedValue(generator = "CSIP_ID")
   val id: Long = 0,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking,
 
@@ -155,7 +154,7 @@ class CSIPReport(
   @Column(name = "REFERRAL_COMPLETED_BY")
   var referralCompletedBy: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "REFERRAL_COMPLETED_BY", insertable = false, updatable = false)
   var referralCompletedByStaffUserAccount: StaffUserAccount? = null,
 
@@ -189,7 +188,7 @@ class CSIPReport(
   @Column(name = "CDR_OUTCOME_RECORDED_BY")
   var outcomeCreateUsername: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "CDR_OUTCOME_RECORDED_BY", insertable = false, updatable = false)
   val outcomeCreatedByStaffUserAccount: StaffUserAccount? = null,
 
@@ -266,7 +265,7 @@ class CSIPReport(
   @Column(name = "INV_OUTCOME_RECORDED_BY")
   var recordedBy: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "INV_OUTCOME_RECORDED_BY", insertable = false, updatable = false)
   val recordedByStaffUserAccount: StaffUserAccount? = null,
 
@@ -319,14 +318,14 @@ class CSIPReport(
   @Column
   var auditModuleName: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
   val createdByStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   var lastModifiedUsername: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   val lastModifiedByStaffUserAccount: StaffUserAccount? = null,
 
@@ -363,4 +362,8 @@ class CSIPReport(
   override fun toString(): String {
     return this::class.simpleName + "(id = $id)"
   }
+}
+
+interface CSIPChild {
+  val id: Long
 }

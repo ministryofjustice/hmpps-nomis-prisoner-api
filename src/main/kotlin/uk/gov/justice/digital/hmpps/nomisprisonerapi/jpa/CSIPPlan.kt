@@ -23,7 +23,7 @@ class CSIPPlan(
   @Column(name = "PLAN_ID")
   @SequenceGenerator(name = "PLAN_ID", sequenceName = "PLAN_ID", allocationSize = 1)
   @GeneratedValue(generator = "PLAN_ID")
-  val id: Long = 0,
+  override val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CSIP_ID")
@@ -71,7 +71,7 @@ class CSIPPlan(
 
   // ---- NOT MAPPED columns ---- //
   // All AUDIT data except auditModuleName
-) {
+) : CSIPChild {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
