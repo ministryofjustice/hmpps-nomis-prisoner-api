@@ -927,7 +927,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/case_identifiers")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/case-identifiers")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Refreshes the list of Case identifiers associated with the case",
