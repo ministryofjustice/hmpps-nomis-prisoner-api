@@ -43,6 +43,21 @@ interface OffenderRepository :
     """,
   )
   fun findAllIds(pageable: Pageable): Page<PrisonerId>
+
+  @Query(
+    """
+      select /*+ INDEX (OFFENDERS OFFENDERS_PK) */
+       offender_id_display as prisonerid, 
+       offender_id         as offenderid
+      from offenders
+      where root_offender_id = offender_id
+        and offender_id > :offenderId
+        and rownum <= :pageSize
+      order by offender_id
+    """,
+    nativeQuery = true,
+  )
+  fun findAllIdsFromId(offenderId: Long, pageSize: Int): List<PrisonerWithId>
 }
 
 fun OffenderRepository.findLatestAliasByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()
@@ -55,4 +70,8 @@ interface PrisonerIds {
 }
 interface PrisonerId {
   fun getNomsId(): String
+}
+interface PrisonerWithId {
+  fun getPrisonerId(): String
+  fun getOffenderId(): Long
 }

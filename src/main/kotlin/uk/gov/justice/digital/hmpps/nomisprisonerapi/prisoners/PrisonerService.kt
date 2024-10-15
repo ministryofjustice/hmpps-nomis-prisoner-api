@@ -25,8 +25,9 @@ class PrisonerService(
   private val mergeTransactionRepository: MergeTransactionRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
 ) {
-  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> = bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
-    .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
+  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> =
+    bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
+      .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
 
   fun findAllPrisonersWithBookings(pageRequest: Pageable): Page<PrisonerIds> =
     offenderRepository.findAllWithBookings(
@@ -41,30 +42,48 @@ class PrisonerService(
         offenderNo = it.getNomsId(),
       )
     }
+
   fun findAllPrisoners(pageRequest: Pageable): Page<PrisonerId> =
     offenderRepository.findAllIds(pageRequest).map { PrisonerId(offenderNo = it.getNomsId()) }
 
-  fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> = bookingRepository.findAllById(bookingIds)
-    .map { it.toPrisonerDetails() }
-  fun findPrisonerDetails(offenderNo: String): PrisonerDetails = bookingRepository.findLatestByOffenderNomsId(offenderNo)?.toPrisonerDetails() ?: throw NotFoundException("No prisoner with offender $offenderNo found")
-
-  fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> = mergeTransactionRepository.findByNomsIdAndAfterRequestDate(offenderNo, fromDate?.atStartOfDay())
-    .map {
-      val offender2Retained = offenderRepository.findLatestAliasByNomisId(it.nomsId2) != null
-      MergeDetail(
-        retainedOffenderNo = if (offender2Retained) it.nomsId2 else it.nomsId1,
-        previousBookingId = it.offenderBookId1,
-        deletedOffenderNo = if (offender2Retained) it.nomsId1 else it.nomsId2,
-        activeBookingId = it.offenderBookId2,
-        requestDateTime = it.requestDate,
+  fun findAllPrisonersFromId(offenderId: Long, pageSize: Int): PrisonerNosWithLast =
+    offenderRepository.findAllIdsFromId(offenderId, pageSize).let {
+      PrisonerNosWithLast(
+        it.map { PrisonerId(it.getPrisonerId()) },
+        it.lastOrNull()?.getOffenderId() ?: 0,
       )
     }
+
+  fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> = bookingRepository.findAllById(bookingIds)
+    .map { it.toPrisonerDetails() }
+
+  fun findPrisonerDetails(offenderNo: String): PrisonerDetails =
+    bookingRepository.findLatestByOffenderNomsId(offenderNo)?.toPrisonerDetails()
+      ?: throw NotFoundException("No prisoner with offender $offenderNo found")
+
+  fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> =
+    mergeTransactionRepository.findByNomsIdAndAfterRequestDate(offenderNo, fromDate?.atStartOfDay())
+      .map {
+        val offender2Retained = offenderRepository.findLatestAliasByNomisId(it.nomsId2) != null
+        MergeDetail(
+          retainedOffenderNo = if (offender2Retained) it.nomsId2 else it.nomsId1,
+          previousBookingId = it.offenderBookId1,
+          deletedOffenderNo = if (offender2Retained) it.nomsId1 else it.nomsId2,
+          activeBookingId = it.offenderBookId2,
+          requestDateTime = it.requestDate,
+        )
+      }
 
   fun getPreviousBookingId(offenderNo: String, bookingId: Long): PreviousBookingId =
     offenderBookingRepository.findByIdOrNull(bookingId)
       ?.bookingSequence
-      ?.let { bookingSequence -> offenderBookingRepository.findOneByOffenderNomsIdAndBookingSequence(offenderNo, bookingSequence + 1) }
-      ?.let { PreviousBookingId(bookingId = it.bookingId, bookingSequence = it.bookingSequence!!.toLong()) }
+      ?.let { bookingSequence ->
+        offenderBookingRepository.findOneByOffenderNomsIdAndBookingSequence(
+          offenderNo,
+          bookingSequence + 1,
+        )
+      }
+      ?.let { PreviousBookingId(bookingId = it.bookingId, bookingSequence = it.bookingSequence.toLong()) }
       ?: throw NotFoundException("Prisoner with offenderNo $offenderNo and booking $bookingId not found or has no previous booking")
 }
 
@@ -73,4 +92,9 @@ private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetai
   bookingId = bookingId,
   location = location?.id ?: "",
   active = active,
+)
+
+data class PrisonerNosWithLast(
+  val prisonerIds: List<PrisonerId>,
+  val lastOffenderId: Long,
 )
