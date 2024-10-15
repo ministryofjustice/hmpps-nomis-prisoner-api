@@ -41,32 +41,32 @@ class CSIPReview(
 
   @Column(name = "REMAIN_ON_CSIP")
   @Convert(converter = YesNoConverter::class)
-  val remainOnCSIP: Boolean = false,
+  var remainOnCSIP: Boolean = false,
 
   @Column(name = "CSIP_UPDATED")
   @Convert(converter = YesNoConverter::class)
-  val csipUpdated: Boolean = false,
+  var csipUpdated: Boolean = false,
 
   @Column(name = "CASE_NOTE")
   @Convert(converter = YesNoConverter::class)
-  val caseNote: Boolean = false,
+  var caseNote: Boolean = false,
 
   @Column(name = "CLOSE_CSIP")
   @Convert(converter = YesNoConverter::class)
-  val closeCSIP: Boolean = false,
+  var closeCSIP: Boolean = false,
 
   @Column(name = "PEOPLE_INFORMED")
   @Convert(converter = YesNoConverter::class)
-  val peopleInformed: Boolean = false,
+  var peopleInformed: Boolean = false,
 
   @Column(name = "SUMMARY")
-  val summary: String?,
+  var summary: String?,
 
   @Column(name = "NEXT_REVIEW_DATE", nullable = false)
-  val nextReviewDate: LocalDate?,
+  var nextReviewDate: LocalDate?,
 
   @Column(name = "CLOSE_DATE")
-  val closeDate: LocalDate?,
+  var closeDate: LocalDate?,
 
   @Column(name = "CREATE_DATE")
   val recordedDate: LocalDate? = LocalDate.now(),

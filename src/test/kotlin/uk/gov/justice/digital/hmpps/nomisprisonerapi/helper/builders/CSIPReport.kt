@@ -75,7 +75,7 @@ interface CSIPReportDsl {
     intervention: String = "Support their work",
     progression: String? = null,
     referredBy: String = "Fred Bloggs",
-    targetDate: LocalDate = LocalDate.now(),
+    targetDate: LocalDate = LocalDate.parse("2024-07-06"),
     dsl: CSIPPlanDsl.() -> Unit = {},
   ): CSIPPlan
 

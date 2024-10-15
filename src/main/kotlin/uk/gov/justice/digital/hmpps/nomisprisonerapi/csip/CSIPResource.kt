@@ -400,9 +400,9 @@ data class UpsertCSIPResponse(
   val offenderNo: String,
 
   @Schema(description = "Any new CSIP components that were created")
-  val mappings: List<ResponseMapping>,
+  val components: List<CSIPComponent>,
 )
-data class ResponseMapping(
+data class CSIPComponent(
   @Schema(description = "The child component created")
   val component: Component,
   @Schema(description = "The nomisId of the created component")

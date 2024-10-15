@@ -31,17 +31,17 @@ class CSIPAttendee(
   val csipReview: CSIPReview,
 
   @Column(name = "ATTENDEE_NAME")
-  val name: String? = null,
+  var name: String? = null,
 
   @Column(name = "ATTENDEE_ROLE")
-  val role: String? = null,
+  var role: String? = null,
 
   @Column(name = "ATTENDED")
   @Convert(converter = YesNoConverter::class)
-  val attended: Boolean = false,
+  var attended: Boolean = false,
 
   @Column(name = "CONTRIBUTION")
-  val contribution: String? = null,
+  var contribution: String? = null,
 
   @Column
   var auditModuleName: String? = null,
