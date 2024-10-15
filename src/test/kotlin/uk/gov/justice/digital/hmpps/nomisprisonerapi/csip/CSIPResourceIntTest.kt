@@ -39,6 +39,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   private lateinit var csip3: CSIPReport
   private var document1Id: Long = 0
   private var factor31Id: Long = 0
+  private var plan31Id: Long = 0
 
   @BeforeEach
   internal fun createTestCSIPReports() {
@@ -93,11 +94,13 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           csip2 = csipReport {}
           csip3 = csipReport {
             factor()
+            plan()
           }
         }
       }
     }
     factor31Id = csip3.factors[0].id
+    plan31Id = csip3.plans[0].id
 
     document1Id = csip1.offenderBooking.documents[0].id
   }
@@ -370,7 +373,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].progression").isEqualTo("Behaviour improved")
         .jsonPath("plans[0].referredBy").isEqualTo("Fred Bloggs")
         .jsonPath("plans[0].createdDate").isEqualTo(LocalDate.now().toString())
-        .jsonPath("plans[0].targetDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("plans[0].targetDate").isEqualTo("2024-07-06")
         .jsonPath("plans[0].closedDate").doesNotExist()
         .jsonPath("plans[0].createDateTime").isNotEmpty
         .jsonPath("plans[0].createdBy").isEqualTo("SA")
@@ -999,7 +1002,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("nomisCSIPReportId").isNotEmpty
           .jsonPath("offenderNo").isEqualTo("A1234TT")
-          .jsonPath("mappings.size()").isEqualTo(0)
+          .jsonPath("components.size()").isEqualTo(0)
       }
 
       @Test
@@ -1013,13 +1016,15 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isEqualTo(200)
           .expectBody()
-          .consumeWith { println(it) }
           .jsonPath("nomisCSIPReportId").isNotEmpty
           .jsonPath("offenderNo").isEqualTo("A1234TT")
-          .jsonPath("mappings.size()").isEqualTo(1)
-          .jsonPath("mappings[0].component").isEqualTo(ResponseMapping.Component.FACTOR.name)
-          .jsonPath("mappings[0].nomisId").isNotEmpty
-          .jsonPath("mappings[0].dpsId").isEqualTo("00998877")
+          .jsonPath("components.size()").isEqualTo(2)
+          .jsonPath("components[0].component").isEqualTo(CSIPComponent.Component.FACTOR.name)
+          .jsonPath("components[0].nomisId").isNotEmpty
+          .jsonPath("components[0].dpsId").isEqualTo("00998877")
+          .jsonPath("components[1].component").isEqualTo(CSIPComponent.Component.PLAN.name)
+          .jsonPath("components[1].nomisId").isNotEmpty
+          .jsonPath("components[1].dpsId").isEqualTo("00998899")
       }
 
       @Test
@@ -1064,7 +1069,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
         repository.runInTransaction {
           val newCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
-          // TODO check release date
           assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
           assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
           assertThat(newCsip.originalAgencyId).isEqualTo("RNI")
@@ -1121,15 +1125,13 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.usualBehaviour).isEqualTo("Good person")
           assertThat(newCsip.trigger).isEqualTo("missed meal")
           assertThat(newCsip.protectiveFactors).isEqualTo("ensure taken to canteen")
-          assertThat(newCsip.interviews.size).isEqualTo(0)
+          assertThat(newCsip.interviews.size).isEqualTo(1)
 
-          /* TODO ADD in when set
           assertThat(newCsip.interviews[0].interviewee).isEqualTo("Bill Black")
           assertThat(newCsip.interviews[0].interviewDate).isEqualTo("2024-06-06")
           assertThat(newCsip.interviews[0].role.code).isEqualTo("WITNESS")
           assertThat(newCsip.interviews[0].comments).isEqualTo("Saw a pipe in his hand")
-          assertThat(newCsip.interviews[0].createUsername).isEqualTo("FRED_ADM")
-           */
+          assertThat(newCsip.interviews[0].createUsername).isEqualTo("SA")
 
           // Decision and actions
           assertThat(newCsip.conclusion).isEqualTo("The end result")
@@ -1159,54 +1161,48 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.plans[0].createDate).isEqualTo(LocalDate.now())
           assertThat(newCsip.plans[0].createUsername).isEqualTo("SA")
 
-          // Check reviews
-          // TODO Add in when set
-          assertThat(newCsip.reviews.size).isEqualTo(0)
-          /*
+          // Reviews
+          assertThat(newCsip.reviews.size).isEqualTo(1)
+
           assertThat(newCsip.reviews[0].remainOnCSIP).isEqualTo(true)
           assertThat(newCsip.reviews[0].csipUpdated).isEqualTo(false)
           assertThat(newCsip.reviews[0].caseNote).isEqualTo(false)
           assertThat(newCsip.reviews[0].closeCSIP).isEqualTo(true)
           assertThat(newCsip.reviews[0].peopleInformed).isEqualTo(false)
           assertThat(newCsip.reviews[0].summary).isEqualTo("More help needed")
-          assertThat(newCsip.reviews[0].nextReviewDate).isEqualTo( LocalDate.parse("2024-08-01"))
+          assertThat(newCsip.reviews[0].nextReviewDate).isEqualTo(LocalDate.parse("2024-08-01"))
           assertThat(newCsip.reviews[0].closeDate).isEqualTo(LocalDate.parse("2024-04-16"))
           assertThat(newCsip.reviews[0].recordedUser).isEqualTo("FRED.JAMES")
           assertThat(newCsip.reviews[0].recordedDate).isEqualTo(LocalDate.parse("2024-04-01"))
 
-          // Check attendees
-          assertThat(newCsip.reviews[0].attendees.size).isEqualTo(0)
+          // Attendees
+          assertThat(newCsip.reviews[0].attendees.size).isEqualTo(1)
           assertThat(newCsip.reviews[0].attendees[0].name).isEqualTo("sam jones")
           assertThat(newCsip.reviews[0].attendees[0].role).isEqualTo("person")
           assertThat(newCsip.reviews[0].attendees[0].attended).isEqualTo(true)
           assertThat(newCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
-
-           */
         }
       }
 
       @Nested
       inner class HappyPathMultipleFactors {
         @Test
-        fun `creating a csip with minimal data will return basic data`() {
+        fun `creating a csip with minimal data and factors will return basic data`() {
           val validCSIP = createUpsertCSIPRequestMinimalData().copy(
             reportDetailRequest = reportDetailRequest.copy(
               factors =
               listOf(
                 CSIPFactorRequest(
-                  id = null,
                   dpsId = "112233",
                   typeCode = "BUL",
                   comment = "Offender causes trouble3",
                 ),
                 CSIPFactorRequest(
-                  id = null,
                   dpsId = "223344",
                   typeCode = "BUL",
                   comment = "Offender causes trouble4",
                 ),
                 CSIPFactorRequest(
-                  id = null,
                   dpsId = "223355",
                   typeCode = "BUL",
                   comment = "Offender causes trouble5",
@@ -1224,7 +1220,33 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             .expectBody()
             .jsonPath("nomisCSIPReportId").isNotEmpty
             .jsonPath("offenderNo").isEqualTo("A1234TT")
-            .jsonPath("mappings.size()").isEqualTo(3)
+            .jsonPath("components.size()").isEqualTo(3)
+        }
+      }
+
+      @Nested
+      inner class HappyPathMultiplePlans {
+        @Test
+        fun `creating a csip with minimal data and plans will return basic data`() {
+          val validCSIP = createUpsertCSIPRequestMinimalData().copy(
+            plans =
+            listOf(
+              planRequest,
+              planRequest.copy(dpsId = "123456", identifiedNeed = "help 2"),
+              planRequest.copy(dpsId = "345678", identifiedNeed = "help 3"),
+            ),
+          )
+
+          webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(validCSIP)
+            .exchange()
+            .expectStatus().isEqualTo(200)
+            .expectBody()
+            .jsonPath("nomisCSIPReportId").isNotEmpty
+            .jsonPath("offenderNo").isEqualTo("A1234TT")
+            .jsonPath("components.size()").isEqualTo(3)
         }
       }
     }
@@ -1257,7 +1279,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("nomisCSIPReportId").isNotEmpty
           .jsonPath("offenderNo").isEqualTo("A1234TT")
-          .jsonPath("mappings.size()").isEqualTo(0)
+          .jsonPath("components.size()").isEqualTo(0)
       }
 
       @Test
@@ -1336,15 +1358,13 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(updatedCsip.usualBehaviour).isEqualTo("Good person")
           assertThat(updatedCsip.trigger).isEqualTo("missed meal")
           assertThat(updatedCsip.protectiveFactors).isEqualTo("ensure taken to canteen")
-          assertThat(updatedCsip.interviews.size).isEqualTo(0)
+          assertThat(updatedCsip.interviews.size).isEqualTo(1)
 
-            /* TODO ADD in when set
-          assertThat(newCsip.interviews[0].interviewee).isEqualTo("Bill Black")
-          assertThat(newCsip.interviews[0].interviewDate).isEqualTo("2024-06-06")
-          assertThat(newCsip.interviews[0].role.code).isEqualTo("WITNESS")
-          assertThat(newCsip.interviews[0].comments).isEqualTo("Saw a pipe in his hand")
-          assertThat(newCsip.interviews[0].createUsername).isEqualTo("FRED_ADM")
-             */
+          assertThat(updatedCsip.interviews[0].interviewee).isEqualTo("Bill Black")
+          assertThat(updatedCsip.interviews[0].interviewDate).isEqualTo("2024-06-06")
+          assertThat(updatedCsip.interviews[0].role.code).isEqualTo("WITNESS")
+          assertThat(updatedCsip.interviews[0].comments).isEqualTo("Saw a pipe in his hand")
+          assertThat(updatedCsip.interviews[0].createUsername).isEqualTo("SA")
 
           // Decision and actions
           assertThat(updatedCsip.conclusion).isEqualTo("The end result")
@@ -1374,29 +1394,26 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(updatedCsip.plans[0].createDate).isEqualTo(LocalDate.now())
           assertThat(updatedCsip.plans[0].createUsername).isEqualTo("SA")
 
-          // Check reviews
-          // TODO Add in when set
-          assertThat(updatedCsip.reviews.size).isEqualTo(0)
-            /*
-          assertThat(newCsip.reviews[0].remainOnCSIP).isEqualTo(true)
-          assertThat(newCsip.reviews[0].csipUpdated).isEqualTo(false)
-          assertThat(newCsip.reviews[0].caseNote).isEqualTo(false)
-          assertThat(newCsip.reviews[0].closeCSIP).isEqualTo(true)
-          assertThat(newCsip.reviews[0].peopleInformed).isEqualTo(false)
-          assertThat(newCsip.reviews[0].summary).isEqualTo("More help needed")
-          assertThat(newCsip.reviews[0].nextReviewDate).isEqualTo( LocalDate.parse("2024-08-01"))
-          assertThat(newCsip.reviews[0].closeDate).isEqualTo(LocalDate.parse("2024-04-16"))
-          assertThat(newCsip.reviews[0].recordedUser).isEqualTo("FRED.JAMES")
-          assertThat(newCsip.reviews[0].recordedDate).isEqualTo(LocalDate.parse("2024-04-01"))
+          // Reviews
+          assertThat(updatedCsip.reviews.size).isEqualTo(1)
+
+          assertThat(updatedCsip.reviews[0].remainOnCSIP).isEqualTo(true)
+          assertThat(updatedCsip.reviews[0].csipUpdated).isEqualTo(false)
+          assertThat(updatedCsip.reviews[0].caseNote).isEqualTo(false)
+          assertThat(updatedCsip.reviews[0].closeCSIP).isEqualTo(true)
+          assertThat(updatedCsip.reviews[0].peopleInformed).isEqualTo(false)
+          assertThat(updatedCsip.reviews[0].summary).isEqualTo("More help needed")
+          assertThat(updatedCsip.reviews[0].nextReviewDate).isEqualTo(LocalDate.parse("2024-08-01"))
+          assertThat(updatedCsip.reviews[0].closeDate).isEqualTo(LocalDate.parse("2024-04-16"))
+          assertThat(updatedCsip.reviews[0].recordedUser).isEqualTo("FRED.JAMES")
+          assertThat(updatedCsip.reviews[0].recordedDate).isEqualTo(LocalDate.parse("2024-04-01"))
 
           // Check attendees
-          assertThat(newCsip.reviews[0].attendees.size).isEqualTo(0)
-          assertThat(newCsip.reviews[0].attendees[0].name).isEqualTo("sam jones")
-          assertThat(newCsip.reviews[0].attendees[0].role).isEqualTo("person")
-          assertThat(newCsip.reviews[0].attendees[0].attended).isEqualTo(true)
-          assertThat(newCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
-
-             */
+          assertThat(updatedCsip.reviews[0].attendees.size).isEqualTo(1)
+          assertThat(updatedCsip.reviews[0].attendees[0].name).isEqualTo("sam jones")
+          assertThat(updatedCsip.reviews[0].attendees[0].role).isEqualTo("person")
+          assertThat(updatedCsip.reviews[0].attendees[0].attended).isEqualTo(true)
+          assertThat(updatedCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
         }
       }
 
@@ -1449,21 +1466,79 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             .returnResult().responseBody!!
 
           assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
-          assertThat(response.mappings[0].component).isEqualTo(ResponseMapping.Component.FACTOR)
-          assertThat(response.mappings[0].dpsId).isEqualTo("112244")
-          assertThat(response.mappings[1].component).isEqualTo(ResponseMapping.Component.FACTOR)
-          assertThat(response.mappings[1].dpsId).isEqualTo("112277")
+          assertThat(response.components[0].component).isEqualTo(CSIPComponent.Component.FACTOR)
+          assertThat(response.components[0].dpsId).isEqualTo("112244")
+          assertThat(response.components[1].component).isEqualTo(CSIPComponent.Component.FACTOR)
+          assertThat(response.components[1].dpsId).isEqualTo("112277")
 
           repository.runInTransaction {
             val newCsip = csipRepository.findByIdOrNull(csip3.id)!!
             assertThat(newCsip.factors[0].id).isEqualTo(factor31Id)
             assertThat(newCsip.factors[0].comment).isEqualTo("Offender causes trouble3")
 
-            assertThat(newCsip.factors[1].id).isEqualTo(response.mappings[0].nomisId)
+            assertThat(newCsip.factors[1].id).isEqualTo(response.components[0].nomisId)
             assertThat(newCsip.factors[1].comment).isEqualTo("Offender causes trouble1")
 
-            assertThat(newCsip.factors[2].id).isEqualTo(response.mappings[1].nomisId)
+            assertThat(newCsip.factors[2].id).isEqualTo(response.components[1].nomisId)
             assertThat(newCsip.factors[2].comment).isEqualTo("Offender causes trouble4")
+          }
+        }
+      }
+
+      @Nested
+      inner class HappyPathMultiplePlans {
+        @Test
+        fun `Updating a csip with multiple plans will successfully save along with existing`() {
+          // Update with 2 more plans
+          val response = webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+              UpsertCSIPRequest(
+                id = csip3.id,
+                offenderNo = "A1234TT",
+                incidentDate = LocalDate.parse("2023-12-15"),
+                typeCode = "VPA",
+                locationCode = "EXY",
+                areaOfWorkCode = "KIT",
+                reportedBy = "Jill Reporter",
+                reportedDate = LocalDate.parse("2024-05-12"),
+                plans = listOf(
+                  planRequest.copy(dpsId = "00998800", identifiedNeed = "Help2"),
+                  PlanRequest(
+                    id = plan31Id,
+                    dpsId = "112233",
+                    identifiedNeed = "Help1",
+                    intervention = "Support their work",
+                    progression = null,
+                    referredBy = "Fred Bloggs",
+                    targetDate = LocalDate.parse("2024-07-06"),
+                  ),
+                  planRequest.copy(dpsId = "009988011", identifiedNeed = "Help3"),
+                ),
+              ),
+            )
+            .exchange()
+            .expectStatus().isEqualTo(200)
+            .expectBody(UpsertCSIPResponse::class.java)
+            .returnResult().responseBody!!
+
+          assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
+          assertThat(response.components[0].component).isEqualTo(CSIPComponent.Component.PLAN)
+          assertThat(response.components[0].dpsId).isEqualTo("00998800")
+          assertThat(response.components[1].component).isEqualTo(CSIPComponent.Component.PLAN)
+          assertThat(response.components[1].dpsId).isEqualTo("009988011")
+
+          repository.runInTransaction {
+            val newCsip = csipRepository.findByIdOrNull(csip3.id)!!
+            assertThat(newCsip.plans[0].id).isEqualTo(plan31Id)
+            assertThat(newCsip.plans[0].identifiedNeed).isEqualTo("Help1")
+
+            assertThat(newCsip.plans[1].id).isEqualTo(response.components[0].nomisId)
+            assertThat(newCsip.plans[1].identifiedNeed).isEqualTo("Help2")
+
+            assertThat(newCsip.plans[2].id).isEqualTo(response.components[1].nomisId)
+            assertThat(newCsip.plans[2].identifiedNeed).isEqualTo("Help3")
           }
         }
       }
@@ -1572,7 +1647,6 @@ private val decisionRequest = DecisionRequest(
   actions = actionsRequest,
 )
 private val planRequest = PlanRequest(
-// id = TODO(),
   dpsId = "00998899",
   identifiedNeed = "they need help",
   intervention = "dd",
@@ -1581,8 +1655,8 @@ private val planRequest = PlanRequest(
   targetDate = LocalDate.parse("2024-08-20"),
   closedDate = LocalDate.parse("2024-04-17"),
 )
+
 private val attendeeRequest = AttendeeRequest(
-// id = TODO(),
   dpsId = "00998800",
   name = "sam jones",
   role = "person",
@@ -1590,7 +1664,6 @@ private val attendeeRequest = AttendeeRequest(
   contribution = "talked about things",
 )
 private val reviewRequest = ReviewRequest(
-// id = TODO(),
   dpsId = "00998811",
   remainOnCSIP = true,
   csipUpdated = false,

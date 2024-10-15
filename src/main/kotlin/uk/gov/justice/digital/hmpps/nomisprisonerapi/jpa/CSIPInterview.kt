@@ -33,10 +33,10 @@ class CSIPInterview(
   val csipReport: CSIPReport,
 
   @Column(name = "CSIP_INTERVIEWEE", nullable = false)
-  val interviewee: String,
+  var interviewee: String,
 
   @Column(name = "INTVW_DATE", nullable = false)
-  val interviewDate: LocalDate,
+  var interviewDate: LocalDate,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -49,10 +49,10 @@ class CSIPInterview(
       ), JoinColumnOrFormula(column = JoinColumn(name = "INTVW_ROLE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val role: CSIPInterviewRole,
+  var role: CSIPInterviewRole,
 
   @Column(name = "COMMENTS", nullable = false)
-  val comments: String? = null,
+  var comments: String? = null,
 
   @Column
   var auditModuleName: String? = null,
