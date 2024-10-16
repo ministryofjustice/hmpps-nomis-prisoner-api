@@ -141,7 +141,6 @@ class CSIPReportBuilderRepository(
   val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
   val involvementRepository: ReferenceCodeRepository<CSIPInvolvement>,
   val signedOffRoleRepository: ReferenceCodeRepository<CSIPSignedOffRole>,
-  // TODO Check data in preprod if decisionOutcome and outcome the same
   val decisionOutcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
 ) {
   fun save(csipReport: CSIPReport): CSIPReport = repository.save(csipReport)

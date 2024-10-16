@@ -8,7 +8,9 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.ATTENDEE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.FACTOR
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.INTERVIEW
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.PLAN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.REVIEW
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -362,7 +364,6 @@ class CSIPService(
     val newAttendeeList: MutableList<CSIPAttendee> = mutableListOf()
     attendeeRequests.forEach { request ->
       newAttendeeList.add(
-        // Review request has an id so find the equivalent in the report
         request.id?.let {
           attendees.find { it.id == request.id }
             ?.apply {
@@ -421,14 +422,19 @@ class CSIPService(
     ?: throw BadDataException("Factor type $code not found")
 }
 
-fun CSIPReport.identifyNewComponents(request: UpsertCSIPRequest) =
+fun CSIPReport.identifyNewComponents(request: UpsertCSIPRequest): List<CSIPComponent> =
   identifyNewChildComponents(request.reportDetailRequest?.factors, factors, FACTOR) +
     identifyNewChildComponents(request.plans, plans, PLAN) +
-    identifyNewChildComponents(request.reviews, reviews, REVIEW)
-//  identifyNewChildComponents(request.investigation?.interviews, interviews, INTERVIEW) +
-// request.reviews?.zip(reviews) { req, exist ->
-//   identifyNewChildComponents(req.attendees, exist.attendees, ATTENDEE)
-// }
+    identifyNewChildComponents(request.investigation?.interviews, interviews, INTERVIEW) +
+    identifyNewReviewsAndAttendees(request)
+
+fun CSIPReport.identifyNewReviewsAndAttendees(request: UpsertCSIPRequest): List<CSIPComponent> =
+  request.reviews?.let {
+    identifyNewChildComponents(request.reviews, reviews, REVIEW) +
+      it.zip(reviews) { reviewReq, existingReview ->
+        identifyNewChildComponents(reviewReq.attendees, existingReview.attendees, ATTENDEE)
+      }.flatten()
+  } ?: listOf()
 
 fun identifyNewChildComponents(requestList: List<CSIPChildRequest>?, existingList: List<CSIPChild>, component: CSIPComponent.Component): List<CSIPComponent> {
   val componentsList = mutableListOf<CSIPComponent>()

@@ -120,7 +120,7 @@ data class CSIPFactorRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InvestigationDetailRequest(
   @Schema(description = "Staff involved in the incident")
-  val staffInvolved: String?,
+  val staffInvolved: String? = null,
   @Schema(description = "Whether any evidence was secured")
   val evidenceSecured: String? = null,
   @Schema(description = "Why the incident occurred")
