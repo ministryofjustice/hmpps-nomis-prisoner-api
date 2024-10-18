@@ -84,6 +84,7 @@ class CSIPService(
           mapOf(
             "nomisCSIPReportId" to it.nomisCSIPReportId,
             "offenderNo" to request.offenderNo,
+            "componentsCreated" to it.components,
           ),
         )
       }

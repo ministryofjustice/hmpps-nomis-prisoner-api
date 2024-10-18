@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.csip
 
+import org.apache.commons.lang3.StringUtils.countMatches
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
@@ -7,6 +8,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
@@ -1207,6 +1212,55 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         }
       }
 
+      @Test
+      fun `will track telemetry event for create with minimal data`() {
+        val validCSIP = createUpsertCSIPRequestMinimalData()
+
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+
+        verify(telemetryClient).trackEvent(
+          eq("csip-created"),
+          check {
+            assertThat(it).containsKey("nomisCSIPReportId")
+            assertThat(it).containsEntry("offenderNo", "A1234TT")
+            assertThat(it).containsEntry("componentsCreated", "[]")
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will track telemetry event for create with full data`() {
+        val validCSIP = createUpsertCSIPRequest()
+
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+
+        verify(telemetryClient).trackEvent(
+          eq("csip-created"),
+          check {
+            assertThat(it).containsKey("nomisCSIPReportId")
+            assertThat(it).containsEntry("offenderNo", "A1234TT")
+            assertThat(countMatches(it["componentsCreated"], "CSIPComponent")).isEqualTo(5)
+            assertThat(it["componentsCreated"]).contains("component=FACTOR")
+            assertThat(it["componentsCreated"]).contains("component=PLAN")
+            assertThat(it["componentsCreated"]).contains("component=INTERVIEW")
+            assertThat(it["componentsCreated"]).contains("component=REVIEW")
+            assertThat(it["componentsCreated"]).contains("component=ATTENDEE")
+          },
+          isNull(),
+        )
+      }
+
       @Nested
       inner class HappyPathMultipleFactors {
         @Test
@@ -1523,8 +1577,102 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         }
       }
 
+      @Test
+      fun `will track telemetry event for update with minimal data`() {
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            UpsertCSIPRequest(
+              id = csip1.id,
+              offenderNo = "A1234TT",
+              incidentDate = LocalDate.parse("2023-12-15"),
+              typeCode = "VPA",
+              locationCode = "EXY",
+              areaOfWorkCode = "KIT",
+              reportedBy = "Jill Reporter",
+              reportedDate = LocalDate.parse("2024-05-12"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(200)
+
+        verify(telemetryClient).trackEvent(
+          eq("csip-updated"),
+          check {
+            assertThat(it).containsEntry("nomisCSIPReportId", csip1.id.toString())
+            assertThat(it).containsEntry("offenderNo", "A1234TT")
+            assertThat(it).containsEntry("componentsCreated", "[]")
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will track telemetry event for update with full data`() {
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip1.id)
+
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+
+        verify(telemetryClient).trackEvent(
+          eq("csip-updated"),
+          check<MutableMap<String, String>> {
+            assertThat(it).containsEntry("nomisCSIPReportId", csip1.id.toString())
+            assertThat(it).containsEntry("offenderNo", "A1234TT")
+            assertThat(it["componentsCreated"]).contains("component=FACTOR")
+            assertThat(it["componentsCreated"]).containsPattern("component=PLAN")
+            assertThat(it["componentsCreated"]).contains("component=INTERVIEW")
+            assertThat(it["componentsCreated"]).contains("component=REVIEW")
+            assertThat(it["componentsCreated"]).contains("component=ATTENDEE")
+          },
+          isNull(),
+        )
+      }
+
       @Nested
       inner class HappyPathMultipleFactors {
+        private lateinit var upsertWithMultipleFactors: UpsertCSIPRequest
+
+        @BeforeEach
+        fun setUp() {
+          upsertWithMultipleFactors =
+            UpsertCSIPRequest(
+              id = csip3.id,
+              offenderNo = "A1234TT",
+              incidentDate = LocalDate.parse("2023-12-15"),
+              typeCode = "VPA",
+              locationCode = "EXY",
+              areaOfWorkCode = "KIT",
+              reportedBy = "Jill Reporter",
+              reportedDate = LocalDate.parse("2024-05-12"),
+              reportDetailRequest = UpsertReportDetailsRequest(
+                factors =
+                listOf(
+                  CSIPFactorRequest(
+                    dpsId = "112244",
+                    typeCode = "BUL",
+                    comment = "Offender causes trouble1",
+                  ),
+                  CSIPFactorRequest(
+                    id = factor31Id,
+                    dpsId = "112233",
+                    typeCode = "BUL",
+                    comment = "Offender causes trouble3",
+                  ),
+                  CSIPFactorRequest(
+                    dpsId = "112277",
+                    typeCode = "BUL",
+                    comment = "Offender causes trouble4",
+                  ),
+                ),
+              ),
+            )
+        }
 
         @Test
         fun `Updating a csip with multiple factors will successfully save along with existing`() {
@@ -1532,40 +1680,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           val response = webTestClient.put().uri("/csip")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(
-              UpsertCSIPRequest(
-                id = csip3.id,
-                offenderNo = "A1234TT",
-                incidentDate = LocalDate.parse("2023-12-15"),
-                typeCode = "VPA",
-                locationCode = "EXY",
-                areaOfWorkCode = "KIT",
-                reportedBy = "Jill Reporter",
-                reportedDate = LocalDate.parse("2024-05-12"),
-                reportDetailRequest = UpsertReportDetailsRequest(
-                  factors =
-                  listOf(
-                    CSIPFactorRequest(
-                      dpsId = "112244",
-                      typeCode = "BUL",
-                      comment = "Offender causes trouble1",
-                    ),
-                    CSIPFactorRequest(
-                      id = factor31Id,
-                      dpsId = "112233",
-                      typeCode = "BUL",
-                      comment = "Offender causes trouble3",
-                    ),
-                    CSIPFactorRequest(
-                      dpsId = "112277",
-                      typeCode = "BUL",
-                      comment = "Offender causes trouble4",
-                    ),
-
-                  ),
-                ),
-              ),
-            )
+            .bodyValue(upsertWithMultipleFactors)
             .exchange()
             .expectStatus().isEqualTo(200)
             .expectBody(UpsertCSIPResponse::class.java)
@@ -1589,10 +1704,62 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             assertThat(updatedCsip.factors[2].comment).isEqualTo("Offender causes trouble4")
           }
         }
+
+        @Test
+        fun `will track telemetry event for multiple factors`() {
+          // Update with 2 more factors
+          webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(upsertWithMultipleFactors)
+            .exchange()
+            .expectStatus().isEqualTo(200)
+
+          verify(telemetryClient).trackEvent(
+            eq("csip-updated"),
+            check<MutableMap<String, String>> {
+              assertThat(it).containsEntry("nomisCSIPReportId", csip3.id.toString())
+              assertThat(it).containsEntry("offenderNo", "A1234TT")
+              assertThat(countMatches(it["componentsCreated"], "CSIPComponent")).isEqualTo(2)
+              assertThat(countMatches(it["componentsCreated"], "component=FACTOR")).isEqualTo(2)
+            },
+            isNull(),
+          )
+        }
       }
 
       @Nested
       inner class HappyPathMultiplePlans {
+        private lateinit var upsertWithMultiplePlans: UpsertCSIPRequest
+
+        @BeforeEach
+        fun setUp() {
+          upsertWithMultiplePlans =
+            UpsertCSIPRequest(
+              id = csip3.id,
+              offenderNo = "A1234TT",
+              incidentDate = LocalDate.parse("2023-12-15"),
+              typeCode = "VPA",
+              locationCode = "EXY",
+              areaOfWorkCode = "KIT",
+              reportedBy = "Jill Reporter",
+              reportedDate = LocalDate.parse("2024-05-12"),
+              plans = listOf(
+                planRequest.copy(dpsId = "00998800", identifiedNeed = "Help2"),
+                PlanRequest(
+                  id = plan31Id,
+                  dpsId = "112233",
+                  identifiedNeed = "Help1",
+                  intervention = "Support their work",
+                  progression = null,
+                  referredBy = "Fred Bloggs",
+                  targetDate = LocalDate.parse("2024-07-06"),
+                ),
+                planRequest.copy(dpsId = "009988011", identifiedNeed = "Help3"),
+              ),
+            )
+        }
+
         @Test
         fun `Updating a csip with multiple plans will successfully save along with existing`() {
           // Update with 2 more plans
@@ -1600,29 +1767,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(
-              UpsertCSIPRequest(
-                id = csip3.id,
-                offenderNo = "A1234TT",
-                incidentDate = LocalDate.parse("2023-12-15"),
-                typeCode = "VPA",
-                locationCode = "EXY",
-                areaOfWorkCode = "KIT",
-                reportedBy = "Jill Reporter",
-                reportedDate = LocalDate.parse("2024-05-12"),
-                plans = listOf(
-                  planRequest.copy(dpsId = "00998800", identifiedNeed = "Help2"),
-                  PlanRequest(
-                    id = plan31Id,
-                    dpsId = "112233",
-                    identifiedNeed = "Help1",
-                    intervention = "Support their work",
-                    progression = null,
-                    referredBy = "Fred Bloggs",
-                    targetDate = LocalDate.parse("2024-07-06"),
-                  ),
-                  planRequest.copy(dpsId = "009988011", identifiedNeed = "Help3"),
-                ),
-              ),
+              upsertWithMultiplePlans,
             )
             .exchange()
             .expectStatus().isEqualTo(200)
@@ -1646,6 +1791,29 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             assertThat(updatedCsip.plans[2].id).isEqualTo(response.components[1].nomisId)
             assertThat(updatedCsip.plans[2].identifiedNeed).isEqualTo("Help3")
           }
+        }
+
+        @Test
+        fun `will track telemetry event for multiple plans`() {
+          webTestClient.put().uri("/csip")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(
+              upsertWithMultiplePlans,
+            )
+            .exchange()
+            .expectStatus().isEqualTo(200)
+
+          verify(telemetryClient).trackEvent(
+            eq("csip-updated"),
+            check<MutableMap<String, String>> {
+              assertThat(it).containsEntry("nomisCSIPReportId", csip3.id.toString())
+              assertThat(it).containsEntry("offenderNo", "A1234TT")
+              assertThat(countMatches(it["componentsCreated"], "CSIPComponent")).isEqualTo(2)
+              assertThat(countMatches(it["componentsCreated"], "component=PLAN")).isEqualTo(2)
+            },
+            isNull(),
+          )
         }
       }
 
