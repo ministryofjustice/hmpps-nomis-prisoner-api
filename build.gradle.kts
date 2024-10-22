@@ -21,7 +21,7 @@ dependencies {
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 
-  implementation("com.zaxxer:HikariCP:6.0.0")
+  runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.3.232")
   runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.24.0.0")
 
