@@ -116,8 +116,9 @@ class PayRatesService(
             val startDate =
               // Use the start date as requested by DPS
               requestedRate.startDate
+                // If there is no DPS start date, this must be the first rate in DPS
                 ?: if (lastExpiredRate == null || requestedRate.rate.compareTo(lastExpiredRate.halfDayRate) == 0) {
-                  // This is the lastExpiredRate so just align with the course activity
+                  // There is no lastExpiredRate or it's the current rate, then align with the course activity start date
                   courseStartDate
                 } else {
                   // DPS appears to have deleted the lastExpiredRate, but NOMIS must start after the expired rate
@@ -125,7 +126,7 @@ class PayRatesService(
                 }
 
             val endDate = if (nextRequestedRate == null) {
-              // this is the last rate - it ends at the requested time, otherwise at the same time as the course
+              // this is the last rate so end with the course unless requested to end before then
               minDate(requestedRate.endDate, courseEndDate)
             } else {
               // if there is a next rate then the requested rate ends the day before it
