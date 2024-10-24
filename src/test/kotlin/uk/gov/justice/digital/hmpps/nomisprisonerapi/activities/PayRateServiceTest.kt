@@ -71,7 +71,9 @@ class PayRateServiceTest {
   private val today = LocalDate.now()
   private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
+  private val twoDaysAgo = today.minusDays(2)
   private val threeDaysAgo = today.minusDays(3)
+  private val twoDaysAhead = today.plusDays(2)
   private val threeDaysAhead = today.plusDays(3)
 
   @Nested
@@ -162,7 +164,7 @@ class PayRateServiceTest {
   inner class BuildNewPayRates {
     @BeforeEach
     fun `set up validation mocks`() {
-      // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2
+      // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2, startDate = "2022-10-31"
       nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity()
@@ -181,13 +183,15 @@ class PayRateServiceTest {
     @Test
     fun `no change should do nothing`() {
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(1)
       with(newPayRates.first()) {
-        assertThat(this.iepLevel.code).isEqualTo("STD")
-        assertThat(this.payBand.code).isEqualTo("5")
-        assertThat(this.halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal("0.001")))
+        assertThat(iepLevel.code).isEqualTo("STD")
+        assertThat(payBand.code).isEqualTo("5")
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal("0.001")))
+        assertThat(id.startDate).isEqualTo(courseActivity.scheduleStartDate)
+        assertThat(endDate).isNull()
       }
     }
 
@@ -197,18 +201,42 @@ class PayRateServiceTest {
         PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
         PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // existing rate unchanged
       with(newPayRates.findRate("STD", "5")) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(courseActivity.scheduleStartDate)
         assertThat(endDate).isNull()
       }
       // new rate added
       with(newPayRates.findRate("STD", "6")) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.4), within(BigDecimal(0.001)))
-        assertThat(id.startDate).isEqualTo(today)
+        assertThat(id.startDate).isEqualTo(courseActivity.scheduleStartDate)
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
+    fun `adding should create new pay rate effective from requested start date`() {
+      val request = listOf(
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4), startDate = threeDaysAhead),
+      )
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+
+      assertThat(newPayRates.size).isEqualTo(2)
+      // existing rate unchanged
+      with(newPayRates.findRate("STD", "5")) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(courseActivity.scheduleStartDate)
+        assertThat(endDate).isNull()
+      }
+      // new rate added
+      with(newPayRates.findRate("STD", "6")) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.4), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(threeDaysAhead)
         assertThat(endDate).isNull()
       }
     }
@@ -228,7 +256,7 @@ class PayRateServiceTest {
         PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
         PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // new rate added
@@ -241,13 +269,17 @@ class PayRateServiceTest {
 
     @Test
     fun `amending should expire existing and create new pay rate effective tomorrow`() {
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val request = listOf(
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3), startDate = tomorrow),
+      )
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate has been expired
       with(newPayRates.findRate("STD", "5", expired = true)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(courseActivity.scheduleStartDate)
         assertThat(endDate).isEqualTo(today)
       }
       // new rate created from tomorrow
@@ -259,7 +291,7 @@ class PayRateServiceTest {
     }
 
     @Test
-    fun `re-adding previously expired rate should add new rate effective today`() {
+    fun `re-adding previously deleted rate should add new rate effective from day after expired rate`() {
       nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity {
@@ -271,13 +303,43 @@ class PayRateServiceTest {
       }
 
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate not changed
       with(newPayRates.findRate("STD", "5", expired = true)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
         assertThat(endDate).isEqualTo(threeDaysAgo)
+      }
+      // new rate created from today
+      with(newPayRates.findRate("STD", "5", expired = false)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(4.3), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(twoDaysAgo)
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
+    fun `re-adding pay rate on same day as rate deleted should add new rate effective today`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = "$yesterday")
+          }
+        }
+      }
+
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+
+      assertThat(newPayRates.size).isEqualTo(2)
+      // old rate not changed
+      with(newPayRates.findRate("STD", "5", expired = true)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(courseActivity.scheduleStartDate)
+        assertThat(endDate).isEqualTo(yesterday)
       }
       // new rate created from today
       with(newPayRates.findRate("STD", "5", expired = false)) {
@@ -299,8 +361,11 @@ class PayRateServiceTest {
           }
         }
       }
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val request = listOf(
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4), startDate = tomorrow),
+      )
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate still expired
@@ -317,7 +382,39 @@ class PayRateServiceTest {
     }
 
     @Test
-    fun `removing new rate starting tomorrow should delete the rate rather than expire`() {
+    fun `amending future start date should not cause an expiry`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = today.toString())
+            payRate(startDate = tomorrow.toString(), halfDayRate = 4.3)
+          }
+        }
+      }
+      val request = listOf(
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4), startDate = threeDaysAhead),
+      )
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+
+      assertThat(newPayRates.size).isEqualTo(2)
+      // old rate now expires in the future
+      with(newPayRates.findRate("STD", "5", expired = true)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        assertThat(endDate).isEqualTo(twoDaysAhead)
+      }
+      // new rate with adjusted half day rate now starts when requested
+      with(newPayRates.findRate("STD", "5", expired = false)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(5.4), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(threeDaysAhead)
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
+    fun `deleting a rate with a change effective from tomorrow should expire the old rate`() {
       nomisDataBuilder.build {
         programService {
           courseActivity = courseActivity {
@@ -329,7 +426,7 @@ class PayRateServiceTest {
         }
       }
 
-      val newPayRates = payRatesService.buildNewPayRates(listOf(), courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(listOf(), courseActivity)
 
       // We only have the old expired rate - the future rate is now removed
       assertThat(newPayRates.size).isEqualTo(1)
@@ -337,7 +434,31 @@ class PayRateServiceTest {
       with(newPayRates.first()) {
         assertThat(id.payBandCode).isEqualTo("5")
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
-        assertThat(endDate).isEqualTo(today)
+        assertThat(endDate).isEqualTo(yesterday)
+      }
+    }
+
+    @Test
+    fun `deleting a rate should expire the old rate`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate()
+          }
+        }
+      }
+
+      val newPayRates = payRatesService.buildNewPayRates(listOf(), courseActivity)
+
+      // We still have the single rate
+      assertThat(newPayRates.size).isEqualTo(1)
+      // and the rate is expired
+      with(newPayRates.first()) {
+        assertThat(id.payBandCode).isEqualTo("5")
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        assertThat(endDate).isEqualTo(yesterday)
       }
     }
 
@@ -345,18 +466,18 @@ class PayRateServiceTest {
     fun `missing rate should be expired`() {
       // request pay band 6 instead of 5
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(4.3)))
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // missing rate for pay band 5 has been expired
       with(newPayRates.findRate("STD", "5", expired = true)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
-        assertThat(endDate).isEqualTo(today)
+        assertThat(endDate).isEqualTo(yesterday)
       }
-      // new rate for pay band 6 effective from today
+      // new rate for pay band 6 effective from course start
       with(newPayRates.findRate("STD", "6", expired = false)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(4.3), within(BigDecimal(0.001)))
-        assertThat(id.startDate).isEqualTo(today)
+        assertThat(id.startDate).isEqualTo(courseActivity.scheduleStartDate)
         assertThat(endDate).isNull()
       }
     }
@@ -370,16 +491,20 @@ class PayRateServiceTest {
             courseScheduleRule()
             payRate(endDate = yesterday.toString())
             payRate(startDate = tomorrow.toString(), halfDayRate = 4.3)
-            payRate(payBandCode = "6", endDate = today.toString(), halfDayRate = 5.3)
+            payRate(payBandCode = "6", halfDayRate = 5.3)
             payRate(payBandCode = "7", halfDayRate = 8.7)
           }
         }
       }
       val request = listOf(
-        PayRateRequest("STD", "5", BigDecimal(4.4)),
-        PayRateRequest("STD", "6", BigDecimal(5.4)),
+        // pay band 5 rate 3.2 was deleted then replaced with 4.4 starting tomorrow
+        PayRateRequest("STD", "5", BigDecimal(4.4), startDate = tomorrow),
+        // pay band 6 is being changed to 5.4 from tomorrow
+        PayRateRequest("STD", "6", BigDecimal(5.3)),
+        PayRateRequest("STD", "6", BigDecimal(5.4), startDate = tomorrow),
+        // pay band 7 is being deleted
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(5)
       // old rate for pay band 5 is still expired
@@ -392,7 +517,7 @@ class PayRateServiceTest {
         assertThat(halfDayRate).isCloseTo(BigDecimal(4.4), within(BigDecimal(0.001)))
         assertThat(id.startDate).isEqualTo(tomorrow)
       }
-      // old rate for pay band 6 is still expired
+      // old rate for pay band 6 now expires today
       with(newPayRates.findRate("STD", "6", expired = true)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(5.3), within(BigDecimal(0.001)))
         assertThat(endDate).isEqualTo(today)
@@ -405,7 +530,7 @@ class PayRateServiceTest {
       // old rate for pay band 7 has been expired
       with(newPayRates.findRate("STD", "7", expired = true)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(8.7), within(BigDecimal(0.001)))
-        assertThat(endDate).isEqualTo(today)
+        assertThat(endDate).isEqualTo(yesterday)
       }
     }
 
@@ -421,9 +546,10 @@ class PayRateServiceTest {
         }
       }
       val request = listOf(
-        PayRateRequest("STD", "5", BigDecimal(0.1)),
+        PayRateRequest("STD", "5", BigDecimal(1.41)),
+        PayRateRequest("STD", "5", BigDecimal(0.1), startDate = tomorrow),
       )
-      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity, null)
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // old rate should now expire today
@@ -445,7 +571,7 @@ class PayRateServiceTest {
       val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = BigDecimal(3.2)))
 
       assertThatThrownBy {
-        payRatesService.buildNewPayRates(request, courseActivity, null)
+        payRatesService.buildNewPayRates(request, courseActivity)
       }
         .isInstanceOf(BadDataException::class.java)
         .hasMessageContaining("Pay rate IEP type BAS does not exist for prison $PRISON_ID")
@@ -457,7 +583,7 @@ class PayRateServiceTest {
       val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "A", rate = BigDecimal(3.2)))
 
       assertThatThrownBy {
-        payRatesService.buildNewPayRates(request, courseActivity, null)
+        payRatesService.buildNewPayRates(request, courseActivity)
       }
         .isInstanceOf(BadDataException::class.java)
         .hasMessageContaining("Pay band code A does not exist")
@@ -474,7 +600,6 @@ class PayRateServiceTest {
       val newPayRates = payRatesService.buildNewPayRates(
         request,
         courseActivity.copy(scheduleEndDate = threeDaysAhead),
-        tomorrow,
       )
 
       assertThat(newPayRates).extracting("endDate").containsExactlyInAnyOrder(
@@ -491,30 +616,25 @@ class PayRateServiceTest {
           courseActivity = courseActivity {
             courseSchedule()
             courseScheduleRule()
-            payRate(endDate = tomorrow.toString(), payBandCode = "2")
             payRate(endDate = null)
           }
         }
       }
       val request = listOf(
-        PayRateRequest("STD", "2", BigDecimal(3.2)),
         PayRateRequest("STD", "5", BigDecimal(3.2)),
       )
 
       val newPayRates = payRatesService.buildNewPayRates(
         request,
         courseActivity.copy(scheduleEndDate = threeDaysAhead),
-        null,
       )
 
       assertThat(newPayRates).extracting("payBand.code", "endDate").containsExactlyInAnyOrder(
-        Tuple("2", tomorrow),
         Tuple("5", threeDaysAhead),
       )
-      // 1 pay rate end date set, and 1 not changed
     }
 
-    private fun MutableList<CourseActivityPayRate>.findRate(
+    private fun List<CourseActivityPayRate>.findRate(
       iepLevelCode: String,
       payBandCode: String,
       expired: Boolean = false,
