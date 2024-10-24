@@ -74,6 +74,12 @@ data class PayRateRequest(
 
   @Schema(description = "The half day rate", example = "0.50", required = true)
   val rate: BigDecimal,
+
+  @Schema(description = "Pay rate start date, null means 'before every other rate'", example = "2022-08-12")
+  val startDate: LocalDate? = null,
+
+  @Schema(description = "Pay rate end date, if not passed will be derived from start dates", example = "2022-08-12")
+  val endDate: LocalDate? = null,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
