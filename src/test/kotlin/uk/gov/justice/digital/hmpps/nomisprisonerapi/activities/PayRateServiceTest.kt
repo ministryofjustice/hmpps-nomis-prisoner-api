@@ -350,6 +350,41 @@ class PayRateServiceTest {
     }
 
     @Test
+    fun `re-adding previously deleted rate with history should add new rate effective from day after expired rate`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+            payRate(endDate = "$threeDaysAgo")
+            payRate(startDate = "$twoDaysAgo", endDate = "$twoDaysAgo", halfDayRate = 4.3)
+          }
+        }
+      }
+
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4)))
+      val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
+
+      assertThat(newPayRates.size).isEqualTo(3)
+      // old deleted rates not changed
+      with(newPayRates.findRate("STD", "5", expired = true, rate = 3.2)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
+        assertThat(endDate).isEqualTo(threeDaysAgo)
+      }
+      with(newPayRates.findRate("STD", "5", expired = true, rate = 4.3)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(4.3), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(twoDaysAgo)
+        assertThat(endDate).isEqualTo(twoDaysAgo)
+      }
+      // new rate created day after last expiry
+      with(newPayRates.findRate("STD", "5", expired = false)) {
+        assertThat(halfDayRate).isCloseTo(BigDecimal(5.4), within(BigDecimal(0.001)))
+        assertThat(id.startDate).isEqualTo(yesterday)
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
     fun `amending new rate starting tomorrow should not cause an expiry (adjusting rate twice in one day)`() {
       nomisDataBuilder.build {
         programService {
@@ -638,8 +673,20 @@ class PayRateServiceTest {
       iepLevelCode: String,
       payBandCode: String,
       expired: Boolean = false,
+      rate: Double? = null,
     ): CourseActivityPayRate =
-      firstOrNull { it.id.iepLevelCode == iepLevelCode && it.id.payBandCode == payBandCode && if (expired) it.endDate != null else it.endDate == null }!!
+      firstOrNull {
+        it.id.iepLevelCode == iepLevelCode &&
+          it.id.payBandCode == payBandCode &&
+          (
+            if (expired) {
+              it.endDate != null
+            } else {
+              it.endDate == null
+            }
+            ) &&
+          (rate == null || BigDecimal.valueOf(rate).compareTo(it.halfDayRate) == 0)
+      }!!
   }
 
   @Nested
