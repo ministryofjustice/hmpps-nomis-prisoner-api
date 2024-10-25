@@ -604,9 +604,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/csip/to-migrate")
+  @DisplayName("GET /prisoners/{offenderNo}/csip/reconciliation")
   @Nested
-  inner class GetCSIPsForOffender {
+  inner class GetCSIPsForOffenderReconciliation {
 
     @BeforeEach
     fun setUp() {
@@ -622,7 +622,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoners/A1234TT/csip/to-migrate")
+        webTestClient.get().uri("/prisoners/A1234TT/csip/reconciliation")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -630,7 +630,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoners/A1234TT/csip/to-migrate")
+        webTestClient.get().uri("/prisoners/A1234TT/csip/reconciliation")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -638,7 +638,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/prisoners/A1234TT/csip/to-migrate")
+        webTestClient.get().uri("/prisoners/A1234TT/csip/reconciliation")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -648,7 +648,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when does not exist`() {
-        webTestClient.get().uri("/prisoners/99999/csip/to-migrate")
+        webTestClient.get().uri("/prisoners/99999/csip/reconciliation")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
           .exchange()
           .expectStatus().isNotFound
@@ -659,7 +659,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will fetch the csips`() {
-        webTestClient.get().uri("/prisoners/A1234TT/csip/to-migrate")
+        webTestClient.get().uri("/prisoners/A1234TT/csip/reconciliation")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
           .exchange()
           .expectStatus()
@@ -669,11 +669,16 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCSIPs[0].id").isEqualTo(csip1.id)
           .jsonPath("offenderCSIPs[1].id").isEqualTo(csip2.id)
           .jsonPath("offenderCSIPs[2].id").isEqualTo(csip3.id)
+          .jsonPath("offenderCSIPs[0].reportDetails.factors.size()").isEqualTo(2)
+          .jsonPath("offenderCSIPs[0].investigation.interviews.size()").isEqualTo(1)
+          .jsonPath("offenderCSIPs[0].plans.size()").isEqualTo(1)
+          .jsonPath("offenderCSIPs[0].reviews.size()").isEqualTo(1)
+          .jsonPath("offenderCSIPs[0].reviews[0].attendees.size()").isEqualTo(1)
       }
 
       @Test
       fun `return ok when no csips for prisoner`() {
-        webTestClient.get().uri("/prisoners/Z1234AA/csip/to-migrate")
+        webTestClient.get().uri("/prisoners/Z1234AA/csip/reconciliation")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
           .exchange()
           .expectStatus().isOk
