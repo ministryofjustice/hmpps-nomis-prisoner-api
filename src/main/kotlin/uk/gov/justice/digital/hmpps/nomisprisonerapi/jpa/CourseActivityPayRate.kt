@@ -93,7 +93,7 @@ data class CourseActivityPayRate(
     "CourseActivityPayRate(courseActivityId=${id.courseActivity.courseActivityId}, iepLevel=${id.iepLevelCode}, payBandCode=${id.payBandCode}, startDate=${id.startDate})"
 
   fun hasExpiryDate(): Boolean = endDate != null
-  fun expire(): CourseActivityPayRate = this.apply { endDate = LocalDate.now() }
+  fun expire(): CourseActivityPayRate = this.apply { endDate = LocalDate.now().minusDays(1) }
   fun hasFutureStartDate(): Boolean = id.startDate > LocalDate.now()
   fun isActive(): Boolean = id.startDate <= LocalDate.now() && (endDate == null || endDate!! >= LocalDate.now())
 

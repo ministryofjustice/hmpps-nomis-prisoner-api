@@ -160,7 +160,6 @@ class ActivityService(
     val requestedProgramService = findProgramServiceOrThrow(request.programCode)
 
     checkDatesInOrder(request.startDate, request.endDate)
-    val previousActivityEndDate = existingActivity.scheduleEndDate
 
     with(existingActivity) {
       scheduleStartDate = request.startDate
@@ -171,7 +170,7 @@ class ActivityService(
       payPerSession = request.payPerSession
       excludeBankHolidays = request.excludeBankHolidays
       outsideWork = request.outsideWork
-      payRatesService.buildNewPayRates(request.payRates, this, previousActivityEndDate).also { newPayRates ->
+      payRatesService.buildNewPayRates(request.payRates, this).also { newPayRates ->
         payRates.clear()
         payRates.addAll(newPayRates)
       }

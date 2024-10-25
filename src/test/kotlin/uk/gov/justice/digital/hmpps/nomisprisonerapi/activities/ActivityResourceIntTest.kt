@@ -554,14 +554,26 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should update the activity and pay rate`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(),
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .withStartDate("2022-10-31")
+              .withEndDate("${today.plusDays(7)}"),
+            payRatesJson = """
+            "payRates" : [
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 3.2 },
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 0.8, "startDate": "$tomorrow" }
+            ],
+            """.trimIndent(),
+          ),
         )
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.internalLocation?.locationId).isEqualTo(-3006)
+        assertThat(updated.payRates[0].id.startDate).isEqualTo("2022-10-31")
         assertThat(updated.payRates[0].endDate).isEqualTo(today)
-        assertThat(updated.payRates[1].endDate).isEqualTo("2022-11-30")
+        assertThat(updated.payRates[1].id.startDate).isEqualTo(tomorrow)
+        assertThat(updated.payRates[1].endDate).isEqualTo(today.plusDays(7))
         assertThat(updated.payRates[1].halfDayRate)
           .isCloseTo(BigDecimal(0.8), within(BigDecimal(0.001)))
       }
@@ -570,7 +582,17 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       fun `should raise telemetry event`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(),
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .withStartDate("2022-10-31")
+              .withEndDate("${today.plusDays(7)}"),
+            payRatesJson = """
+              "payRates" : [
+                { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 3.2 },
+                { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 0.8, "startDate": "$tomorrow" }
+              ],
+            """.trimIndent(),
+          ),
         )
           .expectStatus().isOk
 
@@ -681,6 +703,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withEndDate(null),
             payRatesJson = """
               "payRates" : [ {
                   "incentiveLevel" : "BAS",
@@ -701,6 +724,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withEndDate(null),
             payRatesJson = """
               "payRates" : [ {
                   "incentiveLevel" : "EN2",
@@ -721,6 +745,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withEndDate(null),
             payRatesJson = """
               "payRates" : [ {
                   "incentiveLevel" : "ENT",
@@ -758,7 +783,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(today)
+        assertThat(updated.payRates[0].endDate).isEqualTo(yesterday)
       }
 
       @Test
@@ -821,7 +846,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           // remove the BAS pay rate that is not being used
-          jsonBody = updateActivityRequestJson(),
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson()
+              .withEndDate(null),
+          ),
         )
           .expectStatus().isOk
       }
@@ -846,7 +874,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(today)
+        assertThat(updated.payRates[0].endDate).isEqualTo(yesterday)
       }
 
       @Test
@@ -867,7 +895,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(today)
+        assertThat(updated.payRates[0].endDate).isEqualTo(yesterday)
       }
 
       @Test
@@ -933,6 +961,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             detailsJson = detailsJson()
               .withStartDate(yesterday.minusDays(7).toString())
               .withEndDate(null),
+            payRatesJson = """
+            "payRates" : [ 
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 1.8 }, 
+              { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 0.8, "startDate": "$tomorrow" } 
+            ],
+            """.trimIndent(),
           ),
         )
           .expectStatus().isOk
@@ -940,44 +974,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val updated = repository.getActivity(courseActivity.courseActivityId)
         with(findPayRate(updated.payRates, 1.8)) {
           assertThat(id.startDate).isEqualTo(yesterday.minusDays(7))
-          assertThat(endDate).isEqualTo(today)
-        }
-        with(findPayRate(updated.payRates, 0.8)) {
-          assertThat(id.startDate).isEqualTo(tomorrow)
-          assertThat(endDate).isNull()
-        }
-      }
-
-      @Test
-      fun `should retain the end date if pay rate start date is moved back at same time as rate is changed`() {
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity(startDate = yesterday.toString()) {
-              payRate(startDate = today.minusDays(2).toString(), endDate = yesterday.toString(), halfDayRate = 2.8)
-              payRate(startDate = today.toString(), halfDayRate = 1.8)
-              courseSchedule()
-              courseScheduleRule()
-            }
-          }
-        }
-
-        callUpdateEndpoint(
-          courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(
-            detailsJson = detailsJson()
-              .withStartDate(yesterday.minusDays(7).toString())
-              .withEndDate(null),
-          ),
-        )
-          .expectStatus().isOk
-
-        val updated = repository.getActivity(courseActivity.courseActivityId)
-        with(findPayRate(updated.payRates, 2.8)) {
-          assertThat(id.startDate).isEqualTo(yesterday.minusDays(7))
-          assertThat(endDate).isEqualTo(yesterday)
-        }
-        with(findPayRate(updated.payRates, 1.8)) {
-          assertThat(id.startDate).isEqualTo(today)
           assertThat(endDate).isEqualTo(today)
         }
         with(findPayRate(updated.payRates, 0.8)) {
