@@ -324,7 +324,7 @@ class ActivityServiceTest {
         }
       }
       whenever(activityRepository.findById(anyLong())).thenReturn(Optional.of(courseActivity))
-      whenever(payRatesService.buildNewPayRates(anyList(), any())).thenReturn(mutableListOf(newPayRate))
+      whenever(payRatesService.buildNewPayRates(anyList(), any(), any())).thenReturn(mutableListOf(newPayRate))
 
       activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(internalLocationId = null))
 
