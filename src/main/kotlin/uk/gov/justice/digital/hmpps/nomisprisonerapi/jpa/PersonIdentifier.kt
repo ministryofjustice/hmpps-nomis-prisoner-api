@@ -9,12 +9,10 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import java.io.Serializable
-import java.time.LocalDateTime
 
 @Embeddable
 class PersonIdentifierPK(
@@ -56,51 +54,7 @@ class PersonIdentifier(
   Not mapped:
   ISSUED_DATE - always null
    */
-) {
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
-
-  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
-  @Generated
-  lateinit var createDatetime: LocalDateTime
-
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  @Generated
-  var modifyUserId: String? = null
-
-  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
-  @Generated
-  var modifyDatetime: LocalDateTime? = null
-
-  @Column(name = "AUDIT_TIMESTAMP", insertable = false, updatable = false)
-  @Generated
-  var auditTimestamp: LocalDateTime? = null
-
-  @Column(name = "AUDIT_USER_ID", insertable = false, updatable = false)
-  @Generated
-  var auditUserId: String? = null
-
-  @Column(name = "AUDIT_MODULE_NAME", insertable = false, updatable = false)
-  @Generated
-  var auditModuleName: String? = null
-
-  @Column(name = "AUDIT_CLIENT_USER_ID", insertable = false, updatable = false)
-  @Generated
-  var auditClientUserId: String? = null
-
-  @Column(name = "AUDIT_CLIENT_IP_ADDRESS", insertable = false, updatable = false)
-  @Generated
-  var auditClientIpAddress: String? = null
-
-  @Column(name = "AUDIT_CLIENT_WORKSTATION_NAME", insertable = false, updatable = false)
-  @Generated
-  var auditClientWorkstationName: String? = null
-
-  @Column(name = "AUDIT_ADDITIONAL_INFO", insertable = false, updatable = false)
-  @Generated
-  var auditAdditionalInfo: String? = null
-
+) : NomisAuditableEntity() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

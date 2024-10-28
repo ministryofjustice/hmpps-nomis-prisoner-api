@@ -51,6 +51,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         PersonEmployment(
           sequence = employment.id.sequence,
           active = employment.active,
+          audit = employment.toAudit(),
           corporate = employment.employerCorporate?.let { corporate ->
             PersonEmploymentCorporate(
               id = corporate.id,
@@ -65,6 +66,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           type = personIdentifier.identifierType.toCodeDescription(),
           identifier = personIdentifier.identifier,
           issuedAuthority = personIdentifier.issuedAuthority,
+          audit = personIdentifier.toAudit(),
         )
       },
       addresses = it.addresses.map { address ->
@@ -106,6 +108,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           effectiveDate = restriction.effectiveDate,
           expiryDate = restriction.expiryDate,
           enteredStaff = ContactRestrictionEnteredStaff(staffId = restriction.enteredStaff.id),
+          audit = restriction.toAudit(),
         )
       },
       contacts = it.contacts.map { contact ->
@@ -119,6 +122,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           nextOfKin = contact.nextOfKin,
           expiryDate = contact.expiryDate,
           comment = contact.comment,
+          audit = contact.toAudit(),
           prisoner = contact.offenderBooking.let { booking ->
             ContactForPrisoner(
               bookingId = booking.bookingId,
@@ -135,6 +139,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
               effectiveDate = restriction.effectiveDate,
               expiryDate = restriction.expiryDate,
               enteredStaff = ContactRestrictionEnteredStaff(staffId = restriction.enteredStaff.id),
+              audit = restriction.toAudit(),
             )
           },
         )

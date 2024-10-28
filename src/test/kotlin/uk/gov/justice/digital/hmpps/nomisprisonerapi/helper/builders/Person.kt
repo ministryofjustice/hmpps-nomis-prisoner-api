@@ -72,6 +72,8 @@ interface PersonDsl {
   fun employment(
     employerCorporate: Corporate? = null,
     active: Boolean = true,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonEmploymentDsl.() -> Unit = {},
   ): PersonEmployment
 
@@ -80,6 +82,8 @@ interface PersonDsl {
     type: String = "NINO",
     identifier: String = "NE112233T",
     issuedAuthority: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonIdentifierDsl.() -> Unit = {},
   ): PersonIdentifier
 
@@ -90,6 +94,8 @@ interface PersonDsl {
     comment: String? = null,
     effectiveDate: String = LocalDate.now().toString(),
     expiryDate: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: VisitorRestrictsDsl.() -> Unit = {},
   ): VisitorRestriction
 }
@@ -279,6 +285,8 @@ class PersonBuilder(
   override fun employment(
     employerCorporate: Corporate?,
     active: Boolean,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: PersonEmploymentDsl.() -> Unit,
   ): PersonEmployment =
     personEmploymentBuilderFactory.builder().let { builder ->
@@ -287,6 +295,8 @@ class PersonBuilder(
         sequence = person.employments.size + 1L,
         employerCorporate = employerCorporate,
         active = active,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also { person.employments += it }
         .also { builder.apply(dsl) }
@@ -296,6 +306,8 @@ class PersonBuilder(
     type: String,
     identifier: String,
     issuedAuthority: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: PersonIdentifierDsl.() -> Unit,
   ): PersonIdentifier =
     personIdentifierBuilderFactory.builder().let { builder ->
@@ -305,6 +317,8 @@ class PersonBuilder(
         type = type,
         identifier = identifier,
         issuedAuthority = issuedAuthority,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also { person.identifiers += it }
         .also { builder.apply(dsl) }
@@ -316,6 +330,8 @@ class PersonBuilder(
     comment: String?,
     effectiveDate: String,
     expiryDate: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: VisitorRestrictsDsl.() -> Unit,
   ): VisitorRestriction =
     visitorRestrictsBuilderFactory.builder().let { builder ->
@@ -326,6 +342,8 @@ class PersonBuilder(
         comment = comment,
         effectiveDate = LocalDate.parse(effectiveDate),
         expiryDate = expiryDate?.let { LocalDate.parse(it) },
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also { person.restrictions += it }
         .also { builder.apply(dsl) }

@@ -293,6 +293,8 @@ interface BookingDsl {
     approvedVisitor: Boolean = true,
     comment: String? = null,
     expiryDate: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: OffenderContactPersonDsl.() -> Unit = {},
   ): OffenderContactPerson
 }
@@ -843,6 +845,8 @@ class BookingBuilder(
     approvedVisitor: Boolean,
     comment: String?,
     expiryDate: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: OffenderContactPersonDsl.() -> Unit,
   ): OffenderContactPerson = offenderContactPersonBuilderFactory.builder().let { builder ->
     builder.build(
@@ -856,6 +860,8 @@ class BookingBuilder(
       approvedVisitor = approvedVisitor,
       comment = comment,
       expiryDate = expiryDate?.let { LocalDate.parse(it) },
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
     )
       .also { offenderBooking.contacts += it }
       .also { builder.apply(dsl) }

@@ -395,7 +395,11 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            employment(employerCorporate = corporate)
+            employment(
+              employerCorporate = corporate,
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
             employment(active = false)
           }
         }
@@ -413,6 +417,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("employments[0].corporate.id").isEqualTo(corporate.id)
           .jsonPath("employments[0].active").isEqualTo(true)
           .jsonPath("employments[0].corporate.name").isEqualTo("Police")
+          .jsonPath("employments[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("employments[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("employments[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("employments[1].sequence").isEqualTo(2)
           .jsonPath("employments[1].corporate").doesNotExist()
           .jsonPath("employments[1].active").isEqualTo(false)
@@ -430,7 +437,13 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            identifier(type = "PNC", identifier = "20/0071818T", issuedAuthority = "Met Police")
+            identifier(
+              type = "PNC",
+              identifier = "20/0071818T",
+              issuedAuthority = "Met Police",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
             identifier(type = "STAFF", identifier = "123")
           }
         }
@@ -448,6 +461,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("identifiers[0].type.code").isEqualTo("PNC")
           .jsonPath("identifiers[0].type.description").isEqualTo("PNC Number")
           .jsonPath("identifiers[0].issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("identifiers[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("identifiers[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("identifiers[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("identifiers[1].sequence").isEqualTo(2)
           .jsonPath("identifiers[1].type.code").isEqualTo("STAFF")
           .jsonPath("identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
@@ -489,6 +505,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
                 emergencyContact = true,
                 approvedVisitor = false,
                 comment = "Brother is next to kin",
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
               )
               // same person can be contact twice so long as there is a different relationship
               visitorContactToA1234AA = contact(
@@ -556,6 +574,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("contacts[0].prisoner.lastName").isEqualTo("SMITH")
           .jsonPath("contacts[0].prisoner.firstName").isEqualTo("JOHN")
           .jsonPath("contacts[0].expiryDate").doesNotExist()
+          .jsonPath("contacts[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("contacts[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("contacts[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("contacts[1].id").isEqualTo(visitorContactToA1234AA.id)
           .jsonPath("contacts[1].contactType.code").isEqualTo("S")
           .jsonPath("contacts[1].contactType.description").isEqualTo("Social/Family")
@@ -630,6 +651,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
                   comment = "Banned for life!",
                   effectiveDate = "2020-01-01",
                   expiryDate = "2023-02-02",
+                  whoCreated = "KOFEADDY",
+                  whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
                 )
                 restriction(
                   restrictionType = "CCTV",
@@ -655,6 +678,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("contacts[0].restrictions[0].effectiveDate").isEqualTo("2020-01-01")
           .jsonPath("contacts[0].restrictions[0].expiryDate").isEqualTo("2023-02-02")
           .jsonPath("contacts[0].restrictions[0].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("contacts[0].restrictions[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("contacts[0].restrictions[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("contacts[0].restrictions[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("contacts[0].restrictions[1].type.code").isEqualTo("CCTV")
           .jsonPath("contacts[0].restrictions[1].type.description").isEqualTo("CCTV")
           .jsonPath("contacts[0].restrictions[1].comment").doesNotExist()
@@ -683,6 +709,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               comment = "Banned for life!",
               effectiveDate = "2020-01-01",
               expiryDate = "2023-02-02",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
             )
             restriction(
               restrictionType = "CCTV",
@@ -706,6 +734,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("restrictions[0].effectiveDate").isEqualTo("2020-01-01")
           .jsonPath("restrictions[0].expiryDate").isEqualTo("2023-02-02")
           .jsonPath("restrictions[0].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("restrictions[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("restrictions[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("restrictions[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("restrictions[1].type.code").isEqualTo("CCTV")
           .jsonPath("restrictions[1].type.description").isEqualTo("CCTV")
           .jsonPath("restrictions[1].comment").doesNotExist()
