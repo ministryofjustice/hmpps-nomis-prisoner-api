@@ -63,6 +63,8 @@ interface PersonDsl {
   @PersonEmailDslMarker
   fun email(
     emailAddress: String,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonEmailDsl.() -> Unit = {},
   ): PersonInternetAddress
 
@@ -257,11 +259,18 @@ class PersonBuilder(
         .also { builder.apply(dsl) }
     }
 
-  override fun email(emailAddress: String, dsl: PersonEmailDsl.() -> Unit): PersonInternetAddress =
+  override fun email(
+    emailAddress: String,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: PersonEmailDsl.() -> Unit,
+  ): PersonInternetAddress =
     personEmailBuilderFactory.builder().let { builder ->
       builder.build(
         person = person,
         emailAddress = emailAddress,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also { person.internetAddresses += it }
         .also { builder.apply(dsl) }

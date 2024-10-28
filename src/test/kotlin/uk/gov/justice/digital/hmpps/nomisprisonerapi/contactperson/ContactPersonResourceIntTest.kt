@@ -354,7 +354,11 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            email(emailAddress = "john.bog@justice.gov.uk")
+            email(
+              emailAddress = "john.bog@justice.gov.uk",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
             email(emailAddress = "john.bog@gmail.com")
           }
         }
@@ -370,6 +374,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(person.internetAddresses[0].internetAddressId)
           .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
+          .jsonPath("emailAddresses[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("emailAddresses[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("emailAddresses[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(person.internetAddresses[1].internetAddressId)
           .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
       }
