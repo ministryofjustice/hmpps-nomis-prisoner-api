@@ -88,13 +88,15 @@ class PayRatesService(
     // map all rates that are active either today or in the future
     newRates.addAll(
       requestedRates.filterNotExpired()
-        .map { adjustOverlappingRates(it, expiredRates) }
+        .mapNotNull { adjustOverlappingRates(it, expiredRates) }
         .map { it.toCourseActivityPayRate(existingActivity, it.startDate!!, it.endDate) },
     )
 
-    // Rates that are missing from the request but are still active must have been deleted in DPS - expire them in NOMIS
+    // Rates that are missing but still active in NOMIS must have been deleted in DPS - expire them in NOMIS
     newRates.addAll(
-      existingRates.filter { it !in newRates && it.isActive() }
+      existingRates
+        .filter { it.isActive() }
+        .filterNotActiveIn(newRates)
         .map { it.expire() }
         .also { it.throwIfPayBandsInUse() },
     )
@@ -108,14 +110,32 @@ class PayRatesService(
   private fun adjustOverlappingRates(
     req: PayRateRequest,
     expiredRates: MutableList<CourseActivityPayRate>,
-  ): PayRateRequest {
-    val expiredRatesForType = expiredRates.filter { exp -> exp.toRateType() == req.toRateType() }
-    return if (expiredRatesForType.isNotEmpty() && req.startDate!! <= expiredRatesForType.last().endDate) {
-      req.copy(startDate = expiredRates.last().endDate?.plusDays(1))
+  ): PayRateRequest? {
+    val lastExpiryForType = expiredRates.filter { exp -> exp.toRateType() == req.toRateType() }.maxOfOrNull { it.endDate!! }
+    return if (req.endDate != null && lastExpiryForType != null && req.endDate <= lastExpiryForType) {
+      // The requested rate doesn't make sense when compared with the last expiry on NOMIS - this must be corrupted data
+      // so ignore the request in favour of what's already on NOMIS
+      null
+    } else if (lastExpiryForType != null &&
+      req.isActive() &&
+      req.startDate!! <= lastExpiryForType
+    ) {
+      // The requested rate overlaps with the last expiry on NOMIS - adjust the start date to the day after the last expiry
+      req.copy(startDate = lastExpiryForType.plusDays(1))
     } else {
       req
     }
   }
+
+  private fun PayRateRequest.isActive() = startDate!! <= LocalDate.now() && (endDate == null || endDate >= LocalDate.now())
+
+  // Find any rates that are not active in the list of new rates
+  private fun List<CourseActivityPayRate>.filterNotActiveIn(newRates: List<CourseActivityPayRate>) =
+    filter { existing ->
+      newRates.none { new ->
+        new.isActive() && (new.toRateType() == existing.toRateType())
+      }
+    }
 
   private data class RateType(val iepLevel: String, val payBand: String)
   private fun PayRateRequest.toRateType() = RateType(incentiveLevel, payBand)
