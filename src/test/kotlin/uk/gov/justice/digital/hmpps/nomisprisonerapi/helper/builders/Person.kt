@@ -53,6 +53,8 @@ interface PersonDsl {
     phoneType: String,
     phoneNo: String,
     extNo: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonPhoneDsl.() -> Unit = {},
   ): PersonPhone
 
@@ -232,6 +234,8 @@ class PersonBuilder(
     phoneType: String,
     phoneNo: String,
     extNo: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: PersonPhoneDsl.() -> Unit,
   ): PersonPhone =
     personPhoneBuilderFactory.builder().let { builder ->
@@ -240,6 +244,8 @@ class PersonBuilder(
         phoneType = phoneType,
         phoneNo = phoneNo,
         extNo = extNo,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also { person.phones += it }
         .also { builder.apply(dsl) }

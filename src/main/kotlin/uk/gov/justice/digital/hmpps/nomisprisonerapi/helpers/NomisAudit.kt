@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisEntity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDateTime
 
@@ -37,7 +37,7 @@ data class NomisAudit(
   val auditAdditionalInfo: String? = null,
 )
 
-fun NomisEntity.toAudit() = NomisAudit(
+fun NomisAuditableEntity.toAudit() = NomisAudit(
   createDatetime = createDatetime,
   createUsername = createUsername,
   createDisplayName = createStaffUserAccount?.staff.asDisplayName(),

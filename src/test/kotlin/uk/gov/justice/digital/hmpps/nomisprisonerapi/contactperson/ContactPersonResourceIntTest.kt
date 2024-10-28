@@ -173,11 +173,19 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
+          staff(firstName = "KOFE", lastName = "ADDY") {
+            account(username = "KOFEADDY", type = "GENERAL")
+          }
           person = person(
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            phone(phoneType = "MOB", phoneNo = "07399999999")
+            phone(
+              phoneType = "MOB",
+              phoneNo = "07399999999",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
             phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
           }
         }
@@ -196,6 +204,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("phoneNumbers[0].type.description").isEqualTo("Mobile")
           .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
           .jsonPath("phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("phoneNumbers[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("phoneNumbers[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("phoneNumbers[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("phoneNumbers[1].phoneId").isEqualTo(person.phones[1].phoneId)
           .jsonPath("phoneNumbers[1].type.code").isEqualTo("HOME")
           .jsonPath("phoneNumbers[1].type.description").isEqualTo("Home")
@@ -211,6 +222,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
+          staff(firstName = "KOFE", lastName = "ADDY") {
+            account(username = "KOFEADDY", type = "GENERAL")
+          }
           person = person(
             firstName = "JOHN",
             lastName = "BOG",
@@ -239,7 +253,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               startDate = "2024-10-01",
               endDate = "2024-11-01",
             ) {
-              phone(phoneType = "MOB", phoneNo = "07399999999")
+              phone(
+                phoneType = "MOB",
+                phoneNo = "07399999999",
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
             }
             address(
@@ -314,6 +333,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
           .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
           .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("addresses[1].phoneNumbers[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("addresses[1].phoneNumbers[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(person.addresses[1].phones[1].phoneId)
           .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")

@@ -152,14 +152,14 @@ internal class VisitResponseTest {
                     person = this,
                     phoneType = PhoneUsage("HOME", "Home"),
                     phoneNo = "0123456789",
-                  ),
+                  ).apply { createDatetime = LocalDateTime.now() },
                 )
                 this.phones.add(
                   PersonPhone(
                     person = this,
                     phoneType = PhoneUsage("MOBL", "Mobile"),
                     phoneNo = "07973 121212",
-                  ),
+                  ).apply { createDatetime = LocalDateTime.now() },
                 )
               },
             ),
@@ -183,7 +183,7 @@ internal class VisitResponseTest {
                     person = this,
                     phoneType = PhoneUsage("HOME", "Home"),
                     phoneNo = "0123456789",
-                  ),
+                  ).apply { createDatetime = LocalDateTime.now() },
                 )
                 this.phones.add(
                   PersonPhone(
@@ -191,25 +191,25 @@ internal class VisitResponseTest {
                     phoneType = PhoneUsage("MOBL", "Mobile"),
                     phoneNo = "07973 121212",
                     extNo = "x777",
-                  ),
+                  ).apply { createDatetime = LocalDateTime.now() },
                 )
                 this.addresses.add(
                   PersonAddress(person = this).apply {
                     phones.add(
-                      AddressPhone(this, PhoneUsage("HOME", "Home"), "1234567890", null),
+                      AddressPhone(this, PhoneUsage("HOME", "Home"), "1234567890", null).apply { createDatetime = LocalDateTime.now() },
                     )
                     phones.add(
-                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 333333", null),
+                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 333333", null).apply { createDatetime = LocalDateTime.now() },
                     )
                   },
                 )
                 this.addresses.add(
                   PersonAddress(person = this).apply {
                     phones.add(
-                      AddressPhone(this, PhoneUsage("HOME", "Home"), "2345678901", "x888"),
+                      AddressPhone(this, PhoneUsage("HOME", "Home"), "2345678901", "x888").apply { createDatetime = LocalDateTime.now() },
                     )
                     phones.add(
-                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 444444", null),
+                      AddressPhone(this, PhoneUsage("MOBL", "Mobile"), "07973 444444", null).apply { createDatetime = LocalDateTime.now() },
                     )
                   },
                 )
@@ -273,14 +273,14 @@ internal class VisitResponseTest {
                   },
                 )
               }.apply {
-                this.phones[0].whenCreated = LocalDateTime.now().minusDays(10) // 6th
-                this.phones[1].whenCreated = LocalDateTime.now().minusDays(11)
-                this.phones[1].whenModified = LocalDateTime.now().minusDays(4) // 4th
-                this.addresses[0].phones[0].whenCreated = LocalDateTime.now().minusDays(8) // 5th
-                this.addresses[0].phones[1].whenCreated = LocalDateTime.now().minusDays(9)
-                this.addresses[0].phones[1].whenModified = LocalDateTime.now().minusDays(1) // 1st
-                this.addresses[1].phones[0].whenCreated = LocalDateTime.now().minusDays(2) // 2nd
-                this.addresses[1].phones[1].whenCreated = LocalDateTime.now().minusDays(3) // 3rd
+                this.phones[0].createDatetime = LocalDateTime.now().minusDays(10) // 6th
+                this.phones[1].createDatetime = LocalDateTime.now().minusDays(11)
+                this.phones[1].modifyDatetime = LocalDateTime.now().minusDays(4) // 4th
+                this.addresses[0].phones[0].createDatetime = LocalDateTime.now().minusDays(8) // 5th
+                this.addresses[0].phones[1].createDatetime = LocalDateTime.now().minusDays(9)
+                this.addresses[0].phones[1].modifyDatetime = LocalDateTime.now().minusDays(1) // 1st
+                this.addresses[1].phones[0].createDatetime = LocalDateTime.now().minusDays(2) // 2nd
+                this.addresses[1].phones[1].createDatetime = LocalDateTime.now().minusDays(3) // 3rd
               },
             ),
             outcomeVisitorRecord,

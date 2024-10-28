@@ -37,6 +37,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           number = number.phoneNo,
           type = number.phoneType.toCodeDescription(),
           extension = number.extNo,
+          audit = number.toAudit(),
         )
       },
       emailAddresses = it.internetAddresses.map { address ->
@@ -90,6 +91,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
               number = number.phoneNo,
               type = number.phoneType.toCodeDescription(),
               extension = number.extNo,
+              audit = number.toAudit(),
             )
           },
         )

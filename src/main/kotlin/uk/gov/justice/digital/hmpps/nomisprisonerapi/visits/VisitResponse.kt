@@ -167,19 +167,17 @@ data class VisitResponse(
   )
 }
 
-fun List<Phone>.toTelephoneList(): List<String> {
-  return this.map { phone ->
-    phone.phoneNo + if (phone.extNo.isNullOrBlank()) {
-      ""
-    } else {
-      " ${phone.extNo}"
-    }
+fun List<Phone>.toTelephoneList(): List<String> = this.map { phone ->
+  phone.phoneNo + if (phone.extNo.isNullOrBlank()) {
+    ""
+  } else {
+    " ${phone.extNo}"
   }
 }
 
 private val Phone.lastChanged: LocalDateTime
   get() {
-    return whenModified ?: whenCreated
+    return modifyDatetime ?: createDatetime
   }
 
 fun Visit.outcomeVisitor(): VisitVisitor? =

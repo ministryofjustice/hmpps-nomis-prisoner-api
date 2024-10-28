@@ -204,6 +204,8 @@ data class PersonPhoneNumber(
   val extension: String?,
   @Schema(description = "Phone type")
   val type: CodeDescription,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS about a address number")

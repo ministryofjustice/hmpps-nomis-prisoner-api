@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 
 @MappedSuperclass
 @EntityOpen
-class NomisEntity {
+class NomisAuditableEntity {
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
   var createStaffUserAccount: StaffUserAccount? = null

@@ -14,7 +14,6 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "PHONES")
@@ -37,18 +36,12 @@ abstract class Phone(
   open val phoneNo: String,
   @Column(name = "EXT_NO")
   open val extNo: String? = null,
-) {
+) : NomisAuditableEntity() {
   @Id
   @SequenceGenerator(name = "PHONE_ID", sequenceName = "PHONE_ID", allocationSize = 1)
   @GeneratedValue(generator = "PHONE_ID")
   @Column(name = "PHONE_ID", nullable = false)
-  open var phoneId: Long = 0
-
-  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
-  open var whenCreated: LocalDateTime = LocalDateTime.now()
-
-  @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
-  open var whenModified: LocalDateTime? = null
+  var phoneId: Long = 0
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
