@@ -85,6 +85,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           comment = address.comment,
           startDate = address.startDate,
           endDate = address.endDate,
+          audit = address.toAudit(),
           phoneNumbers = address.phones.map { number ->
             PersonPhoneNumber(
               phoneId = number.phoneId,

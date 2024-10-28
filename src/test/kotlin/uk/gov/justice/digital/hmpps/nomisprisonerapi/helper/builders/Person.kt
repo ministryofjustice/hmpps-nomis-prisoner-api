@@ -45,6 +45,8 @@ interface PersonDsl {
     comment: String? = null,
     startDate: String? = null,
     endDate: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonAddressDsl.() -> Unit = {},
   ): PersonAddress
 
@@ -204,6 +206,8 @@ class PersonBuilder(
     comment: String?,
     startDate: String?,
     endDate: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: PersonAddressDsl.() -> Unit,
   ): PersonAddress =
     personAddressBuilderFactory.builder().let { builder ->
@@ -225,6 +229,8 @@ class PersonBuilder(
         comment = comment,
         startDate = startDate?.let { LocalDate.parse(it) },
         endDate = endDate?.let { LocalDate.parse(it) },
+        whoCreated = whoCreated,
+        whenCreated = whenCreated,
       )
         .also { person.addresses += it }
         .also { builder.apply(dsl) }

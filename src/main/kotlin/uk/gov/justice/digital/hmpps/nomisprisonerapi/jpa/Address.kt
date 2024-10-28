@@ -137,12 +137,12 @@ abstract class Address(
   CITY_NAME - always null
   ADDRESS_USAGE - not used for personal addresses
    */
-) {
+) : NomisAuditableEntity() {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
-  open val addressId: Long = 0
+  val addressId: Long = 0
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
