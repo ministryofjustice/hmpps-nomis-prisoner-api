@@ -109,7 +109,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.post()
-          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case_identifiers")
+          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -124,7 +124,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.post()
-          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case_identifiers")
+          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -139,7 +139,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.post()
-          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case_identifiers")
+          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -147,7 +147,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.post()
-          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case_identifiers")
+          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -164,7 +164,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if court case not found`() {
-        webTestClient.post().uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/111/case_identifiers")
+        webTestClient.post().uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/111/case-identifiers")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -185,7 +185,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can add a new case reference`() {
         webTestClient.post()
-          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case_identifiers")
+          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -217,7 +217,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
         @Test
         fun `can remove case references`() {
           webTestClient.post()
-            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case_identifiers")
+            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
@@ -244,7 +244,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
         @Test
         fun `case references can be added and removed`() {
           webTestClient.post()
-            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case_identifiers")
+            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(

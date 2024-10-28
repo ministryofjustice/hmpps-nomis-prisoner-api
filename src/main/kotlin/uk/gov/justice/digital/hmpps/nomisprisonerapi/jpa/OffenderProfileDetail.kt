@@ -40,11 +40,11 @@ data class OffenderProfileDetail(
   @ManyToOne
   @JoinColumns(
     value = [
-      JoinColumn(name = "OFFENDER_BOOK_ID", referencedColumnName = "OFFENDER_BOOK_ID", nullable = false, insertable = false, updatable = false),
-      JoinColumn(name = "PROFILE_SEQ", referencedColumnName = "PROFILE_SEQ", nullable = false, insertable = false, updatable = false),
+      JoinColumn(name = "OFFENDER_BOOK_ID", referencedColumnName = "OFFENDER_BOOK_ID", nullable = true, insertable = false, updatable = false),
+      JoinColumn(name = "PROFILE_SEQ", referencedColumnName = "PROFILE_SEQ", nullable = true, insertable = false, updatable = false),
     ],
   )
-  val offenderProfile: OffenderProfile,
+  val offenderProfile: OffenderProfile? = null,
 
   @Column(name = "PROFILE_CODE")
   var profileCodeId: String?,

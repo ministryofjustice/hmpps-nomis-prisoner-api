@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetailId
@@ -35,11 +36,13 @@ class OffenderProfileDetailBuilder(
     listSequence: Long,
     profileTypeId: String,
     profileCodeId: String?,
-    profile: OffenderProfile,
+    offenderBooking: OffenderBooking,
+    sequence: Long,
+    profile: OffenderProfile? = null,
   ): OffenderProfileDetail = OffenderProfileDetail(
     id = OffenderProfileDetailId(
-      offenderBooking = profile.id.offenderBooking,
-      sequence = profile.id.sequence,
+      offenderBooking = offenderBooking,
+      sequence = sequence,
       profileType = repository.lookupProfileType(profileTypeId),
     ),
     offenderProfile = profile,

@@ -262,9 +262,15 @@ data class CaseNoteResponse(
   var createdDatetime: LocalDateTime,
   @Schema(description = "Created username")
   var createdUsername: String,
-  @Schema(description = "Which screen (or DPS) created the case note", example = "false")
+
+  @Schema(description = "Which screen (or DPS) created the case note", example = "OIDABCDE")
   val auditModuleName: String? = null,
+
+  @Schema(description = "Which system (Nomis or DPS) created the case note", example = "DPS")
+  val sourceSystem: SourceSystem,
 )
+
+enum class SourceSystem { DPS, NOMIS }
 
 @Schema(description = "A request to create a case note in NOMIS")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -308,6 +314,9 @@ data class CaseNoteAmendment(
 
   @Schema(description = "Amendment created timestamp")
   val createdDateTime: LocalDateTime,
+
+  @Schema(description = "Which system (Nomis or DPS) created the amendment", example = "DPS")
+  val sourceSystem: SourceSystem,
 )
 
 @Schema(description = "A response after a case note created in NOMIS")

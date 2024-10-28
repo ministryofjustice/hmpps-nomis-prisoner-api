@@ -108,19 +108,19 @@ data class SaferCustodyScreeningRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CSIPFactorRequest(
   @Schema(description = "Contributory Factor id")
-  val id: Long? = null,
+  override val id: Long? = null,
   @Schema(description = "DPS Factor id")
-  val dpsId: String,
+  override val dpsId: String,
   @Schema(description = "Contributory Factor")
   val typeCode: String,
   @Schema(description = "Factor comment")
   val comment: String?,
-)
+) : CSIPChildRequest
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InvestigationDetailRequest(
   @Schema(description = "Staff involved in the incident")
-  val staffInvolved: String?,
+  val staffInvolved: String? = null,
   @Schema(description = "Whether any evidence was secured")
   val evidenceSecured: String? = null,
   @Schema(description = "Why the incident occurred")
@@ -138,9 +138,9 @@ data class InvestigationDetailRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class InterviewDetailRequest(
   @Schema(description = "Interview Id")
-  val id: Long? = null,
+  override val id: Long? = null,
   @Schema(description = "DPS Interview id")
-  val dpsId: String,
+  override val dpsId: String,
   @Schema(description = "Person being interviewed")
   val interviewee: String,
   @Schema(description = "date of interview")
@@ -149,7 +149,7 @@ data class InterviewDetailRequest(
   val roleCode: String,
   @Schema(description = "Additional data regarding the interview")
   val comments: String? = null,
-)
+) : CSIPChildRequest
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class DecisionRequest(
@@ -184,9 +184,9 @@ data class ActionsRequest(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PlanRequest(
   @Schema(description = "Plan Id")
-  val id: Long? = null,
+  override val id: Long? = null,
   @Schema(description = "DPS Plan/IdentifiedNeed id")
-  val dpsId: String,
+  override val dpsId: String,
   @Schema(description = "Details of the need", required = true)
   val identifiedNeed: String,
   @Schema(description = "Intervention plan", required = true)
@@ -199,16 +199,14 @@ data class PlanRequest(
   val targetDate: LocalDate,
   @Schema(description = "Plan closed date")
   val closedDate: LocalDate? = null,
-)
+) : CSIPChildRequest
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ReviewRequest(
   @Schema(description = "Review Id")
-  val id: Long? = null,
+  override val id: Long? = null,
   @Schema(description = "DPS Review id")
-  val dpsId: String,
-  // @Schema(description = "Sequence number")
-  // val reviewSequence: Int,
+  override val dpsId: String,
   @Schema(description = "Attendees to the review")
   val attendees: List<AttendeeRequest>?,
   @Schema(description = "Whether to remain on CSIP")
@@ -231,14 +229,14 @@ data class ReviewRequest(
   val recordedDate: LocalDate,
   @Schema(description = "The username of the person who recorded the review")
   val recordedBy: String,
-)
+) : CSIPChildRequest
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AttendeeRequest(
   @Schema(description = "Review Attendee/Contributor Id")
-  val id: Long? = null,
+  override val id: Long? = null,
   @Schema(description = "DPS Attendee id")
-  val dpsId: String,
+  override val dpsId: String,
   @Schema(description = "Name of attendee/contributor")
   val name: String?,
   @Schema(description = "Role of attendee/contributor")
@@ -247,4 +245,9 @@ data class AttendeeRequest(
   val attended: Boolean,
   @Schema(description = "Contribution")
   val contribution: String? = null,
-)
+) : CSIPChildRequest
+
+interface CSIPChildRequest {
+  val id: Long?
+  val dpsId: String
+}

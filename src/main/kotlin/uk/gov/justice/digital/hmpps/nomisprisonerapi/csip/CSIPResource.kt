@@ -84,11 +84,11 @@ class CSIPResource(private val csipService: CSIPService) {
   fun upsertCSIP(@RequestBody @Valid request: UpsertCSIPRequest) = csipService.upsertCSIP(request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
-  @GetMapping("/prisoners/{offenderNo}/csip/to-migrate")
+  @GetMapping("/prisoners/{offenderNo}/csip/reconciliation")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Gets csips for an offender",
-    description = "Retrieves csips for a prisoner from all bookings. Requires ROLE_NOMIS_CSIP",
+    summary = "Gets csips for an offender for reconciliation",
+    description = "Retrieves a list of csips for a prisoner. Requires ROLE_NOMIS_CSIP",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -132,7 +132,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
     ],
   )
-  fun getCSIPsToMigrate(
+  fun getCSIPsForPrisoner(
     @Schema(description = "Offender No AKA prisoner number", example = "A1234AK")
     @PathVariable
     offenderNo: String,
@@ -400,9 +400,9 @@ data class UpsertCSIPResponse(
   val offenderNo: String,
 
   @Schema(description = "Any new CSIP components that were created")
-  val mappings: List<ResponseMapping>,
+  val components: List<CSIPComponent>,
 )
-data class ResponseMapping(
+data class CSIPComponent(
   @Schema(description = "The child component created")
   val component: Component,
   @Schema(description = "The nomisId of the created component")

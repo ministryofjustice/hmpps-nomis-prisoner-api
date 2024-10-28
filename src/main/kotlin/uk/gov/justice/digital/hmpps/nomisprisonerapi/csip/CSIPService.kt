@@ -8,21 +8,32 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.DocumentService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.ATTENDEE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.FACTOR
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.INTERVIEW
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.PLAN
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.REVIEW
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPChild
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPFactorType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPIncidentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterview
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInterviewRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPInvolvement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPOutcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPSignedOffRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReviewRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -37,12 +48,14 @@ class CSIPService(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val telemetryClient: TelemetryClient,
   val areaOfWorkRepository: ReferenceCodeRepository<CSIPAreaOfWork>,
+  val factorRepository: ReferenceCodeRepository<CSIPFactorType>,
+  val interviewRoleRepository: ReferenceCodeRepository<CSIPInterviewRole>,
   val involvementRepository: ReferenceCodeRepository<CSIPInvolvement>,
   val locationRepository: ReferenceCodeRepository<CSIPIncidentLocation>,
   val signedOffRoleRepository: ReferenceCodeRepository<CSIPSignedOffRole>,
   val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
   val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
-  val factorRepository: ReferenceCodeRepository<CSIPFactorType>,
+  val reviewRepository: CSIPReviewRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -63,7 +76,7 @@ class CSIPService(
         UpsertCSIPResponse(
           nomisCSIPReportId = it.id,
           offenderNo = it.offenderBooking.offender.nomsId,
-          mappings = it.identifyNewMappings(request),
+          components = it.identifyNewComponents(request),
         )
       }.also {
         telemetryClient.trackEvent(
@@ -71,6 +84,7 @@ class CSIPService(
           mapOf(
             "nomisCSIPReportId" to it.nomisCSIPReportId,
             "offenderNo" to request.offenderNo,
+            "componentsCreated" to it.components,
           ),
         )
       }
@@ -176,8 +190,8 @@ class CSIPService(
     } ?: throw NotFoundException("CSIP Report with id=${request.id} does not exist")
 
   private fun CSIPReport.addNonMandatoryFields(currentRequest: UpsertCSIPRequest) {
-    // TODO Add release date -> Confirmed Release Date (from External Movements)
-    // releaseDate = latestBooking.releaseDetail.releaseDate,
+    // Release date is not added as part of this request as it is only set when the
+    // oracle form loads in the Referral continued screen
     currentRequest.reportDetailRequest?.let { reportDetailRequest ->
       involvement = reportDetailRequest.involvementCode?.let { lookupInvolvement(it) }
       concernDescription = reportDetailRequest.concern
@@ -191,7 +205,6 @@ class CSIPService(
         addOrUpdateFactors(reportDetailRequest.factors)
       }
     }
-
     currentRequest.saferCustodyScreening?.let { saferCustodyScreening ->
       outcome = lookupOutcome(saferCustodyScreening.scsOutcomeCode)
       reasonForDecision = saferCustodyScreening.reasonForDecision
@@ -199,16 +212,18 @@ class CSIPService(
       outcomeCreateDate = saferCustodyScreening.recordedDate
     }
 
-    currentRequest.investigation?.let { investigation ->
-      staffInvolved = investigation.staffInvolved
-      evidenceSecured = investigation.evidenceSecured
-      reasonOccurred = investigation.reasonOccurred
-      usualBehaviour = investigation.usualBehaviour
-      trigger = investigation.trigger
-      protectiveFactors = investigation.protectiveFactors
-      // TODO interviews = mutableListOf()
+    currentRequest.investigation?.let { investigationRequest ->
+      staffInvolved = investigationRequest.staffInvolved
+      evidenceSecured = investigationRequest.evidenceSecured
+      reasonOccurred = investigationRequest.reasonOccurred
+      usualBehaviour = investigationRequest.usualBehaviour
+      trigger = investigationRequest.trigger
+      protectiveFactors = investigationRequest.protectiveFactors
+      investigationRequest.interviews?.let {
+        addOrUpdateInterviews(investigationRequest.interviews)
+      }
     }
-    currentRequest.decision?.let { setDecisionData(currentRequest.decision) }
+    currentRequest.decision?.let { updateDecisionData(currentRequest.decision) }
 
     caseManager = currentRequest.caseManager
     reasonForPlan = currentRequest.planReason
@@ -216,10 +231,13 @@ class CSIPService(
     if (!currentRequest.plans.isNullOrEmpty()) {
       addOrUpdatePlans(planRequests = currentRequest.plans)
     }
+    if (!currentRequest.reviews.isNullOrEmpty()) {
+      addOrUpdateReviews(reviewRequests = currentRequest.reviews)
+    }
   }
 
   private fun CSIPReport.addOrUpdateFactors(factorRequests: List<CSIPFactorRequest>) {
-    val newFactorList = mutableListOf<CSIPFactor>()
+    val newFactorList: MutableList<CSIPFactor> = mutableListOf()
     factorRequests.forEach { factorRequest ->
       // Factor request has an id so find the equivalent in the report
       factorRequest.id?.let {
@@ -229,9 +247,7 @@ class CSIPService(
             it.comment = factorRequest.comment
             newFactorList.add(it)
           }
-          ?: {
-            throw BadDataException("Attempting to update csip report $id with a csip factor id (${factorRequest.id}) that does not exist")
-          }
+          ?: throw BadDataException("Attempting to update csip report $id with a csip factor id (${factorRequest.id}) that does not exist")
       } ?: apply {
         val factor = CSIPFactor(
           csipReport = this,
@@ -246,37 +262,133 @@ class CSIPService(
   }
 
   private fun CSIPReport.addOrUpdatePlans(planRequests: List<PlanRequest>) {
-    planRequests.forEach { planRequest ->
-      // Plan request has an id so find the equivalent in the report
-      planRequest.id?.let {
-        plans.find { it.id == planRequest.id }
-          ?.also {
-            it.identifiedNeed = planRequest.identifiedNeed
-            it.intervention = planRequest.intervention
-            it.progression = planRequest.progression
-            it.referredBy = planRequest.referredBy
-            it.targetDate = planRequest.targetDate
-            it.closedDate = planRequest.closedDate
-          }
-          ?: {
-            throw BadDataException("Attempting to update csip report $id with a csip plan id (${planRequest.id}) that does not exist")
-          }
-      } ?: let {
-        val plan = CSIPPlan(
+    val newPlanList: MutableList<CSIPPlan> = mutableListOf()
+    planRequests.forEach { request ->
+      newPlanList.add(
+        request.id?.let {
+          plans.find { it.id == request.id }
+            ?.apply {
+              identifiedNeed = request.identifiedNeed
+              intervention = request.intervention
+              progression = request.progression
+              referredBy = request.referredBy
+              targetDate = request.targetDate
+              closedDate = request.closedDate
+            }
+            ?: throw BadDataException("Attempting to update csip report $id with a csip plan id (${request.id}) that does not exist")
+        } ?: CSIPPlan(
           csipReport = this,
-          identifiedNeed = planRequest.identifiedNeed,
-          intervention = planRequest.intervention,
-          progression = planRequest.progression,
-          referredBy = planRequest.referredBy,
-          targetDate = planRequest.targetDate,
-          closedDate = planRequest.closedDate,
-        )
-        plans.add(plan)
-      }
+          identifiedNeed = request.identifiedNeed,
+          intervention = request.intervention,
+          progression = request.progression,
+          referredBy = request.referredBy,
+          targetDate = request.targetDate,
+          closedDate = request.closedDate,
+        ),
+      )
     }
+    plans.clear()
+    plans.addAll(newPlanList)
   }
 
-  private fun CSIPReport.setDecisionData(decision: DecisionRequest) {
+  private fun CSIPReport.addOrUpdateReviews(reviewRequests: List<ReviewRequest>) {
+    val newReviewList: MutableList<CSIPReview> = mutableListOf()
+    reviewRequests.forEach { request ->
+      newReviewList.add(
+        if (request.id != null) {
+          reviews.find { it.id == request.id }
+            ?.apply {
+              remainOnCSIP = request.remainOnCSIP
+              csipUpdated = request.csipUpdated
+              caseNote = request.caseNote
+              closeCSIP = request.closeCSIP
+              peopleInformed = request.peopleInformed
+              summary = request.summary
+              nextReviewDate = request.nextReviewDate
+              closeDate = request.closeDate
+            }
+            ?: throw BadDataException("Attempting to update csip report $id with a csip review id (${request.id}) that does not exist")
+        } else {
+          CSIPReview(
+            csipReport = this,
+            remainOnCSIP = request.remainOnCSIP,
+            csipUpdated = request.csipUpdated,
+            caseNote = request.caseNote,
+            closeCSIP = request.closeCSIP,
+            peopleInformed = request.peopleInformed,
+            summary = request.summary,
+            nextReviewDate = request.nextReviewDate,
+            closeDate = request.closeDate,
+            recordedDate = request.recordedDate,
+            recordedUser = request.recordedBy,
+            reviewSequence = reviewRepository.getNextSequence(this.id),
+          )
+        }.apply {
+          if (!request.attendees.isNullOrEmpty()) {
+            addOrUpdateAttendees(request.attendees)
+          }
+        },
+      )
+    }
+    reviews.clear()
+    reviews.addAll(newReviewList)
+  }
+
+  private fun CSIPReport.addOrUpdateInterviews(requests: List<InterviewDetailRequest>) {
+    val newInterviewList: MutableList<CSIPInterview> = mutableListOf()
+    requests.forEach { request ->
+      newInterviewList.add(
+        // Interview request has an id so find the equivalent in the report
+        request.id?.let {
+          interviews.find { it.id == request.id }
+            ?. apply {
+              interviewee = request.interviewee
+              interviewDate = request.date
+              role = lookupInterviewRoleType(request.roleCode)
+              comments = request.comments
+            }
+            ?: throw BadDataException("Attempting to update csip report $id with a csip interview id (${request.id}) that does not exist")
+        } ?: CSIPInterview(
+          csipReport = this,
+          interviewee = request.interviewee,
+          interviewDate = request.date,
+          role = lookupInterviewRoleType(request.roleCode),
+          comments = request.comments,
+        ),
+      )
+    }
+    interviews.clear()
+    interviews.addAll(newInterviewList)
+  }
+
+  private fun CSIPReview.addOrUpdateAttendees(attendeeRequests: List<AttendeeRequest>) {
+    val newAttendeeList: MutableList<CSIPAttendee> = mutableListOf()
+    attendeeRequests.forEach { request ->
+      newAttendeeList.add(
+        request.id?.let {
+          attendees.find { it.id == request.id }
+            ?.apply {
+              name = request.name
+              role = request.role
+              attended = request.attended
+              contribution = request.contribution
+            }
+            ?: throw BadDataException("Attempting to update csip report ${csipReport.id} with a csip attendee id (${request.id}) that does not exist")
+        }
+          ?: CSIPAttendee(
+            csipReview = this,
+            name = request.name,
+            role = request.role,
+            attended = request.attended,
+            contribution = request.contribution,
+          ),
+      )
+    }
+    attendees.clear()
+    attendees.addAll(newAttendeeList)
+  }
+
+  private fun CSIPReport.updateDecisionData(decision: DecisionRequest) {
     conclusion = decision.conclusion
     decisionOutcome = decision.decisionOutcomeCode?.let { lookupOutcome(it) }
     signedOffRole = decision.signedOffRoleCode?.let { lookupSignedOffRole(it) }
@@ -299,6 +411,8 @@ class CSIPService(
     ?: throw BadDataException("Incident type $code not found")
   fun lookupInvolvement(code: String) = involvementRepository.findByIdOrNull(CSIPInvolvement.pk(code))
     ?: throw BadDataException("Involvement type $code not found")
+  fun lookupInterviewRoleType(code: String) = interviewRoleRepository.findByIdOrNull(CSIPInterviewRole.pk(code))
+    ?: throw BadDataException("Interview role type $code not found")
   fun lookupLocation(code: String) = locationRepository.findByIdOrNull(CSIPIncidentLocation.pk(code))
     ?: throw BadDataException("Location type $code not found")
   fun lookupOutcome(code: String) = outcomeRepository.findByIdOrNull(CSIPOutcome.pk(code))
@@ -309,23 +423,24 @@ class CSIPService(
     ?: throw BadDataException("Factor type $code not found")
 }
 
-fun CSIPReport.identifyNewMappings(request: UpsertCSIPRequest) =
-  identifyNewFactorMappings(request)
+fun CSIPReport.identifyNewComponents(request: UpsertCSIPRequest): List<CSIPComponent> =
+  identifyNewChildComponents(request.reportDetailRequest?.factors, factors, FACTOR) +
+    identifyNewChildComponents(request.plans, plans, PLAN) +
+    identifyNewChildComponents(request.investigation?.interviews, interviews, INTERVIEW) +
+    identifyNewReviewsAndAttendees(request)
 
-fun CSIPReport.identifyNewFactorMappings(request: UpsertCSIPRequest): List<ResponseMapping> {
-  val factorMappings = mutableListOf<ResponseMapping>()
-  request.reportDetailRequest?.factors?.let {
-    request.reportDetailRequest.factors.onEachIndexed { index, requestFactor ->
-      requestFactor.id ?: let {
-        factorMappings.add(
-          ResponseMapping(
-            ResponseMapping.Component.FACTOR,
-            this.factors[index].id,
-            requestFactor.dpsId,
-          ),
-        )
-      }
-    }
+fun CSIPReport.identifyNewReviewsAndAttendees(request: UpsertCSIPRequest): List<CSIPComponent> =
+  request.reviews?.let {
+    identifyNewChildComponents(request.reviews, reviews, REVIEW) +
+      it.zip(reviews) { reviewReq, existingReview ->
+        identifyNewChildComponents(reviewReq.attendees, existingReview.attendees, ATTENDEE)
+      }.flatten()
+  } ?: listOf()
+
+fun identifyNewChildComponents(requestList: List<CSIPChildRequest>?, existingList: List<CSIPChild>, component: CSIPComponent.Component): List<CSIPComponent> {
+  val componentsList = mutableListOf<CSIPComponent>()
+  requestList?.onEachIndexed { index, requestItem ->
+    requestItem.id ?: componentsList.add(CSIPComponent(component, existingList[index].id, requestItem.dpsId))
   }
-  return factorMappings
+  return componentsList
 }

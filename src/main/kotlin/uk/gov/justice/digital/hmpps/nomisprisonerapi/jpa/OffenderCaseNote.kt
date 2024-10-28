@@ -114,11 +114,17 @@ class OffenderCaseNote(
   var timeCreation: LocalDateTime? = null,
   // date part always the same as DATE_CREATION
 
-  @Column(name = "CREATE_DATETIME", nullable = false)
-  var createdDatetime: LocalDateTime,
+  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
+  var createdDatetime: LocalDateTime? = null,
 
-  @Column(name = "CREATE_USER_ID", nullable = false)
-  var createdUserId: String,
+  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  var createdUserId: String? = null,
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  var modifiedDatetime: LocalDateTime? = null,
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  var modifiedUserId: String? = null,
 
   val auditModuleName: String? = null,
 ) {

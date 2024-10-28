@@ -24,24 +24,24 @@ class CSIPAttendee(
   @Column(name = "ATTENDEE_ID")
   @SequenceGenerator(name = "ATTENDEE_ID", sequenceName = "ATTENDEE_ID", allocationSize = 1)
   @GeneratedValue(generator = "ATTENDEE_ID")
-  val id: Long = 0,
+  override val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REVIEW_ID")
   val csipReview: CSIPReview,
 
   @Column(name = "ATTENDEE_NAME")
-  val name: String? = null,
+  var name: String? = null,
 
   @Column(name = "ATTENDEE_ROLE")
-  val role: String? = null,
+  var role: String? = null,
 
   @Column(name = "ATTENDED")
   @Convert(converter = YesNoConverter::class)
-  val attended: Boolean = false,
+  var attended: Boolean = false,
 
   @Column(name = "CONTRIBUTION")
-  val contribution: String? = null,
+  var contribution: String? = null,
 
   @Column
   var auditModuleName: String? = null,
@@ -64,7 +64,7 @@ class CSIPAttendee(
 
   // ---- NOT MAPPED columns ---- //
   // All AUDIT data except auditModuleName
-) {
+) : CSIPChild {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String

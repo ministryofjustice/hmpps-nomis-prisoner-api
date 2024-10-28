@@ -26,17 +26,17 @@ class CSIPInterview(
   @Column(name = "CSIP_INTVW_ID")
   @SequenceGenerator(name = "CSIP_INTVW_ID", sequenceName = "CSIP_INTVW_ID", allocationSize = 1)
   @GeneratedValue(generator = "CSIP_INTVW_ID")
-  val id: Long = 0,
+  override val id: Long = 0,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CSIP_ID")
   val csipReport: CSIPReport,
 
   @Column(name = "CSIP_INTERVIEWEE", nullable = false)
-  val interviewee: String,
+  var interviewee: String,
 
   @Column(name = "INTVW_DATE", nullable = false)
-  val interviewDate: LocalDate,
+  var interviewDate: LocalDate,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -49,10 +49,10 @@ class CSIPInterview(
       ), JoinColumnOrFormula(column = JoinColumn(name = "INTVW_ROLE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val role: CSIPInterviewRole,
+  var role: CSIPInterviewRole,
 
   @Column(name = "COMMENTS", nullable = false)
-  val comments: String? = null,
+  var comments: String? = null,
 
   @Column
   var auditModuleName: String? = null,
@@ -75,7 +75,7 @@ class CSIPInterview(
 
   // ---- NOT MAPPED columns ---- //
   // All AUDIT data except auditModuleName
-) {
+) : CSIPChild {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String

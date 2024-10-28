@@ -6,6 +6,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskSubType
@@ -16,7 +21,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.WorkRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.Optional
 
 private val TWO_UNICODE_CHARS = "⌘⌥"
 
@@ -92,12 +99,12 @@ internal class CaseNotesServiceTest {
 
     @Test
     fun `basic text has no amendments`() {
-      assertThat(caseNotesService.parseAmendments("basic text")).isEmpty()
+      assertThat(caseNotesService.parseAmendments(caseNote("basic text"))).isEmpty()
     }
 
     @Test
     fun `empty text`() {
-      assertThat(caseNotesService.parseAmendments("")).isEmpty()
+      assertThat(caseNotesService.parseAmendments(caseNote(""))).isEmpty()
     }
 
     @Test
@@ -106,7 +113,7 @@ internal class CaseNotesServiceTest {
 
       assertThat(
         caseNotesService.parseAmendments(
-          "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change",
+          caseNote("basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change"),
         ),
       )
         .containsExactly(
@@ -117,6 +124,7 @@ internal class CaseNotesServiceTest {
             "First1",
             "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
+            sourceSystem = SourceSystem.NOMIS,
           ),
         )
     }
@@ -127,7 +135,7 @@ internal class CaseNotesServiceTest {
 
       assertThat(
         caseNotesService.parseAmendments(
-          "basic text ...[JMORROW_GEN updated the case note on 14/12/2006 07:32:39] made a change",
+          caseNote("basic text ...[JMORROW_GEN updated the case note on 14/12/2006 07:32:39] made a change"),
         ),
       )
         .extracting("createdDateTime").containsExactly(LocalDateTime.parse("2006-12-14T07:32:39"))
@@ -139,7 +147,7 @@ internal class CaseNotesServiceTest {
 
       assertThat(
         caseNotesService.parseAmendments(
-          "basic text ...[JMORROW_GEN updated the case notes on 18-08-2009 14:04:53] made a change",
+          caseNote("basic text ...[JMORROW_GEN updated the case notes on 18-08-2009 14:04:53] made a change"),
         ),
       )
         .extracting("createdDateTime").containsExactly(LocalDateTime.parse("2009-08-18T14:04:53"))
@@ -152,7 +160,7 @@ internal class CaseNotesServiceTest {
 
       assertThat(
         caseNotesService.parseAmendments(
-          "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change ...[PPHILLIPS_GEN updated the case notes on 2023/06/28 15:52:08] with more details",
+          caseNote("basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change ...[PPHILLIPS_GEN updated the case notes on 2023/06/28 15:52:08] with more details"),
         ),
       )
         .containsExactly(
@@ -163,6 +171,7 @@ internal class CaseNotesServiceTest {
             "First1",
             "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
+            sourceSystem = SourceSystem.NOMIS,
           ),
           CaseNoteAmendment(
             "with more details",
@@ -171,6 +180,7 @@ internal class CaseNotesServiceTest {
             "First2",
             "Last2",
             LocalDateTime.parse("2023-06-28T15:52:08"),
+            sourceSystem = SourceSystem.NOMIS,
           ),
         )
     }
@@ -181,7 +191,7 @@ internal class CaseNotesServiceTest {
 
       assertThat(
         caseNotesService.parseAmendments(
-          "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] ",
+          caseNote("basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] "),
         ),
       )
         .containsExactly(
@@ -192,6 +202,7 @@ internal class CaseNotesServiceTest {
             "First1",
             "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
+            sourceSystem = SourceSystem.NOMIS,
           ),
         )
     }
@@ -203,7 +214,7 @@ internal class CaseNotesServiceTest {
 
       assertThat(
         caseNotesService.parseAmendments(
-          "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41]  ...[PPHILLIPS_GEN updated the case notes on 2023/06/28 15:52:08] with more details",
+          caseNote("basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41]  ...[PPHILLIPS_GEN updated the case notes on 2023/06/28 15:52:08] with more details"),
         ),
       )
         .containsExactly(
@@ -214,6 +225,7 @@ internal class CaseNotesServiceTest {
             "First1",
             "Last1",
             LocalDateTime.parse("2023-03-02T17:11:41"),
+            sourceSystem = SourceSystem.NOMIS,
           ),
           CaseNoteAmendment(
             "with more details",
@@ -222,6 +234,7 @@ internal class CaseNotesServiceTest {
             "First2",
             "Last2",
             LocalDateTime.parse("2023-06-28T15:52:08"),
+            sourceSystem = SourceSystem.NOMIS,
           ),
         )
     }
@@ -360,4 +373,120 @@ internal class CaseNotesServiceTest {
       assertThat(Utf8.encodedLength(result)).isEqualTo(4000)
     }
   }
+
+  @Nested
+  internal inner class CaseNoteSourceSystem {
+    @Test
+    fun `Is NOMIS`() {
+      whenever(offenderCaseNoteRepository.findById(1)).thenReturn(
+        Optional.of(caseNote()),
+      )
+      assertThat(
+        caseNotesService.getCaseNote(1L).sourceSystem,
+      ).isEqualTo(
+        SourceSystem.NOMIS,
+      )
+    }
+
+    @Test
+    fun `Is DPS due to null modify user null`() {
+      whenever(offenderCaseNoteRepository.findById(1)).thenReturn(
+        Optional.of(caseNote(auditModuleName = "PRISON_API", modifiedUserId = null)),
+      )
+      assertThat(
+        caseNotesService.getCaseNote(1L).sourceSystem,
+      ).isEqualTo(
+        SourceSystem.DPS,
+      )
+    }
+
+    @Test
+    fun `Is DPS due to modify user equals create`() {
+      whenever(offenderCaseNoteRepository.findById(1)).thenReturn(
+        Optional.of(caseNote(auditModuleName = "ELITE2_API", modifiedUserId = "created-user_id")),
+      )
+      assertThat(
+        caseNotesService.getCaseNote(1L).sourceSystem,
+      ).isEqualTo(
+        SourceSystem.DPS,
+      )
+    }
+  }
+
+  @Nested
+  internal inner class AmendmentSourceSystem {
+    val textWithAmendment = "some text ...[STEVER updated the case notes on 2024/05/06 07:08:09] change"
+
+    @Test
+    fun `Is NOMIS`() {
+      whenever(offenderCaseNoteRepository.findById(1)).thenReturn(
+        Optional.of(caseNote(textWithAmendment)),
+      )
+      assertThat(
+        caseNotesService.getCaseNote(1L).amendments.first().sourceSystem,
+      ).isEqualTo(
+        SourceSystem.NOMIS,
+      )
+    }
+
+    @Test
+    fun `Is NOMIS due to null modify date`() {
+      whenever(offenderCaseNoteRepository.findById(1)).thenReturn(
+        Optional.of(caseNote(textWithAmendment, auditModuleName = "PRISON_API", modifiedDateTime = null)),
+      )
+      assertThat(
+        caseNotesService.getCaseNote(1L).amendments.first().sourceSystem,
+      ).isEqualTo(
+        SourceSystem.NOMIS,
+      )
+    }
+
+    @Test
+    fun `Is DPS due to modify date not null`() {
+      whenever(offenderCaseNoteRepository.findById(1)).thenReturn(
+        Optional.of(caseNote(textWithAmendment, auditModuleName = "PRISON_API")),
+      )
+      assertThat(
+        caseNotesService.getCaseNote(1L).amendments.first().sourceSystem,
+      ).isEqualTo(
+        SourceSystem.DPS,
+      )
+    }
+  }
 }
+
+fun caseNote(
+  caseNoteText: String = "A note",
+  auditModuleName: String = "a-module",
+  modifiedUserId: String? = "my-user-name",
+  modifiedDateTime: LocalDateTime? = LocalDateTime.now(),
+) =
+  OffenderCaseNote(
+    offenderBooking = OffenderBooking(
+      offender = Offender(
+        nomsId = "A1234AA",
+        gender = Gender("MALE", "DESC"),
+        firstName = "First",
+        lastName = "Last",
+      ),
+      bookingBeginDate = LocalDateTime.now(),
+    ),
+    occurrenceDate = LocalDate.parse("2024-03-04"),
+    occurrenceDateTime = LocalDateTime.now(),
+    caseNoteType = TaskType("CODE", "desc"),
+    caseNoteSubType = TaskSubType("SUBCODE", "desc"),
+    author = Staff(firstName = "Joe", lastName = "Bloggs")
+      .apply {
+        accounts.add(StaffUserAccount(username = "USER", staff = this, type = "type", source = "source"))
+      },
+    caseNoteText = caseNoteText,
+    amendmentFlag = true,
+    noteSourceCode = NoteSourceCode.INST,
+
+    dateCreation = LocalDate.now(),
+    createdUserId = "created-user_id",
+    auditModuleName = auditModuleName,
+
+    modifiedUserId = modifiedUserId,
+    modifiedDatetime = modifiedDateTime,
+  )
