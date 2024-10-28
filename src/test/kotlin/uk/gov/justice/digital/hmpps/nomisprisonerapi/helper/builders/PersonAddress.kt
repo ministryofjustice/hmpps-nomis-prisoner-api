@@ -9,8 +9,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class PersonAddressDslMarker
@@ -26,6 +28,8 @@ interface PersonAddressDsl {
     phoneType: String,
     phoneNo: String,
     extNo: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: AddressPhoneDsl.() -> Unit = {},
   ): AddressPhone
 }
@@ -48,12 +52,14 @@ class PersonAddressBuilderRepository(
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
+  private val addressRepository: AddressRepository,
 
 ) {
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) }
   fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) }
   fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) }
+  fun save(address: PersonAddress): PersonAddress = addressRepository.saveAndFlush(address)
 }
 
 class PersonAddressBuilder(
@@ -100,13 +106,15 @@ class PersonAddressBuilder(
       comment = comment,
       startDate = startDate,
       endDate = endDate,
-    )
+    ).let { personAddressBuilderRepository.save(it) }
       .also { address = it }
 
   override fun phone(
     phoneType: String,
     phoneNo: String,
     extNo: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: AddressPhoneDsl.() -> Unit,
   ): AddressPhone =
     addressPhoneBuilderFactory.builder().let { builder ->
@@ -115,6 +123,8 @@ class PersonAddressBuilder(
         phoneType = phoneType,
         extNo = extNo,
         phoneNo = phoneNo,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also { address.phones += it }
         .also { builder.apply(dsl) }

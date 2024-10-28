@@ -157,7 +157,7 @@ data class Person(
   NAME_SEQUENCE - always null
    */
 
-) : NomisEntity() {
+) : NomisAuditableEntity() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
