@@ -5,10 +5,9 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts.NomisAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import java.time.LocalDate
 
@@ -31,21 +30,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
       isStaff = it.isStaff,
       isRemitter = it.isRemitter,
       keepBiometrics = it.keepBiometrics,
-      audit = NomisAudit(
-        createDatetime = it.createDatetime,
-        createUsername = it.createUsername,
-        createDisplayName = it.createStaffUserAccount?.staff.asDisplayName(),
-        modifyDatetime = it.modifyDatetime,
-        modifyUserId = it.modifyUserId,
-        modifyDisplayName = it.modifyStaffUserAccount?.staff.asDisplayName(),
-        auditUserId = it.auditUserId,
-        auditTimestamp = it.auditTimestamp,
-        auditModuleName = it.auditModuleName,
-        auditAdditionalInfo = it.auditAdditionalInfo,
-        auditClientIpAddress = it.auditClientIpAddress,
-        auditClientUserId = it.auditClientUserId,
-        auditClientWorkstationName = it.auditClientWorkstationName,
-      ),
+      audit = it.toAudit(),
       phoneNumbers = it.phones.map { number ->
         PersonPhoneNumber(
           phoneId = number.phoneId,
@@ -169,8 +154,6 @@ class ContactPersonService(private val personRepository: PersonRepository) {
       )
     }.map { PersonIdResponse(personId = it.personId) }
 }
-
-private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }
 
 data class PersonFilter(
   val fromDate: LocalDate?,

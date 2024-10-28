@@ -35,6 +35,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY", type = "GENERAL")
+        }
         personMinimal = person(
           firstName = "JOHN",
           lastName = "BOG",
@@ -54,6 +57,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           isStaff = true,
           isRemitter = true,
           keepBiometrics = true,
+          whoCreated = "KOFEADDY",
+          whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
         }
       }
@@ -155,8 +160,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("isStaff").isEqualTo(true)
           .jsonPath("isRemitter").isEqualTo(true)
           .jsonPath("keepBiometrics").isEqualTo(true)
-          .jsonPath("audit.createUsername").isNotEmpty
-          .jsonPath("audit.createDatetime").isNotEmpty
+          .jsonPath("audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
     }
 

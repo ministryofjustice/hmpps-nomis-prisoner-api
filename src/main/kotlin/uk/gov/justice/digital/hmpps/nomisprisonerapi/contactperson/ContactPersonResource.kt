@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts.NomisAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
 
 @RestController

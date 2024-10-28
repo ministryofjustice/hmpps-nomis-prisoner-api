@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
@@ -99,7 +100,7 @@ class AlertsService(
 
   private fun OffenderAlert.toAlertResponse() = AlertResponse(
     bookingId = id.offenderBooking.bookingId,
-    bookingSequence = id.offenderBooking.bookingSequence!!.toLong(),
+    bookingSequence = id.offenderBooking.bookingSequence.toLong(),
     alertSequence = id.sequence,
     alertCode = alertCode.toCodeDescription(),
     type = alertType.toCodeDescription(),

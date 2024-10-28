@@ -127,6 +127,9 @@ class PersonBuilderRepository(
   fun updateCreateDatetime(person: Person, whenCreated: LocalDateTime) {
     jdbcTemplate.update("update PERSONS set CREATE_DATETIME = ? where PERSON_ID = ?", whenCreated, person.id)
   }
+  fun updateCreateUsername(person: Person, whoCreated: String) {
+    jdbcTemplate.update("update PERSONS set CREATE_USER_ID = ? where PERSON_ID = ?", whoCreated, person.id)
+  }
 }
 
 class PersonBuilder(
@@ -155,6 +158,7 @@ class PersonBuilder(
     isRemitter: Boolean?,
     keepBiometrics: Boolean,
     whenCreated: LocalDateTime?,
+    whoCreated: String?,
   ): Person = Person(
     lastName = lastName,
     firstName = firstName,
@@ -174,6 +178,9 @@ class PersonBuilder(
     .also {
       if (whenCreated != null) {
         repository.updateCreateDatetime(it, whenCreated)
+      }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
       }
     }
     .also { person = it }
