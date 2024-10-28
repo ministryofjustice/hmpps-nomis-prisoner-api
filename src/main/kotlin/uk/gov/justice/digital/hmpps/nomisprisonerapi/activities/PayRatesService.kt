@@ -63,116 +63,140 @@ class PayRatesService(
       }
 
   /*
-   * Rebuild the list of pay rates to replace the existing list - taking into account we never delete old rates, just expire them
+   * Rebuild the list of pay rates to replace the existing list.
    *
-   * This is quite a tricky algorithm. When building the new rate list it does the following:
-   * - newly requested rates are created and become effective today
-   * - any existing rates that are still active but haven't changed are retained
-   * - any existing rates that have changed are expired with today's date and a new rate added effective tomorrow
-   * - any existing rates that are expired are retained
-   * - any existing rates that are not included in the new request are expired
+   * This is complicated by the following:
+   * - DPS doesn't support end dates so we have to derive them from the start dates
+   * - DPS allows hard deletes of rates, but we can't delete them from NOMIS
    */
-  fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity, previousActivityEndDate: LocalDate?): MutableList<CourseActivityPayRate> {
-    val newPayRates = mutableListOf<CourseActivityPayRate>()
-    val existingPayRates = existingActivity.payRates
-    val tomorrow = LocalDate.now().plusDays(1)
+  fun buildNewPayRates(requestedPayRates: List<PayRateRequest>, existingActivity: CourseActivity): List<CourseActivityPayRate> {
+    val newRates = mutableListOf<CourseActivityPayRate>()
+    val expiredRates = mutableListOf<CourseActivityPayRate>()
+    val existingRates = existingActivity.payRates
 
-    requestedPayRates.forEach { requestedPayRate ->
-      val existingPayRate = existingPayRates.findExistingPayRate(requestedPayRate)
+    // DPS doesn't support end dates so derive them from the start dates / activity dates
+    val requestedRates = requestedPayRates.deriveDates(existingActivity.scheduleStartDate, existingActivity.scheduleEndDate)
 
-      handleEndDate(previousActivityEndDate, existingActivity, existingPayRate)
+    // keep any existing rates that have expired - they might no longer exist in DPS but we can't delete them from NOMIS
+    expiredRates.addAll(existingRates.filterExpired())
 
-      when {
-        existingPayRate == null -> newPayRates.add(
-          requestedPayRate.toCourseActivityPayRate(
-            existingActivity,
-            getStartDate(requestedPayRate.incentiveLevel, requestedPayRate.payBand, existingPayRates, existingActivity.scheduleStartDate),
-            existingActivity.scheduleEndDate,
-          ),
-        )
+    // if there are active rates in NOMIS which are different to the requested rate, expire them
+    expiredRates.addAll(existingRates.expireChangedRates(requestedRates))
 
-        existingPayRate.rateIsUnchanged(requestedPayRate) -> newPayRates.add(existingPayRate)
+    newRates.addAll(expiredRates)
 
-        // e.g. rate adjusted twice in same day
-        existingPayRate.rateIsChangedButNotYetActive(requestedPayRate) -> newPayRates.add(
-          existingPayRate.apply { halfDayRate = requestedPayRate.rate },
-        )
+    // map all rates that are active either today or in the future
+    newRates.addAll(
+      requestedRates.filterNotExpired()
+        .map { adjustOverlappingRates(it, expiredRates) }
+        .map { it.toCourseActivityPayRate(existingActivity, it.startDate!!, it.endDate) },
+    )
 
-        existingPayRate.rateIsChanged(requestedPayRate) -> {
-          newPayRates.add(existingPayRate.expire())
-          newPayRates.add(
-            requestedPayRate.toCourseActivityPayRate(existingActivity, tomorrow, existingActivity.scheduleEndDate),
-          )
-        }
-      }
-    }
+    // Rates that are missing from the request but are still active must have been deleted in DPS - expire them in NOMIS
+    newRates.addAll(
+      existingRates.filter { it !in newRates && it.isActive() }
+        .map { it.expire() }
+        .also { it.throwIfPayBandsInUse() },
+    )
 
-    newPayRates.addAll(existingPayRates.getExpiredPayRates() - newPayRates.toSet())
-    newPayRates.addAll(existingPayRates.expirePayRatesIfMissingFrom(newPayRates))
-    newPayRates.adjustStartDatesIfChanged(existingActivity)
-
-    return newPayRates
+    return newRates
   }
 
-  /**
-   * See https://dsdmoj.atlassian.net/browse/SDIT-1605
-   * If you add an end date to an Activity it should also update the end date on current course activity pay rates.
+  /*
+   * As there may be rates in NOMIS that DPS doesn't know about we have to adjust dates for them
    */
-  private fun handleEndDate(
-    previousActivityEndDate: LocalDate?,
-    existingActivity: CourseActivity,
-    existingCurrentPayRate: CourseActivityPayRate?,
-  ) {
-    if (existingCurrentPayRate != null) {
-      if (previousActivityEndDate == null) {
-        if (existingActivity.scheduleEndDate != null && existingCurrentPayRate.endDate == null) {
-          existingCurrentPayRate.endDate = existingActivity.scheduleEndDate
-        }
-        // ... but leave an existing future pay rate end date alone
-      } else {
-        existingCurrentPayRate.endDate = existingActivity.scheduleEndDate
-      }
+  private fun adjustOverlappingRates(
+    req: PayRateRequest,
+    expiredRates: MutableList<CourseActivityPayRate>,
+  ): PayRateRequest {
+    val expiredRatesForType = expiredRates.filter { exp -> exp.toRateType() == req.toRateType() }
+    return if (expiredRatesForType.isNotEmpty() && req.startDate!! <= expiredRatesForType.last().endDate) {
+      req.copy(startDate = expiredRates.last().endDate?.plusDays(1))
+    } else {
+      req
     }
   }
 
-  private fun MutableList<CourseActivityPayRate>.findExistingPayRate(requested: PayRateRequest) =
-    firstOrNull { existing ->
-      (existing.endDate == null || existing.endDate!! >= LocalDate.now()) &&
-        requested.payBand == existing.id.payBandCode &&
-        requested.incentiveLevel == existing.id.iepLevelCode
+  private data class RateType(val iepLevel: String, val payBand: String)
+  private fun PayRateRequest.toRateType() = RateType(incentiveLevel, payBand)
+  private fun CourseActivityPayRate.toRateType() = RateType(id.iepLevelCode, id.payBandCode)
+
+  /*
+   * NOMIS needs start and end dates, but DPS only provides start dates (except for on the first rate which has null start date).
+   * Map the requested rates to have start and end dates.
+   */
+  private fun List<PayRateRequest>.deriveDates(courseStartDate: LocalDate, courseEndDate: LocalDate?): List<PayRateRequest> =
+    this.groupBy { it.toRateType() }
+      .flatMap { (_, requestedRatesForType) ->
+        requestedRatesForType
+          .sortedBy { it.startDate }
+          .windowed(size = 2, step = 1, partialWindows = true)
+          .map {
+            val requestedRate: PayRateRequest = it[0]
+            val nextRequestedRate: PayRateRequest? = if (it.size > 1) it[1] else null
+
+            val startDate =
+              // Use the start date as requested by DPS
+              requestedRate.startDate
+                // If there is no DPS start date, start at the same time as the course
+                ?: courseStartDate
+
+            val endDate = if (nextRequestedRate == null) {
+              // this is the last rate so end with the course unless requested to end before then
+              minDate(requestedRate.endDate, courseEndDate)
+            } else {
+              // if there is a next rate then the requested rate ends the day before it
+              nextRequestedRate.startDate!!.minusDays(1)
+            }
+
+            requestedRate.copy(startDate = startDate, endDate = endDate)
+          }
+      }
+
+  /*
+   * Expire any active pay rates where the rate has changed in DPS and return them
+   */
+  private fun List<CourseActivityPayRate>.expireChangedRates(requestedRates: List<PayRateRequest>): List<CourseActivityPayRate> =
+    this.groupBy { it.toRateType() }
+      .mapNotNull { (rateType, existingRatesForType) ->
+        val requestedRatesForType = requestedRates.filter { it.toRateType() == rateType }
+        val existingActiveRate = existingRatesForType.findActiveRate()
+        val requestedActiveRate = requestedRatesForType.findActiveRate()
+
+        // The rate has changed - expire the existing rate
+        if (existingActiveRate != null &&
+          requestedActiveRate != null &&
+          existingActiveRate.halfDayRate.compareTo(requestedActiveRate.rate) != 0
+        ) {
+          existingActiveRate.expire()
+        } else {
+          null
+        }
+      }
+
+  private fun List<CourseActivityPayRate>.filterExpired(): List<CourseActivityPayRate> =
+    filter { it.endDate != null && it.endDate!! < LocalDate.now() }
+
+  private fun List<PayRateRequest>.filterNotExpired(): List<PayRateRequest> =
+    filter { it.endDate == null || it.endDate >= LocalDate.now() }
+
+  private fun List<PayRateRequest>.findActiveRate(): PayRateRequest? =
+    find { it.startDate!! <= LocalDate.now() && (it.endDate == null || it.endDate >= LocalDate.now()) }
+
+  private fun List<CourseActivityPayRate>.findActiveRate(): CourseActivityPayRate? =
+    find { it.id.startDate <= LocalDate.now() && (it.endDate == null || it.endDate!! >= LocalDate.now()) }
+
+  private fun minDate(date1: LocalDate?, date2: LocalDate?): LocalDate? =
+    when {
+      date1 == null -> date2
+      date2 == null -> date1
+      date1 < date2 -> date1
+      else -> date2
     }
 
-  private fun CourseActivityPayRate.rateIsUnchanged(requested: PayRateRequest) =
-    this.halfDayRate.compareTo(CourseActivityPayRate.preciseHalfDayRate(requested.rate)) == 0
-
-  private fun CourseActivityPayRate.rateIsChangedButNotYetActive(requested: PayRateRequest) =
-    this.rateIsChanged(requested) && this.hasFutureStartDate()
-
-  private fun CourseActivityPayRate.rateIsChanged(requested: PayRateRequest) =
-    this.halfDayRate.compareTo(requested.rate) != 0
-
-  private fun MutableList<CourseActivityPayRate>.containsActiveRate(newPayRate: CourseActivityPayRate) =
-    this.firstOrNull { existing ->
-      !existing.hasExpiryDate() &&
-        existing.id.payBandCode == newPayRate.id.payBandCode &&
-        existing.id.iepLevelCode == newPayRate.id.iepLevelCode
-    } != null
-
-  private fun MutableList<CourseActivityPayRate>.containsRate(newPayRate: CourseActivityPayRate) =
-    this.firstOrNull { existing ->
-      existing.id.payBandCode == newPayRate.id.payBandCode &&
-        existing.id.iepLevelCode == newPayRate.id.iepLevelCode
-    } != null
-
-  private fun MutableList<CourseActivityPayRate>.getExpiredPayRates() = this.filter { it.hasExpiryDate() }
-
-  private fun MutableList<CourseActivityPayRate>.expirePayRatesIfMissingFrom(newPayRates: MutableList<CourseActivityPayRate>) =
-    this.filter { old -> !old.hasExpiryDate() }
-      .filter { old -> !old.hasFutureStartDate() } // ignore future rates not included in updates - so they are deleted
-      .filter { old -> !newPayRates.containsActiveRate(old) }
-      .map { old -> old.expire() }
-      .also { expiredPayRates -> expiredPayRates.throwIfPayBandsInUse() }
-
+  /*
+   * Fails if any of the pay rates are in use, because we are trying to delete the pay rates
+   */
   private fun List<CourseActivityPayRate>.throwIfPayBandsInUse() =
     this.forEach { activityPayRate ->
       offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndProgramStatusCode(activityPayRate.id.courseActivity.courseActivityId, "ALLOC")
@@ -183,6 +207,7 @@ class PayRatesService(
         ?.run { throw BadDataException("Pay band ${activityPayRate.payBand.code} for incentive level ${activityPayRate.iepLevel.code} is allocated to offender(s) $this") }
     }
 
+  // Map the requested rate to a NOMIS pay rate
   private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity, startDate: LocalDate, endDate: LocalDate? = null): CourseActivityPayRate {
     val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
       ?: throw BadDataException("Pay band code $payBand does not exist")
@@ -202,45 +227,6 @@ class PayRatesService(
       endDate = endDate,
       halfDayRate = CourseActivityPayRate.preciseHalfDayRate(rate),
     )
-  }
-
-  // If the pay rate already exists the new rate becomes effective tomorrow
-  // If the pay rate is brand new it becomes effective today
-  // A pay rate cannot start before the activity
-  private fun getStartDate(
-    iepLevelCode: String,
-    payBandCode: String,
-    existingPayRates: List<CourseActivityPayRate>,
-    activityStartDate: LocalDate,
-  ): LocalDate {
-    val today = LocalDate.now()
-    val tomorrow = today.plusDays(1)
-    return existingPayRates.filter { it.id.iepLevelCode == iepLevelCode && it.payBand.code == payBandCode }
-      .takeIf { it.isNotEmpty() }
-      ?.maxBy { it.id.startDate }
-      ?.endDate
-      ?.let { if (it < today) today else tomorrow }
-      ?: listOf(today, activityStartDate).max()
-  }
-
-  // Handle an edge case where the activity start date is moved before any of the existing pay rates - as start date is
-  // part of the key we need to delete and recreate pay rates with the new start date
-  private fun MutableList<CourseActivityPayRate>.adjustStartDatesIfChanged(existingActivity: CourseActivity) {
-    groupBy { it.iepLevel to it.payBand }
-      .map { it.value.minBy { payRate -> payRate.id.startDate } }
-      .filter { existingActivity.payRates.containsRate(it) }
-      .filter { it.id.startDate > existingActivity.scheduleStartDate }
-      .forEach {
-        remove(it)
-        add(
-          PayRateRequest(it.id.iepLevelCode, it.id.payBandCode, it.halfDayRate)
-            .toCourseActivityPayRate(
-              courseActivity = existingActivity,
-              startDate = existingActivity.scheduleStartDate,
-              endDate = it.endDate,
-            ),
-        )
-      }
   }
 
   fun buildUpdateTelemetry(
