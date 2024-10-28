@@ -271,6 +271,8 @@ data class PersonEmployment(
   val corporate: PersonEmploymentCorporate?,
   @Schema(description = "True is employment is active")
   val active: Boolean,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -293,6 +295,8 @@ data class PersonIdentifier(
   val identifier: String,
   @Schema(description = "The issued authority", example = "Police")
   val issuedAuthority: String?,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
@@ -320,6 +324,8 @@ data class PersonContact(
   val prisoner: ContactForPrisoner,
   @Schema(description = "List of restrictions specifically between the prisoner and this contact")
   val restrictions: List<ContactRestriction>,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
@@ -350,6 +356,8 @@ data class ContactRestriction(
   val expiryDate: LocalDate?,
   @Schema(description = "Staff member who created the restriction")
   val enteredStaff: ContactRestrictionEnteredStaff,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
