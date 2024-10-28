@@ -362,6 +362,7 @@ class NomisData(
     isRemitter: Boolean?,
     keepBiometrics: Boolean,
     whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: PersonDsl.() -> Unit,
   ): Person = personBuilderFactory!!.builder()
     .let { builder ->
@@ -380,6 +381,7 @@ class NomisData(
         isRemitter = isRemitter,
         keepBiometrics = keepBiometrics,
         whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also {
           builder.apply(dsl)
@@ -525,6 +527,7 @@ interface NomisDataDsl {
     isRemitter: Boolean? = null,
     keepBiometrics: Boolean = false,
     whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonDsl.() -> Unit = {},
   ): Person
 

@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -912,37 +912,6 @@ data class AlertResponse(
   val comment: String? = null,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
-)
-
-@Schema(description = "The data held in NOMIS the person or system that created this record")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class NomisAudit(
-  @Schema(description = "Date time record was created")
-  val createDatetime: LocalDateTime,
-  @Schema(description = "Username of person that created the record (might also be a system) ")
-  val createUsername: String,
-  @Schema(description = "Real name of person that created the record (might by null for system users)")
-  val createDisplayName: String?,
-  @Schema(description = "Username of person that last modified the record (might also be a system)")
-  val modifyUserId: String? = null,
-  @Schema(description = "Real name of person that modified the record (might by null for system users)")
-  val modifyDisplayName: String?,
-  @Schema(description = "Date time record was last modified")
-  val modifyDatetime: LocalDateTime? = null,
-  @Schema(description = "Audit Date time")
-  val auditTimestamp: LocalDateTime? = null,
-  @Schema(description = "Audit username")
-  val auditUserId: String? = null,
-  @Schema(description = "NOMIS or DPS module that created the record")
-  val auditModuleName: String? = null,
-  @Schema(description = "Client userid")
-  val auditClientUserId: String? = null,
-  @Schema(description = "IP Address where request originated from")
-  val auditClientIpAddress: String? = null,
-  @Schema(description = "Machine name where request originated from")
-  val auditClientWorkstationName: String? = null,
-  @Schema(description = "Additional information that is audited")
-  val auditAdditionalInfo: String? = null,
 )
 
 @Schema(description = "A request to create an alert in NOMIS")
