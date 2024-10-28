@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProg
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonIepLevelRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.util.Optional
 
@@ -105,7 +106,7 @@ class PayRateServiceTest {
         PayRateRequest(
           incentiveLevel = "BAS",
           payBand = "5",
-          rate = BigDecimal(3.2),
+          rate = rate(3.2),
         ),
       ),
       payPerSession = PayPerSession.H,
@@ -182,7 +183,7 @@ class PayRateServiceTest {
 
     @Test
     fun `no change should do nothing`() {
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)))
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(3.2)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(1)
@@ -198,8 +199,8 @@ class PayRateServiceTest {
     @Test
     fun `adding should create new pay rate effective today`() {
       val request = listOf(
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
-        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = rate(3.4)),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -221,8 +222,8 @@ class PayRateServiceTest {
     @Test
     fun `adding should create new pay rate effective from requested start date`() {
       val request = listOf(
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
-        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4), startDate = threeDaysAhead),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = rate(3.4), startDate = threeDaysAhead),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -253,8 +254,8 @@ class PayRateServiceTest {
         }
       }
       val request = listOf(
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
-        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(3.4)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = rate(3.4)),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -270,8 +271,8 @@ class PayRateServiceTest {
     @Test
     fun `amending should expire existing and create new pay rate effective tomorrow`() {
       val request = listOf(
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3), startDate = tomorrow),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(4.3), startDate = tomorrow),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -302,7 +303,7 @@ class PayRateServiceTest {
         }
       }
 
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(4.3)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
@@ -331,7 +332,7 @@ class PayRateServiceTest {
         }
       }
 
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(4.3)))
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(4.3)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
@@ -362,7 +363,7 @@ class PayRateServiceTest {
         }
       }
 
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4)))
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(5.4)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(3)
@@ -397,8 +398,8 @@ class PayRateServiceTest {
         }
       }
       val request = listOf(
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4), startDate = tomorrow),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(5.4), startDate = tomorrow),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -429,8 +430,8 @@ class PayRateServiceTest {
         }
       }
       val request = listOf(
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(3.2)),
-        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = BigDecimal(5.4), startDate = threeDaysAhead),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(3.2)),
+        PayRateRequest(incentiveLevel = "STD", payBand = "5", rate = rate(5.4), startDate = threeDaysAhead),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -469,7 +470,7 @@ class PayRateServiceTest {
       with(newPayRates.first()) {
         assertThat(id.payBandCode).isEqualTo("5")
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
-        assertThat(endDate).isEqualTo(yesterday)
+        assertThat(endDate).isEqualTo(today)
       }
     }
 
@@ -493,21 +494,21 @@ class PayRateServiceTest {
       with(newPayRates.first()) {
         assertThat(id.payBandCode).isEqualTo("5")
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
-        assertThat(endDate).isEqualTo(yesterday)
+        assertThat(endDate).isEqualTo(today)
       }
     }
 
     @Test
     fun `missing rate should be expired`() {
       // request pay band 6 instead of 5
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = BigDecimal(4.3)))
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "6", rate = rate(4.3)))
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
       assertThat(newPayRates.size).isEqualTo(2)
       // missing rate for pay band 5 has been expired
       with(newPayRates.findRate("STD", "5", expired = true)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(3.2), within(BigDecimal(0.001)))
-        assertThat(endDate).isEqualTo(yesterday)
+        assertThat(endDate).isEqualTo(today)
       }
       // new rate for pay band 6 effective from course start
       with(newPayRates.findRate("STD", "6", expired = false)) {
@@ -533,10 +534,10 @@ class PayRateServiceTest {
       }
       val request = listOf(
         // pay band 5 rate 3.2 was deleted then replaced with 4.4 starting tomorrow
-        PayRateRequest("STD", "5", BigDecimal(4.4), startDate = tomorrow),
+        PayRateRequest("STD", "5", rate(4.4), startDate = tomorrow),
         // pay band 6 is being changed to 5.4 from tomorrow
-        PayRateRequest("STD", "6", BigDecimal(5.3)),
-        PayRateRequest("STD", "6", BigDecimal(5.4), startDate = tomorrow),
+        PayRateRequest("STD", "6", rate(5.3)),
+        PayRateRequest("STD", "6", rate(5.4), startDate = tomorrow),
         // pay band 7 is being deleted
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
@@ -565,7 +566,7 @@ class PayRateServiceTest {
       // old rate for pay band 7 has been expired
       with(newPayRates.findRate("STD", "7", expired = true)) {
         assertThat(halfDayRate).isCloseTo(BigDecimal(8.7), within(BigDecimal(0.001)))
-        assertThat(endDate).isEqualTo(yesterday)
+        assertThat(endDate).isEqualTo(today)
       }
     }
 
@@ -581,8 +582,8 @@ class PayRateServiceTest {
         }
       }
       val request = listOf(
-        PayRateRequest("STD", "5", BigDecimal(1.41)),
-        PayRateRequest("STD", "5", BigDecimal(0.1), startDate = tomorrow),
+        PayRateRequest("STD", "5", rate(1.41)),
+        PayRateRequest("STD", "5", rate(0.1), startDate = tomorrow),
       )
       val newPayRates = payRatesService.buildNewPayRates(request, courseActivity)
 
@@ -603,7 +604,7 @@ class PayRateServiceTest {
     @Test
     fun invalidPayBandIEP() {
       whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), eq("BAS"), any())).thenReturn(null)
-      val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = BigDecimal(3.2)))
+      val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = rate(3.2)))
 
       assertThatThrownBy {
         payRatesService.buildNewPayRates(request, courseActivity)
@@ -615,7 +616,7 @@ class PayRateServiceTest {
     @Test
     fun invalidPayBand() {
       whenever(payBandRepository.findById(PayBand.pk("A"))).thenReturn(Optional.empty())
-      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "A", rate = BigDecimal(3.2)))
+      val request = listOf(PayRateRequest(incentiveLevel = "STD", payBand = "A", rate = rate(3.2)))
 
       assertThatThrownBy {
         payRatesService.buildNewPayRates(request, courseActivity)
@@ -628,8 +629,8 @@ class PayRateServiceTest {
     fun `Changing the end date of the activity`() {
       // The default existing activity has 1 active pay rate - iepLevel = "STD", payBand = "5", halfDayRate = 3.2
       val request = listOf(
-        PayRateRequest("STD", "2", BigDecimal(0.3)),
-        PayRateRequest("STD", "5", BigDecimal(3.2)),
+        PayRateRequest("STD", "2", rate(0.3)),
+        PayRateRequest("STD", "5", rate(3.2)),
       )
 
       val newPayRates = payRatesService.buildNewPayRates(
@@ -656,7 +657,7 @@ class PayRateServiceTest {
         }
       }
       val request = listOf(
-        PayRateRequest("STD", "5", BigDecimal(3.2)),
+        PayRateRequest("STD", "5", rate(3.2)),
       )
 
       val newPayRates = payRatesService.buildNewPayRates(
@@ -762,4 +763,6 @@ class PayRateServiceTest {
       assertThat(telemetry["expired-courseActivityPayRateIds"]).isNull()
     }
   }
+
+  private fun rate(value: Double) = BigDecimal.valueOf(value).setScale(3, RoundingMode.HALF_UP)
 }

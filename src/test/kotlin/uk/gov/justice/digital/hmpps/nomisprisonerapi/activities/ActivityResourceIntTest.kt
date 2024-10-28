@@ -3,6 +3,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -783,7 +784,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(yesterday)
+        assertThat(updated.payRates[0].endDate).isEqualTo(today)
       }
 
       @Test
@@ -874,7 +875,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(yesterday)
+        assertThat(updated.payRates[0].endDate).isEqualTo(today)
       }
 
       @Test
@@ -895,7 +896,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
-        assertThat(updated.payRates[0].endDate).isEqualTo(yesterday)
+        assertThat(updated.payRates[0].endDate).isEqualTo(today)
       }
 
       @Test
@@ -973,7 +974,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
         with(findPayRate(updated.payRates, 1.8)) {
-          assertThat(id.startDate).isEqualTo(yesterday.minusDays(7))
+          assertThat(id.startDate).isEqualTo(yesterday)
           assertThat(endDate).isEqualTo(today)
         }
         with(findPayRate(updated.payRates, 0.8)) {
@@ -1001,6 +1002,152 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           jsonBody = updateActivityRequestJson(),
         )
           .expectStatus().isOk
+      }
+
+      @Test
+      fun `should handle an update where data was corrupted prior to the pay rates start date fix - starts tomorrow`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(endDate = null) {
+              courseSchedule()
+              courseScheduleRule()
+              // This is representative of production data
+              payRate(startDate = "${courseActivity.scheduleStartDate}", endDate = "${today.minusDays(8)}", halfDayRate = 1.8)
+              payRate(startDate = "${today.minusDays(7)}", endDate = "${today.minusDays(3)}", halfDayRate = 1.9)
+              payRate(startDate = "${today.minusDays(2)}", endDate = "$today", halfDayRate = 1.8)
+              payRate(startDate = "$tomorrow", endDate = null, halfDayRate = 1.9)
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withEndDate(null),
+            payRatesJson = """
+              "payRates" : [ 
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 1.8
+                },
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 1.9,
+                  "startDate": "${today.minusDays(7)}"
+                }
+              ],
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+        assertThat(updated.payRates).extracting("id.startDate", "endDate", "halfDayRate").containsExactly(
+          tuple(courseActivity.scheduleStartDate, today.minusDays(8), BigDecimal("1.800")),
+          tuple(today.minusDays(7), today.minusDays(3), BigDecimal("1.900")),
+          tuple(today.minusDays(2), today, BigDecimal("1.800")),
+          tuple(tomorrow, null, BigDecimal("1.900")),
+        )
+      }
+
+      @Test
+      fun `should handle an update where data was corrupted prior to the pay rates start date fix - starts today`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(endDate = null) {
+              courseSchedule()
+              courseScheduleRule()
+              // This is representative of production data
+              payRate(startDate = "${courseActivity.scheduleStartDate}", endDate = "${today.minusDays(8)}", halfDayRate = 1.8)
+              payRate(startDate = "${today.minusDays(7)}", endDate = "${today.minusDays(3)}", halfDayRate = 1.9)
+              payRate(startDate = "${today.minusDays(2)}", endDate = "$yesterday", halfDayRate = 1.8)
+              payRate(startDate = "$today", endDate = null, halfDayRate = 1.9)
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withEndDate(null),
+            payRatesJson = """
+              "payRates" : [ 
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 1.8
+                },
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 1.9,
+                  "startDate": "${today.minusDays(7)}"
+                }
+              ],
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+
+        assertThat(updated.payRates).extracting("id.startDate", "endDate", "halfDayRate").containsExactly(
+          tuple(courseActivity.scheduleStartDate, today.minusDays(8), BigDecimal("1.800")),
+          tuple(today.minusDays(7), today.minusDays(3), BigDecimal("1.900")),
+          tuple(today.minusDays(2), yesterday, BigDecimal("1.800")),
+          tuple(today, null, BigDecimal("1.900")),
+        )
+      }
+
+      @Test
+      fun `should handle an update where data was corrupted prior to the pay rates start date fix - starts yesterday`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(endDate = null) {
+              courseSchedule()
+              courseScheduleRule()
+              // This is representative of production data
+              payRate(startDate = "${courseActivity.scheduleStartDate}", endDate = "${today.minusDays(8)}", halfDayRate = 1.8)
+              payRate(startDate = "${today.minusDays(7)}", endDate = "${today.minusDays(3)}", halfDayRate = 1.9)
+              payRate(startDate = "${today.minusDays(2)}", endDate = "${today.minusDays(2)}", halfDayRate = 1.8)
+              payRate(startDate = "$yesterday", endDate = null, halfDayRate = 1.9)
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withEndDate(null),
+            payRatesJson = """
+              "payRates" : [ 
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 1.8
+                },
+                {
+                  "incentiveLevel" : "STD",
+                  "payBand" : "5",
+                  "rate" : 1.9,
+                  "startDate": "${today.minusDays(7)}"
+                }
+              ],
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+
+        assertThat(updated.payRates).extracting("id.startDate", "endDate", "halfDayRate").containsExactly(
+          tuple(courseActivity.scheduleStartDate, today.minusDays(8), BigDecimal("1.800")),
+          tuple(today.minusDays(7), today.minusDays(3), BigDecimal("1.900")),
+          tuple(today.minusDays(2), today.minusDays(2), BigDecimal("1.800")),
+          tuple(yesterday, null, BigDecimal("1.900")),
+        )
       }
 
       private fun findPayRate(rates: List<CourseActivityPayRate>, halfDayRate: Double) =
