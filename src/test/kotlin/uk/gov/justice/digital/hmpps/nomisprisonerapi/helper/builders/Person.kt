@@ -45,6 +45,8 @@ interface PersonDsl {
     comment: String? = null,
     startDate: String? = null,
     endDate: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonAddressDsl.() -> Unit = {},
   ): PersonAddress
 
@@ -61,6 +63,8 @@ interface PersonDsl {
   @PersonEmailDslMarker
   fun email(
     emailAddress: String,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: PersonEmailDsl.() -> Unit = {},
   ): PersonInternetAddress
 
@@ -204,6 +208,8 @@ class PersonBuilder(
     comment: String?,
     startDate: String?,
     endDate: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: PersonAddressDsl.() -> Unit,
   ): PersonAddress =
     personAddressBuilderFactory.builder().let { builder ->
@@ -225,6 +231,8 @@ class PersonBuilder(
         comment = comment,
         startDate = startDate?.let { LocalDate.parse(it) },
         endDate = endDate?.let { LocalDate.parse(it) },
+        whoCreated = whoCreated,
+        whenCreated = whenCreated,
       )
         .also { person.addresses += it }
         .also { builder.apply(dsl) }
@@ -251,11 +259,18 @@ class PersonBuilder(
         .also { builder.apply(dsl) }
     }
 
-  override fun email(emailAddress: String, dsl: PersonEmailDsl.() -> Unit): PersonInternetAddress =
+  override fun email(
+    emailAddress: String,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: PersonEmailDsl.() -> Unit,
+  ): PersonInternetAddress =
     personEmailBuilderFactory.builder().let { builder ->
       builder.build(
         person = person,
         emailAddress = emailAddress,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also { person.internetAddresses += it }
         .also { builder.apply(dsl) }

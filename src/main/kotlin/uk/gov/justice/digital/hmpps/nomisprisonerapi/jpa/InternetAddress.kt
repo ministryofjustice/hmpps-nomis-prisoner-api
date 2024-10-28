@@ -19,10 +19,10 @@ abstract class InternetAddress(
 
   @Column(name = "INTERNET_ADDRESS_CLASS")
   open val internetAddressClass: String,
-) {
+) : NomisAuditableEntity() {
   @Id
   @SequenceGenerator(name = "INTERNET_ADDRESS_ID", sequenceName = "INTERNET_ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "INTERNET_ADDRESS_ID")
   @Column(name = "INTERNET_ADDRESS_ID", nullable = false)
-  open val internetAddressId: Long = 0
+  val internetAddressId: Long = 0
 }

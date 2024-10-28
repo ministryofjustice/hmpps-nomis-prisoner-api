@@ -173,9 +173,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          staff(firstName = "KOFE", lastName = "ADDY") {
-            account(username = "KOFEADDY", type = "GENERAL")
-          }
           person = person(
             firstName = "JOHN",
             lastName = "BOG",
@@ -222,9 +219,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          staff(firstName = "KOFE", lastName = "ADDY") {
-            account(username = "KOFEADDY", type = "GENERAL")
-          }
           person = person(
             firstName = "JOHN",
             lastName = "BOG",
@@ -252,6 +246,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               comment = "Not to be used",
               startDate = "2024-10-01",
               endDate = "2024-11-01",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
             ) {
               phone(
                 phoneType = "MOB",
@@ -317,6 +313,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
           .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
           .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
+          .jsonPath("addresses[1].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("addresses[1].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("addresses[1].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
       }
 
@@ -355,7 +354,11 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            email(emailAddress = "john.bog@justice.gov.uk")
+            email(
+              emailAddress = "john.bog@justice.gov.uk",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
             email(emailAddress = "john.bog@gmail.com")
           }
         }
@@ -371,6 +374,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(person.internetAddresses[0].internetAddressId)
           .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
+          .jsonPath("emailAddresses[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("emailAddresses[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("emailAddresses[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(person.internetAddresses[1].internetAddressId)
           .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
       }

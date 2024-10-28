@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
@@ -53,13 +55,19 @@ class PersonAddressBuilderRepository(
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
   private val addressRepository: AddressRepository,
-
+  private val jdbcTemplate: JdbcTemplate,
 ) {
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) }
   fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) }
   fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) }
   fun save(address: PersonAddress): PersonAddress = addressRepository.saveAndFlush(address)
+  fun updateCreateDatetime(address: Address, whenCreated: LocalDateTime) {
+    jdbcTemplate.update("update ADDRESSES set CREATE_DATETIME = ? where ADDRESS_ID = ?", whenCreated, address.addressId)
+  }
+  fun updateCreateUsername(address: Address, whoCreated: String) {
+    jdbcTemplate.update("update ADDRESSES set CREATE_USER_ID = ? where ADDRESS_ID = ?", whoCreated, address.addressId)
+  }
 }
 
 class PersonAddressBuilder(
@@ -87,6 +95,8 @@ class PersonAddressBuilder(
     comment: String?,
     startDate: LocalDate?,
     endDate: LocalDate?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
   ): PersonAddress =
     PersonAddress(
       addressType = personAddressBuilderRepository.addressTypeOf(type),
@@ -107,6 +117,14 @@ class PersonAddressBuilder(
       startDate = startDate,
       endDate = endDate,
     ).let { personAddressBuilderRepository.save(it) }
+      .also {
+        if (whenCreated != null) {
+          personAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
+        }
+        if (whoCreated != null) {
+          personAddressBuilderRepository.updateCreateUsername(it, whoCreated)
+        }
+      }
       .also { address = it }
 
   override fun phone(

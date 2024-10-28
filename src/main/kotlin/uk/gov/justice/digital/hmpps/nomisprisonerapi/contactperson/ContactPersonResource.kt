@@ -247,6 +247,8 @@ data class PersonAddress(
   val startDate: LocalDate?,
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate?,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS about a email address")
@@ -256,6 +258,8 @@ data class PersonEmailAddress(
   val emailAddressId: Long,
   @Schema(description = "The email address", example = "john.smith@internet.co.uk")
   val email: String,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS about a person's employment")

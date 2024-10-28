@@ -44,6 +44,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         PersonEmailAddress(
           emailAddressId = address.internetAddressId,
           email = address.internetAddress,
+          audit = address.toAudit(),
         )
       },
       employments = it.employments.map { employment ->
@@ -85,6 +86,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           comment = address.comment,
           startDate = address.startDate,
           endDate = address.endDate,
+          audit = address.toAudit(),
           phoneNumbers = address.phones.map { number ->
             PersonPhoneNumber(
               phoneId = number.phoneId,
