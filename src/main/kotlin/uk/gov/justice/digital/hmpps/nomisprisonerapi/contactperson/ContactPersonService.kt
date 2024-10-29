@@ -128,6 +128,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           prisoner = contact.offenderBooking.let { booking ->
             ContactForPrisoner(
               bookingId = booking.bookingId,
+              bookingSequence = booking.bookingSequence.toLong(),
               offenderNo = booking.offender.nomsId,
               lastName = booking.offender.lastName,
               firstName = booking.offender.firstName,

@@ -333,6 +333,8 @@ data class PersonContact(
 data class ContactForPrisoner(
   @Schema(description = "Unique NOMIS Id of booking associated with the prisoner")
   val bookingId: Long,
+  @Schema(description = "Booking sequence this contact is related to. WHen 1 this indicates contact is for current term")
+  val bookingSequence: Long,
   @Schema(description = "Offender no aka prisoner number", example = "A1234AA")
   val offenderNo: String,
   @Schema(description = "Last name of the prisoner", example = "Smith")
