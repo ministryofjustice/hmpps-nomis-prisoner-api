@@ -974,7 +974,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
         with(findPayRate(updated.payRates, 1.8)) {
-          assertThat(id.startDate).isEqualTo(yesterday)
+          assertThat(id.startDate).isEqualTo(yesterday.minusDays(7))
           assertThat(endDate).isEqualTo(today)
         }
         with(findPayRate(updated.payRates, 0.8)) {
@@ -1147,6 +1147,50 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           tuple(today.minusDays(7), today.minusDays(3), BigDecimal("1.900")),
           tuple(today.minusDays(2), today.minusDays(2), BigDecimal("1.800")),
           tuple(yesterday, null, BigDecimal("1.900")),
+        )
+      }
+
+      @Test
+      fun `should handle nonsensical requested rates and prefer old rates from NOMIS`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(endDate = null) {
+              courseSchedule()
+              courseScheduleRule()
+              // This is here to test that its dates don't affect decisions made on iepLevelCode='STD' (which was a bug)
+              payRate(iepLevelCode = "BAS", startDate = "${courseActivity.scheduleStartDate}", endDate = "$tomorrow", halfDayRate = 0.8)
+              payRate(iepLevelCode = "BAS", startDate = "${tomorrow.plusDays(1)}", endDate = null, halfDayRate = 0.9)
+              // This represents data already being used on NOMIS that will be contradicted by data in the DPS request
+              payRate(startDate = "${courseActivity.scheduleStartDate}", endDate = "${today.minusDays(3)}", halfDayRate = 1.8)
+              payRate(startDate = "${today.minusDays(2)}", endDate = null, halfDayRate = 1.9)
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withStartDate("2022-10-31").withEndDate(null),
+            payRatesJson = """
+              "payRates" : [
+                { "incentiveLevel" : "BAS", "payBand" : "5", "rate" : 0.8 },
+                { "incentiveLevel" : "BAS", "payBand" : "5", "rate" : 0.9, "startDate": "${tomorrow.plusDays(1)}" },
+                { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 1.8 },
+                { "incentiveLevel" : "STD", "payBand" : "5", "rate" : 1.9, "startDate": "$tomorrow" }
+              ],
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        val updated = repository.getActivity(courseActivity.courseActivityId)
+
+        assertThat(updated.payRates).extracting("id.iepLevelCode", "id.startDate", "endDate", "halfDayRate").containsExactlyInAnyOrder(
+          tuple("BAS", courseActivity.scheduleStartDate, tomorrow, BigDecimal("0.800")),
+          tuple("BAS", tomorrow.plusDays(1), null, BigDecimal("0.900")),
+          tuple("STD", courseActivity.scheduleStartDate, today.minusDays(3), BigDecimal("1.800")),
+          tuple("STD", today.minusDays(2), today, BigDecimal("1.900")),
+          tuple("STD", tomorrow, null, BigDecimal("1.900")),
         )
       }
 
