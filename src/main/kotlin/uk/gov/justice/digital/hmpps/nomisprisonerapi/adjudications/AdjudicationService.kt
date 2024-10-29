@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationFindingType
@@ -43,7 +44,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction.Companion.PLACED_ON_REPORT_ACTION_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SUSPECT_ROLE
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VICTIM_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WITNESS_ROLE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.isInvolvedForForce
@@ -138,47 +138,45 @@ class AdjudicationService(
   private fun mapAdjudication(
     adjudication: AdjudicationIncidentParty,
     hearings: List<AdjudicationHearing> = emptyList(),
-  ): AdjudicationResponse {
-    return AdjudicationResponse(
-      // must be non-null in this context
-      adjudicationNumber = adjudication.adjudicationNumber!!,
-      adjudicationSequence = adjudication.id.partySequence,
-      offenderNo = adjudication.prisonerOnReport().offender.nomsId,
-      bookingId = adjudication.prisonerOnReport().bookingId,
-      gender = adjudication.prisonerOnReport().offender.gender.toCodeDescription(),
-      currentPrison = adjudication.prisonerOnReport().takeIf { it.active }?.location?.toCodeDescription(),
-      partyAddedDate = adjudication.partyAddedDate,
-      comment = adjudication.comment,
-      incident = AdjudicationIncident(
-        adjudicationIncidentId = adjudication.id.agencyIncidentId,
-        reportingStaff = adjudication.incident.reportingStaff.toStaff(
-          adjudication.incident.createUsername,
-          adjudication.incident.reportedDate,
-        ),
-        incidentDate = adjudication.incident.incidentDate,
-        incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
-        reportedDate = adjudication.incident.reportedDate,
-        reportedTime = adjudication.incident.reportedDateTime.toLocalTime(),
-        createdByUsername = adjudication.incident.createUsername,
-        createdDateTime = adjudication.incident.createDatetime,
-        internalLocation = adjudication.incident.agencyInternalLocation.toInternalLocation(),
-        incidentType = adjudication.incident.incidentType.toCodeDescription(),
-        prison = adjudication.incident.prison.toCodeDescription(),
-        details = adjudication.incident.incidentDetails,
-        prisonerWitnesses = adjudication.otherPrisonersInIncident { it.isWitness() },
-        prisonerVictims = adjudication.otherPrisonersInIncident { it.isVictim() },
-        otherPrisonersInvolved = adjudication.otherPrisonersInIncident { it.isSuspect() || it.isInvolvedForOtherReason() },
-        reportingOfficers = adjudication.staffInIncident { it.isReportingOfficer() },
-        staffWitnesses = adjudication.staffInIncident { it.isWitness() },
-        staffVictims = adjudication.staffInIncident { it.isVictim() },
-        otherStaffInvolved = adjudication.staffInIncident { it.isInvolvedForForce() || it.isInvolvedForOtherReason() },
-        repairs = adjudication.incident.repairs.map { it.toRepair() },
+  ): AdjudicationResponse = AdjudicationResponse(
+    // must be non-null in this context
+    adjudicationNumber = adjudication.adjudicationNumber!!,
+    adjudicationSequence = adjudication.id.partySequence,
+    offenderNo = adjudication.prisonerOnReport().offender.nomsId,
+    bookingId = adjudication.prisonerOnReport().bookingId,
+    gender = adjudication.prisonerOnReport().offender.gender.toCodeDescription(),
+    currentPrison = adjudication.prisonerOnReport().takeIf { it.active }?.location?.toCodeDescription(),
+    partyAddedDate = adjudication.partyAddedDate,
+    comment = adjudication.comment,
+    incident = AdjudicationIncident(
+      adjudicationIncidentId = adjudication.id.agencyIncidentId,
+      reportingStaff = adjudication.incident.reportingStaff.toStaff(
+        adjudication.incident.createUsername,
+        adjudication.incident.reportedDate,
       ),
-      charges = adjudication.charges.map { it.toCharge() },
-      investigations = adjudication.investigations.map { it.toInvestigation() },
-      hearings = hearings.map { it.toHearing() },
-    )
-  }
+      incidentDate = adjudication.incident.incidentDate,
+      incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
+      reportedDate = adjudication.incident.reportedDate,
+      reportedTime = adjudication.incident.reportedDateTime.toLocalTime(),
+      createdByUsername = adjudication.incident.createUsername,
+      createdDateTime = adjudication.incident.createDatetime,
+      internalLocation = adjudication.incident.agencyInternalLocation.toInternalLocation(),
+      incidentType = adjudication.incident.incidentType.toCodeDescription(),
+      prison = adjudication.incident.prison.toCodeDescription(),
+      details = adjudication.incident.incidentDetails,
+      prisonerWitnesses = adjudication.otherPrisonersInIncident { it.isWitness() },
+      prisonerVictims = adjudication.otherPrisonersInIncident { it.isVictim() },
+      otherPrisonersInvolved = adjudication.otherPrisonersInIncident { it.isSuspect() || it.isInvolvedForOtherReason() },
+      reportingOfficers = adjudication.staffInIncident { it.isReportingOfficer() },
+      staffWitnesses = adjudication.staffInIncident { it.isWitness() },
+      staffVictims = adjudication.staffInIncident { it.isVictim() },
+      otherStaffInvolved = adjudication.staffInIncident { it.isInvolvedForForce() || it.isInvolvedForOtherReason() },
+      repairs = adjudication.incident.repairs.map { it.toRepair() },
+    ),
+    charges = adjudication.charges.map { it.toCharge() },
+    investigations = adjudication.investigations.map { it.toInvestigation() },
+    hearings = hearings.map { it.toHearing() },
+  )
 
   fun findAdjudicationChargeIdsByFilter(
     pageRequest: Pageable,
@@ -397,19 +395,17 @@ class AdjudicationService(
     incidentParty: AdjudicationIncidentParty,
     chargeSequence: Int,
     charge: ChargeToCreate,
-  ): AdjudicationIncidentCharge {
-    return AdjudicationIncidentCharge(
-      id = AdjudicationIncidentChargeId(
-        agencyIncidentId = incident.id,
-        chargeSequence = chargeSequence,
-      ),
-      incident = incident,
-      partySequence = incidentParty.id.partySequence,
-      incidentParty = incidentParty,
-      offence = lookupOffence(charge.offenceCode),
-      offenceId = "${incidentParty.adjudicationNumber}/$chargeSequence",
-    )
-  }
+  ): AdjudicationIncidentCharge = AdjudicationIncidentCharge(
+    id = AdjudicationIncidentChargeId(
+      agencyIncidentId = incident.id,
+      chargeSequence = chargeSequence,
+    ),
+    incident = incident,
+    partySequence = incidentParty.id.partySequence,
+    incidentParty = incidentParty,
+    offence = lookupOffence(charge.offenceCode),
+    offenceId = "${incidentParty.adjudicationNumber}/$chargeSequence",
+  )
 
   private fun createInvestigation(
     incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
@@ -461,24 +457,18 @@ class AdjudicationService(
     adjudicationHearingRepository.findByIdOrNull(hearingId)?.toHearing()
       ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
 
-  private fun findPrison(prisonId: String): AgencyLocation {
-    return agencyLocationRepository.findByIdOrNull(prisonId)
-      ?: throw BadDataException("Prison $prisonId not found")
-  }
+  private fun findPrison(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)
+    ?: throw BadDataException("Prison $prisonId not found")
 
-  private fun findInternalLocation(internalLocationId: Long): AgencyInternalLocation {
-    return agencyInternalLocationRepository.findByIdOrNull(internalLocationId)
-      ?: throw BadDataException("Prison internal location $internalLocationId not found")
-  }
+  private fun findInternalLocation(internalLocationId: Long): AgencyInternalLocation = agencyInternalLocationRepository.findByIdOrNull(internalLocationId)
+    ?: throw BadDataException("Prison internal location $internalLocationId not found")
 
   private fun findLatestBooking(offenderNo: String): OffenderBooking =
     offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
 
-  private fun findStaffByUsername(reportingStaffUsername: String): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff {
-    return staffUserAccountRepository.findByUsername(reportingStaffUsername)?.staff
-      ?: throw BadDataException("Staff $reportingStaffUsername not found")
-  }
+  private fun findStaffByUsername(reportingStaffUsername: String): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff = staffUserAccountRepository.findByUsername(reportingStaffUsername)?.staff
+    ?: throw BadDataException("Staff $reportingStaffUsername not found")
 
   private fun lookupOffence(offenceCode: String): AdjudicationIncidentOffence =
     adjudicationIncidentOffenceRepository.findByCode(offenceCode)
@@ -1343,9 +1333,6 @@ fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
     lastName = lastName,
     username = accounts.usernamePreferringGeneralAccount(),
   )
-
-private fun List<StaffUserAccount>.usernamePreferringGeneralAccount() =
-  this.maxByOrNull { it.type }?.username ?: "unknown"
 
 fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward =
   HearingResultAward(

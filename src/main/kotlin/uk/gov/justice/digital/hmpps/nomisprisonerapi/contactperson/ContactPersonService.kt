@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import java.time.LocalDate
 
@@ -107,7 +109,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           comment = restriction.comment,
           effectiveDate = restriction.effectiveDate,
           expiryDate = restriction.expiryDate,
-          enteredStaff = ContactRestrictionEnteredStaff(staffId = restriction.enteredStaff.id),
+          enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
           audit = restriction.toAudit(),
         )
       },
@@ -138,7 +140,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
               comment = restriction.comment,
               effectiveDate = restriction.effectiveDate,
               expiryDate = restriction.expiryDate,
-              enteredStaff = ContactRestrictionEnteredStaff(staffId = restriction.enteredStaff.id),
+              enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
               audit = restriction.toAudit(),
             )
           },
@@ -168,3 +170,5 @@ data class PersonFilter(
   val fromDate: LocalDate?,
   val toDate: LocalDate?,
 )
+
+private fun Staff.toContactRestrictionEnteredStaff() = ContactRestrictionEnteredStaff(staffId = this.id, username = this.usernamePreferringGeneralAccount())

@@ -10,10 +10,15 @@ annotation class StaffDslMarker
 
 @NomisDataDslMarker
 interface StaffDsl {
+  companion object {
+    const val GENERAL = "GENERAL"
+    const val ADMIN = "ADMIN"
+  }
+
   @StaffUserAccountDslMarker
   fun account(
     username: String = "G_BYD",
-    type: String = "GENERAL",
+    type: String = GENERAL,
     dsl: StaffUserAccountDsl.() -> Unit = {},
   ): StaffUserAccount
 }
@@ -23,9 +28,7 @@ class StaffBuilderFactory(
   private val repository: StaffBuilderRepository,
   private val staffUserAccountBuilderFactory: StaffUserAccountBuilderFactory,
 ) {
-  fun builder(): StaffBuilder {
-    return StaffBuilder(repository, staffUserAccountBuilderFactory)
-  }
+  fun builder(): StaffBuilder = StaffBuilder(repository, staffUserAccountBuilderFactory)
 }
 
 @Component
