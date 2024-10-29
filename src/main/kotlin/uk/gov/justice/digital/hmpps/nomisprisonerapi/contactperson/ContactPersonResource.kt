@@ -364,6 +364,8 @@ data class ContactRestriction(
 data class ContactRestrictionEnteredStaff(
   @Schema(description = "NOMIS staff id")
   val staffId: Long,
+  @Schema(description = "username for staff member. For staff with multiple accounts this will be the general account username.")
+  val username: String,
 )
 
 data class PersonIdResponse(

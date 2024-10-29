@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -630,12 +631,19 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       private lateinit var person: Person
       private lateinit var prisoner: Offender
       private lateinit var contact: OffenderContactPerson
-      private lateinit var staff: Staff
+      private lateinit var lsaStaffMember: Staff
+      private lateinit var generalStaffMember: Staff
 
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          staff = staff(firstName = "JANE", lastName = "STAFF")
+          lsaStaffMember = staff(firstName = "JANE", lastName = "STAFF") {
+            account(username = "j.staff_adm", type = StaffDsl.ADMIN)
+            account(username = "j.staff_gen", type = StaffDsl.GENERAL)
+          }
+          generalStaffMember = staff(firstName = "JANE", lastName = "SMITH") {
+            account(username = "j.smith")
+          }
           person = person(
             firstName = "JOHN",
             lastName = "BOG",
@@ -647,7 +655,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               ) {
                 restriction(
                   restrictionType = "BAN",
-                  enteredStaff = staff,
+                  enteredStaff = generalStaffMember,
                   comment = "Banned for life!",
                   effectiveDate = "2020-01-01",
                   expiryDate = "2023-02-02",
@@ -656,7 +664,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
                 )
                 restriction(
                   restrictionType = "CCTV",
-                  enteredStaff = staff,
+                  enteredStaff = lsaStaffMember,
                 )
               }
             }
@@ -677,7 +685,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("contacts[0].restrictions[0].comment").isEqualTo("Banned for life!")
           .jsonPath("contacts[0].restrictions[0].effectiveDate").isEqualTo("2020-01-01")
           .jsonPath("contacts[0].restrictions[0].expiryDate").isEqualTo("2023-02-02")
-          .jsonPath("contacts[0].restrictions[0].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("contacts[0].restrictions[0].enteredStaff.staffId").isEqualTo(generalStaffMember.id)
+          .jsonPath("contacts[0].restrictions[0].enteredStaff.username").isEqualTo("j.smith")
           .jsonPath("contacts[0].restrictions[0].audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("contacts[0].restrictions[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("contacts[0].restrictions[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
@@ -686,26 +695,35 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("contacts[0].restrictions[1].comment").doesNotExist()
           .jsonPath("contacts[0].restrictions[1].effectiveDate").isEqualTo(LocalDate.now().toString())
           .jsonPath("contacts[0].restrictions[1].expiryDate").doesNotExist()
-          .jsonPath("contacts[0].restrictions[1].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("contacts[0].restrictions[1].enteredStaff.staffId").isEqualTo(lsaStaffMember.id)
+          .jsonPath("contacts[0].restrictions[1].enteredStaff.username").isEqualTo("j.staff_gen")
       }
     }
 
     @Nested
     inner class GlobalRestrictions {
       private lateinit var person: Person
-      private lateinit var staff: Staff
+      private lateinit var lsaStaffMember: Staff
+      private lateinit var generalStaffMember: Staff
 
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          staff = staff(firstName = "JANE", lastName = "STAFF")
+          lsaStaffMember = staff(firstName = "JANE", lastName = "STAFF") {
+            account(username = "j.staff_gen", type = StaffDsl.GENERAL)
+            account(username = "j.staff_adm", type = StaffDsl.ADMIN)
+          }
+          generalStaffMember = staff(firstName = "JANE", lastName = "SMITH") {
+            account(username = "j.smith")
+          }
+
           person = person(
             firstName = "JOHN",
             lastName = "BOG",
           ) {
             restriction(
               restrictionType = "BAN",
-              enteredStaff = staff,
+              enteredStaff = generalStaffMember,
               comment = "Banned for life!",
               effectiveDate = "2020-01-01",
               expiryDate = "2023-02-02",
@@ -714,7 +732,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             )
             restriction(
               restrictionType = "CCTV",
-              enteredStaff = staff,
+              enteredStaff = lsaStaffMember,
             )
           }
         }
@@ -733,7 +751,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("restrictions[0].comment").isEqualTo("Banned for life!")
           .jsonPath("restrictions[0].effectiveDate").isEqualTo("2020-01-01")
           .jsonPath("restrictions[0].expiryDate").isEqualTo("2023-02-02")
-          .jsonPath("restrictions[0].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("restrictions[0].enteredStaff.staffId").isEqualTo(generalStaffMember.id)
+          .jsonPath("restrictions[0].enteredStaff.username").isEqualTo("j.smith")
           .jsonPath("restrictions[0].audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("restrictions[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("restrictions[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
@@ -742,7 +761,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("restrictions[1].comment").doesNotExist()
           .jsonPath("restrictions[1].effectiveDate").isEqualTo(LocalDate.now().toString())
           .jsonPath("restrictions[1].expiryDate").doesNotExist()
-          .jsonPath("restrictions[1].enteredStaff.staffId").isEqualTo(staff.id)
+          .jsonPath("restrictions[1].enteredStaff.staffId").isEqualTo(lsaStaffMember.id)
+          .jsonPath("restrictions[1].enteredStaff.username").isEqualTo("j.staff_gen")
       }
     }
   }
