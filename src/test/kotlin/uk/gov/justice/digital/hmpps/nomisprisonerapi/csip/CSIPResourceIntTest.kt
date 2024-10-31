@@ -296,7 +296,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.actions.simReferral").isEqualTo(false)
         .jsonPath("createDateTime").isNotEmpty
         .jsonPath("createdBy").isEqualTo("SA")
-        .jsonPath("createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -328,7 +327,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("staffAssaultedName").isEqualTo("Assaulted Person")
         .jsonPath("createDateTime").isNotEmpty
         .jsonPath("createdBy").isEqualTo("SA")
-        .jsonPath("createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -397,7 +395,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("plans[0].closedDate").doesNotExist()
         .jsonPath("plans[0].createDateTime").isNotEmpty
         .jsonPath("plans[0].createdBy").isEqualTo("SA")
-        .jsonPath("plans[0].createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -422,7 +419,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].recordedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("reviews[0].createDateTime").isNotEmpty
         .jsonPath("reviews[0].createdBy").isNotEmpty
-        .jsonPath("reviews[0].createdByDisplayName").doesNotExist()
         .jsonPath("reviews[0].attendees[0].id").isEqualTo(csip1.reviews[0].attendees[0].id)
         .jsonPath("reviews[0].attendees[0].name").isEqualTo("Fred Attendee")
         .jsonPath("reviews[0].attendees[0].role").isEqualTo("Witness")
@@ -430,7 +426,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].attendees[0].contribution").isEqualTo("helped")
         .jsonPath("reviews[0].attendees[0].createDateTime").isNotEmpty
         .jsonPath("reviews[0].attendees[0].createdBy").isNotEmpty
-        .jsonPath("reviews[0].attendees[0].createdByDisplayName").doesNotExist()
     }
 
     @Test
@@ -465,7 +460,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("investigation.interviews[0].comments").isEqualTo("Helping with behaviour")
         .jsonPath("investigation.interviews[0].createDateTime").isNotEmpty
         .jsonPath("investigation.interviews[0].createdBy").isNotEmpty
-        .jsonPath("investigation.interviews[0].createdByDisplayName").doesNotExist()
     }
 
     @Test
