@@ -90,6 +90,52 @@ class IncidentResource(private val incidentService: IncidentService) {
     )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
+  @GetMapping("/booking/{bookingId}")
+  @Operation(
+    summary = "Get a list of Incidents for a booking",
+    description = "Gets a list of all incidents relating to an offender booking. Requires role NOMIS_INCIDENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getIncidentsForBooking(
+    @Schema(description = "booking id")
+    @PathVariable
+    bookingId: Long,
+  ) = incidentService.getIncidentsForBooking(bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/{incidentId}")
   @Operation(
     summary = "Get incident details",

@@ -77,4 +77,17 @@ interface IncidentRepository : CrudRepository<Incident, Long>, JpaSpecificationE
     statusValues: List<String>,
     pageable: Pageable,
   ): Page<Long>
+
+  @Query(
+    """
+      select 
+        incident
+      from Incident incident
+      join incident.offenderParties op
+        where 
+          op.offenderBooking.bookingId = :bookingId
+      order by incident.id asc
+    """,
+  )
+  fun findAllIncidentsByBookingId(bookingId: Long): List<Incident>
 }

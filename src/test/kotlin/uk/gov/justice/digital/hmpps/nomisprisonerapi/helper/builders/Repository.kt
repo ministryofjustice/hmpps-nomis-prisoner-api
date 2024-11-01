@@ -137,6 +137,8 @@ class Repository(
   fun deleteOffenders() = offenderRepository.deleteAll()
   fun deleteAllCSIPReports() = csipReportRepository.deleteAll()
   fun deleteMergeTransactions() = mergeTransactionRepository.deleteAll()
+  fun deleteAllIncidents() = incidentRepository.deleteAll()
+  fun deleteAllQuestionnaires() = questionnaireRepository.deleteAll()
 
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
 

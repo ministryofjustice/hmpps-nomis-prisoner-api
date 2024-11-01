@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companio
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.openStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
@@ -25,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 @Transactional
 class IncidentService(
   private val incidentRepository: IncidentRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -56,6 +58,11 @@ class IncidentService(
       // typically we won't when run in production
       incidentRepository.findAllIncidentIds(fromDate, toDate, pageRequest)
     }
+
+  fun getIncidentsForBooking(bookingId: Long): List<IncidentResponse> =
+    offenderBookingRepository.findByIdOrNull(bookingId)
+      ?.let { incidentRepository.findAllIncidentsByBookingId(bookingId).map { it.toIncidentResponse() } }
+      ?: throw NotFoundException("Prisoner with booking $bookingId not found")
 
   fun findAllIncidentAgencies() =
     incidentRepository.findAllIncidentAgencies().map { IncidentAgencyId(it) }
