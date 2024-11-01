@@ -24,7 +24,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
-  private lateinit var offenderParty: Offender
+  private lateinit var offender1: Offender
+  private lateinit var offender2: Offender
   private lateinit var partyStaff1: Staff
   private lateinit var reportingStaff1: Staff
   private lateinit var reportingStaff2: Staff
@@ -37,6 +38,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   private lateinit var incident4: Incident
   private lateinit var requirementRecordingStaff: Staff
   private lateinit var responseRecordingStaff: Staff
+  private var bookingId2: Long = 0
 
   @BeforeEach
   internal fun createIncidents() {
@@ -52,7 +54,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       ) {
         staffParty(staff = partyStaff1, role = "WIT")
         staffParty(staff = reportingStaff2)
-        offenderParty(offenderBooking = offenderParty.latestBooking(), outcome = "POR")
+        offenderParty(offenderBooking = offender1.latestBooking(), outcome = "POR")
 
         requirement("Update the name", recordingStaff = requirementRecordingStaff, locationId = "MDI")
         requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, locationId = "MDI")
@@ -109,7 +111,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     responseRecordingStaff = staff(firstName = "ALBERT", lastName = "STAFF") {
       account(username = "ALBERTSTAFF")
     }
-    offenderParty = offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
+    offender1 = offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
+      booking(agencyLocationId = "MDI")
+    }
+    offender2 = offender(nomsId = "A1234YY", firstName = "Bob", lastName = "Smith") {
       booking(agencyLocationId = "MDI")
     }
   }
@@ -152,20 +157,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   internal fun deleteIncidents() {
-    repository.delete(incident1)
-    repository.delete(incident2)
-    repository.delete(incident3)
-    repository.delete(incident4)
-
-    repository.delete(questionnaire1)
-    repository.delete(questionnaire2)
-
-    repository.delete(requirementRecordingStaff)
-    repository.delete(responseRecordingStaff)
-    repository.delete(partyStaff1)
-    repository.delete(offenderParty)
-    repository.delete(reportingStaff1)
-    repository.delete(reportingStaff2)
+    repository.deleteAllIncidents()
+    repository.deleteAllQuestionnaires()
+    repository.deleteStaff()
+    repository.deleteOffenders()
   }
 
   @Nested
@@ -511,6 +506,106 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
         .jsonPath("history[0].questions[0].answers[0].answer").doesNotExist()
         .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("one staff")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /incidents/booking/{bookingId}")
+  inner class GetIncidentsForBooking {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/incidents/booking/${offender1.latestBooking().bookingId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/incidents/booking/${offender1.latestBooking().bookingId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/incidents/booking/${offender1.latestBooking().bookingId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `unknown incident should return not found`() {
+      webTestClient.get().uri("/incidents/booking/999999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          Assertions.assertThat(it).contains("Not Found: Prisoner with booking 999999 not found")
+        }
+    }
+
+    @Test
+    fun `booking with incident with no incident parties should return empty list`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234YY") {
+          bookingId2 = booking().bookingId
+        }
+      }
+
+      webTestClient.get().uri("/incidents/booking/$bookingId2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `booking with multiple incidents should return incidents list`() {
+      nomisDataBuilder.build {
+        incident1 = incident(
+          title = "Fighting",
+          description = "Offenders were causing trouble.",
+          reportingStaff = reportingStaff1,
+          questionnaire = questionnaire1,
+        ) {
+          offenderParty(offenderBooking = offender2.latestBooking(), outcome = "POR")
+        }
+        incident(
+          title = "Fighting again",
+          description = "causing trouble.",
+          reportingStaff = reportingStaff1,
+          questionnaire = questionnaire1,
+        ) {
+          offenderParty(offenderBooking = offender2.latestBooking(), outcome = "TRN")
+        }
+      }
+
+      webTestClient.get().uri("/incidents/booking/${offender2.latestBooking().bookingId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(2)
+        .jsonPath("[0].title").isEqualTo("Fighting")
+        .jsonPath("[1].title").isEqualTo("Fighting again")
+    }
+
+    @Test
+    fun `booking will correctly identify the incident for the booking`() {
+      webTestClient.get().uri("/incidents/booking/${offender1.latestBooking().bookingId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(1)
+        .jsonPath("[0].title").isEqualTo("Fight in the cell")
     }
   }
 
