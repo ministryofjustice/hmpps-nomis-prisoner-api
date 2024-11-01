@@ -40,10 +40,8 @@ fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>? = null): CS
     reviews = reviews.map { it.toReviewResponse() },
     documents = documentIds,
     createdBy = createUsername,
-    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     createDateTime = createDatetime,
     lastModifiedBy = lastModifiedUsername,
-    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
   )
 
@@ -85,10 +83,8 @@ fun CSIPFactor.toFactorResponse() =
     comment = comment,
     createDateTime = createDatetime,
     createdBy = createUsername,
-    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
-    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPReport.toInvestigationResponse() =
@@ -111,10 +107,8 @@ private fun CSIPInterview.toInterviewResponse() =
     comments = comments,
     createDateTime = createDatetime,
     createdBy = createUsername,
-    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
-    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPReport.toDecisionResponse() =
@@ -153,10 +147,8 @@ private fun CSIPPlan.toPlanResponse() =
     closedDate = closedDate,
     createDateTime = createDatetime,
     createdBy = createUsername,
-    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
-    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPReview.toReviewResponse() =
@@ -177,10 +169,8 @@ private fun CSIPReview.toReviewResponse() =
     recordedByDisplayName = recordedByStaffUserAccount.asDisplayName(),
     createDateTime = createDateTime,
     createdBy = createUsername,
-    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
-    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun CSIPAttendee.toAttendeeResponse() =
@@ -192,10 +182,8 @@ private fun CSIPAttendee.toAttendeeResponse() =
     contribution = contribution,
     createDateTime = createDatetime,
     createdBy = createUsername,
-    createdByDisplayName = createdByStaffUserAccount.asDisplayName(),
     lastModifiedDateTime = lastModifiedDateTime,
     lastModifiedBy = lastModifiedUsername,
-    lastModifiedByDisplayName = lastModifiedByStaffUserAccount.asDisplayName(),
   )
 
 private fun StaffUserAccount?.asDisplayName(): String? = this?.staff?.let { "${it.firstName} ${it.lastName}" }
