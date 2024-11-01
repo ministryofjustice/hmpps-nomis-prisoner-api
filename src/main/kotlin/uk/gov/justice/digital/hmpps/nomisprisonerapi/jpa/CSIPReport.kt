@@ -318,16 +318,8 @@ class CSIPReport(
   @Column
   var auditModuleName: String? = null,
 
-  @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  val createdByStaffUserAccount: StaffUserAccount? = null,
-
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   var lastModifiedUsername: String? = null,
-
-  @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  val lastModifiedByStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
   var lastModifiedDateTime: LocalDateTime? = null,
