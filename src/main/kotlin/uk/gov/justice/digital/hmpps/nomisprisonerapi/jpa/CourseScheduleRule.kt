@@ -70,7 +70,7 @@ data class CourseScheduleRule(
 
   @Column(name = "SLOT_CATEGORY_CODE")
   @Enumerated(EnumType.STRING)
-  val slotCategory: SlotCategory? = null,
+  val slotCategory: SlotCategory,
 
 ) : Serializable {
 

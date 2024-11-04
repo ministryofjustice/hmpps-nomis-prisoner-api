@@ -57,7 +57,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           deceasedDate = "2023-12-22",
           isStaff = true,
           isRemitter = true,
-          keepBiometrics = true,
           whoCreated = "KOFEADDY",
           whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
@@ -130,7 +129,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("deceasedDate").doesNotExist()
           .jsonPath("isStaff").doesNotExist()
           .jsonPath("isRemitter").doesNotExist()
-          .jsonPath("keepBiometrics").isEqualTo(false)
           .jsonPath("audit.createUsername").isNotEmpty
           .jsonPath("audit.createDatetime").isNotEmpty
       }
@@ -160,7 +158,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("deceasedDate").isEqualTo("2023-12-22")
           .jsonPath("isStaff").isEqualTo(true)
           .jsonPath("isRemitter").isEqualTo(true)
-          .jsonPath("keepBiometrics").isEqualTo(true)
           .jsonPath("audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
@@ -401,7 +398,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               whoCreated = "KOFEADDY",
               whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
             )
-            employment(active = false)
+            employment(employerCorporate = corporate, active = false)
           }
         }
       }
@@ -422,7 +419,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("employments[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("employments[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("employments[1].sequence").isEqualTo(2)
-          .jsonPath("employments[1].corporate").doesNotExist()
+          .jsonPath("employments[1].corporate.name").isEqualTo("Police")
           .jsonPath("employments[1].active").isEqualTo(false)
       }
     }

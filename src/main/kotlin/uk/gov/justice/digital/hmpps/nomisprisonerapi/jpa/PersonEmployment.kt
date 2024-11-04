@@ -36,7 +36,7 @@ class PersonEmployment(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "EMPLOYER_CORP_ID", nullable = true)
-  val employerCorporate: Corporate?,
+  val employerCorporate: Corporate,
 
   /*
   Not mapped:
