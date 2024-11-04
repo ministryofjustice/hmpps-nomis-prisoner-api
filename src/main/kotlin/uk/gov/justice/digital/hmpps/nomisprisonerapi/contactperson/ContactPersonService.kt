@@ -31,7 +31,6 @@ class ContactPersonService(private val personRepository: PersonRepository) {
       deceasedDate = it.deceasedDate,
       isStaff = it.isStaff,
       isRemitter = it.isRemitter,
-      keepBiometrics = it.keepBiometrics,
       audit = it.toAudit(),
       phoneNumbers = it.phones.map { number ->
         PersonPhoneNumber(
@@ -54,7 +53,7 @@ class ContactPersonService(private val personRepository: PersonRepository) {
           sequence = employment.id.sequence,
           active = employment.active,
           audit = employment.toAudit(),
-          corporate = employment.employerCorporate?.let { corporate ->
+          corporate = employment.employerCorporate.let { corporate ->
             PersonEmploymentCorporate(
               id = corporate.id,
               name = corporate.corporateName,

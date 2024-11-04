@@ -40,7 +40,7 @@ class PersonEmploymentBuilder(val repository: PersonEmploymentBuilderRepository)
     person: Person,
     sequence: Long,
     active: Boolean,
-    employerCorporate: Corporate?,
+    employerCorporate: Corporate,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
   ): PersonEmployment =

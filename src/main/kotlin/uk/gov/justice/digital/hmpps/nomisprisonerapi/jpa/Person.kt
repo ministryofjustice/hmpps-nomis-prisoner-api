@@ -132,10 +132,6 @@ data class Person(
   @Convert(converter = YesNoConverter::class)
   val isRemitter: Boolean? = false,
 
-  @Column(name = "KEEP_BIOMETRICS")
-  @Convert(converter = YesNoConverter::class)
-  val keepBiometrics: Boolean = false,
-
   /* columns not mapped
   OCCUPATION_CODE - always null
   CRIMINAL_HISTORY_TEXT - always null
@@ -155,6 +151,7 @@ data class Person(
   CARE_OF - always null
   SUSPENDED_DATE - always null
   NAME_SEQUENCE - always null
+  KEEP_BIOMETRICS - not used in NOMIS
    */
 
 ) : NomisAuditableEntity() {

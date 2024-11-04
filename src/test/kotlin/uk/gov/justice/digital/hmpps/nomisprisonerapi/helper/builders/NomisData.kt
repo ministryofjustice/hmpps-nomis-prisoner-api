@@ -360,7 +360,6 @@ class NomisData(
     deceasedDate: String?,
     isStaff: Boolean?,
     isRemitter: Boolean?,
-    keepBiometrics: Boolean,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: PersonDsl.() -> Unit,
@@ -379,7 +378,6 @@ class NomisData(
         deceasedDate = deceasedDate?.let { LocalDate.parse(it) },
         isStaff = isStaff,
         isRemitter = isRemitter,
-        keepBiometrics = keepBiometrics,
         whenCreated = whenCreated,
         whoCreated = whoCreated,
       )
@@ -525,7 +523,6 @@ interface NomisDataDsl {
     deceasedDate: String? = null,
     isStaff: Boolean? = null,
     isRemitter: Boolean? = null,
-    keepBiometrics: Boolean = false,
     whenCreated: LocalDateTime? = null,
     whoCreated: String? = null,
     dsl: PersonDsl.() -> Unit = {},
