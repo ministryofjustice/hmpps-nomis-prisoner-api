@@ -92,6 +92,9 @@ data class ScheduleRulesResponse(
 
   @Schema(description = "Runs on Sundays", example = "true")
   val sunday: Boolean,
+
+  @Schema(description = "Time slot", example = "AM")
+  val slotCategoryCode: String,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

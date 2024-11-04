@@ -47,6 +47,7 @@ class ScheduleRuleService {
         friday = it.friday,
         saturday = it.saturday,
         sunday = it.sunday,
+        slotCategoryCode = it.slotCategory.name,
       )
     }
 

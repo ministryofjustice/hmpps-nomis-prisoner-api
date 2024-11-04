@@ -469,7 +469,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
             otherCourseActivity = courseActivity(startDate = "$today")
           }
           offender {
-            booking(agencyLocationId = "LEI") { // wrong prison
+            booking(agencyLocationId = "LEI") {
+              // wrong prison
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
               courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
             }
@@ -736,6 +737,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .jsonPath("scheduleRules[0].friday").isEqualTo(true)
           .jsonPath("scheduleRules[0].saturday").isEqualTo(false)
           .jsonPath("scheduleRules[0].sunday").isEqualTo(false)
+          .jsonPath("scheduleRules[0].slotCategoryCode").isEqualTo("AM")
       }
 
       @Test
@@ -763,8 +765,10 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("scheduleRules[0].startTime").isEqualTo("09:30")
           .jsonPath("scheduleRules[0].endTime").isEqualTo("12:15")
+          .jsonPath("scheduleRules[0].slotCategoryCode").isEqualTo("AM")
           .jsonPath("scheduleRules[1].startTime").isEqualTo("13:00")
           .jsonPath("scheduleRules[1].endTime").isEqualTo("16:30")
+          .jsonPath("scheduleRules[1].slotCategoryCode").isEqualTo("PM")
       }
     }
 
