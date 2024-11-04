@@ -53,6 +53,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   private var review31Id: Long = 0
   private var attendee31Id: Long = 0
   private var interview31Id: Long = 0
+  private var bookingId: Long = 0
+  private var bookingId2: Long = 0
+  private var bookingId3: Long = 0
 
   @BeforeEach
   internal fun createTestCSIPReports() {
@@ -116,6 +119,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         }
       }
     }
+    bookingId = csip1.offenderBooking.bookingId
     factor31Id = csip3.factors[0].id
     plan31Id = csip3.plans[0].id
     review31Id = csip3.reviews[0].id
@@ -510,6 +514,91 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("id").isEqualTo(csip1.id)
         .jsonPath("documents").doesNotExist()
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /csip/booking/{bookingId}")
+  inner class GetCSIPIdsForBooking {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/csip/booking/$bookingId")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/csip/booking/$bookingId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/csip/booking/$bookingId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `unknown csip should return not found`() {
+      webTestClient.get().uri("/csip/booking/999999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Not Found: Prisoner with booking 999999 not found")
+        }
+    }
+
+    @Test
+    fun `booking with no csips should return empty list`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234YY") {
+          bookingId2 = booking().bookingId
+        }
+      }
+
+      webTestClient.get().uri("/csip/booking/$bookingId2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `booking with multiple csips should return csip ids list`() {
+      webTestClient.get().uri("/csip/booking/$bookingId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(3)
+    }
+
+    @Test
+    fun `booking will correctly identify the csip for the booking`() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234YY") {
+          bookingId3 = booking {
+            csipReport()
+          }.bookingId
+        }
+      }
+      webTestClient.get().uri("/csip/booking/$bookingId3")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(1)
     }
   }
 

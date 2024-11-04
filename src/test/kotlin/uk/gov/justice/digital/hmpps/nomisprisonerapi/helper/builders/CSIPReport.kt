@@ -185,7 +185,6 @@ class CSIPReportBuilder(
     planReason: String?,
     firstCaseReviewDate: LocalDate?,
     logNumber: String?,
-    createUsername: String,
   ): CSIPReport =
     CSIPReport(
       offenderBooking = offenderBooking,

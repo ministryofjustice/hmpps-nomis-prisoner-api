@@ -114,6 +114,11 @@ class CSIPService(
     return csip.toCSIPResponse(documentIds)
   }
 
+  fun getCSIPIdsForBooking(bookingId: Long): List<CSIPIdResponse> =
+    offenderBookingRepository.findByIdOrNull(bookingId)
+      ?.let { csipRepository.findIdsByOffenderBookingBookingId(bookingId).map { csipId -> CSIPIdResponse(csipId) } }
+      ?: throw NotFoundException("Prisoner with booking $bookingId not found")
+
   fun findIdsByFilter(pageRequest: Pageable, csipFilter: CSIPFilter): Page<CSIPIdResponse> {
     log.info("CSIP Id filter request : $csipFilter with page request $pageRequest")
     return findAllIds(

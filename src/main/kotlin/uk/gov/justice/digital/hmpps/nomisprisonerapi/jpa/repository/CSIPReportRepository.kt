@@ -39,4 +39,16 @@ interface CSIPReportRepository : CrudRepository<CSIPReport, Long>, JpaSpecificat
   fun findAllCSIPIds(pageable: Pageable): Page<Long>
 
   fun findAllByOffenderBookingOffenderNomsId(offenderNo: String): List<CSIPReport>
+
+  @Query(
+    """
+      select
+        csipReport.id
+      from CSIPReport csipReport 
+         where
+            csipReport.offenderBooking.bookingId = :bookingId
+      order by csipReport.id asc
+    """,
+  )
+  fun findIdsByOffenderBookingBookingId(bookingId: Long): List<Long>
 }

@@ -239,6 +239,51 @@ class CSIPResource(private val csipService: CSIPService) {
     includeDocumentIds: Boolean = false,
   ) = csipService.getCSIP(id, includeDocumentIds)
 
+  @GetMapping("/csip/booking/{bookingId}")
+  @Operation(
+    summary = "Get a list of CSIP Ids for a booking",
+    description = "Gets a list of all csip ids relating to an offender booking. Requires role NOMIS_CSIP",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_CSIP",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getCSIPIdsForBooking(
+    @Schema(description = "booking id")
+    @PathVariable
+    bookingId: Long,
+  ): List<CSIPIdResponse> = csipService.getCSIPIdsForBooking(bookingId)
+
   @DeleteMapping("/csip/{csipId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
