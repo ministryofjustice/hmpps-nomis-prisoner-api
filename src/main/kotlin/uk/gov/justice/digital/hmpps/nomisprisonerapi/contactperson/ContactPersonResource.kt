@@ -279,7 +279,7 @@ data class PersonEmploymentCorporate(
   @Schema(description = "Unique NOMIS Id of corporate address")
   val id: Long,
   @Schema(description = "The corporate name", example = "Police")
-  val name: String?,
+  val name: String,
 )
 
 @Schema(description = "The data held in NOMIS about a person's identifiers")
