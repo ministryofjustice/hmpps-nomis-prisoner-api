@@ -70,7 +70,7 @@ interface PersonDsl {
 
   @PersonEmploymentDslMarker
   fun employment(
-    employerCorporate: Corporate? = null,
+    employerCorporate: Corporate,
     active: Boolean = true,
     whenCreated: LocalDateTime? = null,
     whoCreated: String? = null,
@@ -168,7 +168,6 @@ class PersonBuilder(
     deceasedDate: LocalDate?,
     isStaff: Boolean?,
     isRemitter: Boolean?,
-    keepBiometrics: Boolean,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
   ): Person = Person(
@@ -184,7 +183,6 @@ class PersonBuilder(
     deceasedDate = deceasedDate,
     isStaff = isStaff,
     isRemitter = isRemitter,
-    keepBiometrics = keepBiometrics,
   )
     .let { repository.save(it) }
     .also {
@@ -283,7 +281,7 @@ class PersonBuilder(
     }
 
   override fun employment(
-    employerCorporate: Corporate?,
+    employerCorporate: Corporate,
     active: Boolean,
     whenCreated: LocalDateTime?,
     whoCreated: String?,

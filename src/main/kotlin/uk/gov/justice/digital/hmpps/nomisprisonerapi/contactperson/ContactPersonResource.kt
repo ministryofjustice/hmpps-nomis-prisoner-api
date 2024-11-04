@@ -171,10 +171,8 @@ data class ContactPerson(
   val deceasedDate: LocalDate?,
   @Schema(description = "True if a staff member")
   val isStaff: Boolean?,
-  @Schema(description = "No longer used in NOMIS since 2018")
+  @Schema(description = "Set to true when person created via finance remitter page")
   val isRemitter: Boolean?,
-  @Schema(description = "No longer used in NOMIS since 2019")
-  val keepBiometrics: Boolean,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
   @Schema(description = "List of phone numbers for the person")
@@ -268,7 +266,7 @@ data class PersonEmployment(
   @Schema(description = "Unique NOMIS sequence for this employment for this person")
   val sequence: Long,
   @Schema(description = "The entity the person is employed by")
-  val corporate: PersonEmploymentCorporate?,
+  val corporate: PersonEmploymentCorporate,
   @Schema(description = "True is employment is active")
   val active: Boolean,
   @Schema(description = "Audit data associated with the records")
