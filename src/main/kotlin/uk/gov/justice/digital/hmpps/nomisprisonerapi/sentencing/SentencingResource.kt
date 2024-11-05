@@ -1251,8 +1251,6 @@ data class CreateSentenceResponse(
 data class CreateCourtAppearanceResponse(
   val id: Long,
   val courtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
-  // if created as an individual appearance, an associated next appearance may also have been created
-  val nextCourtAppearanceId: Long? = null,
 )
 
 @Schema(description = "Create adjustment response")
@@ -1260,8 +1258,6 @@ data class CreateCourtAppearanceResponse(
 data class UpdateCourtAppearanceResponse(
   val createdCourtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
   val deletedOffenderChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
-  // if created as an individual appearance, an associated next appearance may also have been created
-  val nextCourtAppearanceId: Long? = null,
 )
 
 @Schema(description = "Create adjustment response")
