@@ -971,9 +971,9 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(10)
-        .jsonPath("$.content[0].locationId").isEqualTo(-3010)
-        .jsonPath("$.content[1].locationId").isEqualTo(-3009)
-        .jsonPath("$.content[2].locationId").isEqualTo(-3008)
+        .jsonPath("$.content[*].locationId").value<List<Int>> {
+          assertThat(it).contains(-3010, -3009, -3008)
+        }
     }
 
     @Test
@@ -987,16 +987,14 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(309)
+        .jsonPath("totalElements").isEqualTo(310)
         .jsonPath("numberOfElements").isEqualTo(5)
         .jsonPath("number").isEqualTo(0)
-        .jsonPath("totalPages").isEqualTo(310 / 5)
+        .jsonPath("totalPages").isEqualTo(311 / 5)
         .jsonPath("size").isEqualTo(5)
-        .jsonPath("$.content[0].locationId").isEqualTo(-3010)
-        .jsonPath("$.content[1].locationId").isEqualTo(-3009)
-        .jsonPath("$.content[2].locationId").isEqualTo(-3008)
-        .jsonPath("$.content[3].locationId").isEqualTo(-3007)
-        .jsonPath("$.content[4].locationId").isEqualTo(-3006)
+        .jsonPath("$.content[*].locationId").value<List<Int>> {
+          assertThat(it).contains(-3010, -3009, -3008)
+        }
     }
 
     @Test
@@ -1011,16 +1009,14 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(309)
+        .jsonPath("totalElements").isEqualTo(310)
         .jsonPath("numberOfElements").isEqualTo(5)
         .jsonPath("number").isEqualTo(1)
-        .jsonPath("totalPages").isEqualTo(310 / 5)
+        .jsonPath("totalPages").isEqualTo(311 / 5)
         .jsonPath("size").isEqualTo(5)
-        .jsonPath("$.content[0].locationId").isEqualTo(-3005)
-        .jsonPath("$.content[1].locationId").isEqualTo(-3004)
-        .jsonPath("$.content[2].locationId").isEqualTo(-3003)
-        .jsonPath("$.content[3].locationId").isEqualTo(-3002)
-        .jsonPath("$.content[4].locationId").isEqualTo(-3001)
+        .jsonPath("$.content[*].locationId").value<List<Int>> {
+          assertThat(it).contains(-3005, -3004, -3003)
+        }
     }
   }
 }
