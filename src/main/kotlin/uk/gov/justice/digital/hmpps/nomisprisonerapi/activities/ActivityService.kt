@@ -63,7 +63,9 @@ class ActivityService(
   private fun mapActivityModel(request: CreateActivityRequest): CourseActivity {
     val prison = findPrisonOrThrow(request.prisonId)
 
-    val location = findLocationInPrisonOrThrow(request.internalLocationId, request.prisonId)
+    val location = request.internalLocationId
+      ?.let { findLocationInPrisonOrThrow(request.internalLocationId, request.prisonId) }
+      ?: findCswapLocationInPrisonOrThrow(request.prisonId)
 
     val programService = findProgramServiceOrThrow(request.programCode)
 
@@ -155,7 +157,9 @@ class ActivityService(
       }
 
   private fun mapActivityModel(existingActivity: CourseActivity, request: UpdateActivityRequest): CourseActivity {
-    val location = findLocationInPrisonOrThrow(request.internalLocationId, existingActivity.prison.id)
+    val location = request.internalLocationId
+      ?.let { findLocationInPrisonOrThrow(request.internalLocationId, existingActivity.prison.id) }
+      ?: findCswapLocationInPrisonOrThrow(existingActivity.prison.id)
 
     val requestedProgramService = findProgramServiceOrThrow(request.programCode)
 
@@ -217,6 +221,10 @@ class ActivityService(
     }
     return location
   }
+
+  private fun findCswapLocationInPrisonOrThrow(prisonId: String): AgencyInternalLocation =
+    agencyInternalLocationRepository.findByAgencyIdAndLocationCode(prisonId, "CSWAP")
+      ?: throw BadDataException("CSWAP location for prison $prisonId does not exist. Activities need a location otherwise they are missed off NART reports and we use CSWAP as the default location where DPS provides none.")
 
   private fun findPrisonOrThrow(prisonId: String) =
     agencyLocationRepository.findByIdOrNull(prisonId)

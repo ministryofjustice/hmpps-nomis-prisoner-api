@@ -21,4 +21,6 @@ interface AgencyInternalLocationRepository : JpaRepository<AgencyInternalLocatio
     locationType: String,
     active: Boolean = true,
   ): List<AgencyInternalLocation>
+
+  fun findByAgencyIdAndLocationCode(agencyId: String, locationCode: String): AgencyInternalLocation?
 }

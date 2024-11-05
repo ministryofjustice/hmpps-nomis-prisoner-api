@@ -295,6 +295,17 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should default CSWAP if no location`() {
+        val id = callCreateEndpoint(validJsonRequest().withInternalLocation(null))
+
+        repository.runInTransaction {
+          with(repository.getActivity(id)) {
+            assertThat(internalLocation?.locationCode).isEqualTo("CSWAP")
+          }
+        }
+      }
+
+      @Test
       fun `should raise telemetry event`() {
         val id = callCreateEndpoint()
         val courseActivity = repository.getActivity(id)
@@ -440,6 +451,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   private fun String.withPayBand(payBand: String) = replace(""""payBand" : "5",""", """"payBand" : "$payBand",""")
 
   private fun String.withPayPerSession(payPerSession: String) = replace(""""payPerSession": "F",""", """"payPerSession": "$payPerSession",""")
+
+  private fun String.withInternalLocation(location: String?) = replace(""""internalLocationId" : -3005,""", location?.let { """"internalLocationId": ${location.toIntOrNull() ?: ('"' + location + '"')},""" } ?: "")
 
   @Nested
   inner class UpdateActivity {
@@ -1563,15 +1576,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
             detailsJson = detailsJson()
-              .withEndDate(null)
-              .withInternalLocation(null),
+              .withEndDate(null),
           ),
         )
           .expectStatus().isOk
 
         val updated = repository.getActivity(courseActivity.courseActivityId)
         assertThat(updated.scheduleEndDate).isNull()
-        assertThat(updated.internalLocation).isNull()
       }
 
       @Test
@@ -1605,6 +1616,29 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
           assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
           assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST") // The deallocated booking is not moved to the new program
+        }
+      }
+
+      @Test
+      fun `should default CSWAP if internal location is null`() {
+        nomisDataBuilder.build {
+          programService(programCode = "NEW_SERVICE") {
+            courseActivity(internalLocationId = -3005)
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withInternalLocation(null),
+          ),
+        )
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          with(repository.getActivity(courseActivity.courseActivityId)) {
+            assertThat(internalLocation?.locationCode).isEqualTo("CSWAP")
+          }
         }
       }
     }

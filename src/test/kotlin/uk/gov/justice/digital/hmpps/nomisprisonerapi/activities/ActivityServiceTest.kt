@@ -300,13 +300,12 @@ class ActivityServiceTest {
     @Test
     fun `should update nullables OK`() {
       assertDoesNotThrow {
-        activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(endDate = null, internalLocationId = null))
+        activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(endDate = null))
       }
 
       verify(activityRepository).saveAndFlush(
         check { activity ->
           assertThat(activity.scheduleEndDate).isNull()
-          assertThat(activity.internalLocation).isNull()
         },
       )
     }
@@ -326,7 +325,7 @@ class ActivityServiceTest {
       whenever(activityRepository.findById(anyLong())).thenReturn(Optional.of(courseActivity))
       whenever(payRatesService.buildNewPayRates(anyList(), any())).thenReturn(mutableListOf(newPayRate))
 
-      activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(internalLocationId = null))
+      activityService.updateActivity(courseActivity.courseActivityId, updateRequest.copy(capacity = 10))
 
       verify(telemetryClient).trackEvent(
         eq("activity-updated"),
