@@ -73,7 +73,7 @@ class LocationService(
 
   @Audit
   fun updateLocation(locationId: Long, locationDto: UpdateLocationRequest) {
-    val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
+    val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
     val housingUnitType = locationDto.unitType?.let {
@@ -112,7 +112,7 @@ class LocationService(
 
   @Audit
   fun deactivateLocation(locationId: Long, deactivateRequest: DeactivateRequest) {
-    val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
+    val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
     if (deactivateRequest.force) {
@@ -141,7 +141,7 @@ class LocationService(
 
   @Audit
   fun reactivateLocation(locationId: Long) {
-    val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
+    val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
     if (location.active) {
@@ -164,7 +164,7 @@ class LocationService(
 
   @Audit
   fun updateCapacity(locationId: Long, capacity: UpdateCapacityRequest, ignoreOperationalCapacity: Boolean) {
-    val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
+    val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
     location.capacity = capacity.capacity
@@ -187,7 +187,7 @@ class LocationService(
 
   @Audit
   fun updateCertification(locationId: Long, certification: UpdateCertificationRequest) {
-    val location = agencyInternalLocationRepository.findByIdOrNull(locationId)
+    val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
     location.certified = certification.certified
