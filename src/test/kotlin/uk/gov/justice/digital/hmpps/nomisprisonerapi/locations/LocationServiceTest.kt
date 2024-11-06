@@ -218,7 +218,7 @@ internal class LocationServiceTest {
 
     @BeforeEach
     fun setup() {
-      whenever(agencyInternalLocationRepository.findById(LOCATION_ID)).thenReturn(Optional.of(agencyInternalLocation))
+      whenever(agencyInternalLocationRepository.findWithLockByLocationId(LOCATION_ID)).thenReturn(agencyInternalLocation)
     }
 
     @Test
