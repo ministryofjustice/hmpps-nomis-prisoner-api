@@ -9,6 +9,8 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 
+const val INCIDENTS_SERVICE = "INCIDENTS"
+
 @Entity
 @Table(name = "EXTERNAL_SERVICES")
 data class ExternalService(
