@@ -26,7 +26,7 @@ interface AgencyInternalLocationRepository : JpaRepository<AgencyInternalLocatio
     active: Boolean = true,
   ): List<AgencyInternalLocation>
 
-  fun findByAgencyIdAndLocationCode(agencyId: String, locationCode: String): AgencyInternalLocation?
+  fun findByAgencyIdAndLocationCodeAndActive(agencyId: String, locationCode: String, active: Boolean): AgencyInternalLocation?
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])

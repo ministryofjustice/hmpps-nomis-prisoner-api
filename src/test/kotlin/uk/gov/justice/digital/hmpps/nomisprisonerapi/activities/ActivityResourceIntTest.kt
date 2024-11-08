@@ -1641,6 +1641,29 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           }
         }
       }
+
+      @Test
+      fun `should ignore inactive CSWAP location`() {
+        nomisDataBuilder.build {
+          programService(programCode = "NEW_SERVICE") {
+            courseActivity(internalLocationId = -3005)
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withInternalLocation(null),
+          ),
+        )
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          with(repository.getActivity(courseActivity.courseActivityId)) {
+            assertThat(internalLocation?.locationCode).isEqualTo("CSWAP")
+          }
+        }
+      }
     }
 
     @Nested

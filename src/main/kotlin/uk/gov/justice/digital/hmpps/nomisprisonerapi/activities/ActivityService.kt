@@ -223,7 +223,7 @@ class ActivityService(
   }
 
   private fun findCswapLocationInPrisonOrThrow(prisonId: String): AgencyInternalLocation =
-    agencyInternalLocationRepository.findByAgencyIdAndLocationCode(prisonId, "CSWAP")
+    agencyInternalLocationRepository.findByAgencyIdAndLocationCodeAndActive(prisonId, "CSWAP", active = true)
       ?: throw BadDataException("CSWAP location for prison $prisonId does not exist. Activities need a location otherwise they are missed off NART reports and we use CSWAP as the default location where DPS provides none.")
 
   private fun findPrisonOrThrow(prisonId: String) =
