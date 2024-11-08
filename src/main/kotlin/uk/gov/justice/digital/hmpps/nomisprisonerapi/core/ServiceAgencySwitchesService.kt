@@ -27,6 +27,11 @@ class ServiceAgencySwitchesService(
     externalServiceRepository.findByIdOrNull(serviceCode)
       ?: throw NotFoundException("Service code $serviceCode does not exist")
 
+  fun getServicePrisonIds(serviceCode: String): List<String> =
+    externalServiceRepository.findByIdOrNull(serviceCode)
+      ?.serviceAgencySwitches?.map { it.id.agencyLocation.id }
+      ?: listOf()
+
   fun checkServicePrison(serviceCode: String, prisonId: String): Boolean =
     serviceAgencySwitchesRepository.existsByIdExternalServiceServiceNameAndIdAgencyLocationId(serviceCode, prisonId)
 

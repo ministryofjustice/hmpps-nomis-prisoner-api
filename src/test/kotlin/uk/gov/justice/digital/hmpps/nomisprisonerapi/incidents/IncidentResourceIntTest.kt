@@ -15,11 +15,19 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ExternalServiceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ServiceAgencySwitchesRepository
 import java.time.LocalDate
 
 class IncidentResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var repository: Repository
+
+  @Autowired
+  private lateinit var serviceAgencySwitchesRepository: ServiceAgencySwitchesRepository
+
+  @Autowired
+  private lateinit var externalServiceRepository: ExternalServiceRepository
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -45,6 +53,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       setUpStaffAndOffenders()
       setUpQuestionnaires()
+
+      externalService(serviceName = "INCIDENTS") {
+        serviceAgencySwitch(prisonId = "HAZLWD")
+      }
 
       incident1 = incident(
         title = "Fight in the cell",
@@ -161,6 +173,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.deleteAllQuestionnaires()
     repository.deleteStaff()
     repository.deleteOffenders()
+    serviceAgencySwitchesRepository.deleteAll()
+    externalServiceRepository.deleteAll()
   }
 
   @Nested
@@ -648,6 +662,23 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("size()").isEqualTo(2)
         .jsonPath("[0].agencyId").isEqualTo("BXI")
         .jsonPath("[1].agencyId").isEqualTo("MDI")
+    }
+
+    @Test
+    fun `will not get agencies excluded from incident agency service list`() {
+      nomisDataBuilder.build {
+        incident(locationId = "HAZLWD", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
+        incident(locationId = "LEI", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
+      }
+      webTestClient.get().uri("/incidents/reconciliation/agencies")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(3)
+        .jsonPath("[0].agencyId").isEqualTo("BXI")
+        .jsonPath("[1].agencyId").isEqualTo("LEI")
+        .jsonPath("[2].agencyId").isEqualTo("MDI")
     }
   }
 
