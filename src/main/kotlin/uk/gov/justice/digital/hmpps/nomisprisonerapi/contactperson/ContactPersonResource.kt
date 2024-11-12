@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -17,6 +18,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -142,6 +145,60 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       fromDate = fromDate,
     ),
   )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/persons")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a person",
+    description = "Retrieves a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Person ID Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreatePersonResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPerson(
+    @RequestBody @Valid
+    request: CreatePersonRequest,
+  ): CreatePersonResponse = contactPersonService.createPerson(request)
 }
 
 @Schema(description = "The data held in NOMIS about a person who is a contact for a prisoner")
@@ -369,6 +426,38 @@ data class ContactRestrictionEnteredStaff(
 )
 
 data class PersonIdResponse(
+  @Schema(description = "The person Id")
+  val personId: Long,
+)
+
+@Schema(description = "Request to create an person (aka DPS contact) in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreatePersonRequest(
+  @Schema(description = "The person id. When non-zero this will be used rather than the auto generated id", example = "12345")
+  val personId: Long? = null,
+  @Schema(description = "First name of the person", example = "Ashantee")
+  val firstName: String,
+  @Schema(description = "Surname name of the person", example = "Addo")
+  val lastName: String,
+  @Schema(description = "Middle name of the person", example = "Ashwin")
+  val middleName: String? = null,
+  @Schema(description = "Date of birth of the person")
+  val dateOfBirth: LocalDate? = null,
+  @Schema(description = "Gender code of the person", example = "F")
+  val genderCode: String? = null,
+  @Schema(description = "Title code of the person", example = "DR")
+  val titleCode: String? = null,
+  @Schema(description = "Language code of the person", example = "FRE-FRA")
+  val languageCode: String? = null,
+  @Schema(description = "True if the person requires an interpreter")
+  val interpreterRequired: Boolean = false,
+  @Schema(description = "Domestic status code aka marital status of the person", example = "S")
+  val domesticStatusCode: String? = null,
+  @Schema(description = "True if a staff member")
+  val isStaff: Boolean? = null,
+)
+
+data class CreatePersonResponse(
   @Schema(description = "The person Id")
   val personId: Long,
 )
