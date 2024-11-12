@@ -76,3 +76,5 @@ fun SplashScreen.blockedList(): List<String> =
 fun SplashScreen.isBlockedAccess(): Boolean = accessBlockedType.code == "YES"
 fun SplashScreen.isConditionalAccess(): Boolean = accessBlockedType.code == "COND"
 fun SplashScreen.isNotBlockedAccess(): Boolean = accessBlockedType.code == "NO"
+
+const val ALL_PRISONS = "**ALL**"

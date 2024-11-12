@@ -68,6 +68,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonReposi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SplashScreenRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import kotlin.jvm.optionals.getOrNull
@@ -106,6 +107,7 @@ class Repository(
   val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
   val offenderChargeRepository: OffenderChargeRepository,
   val questionnaireRepository: QuestionnaireRepository,
+  val splashScreenRepository: SplashScreenRepository,
   val incidentRepository: IncidentRepository,
   val mergeTransactionRepository: MergeTransactionRepository,
   val csipReportRepository: CSIPReportRepository,
@@ -139,7 +141,7 @@ class Repository(
   fun deleteMergeTransactions() = mergeTransactionRepository.deleteAll()
   fun deleteAllIncidents() = incidentRepository.deleteAll()
   fun deleteAllQuestionnaires() = questionnaireRepository.deleteAll()
-
+  fun deleteAllSplashScreens() = splashScreenRepository.deleteAll()
   fun delete(people: Collection<Person>) = personRepository.deleteAllById(people.map { it.id })
 
   fun deleteProgramServices() = programServiceRepository.deleteAll()
