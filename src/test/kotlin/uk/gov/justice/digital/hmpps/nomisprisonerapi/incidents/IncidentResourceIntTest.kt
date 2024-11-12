@@ -10,24 +10,17 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents.IncidentService.Companion.INCIDENT_REPORTING_SCREEN_ID
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ExternalServiceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ServiceAgencySwitchesRepository
 import java.time.LocalDate
 
 class IncidentResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var serviceAgencySwitchesRepository: ServiceAgencySwitchesRepository
-
-  @Autowired
-  private lateinit var externalServiceRepository: ExternalServiceRepository
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -54,8 +47,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       setUpStaffAndOffenders()
       setUpQuestionnaires()
 
-      externalService(serviceName = "INCIDENTS") {
-        serviceAgencySwitch(prisonId = "HAZLWD")
+      splashScreen(moduleName = INCIDENT_REPORTING_SCREEN_ID, accessBlockedCode = "COND") {
+        splashCondition(prisonId = "HAZLWD", accessBlocked = true)
       }
 
       incident1 = incident(
@@ -173,8 +166,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.deleteAllQuestionnaires()
     repository.deleteStaff()
     repository.deleteOffenders()
-    serviceAgencySwitchesRepository.deleteAll()
-    externalServiceRepository.deleteAll()
+    repository.deleteAllSplashScreens()
   }
 
   @Nested

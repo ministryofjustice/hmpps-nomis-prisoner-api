@@ -8,17 +8,13 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SplashConditionRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SplashScreenRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ALL_PRISONS
 
 class SplashScreenResourceIntTest : IntegrationTestBase() {
-
   @Autowired
-  private lateinit var splashScreenRepository: SplashScreenRepository
-
-  @Autowired
-  private lateinit var splashConditionRepository: SplashConditionRepository
+  private lateinit var repository: Repository
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -28,7 +24,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       splashScreen(moduleName = "SCREEN1", accessBlockedCode = "NO")
       splashScreen(moduleName = "SCREEN2", accessBlockedCode = "COND", warningText = "A warning", blockedText = "Block message") {
-        splashCondition(prisonId = "**ALL**", accessBlocked = true)
+        splashCondition(prisonId = ALL_PRISONS, accessBlocked = true)
       }
       splashScreen(moduleName = "SCREEN3", accessBlockedCode = "YES", warningText = "A warning", blockedText = "Block message") {
         splashCondition(prisonId = "LEI", accessBlocked = true)
@@ -45,8 +41,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   fun `tear down`() {
-    splashConditionRepository.deleteAll()
-    splashScreenRepository.deleteAll()
+    repository.deleteAllSplashScreens()
   }
 
   @Nested
@@ -209,7 +204,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("size()").isEqualTo(1)
-        .jsonPath("[0].prisonId").isEqualTo("**ALL**")
+        .jsonPath("[0].prisonId").isEqualTo(ALL_PRISONS)
     }
 
     @Test
