@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -37,16 +39,19 @@ data class SplashScreen(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'" + SplashBlockAccessCodeType.SPLASH_BLK + "'",
+          value = "'" + SplashAccessBlockedType.SPLASH_BLK + "'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "BLOCK_ACCESS_CODE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  var blockAccessCode: SplashBlockAccessCodeType,
+  var accessBlockedType: SplashAccessBlockedType,
 
   @Column
   val blockedText: String?,
+
+  @OneToMany(mappedBy = "splashScreen", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val conditions: MutableList<SplashCondition> = mutableListOf(),
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -58,3 +63,16 @@ data class SplashScreen(
 
   override fun hashCode(): Int = javaClass.hashCode()
 }
+
+fun SplashScreen.blockedList(): List<String> =
+  if (isBlockedAccess()) {
+    this.conditions.map { it.value }
+  } else if (isConditionalAccess()) {
+    this.conditions.filter { it.accessBlocked }.map { it.value }
+  } else {
+    listOf()
+  }
+
+fun SplashScreen.isBlockedAccess(): Boolean = accessBlockedType.code == "YES"
+fun SplashScreen.isConditionalAccess(): Boolean = accessBlockedType.code == "COND"
+fun SplashScreen.isNotBlockedAccess(): Boolean = accessBlockedType.code == "NO"

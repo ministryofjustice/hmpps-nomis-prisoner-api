@@ -232,7 +232,7 @@ class NomisData(
   override fun splashScreen(
     moduleName: String,
     warningText: String?,
-    blockAccessCode: String,
+    accessBlockedCode: String,
     blockedText: String?,
     dsl: SplashScreenDsl.() -> Unit,
   ): SplashScreen =
@@ -241,7 +241,7 @@ class NomisData(
         builder.build(
           moduleName,
           warningText,
-          blockAccessCode,
+          accessBlockedCode,
           blockedText,
         )
           .also {
@@ -492,7 +492,7 @@ interface NomisDataDsl {
   fun splashScreen(
     moduleName: String,
     warningText: String? = null,
-    blockAccessCode: String,
+    accessBlockedCode: String,
     blockedText: String? = null,
     dsl: SplashScreenDsl.() -> Unit = {},
   ): SplashScreen
