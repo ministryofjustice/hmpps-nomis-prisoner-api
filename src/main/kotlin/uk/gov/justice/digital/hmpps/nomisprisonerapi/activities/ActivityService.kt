@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActivitiesWithoutScheduleRulesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindPayRateWithUnknownIncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
@@ -129,6 +130,18 @@ class ActivityService(
           courseActivityDescription = it.getCourseActivityDescription(),
           payBandCode = it.getPayBandCode(),
           incentiveLevelCode = it.getIncentiveLevelCode(),
+        )
+      }
+  }
+
+  fun findActivitiesWithoutScheduleRules(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindActivitiesWithoutScheduleRulesResponse> {
+    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
+    return findPrisonOrThrow(prisonId)
+      .let { courseActivityRepository.findActivitiesWithoutScheduleRules(prisonId, excludePrograms, courseActivityId) }
+      .map {
+        FindActivitiesWithoutScheduleRulesResponse(
+          courseActivityId = it.getCourseActivityId(),
+          courseActivityDescription = it.getCourseActivityDescription(),
         )
       }
   }
