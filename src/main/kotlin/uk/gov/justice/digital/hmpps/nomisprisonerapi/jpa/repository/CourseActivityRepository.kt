@@ -74,6 +74,35 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
   )
   fun findPayRatesWithUnknownIncentive(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<PayRateWithUnknownIncentive>
 
+  @Query(
+    value = """
+    select 
+      ca.courseActivityId as courseActivityId, 
+      ca.description as courseActivityDescription 
+    from CourseActivity ca 
+    left join CourseScheduleRule csr on ca = csr.courseActivity
+    where ca.prison.id = :prisonId
+    and ca.active = true
+    and ca.scheduleStartDate <= current_date 
+    and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
+    and ca.program.programCode not in :excludeProgramCodes
+    and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
+    and csr is null
+    and ca.courseActivityId in
+      (
+       select distinct(opp.courseActivity.courseActivityId) 
+       from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
+       where opp.prison.id = :prisonId 
+       and opp.programStatus.code = 'ALLOC'
+       and (opp.endDate is null or opp.endDate > current_date)
+       and ob.active = true
+       and ob.location.id = :prisonId
+      )   
+  """,
+  )
+  fun findActivitiesWithoutScheduleRules(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<ActivityWithoutScheduleRule>
+
   @Modifying
   @Query(
     value = """
@@ -90,4 +119,9 @@ interface PayRateWithUnknownIncentive {
   fun getCourseActivityDescription(): String
   fun getPayBandCode(): String
   fun getIncentiveLevelCode(): String
+}
+
+interface ActivityWithoutScheduleRule {
+  fun getCourseActivityId(): Long
+  fun getCourseActivityDescription(): String
 }
