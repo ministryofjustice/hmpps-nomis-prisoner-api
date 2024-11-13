@@ -1090,8 +1090,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
         val newPerson = personRepository.findByIdOrNull(newPersonCreateResponse.personId)!!
 
-        assertThat(newPerson.firstName).isEqualTo(validPerson.firstName)
-        assertThat(newPerson.lastName).isEqualTo(validPerson.lastName)
+        assertThat(newPerson.firstName).isEqualTo("JANE")
+        assertThat(newPerson.lastName).isEqualTo("SMITH")
+        assertThat(newPerson.isRemitter).isNull()
       }
 
       @Test
@@ -1105,8 +1106,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
         val newPerson = personRepository.findByIdOrNull(98765443)!!
 
-        assertThat(newPerson.firstName).isEqualTo(validPerson.firstName)
-        assertThat(newPerson.lastName).isEqualTo(validPerson.lastName)
+        assertThat(newPerson.firstName).isEqualTo("JANE")
+        assertThat(newPerson.lastName).isEqualTo("SMITH")
       }
 
       @Test
@@ -1134,9 +1135,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
         with(newPerson) {
           assertThat(id).isEqualTo(98765443)
-          assertThat(firstName).isEqualTo(validPerson.firstName)
-          assertThat(lastName).isEqualTo(validPerson.lastName)
-          assertThat(middleName).isEqualTo("Tina")
+          assertThat(firstName).isEqualTo("JANE")
+          assertThat(lastName).isEqualTo("SMITH")
+          assertThat(middleName).isEqualTo("TINA")
           assertThat(birthDate).isEqualTo(LocalDate.parse("1965-07-19"))
           assertThat(sex?.code).isEqualTo("F")
           assertThat(title?.code).isEqualTo("DR")
