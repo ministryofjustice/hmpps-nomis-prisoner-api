@@ -19,12 +19,10 @@ class SplashScreenService(
       ?.toDto()
       ?: throw NotFoundException("Splash screen with screen/module name $moduleName does not exist")
 
-  fun getBlockedPrisons(moduleName: String): List<PrisonDto> {
-    val fred = splashScreenRepository.findByModuleName(moduleName)
+  fun getBlockedPrisons(moduleName: String): List<PrisonDto> =
+    splashScreenRepository.findByModuleName(moduleName)
       ?.blockedList()?.map { PrisonDto(prisonId = it) }
-      ?: throw NotFoundException("Splash screen with screen/module name $moduleName does not exist")
-    return fred
-  }
+      ?: listOf()
 }
 
 fun SplashScreen.toDto() = SplashScreenDto(
