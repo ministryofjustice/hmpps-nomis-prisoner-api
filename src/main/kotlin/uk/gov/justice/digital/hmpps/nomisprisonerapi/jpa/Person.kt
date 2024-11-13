@@ -12,15 +12,10 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.HibernateException
-import org.hibernate.annotations.GenericGenerator
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.Parameter
 import org.hibernate.annotations.SQLRestriction
-import org.hibernate.engine.spi.SharedSessionContractImplementor
-import org.hibernate.id.enhanced.SequenceStyleGenerator
 import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
 
@@ -30,16 +25,7 @@ data class Person(
   @Id
   @Column(name = "PERSON_ID")
   @GeneratedValue(generator = "PERSON_ID")
-  // TODO - work out how to use IdGeneratorType instead of deprecated GenericGenerator
-  @GenericGenerator(
-    name = "PERSON_ID",
-    strategy = "uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonSequenceGeneratorOrUseId",
-    parameters = [
-      Parameter(name = "sequence_name", value = "PERSON_ID"),
-      Parameter(name = "initial_value", value = "1"),
-      Parameter(name = "increment_size", value = "1"),
-    ],
-  )
+  @SequenceOrUseId(name = "PERSON_ID")
   var id: Long = 0,
 
   @Column(name = "FIRST_NAME", nullable = false)
@@ -180,16 +166,4 @@ data class Person(
 
   @Override
   override fun toString(): String = "${this::class.simpleName} (id = $id )"
-}
-
-@Suppress("unused")
-class PersonSequenceGeneratorOrUseId : SequenceStyleGenerator() {
-
-  @Throws(HibernateException::class)
-  override fun generate(session: SharedSessionContractImplementor, entity: Any): Any {
-    if (entity is Person && entity.id != 0L) {
-      return entity.id
-    }
-    return super.generate(session, entity)
-  }
 }
