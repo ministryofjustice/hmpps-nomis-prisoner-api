@@ -184,9 +184,9 @@ class ContactPersonService(
     request.let {
       Person(
         id = it.personId ?: 0,
-        lastName = it.lastName,
-        firstName = it.firstName,
-        middleName = it.middleName,
+        lastName = it.lastName.uppercase(),
+        firstName = it.firstName.uppercase(),
+        middleName = it.middleName?.uppercase(),
         birthDate = it.dateOfBirth,
         sex = genderOf(it.genderCode),
         title = titleOf(it.titleCode),
@@ -194,7 +194,6 @@ class ContactPersonService(
         interpreterRequired = it.interpreterRequired,
         domesticStatus = martialStatusOf(it.domesticStatusCode),
         isStaff = it.isStaff,
-        isRemitter = false,
       )
     }
       .let { personRepository.save(it) }

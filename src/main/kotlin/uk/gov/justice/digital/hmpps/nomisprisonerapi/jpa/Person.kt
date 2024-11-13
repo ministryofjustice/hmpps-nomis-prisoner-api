@@ -129,7 +129,7 @@ data class Person(
 
   @Column(name = "REMITTER_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val isRemitter: Boolean? = false,
+  val isRemitter: Boolean? = null,
 
   /* columns not mapped
   OCCUPATION_CODE - always null
