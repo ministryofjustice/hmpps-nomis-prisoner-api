@@ -183,7 +183,7 @@ class ContactPersonService(
 
     request.let {
       Person(
-        id = 98765443,
+        id = it.personId ?: 0,
         lastName = it.lastName,
         firstName = it.firstName,
         middleName = it.middleName,
