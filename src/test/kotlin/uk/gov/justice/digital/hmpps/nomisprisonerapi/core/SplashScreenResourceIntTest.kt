@@ -160,15 +160,14 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return not found if splash screen does not exist`() {
+    fun `should return empty list if splash screen does not exist`() {
       webTestClient.get()
         .uri("/splash-screens/UNKNOWN_SCREEN/blocked")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
         .exchange()
-        .expectStatus().isNotFound
-        .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Not Found: Splash screen with screen/module name UNKNOWN_SCREEN does not exist")
-        }
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(0)
     }
 
     @Test

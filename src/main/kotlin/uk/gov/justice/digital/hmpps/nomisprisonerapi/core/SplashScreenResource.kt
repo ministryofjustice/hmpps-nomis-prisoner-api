@@ -50,13 +50,6 @@ class SplashScreenResource(private val service: SplashScreenService) {
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
       ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Not found if the screen (module) name does not exist",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
     ],
   )
   fun getScreenConditions(
@@ -127,7 +120,7 @@ data class SplashConditionDto(
 
 @Schema(description = "Splash screen details")
 data class SplashScreenDto(
-  @Schema(description = "The name of the module", example = "OIDINCRS")
+  @Schema(description = "The name of the module/screen", example = "OIDINCRS")
   val moduleName: String,
 
   @Schema(description = "The type of access - YES, NO, COND")
