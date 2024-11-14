@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ImageSource
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MarkType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImageBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImageIdentifyingMarks
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImageIdentifyingMark
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderImageBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderImageIdentifyingMarkRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -58,7 +58,7 @@ class IdentifyingMarksIntTest : IntegrationTestBase() {
       val imageSourceFile = imageSourceRepository.findByIdOrNull(ImageSource.pk("FILE"))!!
       val bodyPartHead = bodyPartRepository.findByIdOrNull(BodyPart.pk("HEAD"))!!
       val markTypeTattoo = markTypeRepository.findByIdOrNull(MarkType.pk("TAT"))!!
-      val image = OffenderImageIdentifyingMarks(
+      val image = OffenderImageIdentifyingMark(
         id = 0,
         offenderBooking = booking,
         captureDateTime = LocalDateTime.now(),

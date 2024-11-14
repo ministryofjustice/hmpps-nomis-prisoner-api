@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 
 @Entity
 @DiscriminatorValue("OFF_IDM")
-class OffenderImageIdentifyingMarks(
+class OffenderImageIdentifyingMark(
   id: Long,
   offenderBooking: OffenderBooking,
   captureDateTime: LocalDateTime,
