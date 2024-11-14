@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
+import jakarta.persistence.DiscriminatorColumn
+import jakarta.persistence.DiscriminatorType
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -11,7 +13,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.Lob
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
-import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
@@ -22,7 +23,7 @@ import java.time.LocalDateTime
 
 @EntityOpen
 @Entity(name = "OFFENDER_IMAGES")
-@DiscriminatorFormula("IMAGE_OBJECT_TYPE")
+@DiscriminatorColumn(name = "IMAGE_OBJECT_TYPE", discriminatorType = DiscriminatorType.STRING)
 @Inheritance
 abstract class OffenderImage(
   @Id
