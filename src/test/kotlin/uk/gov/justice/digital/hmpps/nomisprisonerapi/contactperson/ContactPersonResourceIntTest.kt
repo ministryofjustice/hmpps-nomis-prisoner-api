@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.contactperson
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl
@@ -1001,6 +1003,149 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         .jsonPath("numberOfElements").isEqualTo(60)
         .jsonPath("content[0].personId").isEqualTo(lowestPersonId)
         .jsonPath("content[59].personId").isEqualTo(highestPersonId)
+    }
+  }
+
+  @DisplayName("POST /persons")
+  @Nested
+  inner class CreatePerson {
+    private val validPerson = CreatePersonRequest(
+      firstName = "Jane",
+      lastName = "Smith",
+    )
+
+    private lateinit var existingPerson: Person
+
+    @BeforeEach
+    fun setUp() {
+      personRepository.deleteAll()
+
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPerson)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPerson)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons")
+          .bodyValue(validPerson)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 409 when person id supplied already exists`() {
+        webTestClient.post().uri("/persons")
+          .bodyValue(validPerson.copy(personId = existingPerson.id))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a person with core data and assign an id`() {
+        val newPersonCreateResponse: CreatePersonResponse = webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(validPerson.copy(personId = null))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePersonResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val newPerson = personRepository.findByIdOrNull(newPersonCreateResponse.personId)!!
+
+        assertThat(newPerson.firstName).isEqualTo("JANE")
+        assertThat(newPerson.lastName).isEqualTo("SMITH")
+        assertThat(newPerson.isRemitter).isNull()
+      }
+
+      @Test
+      fun `will create a person with core data and set own id`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(validPerson.copy(personId = 98765443))
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        val newPerson = personRepository.findByIdOrNull(98765443)!!
+
+        assertThat(newPerson.firstName).isEqualTo("JANE")
+        assertThat(newPerson.lastName).isEqualTo("SMITH")
+      }
+
+      @Test
+      fun `will create a person with all supplied data`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(
+            validPerson.copy(
+              personId = 98765443,
+              middleName = "Tina",
+              dateOfBirth = LocalDate.parse("1965-07-19"),
+              genderCode = "F",
+              titleCode = "DR",
+              languageCode = "ENG",
+              interpreterRequired = true,
+              domesticStatusCode = "S",
+              isStaff = true,
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        val newPerson = personRepository.findByIdOrNull(98765443)!!
+
+        with(newPerson) {
+          assertThat(id).isEqualTo(98765443)
+          assertThat(firstName).isEqualTo("JANE")
+          assertThat(lastName).isEqualTo("SMITH")
+          assertThat(middleName).isEqualTo("TINA")
+          assertThat(birthDate).isEqualTo(LocalDate.parse("1965-07-19"))
+          assertThat(sex?.code).isEqualTo("F")
+          assertThat(title?.code).isEqualTo("DR")
+          assertThat(domesticStatus?.code).isEqualTo("S")
+          assertThat(interpreterRequired).isTrue
+          assertThat(isStaff).isTrue
+        }
+      }
     }
   }
 }

@@ -50,13 +50,6 @@ class SplashScreenResource(private val service: SplashScreenService) {
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
       ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Not found if the screen (module) name does not exist",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
     ],
   )
   fun getScreenConditions(
@@ -68,7 +61,7 @@ class SplashScreenResource(private val service: SplashScreenService) {
   @GetMapping("/splash-screens/{moduleName}/blocked")
   @Operation(
     summary = "Retrieve a list of blocked prison ids for the screen",
-    description = "Retrieves a list of blocked prison ids for the screen (module) name or **ALL* if all prisons, or an empty list if there are none blocked. Requires role NOMIS_SCREEN_ACCESS",
+    description = "Retrieves a list of blocked prison ids for the screen (module) name or **ALL** if all prisons, or an empty list if there are none blocked. Requires role NOMIS_SCREEN_ACCESS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -115,7 +108,7 @@ data class PrisonDto(
   val prisonId: String,
 )
 
-@Schema(description = "A Splash condition details")
+@Schema(description = "Splash Screen Access Condition details")
 data class SplashConditionDto(
   @Schema(description = "The prisonId or **ALL**", example = "MDI but can be **ALL** for all")
   val prisonId: String,
@@ -125,9 +118,9 @@ data class SplashConditionDto(
   val type: CodeDescription,
 )
 
-@Schema(description = "A Splash screen details")
+@Schema(description = "Splash screen details")
 data class SplashScreenDto(
-  @Schema(description = "The name of the module", example = "OIDINCRS")
+  @Schema(description = "The name of the module/screen", example = "OIDINCRS")
   val moduleName: String,
 
   @Schema(description = "The type of access - YES, NO, COND")
@@ -139,6 +132,6 @@ data class SplashScreenDto(
   @Schema(description = "The text shown when a screen is blocked", example = "This screen is no longer accessible, use DPS.")
   val blockedText: String?,
 
-  @Schema(description = "The prison code", example = "BXI")
+  @Schema(description = "Prison access conditions")
   val conditions: List<SplashConditionDto>,
 )
