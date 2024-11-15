@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 @Entity
 @DiscriminatorValue("OFF_BKG")
 class OffenderBookingImage(
-  id: Long,
+  id: Long = 0,
   captureDateTime: LocalDateTime,
   fullSizeImage: ByteArray,
   thumbnailImage: ByteArray,
