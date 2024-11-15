@@ -62,6 +62,11 @@ class OffenderIdentifyingMarkBuilder(
 ) : OffenderIdentifyingMarkDsl {
   private lateinit var identifyingMark: OffenderIdentifyingMark
 
+  private fun findBodyPart(code: String) = bodyPartRepository.findByIdOrNull(BodyPart.pk(code))!!
+  private fun findMarkType(code: String) = markTypeRepository.findByIdOrNull(MarkType.pk(code))!!
+  private fun findSide(code: String) = sideRepository.findByIdOrNull(Side.pk(code))!!
+  private fun findPartOrientation(code: String) = partOrientationRepository.findByIdOrNull(PartOrientation.pk(code))!!
+
   fun build(
     offenderBooking: OffenderBooking,
     sequence: Long,
@@ -73,10 +78,10 @@ class OffenderIdentifyingMarkBuilder(
   ): OffenderIdentifyingMark =
     OffenderIdentifyingMark(
       id = OffenderIdentifyingMarkId(offenderBooking, sequence),
-      bodyPart = bodyPartRepository.findByIdOrNull(BodyPart.pk(bodyPartCode))!!,
-      markType = markTypeRepository.findByIdOrNull(MarkType.pk(markTypeCode))!!,
-      side = sideCode?.let { sideRepository.findByIdOrNull(Side.pk(sideCode))!! },
-      partOrientation = partOrientationCode?.let { partOrientationRepository.findByIdOrNull(PartOrientation.pk(partOrientationCode)) }!!,
+      bodyPart = findBodyPart(bodyPartCode),
+      markType = findMarkType(markTypeCode),
+      side = sideCode?.let { findSide(sideCode) },
+      partOrientation = partOrientationCode?.let { findPartOrientation(partOrientationCode) },
       commentText = commentText,
     )
       .let { repository.save(it) }

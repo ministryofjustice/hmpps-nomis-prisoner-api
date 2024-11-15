@@ -35,6 +35,10 @@ class OffenderIdentifyingMarkImageBuilder(
   private val markTypeRepository: ReferenceCodeRepository<MarkType>,
 ) : OffenderIdentifyingMarkImageDsl {
 
+  private fun findImageSource(code: String) = imageSourceRepository.findByIdOrNull(ImageSource.pk(code))!!
+  private fun findBodyPart(code: String) = bodyPartRepository.findByIdOrNull(BodyPart.pk(code))!!
+  private fun findMarkType(code: String) = markTypeRepository.findByIdOrNull(MarkType.pk(code))!!
+
   fun build(
     identifyingMark: OffenderIdentifyingMark,
     captureDateTime: LocalDateTime,
@@ -51,9 +55,9 @@ class OffenderIdentifyingMarkImageBuilder(
       fullSizeImage = fullSizeImage,
       thumbnailImage = thumbnailImage,
       active = active,
-      imageSource = imageSourceRepository.findByIdOrNull(ImageSource.pk(imageSourceCode))!!,
-      orientationType = bodyPartRepository.findByIdOrNull(BodyPart.pk(orientationTypeCode))!!,
-      imageViewType = markTypeRepository.findByIdOrNull(MarkType.pk(imageViewType))!!,
+      imageSource = findImageSource(imageSourceCode),
+      orientationType = findBodyPart(orientationTypeCode),
+      imageViewType = findMarkType(imageViewType),
     )
       .let { repository.save(it) }
 }

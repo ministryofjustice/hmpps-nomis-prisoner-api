@@ -10,15 +10,8 @@ import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.BodyPart
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ImageSource
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MarkType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PartOrientation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Side
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingImageRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -27,25 +20,7 @@ class OffenderIdentifyingMarksIntTest : IntegrationTestBase() {
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Autowired
-  private lateinit var imageSourceRepository: ReferenceCodeRepository<ImageSource>
-
-  @Autowired
-  private lateinit var bodyPartRepository: ReferenceCodeRepository<BodyPart>
-
-  @Autowired
-  private lateinit var markTypeRepository: ReferenceCodeRepository<MarkType>
-
-  @Autowired
-  private lateinit var sideRepository: ReferenceCodeRepository<Side>
-
-  @Autowired
-  private lateinit var partOrientationRepository: ReferenceCodeRepository<PartOrientation>
-
-  @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  @Autowired
-  private lateinit var offenderBookingImageRepository: OffenderBookingImageRepository
 
   @Autowired
   private lateinit var repository: Repository

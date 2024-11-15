@@ -28,6 +28,8 @@ class OffenderBookingImageBuilder(
   private val imageSourceRepository: ReferenceCodeRepository<ImageSource>,
 ) : OffenderBookingImageDsl {
 
+  private fun findImageSource(code: String) = imageSourceRepository.findByIdOrNull(ImageSource.pk(code))!!
+
   fun build(
     offenderBooking: OffenderBooking,
     captureDateTime: LocalDateTime,
@@ -42,7 +44,7 @@ class OffenderBookingImageBuilder(
       fullSizeImage = fullSizeImage,
       thumbnailImage = thumbnailImage,
       active = active,
-      imageSource = imageSourceRepository.findByIdOrNull(ImageSource.pk(imageSourceCode))!!,
+      imageSource = findImageSource(imageSourceCode),
     )
       .let { repository.save(it) }
 }
