@@ -69,7 +69,7 @@ class OffenderIdentifyingMark(
       ), JoinColumnOrFormula(column = JoinColumn(name = "SIDE_CODE", referencedColumnName = "code")),
     ],
   )
-  val side: Side,
+  val side: Side? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -82,7 +82,7 @@ class OffenderIdentifyingMark(
       ), JoinColumnOrFormula(column = JoinColumn(name = "PART_ORIENTATION_CODE", referencedColumnName = "code")),
     ],
   )
-  val partOrientation: PartOrientation,
+  val partOrientation: PartOrientation? = null,
 
   @Column(name = "COMMENT_TEXT")
   val commentText: String? = null,

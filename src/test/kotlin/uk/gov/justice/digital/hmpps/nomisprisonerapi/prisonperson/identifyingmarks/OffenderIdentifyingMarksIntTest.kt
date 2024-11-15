@@ -14,10 +14,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.BodyPart
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ImageSource
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MarkType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBookingImage
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMarkId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMarkImage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PartOrientation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Side
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingImageRepository
@@ -68,35 +64,27 @@ class OffenderIdentifyingMarksIntTest : IntegrationTestBase() {
       lateinit var booking: OffenderBooking
       nomisDataBuilder.build {
         offender {
-          booking = booking()
+          booking = booking {
+            identifyingMark(
+              bodyPartCode = "HEAD",
+              markTypeCode = "TAT",
+              sideCode = "L",
+              partOrientationCode = "FACE",
+              commentText = "Head tattoo left facing",
+            ) {
+              image(
+                captureDateTime = LocalDateTime.now(),
+                fullSizeImage = byteArrayOf(1, 2, 3),
+                thumbnailImage = byteArrayOf(4, 5, 6),
+                active = true,
+                imageSourceCode = "FILE",
+                orientationTypeCode = "HEAD",
+                imageViewTypeCode = "TAT",
+              )
+            }
+          }
         }
       }
-
-      val identifyingMark = OffenderIdentifyingMark(
-        id = OffenderIdentifyingMarkId(booking, 1),
-        bodyPart = bodyPartRepository.findByIdOrNull(BodyPart.pk("HEAD"))!!,
-        markType = markTypeRepository.findByIdOrNull(MarkType.pk("TAT"))!!,
-        side = sideRepository.findByIdOrNull(Side.pk("L"))!!,
-        partOrientation = partOrientationRepository.findByIdOrNull(PartOrientation.pk("FACE"))!!,
-        commentText = "Head tattoo left facing",
-      )
-
-      identifyingMark.images.add(
-        OffenderIdentifyingMarkImage(
-          id = 0,
-          captureDateTime = LocalDateTime.now(),
-          fullSizeImage = byteArrayOf(1, 2, 3),
-          thumbnailImage = byteArrayOf(4, 5, 6),
-          active = true,
-          imageSource = imageSourceRepository.findByIdOrNull(ImageSource.pk("FILE"))!!,
-          orientationType = bodyPartRepository.findByIdOrNull(BodyPart.pk("HEAD"))!!,
-          imageViewType = markTypeRepository.findByIdOrNull(MarkType.pk("TAT"))!!,
-          identifyingMark = identifyingMark,
-        ),
-      )
-
-      booking.identifyingMarks.add(identifyingMark)
-      offenderBookingRepository.save(booking)
 
       repository.runInTransaction {
         val saved = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
@@ -105,8 +93,8 @@ class OffenderIdentifyingMarksIntTest : IntegrationTestBase() {
           assertThat(id.idMarkSequence).isEqualTo(1)
           assertThat(bodyPart.code).isEqualTo("HEAD")
           assertThat(markType.code).isEqualTo("TAT")
-          assertThat(side.code).isEqualTo("L")
-          assertThat(partOrientation.code).isEqualTo("FACE")
+          assertThat(side?.code).isEqualTo("L")
+          assertThat(partOrientation?.code).isEqualTo("FACE")
           assertThat(commentText).isEqualTo("Head tattoo left facing")
           assertThat(images).hasSize(1)
         }
@@ -129,25 +117,21 @@ class OffenderIdentifyingMarksIntTest : IntegrationTestBase() {
       lateinit var booking: OffenderBooking
       nomisDataBuilder.build {
         offender {
-          booking = booking()
+          booking = booking {
+            image(
+              captureDateTime = LocalDateTime.now(),
+              fullSizeImage = byteArrayOf(7, 8, 9),
+              thumbnailImage = byteArrayOf(10, 11, 12),
+              active = false,
+              imageSourceCode = "WEB",
+            )
+          }
         }
       }
-      val imageSourceFile = imageSourceRepository.findByIdOrNull(ImageSource.pk("WEB"))!!
-      val image = OffenderBookingImage(
-        id = 0,
-        offenderBooking = booking,
-        captureDateTime = LocalDateTime.now(),
-        fullSizeImage = byteArrayOf(7, 8, 9),
-        thumbnailImage = byteArrayOf(10, 11, 12),
-        active = false,
-        imageSource = imageSourceFile,
-      )
-      val imageId = offenderBookingImageRepository.save(image)
 
       repository.runInTransaction {
-        val saved = offenderBookingImageRepository.findByIdOrNull(imageId.id)!!
-        with(saved) {
-          assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+        val saved = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+        with(saved.images.first()) {
           assertThat(captureDateTime.toLocalDate()).isEqualTo(LocalDate.now())
           assertThat(fullSizeImage).containsExactly(7, 8, 9)
           assertThat(thumbnailImage).containsExactly(10, 11, 12)
