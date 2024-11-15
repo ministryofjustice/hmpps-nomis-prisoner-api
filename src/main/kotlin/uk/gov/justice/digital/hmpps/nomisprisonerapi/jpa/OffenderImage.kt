@@ -5,7 +5,6 @@ import jakarta.persistence.Convert
 import jakarta.persistence.DiscriminatorColumn
 import jakarta.persistence.DiscriminatorType
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.Inheritance
@@ -32,10 +31,6 @@ abstract class OffenderImage(
   @Column(name = "OFFENDER_IMAGE_ID")
   val id: Long = 0,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_BOOK_ID")
-  val offenderBooking: OffenderBooking,
-
   @Column(name = "CAPTURE_DATETIME")
   val captureDateTime: LocalDateTime,
 
@@ -46,9 +41,6 @@ abstract class OffenderImage(
   @Column(name = "THUMBNAIL_IMAGE")
   @Lob
   val thumbnailImage: ByteArray,
-
-  @Column(name = "IMAGE_OBJECT_ID")
-  val imageObjectId: Long? = null,
 
   @Column(name = "IMAGE_OBJECT_SEQ")
   val imageObjectSequence: Long? = null,

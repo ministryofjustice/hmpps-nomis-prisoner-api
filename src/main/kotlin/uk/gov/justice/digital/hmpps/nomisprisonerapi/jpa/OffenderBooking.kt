@@ -149,6 +149,12 @@ data class OffenderBooking(
 
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val profileDetails: MutableList<OffenderProfileDetail> = mutableListOf(),
+
+  @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val images: MutableList<OffenderBookingImage> = mutableListOf(),
+
+  @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val identifyingMarks: MutableList<OffenderIdentifyingMark> = mutableListOf(),
 ) {
   fun getNextSequence(): Long = incentives.map { it.id.sequence }.maxOrNull()?.let { it + 1 } ?: 1
 

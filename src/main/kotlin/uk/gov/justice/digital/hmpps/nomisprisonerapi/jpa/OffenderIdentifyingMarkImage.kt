@@ -2,7 +2,9 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
@@ -11,16 +13,21 @@ import java.time.LocalDateTime
 
 @Entity
 @DiscriminatorValue("OFF_IDM")
-class OffenderImageIdentifyingMark(
+class OffenderIdentifyingMarkImage(
   id: Long,
-  offenderBooking: OffenderBooking,
   captureDateTime: LocalDateTime,
   fullSizeImage: ByteArray,
   thumbnailImage: ByteArray,
-  imageObjectId: Long? = null,
   imageObjectSequence: Long? = null,
   active: Boolean,
   imageSource: ImageSource,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumns(
+    JoinColumn(name = "OFFENDER_BOOK_ID", referencedColumnName = "OFFENDER_BOOK_ID", nullable = false),
+    JoinColumn(name = "IMAGE_OBJECT_ID", referencedColumnName = "ID_MARK_SEQ", nullable = false),
+  )
+  val identifyingMark: OffenderIdentifyingMark,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -49,11 +56,9 @@ class OffenderImageIdentifyingMark(
   val imageViewType: MarkType,
 ) : OffenderImage(
   id,
-  offenderBooking,
   captureDateTime,
   fullSizeImage,
   thumbnailImage,
-  imageObjectId,
   imageObjectSequence,
   active,
   imageSource,
