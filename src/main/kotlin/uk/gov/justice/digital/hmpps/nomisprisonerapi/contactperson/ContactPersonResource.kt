@@ -151,7 +151,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person",
-    description = "Retrieves a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person, typically a person who will become a contact of a prisoners. Requires ROLE_NOMIS_CONTACTPERSONS",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -160,6 +160,70 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
           Content(
             mediaType = "application/json",
             schema = Schema(implementation = CreatePersonResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Person already exists with the same ID",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPerson(
+    @RequestBody @Valid
+    request: CreatePersonRequest,
+  ): CreatePersonResponse = contactPersonService.createPerson(request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/persons/{personId}/contact")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a person contact",
+    description = "Creates a person contact; the relationship between a prisoner and a person. Typically a prospective visitor. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Person Contact ID Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreatePersonContactResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad for example prisoner does not exist or contact / relationship types do not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
           ),
         ],
       ),
@@ -193,12 +257,25 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
           ),
         ],
       ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Contact with the specified relationship and type already exists for this prisoner's latest booking",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
-  fun createPerson(
+  fun createPersonContact(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
     @RequestBody @Valid
-    request: CreatePersonRequest,
-  ): CreatePersonResponse = contactPersonService.createPerson(request)
+    request: CreatePersonContactRequest,
+  ): CreatePersonContactResponse = contactPersonService.createPersonContact(personId, request)
 }
 
 @Schema(description = "The data held in NOMIS about a person who is a contact for a prisoner")
@@ -460,4 +537,32 @@ data class CreatePersonRequest(
 data class CreatePersonResponse(
   @Schema(description = "The person Id")
   val personId: Long,
+)
+
+@Schema(description = "Request to create a contact (aka DPS prisoner contact) in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreatePersonContactRequest(
+  @Schema(description = "Offender no aka prisoner number. Contact will be added to latest booking", example = "A1234AA")
+  val offenderNo: String,
+  @Schema(description = "The contact type", example = "S")
+  val contactTypeCode: String,
+  @Schema(description = "The relationship type", example = "BRO")
+  val relationshipTypeCode: String,
+  @Schema(description = "True if active")
+  val active: Boolean,
+  @Schema(description = "Date contact is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "True if approved to visit the prisoner")
+  val approvedVisitor: Boolean,
+  @Schema(description = "True if next of kin to the prisoner")
+  val nextOfKin: Boolean,
+  @Schema(description = "True if emergency contact for the prisoner")
+  val emergencyContact: Boolean,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
+)
+
+data class CreatePersonContactResponse(
+  @Schema(description = "The contact Id")
+  val personContactId: Long,
 )
