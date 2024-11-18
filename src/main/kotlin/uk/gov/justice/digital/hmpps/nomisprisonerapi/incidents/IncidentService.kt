@@ -6,8 +6,10 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.SplashScreenService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ALL_PRISONS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
@@ -27,9 +29,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 class IncidentService(
   private val incidentRepository: IncidentRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
+  private val splashScreenService: SplashScreenService,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
+    const val INCIDENT_REPORTING_SCREEN_ID = "OIDINCRS"
   }
 
   fun getIncident(incidentId: Long): IncidentResponse? {
@@ -64,8 +68,16 @@ class IncidentService(
       ?.let { incidentRepository.findAllIncidentsByBookingId(bookingId).map { it.toIncidentResponse() } }
       ?: throw NotFoundException("Prisoner with booking $bookingId not found")
 
-  fun findAllIncidentAgencies() =
-    incidentRepository.findAllIncidentAgencies().map { IncidentAgencyId(it) }
+  fun findAllIncidentAgencies(): List<IncidentAgencyId> {
+    val blockedPrisonIds = splashScreenService.getBlockedPrisons(INCIDENT_REPORTING_SCREEN_ID).map { it.prisonId }
+    return if (blockedPrisonIds.contains(ALL_PRISONS)) {
+      listOf()
+    } else {
+      incidentRepository.findAllIncidentAgencies()
+        .filter { it !in blockedPrisonIds }
+        .map { IncidentAgencyId(it) }
+    }
+  }
 
   fun getIncidentCountsForReconciliation(agencyId: String): IncidentsReconciliationResponse =
     IncidentsReconciliationResponse(

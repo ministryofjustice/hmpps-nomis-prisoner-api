@@ -987,10 +987,10 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(310)
+        .jsonPath("totalElements").isEqualTo(311)
         .jsonPath("numberOfElements").isEqualTo(5)
         .jsonPath("number").isEqualTo(0)
-        .jsonPath("totalPages").isEqualTo(311 / 5)
+        .jsonPath("totalPages").isEqualTo(63)
         .jsonPath("size").isEqualTo(5)
         .jsonPath("$.content[*].locationId").value<List<Int>> {
           assertThat(it).contains(-3010, -3009, -3008)
@@ -1009,10 +1009,10 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(310)
+        .jsonPath("totalElements").isEqualTo(311)
         .jsonPath("numberOfElements").isEqualTo(5)
         .jsonPath("number").isEqualTo(1)
-        .jsonPath("totalPages").isEqualTo(311 / 5)
+        .jsonPath("totalPages").isEqualTo(63)
         .jsonPath("size").isEqualTo(5)
         .jsonPath("$.content[*].locationId").value<List<Int>> {
           assertThat(it).contains(-3005, -3004, -3003)

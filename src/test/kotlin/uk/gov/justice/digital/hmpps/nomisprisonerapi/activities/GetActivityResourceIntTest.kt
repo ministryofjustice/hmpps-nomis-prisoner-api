@@ -599,6 +599,184 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /activities/without-schedule-rules")
+  inner class GetActivitiesWithoutScheduleRules {
+    private lateinit var courseActivity: CourseActivity
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.get().uri("/activities/without-schedule-rules?prisonId=ANY")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.get().uri("/activities/without-schedule-rules?prisonId=ANY")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.get().uri("/activities/without-schedule-rules?prisonId=ANY")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return active activities without schedule rules`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {}
+        }
+        offender {
+          booking {
+            courseAllocation(courseActivity = courseActivity)
+          }
+        }
+      }
+
+      webTestClient.getActivitiesWithoutScheduleRules()
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(1)
+        .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
+    }
+
+    @Test
+    fun `should return multiple active activities without schedule rules`() {
+      lateinit var courseActivity2: CourseActivity
+      lateinit var courseActivity3: CourseActivity
+
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {}
+          courseActivity2 = courseActivity {}
+          courseActivity3 = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+          }
+        }
+        listOf(courseActivity, courseActivity2, courseActivity3).forEach {
+          offender {
+            booking {
+              courseAllocation(courseActivity = it)
+            }
+          }
+        }
+      }
+
+      webTestClient.getActivitiesWithoutScheduleRules()
+        .expectBody()
+        .jsonPath("$[*].courseActivityId").value<List<Int>> {
+          assertThat(it).containsExactlyInAnyOrder(courseActivity.courseActivityId.toInt(), courseActivity2.courseActivityId.toInt())
+        }
+        .jsonPath("$[*].courseActivityDescription").value<List<String>> {
+          assertThat(it).containsExactlyInAnyOrder(courseActivity.description!!, courseActivity2.description!!)
+        }
+    }
+
+    @Test
+    fun `should return single active activities without schedule rules`() {
+      lateinit var courseActivity2: CourseActivity
+
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {}
+          courseActivity2 = courseActivity {}
+        }
+        listOf(courseActivity, courseActivity2).forEach {
+          offender {
+            booking {
+              courseAllocation(courseActivity = it)
+            }
+          }
+        }
+      }
+
+      webTestClient.getActivitiesWithoutScheduleRules(courseActivityId = courseActivity.courseActivityId)
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(1)
+        .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
+    }
+
+    @Test
+    fun `should ignore inactive activities without schedule rules`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(endDate = "$yesterday")
+        }
+        offender {
+          booking {
+            courseAllocation(courseActivity = courseActivity)
+          }
+        }
+      }
+
+      webTestClient.getActivitiesWithoutScheduleRules()
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should ignore active activities with schedule rules`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+          }
+        }
+        offender {
+          booking {
+            courseAllocation(courseActivity = courseActivity)
+          }
+        }
+      }
+
+      webTestClient.getActivitiesWithoutScheduleRules()
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should ignore activities without allocations`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity {
+            courseSchedule()
+            courseScheduleRule()
+          }
+        }
+      }
+
+      webTestClient.getActivitiesWithoutScheduleRules()
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(0)
+    }
+
+    private fun WebTestClient.getActivitiesWithoutScheduleRules(
+      prison: String = "BXI",
+      excludeProgramCodes: List<String> = listOf(),
+      courseActivityId: Long? = null,
+    ): WebTestClient.ResponseSpec =
+      get().uri {
+        it.path("/activities/without-schedule-rules")
+          .queryParam("prisonId", prison)
+          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
+          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+  }
+
+  @Nested
   @DisplayName("GET /activities/{courseActivityId}")
   inner class GetActivity {
 

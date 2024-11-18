@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.EndActivitiesRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveAllocationIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActivitiesWithoutScheduleRulesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindAllocationsMissingPayBandsResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindPayRateWithUnknownIncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindSuspendedAllocationsResponse
@@ -421,6 +422,46 @@ class ActivitiesResource(
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindPayRateWithUnknownIncentiveResponse> =
     activityService.findPayRatesWithUnknownIncentive(prisonId, excludeProgramCodes, courseActivityId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @GetMapping("/activities/without-schedule-rules")
+  @Operation(
+    summary = "Find activities without schedule rules",
+    description = "Searches for course activities that are active with active allocations but no schedule rules. Requires role NOMIS_ACTIVITIES",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun findActivitiesWithoutScheduleRules(
+    @Schema(description = "Prison id") @RequestParam prisonId: String,
+    @Schema(description = "Exclude program codes", name = "excludeProgramCode") @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
+    @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
+  ): List<FindActivitiesWithoutScheduleRulesResponse> =
+    activityService.findActivitiesWithoutScheduleRules(prisonId, excludeProgramCodes, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/{courseActivityId}")

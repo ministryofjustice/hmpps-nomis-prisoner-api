@@ -19,9 +19,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBookingImage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
@@ -296,6 +298,27 @@ interface BookingDsl {
     whoCreated: String? = null,
     dsl: OffenderContactPersonDsl.() -> Unit = {},
   ): OffenderContactPerson
+
+  @OffenderBookingImageDslMarker
+  fun image(
+    captureDateTime: LocalDateTime = LocalDateTime.now(),
+    fullSizeImage: ByteArray = byteArrayOf(1, 2, 3),
+    thumbnailImage: ByteArray = byteArrayOf(4, 5, 6),
+    active: Boolean = true,
+    imageSourceCode: String = "FILE",
+    dsl: OffenderBookingImageDsl.() -> Unit = {},
+  ): OffenderBookingImage
+
+  @OffenderIdentifyingMarkDslMarker
+  fun identifyingMark(
+    sequence: Long = 1,
+    bodyPartCode: String = "HEAD",
+    markTypeCode: String = "TAT",
+    sideCode: String? = "L",
+    partOrientationCode: String? = "FRONT",
+    commentText: String? = "head tattoo left front",
+    dsl: OffenderIdentifyingMarkDsl.() -> Unit = {},
+  ): OffenderIdentifyingMark
 }
 
 @Component
@@ -330,6 +353,8 @@ class BookingBuilderFactory(
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
+  private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
+  private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -350,6 +375,8 @@ class BookingBuilderFactory(
     offenderContactPersonBuilderFactory,
     visitBuilderFactory,
     profileDetailBuilderFactory,
+    offenderBookingImageBuilderFactory,
+    offenderIdentifyingMarkBuilderFactory,
   )
 }
 
@@ -372,6 +399,8 @@ class BookingBuilder(
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
+  private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
+  private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -947,6 +976,50 @@ class BookingBuilder(
         body = body,
       )
         .also { offenderBooking.documents += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun image(
+    captureDateTime: LocalDateTime,
+    fullSizeImage: ByteArray,
+    thumbnailImage: ByteArray,
+    active: Boolean,
+    imageSourceCode: String,
+    dsl: OffenderBookingImageDsl.() -> Unit,
+  ): OffenderBookingImage =
+    offenderBookingImageBuilderFactory.builder().let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        captureDateTime = captureDateTime,
+        fullSizeImage = fullSizeImage,
+        thumbnailImage = thumbnailImage,
+        active = active,
+        imageSourceCode = imageSourceCode,
+      )
+        .also { offenderBooking.images += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun identifyingMark(
+    sequence: Long,
+    bodyPartCode: String,
+    markTypeCode: String,
+    sideCode: String?,
+    partOrientationCode: String?,
+    commentText: String?,
+    dsl: OffenderIdentifyingMarkDsl.() -> Unit,
+  ): OffenderIdentifyingMark =
+    offenderIdentifyingMarkBuilderFactory.builder().let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        sequence = sequence,
+        bodyPartCode = bodyPartCode,
+        markTypeCode = markTypeCode,
+        sideCode = sideCode,
+        partOrientationCode = partOrientationCode,
+        commentText = commentText,
+      )
+        .also { offenderBooking.identifyingMarks += it }
         .also { builder.apply(dsl) }
     }
 }

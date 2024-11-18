@@ -10,7 +10,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -25,8 +24,8 @@ import java.time.LocalDate
 data class Person(
   @Id
   @Column(name = "PERSON_ID")
-  @SequenceGenerator(name = "PERSON_ID", sequenceName = "PERSON_ID", allocationSize = 1)
   @GeneratedValue(generator = "PERSON_ID")
+  @SequenceOrUseId(name = "PERSON_ID")
   var id: Long = 0,
 
   @Column(name = "FIRST_NAME", nullable = false)
@@ -130,7 +129,7 @@ data class Person(
 
   @Column(name = "REMITTER_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val isRemitter: Boolean? = false,
+  val isRemitter: Boolean? = null,
 
   /* columns not mapped
   OCCUPATION_CODE - always null

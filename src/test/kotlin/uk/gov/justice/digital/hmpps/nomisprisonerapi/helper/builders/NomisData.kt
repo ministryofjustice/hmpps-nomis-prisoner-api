@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -27,6 +28,7 @@ class NomisDataBuilder(
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
+  private val splashScreenBuilderFactory: SplashScreenBuilderFactory? = null,
   private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
@@ -42,6 +44,7 @@ class NomisDataBuilder(
     adjudicationIncidentBuilderFactory,
     nonAssociationBuilderFactory,
     externalServiceBuilderFactory,
+    splashScreenBuilderFactory,
     agencyInternalLocationBuilderFactory,
     questionnaireBuilderFactory,
     incidentBuilderFactory,
@@ -59,6 +62,7 @@ class NomisData(
   private val adjudicationIncidentBuilderFactory: AdjudicationIncidentBuilderFactory? = null,
   private val nonAssociationBuilderFactory: NonAssociationBuilderFactory? = null,
   private val externalServiceBuilderFactory: ExternalServiceBuilderFactory? = null,
+  private val splashScreenBuilderFactory: SplashScreenBuilderFactory? = null,
   private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
@@ -219,6 +223,26 @@ class NomisData(
         builder.build(
           serviceName,
           description,
+        )
+          .also {
+            builder.apply(dsl)
+          }
+      }
+
+  override fun splashScreen(
+    moduleName: String,
+    warningText: String?,
+    accessBlockedCode: String,
+    blockedText: String?,
+    dsl: SplashScreenDsl.() -> Unit,
+  ): SplashScreen =
+    splashScreenBuilderFactory!!.builder()
+      .let { builder ->
+        builder.build(
+          moduleName,
+          warningText,
+          accessBlockedCode,
+          blockedText,
         )
           .also {
             builder.apply(dsl)
@@ -463,6 +487,15 @@ interface NomisDataDsl {
     description: String = serviceName,
     dsl: ExternalServiceDsl.() -> Unit = {},
   ): ExternalService
+
+  @SplashScreenDslMarker
+  fun splashScreen(
+    moduleName: String,
+    warningText: String? = null,
+    accessBlockedCode: String,
+    blockedText: String? = null,
+    dsl: SplashScreenDsl.() -> Unit = {},
+  ): SplashScreen
 
   @AgencyInternalLocationDslMarker
   fun agencyInternalLocation(

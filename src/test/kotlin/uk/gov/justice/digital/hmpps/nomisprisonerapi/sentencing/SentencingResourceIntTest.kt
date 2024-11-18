@@ -1402,11 +1402,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         assertThat(courtCaseResponse.id).isGreaterThan(0)
-        assertThat(courtCaseResponse.courtAppearanceIds.size).isEqualTo(2)
+        assertThat(courtCaseResponse.courtAppearanceIds.size).isEqualTo(1)
         assertThat(courtCaseResponse.courtAppearanceIds[0].id).isGreaterThan(0)
-        assertThat(courtCaseResponse.courtAppearanceIds[1].id).isGreaterThan(0)
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds.size).isEqualTo(2)
-        assertThat(courtCaseResponse.courtAppearanceIds[1].courtEventChargesIds.size).isEqualTo(2)
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds[0].offenderChargeId).isGreaterThan(0)
         assertThat(courtCaseResponse.courtAppearanceIds[0].courtEventChargesIds[1].offenderChargeId).isGreaterThan(0)
 
@@ -1459,32 +1457,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
           .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1067")
           .jsonPath("offenderCharges[0].offencesCount").doesNotExist()
-          // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
-          .jsonPath("courtEvents[1].courtOrders[0].id").doesNotExist()
-          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-02-20T09:00:00")
-          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
-          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[1].directionCode.code").isEqualTo("OUT")
-          .jsonPath("courtEvents[1].judgeName").doesNotExist()
-          .jsonPath("courtEvents[1].courtId").isEqualTo("COURT1")
-          .jsonPath("courtEvents[1].outcomeReasonCode").doesNotExist()
-          .jsonPath("courtEvents[1].commentText").doesNotExist()
-          .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
-          .jsonPath("courtEvents[1].nextEventDateTime").doesNotExist()
-          .jsonPath("courtEvents[1].nextEventStartTime").doesNotExist()
-          .jsonPath("courtEvents[1].createdDateTime").isNotEmpty
-          .jsonPath("courtEvents[1].createdByUsername").isNotEmpty
-          // court charges are copied from originating court appearance
-          .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
-          .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-          .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
-          .jsonPath("courtEvents[1].courtEventCharges[0].offencesCount").doesNotExist()
-          .jsonPath("courtEvents[1].courtEventCharges[1].offenceDate").isEqualTo("2023-01-02")
-          .jsonPath("courtEvents[1].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-03")
-          .jsonPath("courtEvents[1].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("HP03001")
-          .jsonPath("courtEvents[1].courtEventCharges[1].offencesCount").doesNotExist()
       }
 
       @Test
@@ -1553,10 +1525,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-01T09:00:00")
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Completed")
-          // when next court appearance details are provided, nomis creates a 2nd court appearance without an outcome
-          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-02-20T09:00:00")
-          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
-          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
       }
 
       @Test
@@ -1586,10 +1554,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-02T09:00:00")
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          // next appearance
-          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-02-20T09:00:00")
-          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
-          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
       }
 
       @Test
@@ -1619,10 +1583,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo("2023-01-01T09:00:00")
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Completed")
-          // next appearance is after the last movement date, status is scheduled
-          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2023-02-20T09:00:00")
-          .jsonPath("courtEvents[1].courtEventType.description").isEqualTo("Court Appearance")
-          .jsonPath("courtEvents[1].eventStatus.description").isEqualTo("Scheduled (Approved)")
       }
 
       @Test
@@ -1907,42 +1867,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[1].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RR84700")
           .jsonPath("courtEvents[1].courtEventCharges[1].offencesCount").doesNotExist()
-          // confirm a second appearance has been created from the next event details
-          .jsonPath("courtEvents[2].eventDateTime").isEqualTo("2023-02-20T09:00:00")
-          .jsonPath("courtEvents[2].courtEventType.description").isEqualTo("Court Appearance")
-          .jsonPath("courtEvents[2].eventStatus.description").isEqualTo("Scheduled (Approved)")
-          .jsonPath("courtEvents[2].directionCode.code").isEqualTo("OUT")
-          .jsonPath("courtEvents[2].judgeName").doesNotExist()
-          .jsonPath("courtEvents[2].courtId").isEqualTo("COURT1")
-          .jsonPath("courtEvents[2].outcomeReasonCode").doesNotExist()
-          .jsonPath("courtEvents[2].commentText").doesNotExist()
-          .jsonPath("courtEvents[2].orderRequestedFlag").isEqualTo(false)
-          .jsonPath("courtEvents[2].holdFlag").isEqualTo(false)
-          .jsonPath("courtEvents[2].nextEventRequestFlag").isEqualTo(false)
-          .jsonPath("courtEvents[2].nextEventDateTime").doesNotExist()
-          .jsonPath("courtEvents[2].courtOrders[0].id").doesNotExist()
-          .jsonPath("courtEvents[2].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
-          .jsonPath("courtEvents[2].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
-          .jsonPath("courtEvents[2].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
-          .jsonPath("courtEvents[2].courtEventCharges[0].offencesCount").doesNotExist()
-          .jsonPath("courtEvents[2].courtEventCharges[0].resultCode1.code").isEqualTo("1005")
-          .jsonPath("courtEvents[2].courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("courtEvents[2].courtEventCharges[1].offenceDate").isEqualTo("2023-01-01")
-          .jsonPath("courtEvents[2].courtEventCharges[1].offenceEndDate").isEqualTo("2023-01-05")
-          .jsonPath("courtEvents[2].courtEventCharges[1].offenderCharge.offence.offenceCode").isEqualTo("RR84700")
-          .jsonPath("courtEvents[2].courtEventCharges[1].offencesCount").doesNotExist()
-          .jsonPath("courtEvents[2].courtEventCharges[1].resultCode1.code").isEqualTo("1067")
-          .jsonPath("courtEvents[2].courtEventCharges[1].resultCode1Indicator").isEqualTo("F")
-          // the new offender charges
-          .jsonPath("courtEvents[2].courtEventCharges[2].offenceDate").isEqualTo("2023-01-03")
-          .jsonPath("courtEvents[2].courtEventCharges[2].offenceEndDate").isEqualTo("2023-01-05")
-          .jsonPath("courtEvents[2].courtEventCharges[2].offenderCharge.offence.offenceCode").isEqualTo("RT88077B")
-          .jsonPath("courtEvents[2].courtEventCharges[2].offencesCount").doesNotExist()
-          .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1.code").isEqualTo("1004")
-          .jsonPath("courtEvents[2].courtEventCharges[2].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("courtEvents[2].courtEventCharges[3].offenceDate").isEqualTo("2023-02-03")
-          .jsonPath("courtEvents[2].courtEventCharges[3].offenceEndDate").isEqualTo("2023-02-05")
-          .jsonPath("courtEvents[2].courtEventCharges[3].offenderCharge.offence.offenceCode").isEqualTo("RT88083B")
+          // confirm a second appearance has NOT been created from the next event details
+          .jsonPath("courtEvents[2]").doesNotExist()
           // offender charges not updated for adding a new appearance using existing Offender charges
           .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
           .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
@@ -2382,61 +2308,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
-      }
-
-      @Test
-      fun `can update a court appearance next appearance fields without changing the generated next appearance`() {
-        // create a court appearance with a next appearance date which will generate a second appearance using the provided date
-
-        val appearanceResponse =
-          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(
-              BodyInserters.fromValue(
-                createCourtAppearanceRequest(),
-              ),
-            )
-            .exchange()
-            .expectStatus().isCreated.expectBody(CreateCourtAppearanceResponse::class.java)
-            .returnResult().responseBody!!
-
-        // update the newly created appearance with next event date
-        webTestClient.put()
-          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${appearanceResponse.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createCourtAppearanceRequest(
-                eventDateTime = LocalDateTime.of(2023, 1, 20, 14, 0),
-                courtId = "LEEDYC",
-                courtEventType = "19",
-                outcomeReasonCode = "4506",
-                // next event date was previously 2023, 1, 10
-                nextEventDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
-                nextCourtId = "LEICYC",
-              ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isOk
-
-        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("offenderNo").isEqualTo(offenderNo)
-          // should be 2 original appearance2 and the 2 just created
-          .jsonPath("courtEvents.size()").isEqualTo(4)
-          .jsonPath("courtEvents[2].id").isEqualTo(appearanceResponse.id)
-          .jsonPath("courtEvents[2].eventDateTime").isEqualTo("2023-01-20T14:00:00")
-          .jsonPath("courtEvents[2].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
-          // check the appearance generated for the old dates is still there
-          .jsonPath("courtEvents[3].id").isEqualTo(appearanceResponse.nextCourtAppearanceId!!)
-          .jsonPath("courtEvents[3].eventDateTime").isEqualTo("2023-02-20T09:00:00")
-          .jsonPath("courtEvents[3].nextEventDateTime").doesNotExist()
       }
 
       @Test

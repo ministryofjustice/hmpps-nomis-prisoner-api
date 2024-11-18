@@ -186,20 +186,7 @@ class SentencingService(
           )
         },
       )
-
-      request.courtAppearance.nextEventDateTime?.let {
-        courtCase.courtEvents.add(
-          createNextCourtEvent(
-            booking,
-            courtCase.courtEvents[0],
-            mandatoryCourtAppearanceRequest,
-          ).also { nextCourtEvent ->
-            nextCourtEvent.initialiseCourtEventCharges()
-          },
-        )
-      }
       courtCaseRepository.saveAndFlush(courtCase).also {
-        // TODO confirm no order associated with Next appearances
         refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
         storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = booking.bookingId,
@@ -317,16 +304,7 @@ class SentencingService(
           courtEvent,
         )
         courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
-          var nextAppearanceId: Long? = null
           refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
-          createdCourtEvent.nextEventDate?.let {
-            createdCourtEvent.courtCase!!.courtEvents.add(
-              createNextCourtEvent(booking, createdCourtEvent, courtAppearanceRequest).also { nextCourtEvent ->
-                nextCourtEvent.initialiseCourtEventCharges()
-                nextAppearanceId = courtEventRepository.saveAndFlush(nextCourtEvent).id
-              },
-            )
-          }
           storedProcedureRepository.imprisonmentStatusUpdate(
             bookingId = booking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
@@ -340,7 +318,6 @@ class SentencingService(
                   courtEventCharge.id.offenderCharge.id,
                 )
               },
-            nextCourtAppearanceId = nextAppearanceId,
           ).also { response ->
             telemetryClient.trackEvent(
               "court-appearance-created",
@@ -350,7 +327,6 @@ class SentencingService(
                 "offenderNo" to offenderNo,
                 "court" to courtAppearanceRequest.courtId,
                 "courtEventId" to response.id.toString(),
-                "nextCourtEventId" to response.nextCourtAppearanceId.toString(),
                 "createdOffenderChargeIds" to createdOffenderCharges.toString(),
               ),
               null,
@@ -430,26 +406,6 @@ class SentencingService(
     }
   }
 
-  private fun createNextCourtEvent(
-    booking: OffenderBooking,
-    courtEvent: CourtEvent,
-    request: CourtAppearanceRequest,
-  ) = CourtEvent(
-    offenderBooking = booking,
-    courtCase = courtEvent.courtCase,
-    eventDate = courtEvent.nextEventDate!!,
-    startTime = courtEvent.nextEventStartTime!!,
-    courtEventType = courtEvent.courtEventType,
-    // TODO confirm status rules are the same for next appearance
-    eventStatus = determineEventStatus(
-      courtEvent.nextEventDate!!,
-      booking,
-    ),
-    // if next event, we must have a specified court
-    court = lookupEstablishment(request.nextCourtId!!),
-    directionCode = lookupDirectionType(DirectionType.OUT),
-  )
-
   @Audit
   fun updateCourtAppearance(
     offenderNo: String,
@@ -470,8 +426,6 @@ class SentencingService(
           courtAppearance.court = lookupEstablishment(request.courtId)
           courtAppearance.outcomeReasonCode =
             request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
-          // will get a separate update for a generated next event - so just updating these fields rather than the target appearance
-          // todo confirm this is how updating next event dates will work
           courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
           courtAppearance.nextEventStartTime = request.nextEventDateTime
 

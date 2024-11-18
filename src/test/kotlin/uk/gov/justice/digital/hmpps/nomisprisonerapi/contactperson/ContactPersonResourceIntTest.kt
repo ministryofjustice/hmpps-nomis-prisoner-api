@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.contactperson
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl
@@ -15,6 +17,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,6 +30,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var personRepository: PersonRepository
+
+  @Autowired
+  private lateinit var personContactRepository: OffenderContactPersonRepository
+
+  @Autowired
+  private lateinit var offenderRepository: OffenderRepository
 
   @DisplayName("GET /persons/{personId}")
   @Nested
@@ -1001,6 +1011,303 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         .jsonPath("numberOfElements").isEqualTo(60)
         .jsonPath("content[0].personId").isEqualTo(lowestPersonId)
         .jsonPath("content[59].personId").isEqualTo(highestPersonId)
+    }
+  }
+
+  @DisplayName("POST /persons")
+  @Nested
+  inner class CreatePerson {
+    private val validPerson = CreatePersonRequest(
+      firstName = "Jane",
+      lastName = "Smith",
+    )
+
+    private lateinit var existingPerson: Person
+
+    @BeforeEach
+    fun setUp() {
+      personRepository.deleteAll()
+
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPerson)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPerson)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons")
+          .bodyValue(validPerson)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 409 when person id supplied already exists`() {
+        webTestClient.post().uri("/persons")
+          .bodyValue(validPerson.copy(personId = existingPerson.id))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a person with core data and assign an id`() {
+        val newPersonCreateResponse: CreatePersonResponse = webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(validPerson.copy(personId = null))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePersonResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val newPerson = personRepository.findByIdOrNull(newPersonCreateResponse.personId)!!
+
+        assertThat(newPerson.firstName).isEqualTo("JANE")
+        assertThat(newPerson.lastName).isEqualTo("SMITH")
+        assertThat(newPerson.isRemitter).isNull()
+      }
+
+      @Test
+      fun `will create a person with core data and set own id`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(validPerson.copy(personId = 98765443))
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        val newPerson = personRepository.findByIdOrNull(98765443)!!
+
+        assertThat(newPerson.firstName).isEqualTo("JANE")
+        assertThat(newPerson.lastName).isEqualTo("SMITH")
+      }
+
+      @Test
+      fun `will create a person with all supplied data`() {
+        webTestClient.post().uri("/persons")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(
+            validPerson.copy(
+              personId = 98765443,
+              middleName = "Tina",
+              dateOfBirth = LocalDate.parse("1965-07-19"),
+              genderCode = "F",
+              titleCode = "DR",
+              languageCode = "ENG",
+              interpreterRequired = true,
+              domesticStatusCode = "S",
+              isStaff = true,
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        val newPerson = personRepository.findByIdOrNull(98765443)!!
+
+        with(newPerson) {
+          assertThat(id).isEqualTo(98765443)
+          assertThat(firstName).isEqualTo("JANE")
+          assertThat(lastName).isEqualTo("SMITH")
+          assertThat(middleName).isEqualTo("TINA")
+          assertThat(birthDate).isEqualTo(LocalDate.parse("1965-07-19"))
+          assertThat(sex?.code).isEqualTo("F")
+          assertThat(title?.code).isEqualTo("DR")
+          assertThat(domesticStatus?.code).isEqualTo("S")
+          assertThat(interpreterRequired).isTrue
+          assertThat(isStaff).isTrue
+        }
+      }
+    }
+  }
+
+  @DisplayName("POST /persons/{personId}/contact")
+  @Nested
+  inner class CreateContactPerson {
+    val offenderNo = "A1234KT"
+    private val validContactRequest = CreatePersonContactRequest(
+      offenderNo = offenderNo,
+      contactTypeCode = "S",
+      relationshipTypeCode = "BRO",
+      active = true,
+      expiryDate = null,
+      approvedVisitor = false,
+      nextOfKin = true,
+      emergencyContact = true,
+      comment = "Best friends forever",
+    )
+
+    private lateinit var existingPerson: Person
+    private lateinit var existingContact: OffenderContactPerson
+    private var latestBookingId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = offenderNo) {
+          latestBookingId = booking {
+            existingContact = contact(person = existingPerson, contactType = "S", relationshipType = "SIS")
+          }.bookingId
+          booking {
+            contact(person = existingPerson, contactType = "S", relationshipType = "BRO")
+            release()
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validContactRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validContactRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .bodyValue(validContactRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 409 when contact relationship supplied already exists on latest booking`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .bodyValue(validContactRequest.copy(relationshipTypeCode = "SIS"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.post().uri("/persons/999/contact")
+          .bodyValue(validContactRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when prisoner does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .bodyValue(validContactRequest.copy(offenderNo = "A999ZZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when contact type does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .bodyValue(validContactRequest.copy(contactTypeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when relationship type does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .bodyValue(validContactRequest.copy(relationshipTypeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a contact`() {
+        val response: CreatePersonContactResponse = webTestClient.post().uri("/persons/${existingPerson.id}/contact")
+          .bodyValue(validContactRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePersonContactResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val newContact = personContactRepository.findByIdOrNull(response.personContactId)!!
+
+        with(newContact) {
+          assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
+          assertThat(person?.id).isEqualTo(existingPerson.id)
+          assertThat(nextOfKin).isTrue()
+          assertThat(approvedVisitor).isFalse()
+          assertThat(emergencyContact).isTrue()
+          assertThat(active).isTrue()
+          assertThat(expiryDate).isNull()
+          assertThat(comment).isEqualTo("Best friends forever")
+          assertThat(contactType.description).isEqualTo("Social/Family")
+          assertThat(relationshipType.description).isEqualTo("Brother")
+        }
+      }
     }
   }
 }

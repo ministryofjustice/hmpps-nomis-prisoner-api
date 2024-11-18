@@ -5,17 +5,40 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
 @Transactional
 @Service
-class ContactPersonService(private val personRepository: PersonRepository) {
+class ContactPersonService(
+  private val bookingRepository: OffenderBookingRepository,
+  private val personRepository: PersonRepository,
+  private val contactRepository: OffenderContactPersonRepository,
+  private val genderRepository: ReferenceCodeRepository<Gender>,
+  private val titleRepository: ReferenceCodeRepository<Title>,
+  private val languageRepository: ReferenceCodeRepository<Language>,
+  private val maritalStatusRepository: ReferenceCodeRepository<MaritalStatus>,
+  private val contactTypeRepository: ReferenceCodeRepository<ContactType>,
+  private val relationshipTypeRepository: ReferenceCodeRepository<RelationshipType>,
+) {
   fun getPerson(personId: Long): ContactPerson = personRepository.findByIdOrNull(personId)?.let {
     ContactPerson(
       personId = it.id,
@@ -164,6 +187,66 @@ class ContactPersonService(private val personRepository: PersonRepository) {
         pageRequest,
       )
     }.map { PersonIdResponse(personId = it.personId) }
+
+  fun createPerson(request: CreatePersonRequest): CreatePersonResponse {
+    assertDoesNotExist(request)
+
+    request.let {
+      Person(
+        id = it.personId ?: 0,
+        lastName = it.lastName.uppercase(),
+        firstName = it.firstName.uppercase(),
+        middleName = it.middleName?.uppercase(),
+        birthDate = it.dateOfBirth,
+        sex = genderOf(it.genderCode),
+        title = titleOf(it.titleCode),
+        language = languageOf(it.languageCode),
+        interpreterRequired = it.interpreterRequired,
+        domesticStatus = martialStatusOf(it.domesticStatusCode),
+        isStaff = it.isStaff,
+      )
+    }
+      .let { personRepository.save(it) }
+      .let { return CreatePersonResponse(it.id) }
+  }
+
+  fun createPersonContact(personId: Long, request: CreatePersonContactRequest): CreatePersonContactResponse {
+    val booking = bookingRepository.findLatestByOffenderNomsId(request.offenderNo) ?: throw BadDataException("Prisoner with nomisId=${request.offenderNo} does not exist")
+    val person = personRepository.findByIdOrNull(personId) ?: throw NotFoundException("Person with id=$personId does not exist")
+    if (booking.contacts.any { it.contactType.code == request.contactTypeCode && it.relationshipType.code == request.relationshipTypeCode && person == it.person }) {
+      throw ConflictException("Prisoner ${request.offenderNo} with booking ${booking.bookingId} already is a contact with person $personId for contactType ${request.contactTypeCode} and relationshipType ${request.relationshipTypeCode} ")
+    }
+    val contact = OffenderContactPerson(
+      offenderBooking = booking,
+      person = person,
+      contactType = contactType(request.contactTypeCode),
+      relationshipType = relationshipType(request.relationshipTypeCode),
+      rootOffender = null,
+      active = request.active,
+      approvedVisitor = request.approvedVisitor,
+      emergencyContact = request.emergencyContact,
+      nextOfKin = request.nextOfKin,
+      comment = request.comment,
+      expiryDate = request.expiryDate,
+    )
+
+    return CreatePersonContactResponse(contactRepository.save(contact).id)
+  }
+
+  fun assertDoesNotExist(request: CreatePersonRequest) {
+    request.personId?.takeIf { it != 0L }
+      ?.run {
+        if (personRepository.existsById(this)) {
+          throw ConflictException("Person with id=$this already exists")
+        }
+      }
+  }
+  fun contactType(code: String): ContactType = contactTypeRepository.findByIdOrNull(ContactType.pk(code)) ?: throw BadDataException("contactType with code $code does not exist")
+  fun relationshipType(code: String): RelationshipType = relationshipTypeRepository.findByIdOrNull(RelationshipType.pk(code)) ?: throw BadDataException("relationshipType with code $code does not exist")
+  fun genderOf(code: String?): Gender? = code?.let { genderRepository.findByIdOrNull(Gender.pk(it)) }
+  fun titleOf(code: String?): Title? = code?.let { titleRepository.findByIdOrNull(Title.pk(it)) }
+  fun languageOf(code: String?): Language? = code?.let { languageRepository.findByIdOrNull(Language.pk(it)) }
+  fun martialStatusOf(code: String?): MaritalStatus? = code?.let { maritalStatusRepository.findByIdOrNull(MaritalStatus.pk(it)) }
 }
 
 data class PersonFilter(

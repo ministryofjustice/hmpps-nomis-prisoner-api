@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.CreateActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActiveActivityIdsResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindActivitiesWithoutScheduleRulesResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.FindPayRateWithUnknownIncentiveResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.GetActivityResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpdateActivityRequest
@@ -133,6 +134,18 @@ class ActivityService(
       }
   }
 
+  fun findActivitiesWithoutScheduleRules(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindActivitiesWithoutScheduleRulesResponse> {
+    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
+    return findPrisonOrThrow(prisonId)
+      .let { courseActivityRepository.findActivitiesWithoutScheduleRules(prisonId, excludePrograms, courseActivityId) }
+      .map {
+        FindActivitiesWithoutScheduleRulesResponse(
+          courseActivityId = it.getCourseActivityId(),
+          courseActivityDescription = it.getCourseActivityDescription(),
+        )
+      }
+  }
+
   fun getActivity(courseActivityId: Long): GetActivityResponse? =
     findCourseActivityOrThrow(courseActivityId)
       .let {
@@ -223,7 +236,7 @@ class ActivityService(
   }
 
   private fun findCswapLocationInPrisonOrThrow(prisonId: String): AgencyInternalLocation =
-    agencyInternalLocationRepository.findByAgencyIdAndLocationCode(prisonId, "CSWAP")
+    agencyInternalLocationRepository.findByAgencyIdAndLocationCodeAndActive(prisonId, "CSWAP", active = true)
       ?: throw BadDataException("CSWAP location for prison $prisonId does not exist. Activities need a location otherwise they are missed off NART reports and we use CSWAP as the default location where DPS provides none.")
 
   private fun findPrisonOrThrow(prisonId: String) =
