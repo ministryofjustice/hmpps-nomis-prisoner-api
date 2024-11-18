@@ -667,7 +667,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     responses = [
       ApiResponse(
         responseCode = "201",
-        description = "Created Court case",
+        description = "Created Charge",
       ),
       ApiResponse(
         responseCode = "400",
