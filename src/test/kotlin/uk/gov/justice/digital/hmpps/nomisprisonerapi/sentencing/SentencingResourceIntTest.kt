@@ -1994,6 +1994,182 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{id}/charges")
+  inner class CreateOffenderCharge {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private var latestBookingId: Long = 0
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var staff: Staff
+    private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland = offender(nomsId = offenderNo) {
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
+            courtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            )
+          }
+        }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createOffenderChargeRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createOffenderChargeRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createOffenderChargeRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when offender does not exist`() {
+        webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/charges")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createOffenderChargeRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
+      }
+
+      @Test
+      internal fun `404 when case does not exist`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/1234/charges")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createOffenderChargeRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Court case 1234 for $offenderNo not found")
+      }
+    }
+
+    @Nested
+    inner class CreateChargeSuccess {
+
+      @Test
+      fun `can add a new offender charge to a case`() {
+        val chargeResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createOffenderChargeRequest(resultCode1 = "1081"),
+              ),
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(OffenderChargeIdResponse::class.java)
+            .returnResult().responseBody!!
+
+        assertThat(chargeResponse.offenderChargeId).isGreaterThan(0)
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+          // the new offender charges
+          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Detention and Training Order")
+          .jsonPath("offenderCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
+      }
+
+      @Test
+      fun `will track telemetry for the create`() {
+        val createResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createOffenderChargeRequest(),
+              ),
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(OffenderChargeIdResponse::class.java)
+            .returnResult().responseBody!!
+
+        verify(telemetryClient).trackEvent(
+          eq("offender-charge-created"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("offenderChargeId", createResponse.offenderChargeId.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+  }
+
+  @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{id}")
   inner class UpdateCourtAppearance {
     private val offenderNo: String = "A1234AB"

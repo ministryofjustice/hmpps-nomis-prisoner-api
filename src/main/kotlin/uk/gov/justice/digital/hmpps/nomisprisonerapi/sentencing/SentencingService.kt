@@ -213,7 +213,7 @@ class SentencingService(
             CreateCourtAppearanceResponse(
               id = it.id,
               courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
-                CreateCourtEventChargesResponse(
+                OffenderChargeIdResponse(
                   courtEventCharge.id.offenderCharge.id,
                 )
               },
@@ -336,7 +336,7 @@ class SentencingService(
             courtEventChargesIds = createdCourtEvent.courtEventCharges
               .filter { it.id.offenderCharge.id in createdOffenderCharges }
               .map { courtEventCharge ->
-                CreateCourtEventChargesResponse(
+                OffenderChargeIdResponse(
                   courtEventCharge.id.offenderCharge.id,
                 )
               },
@@ -352,6 +352,46 @@ class SentencingService(
                 "courtEventId" to response.id.toString(),
                 "nextCourtEventId" to response.nextCourtAppearanceId.toString(),
                 "createdOffenderChargeIds" to createdOffenderCharges.toString(),
+              ),
+              null,
+            )
+          }
+        }
+      }
+    }
+  }
+
+  // creates offender charge without associating with a Court Event
+  fun createCourtCharge(
+    offenderNo: String,
+    caseId: Long,
+    offenderChargeRequest: OffenderChargeRequest,
+  ): OffenderChargeIdResponse {
+    findLatestBooking(offenderNo).let { booking ->
+      findCourtCase(caseId, offenderNo).let { courtCase ->
+        val resultCode =
+          offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) }
+        val offenderCharge = OffenderCharge(
+          courtCase = courtCase,
+          offenderBooking = booking,
+          offence = lookupOffence(offenderChargeRequest.offenceCode),
+          offenceDate = offenderChargeRequest.offenceDate,
+          offenceEndDate = offenderChargeRequest.offenceEndDate,
+          resultCode1 = resultCode,
+          resultCode1Indicator = resultCode?.dispositionCode,
+          chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) },
+        )
+        offenderChargeRepository.saveAndFlush(offenderCharge).let { createdOffenderCharge ->
+          return OffenderChargeIdResponse(
+            offenderChargeId = createdOffenderCharge.id,
+          ).also { response ->
+            telemetryClient.trackEvent(
+              "offender-charge-created",
+              mapOf(
+                "courtCaseId" to caseId.toString(),
+                "bookingId" to booking.bookingId.toString(),
+                "offenderNo" to offenderNo,
+                "offenderChargeId" to response.offenderChargeId.toString(),
               ),
               null,
             )
@@ -474,12 +514,12 @@ class SentencingService(
             createdCourtEventChargesIds = courtAppearance.courtEventCharges
               .filter { it.id.offenderCharge.id in createdOffenderCharges }
               .map { courtEventCharge ->
-                CreateCourtEventChargesResponse(
+                OffenderChargeIdResponse(
                   courtEventCharge.id.offenderCharge.id,
                 )
               },
             deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
-              CreateCourtEventChargesResponse(
+              OffenderChargeIdResponse(
                 offenderChargeId = offenderCharge.id,
               )
             },

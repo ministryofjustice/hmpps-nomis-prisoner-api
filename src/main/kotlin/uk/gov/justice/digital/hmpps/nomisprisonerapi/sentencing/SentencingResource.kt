@@ -651,6 +651,77 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sentencingService.createCourtAppearance(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/charges")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new Offender Charge",
+    description = "Required role NOMIS_SENTENCING Creates a new Offender Charge for the offender and latest booking. Will not associate with a Court Event",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateCourtCaseRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Created Court case",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCourtCharge(
+    @Schema(description = "Offender No", example = "AK1234B", required = true)
+    @PathVariable
+    offenderNo: String,
+    @PathVariable
+    caseId: Long,
+    @RequestBody @Valid
+    request: OffenderChargeRequest,
+  ): OffenderChargeIdResponse = sentencingService.createCourtCharge(offenderNo, caseId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -1250,7 +1321,7 @@ data class CreateSentenceResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateCourtAppearanceResponse(
   val id: Long,
-  val courtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
+  val courtEventChargesIds: List<OffenderChargeIdResponse> = listOf(),
   // if created as an individual appearance, an associated next appearance may also have been created
   val nextCourtAppearanceId: Long? = null,
 )
@@ -1258,15 +1329,15 @@ data class CreateCourtAppearanceResponse(
 @Schema(description = "Create adjustment response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateCourtAppearanceResponse(
-  val createdCourtEventChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
-  val deletedOffenderChargesIds: List<CreateCourtEventChargesResponse> = listOf(),
+  val createdCourtEventChargesIds: List<OffenderChargeIdResponse> = listOf(),
+  val deletedOffenderChargesIds: List<OffenderChargeIdResponse> = listOf(),
   // if created as an individual appearance, an associated next appearance may also have been created
   val nextCourtAppearanceId: Long? = null,
 )
 
-@Schema(description = "Create adjustment response")
+@Schema(description = "Create offender charge response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class CreateCourtEventChargesResponse(
+data class OffenderChargeIdResponse(
   val offenderChargeId: Long,
 )
 
@@ -1300,7 +1371,7 @@ data class CreateCourtAppearanceRequest(
   val existingOffenderChargeIds: List<Long>,
 )
 
-@Schema(description = "Court Event")
+@Schema(description = "Court Charge")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderChargeRequest(
   val offenceCode: String,
