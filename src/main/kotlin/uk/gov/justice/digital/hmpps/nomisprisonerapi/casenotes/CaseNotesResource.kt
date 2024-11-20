@@ -238,8 +238,10 @@ data class CaseNoteResponse(
   val caseNoteSubType: CodeDescription,
   @Schema(description = "Whether system-generated")
   val noteSourceCode: NoteSourceCode? = null,
-  @Schema(description = "Date case note occurred")
+  @Schema(description = "Datetime case note occurred")
   val occurrenceDateTime: LocalDateTime? = null,
+  @Schema(description = "Datetime case note was created by user")
+  val creationDateTime: LocalDateTime? = null,
 
   @Schema(description = "Author STAFF_ID")
   val authorStaffId: Long,
@@ -258,9 +260,9 @@ data class CaseNoteResponse(
   @Schema(description = "Amendments to the text")
   val amendments: List<CaseNoteAmendment> = mutableListOf(),
 
-  @Schema(description = "Created timestamp")
+  @Schema(description = "Created DB timestamp")
   var createdDatetime: LocalDateTime,
-  @Schema(description = "Created username")
+  @Schema(description = "Created DB username")
   var createdUsername: String,
 
   @Schema(description = "Which screen (or DPS) created the case note", example = "OIDABCDE")

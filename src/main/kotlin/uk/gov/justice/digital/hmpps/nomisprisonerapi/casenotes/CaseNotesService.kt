@@ -113,6 +113,7 @@ class CaseNotesService(
     caseNoteType = caseNoteType.toCodeDescription(),
     caseNoteSubType = caseNoteSubType.toCodeDescription(),
     occurrenceDateTime = occurrenceDateTime,
+    creationDateTime = timeCreation,
     authorUsername = author.accounts.first().username,
     // NB ^ omitted by the /{offenderNo}/case-notes/v2 endpoint
     authorStaffId = author.id,

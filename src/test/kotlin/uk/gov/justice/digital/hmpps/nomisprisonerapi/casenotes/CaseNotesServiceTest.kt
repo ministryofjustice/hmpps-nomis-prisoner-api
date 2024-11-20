@@ -186,6 +186,49 @@ internal class CaseNotesServiceTest {
     }
 
     @Test
+    fun `multiple amendments with CRLF`() {
+      whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
+
+      assertThat(
+        caseNotesService.parseAmendments(
+          caseNote(
+            """Didn't attend work, and had no valid reason to not attend.
+This is not acceptable behaviour. ...[JMORROW_GEN updated the case notes on 2023/07/11 15:19:11] Please dismiss the above, Mr Beckford was not feeling well, 
+Also now has a sick note from health care until 14/07/2023. ...[JMORROW_GEN updated the case notes on 2023/07/11 15:19:11] Please dismiss the above, Mr Beckford was not feeling well, 
+Also now has a sick note from health care until 14/07/2023.""",
+          ),
+        ),
+      )
+        .containsExactly(
+          CaseNoteAmendment(
+            """Please dismiss the above, Mr Beckford was not feeling well, 
+Also now has a sick note from health care until 14/07/2023.""",
+            "JMORROW_GEN",
+            12345L,
+            "First1",
+            "Last1",
+            LocalDateTime.parse("2023-07-11T15:19:11"),
+            sourceSystem = SourceSystem.NOMIS,
+          ),
+          CaseNoteAmendment(
+            """Please dismiss the above, Mr Beckford was not feeling well, 
+Also now has a sick note from health care until 14/07/2023.""",
+            "JMORROW_GEN",
+            12345L,
+            "First1",
+            "Last1",
+            LocalDateTime.parse("2023-07-11T15:19:11"),
+            sourceSystem = SourceSystem.NOMIS,
+          ),
+        )
+    }
+
+    // Didn't attend work, and had no valid reason to not attend.
+    // This is not acceptable behaviour. ...[NQL56L updated the case notes on 2023/07/11 15:19:11] Please dismiss the above, Mr Beckford was not feeling well,
+    // Also now has a sick note from health care until 14/07/2023. ...[NQL56L updated the case notes on 2023/07/11 15:19:11] Please dismiss the above, Mr Beckford was not feeling well,
+    // Also now has a sick note from health care until 14/07/2023.
+
+    @Test
     fun `one empty amendment`() {
       whenever(staffUserAccountRepository.findByUsername("JMORROW_GEN")).thenReturn(staffUserAccount1)
 
