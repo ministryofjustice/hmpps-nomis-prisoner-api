@@ -132,6 +132,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseNoteText").isEqualTo("A note")
           .jsonPath("amendments").isEmpty()
           .jsonPath("occurrenceDateTime").isEqualTo("2021-02-03T04:05:06")
+          .jsonPath("creationDateTime").isEqualTo("2021-02-03T04:05:06")
           .jsonPath("noteSourceCode").isEqualTo("INST")
           .jsonPath("createdDatetime").isEqualTo("2021-02-03T04:05:06")
           .jsonPath("createdUsername").isEqualTo("SA")
