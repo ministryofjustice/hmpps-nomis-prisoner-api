@@ -1347,6 +1347,7 @@ data class CourtAppearanceRequest(
   val nextEventDateTime: LocalDateTime?,
   // update requests will also determine the offences to remove from the appearance
   val courtEventChargesToUpdate: List<ExistingOffenderChargeRequest>,
+  // TODO remove when all hierarchical endpoints removed.
   val courtEventChargesToCreate: List<OffenderChargeRequest>,
   // nomis UI doesn't allow this during a create but DPS does
   val nextCourtId: String?,
