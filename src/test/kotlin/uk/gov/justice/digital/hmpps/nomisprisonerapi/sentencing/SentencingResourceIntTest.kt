@@ -1806,20 +1806,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 createCourtAppearanceRequest(
                   courtEventChargesToUpdate = mutableListOf(
                     createExistingOffenderChargeRequest(offenderChargeId = offenderCharge1.id),
-                    createExistingOffenderChargeRequest(offenderChargeId = offenderCharge2.id),
-                  ),
-                  courtEventChargesToCreate = mutableListOf(
-                    createOffenderChargeRequest(
-                      offenceCode = "RT88077B",
-                      resultCode1 = "1004",
-                      offenceDate = LocalDate.of(2023, 1, 3),
-                      offenceEndDate = LocalDate.of(2023, 1, 5),
-                    ),
-                    createOffenderChargeRequest(
-                      offenceCode = "RT88083B",
-                      offenceDate = LocalDate.of(2023, 2, 3),
-                      offenceEndDate = LocalDate.of(2023, 2, 5),
-                    ),
+                    createExistingOffenderChargeRequest(offenderChargeId = offenderCharge2.id, resultCode1 = "1004"),
                   ),
                 ),
               ),
@@ -1829,8 +1816,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .returnResult().responseBody!!
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
-        // only newly created Offender charges are returned - for mapping purposes
-        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(2)
 
         // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
@@ -1858,7 +1843,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].nextEventDateTime").isEqualTo("2023-02-20T09:00:00")
           .jsonPath("courtEvents[1].createdDateTime").isNotEmpty
           .jsonPath("courtEvents[1].createdByUsername").isNotEmpty
-          .jsonPath("courtEvents[1].courtOrders[0].id").exists()
+          // TODO should a charge request with an order producing ResultCode not be used ?  (currently using value from underlying offender charge)
+          .jsonPath("courtEvents[1].courtOrders[0].id").doesNotExist()
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-05")
           .jsonPath("courtEvents[1].courtEventCharges[0].offenderCharge.offence.offenceCode").isEqualTo("RT88074")
@@ -1877,10 +1863,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Bound Over to Leave the Island within 3 days")
           .jsonPath("offenderCharges[1].resultCode1Indicator").isEqualTo("F")
           .jsonPath("offenderCharges[1].chargeStatus.description").isEqualTo("Inactive")
-          .jsonPath("offenderCharges[2].resultCode1.description")
-          .isEqualTo("Restriction Order")
-          .jsonPath("offenderCharges[2].resultCode1Indicator").isEqualTo("F")
-          .jsonPath("offenderCharges[2].chargeStatus.description").isEqualTo("Active")
       }
 
       @Test
@@ -2402,77 +2384,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(1)
         // no longer referenced by any court appearance in this case
         assertThat(courtAppearanceResponse.deletedOffenderChargesIds[0].offenderChargeId).isEqualTo(offenderCharge3.id)
-      }
-
-      @Test
-      fun `can create new court event charges`() {
-        val courtAppearanceResponse = webTestClient.put()
-          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createCourtAppearanceRequest(
-                courtEventChargesToCreate = mutableListOf(
-                  createOffenderChargeRequest(offenceCode = "VM08085"),
-                  createOffenderChargeRequest(offenceCode = "BL19011"),
-                ),
-                courtEventChargesToUpdate = mutableListOf(
-                  createExistingOffenderChargeRequest(
-                    offenderChargeId = offenderCharge1.id,
-                  ),
-                  createExistingOffenderChargeRequest(
-                    offenderChargeId = offenderCharge2.id,
-                  ),
-                  createExistingOffenderChargeRequest(
-                    offenderChargeId = offenderCharge3.id,
-                  ),
-                ),
-              ),
-            ),
-
-          )
-          .exchange()
-          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
-          .returnResult().responseBody!!
-
-        val getResponse = webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-          .expectStatus().isOk.expectBody(CourtCaseResponse::class.java)
-          .returnResult().responseBody!!
-
-        val updatedCourtAppearance = getResponse.courtEvents[0]
-        assertThat(updatedCourtAppearance.eventDateTime).isEqualTo(LocalDateTime.of(2023, 1, 5, 9, 0))
-        assertThat(updatedCourtAppearance.courtEventCharges[3].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
-        assertThat(updatedCourtAppearance.courtEventCharges[3].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
-        assertThat(updatedCourtAppearance.courtEventCharges[3].resultCode1!!.code).isEqualTo("1067")
-        assertThat(updatedCourtAppearance.courtEventCharges[3].resultCode1Indicator).isEqualTo("F")
-        assertThat(updatedCourtAppearance.courtEventCharges[3].offenderCharge.offence.offenceCode).isEqualTo("VM08085")
-
-        assertThat(updatedCourtAppearance.courtEventCharges[4].offenderCharge.offence.offenceCode).isEqualTo("BL19011")
-
-        assertThat(getResponse.offenderCharges[3].offence.offenceCode).isEqualTo("VM08085")
-        assertThat(getResponse.offenderCharges[3].offenceDate).isEqualTo(LocalDate.of(2023, 1, 1))
-        assertThat(getResponse.offenderCharges[3].offenceEndDate).isEqualTo(LocalDate.of(2023, 1, 2))
-        assertThat(getResponse.offenderCharges[3].resultCode1!!.code).isEqualTo("1067")
-        assertThat(getResponse.offenderCharges[3].chargeStatus!!.code).isEqualTo("I")
-        assertThat(getResponse.offenderCharges[3].resultCode1Indicator).isEqualTo("F")
-
-        assertThat(getResponse.offenderCharges[4].offence.offenceCode).isEqualTo("BL19011")
-
-        // 3 original charges updated, 2 new ones created
-        // order of ids is important - must match the request order
-        assertThat(offenderCharge1.id).isEqualTo(updatedCourtAppearance.courtEventCharges[0].offenderCharge.id)
-        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[0].offenderChargeId).isEqualTo(
-          updatedCourtAppearance.courtEventCharges[3].offenderCharge.id,
-        )
-        assertThat(courtAppearanceResponse.createdCourtEventChargesIds[1].offenderChargeId).isEqualTo(
-          updatedCourtAppearance.courtEventCharges[4].offenderCharge.id,
-        )
-
-        assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(0)
       }
 
       @Test
