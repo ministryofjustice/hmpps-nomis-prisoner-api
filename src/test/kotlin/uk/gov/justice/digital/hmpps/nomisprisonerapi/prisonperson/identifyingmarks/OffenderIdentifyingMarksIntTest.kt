@@ -120,4 +120,42 @@ class OffenderIdentifyingMarksIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /bookings/{bookingId}/identifying-marks")
+  @Nested
+  inner class GetBookingIdentifyingMarks {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/bookings/123456/identifying-marks")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/bookings/123456/identifying-marks")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/bookings/123456/identifying-marks")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `not found if booking does not exist`() {
+        webTestClient.get().uri("/bookings/123456/identifying-marks")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+  }
 }
