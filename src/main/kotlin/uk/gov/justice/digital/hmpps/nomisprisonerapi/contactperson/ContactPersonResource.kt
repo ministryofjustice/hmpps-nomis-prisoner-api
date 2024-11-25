@@ -276,6 +276,73 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     @RequestBody @Valid
     request: CreatePersonContactRequest,
   ): CreatePersonContactResponse = contactPersonService.createPersonContact(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/persons/{personId}/address")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a person address",
+    description = "Creates a person address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Person Address ID Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreatePersonAddressResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPersonAddress(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @RequestBody @Valid
+    request: CreatePersonAddressRequest,
+  ): CreatePersonAddressResponse = contactPersonService.createPersonAddress(personId, request)
 }
 
 @Schema(description = "The data held in NOMIS about a person who is a contact for a prisoner")
@@ -565,4 +632,42 @@ data class CreatePersonContactRequest(
 data class CreatePersonContactResponse(
   @Schema(description = "The contact Id")
   val personContactId: Long,
+)
+
+data class CreatePersonAddressRequest(
+  @Schema(description = "Address reference code", example = "HOME")
+  val typeCode: String? = null,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String? = null,
+  @Schema(description = "Premise", example = "22")
+  val premise: String? = null,
+  @Schema(description = "Street", example = "West Street")
+  val street: String? = null,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String? = null,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String? = null,
+  @Schema(description = "City reference code", example = "25343")
+  val cityCode: String? = null,
+  @Schema(description = "County reference code", example = "S.YORKSHIRE")
+  val countyCode: String? = null,
+  @Schema(description = "Country reference code", example = "ENG")
+  val countryCode: String? = null,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean? = null,
+  @Schema(description = "true if this is the person's primary address")
+  val primaryAddress: Boolean,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean,
+  @Schema(description = "Free format comment about the address")
+  val comment: String? = null,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate? = null,
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate? = null,
+)
+
+data class CreatePersonAddressResponse(
+  @Schema(description = "The address Id")
+  val personAddressId: Long,
 )

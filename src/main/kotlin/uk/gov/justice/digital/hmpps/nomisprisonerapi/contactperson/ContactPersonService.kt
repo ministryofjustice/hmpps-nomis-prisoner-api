@@ -11,7 +11,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
@@ -22,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -32,12 +37,17 @@ class ContactPersonService(
   private val bookingRepository: OffenderBookingRepository,
   private val personRepository: PersonRepository,
   private val contactRepository: OffenderContactPersonRepository,
+  private val personAddressRepository: PersonAddressRepository,
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
   private val languageRepository: ReferenceCodeRepository<Language>,
   private val maritalStatusRepository: ReferenceCodeRepository<MaritalStatus>,
   private val contactTypeRepository: ReferenceCodeRepository<ContactType>,
   private val relationshipTypeRepository: ReferenceCodeRepository<RelationshipType>,
+  private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
+  private val cityRepository: ReferenceCodeRepository<City>,
+  private val countyRepository: ReferenceCodeRepository<County>,
+  private val countryRepository: ReferenceCodeRepository<Country>,
 ) {
   fun getPerson(personId: Long): ContactPerson = personRepository.findByIdOrNull(personId)?.let {
     ContactPerson(
@@ -211,7 +221,7 @@ class ContactPersonService(
 
   fun createPersonContact(personId: Long, request: CreatePersonContactRequest): CreatePersonContactResponse {
     val booking = bookingRepository.findLatestByOffenderNomsId(request.offenderNo) ?: throw BadDataException("Prisoner with nomisId=${request.offenderNo} does not exist")
-    val person = personRepository.findByIdOrNull(personId) ?: throw NotFoundException("Person with id=$personId does not exist")
+    val person = personOf(personId)
     if (booking.contacts.any { it.contactType.code == request.contactTypeCode && it.relationshipType.code == request.relationshipTypeCode && person == it.person }) {
       throw ConflictException("Prisoner ${request.offenderNo} with booking ${booking.bookingId} already is a contact with person $personId for contactType ${request.contactTypeCode} and relationshipType ${request.relationshipTypeCode} ")
     }
@@ -232,6 +242,30 @@ class ContactPersonService(
     return CreatePersonContactResponse(contactRepository.save(contact).id)
   }
 
+  fun createPersonAddress(personId: Long, request: CreatePersonAddressRequest): CreatePersonAddressResponse = personAddressRepository.saveAndFlush(
+    request.let {
+      uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress(
+        addressType = addressTypeOf(it.typeCode),
+        person = personOf(personId),
+        premise = it.premise,
+        street = it.street,
+        locality = it.locality,
+        flat = it.flat,
+        postalCode = it.postcode,
+        city = cityOf(it.cityCode),
+        county = countyOf(it.countyCode),
+        country = countryOf(it.countryCode),
+        validatedPAF = false,
+        noFixedAddress = it.noFixedAddress,
+        primaryAddress = it.primaryAddress,
+        mailAddress = it.mailAddress,
+        comment = it.comment,
+        startDate = it.startDate,
+        endDate = it.endDate,
+      )
+    },
+  ).let { CreatePersonAddressResponse(personAddressId = it.addressId) }
+
   fun assertDoesNotExist(request: CreatePersonRequest) {
     request.personId?.takeIf { it != 0L }
       ?.run {
@@ -246,6 +280,11 @@ class ContactPersonService(
   fun titleOf(code: String?): Title? = code?.let { titleRepository.findByIdOrNull(Title.pk(it)) }
   fun languageOf(code: String?): Language? = code?.let { languageRepository.findByIdOrNull(Language.pk(it)) }
   fun martialStatusOf(code: String?): MaritalStatus? = code?.let { maritalStatusRepository.findByIdOrNull(MaritalStatus.pk(it)) }
+  fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
+  fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
+  fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) ?: throw BadDataException("County with code $code does not exist") }
+  fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
+  fun personOf(personId: Long): Person = personRepository.findByIdOrNull(personId) ?: throw NotFoundException("Person with id=$personId does not exist")
 }
 
 data class PersonFilter(
