@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttribu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhysicalAttributesRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTimer
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTime
 
 @Service
 @Transactional
@@ -31,7 +31,7 @@ class PhysicalAttributesService(
         BookingPhysicalAttributesResponse(
           bookingId = it.bookingId,
           startDateTime = it.bookingBeginDate,
-          endDateTime = it.getReleaseTimer(),
+          endDateTime = it.getReleaseTime(),
           latestBooking = it.bookingSequence == 1,
           physicalAttributes = it.physicalAttributes.map {
             PhysicalAttributesResponse(
