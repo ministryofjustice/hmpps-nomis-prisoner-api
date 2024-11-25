@@ -347,7 +347,10 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           }
 
           offender(nomsId = "A1234XX") {
-            booking(bookingEndDate = LocalDate.now().minusDays(10))
+            booking(bookingEndDate = LocalDate.now().minusDays(10), inOutStatus = "IN", active = true)
+          }
+          offender(nomsId = "A1234YY") {
+            booking(bookingEndDate = LocalDate.now().minusDays(10), inOutStatus = "OUT", active = true)
           }
         }
       }
@@ -359,7 +362,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("$.totalElements").isEqualTo(2)
+          .jsonPath("$.totalElements").isEqualTo(3)
           .jsonPath("$.numberOfElements").isEqualTo(1)
       }
 
@@ -370,12 +373,14 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("$.totalElements").isEqualTo(2)
-          .jsonPath("$.numberOfElements").isEqualTo(2)
+          .jsonPath("$.totalElements").isEqualTo(3)
+          .jsonPath("$.numberOfElements").isEqualTo(3)
           .jsonPath("$.content[0].bookingId").isNumber
           .jsonPath("$.content[0].offenderNo").isEqualTo("A1234TT")
           .jsonPath("$.content[1].bookingId").isNumber
           .jsonPath("$.content[1].offenderNo").isEqualTo("A1234SS")
+          .jsonPath("$.content[2].bookingId").isNumber
+          .jsonPath("$.content[2].offenderNo").isEqualTo("A1234XX")
       }
     }
   }

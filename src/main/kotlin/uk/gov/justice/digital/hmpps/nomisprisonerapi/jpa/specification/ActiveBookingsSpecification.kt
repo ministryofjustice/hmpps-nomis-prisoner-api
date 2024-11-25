@@ -17,7 +17,16 @@ class ActiveBookingsSpecification : Specification<OffenderBooking> {
     val predicates = mutableListOf<Predicate>()
 
     predicates.add(criteriaBuilder.equal(root.get<String>(OffenderBooking::active.name), true))
-    predicates.add(criteriaBuilder.isNull(root.get<String>(OffenderBooking::bookingEndDate.name)))
+    // ignore prisoners that are out but with a booking end date - since the data must be in a bad state
+    // due to NOMIS data fix
+    predicates.add(
+      criteriaBuilder.not(
+        criteriaBuilder.and(
+          criteriaBuilder.isNotNull(root.get<String>(OffenderBooking::bookingEndDate.name)),
+          criteriaBuilder.equal(root.get<String>(OffenderBooking::inOutStatus.name), "OUT"),
+        ),
+      ),
+    )
 
     return criteriaBuilder.and(*predicates.toTypedArray())
   }
