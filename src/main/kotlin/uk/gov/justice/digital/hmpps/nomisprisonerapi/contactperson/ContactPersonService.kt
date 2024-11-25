@@ -175,18 +175,17 @@ class ContactPersonService(
   fun findPersonIdsByFilter(
     pageRequest: Pageable,
     personFilter: PersonFilter,
-  ): Page<PersonIdResponse> =
-    if (personFilter.toDate == null && personFilter.fromDate == null) {
-      personRepository.findAllPersonIds(
-        pageRequest,
-      )
-    } else {
-      personRepository.findAllPersonIds(
-        fromDate = personFilter.fromDate?.atStartOfDay(),
-        toDate = personFilter.toDate?.atStartOfDay(),
-        pageRequest,
-      )
-    }.map { PersonIdResponse(personId = it.personId) }
+  ): Page<PersonIdResponse> = if (personFilter.toDate == null && personFilter.fromDate == null) {
+    personRepository.findAllPersonIds(
+      pageRequest,
+    )
+  } else {
+    personRepository.findAllPersonIds(
+      fromDate = personFilter.fromDate?.atStartOfDay(),
+      toDate = personFilter.toDate?.atStartOfDay(),
+      pageRequest,
+    )
+  }.map { PersonIdResponse(personId = it.personId) }
 
   fun createPerson(request: CreatePersonRequest): CreatePersonResponse {
     assertDoesNotExist(request)
