@@ -5,12 +5,14 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIdentifyingMarkImageRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTime
 
 @Service
 @Transactional(readOnly = true)
 class IdentifyingMarksService(
   private val bookingRepository: OffenderBookingRepository,
+  private val imageRepository: OffenderIdentifyingMarkImageRepository,
 ) {
 
   fun getIdentifyingMarks(bookingId: Long): BookingIdentifyingMarksResponse =
@@ -41,6 +43,25 @@ class IdentifyingMarksService(
       }
       ?: throw NotFoundException("Booking not found: $bookingId")
 
-  // TODO SDIT-2212 implement this service
-  fun getIdentifyingMarksImage(imageId: Long): IdentifyingMarkImageDetailsResponse = throw NotFoundException("Image not found: $imageId")
+  fun getIdentifyingMarksImageDetails(imageId: Long): IdentifyingMarkImageDetailsResponse =
+    imageRepository.findByIdOrNull(imageId)
+      ?.let {
+        IdentifyingMarkImageDetailsResponse(
+          imageId = it.id,
+          bookingId = it.identifyingMark.id.offenderBooking.bookingId,
+          idMarksSeq = it.identifyingMark.id.idMarkSequence,
+          captureDateTime = it.captureDateTime,
+          bodyPartCode = it.orientationType.code,
+          markTypeCode = it.imageViewType.code,
+          default = it.active,
+          imageExists = it.fullSizeImage != null,
+          imageSourceCode = it.imageSource.code,
+          createDateTime = it.createDatetime,
+          createdBy = it.createUserId,
+          modifiedDateTime = it.modifyDatetime,
+          modifiedBy = it.modifyUserId,
+          auditModuleName = it.auditModuleName,
+        )
+      }
+      ?: throw NotFoundException("Image not found: $imageId")
 }

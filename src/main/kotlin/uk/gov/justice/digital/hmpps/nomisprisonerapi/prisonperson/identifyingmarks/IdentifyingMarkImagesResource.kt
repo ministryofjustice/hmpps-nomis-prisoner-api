@@ -68,5 +68,5 @@ class IdentifyingMarkImagesResource(private val service: IdentifyingMarksService
   )
   fun getIdentifyingMarksImage(
     @Schema(description = "Image id", example = "12345") @PathVariable imageId: Long,
-  ): IdentifyingMarkImageDetailsResponse = service.getIdentifyingMarksImage(imageId)
+  ): IdentifyingMarkImageDetailsResponse = service.getIdentifyingMarksImageDetails(imageId)
 }

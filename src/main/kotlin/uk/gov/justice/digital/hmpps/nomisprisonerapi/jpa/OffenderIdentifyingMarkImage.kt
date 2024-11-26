@@ -16,8 +16,8 @@ import java.time.LocalDateTime
 class OffenderIdentifyingMarkImage(
   id: Long = 0,
   captureDateTime: LocalDateTime,
-  fullSizeImage: ByteArray,
-  thumbnailImage: ByteArray,
+  fullSizeImage: ByteArray?,
+  thumbnailImage: ByteArray?,
   imageObjectSequence: Long? = null,
   active: Boolean,
   imageSource: ImageSource,
