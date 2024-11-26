@@ -40,4 +40,7 @@ class IdentifyingMarksService(
         )
       }
       ?: throw NotFoundException("Booking not found: $bookingId")
+
+  // TODO SDIT-2212 implement this service
+  fun getIdentifyingMarksImage(imageId: Long): IdentifyingMarkImageDetailsResponse = throw NotFoundException("Image not found: $imageId")
 }
