@@ -36,11 +36,11 @@ abstract class OffenderImage(
 
   @Column(name = "FULL_SIZE_IMAGE")
   @Lob
-  val fullSizeImage: ByteArray,
+  val fullSizeImage: ByteArray? = null,
 
   @Column(name = "THUMBNAIL_IMAGE")
   @Lob
-  val thumbnailImage: ByteArray,
+  val thumbnailImage: ByteArray? = null,
 
   @Column(name = "IMAGE_OBJECT_SEQ")
   val imageObjectSequence: Long? = null,

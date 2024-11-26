@@ -23,8 +23,8 @@ interface OffenderIdentifyingMarkDsl {
   @OffenderIdentifyingMarkImageDslMarker
   fun image(
     captureDateTime: LocalDateTime = LocalDateTime.now(),
-    fullSizeImage: ByteArray = byteArrayOf(1, 2, 3),
-    thumbnailImage: ByteArray = byteArrayOf(4, 5, 6),
+    fullSizeImage: ByteArray? = byteArrayOf(1, 2, 3),
+    thumbnailImage: ByteArray? = byteArrayOf(4, 5, 6),
     active: Boolean = true,
     imageSourceCode: String = "FILE",
     orientationTypeCode: String = "HEAD",
@@ -89,8 +89,8 @@ class OffenderIdentifyingMarkBuilder(
 
   override fun image(
     captureDateTime: LocalDateTime,
-    fullSizeImage: ByteArray,
-    thumbnailImage: ByteArray,
+    fullSizeImage: ByteArray?,
+    thumbnailImage: ByteArray?,
     active: Boolean,
     imageSourceCode: String,
     orientationTypeCode: String,

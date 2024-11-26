@@ -21,6 +21,8 @@ class IdentifyingMarkImageDetailsResponse(
   val markTypeCode: String,
   @Schema(description = "Whether this is the default image for the bookingId/idMarksSeq", example = "true")
   val default: Boolean,
+  @Schema(description = "Whether image data exists yet. Image records are created prior to the actual image being added to them (which sometimes never happens).", example = "true")
+  val imageExists: Boolean,
   @Schema(description = "The source of the image", example = "FILE")
   val imageSourceCode: String,
   @Schema(description = "The time the image record was created. Note records are created without an image which is added later.", example = "2020-07-17T12:34:56")

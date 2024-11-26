@@ -42,8 +42,8 @@ class OffenderIdentifyingMarkImageBuilder(
   fun build(
     identifyingMark: OffenderIdentifyingMark,
     captureDateTime: LocalDateTime,
-    fullSizeImage: ByteArray,
-    thumbnailImage: ByteArray,
+    fullSizeImage: ByteArray?,
+    thumbnailImage: ByteArray?,
     active: Boolean,
     imageSourceCode: String,
     orientationTypeCode: String,
