@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileTypeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTimer
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTime
 import java.time.LocalDate
 
 @Service
@@ -40,7 +40,7 @@ class ProfileDetailsService(
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
           startDateTime = booking.bookingBeginDate,
-          endDateTime = booking.getReleaseTimer(),
+          endDateTime = booking.getReleaseTime(),
           latestBooking = booking.bookingSequence == 1,
           profileDetails = booking.profileDetails
             .filter { it.id.sequence == 1L }
