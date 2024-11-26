@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -33,6 +34,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var personContactRepository: OffenderContactPersonRepository
+
+  @Autowired
+  private lateinit var personAddressRepository: PersonAddressRepository
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
@@ -1306,6 +1310,168 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           assertThat(comment).isEqualTo("Best friends forever")
           assertThat(contactType.description).isEqualTo("Social/Family")
           assertThat(relationshipType.description).isEqualTo("Brother")
+        }
+      }
+    }
+  }
+
+  @DisplayName("POST /persons/{personId}/address")
+  @Nested
+  inner class CreatePersonAddress {
+    private val validAddressRequest = CreatePersonAddressRequest(
+      mailAddress = true,
+      primaryAddress = true,
+    )
+
+    private lateinit var existingPerson: Person
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.post().uri("/persons/999/address")
+          .bodyValue(validAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when city code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when county code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when country code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when address type code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a address`() {
+        val response: CreatePersonAddressResponse = webTestClient.post().uri("/persons/${existingPerson.id}/address")
+          .bodyValue(
+            validAddressRequest.copy(
+              typeCode = "HOME",
+              flat = "1A",
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+              locality = "Broomhill",
+              cityCode = SHEFFIELD,
+              countyCode = "S.YORKSHIRE",
+              countryCode = "GBR",
+              postcode = "S10 2HH",
+              primaryAddress = true,
+              mailAddress = true,
+              noFixedAddress = false,
+              startDate = LocalDate.parse("2001-01-01"),
+              endDate = LocalDate.parse("2032-12-31"),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePersonAddressResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val address = personAddressRepository.findByIdOrNull(response.personAddressId)!!
+
+        with(address) {
+          assertThat(addressId).isEqualTo(addressId)
+          assertThat(person.id).isEqualTo(existingPerson.id)
+          assertThat(addressType?.description).isEqualTo("Home Address")
+          assertThat(flat).isEqualTo("1A")
+          assertThat(premise).isEqualTo("Bolden Court")
+          assertThat(street).isEqualTo("Fulwood Road")
+          assertThat(locality).isEqualTo("Broomhill")
+          assertThat(city?.description).isEqualTo("Sheffield")
+          assertThat(county?.description).isEqualTo("South Yorkshire")
+          assertThat(country?.description).isEqualTo("United Kingdom")
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+          assertThat(noFixedAddress).isFalse()
+          assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
+          assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.addresses).anyMatch { it.addressId == address.addressId }
         }
       }
     }

@@ -315,7 +315,7 @@ interface BookingDsl {
     bodyPartCode: String = "HEAD",
     markTypeCode: String = "TAT",
     sideCode: String? = "L",
-    partOrientationCode: String? = "FRONT",
+    partOrientationCode: String? = "FACE",
     commentText: String? = "head tattoo left front",
     dsl: OffenderIdentifyingMarkDsl.() -> Unit = {},
   ): OffenderIdentifyingMark

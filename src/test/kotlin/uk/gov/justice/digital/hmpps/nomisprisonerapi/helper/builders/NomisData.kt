@@ -37,6 +37,8 @@ class NomisDataBuilder(
   private val personBuilderFactory: PersonBuilderFactory? = null,
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
 ) {
+  fun <T> runInTransaction(block: () -> T) = block()
+
   fun build(dsl: NomisData.() -> Unit) = NomisData(
     programServiceBuilderFactory,
     offenderBuilderFactory,
@@ -72,14 +74,13 @@ class NomisData(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
 
 ) : NomisDataDsl {
-  override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff =
-    staffBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(lastName, firstName)
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(lastName, firstName)
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun adjudicationIncident(
     whenCreated: LocalDateTime,
@@ -117,14 +118,13 @@ class NomisData(
     birthDate: LocalDate,
     genderCode: String,
     dsl: OffenderDsl.() -> Unit,
-  ): Offender =
-    offenderBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(nomsId, lastName, firstName, birthDate, genderCode)
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): Offender = offenderBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(nomsId, lastName, firstName, birthDate, genderCode)
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun programService(
     programCode: String,
@@ -132,14 +132,13 @@ class NomisData(
     description: String,
     active: Boolean,
     dsl: ProgramServiceDsl.() -> Unit,
-  ): ProgramService =
-    programServiceBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(programCode, programId, description, active)
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): ProgramService = programServiceBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(programCode, programId, description, active)
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun questionnaire(
     code: String,
@@ -147,19 +146,18 @@ class NomisData(
     active: Boolean,
     listSequence: Int,
     dsl: QuestionnaireDsl.() -> Unit,
-  ): Questionnaire =
-    questionnaireBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          code = code,
-          description = description,
-          active = active,
-          listSequence = listSequence,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): Questionnaire = questionnaireBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        code = code,
+        description = description,
+        active = active,
+        listSequence = listSequence,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun incident(
     title: String,
@@ -172,24 +170,23 @@ class NomisData(
     followUpDate: LocalDate,
     questionnaire: Questionnaire,
     dsl: IncidentDsl.() -> Unit,
-  ): Incident =
-    incidentBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          title = title,
-          description = description,
-          agencyId = locationId,
-          reportingStaff = reportingStaff,
-          reportedDateTime = reportedDateTime,
-          incidentDateTime = incidentDateTime,
-          incidentStatus = incidentStatus,
-          followUpDate = followUpDate,
-          questionnaire = questionnaire,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): Incident = incidentBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        title = title,
+        description = description,
+        agencyId = locationId,
+        reportingStaff = reportingStaff,
+        reportedDateTime = reportedDateTime,
+        incidentDateTime = incidentDateTime,
+        incidentStatus = incidentStatus,
+        followUpDate = followUpDate,
+        questionnaire = questionnaire,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun nonAssociation(
     offender1: Offender,
@@ -197,37 +194,35 @@ class NomisData(
     nonAssociationReason: String,
     recipNonAssociationReason: String,
     dsl: NonAssociationDsl.() -> Unit,
-  ): OffenderNonAssociation =
-    nonAssociationBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          offender1.id,
-          offender2.id,
-          offender1.latestBooking(),
-          offender2.latestBooking(),
-          nonAssociationReason,
-          recipNonAssociationReason,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): OffenderNonAssociation = nonAssociationBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        offender1.id,
+        offender2.id,
+        offender1.latestBooking(),
+        offender2.latestBooking(),
+        nonAssociationReason,
+        recipNonAssociationReason,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun externalService(
     serviceName: String,
     description: String,
     dsl: ExternalServiceDsl.() -> Unit,
-  ): ExternalService =
-    externalServiceBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          serviceName,
-          description,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): ExternalService = externalServiceBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        serviceName,
+        description,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun splashScreen(
     moduleName: String,
@@ -235,19 +230,18 @@ class NomisData(
     accessBlockedCode: String,
     blockedText: String?,
     dsl: SplashScreenDsl.() -> Unit,
-  ): SplashScreen =
-    splashScreenBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          moduleName,
-          warningText,
-          accessBlockedCode,
-          blockedText,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): SplashScreen = splashScreenBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        moduleName,
+        warningText,
+        accessBlockedCode,
+        blockedText,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun agencyInternalLocation(
     locationCode: String,
@@ -264,41 +258,39 @@ class NomisData(
     deactivationDate: LocalDate?,
     reactivationDate: LocalDate?,
     dsl: AgencyInternalLocationDsl.() -> Unit,
-  ): AgencyInternalLocation =
-    agencyInternalLocationBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          locationCode = locationCode,
-          locationType = locationType,
-          prisonId = prisonId,
-          parentAgencyInternalLocationId = parentAgencyInternalLocationId,
-          capacity = capacity,
-          operationalCapacity = operationalCapacity,
-          cnaCapacity = cnaCapacity,
-          userDescription = userDescription,
-          listSequence = listSequence,
-          comment = comment,
-          active = active,
-          deactivationDate = deactivationDate,
-          reactivationDate = reactivationDate,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): AgencyInternalLocation = agencyInternalLocationBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        locationCode = locationCode,
+        locationType = locationType,
+        prisonId = prisonId,
+        parentAgencyInternalLocationId = parentAgencyInternalLocationId,
+        capacity = capacity,
+        operationalCapacity = operationalCapacity,
+        cnaCapacity = cnaCapacity,
+        userDescription = userDescription,
+        listSequence = listSequence,
+        comment = comment,
+        active = active,
+        deactivationDate = deactivationDate,
+        reactivationDate = reactivationDate,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun template(
     name: String,
     description: String?,
     dsl: IWPTemplateDsl.() -> Unit,
-  ): IWPTemplate =
-    templateBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(name, description)
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): IWPTemplate = templateBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(name, description)
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun corporate(
     corporateName: String,
@@ -311,24 +303,23 @@ class NomisData(
     expiryDate: LocalDate?,
     taxNo: String?,
     dsl: CorporateDsl.() -> Unit,
-  ): Corporate =
-    corporateBuilderFactory!!.builder()
-      .let { builder ->
-        builder.build(
-          corporateName = corporateName,
-          caseloadId = caseloadId,
-          createdDate = createdDate,
-          commentText = commentText,
-          suspended = suspended,
-          feiNumber = feiNumber,
-          active = active,
-          expiryDate = expiryDate,
-          taxNo = taxNo,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): Corporate = corporateBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        corporateName = corporateName,
+        caseloadId = caseloadId,
+        createdDate = createdDate,
+        commentText = commentText,
+        suspended = suspended,
+        feiNumber = feiNumber,
+        active = active,
+        expiryDate = expiryDate,
+        taxNo = taxNo,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   override fun mergeTransaction(
     requestDate: LocalDateTime,

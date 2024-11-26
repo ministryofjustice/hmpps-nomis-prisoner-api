@@ -68,12 +68,11 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
       description = "When true only return active prisoners currently in prison else all prisoners that at some point has been in prison are returned",
     )
     active: Boolean = false,
-  ): Page<PrisonerIds> =
-    if (active) {
-      prisonerService.findAllActivePrisoners(pageRequest)
-    } else {
-      prisonerService.findAllPrisonersWithBookings(pageRequest)
-    }
+  ): Page<PrisonerIds> = if (active) {
+    prisonerService.findAllActivePrisoners(pageRequest)
+  } else {
+    prisonerService.findAllPrisonersWithBookings(pageRequest)
+  }
 
   @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING')")
   @GetMapping("/prisoners/ids/active")
