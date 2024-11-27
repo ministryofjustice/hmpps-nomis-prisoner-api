@@ -2250,7 +2250,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offence.offenceCode").isEqualTo("RT88074")
-          .jsonPath("resultCode1.description").isEqualTo("Supervised Attendance Order")
+          .jsonPath("resultCode1.description").isEqualTo("Restriction Order")
           .jsonPath("offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenceEndDate").isEqualTo("2023-01-02")
 
