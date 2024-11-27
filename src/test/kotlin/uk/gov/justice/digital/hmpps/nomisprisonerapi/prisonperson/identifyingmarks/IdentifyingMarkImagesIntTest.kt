@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType.IMAGE_JPEG
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
@@ -188,5 +189,95 @@ class IdentifyingMarkImagesIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody<IdentifyingMarkImageDetailsResponse>()
+  }
+
+  @DisplayName("GET /identifying-marks/images/{imageId}/data")
+  @Nested
+  inner class GetIdentifyingMarkImageData {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/identifying-marks/images/123456/data")
+          .accept(IMAGE_JPEG)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/identifying-marks/images/123456/data")
+          .accept(IMAGE_JPEG)
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/identifying-marks/images/123456/data")
+          .accept(IMAGE_JPEG)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    @Nested
+    inner class Api {
+      @Test
+      fun `should return an image`() {
+        lateinit var image: OffenderIdentifyingMarkImage
+        nomisDataBuilder.build {
+          offender {
+            booking {
+              identifyingMark {
+                image = image(fullSizeImage = byteArrayOf(1, 2, 3))
+              }
+            }
+          }
+        }
+
+        webTestClient.get().uri("/identifying-marks/images/${image.id}/data")
+          .accept(IMAGE_JPEG)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isOk
+          .expectHeader().contentType(IMAGE_JPEG)
+          .expectBody<ByteArray>()
+          .consumeWith {
+            assertThat(it.responseBody!!).isEqualTo(byteArrayOf(1, 2, 3))
+          }
+      }
+
+      @Test
+      fun `should return not found if there is no image`() {
+        lateinit var image: OffenderIdentifyingMarkImage
+        nomisDataBuilder.build {
+          offender {
+            booking {
+              identifyingMark {
+                image = image(fullSizeImage = null)
+              }
+            }
+          }
+        }
+
+        webTestClient.get().uri("/identifying-marks/images/${image.id}/data")
+          .accept(IMAGE_JPEG)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `should return bad request if there is no image record`() {
+        webTestClient.get().uri("/identifying-marks/images/123456/data")
+          .accept(IMAGE_JPEG)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
   }
 }

@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.identifyingma
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageBadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageNotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIdentifyingMarkImageRepository
@@ -64,4 +66,10 @@ class IdentifyingMarksService(
         )
       }
       ?: throw NotFoundException("Image not found: $imageId")
+
+  fun getIdentifyingMarksImageData(imageId: Long): ByteArray =
+    imageRepository.findByIdOrNull(imageId)
+      ?.also { if (it.fullSizeImage == null) throw ImageNotFoundException("Image not found: $imageId") }
+      ?.fullSizeImage
+      ?: throw ImageBadDataException("Image record does not exist: $imageId")
 }

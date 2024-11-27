@@ -24,3 +24,6 @@ class NotFoundException(message: String?) :
   Supplier<NotFoundException> {
   override fun get(): NotFoundException = NotFoundException(message)
 }
+
+class ImageNotFoundException(message: String) : RuntimeException(message)
+class ImageBadDataException(message: String) : RuntimeException(message)

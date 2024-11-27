@@ -18,10 +18,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageBadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageNotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 
 @RestControllerAdvice
-class NomisPrisonerApiExceptionHandler {
+class ExceptionHandler {
   @ExceptionHandler(AccessDeniedException::class)
   fun handleAccessDeniedException(e: AccessDeniedException): ResponseEntity<ErrorResponse> {
     log.debug("Forbidden (403) returned with message {}", e.message)
@@ -148,6 +150,16 @@ class NomisPrisonerApiExceptionHandler {
         ),
       )
   }
+
+  @ExceptionHandler(ImageNotFoundException::class)
+  fun handleImageException(e: ImageNotFoundException): ResponseEntity<Unit> =
+    ResponseEntity.status(NOT_FOUND).build<Unit>()
+      .also { log.info("Image not found exception: {}", e.message) }
+
+  @ExceptionHandler(ImageBadDataException::class)
+  fun handleImageException(e: ImageBadDataException): ResponseEntity<Unit> =
+    ResponseEntity.status(BAD_REQUEST).build<Unit>()
+      .also { log.info("Image bad data exception: {}", e.message) }
 
   @ExceptionHandler(java.lang.Exception::class)
   fun handleException(e: java.lang.Exception): ResponseEntity<ErrorResponse?>? {
