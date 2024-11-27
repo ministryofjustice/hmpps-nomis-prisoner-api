@@ -505,16 +505,23 @@ class SentencingService(
           offenderCharge.resultCode1Indicator = resultCode?.dispositionCode
           offenderCharge.chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
 
+          log.info("before update to CECs")
+          log.info(courtCase.courtEvents[0].courtEventCharges[0].resultCode1?.code)
+          log.info(courtCase.courtEvents[0].courtEventCharges[1].resultCode1?.code)
+          log.info(courtCase.courtEvents[0].courtEventCharges[2].resultCode1?.code)
           refreshCourtEventCharges(offenderCharge = offenderCharge, case = courtCase).also {
-            courtCaseRepository.saveAndFlush(courtCase).also {
-              courtCase.courtEvents.forEach { courtAppearance ->
+            courtCaseRepository.saveAndFlush(courtCase).also { updatedCourtCase ->
+              updatedCourtCase.courtEvents.forEach { courtAppearance ->
                 refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
               }
-              courtCase.courtEvents
               storedProcedureRepository.imprisonmentStatusUpdate(
                 bookingId = booking.bookingId,
                 changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
               )
+              log.info("after update to CECs")
+              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[0].resultCode1?.code)
+              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[1].resultCode1?.code)
+              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[2].resultCode1?.code)
               telemetryClient.trackEvent(
                 "offender-charge-updated",
                 mapOf(

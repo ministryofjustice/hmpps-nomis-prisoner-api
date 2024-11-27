@@ -2115,13 +2115,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
+                  resultCode1 = "1002",
+                  offenceDate = offenderCharge1.offenceDate,
                   plea = "NG",
                 )
                 courtEventCharge(
                   offenderCharge = offenderCharge2,
+                  resultCode1 = "1067",
                 )
                 courtEventCharge(
                   offenderCharge = offenderCharge3,
+                  resultCode1 = "1067",
                 )
               }
             }
@@ -2234,7 +2238,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createOffenderChargeRequest(),
+              createOffenderChargeRequest(resultCode1 = "1004"),
             ),
           )
           .exchange()
@@ -2246,7 +2250,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offence.offenceCode").isEqualTo("RT88074")
-          .jsonPath("resultCode1.description").isEqualTo("Bound Over to Leave the Island within 3 days")
+          .jsonPath("resultCode1.description").isEqualTo("Supervised Attendance Order")
           .jsonPath("offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenceEndDate").isEqualTo("2023-01-02")
 
@@ -2256,7 +2260,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("courtEventCharges[0].resultCode1.code").isEqualTo("1067")
+          .jsonPath("courtEventCharges[0].resultCode1.code").isEqualTo("1004")
+          // confirm other CEC is not updated
+          .jsonPath("courtEventCharges[1].resultCode1.code").isEqualTo("1067")
           .jsonPath("courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
           .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
