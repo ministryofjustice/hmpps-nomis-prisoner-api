@@ -818,6 +818,92 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/charges/{chargeId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Updates Charge",
+    description = "Required role NOMIS_SENTENCING Updates an offender charge for the offender and given Court Case (latest booking)",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CourtAppearanceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender Charge updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court case does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCharge(
+    @Schema(description = "Offender no", example = "AB1234A", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "34565", required = true)
+    @PathVariable
+    caseId: Long,
+    @Schema(description = "Charge Id", example = "34565", required = true)
+    @PathVariable
+    chargeId: Long,
+    @RequestBody @Valid
+    request: OffenderChargeRequest,
+  ) =
+    sentencingService.updateCourtCharge(offenderNo, caseId, chargeId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{id}")
   @Operation(
     summary = "get a court appearance",
@@ -1459,6 +1545,9 @@ data class CaseIdentifierResponse(
   val createDateTime: LocalDateTime,
   @Schema(description = "The time the case identifier was last changed", example = "2021-07-16T12:34:56")
   val modifiedDateTime: LocalDateTime?,
-  @Schema(description = "The name of the module that last changed it, indicates if this was NOMIS or the synchronisation service", example = "DPS_SYNCHRONISATION")
+  @Schema(
+    description = "The name of the module that last changed it, indicates if this was NOMIS or the synchronisation service",
+    example = "DPS_SYNCHRONISATION",
+  )
   val auditModuleName: String?,
 )
