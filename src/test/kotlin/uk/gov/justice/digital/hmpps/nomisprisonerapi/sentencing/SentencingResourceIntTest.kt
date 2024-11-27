@@ -2108,7 +2108,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              offenderCharge1 = offenderCharge(resultCode1 = "1004", offenceCode = "RR84005B", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
               offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
               courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
@@ -2123,10 +2123,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 courtEventCharge(
                   offenderCharge = offenderCharge3,
                 )
-                courtOrder {
-                  sentencePurpose(purposeCode = "REPAIR")
-                  sentencePurpose(purposeCode = "PUNISH")
-                }
               }
             }
           }
@@ -2223,6 +2219,15 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can update an offender charge`() {
+        // confirming that an initial court order does not exist
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courtOrders[0].id").doesNotExist()
+
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -2244,6 +2249,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("resultCode1.description").isEqualTo("Bound Over to Leave the Island within 3 days")
           .jsonPath("offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenceEndDate").isEqualTo("2023-01-02")
+
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courtEventCharges[0].resultCode1.code").isEqualTo("1067")
+          .jsonPath("courtEventCharges[0].resultCode1Indicator").isEqualTo("F")
+          .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
+          .jsonPath("courtOrders[0].id").exists()
 
         // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
