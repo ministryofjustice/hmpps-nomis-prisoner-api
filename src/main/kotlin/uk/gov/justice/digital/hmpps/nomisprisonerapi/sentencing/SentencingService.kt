@@ -348,6 +348,11 @@ class SentencingService(
           return OffenderChargeIdResponse(
             offenderChargeId = createdOffenderCharge.id,
           ).also { response ->
+            // calculates main offence
+            storedProcedureRepository.imprisonmentStatusUpdate(
+              bookingId = booking.bookingId,
+              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+            )
             telemetryClient.trackEvent(
               "offender-charge-created",
               mapOf(
@@ -355,6 +360,7 @@ class SentencingService(
                 "bookingId" to booking.bookingId.toString(),
                 "offenderNo" to offenderNo,
                 "offenderChargeId" to response.offenderChargeId.toString(),
+                "offenceCode" to createdOffenderCharge.offence.id.offenceCode,
               ),
               null,
             )
@@ -462,6 +468,41 @@ class SentencingService(
                 "court" to request.courtId,
                 "courtEventId" to eventId.toString(),
                 "deletedOffenderCharges" to it.deletedOffenderChargesIds.toString(),
+              ),
+              null,
+            )
+          }
+        }
+      }
+    }
+  }
+
+  @Audit
+  fun updateCourtCharge(offenderNo: String, caseId: Long, chargeId: Long, request: OffenderChargeRequest) {
+    findLatestBooking(offenderNo).let { booking ->
+      findCourtCase(caseId, offenderNo).let { courtCase ->
+        findOffenderCharge(offenderNo = offenderNo, id = chargeId).let { offenderCharge ->
+          val resultCode = request.resultCode1?.let { lookupOffenceResultCode(it) }
+          offenderCharge.offence = lookupOffence(request.offenceCode)
+          offenderCharge.offenceDate = request.offenceDate
+          offenderCharge.offenceEndDate = request.offenceEndDate
+          offenderCharge.resultCode1 = resultCode
+          offenderCharge.resultCode1Indicator = resultCode?.dispositionCode
+          offenderCharge.chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
+
+          offenderChargeRepository.saveAndFlush(offenderCharge).also {
+            storedProcedureRepository.imprisonmentStatusUpdate(
+              bookingId = booking.bookingId,
+              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+            )
+            telemetryClient.trackEvent(
+              "offender-charge-updated",
+              mapOf(
+                "courtCaseId" to caseId.toString(),
+                "bookingId" to booking.bookingId.toString(),
+                "offenderNo" to offenderNo,
+                "offenderChargeId" to chargeId.toString(),
+                "offenceCode" to it.offence.id.offenceCode,
               ),
               null,
             )
