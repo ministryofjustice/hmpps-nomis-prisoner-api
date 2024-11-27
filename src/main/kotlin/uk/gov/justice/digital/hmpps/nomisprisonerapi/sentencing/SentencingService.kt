@@ -399,6 +399,21 @@ class SentencingService(
     }
   }
 
+  // use offender charge to reset all CEC common values
+  private fun refreshCourtEventCharges(
+    offenderCharge: OffenderCharge,
+    case: CourtCase,
+  ) {
+    case.courtEvents.flatMap { it.courtEventCharges }.filter { it.id.offenderCharge == offenderCharge }
+      .forEach { courtEventCharge ->
+        courtEventCharge.offenceDate = offenderCharge.offenceDate
+        courtEventCharge.offenceEndDate = offenderCharge.offenceEndDate
+        courtEventCharge.mostSeriousFlag = offenderCharge.mostSeriousFlag
+        courtEventCharge.resultCode1 = offenderCharge.resultCode1
+        courtEventCharge.resultCode1Indicator = offenderCharge.resultCode1Indicator
+      }
+  }
+
   @Audit
   fun updateCourtAppearance(
     offenderNo: String,
@@ -490,22 +505,35 @@ class SentencingService(
           offenderCharge.resultCode1Indicator = resultCode?.dispositionCode
           offenderCharge.chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
 
-          offenderChargeRepository.saveAndFlush(offenderCharge).also {
-            storedProcedureRepository.imprisonmentStatusUpdate(
-              bookingId = booking.bookingId,
-              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-            )
-            telemetryClient.trackEvent(
-              "offender-charge-updated",
-              mapOf(
-                "courtCaseId" to caseId.toString(),
-                "bookingId" to booking.bookingId.toString(),
-                "offenderNo" to offenderNo,
-                "offenderChargeId" to chargeId.toString(),
-                "offenceCode" to it.offence.id.offenceCode,
-              ),
-              null,
-            )
+          log.info("before update to CECs")
+          log.info(courtCase.courtEvents[0].courtEventCharges[0].resultCode1?.code)
+          log.info(courtCase.courtEvents[0].courtEventCharges[1].resultCode1?.code)
+          log.info(courtCase.courtEvents[0].courtEventCharges[2].resultCode1?.code)
+          refreshCourtEventCharges(offenderCharge = offenderCharge, case = courtCase).also {
+            courtCaseRepository.saveAndFlush(courtCase).also { updatedCourtCase ->
+              updatedCourtCase.courtEvents.forEach { courtAppearance ->
+                refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
+              }
+              storedProcedureRepository.imprisonmentStatusUpdate(
+                bookingId = booking.bookingId,
+                changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+              )
+              log.info("after update to CECs")
+              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[0].resultCode1?.code)
+              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[1].resultCode1?.code)
+              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[2].resultCode1?.code)
+              telemetryClient.trackEvent(
+                "offender-charge-updated",
+                mapOf(
+                  "courtCaseId" to caseId.toString(),
+                  "bookingId" to booking.bookingId.toString(),
+                  "offenderNo" to offenderNo,
+                  "offenderChargeId" to chargeId.toString(),
+                  "offenceCode" to offenderCharge.offence.id.offenceCode,
+                ),
+                null,
+              )
+            }
           }
         }
       }
@@ -975,7 +1003,8 @@ class SentencingService(
 }
 
 private fun CourtCase.getOffenderChargesNotAssociatedWithCourtAppearances(): List<OffenderCharge> {
-  val referencedOffenderCharges = this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
+  val referencedOffenderCharges =
+    this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
   return this.offenderCharges.filterNot { oc -> referencedOffenderCharges.contains(oc) }
 }
 
