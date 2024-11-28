@@ -21,12 +21,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -38,6 +40,7 @@ class ContactPersonService(
   private val personRepository: PersonRepository,
   private val contactRepository: OffenderContactPersonRepository,
   private val personAddressRepository: PersonAddressRepository,
+  private val personInternetAddressRepository: PersonInternetAddressRepository,
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
   private val languageRepository: ReferenceCodeRepository<Language>,
@@ -265,6 +268,13 @@ class ContactPersonService(
       )
     },
   ).let { CreatePersonAddressResponse(personAddressId = it.addressId) }
+
+  fun createPersonEmail(personId: Long, request: CreatePersonEmailRequest): CreatePersonEmailResponse = personInternetAddressRepository.saveAndFlush(
+    PersonInternetAddress(
+      person = personOf(personId),
+      emailAddress = request.email,
+    ),
+  ).let { CreatePersonEmailResponse(emailAddressId = it.internetAddressId) }
 
   fun assertDoesNotExist(request: CreatePersonRequest) {
     request.personId?.takeIf { it != 0L }

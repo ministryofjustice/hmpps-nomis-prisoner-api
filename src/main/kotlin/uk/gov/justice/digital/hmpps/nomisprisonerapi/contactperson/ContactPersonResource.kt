@@ -343,6 +343,63 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     @RequestBody @Valid
     request: CreatePersonAddressRequest,
   ): CreatePersonAddressResponse = contactPersonService.createPersonAddress(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/persons/{personId}/email")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a person email",
+    description = "Creates a person email in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Person Email ID aka InternetAddressId Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreatePersonEmailResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPersonEmail(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @RequestBody @Valid
+    request: CreatePersonEmailRequest,
+  ): CreatePersonEmailResponse = contactPersonService.createPersonEmail(personId, request)
 }
 
 @Schema(description = "The data held in NOMIS about a person who is a contact for a prisoner")
@@ -670,4 +727,14 @@ data class CreatePersonAddressRequest(
 data class CreatePersonAddressResponse(
   @Schema(description = "The address Id")
   val personAddressId: Long,
+)
+
+data class CreatePersonEmailRequest(
+  @Schema(description = "Email address", example = "test@test.justice.gov.uk")
+  val email: String,
+)
+
+data class CreatePersonEmailResponse(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val emailAddressId: Long,
 )
