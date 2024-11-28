@@ -15,7 +15,7 @@ class PersonInternetAddress(
   emailAddress: String,
 ) : InternetAddress(
   internetAddress = emailAddress,
-  internetAddressClass = "EMAIL",
+  internetAddressClass = EMAIL_INTERNET_ADDRESS_CLASS,
 ) {
   companion object {
     const val TYPE = "PER"

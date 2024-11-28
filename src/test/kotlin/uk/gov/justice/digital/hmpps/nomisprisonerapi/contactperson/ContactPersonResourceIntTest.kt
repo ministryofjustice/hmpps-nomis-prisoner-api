@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -37,6 +38,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var personAddressRepository: PersonAddressRepository
+
+  @Autowired
+  private lateinit var personInternetAddressRepository: PersonInternetAddressRepository
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
@@ -1472,6 +1476,107 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.runInTransaction {
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.addresses).anyMatch { it.addressId == address.addressId }
+        }
+      }
+    }
+  }
+
+  @DisplayName("POST /persons/{personId}/email")
+  @Nested
+  inner class CreatePersonEmail {
+    private val validEmailRequest = CreatePersonEmailRequest(
+      email = "test@test.com",
+    )
+
+    private lateinit var existingPerson: Person
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/email")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/email")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/email")
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.post().uri("/persons/999/email")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a email`() {
+        val response: CreatePersonEmailResponse = webTestClient.post().uri("/persons/${existingPerson.id}/email")
+          .bodyValue(
+            validEmailRequest.copy(
+              email = "test@email.com",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePersonEmailResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val email = personInternetAddressRepository.findByIdOrNull(response.emailAddressId)!!
+
+        with(email) {
+          assertThat(internetAddressId).isEqualTo(response.emailAddressId)
+          assertThat(person.id).isEqualTo(existingPerson.id)
+          assertThat(email.internetAddress).isEqualTo("test@email.com")
+          assertThat(email.internetAddressClass).isEqualTo("EMAIL")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.internetAddresses).anyMatch { it.internetAddressId == email.internetAddressId }
         }
       }
     }
