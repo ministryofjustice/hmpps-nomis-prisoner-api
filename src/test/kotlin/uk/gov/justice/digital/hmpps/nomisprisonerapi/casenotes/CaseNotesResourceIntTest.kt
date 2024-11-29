@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import java.time.temporal.ChronoUnit.SECONDS
 
 class CaseNotesResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -134,7 +135,9 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("occurrenceDateTime").isEqualTo("2021-02-03T04:05:06")
           .jsonPath("creationDateTime").isEqualTo("2021-02-03T04:05:06")
           .jsonPath("noteSourceCode").isEqualTo("INST")
-          .jsonPath("createdDatetime").isEqualTo("2021-02-03T04:05:06")
+          .jsonPath("createdDatetime").value<String> {
+            assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          }
           .jsonPath("createdUsername").isEqualTo("SA")
           .jsonPath("auditModuleName").isEqualTo("A_MODULE")
           .jsonPath("sourceSystem").isEqualTo("NOMIS")
@@ -307,7 +310,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           assertThat(newCaseNote.noteSourceCode).isEqualTo(NoteSourceCode.INST)
           assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate)
           assertThat(newCaseNote.timeCreation).isEqualTo(newCaseNote.occurrenceDateTime)
-          assertThat(newCaseNote.createdDatetime).isCloseTo(LocalDateTime.now(), within(5, ChronoUnit.SECONDS))
+          assertThat(newCaseNote.createdDatetime).isCloseTo(LocalDateTime.now(), within(5, SECONDS))
           assertThat(newCaseNote.createdUserId).isEqualTo("SA")
 
           repository.delete(newCaseNote)
