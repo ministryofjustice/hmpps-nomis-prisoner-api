@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -115,15 +116,19 @@ class OffenderCaseNote(
   // date part always the same as DATE_CREATION
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
-  var createdDatetime: LocalDateTime? = null,
+  @Generated
+  var createdDatetime: LocalDateTime = LocalDateTime.now(),
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  var createdUserId: String? = null,
+  @Generated
+  var createdUserId: String = "",
 
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
   var modifiedDatetime: LocalDateTime? = null,
 
   @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
   var modifiedUserId: String? = null,
 
   val auditModuleName: String? = null,

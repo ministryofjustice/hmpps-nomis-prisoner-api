@@ -19,9 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.WorkRepository
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import kotlin.collections.contains
 
 @Service
 @Transactional
@@ -124,8 +122,8 @@ class CaseNotesService(
     caseNoteText = parseMainText(caseNoteText),
     amendments = parseAmendments(this),
     noteSourceCode = noteSourceCode,
-    createdDatetime = LocalDateTime.of(dateCreation, timeCreation?.toLocalTime() ?: LocalTime.MIDNIGHT),
-    createdUsername = createdUserId!!,
+    createdDatetime = createdDatetime,
+    createdUsername = createdUserId,
     auditModuleName = auditModuleName,
     sourceSystem = if (auditModuleName in dpsModules && (modifiedUserId == null || modifiedUserId == createdUserId)) {
       SourceSystem.DPS
