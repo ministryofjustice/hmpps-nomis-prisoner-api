@@ -400,6 +400,147 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     @RequestBody @Valid
     request: CreatePersonEmailRequest,
   ): CreatePersonEmailResponse = contactPersonService.createPersonEmail(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/persons/{personId}/phone")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a person global phone",
+    description = "Creates a person global phone in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Person Phone ID Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreatePersonPhoneResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request data, e.g type is not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPersonPhone(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @RequestBody @Valid
+    request: CreatePersonPhoneRequest,
+  ): CreatePersonPhoneResponse = contactPersonService.createPersonPhone(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/persons/{personId}/address/{addressId}/phone")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a person address phone",
+    description = "Creates a person phone associated with an address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Person Phone ID Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreatePersonPhoneResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request data, e.g type is not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person or address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPersonAddressPhone(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Address Id", example = "56789")
+    @PathVariable
+    addressId: Long,
+    @RequestBody @Valid
+    request: CreatePersonPhoneRequest,
+  ): CreatePersonPhoneResponse = contactPersonService.createPersonAddressPhone(
+    personId = personId,
+    addressId = addressId,
+    request = request,
+  )
 }
 
 @Schema(description = "The data held in NOMIS about a person who is a contact for a prisoner")
@@ -737,4 +878,18 @@ data class CreatePersonEmailRequest(
 data class CreatePersonEmailResponse(
   @Schema(description = "Unique NOMIS Id of email address")
   val emailAddressId: Long,
+)
+
+data class CreatePersonPhoneRequest(
+  @Schema(description = "The number", example = "0114 555 555")
+  val number: String,
+  @Schema(description = "Extension", example = "x432")
+  val extension: String? = null,
+  @Schema(description = "Phone type code", example = "MOB")
+  val typeCode: String,
+)
+
+data class CreatePersonPhoneResponse(
+  @Schema(description = "Unique NOMIS Id of phone")
+  val phoneId: Long,
 )

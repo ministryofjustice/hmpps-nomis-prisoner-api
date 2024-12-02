@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
@@ -22,13 +23,17 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RelationshipType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -41,6 +46,8 @@ class ContactPersonService(
   private val contactRepository: OffenderContactPersonRepository,
   private val personAddressRepository: PersonAddressRepository,
   private val personInternetAddressRepository: PersonInternetAddressRepository,
+  private val personPhoneRepository: PersonPhoneRepository,
+  private val addressPhoneRepository: AddressPhoneRepository,
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
   private val languageRepository: ReferenceCodeRepository<Language>,
@@ -48,6 +55,7 @@ class ContactPersonService(
   private val contactTypeRepository: ReferenceCodeRepository<ContactType>,
   private val relationshipTypeRepository: ReferenceCodeRepository<RelationshipType>,
   private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
+  private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
@@ -276,6 +284,24 @@ class ContactPersonService(
     ),
   ).let { CreatePersonEmailResponse(emailAddressId = it.internetAddressId) }
 
+  fun createPersonPhone(personId: Long, request: CreatePersonPhoneRequest): CreatePersonPhoneResponse = personPhoneRepository.saveAndFlush(
+    PersonPhone(
+      person = personOf(personId),
+      phoneNo = request.number,
+      extNo = request.extension,
+      phoneType = phoneTypeOf(request.typeCode),
+    ),
+  ).let { CreatePersonPhoneResponse(phoneId = it.phoneId) }
+
+  fun createPersonAddressPhone(personId: Long, addressId: Long, request: CreatePersonPhoneRequest): CreatePersonPhoneResponse = addressPhoneRepository.saveAndFlush(
+    AddressPhone(
+      address = addressOf(personId = personId, addressId = addressId),
+      phoneNo = request.number,
+      extNo = request.extension,
+      phoneType = phoneTypeOf(request.typeCode),
+    ),
+  ).let { CreatePersonPhoneResponse(phoneId = it.phoneId) }
+
   fun assertDoesNotExist(request: CreatePersonRequest) {
     request.personId?.takeIf { it != 0L }
       ?.run {
@@ -295,6 +321,8 @@ class ContactPersonService(
   fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) ?: throw BadDataException("County with code $code does not exist") }
   fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
   fun personOf(personId: Long): Person = personRepository.findByIdOrNull(personId) ?: throw NotFoundException("Person with id=$personId does not exist")
+  fun addressOf(personId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress = (personAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Person with id=$personId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Address with id=$addressId on Person with id=$personId does not exist")
+  fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
 }
 
 data class PersonFilter(
