@@ -1721,7 +1721,8 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isEqualTo(201)
           .expectBody()
           .jsonPath("[0].bookingId").isEqualTo(activeBookingId)
-          .jsonPath("[0].alertSequence").isEqualTo(1)
+          // sequence will be greater than the original sequence that were just deleted
+          .jsonPath("[0].alertSequence").isEqualTo(3)
           .jsonPath("[0].alertCode.code").isEqualTo("SC")
           .jsonPath("[0].alertCode.description").isEqualTo("Risk to Children")
           .jsonPath("[0].type.code").isEqualTo("S")
@@ -1779,7 +1780,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `can create an alerts that are inactive`() {
+      fun `can create alerts that are inactive`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1818,9 +1819,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           val activeAlert = booking.alerts[1]
 
           assertThat(inactiveAlert.alertStatus).isEqualTo(INACTIVE)
-          assertThat(inactiveAlert.id.sequence).isEqualTo(1)
+          assertThat(inactiveAlert.id.sequence).isEqualTo(3)
           assertThat(activeAlert.alertStatus).isEqualTo(ACTIVE)
-          assertThat(activeAlert.id.sequence).isEqualTo(2)
+          assertThat(activeAlert.id.sequence).isEqualTo(4)
         }
       }
     }
