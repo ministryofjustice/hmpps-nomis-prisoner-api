@@ -1524,6 +1524,306 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("POST /prisoners/{offenderNo}/alerts/resynchronise")
+  @Nested
+  inner class ResynchroniseAlerts {
+    private var activeBookingId = 0L
+    private lateinit var prisoner: Offender
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1234AB") {
+          activeBookingId = booking {
+            alert(
+              sequence = 1,
+              alertCode = "HPI",
+              typeCode = "X",
+              date = LocalDate.parse("2023-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            alert(
+              sequence = 2,
+              alertCode = "SC",
+              typeCode = "S",
+              date = LocalDate.parse("2020-07-19"),
+              expiryDate = LocalDate.parse("2025-07-19"),
+              authorizePersonText = "Security Team",
+              verifiedFlag = true,
+              status = INACTIVE,
+              commentText = "At risk",
+            )
+          }.bookingId
+          booking(bookingBeginDate = LocalDateTime.parse("2021-07-18T10:00:00")) {
+            alert(
+              sequence = 1,
+              alertCode = "SA",
+              typeCode = "X",
+              date = LocalDate.parse("2021-07-19"),
+              expiryDate = null,
+              authorizePersonText = null,
+              verifiedFlag = false,
+              status = ACTIVE,
+              commentText = null,
+            )
+            release(date = LocalDateTime.parse("2021-07-19T10:00:00"))
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+    }
+
+    @Nested
+    inner class Security {
+      private val validAlerts = listOf(
+        CreateAlertRequest(
+          alertCode = "SA",
+          date = LocalDate.now(),
+          isActive = true,
+          createUsername = "JANE.PEEL",
+        ),
+      )
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlerts)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlerts)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlerts)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private val validAlerts = listOf(
+        CreateAlertRequest(
+          alertCode = "SA",
+          date = LocalDate.now(),
+          isActive = true,
+          createUsername = "JANE.PEEL",
+        ),
+      )
+
+      @Test
+      fun `validation fails when prisoner does not exist`() {
+        webTestClient.post().uri("/prisoners/A9999ZZ/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAlerts)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `validation fails when one of the alert codes is not present`() {
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              [
+                {
+                  "date": "2020-01-01",
+                  "isActive": true,
+                  "createUsername": "JANE.PEEL"
+                }
+              ]
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `can to add the same active alert twice`() {
+        // Validation is relaxed since we are replacing exactly what is in DPS
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              [
+                {
+                  "alertCode": "HPI",
+                  "isActive": true,
+                  "date": "2020-01-01",
+                  "createUsername": "JANE.PEEL"
+                },
+                {
+                  "alertCode": "HPI",
+                  "isActive": true,
+                  "date": "2020-01-01",
+                  "createUsername": "JANE.PEEL"
+                }
+              ]
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isCreated()
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `replaces an alerts with minimal data will return basic data`() {
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              [
+                {
+                  "alertCode": "SC",
+                  "isActive": true,
+                  "date": "2020-01-01",
+                  "createUsername": "JANE.PEEL"
+                }
+              ]
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(201)
+          .expectBody()
+          .jsonPath("[0].bookingId").isEqualTo(activeBookingId)
+          .jsonPath("[0].alertSequence").isEqualTo(1)
+          .jsonPath("[0].alertCode.code").isEqualTo("SC")
+          .jsonPath("[0].alertCode.description").isEqualTo("Risk to Children")
+          .jsonPath("[0].type.code").isEqualTo("S")
+          .jsonPath("[0].type.description").isEqualTo("Sexual Offence")
+      }
+
+      @Test
+      fun `creating an alert will allow the data to be retrieved`() {
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              [
+                {
+                  "alertCode": "SC",
+                  "isActive": true,
+                  "date": "2020-01-01",
+                  "createUsername": "JANE.PEEL"
+                }
+              ]
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(201)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          assertThat(booking?.alerts).hasSize(1)
+          val newAlert = booking?.alerts?.first()!!
+
+          assertThat(newAlert.alertCode.code).isEqualTo("SC")
+          assertThat(newAlert.alertType.code).isEqualTo("S")
+          assertThat(newAlert.alertDate).isEqualTo("2020-01-01")
+          assertThat(newAlert.alertStatus).isEqualTo(ACTIVE)
+          assertThat(newAlert.rootOffender).isNotNull
+          assertThat(newAlert.rootOffender?.id).isEqualTo(booking.rootOffender?.id)
+          assertThat(newAlert.workFlows).hasSize(1)
+          assertThat(newAlert.workFlows.first().createUsername).isEqualTo("JANE.PEEL")
+          assertThat(newAlert.workFlows.first().createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newAlert.workFlows.first().logs).hasSize(1)
+          assertThat(newAlert.workFlows.first().logs.first().createUsername).isEqualTo("JANE.PEEL")
+          assertThat(newAlert.workFlows.first().logs.first().createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newAlert.workFlows.first().logs.first().workActionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newAlert.workFlows.first().logs.first().workFlowStatus).isEqualTo(DONE)
+          assertThat(newAlert.workFlows.first().logs.first().workActionCode.code).isEqualTo(DATA_ENTRY)
+          assertThat(newAlert.createUsername).isEqualTo("JANE.PEEL")
+          assertThat(newAlert.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+          assertThat(newAlert.commentText).isNull()
+          assertThat(newAlert.expiryDate).isNull()
+          assertThat(newAlert.verifiedFlag).isFalse()
+        }
+      }
+
+      @Test
+      fun `can create an alerts that are inactive`() {
+        webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              [
+                {
+                  "alertCode": "SC",
+                  "isActive": false,
+                  "date": "2020-01-01",
+                  "expiryDate": "2021-01-01",
+                  "createUsername": "JANE.PEEL",
+                  "comment": "Risky",
+                  "authorisedBy": "Security team"
+                },
+                {
+                  "alertCode": "SC",
+                  "isActive": true,
+                  "date": "2020-01-01",
+                  "createUsername": "JANE.PEEL",
+                  "comment": "Risky",
+                  "authorisedBy": "Security team"
+                }
+              ]
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(201)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          assertThat(booking!!.alerts).hasSize(2)
+          val inactiveAlert = booking.alerts[0]
+          val activeAlert = booking.alerts[1]
+
+          assertThat(inactiveAlert.alertStatus).isEqualTo(INACTIVE)
+          assertThat(activeAlert.alertStatus).isEqualTo(ACTIVE)
+        }
+      }
+    }
+  }
+
   @DisplayName("PUT /prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
   @Nested
   inner class UpdateAlert {

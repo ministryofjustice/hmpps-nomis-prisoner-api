@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
@@ -20,6 +21,10 @@ interface OffenderAlertRepository : JpaRepository<OffenderAlert, OffenderAlertId
 
   @Suppress("ktlint:standard:function-naming")
   fun findAllById_OffenderBooking(offenderBooking: OffenderBooking): List<OffenderAlert>
+
+  @Modifying
+  @Query("delete from OffenderAlert where id.offenderBooking.bookingId = :offenderBookingId")
+  fun deleteAllByOffenderBookingId(offenderBookingId: Long)
 
   @Query(
     """
