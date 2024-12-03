@@ -25,6 +25,13 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
     code: String,
   ): OffenderProgramProfile?
 
+  fun findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCodeAndStartDate(
+    courseActivityId: Long,
+    bookingId: Long,
+    code: String,
+    startDate: LocalDate,
+  ): OffenderProgramProfile?
+
   fun findByCourseActivityCourseActivityIdAndProgramStatusCode(
     courseActivityId: Long,
     code: String,
