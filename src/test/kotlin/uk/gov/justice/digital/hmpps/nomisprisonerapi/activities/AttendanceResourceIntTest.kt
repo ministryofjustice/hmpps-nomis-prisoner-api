@@ -921,7 +921,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return not found if there is no attendance`() {
+    fun `should return 2xx if there is no attendance`() {
       nomisDataBuilder.build {
         offender {
           offenderBooking = booking {
@@ -933,7 +933,16 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/${offenderBooking.bookingId}/attendance")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
-        .expectStatus().isNotFound
+        .expectStatus().isNoContent
+
+      verify(telemetryClient).trackEvent(
+        eq("activity-attendance-delete-ignored"),
+        check<MutableMap<String, String>> {
+          assertThat(it["nomisCourseScheduleId"]).isEqualTo(courseSchedule.courseScheduleId.toString())
+          assertThat(it["bookingId"]).isEqualTo(offenderBooking.bookingId.toString())
+        },
+        isNull(),
+      )
     }
 
     @Test

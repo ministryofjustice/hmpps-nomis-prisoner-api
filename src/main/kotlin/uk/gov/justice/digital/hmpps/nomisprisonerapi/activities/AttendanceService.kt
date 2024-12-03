@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.AttendanceReconciliationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadRequestError
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -190,7 +191,7 @@ class AttendanceService(
         if (paidTransactionId != null) throw BadDataException("Attendance for course schedule $courseScheduleId and booking $bookingId has already been paid")
         attendanceRepository.delete(this)
       }
-      ?: throw NotFoundException("Attendance for course schedule $courseScheduleId and booking $bookingId not found")
+      ?: telemetryClient.trackEvent("activity-attendance-delete-ignored", mapOf("nomisCourseScheduleId" to courseScheduleId.toString(), "bookingId" to bookingId.toString()))
   }
 
   fun findPaidAttendancesSummary(prisonId: String, date: LocalDate) =
