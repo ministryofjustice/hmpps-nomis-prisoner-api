@@ -44,6 +44,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceTermType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
@@ -80,6 +81,7 @@ class SentencingService(
   private val directionTypeRepository: ReferenceCodeRepository<DirectionType>,
   private val offenceRepository: OffenceRepository,
   private val offenderChargeRepository: OffenderChargeRepository,
+  private val courtEventChargeRepository: CourtEventChargeRepository,
   private val courtEventRepository: CourtEventRepository,
   private val offenceResultCodeRepository: OffenceResultCodeRepository,
   private val courtOrderRepository: CourtOrderRepository,
@@ -493,43 +495,50 @@ class SentencingService(
   }
 
   @Audit
-  fun updateCourtCharge(offenderNo: String, caseId: Long, chargeId: Long, request: OffenderChargeRequest) {
+  fun updateCourtCharge(
+    offenderNo: String,
+    caseId: Long,
+    chargeId: Long,
+    courtEventId: Long,
+    request: OffenderChargeRequest,
+  ) {
     findLatestBooking(offenderNo).let { booking ->
       findCourtCase(caseId, offenderNo).let { courtCase ->
-        findOffenderCharge(offenderNo = offenderNo, id = chargeId).let { offenderCharge ->
-          val resultCode = request.resultCode1?.let { lookupOffenceResultCode(it) }
-          offenderCharge.offence = lookupOffence(request.offenceCode)
-          offenderCharge.offenceDate = request.offenceDate
-          offenderCharge.offenceEndDate = request.offenceEndDate
-          offenderCharge.resultCode1 = resultCode
-          offenderCharge.resultCode1Indicator = resultCode?.dispositionCode
-          offenderCharge.chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
+        findCourtAppearance(courtEventId, offenderNo).let { courtAppearance ->
+          val offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId)
+          findCourtEventCharge(
+            offenderNo = offenderNo,
+            id = CourtEventChargeId(offenderCharge, courtAppearance),
+          ).let { courtEventCharge ->
 
-          log.info("before update to CECs")
-          log.info(courtCase.courtEvents[0].courtEventCharges[0].resultCode1?.code)
-          log.info(courtCase.courtEvents[0].courtEventCharges[1].resultCode1?.code)
-          log.info(courtCase.courtEvents[0].courtEventCharges[2].resultCode1?.code)
-          refreshCourtEventCharges(offenderCharge = offenderCharge, case = courtCase).also {
-            courtCaseRepository.saveAndFlush(courtCase).also { updatedCourtCase ->
-              updatedCourtCase.courtEvents.forEach { courtAppearance ->
-                refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
+            val resultCode = request.resultCode1?.let { lookupOffenceResultCode(it) }
+            courtEventCharge.offenceDate = request.offenceDate
+            courtEventCharge.offenceEndDate = request.offenceEndDate
+            courtEventCharge.resultCode1 = resultCode
+            courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
+
+            refreshOffenderCharge(
+              courtEventCharge = courtEventCharge,
+              offenderChargeRequest = request.toExistingOffenderChargeRequest(chargeId),
+              resultCode = resultCode,
+              latestAppearance = courtEventCharge.id.courtEvent.isLatestAppearance(),
+            ).also {
+              courtCase.courtEvents.forEach { courtAppearance ->
+                courtEventRepository.saveAndFlush(courtAppearance).also {
+                  refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
+                }
               }
               storedProcedureRepository.imprisonmentStatusUpdate(
                 bookingId = booking.bookingId,
                 changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
               )
-              log.info("after update to CECs")
-              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[0].resultCode1?.code)
-              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[1].resultCode1?.code)
-              log.info(updatedCourtCase.courtEvents[0].courtEventCharges[2].resultCode1?.code)
               telemetryClient.trackEvent(
-                "offender-charge-updated",
+                "court-charge-updated",
                 mapOf(
                   "courtCaseId" to caseId.toString(),
                   "bookingId" to booking.bookingId.toString(),
                   "offenderNo" to offenderNo,
                   "offenderChargeId" to chargeId.toString(),
-                  "offenceCode" to offenderCharge.offence.id.offenceCode,
                 ),
                 null,
               )
@@ -702,9 +711,9 @@ class SentencingService(
         courtEventCharge.offenceEndDate = offenderChargeRequest.offenceEndDate
         courtEventCharge.resultCode1 = resultCode
         courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
-        if (courtAppearance.isLatestAppearance()) {
-          refreshOffenderCharge(courtEventCharge, offenderChargeRequest, resultCode)
-        }
+
+        refreshOffenderCharge(courtEventCharge, offenderChargeRequest, resultCode, courtAppearance.isLatestAppearance())
+
         courtEventCharge
       }.let {
         courtAppearance.courtEventCharges.clear()
@@ -712,18 +721,21 @@ class SentencingService(
       }
   }
 
+  // nomis only updates the outcome/result on the Offence Charge if a change is made to the latest Court Event Charge
   private fun SentencingService.refreshOffenderCharge(
     courtEventCharge: CourtEventCharge,
     offenderChargeRequest: ExistingOffenderChargeRequest,
     resultCode: OffenceResultCode?,
+    latestAppearance: Boolean = true,
   ) {
     with(courtEventCharge.id.offenderCharge) {
       offenceDate = offenderChargeRequest.offenceDate
       offenceEndDate = offenderChargeRequest.offenceEndDate
-      offence = lookupOffence(offenderChargeRequest.offenceCode)
-      resultCode1 = resultCode
-      resultCode1Indicator = resultCode?.dispositionCode
-      chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
+      if (latestAppearance) {
+        resultCode1 = resultCode
+        resultCode1Indicator = resultCode?.dispositionCode
+        chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
+      }
     }
   }
 
@@ -892,6 +904,11 @@ class SentencingService(
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
   }
 
+  fun getLastModifiedCourtEventCharge(id: Long, offenderNo: String): CourtEventChargeResponse {
+    findLatestBooking(offenderNo)
+    return findLastModifiedCourtEventCharge(offenderChargeId = id, offenderNo = offenderNo).toCourtEventCharge()
+  }
+
   fun refreshCaseIdentifiers(offenderNo: String, caseId: Long, request: CaseIdentifierRequest) {
     val courtCase = courtCaseRepository.findByIdOrNull(caseId)
       ?: throw NotFoundException("Court case $caseId not found")
@@ -945,6 +962,19 @@ class SentencingService(
   private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge {
     return offenderChargeRepository.findByIdOrNull(id)
       ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
+  }
+
+  private fun findCourtEventCharge(id: CourtEventChargeId, offenderNo: String): CourtEventCharge {
+    return courtEventChargeRepository.findByIdOrNull(id)
+      ?: throw NotFoundException("Court event charge with offenderChargeId $id for $offenderNo not found")
+  }
+
+  private fun findLastModifiedCourtEventCharge(offenderChargeId: Long, offenderNo: String): CourtEventCharge {
+    return courtEventChargeRepository.findFirstByIdOffenderChargeIdOrderByLastModifiedDateTimeDesc(offenderChargeId)
+      .also { courtEventCharge ->
+        log.info("BLA BLA BLA " + courtEventCharge?.id?.offenderCharge?.id.toString() + " ${courtEventCharge?.lastModifiedDateTime}")
+      }
+      ?: throw NotFoundException("Last modified Court event charge with offenderChargeId $offenderChargeId for $offenderNo not found")
   }
 
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(
@@ -1001,6 +1031,15 @@ class SentencingService(
     ChargeStatusType.pk(code),
   ) ?: throw BadDataException("Charge status Type $code not found")
 }
+
+private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest =
+  ExistingOffenderChargeRequest(
+    offenceCode = this.offenceCode,
+    offenceDate = this.offenceDate,
+    offenceEndDate = this.offenceEndDate,
+    resultCode1 = this.resultCode1,
+    offenderChargeId = chargeId,
+  )
 
 private fun CourtCase.getOffenderChargesNotAssociatedWithCourtAppearances(): List<OffenderCharge> {
   val referencedOffenderCharges =

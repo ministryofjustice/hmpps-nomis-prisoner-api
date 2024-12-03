@@ -43,6 +43,7 @@ interface CourtEventDsl {
     resultCode1Indicator: String? = "rci1",
     resultCode2Indicator: String? = "rci2",
     mostSeriousFlag: Boolean = false,
+    whenModified: LocalDateTime? = null,
     dsl: CourtEventChargeDsl.() -> Unit = {},
   ): CourtEventCharge
 
@@ -157,6 +158,7 @@ class CourtEventBuilder(
     resultCode1Indicator: String?,
     resultCode2Indicator: String?,
     mostSeriousFlag: Boolean,
+    whenModified: LocalDateTime?,
     dsl: CourtEventChargeDsl.() -> Unit,
   ) =
     courtEventChargeBuilderFactory.builder().let { builder ->
@@ -177,6 +179,7 @@ class CourtEventBuilder(
         resultCode1Indicator = resultCode1Indicator,
         resultCode2Indicator = resultCode2Indicator,
         mostSeriousFlag = mostSeriousFlag,
+        whenModified = whenModified,
       )
         .also { courtEvent.courtEventCharges += it }
         .also { builder.apply(dsl) }

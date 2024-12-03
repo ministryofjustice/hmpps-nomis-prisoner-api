@@ -102,6 +102,10 @@ class CourtEventCharge(
   @Generated
   lateinit var createDatetime: LocalDateTime
 
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
