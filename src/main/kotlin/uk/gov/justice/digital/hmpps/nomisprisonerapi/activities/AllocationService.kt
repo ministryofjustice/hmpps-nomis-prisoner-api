@@ -135,6 +135,14 @@ class AllocationService(
         "ALLOC",
       )
 
+    // If the request is to end the allocation, check if it has already been ended, e.g. by a prison still using NOMIS
+    if (existingAllocation == null && request.programStatusCode == "END") {
+      val ended = findEndedAllocation(courseActivityId, request)
+      if (ended != null) {
+        return ended
+      }
+    }
+
     val requestedPayBand = findPayBandOrThrow(request.payBandCode)
 
     val offenderBooking = findOffenderBookingOrThrow(request.bookingId)
@@ -157,6 +165,14 @@ class AllocationService(
       updateExclusions(request.exclusions ?: listOf())
     }
   }
+
+  private fun findEndedAllocation(courseActivityId: Long, request: UpsertAllocationRequest): OffenderProgramProfile? =
+    offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCodeAndStartDate(
+      courseActivityId,
+      request.bookingId,
+      "END",
+      request.startDate,
+    )
 
   private fun findProgramStatus(programStatusCode: String): OffenderProgramStatus =
     offenderProgramStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(programStatusCode))
