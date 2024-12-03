@@ -81,8 +81,11 @@ class AlertsService(
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
 
+    // ensure the new alerts get a new primary key that doesn't match the ones being deleted
+    // else they will all get deleted from DPS
+    val nextSequence = offenderAlertRepository.getNextSequence(offenderBooking)
     offenderBooking.alerts.clear()
-    requests.forEach { request ->
+    requests.forEachIndexed { index, request ->
       val alertCode = alertCodeRepository.findByIdOrNull(AlertCode.pk(request.alertCode))
         ?: throw BadDataException("Alert code ${request.alertCode} is not valid")
 
@@ -90,7 +93,7 @@ class AlertsService(
 
       offenderBooking.alerts.add(
         OffenderAlert(
-          id = OffenderAlertId(offenderBooking, sequence = offenderAlertRepository.getNextSequence(offenderBooking)),
+          id = OffenderAlertId(offenderBooking, sequence = nextSequence + index),
           rootOffender = offenderBooking.rootOffender,
           alertDate = request.date,
           expiryDate = request.expiryDate,
