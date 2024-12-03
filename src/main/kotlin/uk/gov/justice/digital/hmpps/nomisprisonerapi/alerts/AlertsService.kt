@@ -32,11 +32,10 @@ class AlertsService(
   val alertTypeRepository: ReferenceCodeRepository<AlertType>,
   val workFlowActionRepository: ReferenceCodeRepository<WorkFlowAction>,
 ) {
-  fun getAlert(bookingId: Long, alertSequence: Long): AlertResponse =
-    offenderBookingRepository.findByIdOrNull(bookingId)?.let { booking ->
-      offenderAlertRepository.findById_OffenderBookingAndId_Sequence(booking, alertSequence)?.toAlertResponse()
-        ?: throw NotFoundException("Prisoner alert not found for alertSequence=$alertSequence")
-    } ?: throw NotFoundException("Prisoner booking not found for bookingId=$bookingId")
+  fun getAlert(bookingId: Long, alertSequence: Long): AlertResponse = offenderBookingRepository.findByIdOrNull(bookingId)?.let { booking ->
+    offenderAlertRepository.findById_OffenderBookingAndId_Sequence(booking, alertSequence)?.toAlertResponse()
+      ?: throw NotFoundException("Prisoner alert not found for alertSequence=$alertSequence")
+  } ?: throw NotFoundException("Prisoner booking not found for bookingId=$bookingId")
 
   @Audit
   fun createAlert(offenderNo: String, request: CreateAlertRequest): CreateAlertResponse {
@@ -75,6 +74,47 @@ class AlertsService(
       alertCode = alert.alertCode.toCodeDescription(),
       type = alert.alertType.toCodeDescription(),
     )
+  }
+
+  @Audit
+  fun resynchroniseAlerts(offenderNo: String, requests: List<CreateAlertRequest>): List<CreateAlertResponse> {
+    val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
+
+    offenderBooking.alerts.clear()
+    requests.forEach { request ->
+      val alertCode = alertCodeRepository.findByIdOrNull(AlertCode.pk(request.alertCode))
+        ?: throw BadDataException("Alert code ${request.alertCode} is not valid")
+
+      val workActionCode = workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(WorkFlowAction.DATA_ENTRY))!!
+
+      offenderBooking.alerts.add(
+        OffenderAlert(
+          id = OffenderAlertId(offenderBooking, sequence = offenderAlertRepository.getNextSequence(offenderBooking)),
+          rootOffender = offenderBooking.rootOffender,
+          alertDate = request.date,
+          expiryDate = request.expiryDate,
+          alertType = alertTypeRepository.findByIdOrNull(AlertType.pk(alertCode.parentCode!!))!!,
+          alertCode = alertCode,
+          authorizePersonText = request.authorisedBy,
+          alertStatus = if (request.isActive) ACTIVE else INACTIVE,
+          verifiedFlag = false,
+          commentText = request.comment,
+          createUsername = request.createUsername,
+        ).also {
+          it.addWorkFlowLog(workActionCode = workActionCode)
+        },
+      )
+    }
+
+    return offenderBooking.alerts.map { alert ->
+      CreateAlertResponse(
+        bookingId = alert.id.offenderBooking.bookingId,
+        alertSequence = alert.id.sequence,
+        alertCode = alert.alertCode.toCodeDescription(),
+        type = alert.alertType.toCodeDescription(),
+      )
+    }
   }
 
   @Audit
@@ -133,28 +173,24 @@ class AlertsService(
     }
   }
 
-  fun getAlerts(offenderNo: String): PrisonerAlertsResponse =
-    offenderBookingRepository.findAllByOffenderNomsId(offenderNo).takeIf { it.isNotEmpty() }
-      ?.let { bookings ->
-        val latestBooking = bookings.first { it.bookingSequence == 1 }
-        return PrisonerAlertsResponse(
-          latestBookingAlerts = latestBooking.alerts.map { it.toAlertResponse() }.sortedBy { it.alertSequence },
-        )
-      } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any bookings")
+  fun getAlerts(offenderNo: String): PrisonerAlertsResponse = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).takeIf { it.isNotEmpty() }
+    ?.let { bookings ->
+      val latestBooking = bookings.first { it.bookingSequence == 1 }
+      return PrisonerAlertsResponse(
+        latestBookingAlerts = latestBooking.alerts.map { it.toAlertResponse() }.sortedBy { it.alertSequence },
+      )
+    } ?: throw NotFoundException("Prisoner with offender $offenderNo not found with any bookings")
 
-  fun getActiveAlertsForReconciliation(offenderNo: String): PrisonerAlertsResponse =
-    PrisonerAlertsResponse(
-      latestBookingAlerts = getAlerts(offenderNo).latestBookingAlerts.filter { it.isActive },
-    )
+  fun getActiveAlertsForReconciliation(offenderNo: String): PrisonerAlertsResponse = PrisonerAlertsResponse(
+    latestBookingAlerts = getAlerts(offenderNo).latestBookingAlerts.filter { it.isActive },
+  )
 
-  fun getAlerts(bookingId: Long): BookingAlertsResponse =
-    offenderBookingRepository.findByIdOrNull(bookingId)
-      ?.let { booking -> offenderAlertRepository.findAllById_OffenderBooking(booking).map { it.toAlertResponse() } }
-      ?.let { BookingAlertsResponse(it) }
-      ?: throw NotFoundException("Prisoner with booking $bookingId not found")
+  fun getAlerts(bookingId: Long): BookingAlertsResponse = offenderBookingRepository.findByIdOrNull(bookingId)
+    ?.let { booking -> offenderAlertRepository.findAllById_OffenderBooking(booking).map { it.toAlertResponse() } }
+    ?.let { BookingAlertsResponse(it) }
+    ?: throw NotFoundException("Prisoner with booking $bookingId not found")
 }
 
 private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }
 
-private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) =
-  this.alerts.firstOrNull { it.alertCode.code == alertCode && it.alertStatus == ACTIVE } != null
+private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) = this.alerts.firstOrNull { it.alertCode.code == alertCode && it.alertStatus == ACTIVE } != null

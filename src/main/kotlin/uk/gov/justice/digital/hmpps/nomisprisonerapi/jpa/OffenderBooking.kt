@@ -135,7 +135,7 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val courtCases: MutableList<CourtCase> = mutableListOf(),
 
-  @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val alerts: MutableList<OffenderAlert> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
@@ -167,13 +167,12 @@ data class OffenderBooking(
 
   override fun hashCode(): Int = javaClass.hashCode()
 
-  override fun toString(): String =
-    javaClass.simpleName + "(" +
-      "bookingId = " + bookingId + ", " +
-      "bookNumber = " + bookNumber + ", " +
-      "bookingSequence = " + bookingSequence + ", " +
-      "active = " + active + ", " +
-      "inOutStatus = " + inOutStatus + ")"
+  override fun toString(): String = javaClass.simpleName + "(" +
+    "bookingId = " + bookingId + ", " +
+    "bookNumber = " + bookNumber + ", " +
+    "bookingSequence = " + bookingSequence + ", " +
+    "active = " + active + ", " +
+    "inOutStatus = " + inOutStatus + ")"
 }
 
 fun OffenderBooking.hasBeenReleased() = !this.active && this.inOutStatus == "OUT"

@@ -99,7 +99,7 @@ class OffenderAlert(
 
   // this is more or less a one to one but there are handful alerts with
   // no workflows and some with multiple workflows
-  @OneToMany(mappedBy = "alert", fetch = LAZY, cascade = [CascadeType.ALL])
+  @OneToMany(mappedBy = "alert", fetch = LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   var workFlows: MutableList<AlertWorkFlow> = mutableListOf(),
 
   @Column(name = "CREATE_USER_ID")
