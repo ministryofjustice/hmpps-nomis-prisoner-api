@@ -818,11 +818,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/charges/{chargeId}")
+  @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{courtEventId}/charges/{chargeId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Charge",
-    description = "Required role NOMIS_SENTENCING Updates an offender charge for the offender and given Court Case (latest booking)",
+    description = "Required role NOMIS_SENTENCING Updates a Court Event Charge for the offender and given Appearance and Court Case (latest booking)",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -898,10 +898,13 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Charge Id", example = "34565", required = true)
     @PathVariable
     chargeId: Long,
+    @Schema(description = "Court event Id", example = "34565", required = true)
+    @PathVariable
+    courtEventId: Long,
     @RequestBody @Valid
     request: OffenderChargeRequest,
   ) =
-    sentencingService.updateCourtCharge(offenderNo, caseId, chargeId, request)
+    sentencingService.updateCourtCharge(offenderNo, caseId, chargeId, courtEventId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{id}")
@@ -1024,6 +1027,67 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
   ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-event-charges/{offenderChargeId}/last-modified")
+  @Operation(
+    summary = "get the last modified court event charge",
+    description = "Requires role NOMIS_SENTENCING. Retrieves the last modified court event charge associated with this offender charge. Intended to prevent the need for COURT_EVENT_CHARGE_UPDATED events",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the court appearance details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court event charge not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getLastModifiedCourtEventCharge(
+    @Schema(description = "Offender Charge id", example = "12345")
+    @PathVariable
+    offenderChargeId: Long,
+    @Schema(description = "Offender No", example = "12345")
+    @PathVariable
+    offenderNo: String,
+  ): CourtEventChargeResponse = sentencingService.getLastModifiedCourtEventCharge(offenderChargeId, offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/court-cases/ids")
