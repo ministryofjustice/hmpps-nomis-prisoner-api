@@ -628,6 +628,30 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return OK for de-allocation request when already moved prison and de-allocated`() {
+      nomisDataBuilder.build {
+        offender = offender {
+          bookingId = booking(agencyLocationId = "MDI") {
+            courseAllocation(courseActivity, programStatusCode = "END", endDate = "$yesterday", endReasonCode = "WDRAWN")
+          }.bookingId
+        }
+      }
+
+      // De-allocation is allowed
+      val request = upsertRequest()
+        .withProgramStatusCode("END")
+        .withStartDate("2022-10-31")
+        .withEndDate("$today")
+        .withAdditionalJson(
+          """
+            "endReason": "WDRAWN",
+            "endComment": "Withdrawn due to illness"
+          """.trimMargin(),
+        )
+      upsertAllocationIsOk(request)
+    }
+
+    @Test
     fun `should allow suspension when not in the activity prison`() {
       nomisDataBuilder.build {
         offender = offender {
