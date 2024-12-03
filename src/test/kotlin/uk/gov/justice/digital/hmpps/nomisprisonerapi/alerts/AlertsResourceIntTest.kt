@@ -1818,7 +1818,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           val activeAlert = booking.alerts[1]
 
           assertThat(inactiveAlert.alertStatus).isEqualTo(INACTIVE)
+          assertThat(inactiveAlert.id.sequence).isEqualTo(1)
           assertThat(activeAlert.alertStatus).isEqualTo(ACTIVE)
+          assertThat(activeAlert.id.sequence).isEqualTo(2)
         }
       }
     }

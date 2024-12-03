@@ -81,14 +81,14 @@ class AlertsService(
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
 
-    offenderAlertRepository.deleteAllByOffenderBookingId(offenderBooking.bookingId)
-    return requests.map { request ->
+    offenderBooking.alerts.clear()
+    requests.forEach { request ->
       val alertCode = alertCodeRepository.findByIdOrNull(AlertCode.pk(request.alertCode))
         ?: throw BadDataException("Alert code ${request.alertCode} is not valid")
 
       val workActionCode = workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(WorkFlowAction.DATA_ENTRY))!!
 
-      val alert = offenderAlertRepository.save(
+      offenderBooking.alerts.add(
         OffenderAlert(
           id = OffenderAlertId(offenderBooking, sequence = offenderAlertRepository.getNextSequence(offenderBooking)),
           rootOffender = offenderBooking.rootOffender,
@@ -105,7 +105,9 @@ class AlertsService(
           it.addWorkFlowLog(workActionCode = workActionCode)
         },
       )
+    }
 
+    return offenderBooking.alerts.map { alert ->
       CreateAlertResponse(
         bookingId = alert.id.offenderBooking.bookingId,
         alertSequence = alert.id.sequence,
