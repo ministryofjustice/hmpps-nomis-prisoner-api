@@ -16,11 +16,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
@@ -49,6 +51,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var addressPhoneRepository: AddressPhoneRepository
+
+  @Autowired
+  private lateinit var personIdentifierRepository: PersonIdentifierRepository
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
@@ -1840,6 +1845,121 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           val person = personRepository.findByIdOrNull(existingPerson.id)
           val address = person!!.addresses.find { it.addressId == existingAddress.addressId }
           assertThat(address?.phones).anyMatch { it.phoneId == phone.phoneId }
+        }
+      }
+    }
+  }
+
+  @DisplayName("POST /persons/{personId}/identifier")
+  @Nested
+  inner class CreatePersonIdentifier {
+    private val validIdentifierRequest = CreatePersonIdentifierRequest(
+      identifier = "SMITY52552DL",
+      typeCode = "DL",
+      issuedAuthority = "DVLA",
+    )
+
+    private lateinit var existingPerson: Person
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validIdentifierRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validIdentifierRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
+          .bodyValue(validIdentifierRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.post().uri("/persons/999/identifier")
+          .bodyValue(validIdentifierRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when identifier type code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
+          .bodyValue(validIdentifierRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a identifier`() {
+        val response: CreatePersonIdentifierResponse = webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
+          .bodyValue(
+            validIdentifierRequest.copy(
+              identifier = "SMITY52552DL",
+              typeCode = "DL",
+              issuedAuthority = "DVLA",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePersonIdentifierResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val identifier = personIdentifierRepository.findByIdOrNull(PersonIdentifierPK(person = existingPerson, sequence = response.sequence))!!
+
+        with(identifier) {
+          assertThat(id.sequence).isEqualTo(response.sequence)
+          assertThat(id.person.id).isEqualTo(existingPerson.id)
+          assertThat(this.identifier).isEqualTo("SMITY52552DL")
+          assertThat(identifierType.description).isEqualTo("Driving Licence")
+          assertThat(issuedAuthority).isEqualTo("DVLA")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.identifiers).anyMatch { it.id.sequence == identifier.id.sequence }
         }
       }
     }
