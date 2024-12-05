@@ -10,7 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.GENERAL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -20,12 +21,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPersonRestrictRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitorRestrictionRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -39,6 +42,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var personContactRepository: OffenderContactPersonRepository
+
+  @Autowired
+  private lateinit var personContactRestrictionRepository: OffenderPersonRestrictRepository
+
+  @Autowired
+  private lateinit var personRestrictionRepository: VisitorRestrictionRepository
 
   @Autowired
   private lateinit var personAddressRepository: PersonAddressRepository
@@ -669,8 +678,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun setUp() {
         nomisDataBuilder.build {
           lsaStaffMember = staff(firstName = "JANE", lastName = "STAFF") {
-            account(username = "j.staff_adm", type = StaffDsl.ADMIN)
-            account(username = "j.staff_gen", type = StaffDsl.GENERAL)
+            account(username = "j.staff_adm", type = ADMIN)
+            account(username = "j.staff_gen", type = GENERAL)
           }
           generalStaffMember = staff(firstName = "JANE", lastName = "SMITH") {
             account(username = "j.smith")
@@ -741,8 +750,8 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun setUp() {
         nomisDataBuilder.build {
           lsaStaffMember = staff(firstName = "JANE", lastName = "STAFF") {
-            account(username = "j.staff_gen", type = StaffDsl.GENERAL)
-            account(username = "j.staff_adm", type = StaffDsl.ADMIN)
+            account(username = "j.staff_gen", type = GENERAL)
+            account(username = "j.staff_adm", type = ADMIN)
           }
           generalStaffMember = staff(firstName = "JANE", lastName = "SMITH") {
             account(username = "j.smith")
@@ -1960,6 +1969,299 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.runInTransaction {
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.identifiers).anyMatch { it.id.sequence == identifier.id.sequence }
+        }
+      }
+    }
+  }
+
+  @DisplayName("POST /persons/{personId}/contact/{contactId}/restriction")
+  @Nested
+  inner class CreatePersonContactRestriction {
+    private val restrictionRequest = CreateContactPersonRestrictionRequest(
+      typeCode = "BAN",
+      comment = "Banned for life",
+      effectiveDate = LocalDate.parse("2020-01-01"),
+      expiryDate = LocalDate.parse("2026-01-02"),
+      enteredStaffUsername = "J.SPEAK",
+    )
+
+    private lateinit var staff: Staff
+    private lateinit var existingPerson: Person
+    private lateinit var anotherPerson: Person
+    private lateinit var existingContact: OffenderContactPerson
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+          account(username = "KOFEADDY_ADM", type = ADMIN)
+        }
+        anotherPerson = person { }
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = "A1234KT") {
+          booking {
+            existingContact = contact(person = existingPerson, contactType = "S", relationshipType = "SIS")
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.post().uri("/persons/999/contact/${existingContact.id}/restriction")
+          .bodyValue(restrictionRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when contact does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact/999/restriction")
+          .bodyValue(restrictionRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when contact does not exist on person`() {
+        webTestClient.post().uri("/persons/${anotherPerson.id}/contact/${existingContact.id}/restriction")
+          .bodyValue(restrictionRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when restriction type code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
+          .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when staff username code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
+          .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a restriction`() {
+        val response: CreateContactPersonRestrictionResponse = webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
+          .bodyValue(
+            restrictionRequest.copy(
+              comment = "Banned for life",
+              typeCode = "BAN",
+              effectiveDate = LocalDate.parse("2020-01-01"),
+              expiryDate = LocalDate.parse("2026-01-02"),
+              enteredStaffUsername = "KOFEADDY_GEN",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreateContactPersonRestrictionResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val restriction = personContactRestrictionRepository.findByIdOrNull(response.id)!!
+
+        with(restriction) {
+          assertThat(comment).isEqualTo("Banned for life")
+          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+          assertThat(restrictionType.description).isEqualTo("Banned")
+          assertThat(enteredStaff.id).isEqualTo(staff.id)
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          val contact = person!!.contacts.find { it.id == existingContact.id }
+          assertThat(contact?.restrictions).anyMatch { it.id == restriction.id }
+        }
+      }
+    }
+  }
+
+  @DisplayName("POST /persons/{personId}/restriction")
+  @Nested
+  inner class CreatePersonRestriction {
+    private val restrictionRequest = CreateContactPersonRestrictionRequest(
+      typeCode = "BAN",
+      comment = "Banned for life",
+      effectiveDate = LocalDate.parse("2020-01-01"),
+      expiryDate = LocalDate.parse("2026-01-02"),
+      enteredStaffUsername = "KOFEADDY_GEN",
+    )
+
+    private lateinit var staff: Staff
+    private lateinit var existingPerson: Person
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+          account(username = "KOFEADDY_ADM", type = ADMIN)
+        }
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.post().uri("/persons/999/restriction")
+          .bodyValue(restrictionRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when restriction type code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
+          .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when staff username code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
+          .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a restriction`() {
+        val response: CreateContactPersonRestrictionResponse = webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
+          .bodyValue(
+            restrictionRequest.copy(
+              comment = "Banned for life",
+              typeCode = "BAN",
+              effectiveDate = LocalDate.parse("2020-01-01"),
+              expiryDate = LocalDate.parse("2026-01-02"),
+              enteredStaffUsername = "KOFEADDY_GEN",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreateContactPersonRestrictionResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val restriction = personRestrictionRepository.findByIdOrNull(response.id)!!
+
+        with(restriction) {
+          assertThat(comment).isEqualTo("Banned for life")
+          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+          assertThat(restrictionType.description).isEqualTo("Banned")
+          assertThat(enteredStaff.id).isEqualTo(staff.id)
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.restrictions).anyMatch { it.id == restriction.id }
         }
       }
     }
