@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -501,6 +502,73 @@ class AlertsResource(
     @RequestBody @Valid
     request: CreateAlertCode,
   ) = alertsReferenceDataService.createAlertCode(request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PostMapping("/prisoners/{offenderNo}/alerts/resynchronise")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Replaces an alerts on a prisoner",
+    description = "Replaces all alerts on the prisoner's latest booking. Requires ROLE_NOMIS_ALERTS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Alerts replaces",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = CreateAlertResponse::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun resynchroniseAlerts(
+    @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
+    @PathVariable
+    offenderNo: String,
+    @RequestBody @Valid
+    request: List<CreateAlertRequest>,
+  ): List<CreateAlertResponse> = alertsService.resynchroniseAlerts(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
   @PutMapping("/alerts/codes/{code}")
