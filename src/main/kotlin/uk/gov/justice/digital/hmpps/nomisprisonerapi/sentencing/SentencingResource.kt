@@ -244,7 +244,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Operation(
     summary = "delete a court case",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    description = "Requires role NOMIS_SENTENCING. Deletes a court case by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -263,16 +263,6 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ApiResponse(
         responseCode = "403",
         description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Court case not found",
         content = [
           Content(
             mediaType = "application/json",
@@ -873,7 +863,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Court Appearance",
-    description = "Required role NOMIS_SENTENCING Updates a new Court Appearance for the offender,latest booking and given Court Case",
+    description = "Required role NOMIS_SENTENCING Deletes s Court Appearance for the offender.",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
