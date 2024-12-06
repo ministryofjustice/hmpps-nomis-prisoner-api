@@ -495,6 +495,70 @@ class SentencingService(
   }
 
   @Audit
+  fun deleteCourtAppearance(
+    offenderNo: String,
+    caseId: Long,
+    eventId: Long,
+  ) {
+    findLatestBooking(offenderNo).let { booking ->
+      val telemetry = mapOf(
+        "bookingId" to booking.bookingId.toString(),
+        "offenderNo" to offenderNo,
+        "eventId" to eventId.toString(),
+        "caseId" to caseId.toString(),
+      )
+      courtEventRepository.findByIdOrNull(eventId)?.also {
+        courtEventRepository.delete(it)
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          bookingId = booking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+        )
+        telemetryClient.trackEvent(
+          "court-appearance-deleted",
+          telemetry,
+          null,
+        )
+      }
+        ?: telemetryClient.trackEvent(
+          "court-appearance-delete-not-found",
+          telemetry,
+          null,
+        )
+    }
+  }
+
+  @Audit
+  fun deleteCourtCase(
+    offenderNo: String,
+    caseId: Long,
+  ) {
+    findLatestBooking(offenderNo).let { booking ->
+      val telemetry = mapOf(
+        "bookingId" to booking.bookingId.toString(),
+        "offenderNo" to offenderNo,
+        "caseId" to caseId.toString(),
+      )
+      courtCaseRepository.findByIdOrNull(caseId)?.also {
+        courtCaseRepository.delete(it)
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          bookingId = booking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+        )
+        telemetryClient.trackEvent(
+          "court-case-deleted",
+          telemetry,
+          null,
+        )
+      }
+        ?: telemetryClient.trackEvent(
+          "court-case-delete-not-found",
+          telemetry,
+          null,
+        )
+    }
+  }
+
+  @Audit
   fun updateCourtCharge(
     offenderNo: String,
     caseId: Long,

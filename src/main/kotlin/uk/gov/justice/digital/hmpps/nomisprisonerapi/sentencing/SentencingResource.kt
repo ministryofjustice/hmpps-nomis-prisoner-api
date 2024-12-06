@@ -241,6 +241,47 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffenderBooking(bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
+  @Operation(
+    summary = "delete a court case",
+    description = "Requires role NOMIS_SENTENCING. Deletes a court case by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "court case deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCourtCase(
+    @Schema(description = "Court case id", example = "12345")
+    @PathVariable
+    id: Long,
+    @Schema(description = "Offender No", example = "AB2134")
+    @PathVariable
+    offenderNo: String,
+  ) = sentencingService.deleteCourtCase(caseId = id, offenderNo = offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
   @Operation(
     summary = "get sentences for an offender using the given booking id and sentence sequence",
@@ -816,6 +857,60 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CourtAppearanceRequest,
   ): UpdateCourtAppearanceResponse =
     sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Updates Court Appearance",
+    description = "Required role NOMIS_SENTENCING Deletes s Court Appearance for the offender.",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CourtAppearanceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Court Appearance deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCourtAppearance(
+    @Schema(description = "Offender no", example = "AB1234A", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "34565", required = true)
+    @PathVariable
+    caseId: Long,
+    @Schema(description = "Case appearance Id", example = "34565", required = true)
+    @PathVariable
+    eventId: Long,
+  ) =
+    sentencingService.deleteCourtAppearance(offenderNo, caseId, eventId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{courtEventId}/charges/{chargeId}")

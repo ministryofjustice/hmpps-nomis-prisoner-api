@@ -2750,6 +2750,327 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @Nested
+  @DisplayName("DELETE /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{id}")
+  inner class DeleteCourtAppearance {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private lateinit var courtEvent: CourtEvent
+    private lateinit var courtEvent2: CourtEvent
+    private var latestBookingId: Long = 0
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var staff: Staff
+    private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+    private lateinit var offenderCharge3: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland = offender(nomsId = offenderNo) {
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
+            courtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            ) {
+              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
+                // overrides from the parent offender charge fields
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  plea = "NG",
+                )
+                courtOrder {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+              courtEvent2 = courtEvent(eventDateTime = LocalDateTime.of(2023, 2, 1, 10, 30)) {
+                // overrides from the parent offender charge fields
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  plea = "NG",
+                )
+                courtOrder {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+            }
+          }
+        }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      internal fun `will log event when court appearance does not exist`() {
+        webTestClient.delete().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/1234")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-appearance-delete-not-found"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("eventId", "1234")
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class DeleteCourtAppearanceSuccess {
+
+      @Test
+      fun `can delete a court appearance`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courtEvents.size()").isEqualTo(1)
+          .jsonPath("courtEvents[0].id").isEqualTo(courtEvent2.id)
+
+        // imprisonment status stored procedure is called
+        verify(spRepository).imprisonmentStatusUpdate(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
+        )
+      }
+
+      @Test
+      fun `will track telemetry for the delete`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-appearance-deleted"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("eventId", courtEvent.id.toString())
+            assertThat(it).containsEntry("caseId", courtEvent.courtCase?.id.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+  }
+
+  @Nested
+  @DisplayName("DELETE /prisoners/{offenderNo}/sentencing/court-cases/{id}")
+  inner class DeleteCourtCase {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private lateinit var courtEvent: CourtEvent
+    private lateinit var courtEvent2: CourtEvent
+    private var latestBookingId: Long = 0
+    private lateinit var prisonerAtMoorland: Offender
+    private lateinit var staff: Staff
+    private lateinit var offenderCharge1: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland = offender(nomsId = offenderNo) {
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
+            courtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            ) {
+              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
+                // overrides from the parent offender charge fields
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  plea = "NG",
+                )
+                courtOrder {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+              courtEvent2 = courtEvent(eventDateTime = LocalDateTime.of(2023, 2, 1, 10, 30)) {
+                // overrides from the parent offender charge fields
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  plea = "NG",
+                )
+                courtOrder {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+            }
+          }
+        }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      internal fun `will log event when court case does not exist`() {
+        webTestClient.delete().uri("/prisoners/$offenderNo/sentencing/court-cases/333")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-case-delete-not-found"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("caseId", "333")
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class DeleteCourtCaseSuccess {
+
+      @Test
+      fun `can delete a court appearance`() {
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+
+        // imprisonment status stored procedure is called
+        verify(spRepository).imprisonmentStatusUpdate(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
+        )
+      }
+
+      @Test
+      fun `will track telemetry for the delete`() {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-case-deleted"),
+          org.mockito.kotlin.check {
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("caseId", courtEvent.courtCase?.id.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+  }
+
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-appearances/{id}")
   @Nested
   inner class GetCourtAppearance {
