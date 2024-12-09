@@ -117,6 +117,7 @@ private fun Incident.toIncidentResponse(): IncidentResponse =
 private fun IncidentRequirement.toRequirement() =
   Requirement(
     staff = recordingStaff.toStaff(),
+    sequence = id.requirementSequence,
     comment = comment,
     date = recordedDate,
     agencyId = agency.id,
@@ -180,6 +181,7 @@ private fun IncidentHistory.toHistoryResponse() =
 private fun IncidentStaffParty.toStaffParty() =
   StaffParty(
     staff = staff.toStaff(),
+    sequence = id.partySequence,
     role = role.toCodeDescription(),
     comment = comment,
     createDateTime = createDatetime,
@@ -199,6 +201,7 @@ private fun JPAStaff.toStaff() =
 private fun IncidentOffenderParty.toOffenderParty() =
   OffenderParty(
     offender = offenderBooking.offender.toOffender(),
+    sequence = id.partySequence,
     role = role.toCodeDescription(),
     outcome = outcome?.toCodeDescription(),
     comment = comment,
