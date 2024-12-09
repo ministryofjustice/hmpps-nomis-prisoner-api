@@ -357,6 +357,8 @@ data class Staff(
 data class StaffParty(
   @Schema(description = "Staff involved in the incident")
   val staff: Staff,
+  @Schema(description = "The sequence number of the staff party for this incident")
+  val sequence: Int,
   @Schema(description = "Staff role in the incident")
   val role: CodeDescription,
   @Schema(description = "General information about the incident")
@@ -385,6 +387,8 @@ data class Offender(
 data class OffenderParty(
   @Schema(description = "Offender involved in the incident")
   val offender: Offender,
+  @Schema(description = "The sequence number of the offender party for this incident")
+  val sequence: Int,
   @Schema(description = "Offender role in the incident")
   val role: CodeDescription,
   @Schema(description = "The outcome of the incident")
@@ -405,6 +409,8 @@ data class OffenderParty(
 data class Requirement(
   @Schema(description = "The update required to the incident report")
   val comment: String?,
+  @Schema(description = "The sequence number of the requirement for this incident")
+  val sequence: Int,
   @Schema(description = "Date the requirement was recorded")
   val date: LocalDate,
   @Schema(description = "The staff member who made the requirement request")
