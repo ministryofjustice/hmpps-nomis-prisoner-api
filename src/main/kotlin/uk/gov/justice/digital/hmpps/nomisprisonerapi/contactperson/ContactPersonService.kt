@@ -357,6 +357,39 @@ class ContactPersonService(
     ),
   ).let { CreateContactPersonRestrictionResponse(id = it.id) }
 
+  fun updatePersonRestriction(
+    personId: Long,
+    personRestrictionId: Long,
+    request: UpdateContactPersonRestrictionRequest,
+  ) {
+    val restriction = personOf(personId).restrictions.find { it.id == personRestrictionId }
+      ?: throw NotFoundException("Restriction with id: $personRestrictionId not found on person $personId")
+    with(request) {
+      restriction.restrictionType = restrictionTypeOf(typeCode)
+      restriction.comment = comment
+      restriction.effectiveDate = effectiveDate
+      restriction.expiryDate = expiryDate
+      restriction.enteredStaff = staffOf(username = enteredStaffUsername)
+    }
+  }
+
+  fun updatePersonContactRestriction(
+    personId: Long,
+    contactId: Long,
+    contactRestrictionId: Long,
+    request: UpdateContactPersonRestrictionRequest,
+  ) {
+    val restriction = contactOf(personId, contactId).restrictions.find { it.id == contactRestrictionId }
+      ?: throw NotFoundException("Restriction with id: $contactRestrictionId not found on contact $contactId orn person $personId")
+    with(request) {
+      restriction.restrictionType = restrictionTypeOf(typeCode)
+      restriction.comment = comment
+      restriction.effectiveDate = effectiveDate
+      restriction.expiryDate = expiryDate
+      restriction.enteredStaff = staffOf(username = enteredStaffUsername)
+    }
+  }
+
   fun assertDoesNotExist(request: CreatePersonRequest) {
     request.personId?.takeIf { it != 0L }
       ?.run {

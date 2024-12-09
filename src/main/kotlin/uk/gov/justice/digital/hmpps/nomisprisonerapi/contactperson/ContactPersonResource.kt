@@ -19,6 +19,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -348,6 +349,71 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): CreateContactPersonRestrictionResponse = contactPersonService.createPersonContactRestriction(personId, contactId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}/contact/{contactId}/restriction/{contactRestrictionId}")
+  @Operation(
+    summary = "Updates a person contact restriction for a specific relationship",
+    description = "Updates a person contact restriction; the restriction is for a specific relationship between a prisoner and a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example restriction type does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person or contact or restriction does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePersonContactRestriction(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Contact Id", example = "67899")
+    @PathVariable
+    contactId: Long,
+    @Schema(description = "Restriction Id", example = "38383")
+    @PathVariable
+    contactRestrictionId: Long,
+    @RequestBody @Valid
+    request: UpdateContactPersonRestrictionRequest,
+  ) = contactPersonService.updatePersonContactRestriction(personId, contactId, contactRestrictionId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/restriction")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -413,6 +479,68 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     @RequestBody @Valid
     request: CreateContactPersonRestrictionRequest,
   ): CreateContactPersonRestrictionResponse = contactPersonService.createPersonRestriction(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}/restriction/{personRestrictionId}")
+  @Operation(
+    summary = "Updates a global person restriction",
+    description = "Updates a person restriction; the restriction is estate wide. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example restriction type does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Restriction or Person does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePersonRestriction(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Person restrictions Id", example = "12345")
+    @PathVariable
+    personRestrictionId: Long,
+    @RequestBody @Valid
+    request: UpdateContactPersonRestrictionRequest,
+  ) = contactPersonService.updatePersonRestriction(personId, personRestrictionId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/address")
@@ -1130,4 +1258,19 @@ data class CreateContactPersonRestrictionRequest(
 data class CreateContactPersonRestrictionResponse(
   @Schema(description = "Unique NOMIS Id of the restriction")
   val id: Long,
+)
+
+@Schema(description = "Request to update a contact restriction in NOMIS for either global or against a specific relationship")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateContactPersonRestrictionRequest(
+  @Schema(description = "Restriction type")
+  val typeCode: String,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
+  @Schema(description = "Date restriction became active")
+  val effectiveDate: LocalDate,
+  @Schema(description = "Date restriction is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "Username Staff member who updated the restriction")
+  val enteredStaffUsername: String,
 )
