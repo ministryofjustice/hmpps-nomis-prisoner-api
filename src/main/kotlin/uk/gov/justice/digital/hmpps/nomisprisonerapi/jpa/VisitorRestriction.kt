@@ -34,7 +34,7 @@ data class VisitorRestriction(
 
   @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumn(name = "ENTERED_STAFF_ID", nullable = true)
-  val enteredStaff: Staff,
+  var enteredStaff: Staff,
 
   @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -47,16 +47,16 @@ data class VisitorRestriction(
       ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_RESTRICTION_TYPE", referencedColumnName = "code")),
     ],
   )
-  val restrictionType: RestrictionType,
+  var restrictionType: RestrictionType,
 
   @Column(name = "COMMENT_TXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @Column(name = "EFFECTIVE_DATE", nullable = false)
-  val effectiveDate: LocalDate,
+  var effectiveDate: LocalDate,
 
   @Column(name = "EXPIRY_DATE", nullable = true)
-  val expiryDate: LocalDate?,
+  var expiryDate: LocalDate?,
 
   /*
   Not mapped:
