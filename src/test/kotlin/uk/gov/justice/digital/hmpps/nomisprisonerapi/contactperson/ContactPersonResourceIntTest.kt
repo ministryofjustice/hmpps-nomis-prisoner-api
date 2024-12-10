@@ -13,15 +13,19 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddre
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.GENERAL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestrict
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifierPK
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitorRestriction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPersonRestrictRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -30,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonIdenti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitorRestrictionRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -68,6 +73,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
+
+  @Autowired
+  private lateinit var corporateRepository: CorporateRepository
+
+  @Autowired
+  private lateinit var staffRepository: StaffRepository
 
   @DisplayName("GET /persons/{personId}")
   @Nested
@@ -1184,6 +1195,242 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           assertThat(domesticStatus?.code).isEqualTo("S")
           assertThat(interpreterRequired).isTrue
           assertThat(isStaff).isTrue
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /persons/{personId}")
+  @Nested
+  inner class DeletePerson {
+    private lateinit var person: Person
+    private lateinit var phone: PersonPhone
+    private lateinit var address: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var addressPhone: AddressPhone
+    private lateinit var email: PersonInternetAddress
+    private lateinit var corporate: Corporate
+    private lateinit var employment: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment
+    private lateinit var identifier: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifier
+    private lateinit var prisoner: Offender
+    private lateinit var contact: OffenderContactPerson
+    private lateinit var staff: Staff
+    private lateinit var contactRestriction: OffenderPersonRestrict
+    private lateinit var personRestriction: VisitorRestriction
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY", type = "GENERAL")
+        }
+        corporate = corporate(corporateName = "Police")
+
+        person = person(
+          firstName = "JANE",
+          lastName = "NARK",
+          middleName = "LIZ",
+          dateOfBirth = "1999-12-22",
+          gender = "F",
+          title = "DR",
+          language = "VIE",
+          interpreterRequired = true,
+          domesticStatus = "M",
+          deceasedDate = "2023-12-22",
+          isStaff = true,
+          isRemitter = true,
+          whoCreated = "KOFEADDY",
+          whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+        ) {
+          phone = phone(
+            phoneType = "MOB",
+            phoneNo = "07399999999",
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          )
+          phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+          address = address(
+            type = "HOME",
+            flat = "3B",
+            premise = "Brown Court",
+            street = "Scotland Street",
+            locality = "Hunters Bar",
+            postcode = "S1 3GG",
+            city = SHEFFIELD,
+            county = "S.YORKSHIRE",
+            country = "ENG",
+            validatedPAF = true,
+            noFixedAddress = false,
+            primaryAddress = true,
+            mailAddress = true,
+            comment = "Not to be used",
+            startDate = "2024-10-01",
+            endDate = "2024-11-01",
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          ) {
+            addressPhone = phone(
+              phoneType = "MOB",
+              phoneNo = "07399999999",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
+            phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+          }
+          email = email(
+            emailAddress = "john.bog@justice.gov.uk",
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          )
+          email(emailAddress = "john.bog@gmail.com")
+          employment = employment(
+            employerCorporate = corporate,
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          )
+          employment(employerCorporate = corporate, active = false)
+          identifier = identifier(
+            type = "PNC",
+            identifier = "20/0071818T",
+            issuedAuthority = "Met Police",
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          )
+          identifier(type = "STAFF", identifier = "123")
+          personRestriction = restriction(
+            restrictionType = "BAN",
+            enteredStaff = staff,
+            comment = "Banned for life!",
+            effectiveDate = "2020-01-01",
+            expiryDate = "2023-02-02",
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          )
+          restriction(
+            restrictionType = "CCTV",
+            enteredStaff = staff,
+          )
+        }
+        prisoner = offender(nomsId = "A1234AA", firstName = "JOHN", lastName = "SMITH") {
+          booking {
+            contact = contact(
+              person = person,
+              contactType = "S",
+              relationshipType = "BRO",
+              active = true,
+              nextOfKin = true,
+              emergencyContact = true,
+              approvedVisitor = false,
+              comment = "Brother is next to kin",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            ) {
+              contactRestriction = restriction(
+                restrictionType = "BAN",
+                enteredStaff = staff,
+                comment = "Banned for life!",
+                effectiveDate = "2020-01-01",
+                expiryDate = "2023-02-02",
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+              restriction(
+                restrictionType = "CCTV",
+                enteredStaff = staff,
+              )
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${person.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 204 when person not found`() {
+        webTestClient.delete().uri("/persons/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `will delete person and associated data`() {
+        assertThat(personRepository.existsById(person.id)).isTrue()
+        assertThat(personRestrictionRepository.existsById(personRestriction.id)).isTrue()
+        assertThat(personAddressRepository.existsById(address.addressId)).isTrue()
+        assertThat(personInternetAddressRepository.existsById(email.internetAddressId)).isTrue()
+        assertThat(personPhoneRepository.existsById(phone.phoneId)).isTrue()
+        assertThat(addressPhoneRepository.existsById(addressPhone.phoneId)).isTrue()
+        assertThat(personIdentifierRepository.existsById(identifier.id)).isTrue()
+        assertThat(personContactRepository.existsById(contact.id)).isTrue()
+        assertThat(personContactRestrictionRepository.existsById(contactRestriction.id)).isTrue()
+
+        assertThat(staffRepository.existsById(staff.id)).isTrue()
+        assertThat(offenderRepository.existsById(prisoner.id)).isTrue()
+        assertThat(corporateRepository.existsById(corporate.id)).isTrue()
+
+        nomisDataBuilder.runInTransaction {
+          assertThat(offenderRepository.findByIdOrNull(prisoner.id)!!.latestBooking().contacts).hasSize(1)
+        }
+
+        webTestClient.delete().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(personRepository.existsById(person.id)).isFalse()
+        assertThat(personRestrictionRepository.existsById(personRestriction.id)).isFalse()
+        assertThat(personAddressRepository.existsById(address.addressId)).isFalse()
+        assertThat(personInternetAddressRepository.existsById(email.internetAddressId)).isFalse()
+        assertThat(personPhoneRepository.existsById(phone.phoneId)).isFalse()
+        assertThat(addressPhoneRepository.existsById(addressPhone.phoneId)).isFalse()
+        assertThat(personIdentifierRepository.existsById(identifier.id)).isFalse()
+        assertThat(personContactRepository.existsById(contact.id)).isFalse()
+        assertThat(personContactRestrictionRepository.existsById(contactRestriction.id)).isFalse()
+
+        // will obviously will not get deleted
+        assertThat(staffRepository.existsById(staff.id)).isTrue()
+        assertThat(offenderRepository.existsById(prisoner.id)).isTrue()
+        assertThat(corporateRepository.existsById(corporate.id)).isTrue()
+
+        nomisDataBuilder.runInTransaction {
+          assertThat(offenderRepository.findByIdOrNull(prisoner.id)!!.latestBooking().contacts).isEmpty()
         }
       }
     }
