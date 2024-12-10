@@ -245,6 +245,8 @@ class ContactPersonService(
       .let { return CreatePersonResponse(it.id) }
   }
 
+  fun deletePerson(personId: Long) = personRepository.deleteById(personId)
+
   fun createPersonContact(personId: Long, request: CreatePersonContactRequest): CreatePersonContactResponse {
     val booking = bookingRepository.findLatestByOffenderNomsId(request.offenderNo) ?: throw BadDataException("Prisoner with nomisId=${request.offenderNo} does not exist")
     val person = personOf(personId)
