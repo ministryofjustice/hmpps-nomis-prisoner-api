@@ -242,6 +242,46 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ) = contactPersonService.deletePerson(personId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}")
+  @Operation(
+    summary = "Updates a person",
+    description = "Updates core person data but leaves any associated data e.g contact relationships, addresses. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Person Updated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePerson(
+    @RequestBody @Valid
+    request: UpdatePersonRequest,
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+  ) = contactPersonService.updatePerson(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/contact")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -1169,6 +1209,33 @@ data class CreatePersonRequest(
   val domesticStatusCode: String? = null,
   @Schema(description = "True if a staff member")
   val isStaff: Boolean? = null,
+)
+
+@Schema(description = "Request to update an person (aka DPS contact) in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdatePersonRequest(
+  @Schema(description = "First name of the person", example = "Ashantee")
+  val firstName: String,
+  @Schema(description = "Surname name of the person", example = "Addo")
+  val lastName: String,
+  @Schema(description = "Middle name of the person", example = "Ashwin")
+  val middleName: String? = null,
+  @Schema(description = "Date of birth of the person")
+  val dateOfBirth: LocalDate? = null,
+  @Schema(description = "Gender code of the person", example = "F")
+  val genderCode: String? = null,
+  @Schema(description = "Title code of the person", example = "DR")
+  val titleCode: String? = null,
+  @Schema(description = "Language code of the person", example = "FRE-FRA")
+  val languageCode: String? = null,
+  @Schema(description = "True if the person requires an interpreter")
+  val interpreterRequired: Boolean = false,
+  @Schema(description = "Domestic status code aka marital status of the person", example = "S")
+  val domesticStatusCode: String? = null,
+  @Schema(description = "True if a staff member")
+  val isStaff: Boolean? = null,
+  @Schema(description = "Date the person dies")
+  val deceasedDate: LocalDate? = null,
 )
 
 data class CreatePersonResponse(

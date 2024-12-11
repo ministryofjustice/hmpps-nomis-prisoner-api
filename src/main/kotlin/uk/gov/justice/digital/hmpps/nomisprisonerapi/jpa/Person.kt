@@ -29,16 +29,16 @@ data class Person(
   var id: Long = 0,
 
   @Column(name = "FIRST_NAME", nullable = false)
-  val firstName: String,
+  var firstName: String,
 
   @Column(name = "LAST_NAME", nullable = false)
-  val lastName: String,
+  var lastName: String,
 
   @Column(name = "MIDDLE_NAME")
-  val middleName: String? = null,
+  var middleName: String? = null,
 
   @Column(name = "BIRTHDATE")
-  val birthDate: LocalDate? = null,
+  var birthDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "person", cascade = [CascadeType.ALL], fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${PersonAddress.ADDR_TYPE}'")
@@ -75,7 +75,7 @@ data class Person(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TITLE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val title: Title? = null,
+  var title: Title? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -88,7 +88,7 @@ data class Person(
       ), JoinColumnOrFormula(column = JoinColumn(name = "SEX", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val sex: Gender? = null,
+  var sex: Gender? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -101,11 +101,11 @@ data class Person(
       ), JoinColumnOrFormula(column = JoinColumn(name = "LANGUAGE_CODE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val language: Language? = null,
+  var language: Language? = null,
 
   @Column(name = "INTERPRETER_REQUIRED")
   @Convert(converter = YesNoConverter::class)
-  val interpreterRequired: Boolean = false,
+  var interpreterRequired: Boolean = false,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -118,14 +118,14 @@ data class Person(
       ), JoinColumnOrFormula(column = JoinColumn(name = "MARITAL_STATUS", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val domesticStatus: MaritalStatus? = null,
+  var domesticStatus: MaritalStatus? = null,
 
   @Column(name = "DECEASED_DATE")
-  val deceasedDate: LocalDate? = null,
+  var deceasedDate: LocalDate? = null,
 
   @Column(name = "STAFF_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val isStaff: Boolean? = false,
+  var isStaff: Boolean? = false,
 
   @Column(name = "REMITTER_FLAG")
   @Convert(converter = YesNoConverter::class)
