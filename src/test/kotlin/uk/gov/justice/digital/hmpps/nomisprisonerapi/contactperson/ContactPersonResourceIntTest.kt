@@ -1436,6 +1436,176 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /persons/{personId}")
+  @Nested
+  inner class UpdatePerson {
+    private lateinit var person: Person
+    private lateinit var phone: PersonPhone
+    private lateinit var prisoner: Offender
+    private lateinit var contact: OffenderContactPerson
+    private val validPersonUpdate = UpdatePersonRequest(
+      firstName = "Jane",
+      lastName = "Smith",
+    )
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        person = person(
+          firstName = "JANE",
+          lastName = "NARK",
+          middleName = "LIZ",
+          dateOfBirth = "1999-12-22",
+          gender = "F",
+          title = "DR",
+          language = "VIE",
+          interpreterRequired = true,
+          domesticStatus = "M",
+          deceasedDate = "2023-12-22",
+          isStaff = true,
+          isRemitter = true,
+          whoCreated = "KOFEADDY",
+          whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+        ) {
+          phone = phone(
+            phoneType = "MOB",
+            phoneNo = "07399999999",
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          )
+        }
+        prisoner = offender(nomsId = "A1234AA", firstName = "JOHN", lastName = "SMITH") {
+          booking {
+            contact = contact(
+              person = person,
+              contactType = "S",
+              relationshipType = "BRO",
+              active = true,
+              nextOfKin = true,
+              emergencyContact = true,
+              approvedVisitor = false,
+              comment = "Brother is next to kin",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPersonUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPersonUpdate)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/persons/${person.id}")
+          .bodyValue(validPersonUpdate)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when person not found`() {
+        webTestClient.put().uri("/persons/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(validPersonUpdate)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `will update person and leave child entities alone`() {
+        assertThat(personRepository.existsById(person.id)).isTrue()
+        assertThat(personPhoneRepository.existsById(phone.phoneId)).isTrue()
+        assertThat(personContactRepository.existsById(contact.id)).isTrue()
+        assertThat(offenderRepository.existsById(prisoner.id)).isTrue()
+
+        nomisDataBuilder.runInTransaction {
+          assertThat(offenderRepository.findByIdOrNull(prisoner.id)!!.latestBooking().contacts).hasSize(1)
+        }
+
+        webTestClient.put().uri("/persons/${person.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(validPersonUpdate)
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        // nothing gets deleted
+        assertThat(personRepository.existsById(person.id)).isTrue()
+        assertThat(personPhoneRepository.existsById(phone.phoneId)).isTrue()
+        assertThat(personContactRepository.existsById(contact.id)).isTrue()
+        assertThat(offenderRepository.existsById(prisoner.id)).isTrue()
+      }
+    }
+
+    @Test
+    fun `will create a person with all supplied data`() {
+      webTestClient.put().uri("/persons/${person.id}")
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .bodyValue(
+          validPersonUpdate.copy(
+            middleName = "Tina",
+            dateOfBirth = LocalDate.parse("1965-07-19"),
+            genderCode = "F",
+            titleCode = "DR",
+            languageCode = "ENG",
+            interpreterRequired = true,
+            domesticStatusCode = "S",
+            isStaff = true,
+            deceasedDate = LocalDate.parse("2024-08-19"),
+          ),
+        )
+        .exchange()
+        .expectStatus()
+        .isOk
+
+      val updatedPerson = personRepository.findByIdOrNull(person.id)!!
+
+      with(updatedPerson) {
+        assertThat(firstName).isEqualTo("JANE")
+        assertThat(lastName).isEqualTo("SMITH")
+        assertThat(middleName).isEqualTo("TINA")
+        assertThat(birthDate).isEqualTo(LocalDate.parse("1965-07-19"))
+        assertThat(deceasedDate).isEqualTo(LocalDate.parse("2024-08-19"))
+        assertThat(sex?.code).isEqualTo("F")
+        assertThat(title?.code).isEqualTo("DR")
+        assertThat(domesticStatus?.code).isEqualTo("S")
+        assertThat(interpreterRequired).isTrue
+        assertThat(isStaff).isTrue
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/contact")
   @Nested
   inner class CreateContactPerson {

@@ -245,6 +245,24 @@ class ContactPersonService(
       .let { return CreatePersonResponse(it.id) }
   }
 
+  fun updatePerson(personId: Long, request: UpdatePersonRequest) {
+    personOf(personId).run {
+      request.also {
+        lastName = it.lastName.uppercase()
+        firstName = it.firstName.uppercase()
+        middleName = it.middleName?.uppercase()
+        birthDate = it.dateOfBirth
+        sex = genderOf(it.genderCode)
+        title = titleOf(it.titleCode)
+        language = languageOf(it.languageCode)
+        interpreterRequired = it.interpreterRequired
+        domesticStatus = martialStatusOf(it.domesticStatusCode)
+        isStaff = it.isStaff
+        deceasedDate = it.deceasedDate
+      }
+    }
+  }
+
   fun deletePerson(personId: Long) = personRepository.deleteById(personId)
 
   fun createPersonContact(personId: Long, request: CreatePersonContactRequest): CreatePersonContactResponse {
