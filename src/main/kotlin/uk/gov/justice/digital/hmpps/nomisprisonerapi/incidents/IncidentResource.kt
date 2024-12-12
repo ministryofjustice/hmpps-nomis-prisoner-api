@@ -478,7 +478,7 @@ data class History(
   @Schema(description = "Questions asked for the questionnaire")
   val questions: List<HistoryQuestion>,
   @Schema(description = "When the questionnaire was changed")
-  val incidentChangeDate: LocalDate,
+  val incidentChangeDate: LocalDateTime,
   @Schema(description = "Who changed the questionnaire")
   val incidentChangeStaff: Staff,
   @Schema(description = "The date and time the historical incident questionnaire was created")
