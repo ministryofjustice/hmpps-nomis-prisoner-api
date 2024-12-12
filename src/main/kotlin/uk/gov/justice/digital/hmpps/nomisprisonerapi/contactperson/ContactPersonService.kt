@@ -288,6 +288,28 @@ class ContactPersonService(
     return CreatePersonContactResponse(contactRepository.save(contact).id)
   }
 
+  fun updatePersonContact(personId: Long, contactId: Long, request: UpdatePersonContactRequest) {
+    val contact = contactOf(personId = personId, contactId = contactId)
+    // check if another contact with the same person already has the relationship type
+    // e.g. you can't be the BROTHER to teh same prisoner twice
+    if (contact.offenderBooking.contacts.filter { it.id != contactId }.any { it.contactType.code == request.contactTypeCode && it.relationshipType.code == request.relationshipTypeCode && personId == it.person!!.id }) {
+      throw ConflictException("Prisoner with booking  ${contact.offenderBooking.offender.nomsId} with booking ${contact.offenderBooking.bookingId} already is a contact with person $personId for contactType ${request.contactTypeCode} and relationshipType ${request.relationshipTypeCode} ")
+    }
+
+    contact.run {
+      request.also {
+        contactType = contactType(it.contactTypeCode)
+        relationshipType = relationshipType(it.relationshipTypeCode)
+        active = it.active
+        approvedVisitor = it.approvedVisitor
+        emergencyContact = it.emergencyContact
+        nextOfKin = it.nextOfKin
+        comment = it.comment
+        expiryDate = it.expiryDate
+      }
+    }
+  }
+
   fun createPersonAddress(personId: Long, request: CreatePersonAddressRequest): CreatePersonAddressResponse = personAddressRepository.saveAndFlush(
     request.let {
       uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress(

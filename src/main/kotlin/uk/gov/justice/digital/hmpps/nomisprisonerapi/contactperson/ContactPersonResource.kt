@@ -359,6 +359,79 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): CreatePersonContactResponse = contactPersonService.createPersonContact(personId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}/contact/{contactId}")
+  @Operation(
+    summary = "Updates a person contact",
+    description = "Updates a person contact; the relationship between a prisoner and a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Person Contact Updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad for example prisoner does not exist or contact / relationship types do not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person or contact does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Contact with the specified relationship and type already exists for this prisoner's latest booking",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePersonContact(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Contact Id", example = "75675")
+    @PathVariable
+    contactId: Long,
+    @RequestBody @Valid
+    request: UpdatePersonContactRequest,
+  ) = contactPersonService.updatePersonContact(personId, contactId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/contact/{contactId}/restriction")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -1269,6 +1342,26 @@ data class CreatePersonContactRequest(
 data class CreatePersonContactResponse(
   @Schema(description = "The contact Id")
   val personContactId: Long,
+)
+
+@Schema(description = "Request to update a contact (aka DPS prisoner contact) in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdatePersonContactRequest(
+  val contactTypeCode: String,
+  @Schema(description = "The relationship type", example = "BRO")
+  val relationshipTypeCode: String,
+  @Schema(description = "True if active")
+  val active: Boolean,
+  @Schema(description = "Date contact is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "True if approved to visit the prisoner")
+  val approvedVisitor: Boolean,
+  @Schema(description = "True if next of kin to the prisoner")
+  val nextOfKin: Boolean,
+  @Schema(description = "True if emergency contact for the prisoner")
+  val emergencyContact: Boolean,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
 )
 
 data class CreatePersonAddressRequest(

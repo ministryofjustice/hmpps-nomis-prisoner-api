@@ -55,7 +55,7 @@ data class OffenderContactPerson(
       ), JoinColumnOrFormula(column = JoinColumn(name = "RELATIONSHIP_TYPE", referencedColumnName = "code")),
     ],
   )
-  val relationshipType: RelationshipType,
+  var relationshipType: RelationshipType,
 
   @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -68,30 +68,30 @@ data class OffenderContactPerson(
       ), JoinColumnOrFormula(column = JoinColumn(name = "CONTACT_TYPE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val contactType: ContactType,
+  var contactType: ContactType,
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = false,
+  var active: Boolean = false,
 
   @Column(name = "NEXT_OF_KIN_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val nextOfKin: Boolean = false,
+  var nextOfKin: Boolean = false,
 
   @Column(name = "EMERGENCY_CONTACT_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val emergencyContact: Boolean = false,
+  var emergencyContact: Boolean = false,
 
   // handful of null values
   @Column(name = "APPROVED_VISITOR_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val approvedVisitor: Boolean? = false,
+  var approvedVisitor: Boolean? = false,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @Column(name = "EXPIRY_DATE")
-  val expiryDate: LocalDate? = null,
+  var expiryDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "contactPerson", cascade = [CascadeType.ALL], fetch = LAZY)
   val restrictions: MutableList<OffenderPersonRestrict> = mutableListOf(),
