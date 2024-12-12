@@ -1760,6 +1760,168 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /persons/{personId}/contact/{contactId}")
+  @Nested
+  inner class UpdateContactPerson {
+    val offenderNo = "A1234KT"
+    private val validUpdateContactRequest = UpdatePersonContactRequest(
+      contactTypeCode = "S",
+      relationshipTypeCode = "BRO",
+      active = false,
+      expiryDate = LocalDate.parse("2024-01-01"),
+      approvedVisitor = true,
+      nextOfKin = true,
+      emergencyContact = true,
+      comment = "Best friends forever",
+    )
+
+    private lateinit var existingPerson: Person
+    private lateinit var existingContact: OffenderContactPerson
+    private var latestBookingId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = offenderNo) {
+          latestBookingId = booking {
+            existingContact = contact(
+              person = existingPerson,
+              contactType = "S",
+              relationshipType = "SIS",
+              active = true,
+              expiryDate = null,
+              comment = "Best friends",
+              nextOfKin = false,
+              emergencyContact = false,
+              approvedVisitor = false,
+            )
+            contact(
+              person = existingPerson,
+              contactType = "S",
+              relationshipType = "FRI",
+              active = true,
+            )
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validUpdateContactRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validUpdateContactRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .bodyValue(validUpdateContactRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 409 when contact relationship supplied already exists on latest booking`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .bodyValue(validUpdateContactRequest.copy(relationshipTypeCode = "FRI"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.put().uri("/persons/999/contact/${existingContact.id}")
+          .bodyValue(validUpdateContactRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when contact does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/99999")
+          .bodyValue(validUpdateContactRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when contact type does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .bodyValue(validUpdateContactRequest.copy(contactTypeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when relationship type does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .bodyValue(validUpdateContactRequest.copy(relationshipTypeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a contact`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .bodyValue(validUpdateContactRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val updatedContact = personContactRepository.findByIdOrNull(existingContact.id)!!
+
+        with(updatedContact) {
+          assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
+          assertThat(person?.id).isEqualTo(existingPerson.id)
+          assertThat(nextOfKin).isTrue()
+          assertThat(approvedVisitor).isTrue()
+          assertThat(emergencyContact).isTrue()
+          assertThat(active).isFalse()
+          assertThat(expiryDate).isEqualTo(LocalDate.parse("2024-01-01"))
+          assertThat(comment).isEqualTo("Best friends forever")
+          assertThat(contactType.description).isEqualTo("Social/Family")
+          assertThat(relationshipType.description).isEqualTo("Brother")
+        }
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/address")
   @Nested
   inner class CreatePersonAddress {
