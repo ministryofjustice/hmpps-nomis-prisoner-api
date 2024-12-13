@@ -41,6 +41,12 @@ data class QuestionnaireOffenderRole(
   @Convert(converter = YesNoConverter::class)
   val active: Boolean = true,
 
+  @Column(name = "LIST_SEQ")
+  val listSequence: Int? = null,
+
+  @Column(name = "EXPIRY_DATE")
+  val expiryDate: LocalDate? = null,
+
   @Column
   var auditModuleName: String? = null,
 ) {
@@ -51,10 +57,6 @@ data class QuestionnaireOffenderRole(
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
   lateinit var createDatetime: LocalDateTime
-
-  @Column(name = "EXPIRY_DATE")
-  @Generated
-  lateinit var expiryDate: LocalDate
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

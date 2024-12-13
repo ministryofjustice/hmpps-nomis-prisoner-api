@@ -14,6 +14,7 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
@@ -50,6 +51,9 @@ data class QuestionnaireAnswer(
   @Column(name = "DATE_REQUIRED_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val dateRequired: Boolean = false,
+
+  @Column(name = "EXPIRY_DATE")
+  val expiryDate: LocalDate? = null,
 
   @Column
   var auditModuleName: String? = null,

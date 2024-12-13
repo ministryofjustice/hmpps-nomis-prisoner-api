@@ -14,7 +14,6 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
@@ -33,7 +32,7 @@ class IncidentHistory(
   val questionnaire: Questionnaire,
 
   @Column(name = "CHANGE_DATE")
-  val incidentChangeDate: LocalDate = LocalDate.now(),
+  val incidentChangeDateTime: LocalDateTime = LocalDateTime.now(),
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CHANGE_STAFF_ID")

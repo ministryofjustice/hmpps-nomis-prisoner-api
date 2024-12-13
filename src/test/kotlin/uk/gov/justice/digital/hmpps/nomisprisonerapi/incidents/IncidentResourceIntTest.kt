@@ -461,6 +461,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
         .jsonPath("history[0].createDateTime").isNotEmpty
         .jsonPath("history[0].createdBy").isNotEmpty
+        .jsonPath("history[0].incidentChangeDateTime").isNotEmpty
+        .jsonPath("history[0].incidentChangeStaff.username").isEqualTo("FREDSTAFF")
     }
 
     @Test
