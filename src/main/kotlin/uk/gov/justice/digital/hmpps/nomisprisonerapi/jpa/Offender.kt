@@ -56,7 +56,7 @@ data class Offender(
   @Column(name = "CASELOAD_TYPE")
   val caseloadType: String? = "INST",
 
-  @Column(name = "FIRST_NAME", nullable = true)
+  @Column(name = "FIRST_NAME")
   val firstName: String,
 
   @Column(name = "MIDDLE_NAME")
