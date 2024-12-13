@@ -763,6 +763,69 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): CreatePersonAddressResponse = contactPersonService.createPersonAddress(personId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}/address/{addressId}")
+  @Operation(
+    summary = "Updates a person address",
+    description = "Updates a person address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Person Address Updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person or address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePersonAddress(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Address Id", example = "47474")
+    @PathVariable
+    addressId: Long,
+    @RequestBody @Valid
+    request: UpdatePersonAddressRequest,
+  ) = contactPersonService.updatePersonAddress(personId = personId, addressId = addressId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/email")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -1365,6 +1428,39 @@ data class UpdatePersonContactRequest(
 )
 
 data class CreatePersonAddressRequest(
+  @Schema(description = "Address reference code", example = "HOME")
+  val typeCode: String? = null,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String? = null,
+  @Schema(description = "Premise", example = "22")
+  val premise: String? = null,
+  @Schema(description = "Street", example = "West Street")
+  val street: String? = null,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String? = null,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String? = null,
+  @Schema(description = "City reference code", example = "25343")
+  val cityCode: String? = null,
+  @Schema(description = "County reference code", example = "S.YORKSHIRE")
+  val countyCode: String? = null,
+  @Schema(description = "Country reference code", example = "ENG")
+  val countryCode: String? = null,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean? = null,
+  @Schema(description = "true if this is the person's primary address")
+  val primaryAddress: Boolean,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean,
+  @Schema(description = "Free format comment about the address")
+  val comment: String? = null,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate? = null,
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate? = null,
+)
+
+data class UpdatePersonAddressRequest(
   @Schema(description = "Address reference code", example = "HOME")
   val typeCode: String? = null,
   @Schema(description = "Flat name or number", example = "Apartment 3")

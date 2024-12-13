@@ -2084,6 +2084,177 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("POST /persons/{personId}/address/{addressId}")
+  @Nested
+  inner class UpdatePersonAddress {
+    private val validAddressRequest = UpdatePersonAddressRequest(
+      mailAddress = true,
+      primaryAddress = true,
+    )
+
+    private lateinit var existingPerson: Person
+    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingAddress = address()
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.put().uri("/persons/9999/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/99999")
+          .bodyValue(validAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when city code does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when county code does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when country code does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when address type code does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a address`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .bodyValue(
+            validAddressRequest.copy(
+              typeCode = "HOME",
+              flat = "1A",
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+              locality = "Broomhill",
+              cityCode = SHEFFIELD,
+              countyCode = "S.YORKSHIRE",
+              countryCode = "GBR",
+              postcode = "S10 2HH",
+              primaryAddress = true,
+              mailAddress = true,
+              noFixedAddress = false,
+              startDate = LocalDate.parse("2001-01-01"),
+              endDate = LocalDate.parse("2032-12-31"),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val address = personAddressRepository.findByIdOrNull(existingAddress.addressId)!!
+
+        with(address) {
+          assertThat(addressId).isEqualTo(addressId)
+          assertThat(person.id).isEqualTo(existingPerson.id)
+          assertThat(addressType?.description).isEqualTo("Home Address")
+          assertThat(flat).isEqualTo("1A")
+          assertThat(premise).isEqualTo("Bolden Court")
+          assertThat(street).isEqualTo("Fulwood Road")
+          assertThat(locality).isEqualTo("Broomhill")
+          assertThat(city?.description).isEqualTo("Sheffield")
+          assertThat(county?.description).isEqualTo("South Yorkshire")
+          assertThat(country?.description).isEqualTo("United Kingdom")
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+          assertThat(noFixedAddress).isFalse()
+          assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
+          assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.addresses).anyMatch { it.addressId == address.addressId }
+        }
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/email")
   @Nested
   inner class CreatePersonEmail {

@@ -30,28 +30,28 @@ import java.time.LocalDate
 @Inheritance
 abstract class Address(
   @Column(name = "PREMISE")
-  open val premise: String? = null,
+  open var premise: String? = null,
 
   @Column(name = "STREET")
-  open val street: String? = null,
+  open var street: String? = null,
 
   @Column(name = "LOCALITY")
-  open val locality: String? = null,
+  open var locality: String? = null,
 
   @Column(name = "START_DATE")
-  open val startDate: LocalDate? = null,
+  open var startDate: LocalDate? = null,
 
   @Column(name = "END_DATE")
-  open val endDate: LocalDate? = null,
+  open var endDate: LocalDate? = null,
 
   @Column(name = "NO_FIXED_ADDRESS_FLAG")
   @Convert(converter = YesNoConverter::class)
   // null for a handful of addresses
-  open val noFixedAddress: Boolean? = false,
+  open var noFixedAddress: Boolean? = false,
 
   @Column(name = "PRIMARY_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  open val primaryAddress: Boolean = false,
+  open var primaryAddress: Boolean = false,
 
   @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @SQLRestriction("OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
@@ -69,13 +69,13 @@ abstract class Address(
       ), JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_TYPE", referencedColumnName = "code")),
     ],
   )
-  open val addressType: AddressType? = null,
+  open var addressType: AddressType? = null,
 
   @Column(name = "FLAT")
-  open val flat: String? = null,
+  open var flat: String? = null,
 
   @Column(name = "POSTAL_CODE")
-  open val postalCode: String? = null,
+  open var postalCode: String? = null,
 
   @ManyToOne
   // COUNTY_CODE not always found for records created 2006-01-13 08:58:25.
@@ -90,7 +90,7 @@ abstract class Address(
       ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTY_CODE", referencedColumnName = "code")),
     ],
   )
-  open val county: County? = null,
+  open var county: County? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -103,7 +103,7 @@ abstract class Address(
       ), JoinColumnOrFormula(column = JoinColumn(name = "CITY_CODE", referencedColumnName = "code")),
     ],
   )
-  open val city: City? = null,
+  open var city: City? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -116,18 +116,18 @@ abstract class Address(
       ), JoinColumnOrFormula(column = JoinColumn(name = "COUNTRY_CODE", referencedColumnName = "code")),
     ],
   )
-  open val country: Country? = null,
+  open var country: Country? = null,
 
   @Column(name = "VALIDATED_PAF_FLAG")
   @Convert(converter = YesNoConverter::class)
-  open val validatedPAF: Boolean = false,
+  open var validatedPAF: Boolean = false,
 
   @Column(name = "MAIL_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  open val mailAddress: Boolean = false,
+  open var mailAddress: Boolean = false,
 
   @Column(name = "COMMENT_TEXT")
-  open val comment: String? = null,
+  open var comment: String? = null,
 
   /* Not mapped
   CAPACITY - always null
