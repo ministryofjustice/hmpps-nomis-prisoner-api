@@ -334,6 +334,28 @@ class ContactPersonService(
     },
   ).let { CreatePersonAddressResponse(personAddressId = it.addressId) }
 
+  fun updatePersonAddress(personId: Long, addressId: Long, request: UpdatePersonAddressRequest) {
+    addressOf(personId = personId, addressId = addressId).run {
+      request.also {
+        addressType = addressTypeOf(it.typeCode)
+        premise = it.premise
+        street = it.street
+        locality = it.locality
+        flat = it.flat
+        postalCode = it.postcode
+        city = cityOf(it.cityCode)
+        county = countyOf(it.countyCode)
+        country = countryOf(it.countryCode)
+        noFixedAddress = it.noFixedAddress
+        primaryAddress = it.primaryAddress
+        mailAddress = it.mailAddress
+        comment = it.comment
+        startDate = it.startDate
+        endDate = it.endDate
+      }
+    }
+  }
+
   fun createPersonEmail(personId: Long, request: CreatePersonEmailRequest): CreatePersonEmailResponse = personInternetAddressRepository.saveAndFlush(
     PersonInternetAddress(
       person = personOf(personId),
