@@ -1491,6 +1491,8 @@ data class UpdatePersonAddressRequest(
   val startDate: LocalDate? = null,
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate? = null,
+  @Schema(description = "true if address validated by PAF")
+  val validatedPAF: Boolean? = null,
 )
 
 data class CreatePersonAddressResponse(

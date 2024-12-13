@@ -2220,6 +2220,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               noFixedAddress = false,
               startDate = LocalDate.parse("2001-01-01"),
               endDate = LocalDate.parse("2032-12-31"),
+              validatedPAF = true,
             ),
           )
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
@@ -2245,6 +2246,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           assertThat(noFixedAddress).isFalse()
           assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
           assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
+          assertThat(validatedPAF).isTrue()
         }
 
         nomisDataBuilder.runInTransaction {

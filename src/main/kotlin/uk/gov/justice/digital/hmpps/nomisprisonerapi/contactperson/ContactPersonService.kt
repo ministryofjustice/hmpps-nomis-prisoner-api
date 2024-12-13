@@ -352,6 +352,9 @@ class ContactPersonService(
         comment = it.comment
         startDate = it.startDate
         endDate = it.endDate
+        it.validatedPAF ?.also { validated ->
+          validatedPAF = validated
+        }
       }
     }
   }
