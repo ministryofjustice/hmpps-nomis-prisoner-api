@@ -883,6 +883,59 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): CreatePersonEmailResponse = contactPersonService.createPersonEmail(personId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}/email/{emailAddressId}")
+  @Operation(
+    summary = "Updates a person email",
+    description = "Updates a person email in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Person Email ID aka InternetAddressId Update",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person or email address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePersonEmail(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Email address Id", example = "76554")
+    @PathVariable
+    emailAddressId: Long,
+    @RequestBody @Valid
+    request: UpdatePersonEmailRequest,
+  ) = contactPersonService.updatePersonEmail(personId = personId, emailAddressId = emailAddressId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/phone")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -1635,6 +1688,11 @@ data class CreatePersonAddressResponse(
 )
 
 data class CreatePersonEmailRequest(
+  @Schema(description = "Email address", example = "test@test.justice.gov.uk")
+  val email: String,
+)
+
+data class UpdatePersonEmailRequest(
   @Schema(description = "Email address", example = "test@test.justice.gov.uk")
   val email: String,
 )

@@ -366,6 +366,14 @@ class ContactPersonService(
     ),
   ).let { CreatePersonEmailResponse(emailAddressId = it.internetAddressId) }
 
+  fun updatePersonEmail(personId: Long, emailAddressId: Long, request: UpdatePersonEmailRequest) {
+    emailOf(personId = personId, emailAddressId = emailAddressId).run {
+      request.also {
+        internetAddress = it.email
+      }
+    }
+  }
+
   fun createPersonPhone(personId: Long, request: CreatePersonPhoneRequest): CreatePersonPhoneResponse = personPhoneRepository.saveAndFlush(
     PersonPhone(
       person = personOf(personId),
@@ -498,7 +506,8 @@ class ContactPersonService(
   fun personOf(personId: Long): Person = personRepository.findByIdOrNull(personId) ?: throw NotFoundException("Person with id=$personId does not exist")
   fun staffOf(username: String): Staff = staffUserAccountRepository.findByUsername(username)?.staff ?: throw BadDataException("Staff with username=$username does not exist")
   fun addressOf(personId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress = (personAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Address with id=$addressId on Person with id=$personId does not exist")
-  fun phoneOf(personId: Long, phoneId: Long): PersonPhone = (personPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Phone with id=$personId on Person with id=$personId does not exist")
+  fun phoneOf(personId: Long, phoneId: Long): PersonPhone = (personPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Phone with id=$phoneId on Person with id=$personId does not exist")
+  fun emailOf(personId: Long, emailAddressId: Long): PersonInternetAddress = (personInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("EMail with id=$emailAddressId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Email with id=$emailAddressId on Person with id=$personId does not exist")
   fun phoneOf(personId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(personId = personId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$personId on Address with id=$addressId on Person with id=$personId does not exist")
   fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
   fun identifierTypeOf(code: String): IdentifierType = identifierRepository.findByIdOrNull(IdentifierType.pk(code)) ?: throw BadDataException("IdentifierType with code $code does not exist")

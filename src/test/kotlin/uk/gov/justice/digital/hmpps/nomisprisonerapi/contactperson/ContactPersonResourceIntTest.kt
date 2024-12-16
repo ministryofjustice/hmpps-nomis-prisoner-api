@@ -2358,6 +2358,116 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /persons/{personId}/email/{emailAddressId}")
+  @Nested
+  inner class UpdatePersonEmail {
+    private val validEmailRequest = CreatePersonEmailRequest(
+      email = "test@test.com",
+    )
+
+    private lateinit var existingPerson: Person
+    private lateinit var existingEmail: PersonInternetAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingEmail = email(emailAddress = "test@justice.gov.uk")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.put().uri("/persons/99999/email/${existingEmail.internetAddressId}")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when email does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/email/9999")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a email`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .bodyValue(
+            validEmailRequest.copy(
+              email = "test@email.com",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val email = personInternetAddressRepository.findByIdOrNull(existingEmail.internetAddressId)!!
+
+        with(email) {
+          assertThat(internetAddressId).isEqualTo(existingEmail.internetAddressId)
+          assertThat(person.id).isEqualTo(existingPerson.id)
+          assertThat(email.internetAddress).isEqualTo("test@email.com")
+          assertThat(email.internetAddressClass).isEqualTo("EMAIL")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.internetAddresses).anyMatch { it.internetAddressId == email.internetAddressId }
+        }
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/phone")
   @Nested
   inner class CreatePersonPhone {
