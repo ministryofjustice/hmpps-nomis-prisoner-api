@@ -15,7 +15,7 @@ import jakarta.persistence.Table
 @Inheritance
 abstract class InternetAddress(
   @Column(name = "INTERNET_ADDRESS")
-  open val internetAddress: String,
+  open var internetAddress: String,
 
   @Column(name = "INTERNET_ADDRESS_CLASS")
   open val internetAddressClass: String,
