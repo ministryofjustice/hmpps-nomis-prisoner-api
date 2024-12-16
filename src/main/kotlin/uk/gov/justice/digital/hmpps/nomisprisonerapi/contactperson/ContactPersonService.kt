@@ -375,6 +375,26 @@ class ContactPersonService(
     ),
   ).let { CreatePersonPhoneResponse(phoneId = it.phoneId) }
 
+  fun updatePersonPhone(personId: Long, phoneId: Long, request: UpdatePersonPhoneRequest) {
+    phoneOf(personId = personId, phoneId = phoneId).run {
+      request.also {
+        phoneNo = it.number
+        extNo = it.extension
+        phoneType = phoneTypeOf(it.typeCode)
+      }
+    }
+  }
+
+  fun updatePersonAddressPhone(personId: Long, addressId: Long, phoneId: Long, request: UpdatePersonPhoneRequest) {
+    phoneOf(personId = personId, addressId = addressId, phoneId = phoneId).run {
+      request.also {
+        phoneNo = it.number
+        extNo = it.extension
+        phoneType = phoneTypeOf(it.typeCode)
+      }
+    }
+  }
+
   fun createPersonAddressPhone(personId: Long, addressId: Long, request: CreatePersonPhoneRequest): CreatePersonPhoneResponse = addressPhoneRepository.saveAndFlush(
     AddressPhone(
       address = addressOf(personId = personId, addressId = addressId),
@@ -477,7 +497,9 @@ class ContactPersonService(
   fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
   fun personOf(personId: Long): Person = personRepository.findByIdOrNull(personId) ?: throw NotFoundException("Person with id=$personId does not exist")
   fun staffOf(username: String): Staff = staffUserAccountRepository.findByUsername(username)?.staff ?: throw BadDataException("Staff with username=$username does not exist")
-  fun addressOf(personId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress = (personAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Person with id=$personId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Address with id=$addressId on Person with id=$personId does not exist")
+  fun addressOf(personId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress = (personAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Address with id=$addressId on Person with id=$personId does not exist")
+  fun phoneOf(personId: Long, phoneId: Long): PersonPhone = (personPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Phone with id=$personId on Person with id=$personId does not exist")
+  fun phoneOf(personId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(personId = personId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$personId on Address with id=$addressId on Person with id=$personId does not exist")
   fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
   fun identifierTypeOf(code: String): IdentifierType = identifierRepository.findByIdOrNull(IdentifierType.pk(code)) ?: throw BadDataException("IdentifierType with code $code does not exist")
   fun restrictionTypeOf(code: String): RestrictionType = restrictionTypeRepository.findByIdOrNull(RestrictionType.pk(code)) ?: throw BadDataException("RestrictionType with code $code does not exist")
