@@ -31,11 +31,11 @@ abstract class Phone(
       ), JoinColumnOrFormula(column = JoinColumn(name = "PHONE_TYPE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  open val phoneType: PhoneUsage,
+  open var phoneType: PhoneUsage,
   @Column(name = "PHONE_NO")
-  open val phoneNo: String,
+  open var phoneNo: String,
   @Column(name = "EXT_NO")
-  open val extNo: String? = null,
+  open var extNo: String? = null,
 ) : NomisAuditableEntity() {
   @Id
   @SequenceGenerator(name = "PHONE_ID", sequenceName = "PHONE_ID", allocationSize = 1)
