@@ -64,7 +64,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -177,7 +177,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -225,7 +225,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -263,7 +263,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -320,7 +320,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -390,7 +390,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -470,7 +470,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -532,7 +532,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -605,7 +605,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -664,7 +664,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -734,7 +734,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -794,7 +794,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -854,7 +854,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -904,7 +904,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -974,7 +974,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -1034,7 +1034,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -1104,7 +1104,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -1171,7 +1171,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -1249,7 +1249,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -1309,7 +1309,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
