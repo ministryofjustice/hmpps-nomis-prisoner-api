@@ -1276,6 +1276,69 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     @RequestBody @Valid
     request: CreatePersonIdentifierRequest,
   ): CreatePersonIdentifierResponse = contactPersonService.createPersonIdentifier(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}/identifier/{sequence}")
+  @Operation(
+    summary = "Updates a person identifier",
+    description = "Updates a person identifier in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "209",
+        description = "Person Identifier updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request data, e.g type is not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSON",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person or identifier does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun udpdatePersonIdentifier(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Identifier sequence", example = "4")
+    @PathVariable
+    sequence: Long,
+    @RequestBody @Valid
+    request: UpdatePersonIdentifierRequest,
+  ) = contactPersonService.updatePersonIdentifier(personId, sequence, request)
 }
 
 @Schema(description = "The data held in NOMIS about a person who is a contact for a prisoner")
@@ -1726,6 +1789,15 @@ data class CreatePersonPhoneResponse(
 )
 
 data class CreatePersonIdentifierRequest(
+  @Schema(description = "The identifier type code")
+  val typeCode: String,
+  @Schema(description = "The identifier value", example = "NE121212T")
+  val identifier: String,
+  @Schema(description = "The issued authority", example = "Police")
+  val issuedAuthority: String? = null,
+)
+
+data class UpdatePersonIdentifierRequest(
   @Schema(description = "The identifier type code")
   val typeCode: String,
   @Schema(description = "The identifier value", example = "NE121212T")
