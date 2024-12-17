@@ -240,8 +240,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     sentenceSequence: Long,
     @RequestBody @Valid
     request: CreateSentenceAdjustmentRequest,
-  ): CreateAdjustmentResponse =
-    sentencingAdjustmentService.createSentenceAdjustment(bookingId, sentenceSequence, request)
+  ): CreateAdjustmentResponse = sentencingAdjustmentService.createSentenceAdjustment(bookingId, sentenceSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/key-date-adjustments/{adjustmentId}")
@@ -457,8 +456,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     bookingId: Long,
     @RequestBody @Valid
     request: CreateKeyDateAdjustmentRequest,
-  ): CreateAdjustmentResponse =
-    sentencingAdjustmentService.createKeyDateAdjustment(bookingId, request)
+  ): CreateAdjustmentResponse = sentencingAdjustmentService.createKeyDateAdjustment(bookingId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/adjustments/ids")
@@ -508,14 +506,13 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-  ): Page<AdjustmentIdResponse> =
-    sentencingAdjustmentService.findAdjustmentIdsByFilter(
-      pageRequest = pageRequest,
-      AdjustmentFilter(
-        toDate = toDate,
-        fromDate = fromDate,
-      ),
-    )
+  ): Page<AdjustmentIdResponse> = sentencingAdjustmentService.findAdjustmentIdsByFilter(
+    pageRequest = pageRequest,
+    AdjustmentFilter(
+      toDate = toDate,
+      fromDate = fromDate,
+    ),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/booking-id/{bookingId}/sentencing-adjustments")
@@ -556,12 +553,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     @Schema(description = "Indicate if should return just active adjustments", required = true)
     @RequestParam(value = "active-only", required = false, defaultValue = "true")
     activeOnly: Boolean,
-  ): SentencingAdjustmentsResponse =
-    if (activeOnly) {
-      sentencingAdjustmentService.getActiveSentencingAdjustments(bookingId = bookingId)
-    } else {
-      sentencingAdjustmentService.getAllSentencingAdjustments(bookingId = bookingId)
-    }
+  ): SentencingAdjustmentsResponse = if (activeOnly) {
+    sentencingAdjustmentService.getActiveSentencingAdjustments(bookingId = bookingId)
+  } else {
+    sentencingAdjustmentService.getAllSentencingAdjustments(bookingId = bookingId)
+  }
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -571,6 +567,8 @@ data class SentenceAdjustmentResponse(
   val id: Long,
   @Schema(description = "The booking id", required = true)
   val bookingId: Long,
+  @Schema(description = "The booking sequence", required = true)
+  val bookingSequence: Int,
   @Schema(description = "Indicates whether for this booking the prisoner has been released", required = true)
   val hasBeenReleased: Boolean,
   @Schema(description = "Current prison or OUT")
@@ -711,6 +709,8 @@ data class KeyDateAdjustmentResponse(
   val id: Long,
   @Schema(description = "The booking id", required = true)
   val bookingId: Long,
+  @Schema(description = "The booking sequence", required = true)
+  val bookingSequence: Int,
   @Schema(description = "Indicates whether for this booking the prisoner has been released", required = true)
   val hasBeenReleased: Boolean,
   @Schema(description = "Current prison or OUT")

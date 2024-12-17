@@ -66,14 +66,14 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     internal fun createPrisoner() {
       nomisDataBuilder.build {
         anotherPrisoner = offender(nomsId = "A1234TX") {
+          booking(agencyLocationId = "MDI") {
+            sentence {}
+            adjustmentIdOnActiveBooking = adjustment {}.id
+          }
           booking(bookingBeginDate = LocalDateTime.now().minusDays(2)) {
             sentence {}
             adjustmentIdOnInActiveBooking = adjustment {}.id
             release(date = LocalDateTime.now().minusDays(1))
-          }
-          booking(agencyLocationId = "MDI") {
-            sentence {}
-            adjustmentIdOnActiveBooking = adjustment {}.id
           }
         }
       }
@@ -127,6 +127,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("id").isEqualTo(adjustmentIdOnActiveBooking)
         .jsonPath("offenderNo").isEqualTo("A1234TX")
+        .jsonPath("bookingSequence").isEqualTo("1")
     }
 
     @Test
@@ -865,13 +866,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
 
       nomisDataBuilder.build {
         anotherPrisoner = offender(nomsId = "A1234TX") {
-          booking(bookingBeginDate = LocalDateTime.now().minusDays(2)) {
-            sentence {
-              adjustmentIdOnInActiveBooking = adjustment {}.id
-            }
-            release(date = LocalDateTime.now().minusDays(1))
-          }
-
           booking(agencyLocationId = "MDI") {
             sentence {
               adjustmentIdOnActiveBooking = adjustment {}.id
@@ -879,6 +873,12 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             sentence {
               keyDateRelatedAdjustmentId = adjustment(keyDateAdjustmentId = keyDateAdjustmentId).id
             }
+          }
+          booking(bookingBeginDate = LocalDateTime.now().minusDays(2)) {
+            sentence {
+              adjustmentIdOnInActiveBooking = adjustment {}.id
+            }
+            release(date = LocalDateTime.now().minusDays(1))
           }
         }
       }
@@ -932,6 +932,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("id").isEqualTo(adjustmentIdOnActiveBooking)
+        .jsonPath("bookingSequence").isEqualTo("1")
         .jsonPath("offenderNo").isEqualTo("A1234TX")
         .jsonPath("hiddenFromUsers").isEqualTo(false)
     }
@@ -955,6 +956,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("prisonId").isEqualTo("MDI")
+        .jsonPath("bookingSequence").isEqualTo("1")
         .jsonPath("hasBeenReleased").isEqualTo(false)
       webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnInActiveBooking")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -962,6 +964,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("prisonId").isEqualTo("OUT")
+        .jsonPath("bookingSequence").isEqualTo("2")
         .jsonPath("hasBeenReleased").isEqualTo(true)
     }
   }
