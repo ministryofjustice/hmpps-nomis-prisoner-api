@@ -423,6 +423,15 @@ class ContactPersonService(
     ).let { CreatePersonIdentifierResponse(sequence = it.id.sequence) }
   }
 
+  fun updatePersonIdentifier(personId: Long, sequence: Long, request: UpdatePersonIdentifierRequest) {
+    identifierOf(personId, sequence = sequence).run {
+      request.also {
+        identifier = it.identifier
+        identifierType = identifierTypeOf(it.typeCode)
+        issuedAuthority = it.issuedAuthority
+      }
+    }
+  }
   fun createPersonContactRestriction(
     personId: Long,
     contactId: Long,
@@ -509,6 +518,7 @@ class ContactPersonService(
   fun phoneOf(personId: Long, phoneId: Long): PersonPhone = (personPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Phone with id=$phoneId on Person with id=$personId does not exist")
   fun emailOf(personId: Long, emailAddressId: Long): PersonInternetAddress = (personInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("EMail with id=$emailAddressId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Email with id=$emailAddressId on Person with id=$personId does not exist")
   fun phoneOf(personId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(personId = personId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$personId on Address with id=$addressId on Person with id=$personId does not exist")
+  fun identifierOf(personId: Long, sequence: Long) = personIdentifierRepository.findByIdOrNull(PersonIdentifierPK(personOf(personId), sequence)) ?: throw NotFoundException("Identifier with sequence=$sequence does not exist on person $personId")
   fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
   fun identifierTypeOf(code: String): IdentifierType = identifierRepository.findByIdOrNull(IdentifierType.pk(code)) ?: throw BadDataException("IdentifierType with code $code does not exist")
   fun restrictionTypeOf(code: String): RestrictionType = restrictionTypeRepository.findByIdOrNull(RestrictionType.pk(code)) ?: throw BadDataException("RestrictionType with code $code does not exist")

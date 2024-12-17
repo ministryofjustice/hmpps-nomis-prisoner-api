@@ -42,13 +42,13 @@ class PersonIdentifier(
       ), JoinColumnOrFormula(column = JoinColumn(name = "IDENTIFIER_TYPE", referencedColumnName = "code", nullable = false)),
     ],
   )
-  val identifierType: IdentifierType,
+  var identifierType: IdentifierType,
 
   @Column(name = "IDENTIFIER", nullable = false)
-  val identifier: String,
+  var identifier: String,
 
   @Column(name = "ISSUED_AUTHORITY_TEXT")
-  val issuedAuthority: String?,
+  var issuedAuthority: String?,
 
   /*
   Not mapped:

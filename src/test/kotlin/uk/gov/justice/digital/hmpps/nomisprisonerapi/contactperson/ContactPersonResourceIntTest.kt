@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestrict
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
@@ -1210,7 +1211,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     private lateinit var email: PersonInternetAddress
     private lateinit var corporate: Corporate
     private lateinit var employment: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment
-    private lateinit var identifier: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifier
+    private lateinit var identifier: PersonIdentifier
     private lateinit var prisoner: Offender
     private lateinit var contact: OffenderContactPerson
     private lateinit var staff: Staff
@@ -3083,6 +3084,130 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
         with(identifier) {
           assertThat(id.sequence).isEqualTo(response.sequence)
+          assertThat(id.person.id).isEqualTo(existingPerson.id)
+          assertThat(this.identifier).isEqualTo("SMITY52552DL")
+          assertThat(identifierType.description).isEqualTo("Driving Licence")
+          assertThat(issuedAuthority).isEqualTo("DVLA")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.identifiers).anyMatch { it.id.sequence == identifier.id.sequence }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /persons/{personId}/identifier/{sequence}")
+  @Nested
+  inner class UpdatePersonIdentifier {
+    private val validIdentifierRequest = UpdatePersonIdentifierRequest(
+      identifier = "SMITY52552DL",
+      typeCode = "DL",
+      issuedAuthority = "DVLA",
+    )
+
+    private lateinit var existingPerson: Person
+    private lateinit var existingIdentifier: PersonIdentifier
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingIdentifier = identifier(type = "NINO", identifier = "NE121212K", issuedAuthority = "HMRC")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validIdentifierRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validIdentifierRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .bodyValue(validIdentifierRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.put().uri("/persons/99999/identifier/${existingIdentifier.id.sequence}")
+          .bodyValue(validIdentifierRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when sequence of identifier does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/identifier/9999")
+          .bodyValue(validIdentifierRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when identifier type code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
+          .bodyValue(validIdentifierRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a identifier`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .bodyValue(
+            validIdentifierRequest.copy(
+              identifier = "SMITY52552DL",
+              typeCode = "DL",
+              issuedAuthority = "DVLA",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val identifier = personIdentifierRepository.findByIdOrNull(PersonIdentifierPK(person = existingPerson, sequence = existingIdentifier.id.sequence))!!
+
+        with(identifier) {
+          assertThat(id.sequence).isEqualTo(existingIdentifier.id.sequence)
           assertThat(id.person.id).isEqualTo(existingPerson.id)
           assertThat(this.identifier).isEqualTo("SMITY52552DL")
           assertThat(identifierType.description).isEqualTo("Driving Licence")
