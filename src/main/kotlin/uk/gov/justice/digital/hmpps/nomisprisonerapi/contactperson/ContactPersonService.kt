@@ -310,6 +310,13 @@ class ContactPersonService(
     }
   }
 
+  fun deletePersonContact(personId: Long, contactId: Long) {
+    contactRepository.findByIdOrNull(contactId)?.also {
+      if (it.person?.id != personId) throw BadDataException("Contact of $contactId does not exist on person $personId but does on person ${it.person?.id}")
+    }
+    contactRepository.deleteById(contactId)
+  }
+
   fun createPersonAddress(personId: Long, request: CreatePersonAddressRequest): CreatePersonAddressResponse = personAddressRepository.saveAndFlush(
     request.let {
       uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress(
@@ -359,6 +366,13 @@ class ContactPersonService(
     }
   }
 
+  fun deletePersonAddress(personId: Long, addressId: Long) {
+    personAddressRepository.findByIdOrNull(addressId)?.also {
+      if (it.person.id != personId) throw BadDataException("Address of $addressId does not exist on person $personId but does on person ${it.person.id}")
+    }
+    personAddressRepository.deleteById(addressId)
+  }
+
   fun createPersonEmail(personId: Long, request: CreatePersonEmailRequest): CreatePersonEmailResponse = personInternetAddressRepository.saveAndFlush(
     PersonInternetAddress(
       person = personOf(personId),
@@ -372,6 +386,13 @@ class ContactPersonService(
         internetAddress = it.email
       }
     }
+  }
+
+  fun deletePersonEmail(personId: Long, emailAddressId: Long) {
+    personInternetAddressRepository.findByIdOrNull(emailAddressId)?.also {
+      if (it.person.id != personId) throw BadDataException("Internet Address of $emailAddressId does not exist on person $personId but does on person ${it.person.id}")
+    }
+    personInternetAddressRepository.deleteById(emailAddressId)
   }
 
   fun createPersonPhone(personId: Long, request: CreatePersonPhoneRequest): CreatePersonPhoneResponse = personPhoneRepository.saveAndFlush(
@@ -393,6 +414,13 @@ class ContactPersonService(
     }
   }
 
+  fun deletePersonPhone(personId: Long, phoneId: Long) {
+    personPhoneRepository.findByIdOrNull(phoneId)?.also {
+      if (it.person.id != personId) throw BadDataException("Phone of $phoneId does not exist on person $personId but does on person ${it.person.id}")
+    }
+    personPhoneRepository.deleteById(phoneId)
+  }
+
   fun updatePersonAddressPhone(personId: Long, addressId: Long, phoneId: Long, request: UpdatePersonPhoneRequest) {
     phoneOf(personId = personId, addressId = addressId, phoneId = phoneId).run {
       request.also {
@@ -411,6 +439,17 @@ class ContactPersonService(
       phoneType = phoneTypeOf(request.typeCode),
     ),
   ).let { CreatePersonPhoneResponse(phoneId = it.phoneId) }
+
+  fun deletePersonAddressPhone(personId: Long, addressId: Long, phoneId: Long) {
+    addressPhoneRepository.findByIdOrNull(phoneId)?.also {
+      if (it.address.addressId != addressId) throw BadDataException("Phone of $phoneId does not exist on address $addressId but does on person ${it.address.addressId}")
+    }
+    personAddressRepository.findByIdOrNull(addressId)?.also {
+      if (it.person.id != personId) throw BadDataException("Address of $addressId does not exist on person $personId but does on person ${it.person.id}")
+    }
+
+    addressPhoneRepository.deleteById(phoneId)
+  }
 
   fun createPersonIdentifier(personId: Long, request: CreatePersonIdentifierRequest): CreatePersonIdentifierResponse = personOf(personId).let { person ->
     personIdentifierRepository.saveAndFlush(
@@ -432,20 +471,10 @@ class ContactPersonService(
       }
     }
   }
-  fun createPersonContactRestriction(
-    personId: Long,
-    contactId: Long,
-    request: CreateContactPersonRestrictionRequest,
-  ): CreateContactPersonRestrictionResponse = personContactRestrictionRepository.saveAndFlush(
-    OffenderPersonRestrict(
-      restrictionType = restrictionTypeOf(request.typeCode),
-      contactPerson = contactOf(personId = personId, contactId = contactId),
-      comment = request.comment,
-      effectiveDate = request.effectiveDate,
-      expiryDate = request.expiryDate,
-      enteredStaff = staffOf(username = request.enteredStaffUsername),
-    ),
-  ).let { CreateContactPersonRestrictionResponse(id = it.id) }
+
+  fun deletePersonIdentifier(personId: Long, sequence: Long) {
+    personIdentifierRepository.deleteById(PersonIdentifierPK(person = personOf(personId), sequence = sequence))
+  }
 
   fun createPersonRestriction(
     personId: Long,
@@ -477,6 +506,28 @@ class ContactPersonService(
     }
   }
 
+  fun deletePersonRestriction(personId: Long, personRestrictionId: Long) {
+    personRestrictionRepository.findByIdOrNull(personRestrictionId)?.also {
+      if (it.person.id != personId) throw BadDataException("Restriction of $personRestrictionId does not exist on person $personId but does on person ${it.person.id}")
+    }
+    personRestrictionRepository.deleteById(personRestrictionId)
+  }
+
+  fun createPersonContactRestriction(
+    personId: Long,
+    contactId: Long,
+    request: CreateContactPersonRestrictionRequest,
+  ): CreateContactPersonRestrictionResponse = personContactRestrictionRepository.saveAndFlush(
+    OffenderPersonRestrict(
+      restrictionType = restrictionTypeOf(request.typeCode),
+      contactPerson = contactOf(personId = personId, contactId = contactId),
+      comment = request.comment,
+      effectiveDate = request.effectiveDate,
+      expiryDate = request.expiryDate,
+      enteredStaff = staffOf(username = request.enteredStaffUsername),
+    ),
+  ).let { CreateContactPersonRestrictionResponse(id = it.id) }
+
   fun updatePersonContactRestriction(
     personId: Long,
     contactId: Long,
@@ -492,6 +543,17 @@ class ContactPersonService(
       restriction.expiryDate = expiryDate
       restriction.enteredStaff = staffOf(username = enteredStaffUsername)
     }
+  }
+
+  fun deletePersonContactRestriction(personId: Long, contactId: Long, contactRestrictionId: Long) {
+    personContactRestrictionRepository.findByIdOrNull(contactRestrictionId)?.also {
+      if (it.contactPerson.id != contactId) throw BadDataException("Contact Restriction of $contactRestrictionId does not exist on contact $contactId but does on contact ${it.contactPerson.id}")
+    }
+    contactRepository.findByIdOrNull(contactId)?.also {
+      if (it.person?.id != personId) throw BadDataException("Contact of $contactId does not exist on person $personId but does on person ${it.person?.id}")
+    }
+
+    personContactRestrictionRepository.deleteById(contactRestrictionId)
   }
 
   fun assertDoesNotExist(request: CreatePersonRequest) {
