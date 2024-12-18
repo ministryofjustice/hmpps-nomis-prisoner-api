@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitorRestriction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPersonRestrictRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -74,6 +75,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
+
+  @Autowired
+  private lateinit var offenderBookingRepository: OffenderBookingRepository
 
   @Autowired
   private lateinit var corporateRepository: CorporateRepository
@@ -1923,6 +1927,128 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("DELETE /persons/{personId}/contact/{contactId}")
+  @Nested
+  inner class DeleteContactPerson {
+    val offenderNo = "A1234KT"
+
+    private lateinit var existingPerson: Person
+    private lateinit var existingContact: OffenderContactPerson
+    private var bookingId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = offenderNo) {
+          bookingId = booking {
+            existingContact = contact(
+              person = existingPerson,
+              contactType = "S",
+              relationshipType = "SIS",
+              active = true,
+              expiryDate = null,
+              comment = "Best friends",
+              nextOfKin = false,
+              emergencyContact = false,
+              approvedVisitor = false,
+            )
+            contact(
+              person = existingPerson,
+              contactType = "S",
+              relationshipType = "FRI",
+              active = true,
+            )
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 if contact exists but on a different person`() {
+        assertThat(personRepository.existsById(9999)).isFalse()
+        assertThat(personContactRepository.existsById(existingContact.id)).isTrue()
+        webTestClient.delete().uri("/persons/9999/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isBadRequest
+      }
+
+      @Test
+      fun `will return 204 even if contact not found`() {
+        assertThat(personContactRepository.existsById(9999)).isFalse()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(personContactRepository.existsById(9999)).isFalse()
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a contact`() {
+        nomisDataBuilder.runInTransaction {
+          assertThat(personContactRepository.existsById(existingContact.id)).isTrue()
+          assertThat(offenderBookingRepository.findByIdOrNull(bookingId)!!.contacts).anyMatch { it.id == existingContact.id }
+          assertThat(personRepository.findByIdOrNull(existingPerson.id)!!.contacts).anyMatch { it.id == existingContact.id }
+        }
+
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        nomisDataBuilder.runInTransaction {
+          assertThat(personContactRepository.existsById(existingContact.id)).isFalse()
+          assertThat(offenderBookingRepository.findByIdOrNull(bookingId)!!.contacts).noneMatch { it.id == existingContact.id }
+          assertThat(personRepository.findByIdOrNull(existingPerson.id)!!.contacts).noneMatch { it.id == existingContact.id }
+        }
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/address")
   @Nested
   inner class CreatePersonAddress {
@@ -2258,6 +2384,91 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("DELETE /persons/{personId}/address/{addressId}")
+  @Nested
+  inner class DeletePersonAddress {
+    private lateinit var existingPerson: Person
+    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingAddress = address()
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 address exists but  not exist on the person `() {
+        webTestClient.delete().uri("/persons/9999/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when address does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a address`() {
+        assertThat(personAddressRepository.existsById(existingAddress.addressId)).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(personAddressRepository.existsById(existingAddress.addressId)).isFalse()
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/email")
   @Nested
   inner class CreatePersonEmail {
@@ -2465,6 +2676,90 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.internetAddresses).anyMatch { it.internetAddressId == email.internetAddressId }
         }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /persons/{personId}/email/{emailAddressId}")
+  @Nested
+  inner class DeletePersonEmail {
+    private lateinit var existingPerson: Person
+    private lateinit var existingEmail: PersonInternetAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingEmail = email(emailAddress = "test@justice.gov.uk")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when emails exists but not on the person`() {
+        webTestClient.delete().uri("/persons/99999/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when email does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/email/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a email`() {
+        assertThat(personInternetAddressRepository.existsById(existingEmail.internetAddressId)).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(personInternetAddressRepository.existsById(existingEmail.internetAddressId)).isFalse()
       }
     }
   }
@@ -2702,6 +2997,90 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.phones).anyMatch { it.phoneId == phone.phoneId }
         }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /persons/{personId}/phone/{phoneId}")
+  @Nested
+  inner class DeletePersonPhone {
+    private lateinit var existingPerson: Person
+    private lateinit var existingPhone: PersonPhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingPhone = phone(phoneType = "HOME", phoneNo = "0113 4546 4646", extNo = "ext 567")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/phone/${existingPhone.phoneId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when phone exists but not on that person`() {
+        webTestClient.delete().uri("/persons/9999/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when phone does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/phone/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the phone`() {
+        assertThat(personPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(personPhoneRepository.existsById(existingPhone.phoneId)).isFalse()
       }
     }
   }
@@ -2983,6 +3362,101 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("DELETE /persons/{personId}/address/{addressId}/phone/{phoneId}")
+  @Nested
+  inner class DeletePersonAddressPhone {
+    private lateinit var existingPerson: Person
+    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var existingPhone: AddressPhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingAddress = address {
+            existingPhone = phone(phoneType = "HOME", phoneNo = "0113 4546 4646", extNo = "ext 567")
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when phone exists on address but address does not belong to person`() {
+        webTestClient.delete().uri("/persons/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when phone exists but not on address`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/99999/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when phone does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the phone`() {
+        assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isFalse()
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/identifier")
   @Nested
   inner class CreatePersonIdentifier {
@@ -3218,6 +3692,104 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.identifiers).anyMatch { it.id.sequence == identifier.id.sequence }
         }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /persons/{personId}/identifier/{sequence}")
+  @Nested
+  inner class DeletePersonIdentifier {
+    private lateinit var existingPerson: Person
+    private lateinit var existingIdentifier: PersonIdentifier
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingIdentifier = identifier(type = "NINO", identifier = "NE121212K", issuedAuthority = "HMRC")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.delete().uri("/persons/99999/identifier/${existingIdentifier.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 204 when sequence of identifier does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/identifier/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a identifier`() {
+        assertThat(
+          personIdentifierRepository.existsById(
+            PersonIdentifierPK(
+              person = existingPerson,
+              sequence = existingIdentifier.id.sequence,
+            ),
+          ),
+        ).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(
+          personIdentifierRepository.existsById(
+            PersonIdentifierPK(
+              person = existingPerson,
+              sequence = existingIdentifier.id.sequence,
+            ),
+          ),
+        ).isFalse()
       }
     }
   }
@@ -3549,6 +4121,118 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("DELETE /persons/{personId}/contact/{contactId}/restriction/{restrictionId}")
+  @Nested
+  inner class DeletePersonContactRestriction {
+    private lateinit var staff: Staff
+    private lateinit var existingPerson: Person
+    private lateinit var existingContact: OffenderContactPerson
+    private lateinit var createdByStaff: Staff
+    private lateinit var existingRestriction: OffenderPersonRestrict
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+        }
+        createdByStaff = staff(firstName = "ANDY", lastName = "SMITH") {
+          account(username = "ANDY.SMITH", type = GENERAL)
+        }
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = "A1234KT") {
+          booking {
+            existingContact = contact(person = existingPerson, contactType = "S", relationshipType = "SIS") {
+              existingRestriction = restriction(
+                restrictionType = "CCTV",
+                enteredStaff = createdByStaff,
+                effectiveDate = "2020-12-12",
+                expiryDate = "2026-12-12",
+                comment = "Watch him",
+              )
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/${existingRestriction.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when restriction and contact exist but not on the person`() {
+        webTestClient.delete().uri("/persons/999/contact/${existingContact.id}/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when restriction exists but not on contact`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/9999/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when contact restriction does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a restriction`() {
+        assertThat(personContactRestrictionRepository.existsById(existingRestriction.id)).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(personContactRestrictionRepository.existsById(existingRestriction.id)).isFalse()
+      }
+    }
+  }
+
   @DisplayName("POST /persons/{personId}/restriction")
   @Nested
   inner class CreatePersonRestriction {
@@ -3829,6 +4513,104 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.restrictions).anyMatch { it.id == restriction.id }
         }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /persons/{personId}/restriction/{restrictionId}")
+  @Nested
+  inner class DeletePersonRestriction {
+    private lateinit var staff: Staff
+    private lateinit var existingPerson: Person
+    private lateinit var existingRestriction: VisitorRestriction
+    private lateinit var createdByStaff: Staff
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+        }
+        createdByStaff = staff(firstName = "ANDY", lastName = "SMITH") {
+          account(username = "ANDY.SMITH", type = GENERAL)
+        }
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingRestriction = restriction(
+            restrictionType = "CCTV",
+            enteredStaff = createdByStaff,
+            effectiveDate = "2020-12-12",
+            expiryDate = "2026-12-12",
+            comment = "Watch him",
+          )
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/restriction/${existingRestriction.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when restriction exists but not on the person`() {
+        webTestClient.delete().uri("/persons/999/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when restriction does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/restriction/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a restriction`() {
+        assertThat(personRestrictionRepository.existsById(existingRestriction.id)).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/restriction/${existingRestriction.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(personRestrictionRepository.existsById(existingRestriction.id)).isFalse()
       }
     }
   }
