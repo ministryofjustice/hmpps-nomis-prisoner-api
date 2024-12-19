@@ -11,8 +11,8 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -35,7 +35,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
   lateinit var prisoner: Offender
   var bookingId: Long = 0
 
-  @SpyBean
+  @MockitoSpyBean
   private lateinit var spRepository: StoredProcedureRepository
 
   @BeforeEach

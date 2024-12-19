@@ -220,6 +220,7 @@ interface BookingDsl {
     caseNoteText: String,
     amendmentFlag: Boolean = false,
     noteSourceCode: NoteSourceCode = NoteSourceCode.INST,
+    timeCreation: LocalDateTime? = date,
     dsl: OffenderCaseNoteDsl.() -> Unit = { },
   ): OffenderCaseNote
 
@@ -710,6 +711,7 @@ class BookingBuilder(
     caseNoteText: String,
     amendmentFlag: Boolean,
     noteSourceCode: NoteSourceCode,
+    timeCreation: LocalDateTime?,
     dsl: OffenderCaseNoteDsl.() -> Unit,
   ): OffenderCaseNote = offenderCaseNoteBuilderFactory.builder()
     .let { builder ->
@@ -722,6 +724,7 @@ class BookingBuilder(
         caseNoteText,
         amendmentFlag,
         noteSourceCode,
+        timeCreation,
       ).also {
         builder.apply(dsl)
       }
