@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAcc
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.WorkRepository
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 @Service
 @Transactional
@@ -80,7 +81,7 @@ class CaseNotesService(
         caseNoteText = request.caseNoteText.truncate(),
         amendmentFlag = false,
         // Use date/timeCreation rather than createdDatetime. both provided for now
-        dateCreation = request.occurrenceDateTime.toLocalDate(),
+        dateCreation = request.occurrenceDateTime.truncatedTo(ChronoUnit.DAYS),
         timeCreation = request.occurrenceDateTime,
         noteSourceCode = NoteSourceCode.INST,
       ),
@@ -111,7 +112,7 @@ class CaseNotesService(
     caseNoteType = caseNoteType.toCodeDescription(),
     caseNoteSubType = caseNoteSubType.toCodeDescription(),
     occurrenceDateTime = occurrenceDateTime,
-    creationDateTime = timeCreation,
+    creationDateTime = timeCreation ?: dateCreation,
     authorUsername = author.accounts.first().username,
     // NB ^ omitted by the /{offenderNo}/case-notes/v2 endpoint
     authorStaffId = author.id,

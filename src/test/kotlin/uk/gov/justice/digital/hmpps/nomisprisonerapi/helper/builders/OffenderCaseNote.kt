@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 @DslMarker
 annotation class OffenderCaseNoteDslMarker
@@ -57,6 +58,7 @@ class OffenderCaseNoteBuilder(
     caseNoteText: String,
     amendmentFlag: Boolean,
     noteSourceCode: NoteSourceCode,
+    timeCreation: LocalDateTime?,
   ): OffenderCaseNote = OffenderCaseNote(
     offenderBooking = offenderBooking,
     occurrenceDate = date.toLocalDate(),
@@ -68,8 +70,8 @@ class OffenderCaseNoteBuilder(
     caseNoteText = caseNoteText,
     amendmentFlag = amendmentFlag,
     noteSourceCode = noteSourceCode,
-    dateCreation = date.toLocalDate(),
-    timeCreation = date,
+    dateCreation = (timeCreation ?: date).truncatedTo(ChronoUnit.DAYS),
+    timeCreation = timeCreation,
     auditModuleName = "A_MODULE",
     createdDatetime = date,
     createdUserId = "username",

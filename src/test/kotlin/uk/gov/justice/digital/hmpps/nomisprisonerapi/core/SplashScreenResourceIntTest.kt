@@ -195,7 +195,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return special case for 'COND' with splash screen blocked type and '**ALL**' prisons`() {
+    fun `should return special case for 'COND' with splash screen blocked type and 'ALL' prisons`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN2/blocked")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))

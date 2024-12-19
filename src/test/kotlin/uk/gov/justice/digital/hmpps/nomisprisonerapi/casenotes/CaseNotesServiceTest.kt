@@ -526,7 +526,7 @@ fun caseNote(
     amendmentFlag = true,
     noteSourceCode = NoteSourceCode.INST,
 
-    dateCreation = LocalDate.now(),
+    dateCreation = LocalDateTime.now(),
     createdUserId = "created-user_id",
     auditModuleName = auditModuleName,
 

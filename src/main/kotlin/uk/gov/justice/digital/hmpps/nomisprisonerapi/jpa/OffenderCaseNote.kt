@@ -106,14 +106,14 @@ class OffenderCaseNote(
 
   @Column(name = "DATE_CREATION", nullable = false)
   @CreatedDate
-  var dateCreation: LocalDate,
+  var dateCreation: LocalDateTime,
   // Actually nullable but never null in prod data
   // Can be different to both the contact date and the create_datetime
 
   @Column(name = "TIME_CREATION")
   @CreatedDate
   var timeCreation: LocalDateTime? = null,
-  // date part always the same as DATE_CREATION
+  // date part always the same as DATE_CREATION but CAN BE NULL in prod data
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
