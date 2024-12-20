@@ -3384,7 +3384,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{eventId}/charges/{id}")
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-appearances/{eventId}/charges/{id}")
   @Nested
   inner class GetCourtEventCharge {
     private lateinit var staff: Staff
@@ -3452,7 +3452,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -3461,7 +3461,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -3470,7 +3470,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3478,7 +3478,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -3489,7 +3489,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if no court event charge is found - offender charge and appearance do exist seperately`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge3.id}")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge3.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
@@ -3499,7 +3499,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if charge not found`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/111")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/111")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
@@ -3513,7 +3513,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the court event charge`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge2.id}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge2.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk

@@ -968,7 +968,7 @@ class SentencingService(
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
   }
 
-  fun getCourtEventCharge(chargeId: Long, eventId: Long, offenderNo: String, caseId: Long): CourtEventChargeResponse {
+  fun getCourtEventCharge(chargeId: Long, eventId: Long, offenderNo: String): CourtEventChargeResponse {
     val charge = getOffenderCharge(chargeId)
     val appearance = findCourtAppearance(offenderNo = offenderNo, id = eventId)
     return findCourtEventCharge(CourtEventChargeId(offenderCharge = charge, courtEvent = appearance), offenderNo = offenderNo).toCourtEventCharge()

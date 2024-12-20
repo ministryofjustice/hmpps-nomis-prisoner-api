@@ -1124,7 +1124,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}/charges/{chargeId}")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{eventId}/charges/{chargeId}")
   @Operation(
     summary = "get the court event charge",
     description = "Requires role NOMIS_SENTENCING. Retrieves the court event charge ",
@@ -1175,7 +1175,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Offender not found",
+        description = "Court Appearance not found",
         content = [
           Content(
             mediaType = "application/json",
@@ -1191,14 +1191,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     chargeId: Long,
     @Schema(description = "Event id", example = "12345")
     @PathVariable
-    caseId: Long,
-    @Schema(description = "Case id", example = "12345")
-    @PathVariable
     eventId: Long,
     @Schema(description = "Offender No", example = "AB12345")
     @PathVariable
     offenderNo: String,
-  ): CourtEventChargeResponse = sentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, caseId = caseId, offenderNo = offenderNo)
+  ): CourtEventChargeResponse = sentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, offenderNo = offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/court-cases/ids")
