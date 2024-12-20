@@ -243,7 +243,7 @@ class AdjudicationService(
       reportedDateTime = request.incident.reportedTime.atDate(request.incident.reportedDate),
       incidentType = findGovernorsReportIncidentType(),
       prison = prison,
-      incidentDetails = request.incident.details,
+      incidentDetails = request.incident.details.take(4000),
       agencyInternalLocation = internalLocation,
       reportingStaff = reportingStaff,
       createUsername = request.incident.reportingStaffUsername,
