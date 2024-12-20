@@ -62,7 +62,7 @@ class CaseNoteRepositoryTest {
         caseNoteText = "A note",
         amendmentFlag = true,
         noteSourceCode = NoteSourceCode.INST,
-        dateCreation = timestamp.toLocalDate(),
+        dateCreation = timestamp,
         timeCreation = timestamp,
         createdDatetime = timestamp,
         createdUserId = "my-user-name",

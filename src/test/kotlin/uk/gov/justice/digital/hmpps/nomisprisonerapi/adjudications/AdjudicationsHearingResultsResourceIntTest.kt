@@ -10,8 +10,8 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -35,7 +35,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
   lateinit var repository: Repository
   lateinit var aLocationInMoorland: AgencyInternalLocation
 
-  @SpyBean
+  @MockitoSpyBean
   lateinit var hearingRepository: AdjudicationHearingRepository
 
   @Autowired

@@ -92,9 +92,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-
-      @BeforeEach
-      fun setUp() {
+      @Test
+      fun `returned data for a caseNote`() {
         nomisDataBuilder.build {
           staff1 = staff(firstName = "JANE", lastName = "NARK") {
             account(username = "JANE.NARK")
@@ -111,10 +110,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
             }.bookingId
           }
         }
-      }
 
-      @Test
-      fun `returned data for a caseNote`() {
         webTestClient.get().uri("/casenotes/${casenote1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
           .exchange()
@@ -141,6 +137,36 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("createdUsername").isEqualTo("SA")
           .jsonPath("auditModuleName").isEqualTo("A_MODULE")
           .jsonPath("sourceSystem").isEqualTo("NOMIS")
+      }
+
+      @Test
+      fun `returned data with null timeCreation defaults to dateCreation`() {
+        nomisDataBuilder.build {
+          staff1 = staff(firstName = "JANE", lastName = "NARK") {
+            account(username = "JANE.NARK")
+          }
+          offender(nomsId = "A1234AB") {
+            bookingId = booking {
+              casenote1 = caseNote(
+                caseNoteType = "ALL",
+                caseNoteSubType = "SA",
+                author = staff1,
+                caseNoteText = "A note",
+                date = LocalDateTime.parse("2021-02-03T04:05:06"),
+                timeCreation = null,
+              )
+            }.bookingId
+          }
+        }
+
+        webTestClient.get().uri("/casenotes/${casenote1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("caseNoteId").isEqualTo(casenote1.id)
+          .jsonPath("creationDateTime").isEqualTo("2021-02-03T00:00:00")
       }
     }
   }
@@ -308,7 +334,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           assertThat(newCaseNote.caseNoteText).isEqualTo("the contents")
           assertThat(newCaseNote.amendmentFlag).isFalse()
           assertThat(newCaseNote.noteSourceCode).isEqualTo(NoteSourceCode.INST)
-          assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate)
+          assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate.atStartOfDay())
           assertThat(newCaseNote.timeCreation).isEqualTo(newCaseNote.occurrenceDateTime)
           assertThat(newCaseNote.createdDatetime).isCloseTo(LocalDateTime.now(), within(5, SECONDS))
           assertThat(newCaseNote.createdUserId).isEqualTo("SA")
@@ -410,7 +436,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           assertThat(newCaseNote.occurrenceDate).isEqualTo(now.toLocalDate())
           assertThat(newCaseNote.occurrenceDateTime).isCloseTo(now, within(2, ChronoUnit.MINUTES))
           assertThat(newCaseNote.caseNoteText).isEqualTo("An amended note")
-          assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate)
+          assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate.atStartOfDay())
           assertThat(newCaseNote.timeCreation).isEqualTo(newCaseNote.occurrenceDateTime)
         }
       }
