@@ -862,7 +862,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Updates Court Appearance",
+    summary = "Deletes Court Appearance",
     description = "Required role NOMIS_SENTENCING Deletes s Court Appearance for the offender.",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
@@ -1124,10 +1124,10 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @GetMapping("/prisoners/{offenderNo}/sentencing/court-event-charges/{offenderChargeId}/last-modified")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}/charges/{chargeId}")
   @Operation(
-    summary = "get the last modified court event charge",
-    description = "Requires role NOMIS_SENTENCING. Retrieves the last modified court event charge associated with this offender charge. Intended to prevent the need for COURT_EVENT_CHARGE_UPDATED events",
+    summary = "get the court event charge",
+    description = "Requires role NOMIS_SENTENCING. Retrieves the court event charge ",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1173,16 +1173,32 @@ class SentencingResource(private val sentencingService: SentencingService) {
           ),
         ],
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
-  fun getLastModifiedCourtEventCharge(
+  fun getCourtEventCharge(
     @Schema(description = "Offender Charge id", example = "12345")
     @PathVariable
-    offenderChargeId: Long,
-    @Schema(description = "Offender No", example = "12345")
+    chargeId: Long,
+    @Schema(description = "Event id", example = "12345")
+    @PathVariable
+    caseId: Long,
+    @Schema(description = "Case id", example = "12345")
+    @PathVariable
+    eventId: Long,
+    @Schema(description = "Offender No", example = "AB12345")
     @PathVariable
     offenderNo: String,
-  ): CourtEventChargeResponse = sentencingService.getLastModifiedCourtEventCharge(offenderChargeId, offenderNo)
+  ): CourtEventChargeResponse = sentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, caseId = caseId, offenderNo = offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/court-cases/ids")

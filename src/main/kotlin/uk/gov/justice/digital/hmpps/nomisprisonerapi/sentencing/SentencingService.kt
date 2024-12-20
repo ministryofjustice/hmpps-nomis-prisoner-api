@@ -968,9 +968,10 @@ class SentencingService(
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
   }
 
-  fun getLastModifiedCourtEventCharge(id: Long, offenderNo: String): CourtEventChargeResponse {
-    findLatestBooking(offenderNo)
-    return findLastModifiedCourtEventCharge(offenderChargeId = id, offenderNo = offenderNo).toCourtEventCharge()
+  fun getCourtEventCharge(chargeId: Long, eventId: Long, offenderNo: String, caseId: Long): CourtEventChargeResponse {
+    val charge = getOffenderCharge(chargeId)
+    val appearance = findCourtAppearance(offenderNo = offenderNo, id = eventId)
+    return findCourtEventCharge(CourtEventChargeId(offenderCharge = charge, courtEvent = appearance), offenderNo = offenderNo).toCourtEventCharge()
   }
 
   fun refreshCaseIdentifiers(offenderNo: String, caseId: Long, request: CaseIdentifierRequest) {
@@ -1030,7 +1031,7 @@ class SentencingService(
 
   private fun findCourtEventCharge(id: CourtEventChargeId, offenderNo: String): CourtEventCharge {
     return courtEventChargeRepository.findByIdOrNull(id)
-      ?: throw NotFoundException("Court event charge with offenderChargeId $id for $offenderNo not found")
+      ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
   }
 
   private fun findLastModifiedCourtEventCharge(offenderChargeId: Long, offenderNo: String): CourtEventCharge {
