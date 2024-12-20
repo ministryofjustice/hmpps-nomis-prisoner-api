@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
+import com.google.common.base.Utf8
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
@@ -243,7 +244,7 @@ class AdjudicationService(
       reportedDateTime = request.incident.reportedTime.atDate(request.incident.reportedDate),
       incidentType = findGovernorsReportIncidentType(),
       prison = prison,
-      incidentDetails = request.incident.details.take(4000),
+      incidentDetails = request.incident.details.truncateToUtf8Length(4000),
       agencyInternalLocation = internalLocation,
       reportingStaff = reportingStaff,
       createUsername = request.incident.reportingStaffUsername,
@@ -1359,3 +1360,9 @@ fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false):
       null
     },
   )
+
+fun String.truncateToUtf8Length(maxLength: Int): String {
+  // ensure doesn't exceed number of bytes Oracle can take
+  val tooBigBy = Utf8.encodedLength(this) - maxLength
+  return this.take(this.length - tooBigBy)
+}
