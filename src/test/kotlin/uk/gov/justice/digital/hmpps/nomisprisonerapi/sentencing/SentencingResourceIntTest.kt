@@ -3384,9 +3384,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-event-charges/{chargeId}/last-modified")
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{eventId}/charges/{id}")
   @Nested
-  inner class GetLastModifiedCourtEventCharge {
+  inner class GetCourtEventCharge {
     private lateinit var staff: Staff
     private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
@@ -3395,6 +3395,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var thirdCourtAppearance: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
+    private lateinit var offenderCharge3: OffenderCharge
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -3408,7 +3409,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 offenderCharge2 = offenderCharge(offenceCode = "RI64007")
-                val offenderCharge3 = offenderCharge(offenceCode = "RI64009")
+                offenderCharge3 = offenderCharge(offenceCode = "RI64009")
                 firstCourtAppearance = courtEvent {
                   courtEventCharge(
                     offenderCharge = offenderCharge1,
@@ -3451,7 +3452,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-event-charges/${offenderCharge1.id}/last-modified")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -3460,7 +3461,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-event-charges/${offenderCharge1.id}/last-modified")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -3469,7 +3470,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-event-charges/${offenderCharge1.id}/last-modified")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3477,7 +3478,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-event-charges/${offenderCharge1.id}/last-modified")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -3487,23 +3488,23 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Validation {
       @Test
-      fun `will return 404 if no court event charge is found`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-event-charges/11/last-modified")
+      fun `will return 404 if no court event charge is found - offender charge and appearance do exist seperately`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge3.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Last modified Court event charge with offenderChargeId 11 for ${prisonerAtMoorland.nomsId} not found")
+          .jsonPath("developerMessage").isEqualTo("Court event charge with offenderChargeId ${offenderCharge3.id} for ${prisonerAtMoorland.nomsId} not found")
       }
 
       @Test
-      fun `will return 404 if offender not found`() {
-        webTestClient.get().uri("/prisoners/XXXX/sentencing/court-event-charges/${offenderCharge1.id}/last-modified")
+      fun `will return 404 if charge not found`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/111")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Offender Charge 111 not found")
       }
     }
 
@@ -3512,14 +3513,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the court event charge`() {
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-event-charges/${offenderCharge2.id}/last-modified")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge2.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offenderCharge.id").isEqualTo(offenderCharge2.id)
-          .jsonPath("resultCode1.code").isEqualTo("4508")
-          .jsonPath("resultCode1.description").isEqualTo("Summons Issued")
+          .jsonPath("resultCode1.code").isEqualTo("1002")
+          .jsonPath("resultCode1.description").isEqualTo("Imprisonment")
       }
     }
 
