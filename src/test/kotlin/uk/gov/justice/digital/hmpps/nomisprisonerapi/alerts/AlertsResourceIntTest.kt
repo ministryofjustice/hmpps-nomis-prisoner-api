@@ -24,11 +24,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlertId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.DATA_ENTRY
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.MODIFIED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowAction.Companion.VERIFICATION
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.COMP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAlertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -50,6 +52,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var alertTypeRepository: ReferenceCodeRepository<AlertType>
+
+  @Autowired
+  private lateinit var offenderAlertRepository: OffenderAlertRepository
 
   @DisplayName("JPA Mapping")
   @Nested
@@ -1438,6 +1443,41 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `comment will be truncated when over 4000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith3999Characters = "A".repeat(3999)
+        val textWith3996Characters = "A".repeat(3996)
+        val veryLongComment = textWithASingle4ByteCharacter + textWith3999Characters
+
+        val alert = webTestClient.post().uri("/prisoners/A1234AB/alerts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "alertCode": "SC",
+                "isActive": true,
+                "comment": "$veryLongComment",
+                "date": "2020-01-01",
+                "createUsername": "JANE.PEEL"
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(201)
+          .expectBody(CreateAlertResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val offenderBooking = offenderBookingRepository.findById(alert.bookingId).orElseThrow()
+        val createdAlert = offenderAlertRepository.findById(OffenderAlertId(offenderBooking, alert.alertSequence)).orElseThrow()
+
+        assertThat(createdAlert.commentText).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+      }
+
+      @Test
       fun `creating an alert will allow the data to be retrieved`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
@@ -2104,6 +2144,38 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isEqualTo(200)
+      }
+    }
+
+    @Test
+    fun `comment will be truncated when over 4000 bytes`() {
+      val textWithASingle4ByteCharacter = "😀"
+      val textWith3999Characters = "A".repeat(3999)
+      val textWith3996Characters = "A".repeat(3996)
+      val veryLongComment = textWithASingle4ByteCharacter + textWith3999Characters
+
+      webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          UpdateAlertRequest(
+            expiryDate = LocalDate.parse("2024-02-28"),
+            date = LocalDate.parse("2023-07-19"),
+            isActive = false,
+            updateUsername = "JANE.PEEL",
+            comment = veryLongComment,
+            authorisedBy = "Rasheed in security",
+          ),
+        )
+        .exchange()
+        .expectStatus().isEqualTo(200)
+
+      repository.runInTransaction {
+        val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+        assertThat(booking?.alerts).hasSize(2)
+        val alert = booking?.alerts?.first { it.id.sequence == 1L }!!
+
+        assertThat(alert.commentText).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
       }
     }
   }
