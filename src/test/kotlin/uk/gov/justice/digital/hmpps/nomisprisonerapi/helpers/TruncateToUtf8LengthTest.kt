@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers
 
 import io.opentelemetry.sdk.testing.assertj.OpenTelemetryAssertions.assertThat
 import org.junit.jupiter.api.Test
@@ -25,7 +25,12 @@ class TruncateToUtf8LengthTest {
   }
 
   @Test
-  fun `will truncate when too big with huge byte characters`() {
+  fun `will truncate when too big with huge byte characters at beginning`() {
     assertThat("😀123456789".truncateToUtf8Length(10)).isEqualTo("😀123456")
+  }
+
+  @Test
+  fun `will truncate when too big with huge byte characters at end`() {
+    assertThat("123456789😀".truncateToUtf8Length(10)).isEqualTo("123456789")
   }
 }
