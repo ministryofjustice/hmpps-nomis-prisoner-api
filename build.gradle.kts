@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.1.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.1.2"
   kotlin("plugin.spring") version "2.0.21"
   kotlin("plugin.jpa") version "2.0.21"
   idea
@@ -12,14 +12,14 @@ configurations {
 ext["hibernate.version"] = "6.5.3.Final"
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.1.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.1.1")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
   implementation("org.flywaydb:flyway-core")
   implementation("com.vladmihalcea:hibernate-types-60:2.21.1")
   implementation("org.hibernate.orm:hibernate-community-dialects")
-  implementation("com.google.guava:guava:33.3.1-jre")
+  implementation("com.google.guava:guava:33.4.0-jre")
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 
@@ -29,13 +29,13 @@ dependencies {
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:1.1.0")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:1.1.1")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.2")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.24") {
     exclude(group = "io.swagger.core.v3")
   }
-  testImplementation("io.swagger.core.v3:swagger-core-jakarta:2.2.26")
+  testImplementation("io.swagger.core.v3:swagger-core-jakarta:2.2.27")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 }
