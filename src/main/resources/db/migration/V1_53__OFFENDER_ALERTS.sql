@@ -11,7 +11,7 @@ CREATE TABLE "OFFENDER_ALERTS"
   "ALERT_STATUS"                  VARCHAR2(12 CHAR)                 NOT NULL ,
   "VERIFIED_FLAG"                 VARCHAR2(1 CHAR) DEFAULT 'N'      NOT NULL ,
   "EXPIRY_DATE"                   DATE,
-  "COMMENT_TEXT"                  VARCHAR2(1000 CHAR),
+  "COMMENT_TEXT"                  VARCHAR2(4000 CHAR),
   "CASELOAD_ID"                   VARCHAR2(6 CHAR),
   "MODIFY_USER_ID"                VARCHAR2(32 CHAR),
   "MODIFY_DATETIME"               TIMESTAMP(9),

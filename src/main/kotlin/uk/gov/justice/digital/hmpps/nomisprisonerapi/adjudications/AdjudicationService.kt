@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.adjudications
 
-import com.google.common.base.Utf8
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
@@ -13,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationEvidenceType
@@ -1360,9 +1360,3 @@ fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false):
       null
     },
   )
-
-fun String.truncateToUtf8Length(maxLength: Int): String {
-  // ensure doesn't exceed number of bytes Oracle can take
-  val tooBigBy = Utf8.encodedLength(this) - maxLength
-  return this.take(this.length - tooBigBy)
-}

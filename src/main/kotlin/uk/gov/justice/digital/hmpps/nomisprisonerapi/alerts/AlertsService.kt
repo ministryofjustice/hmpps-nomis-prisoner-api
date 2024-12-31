@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
@@ -61,7 +62,7 @@ class AlertsService(
       authorizePersonText = request.authorisedBy,
       alertStatus = if (request.isActive) ACTIVE else INACTIVE,
       verifiedFlag = false,
-      commentText = request.comment,
+      commentText = request.comment?.truncateToUtf8Length(4000),
       createUsername = request.createUsername,
     )
     alert.addWorkFlowLog(workActionCode = workActionCode)
@@ -102,7 +103,7 @@ class AlertsService(
           authorizePersonText = request.authorisedBy,
           alertStatus = if (request.isActive) ACTIVE else INACTIVE,
           verifiedFlag = false,
-          commentText = request.comment,
+          commentText = request.comment?.truncateToUtf8Length(4000),
           createUsername = request.createUsername,
         ).also {
           it.addWorkFlowLog(workActionCode = workActionCode)
@@ -130,7 +131,7 @@ class AlertsService(
 
     alert.expiryDate = request.expiryDate
     alert.alertStatus = if (request.isActive) ACTIVE else INACTIVE
-    alert.commentText = request.comment
+    alert.commentText = request.comment?.truncateToUtf8Length(4000)
     alert.modifyUserId = request.updateUsername
     alert.modifyDatetime = LocalDateTime.now()
     alert.alertDate = request.date
