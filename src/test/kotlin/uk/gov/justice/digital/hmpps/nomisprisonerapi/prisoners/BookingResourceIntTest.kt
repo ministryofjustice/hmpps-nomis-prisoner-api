@@ -23,6 +23,11 @@ class BookingResourceIntTest : IntegrationTestBase() {
     repository.deleteOffenders()
   }
 
+  @BeforeEach
+  fun setup() {
+    repository.deleteOffenders()
+  }
+
   @Nested
   inner class GetAllLatestBookingsFromId {
     @Nested
