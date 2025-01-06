@@ -30,4 +30,40 @@ interface OffenderBookingRepository :
   fun findAllByOffenderNomsId(@Param("nomsId") nomsId: String): List<OffenderBooking>
 
   fun findOneByOffenderNomsIdAndBookingSequence(nomsId: String, sequence: Int): OffenderBooking?
+
+  @Query(
+    """
+      select 
+       o.OFFENDER_ID_DISPLAY as prisonerid, 
+       b.OFFENDER_BOOK_ID    as bookingid
+      from OFFENDER_BOOKINGS b join OFFENDERS o on b.offender_id = o.offender_id
+      where OFFENDER_BOOK_ID > :bookingId
+        and b.BOOKING_SEQ = 1
+        and rownum <= :pageSize
+      order by OFFENDER_BOOK_ID
+    """,
+    nativeQuery = true,
+  )
+  fun findAllLatestIdsFromId(bookingId: Long, pageSize: Int): List<BookingWithIds>
+
+  @Query(
+    """
+      select 
+       o.OFFENDER_ID_DISPLAY as prisonerid, 
+       b.OFFENDER_BOOK_ID    as bookingid
+      from OFFENDER_BOOKINGS b join OFFENDERS o on b.offender_id = o.offender_id
+      where OFFENDER_BOOK_ID > :bookingId
+        and b.BOOKING_SEQ = 1
+        and b.ACTIVE_FLAG = 'Y'
+        and rownum <= :pageSize
+      order by OFFENDER_BOOK_ID
+    """,
+    nativeQuery = true,
+  )
+  fun findAllLatestActiveIdsFromId(bookingId: Long, pageSize: Int): List<BookingWithIds>
+}
+
+interface BookingWithIds {
+  fun getPrisonerId(): String
+  fun getBookingId(): Long
 }
