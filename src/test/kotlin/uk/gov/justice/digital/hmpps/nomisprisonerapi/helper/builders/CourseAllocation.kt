@@ -29,7 +29,7 @@ interface CourseAllocationDsl {
     toInternalLocationId: Long? = -3005,
     outcomeReasonCode: String? = null,
     pay: Boolean? = null,
-    paidTransactionId: Long? = null,
+    dsl: CourseAttendanceDsl.() -> Unit = {},
   ): OffenderCourseAttendance
 
   @CourseAllocationPayBandDslMarker
@@ -59,7 +59,11 @@ class CourseAllocationBuilderRepository(
 class CourseAllocationBuilderFactory(
   private val repository: CourseAllocationBuilderRepository? = null,
   private val payBandBuilderFactory: CourseAllocationPayBandBuilderFactory = CourseAllocationPayBandBuilderFactory(),
-  private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory = CourseAttendanceBuilderFactory(),
+  private val courseAttendanceBuilderFactory: CourseAttendanceBuilderFactory = CourseAttendanceBuilderFactory(
+    offenderTransactionBuilderFactory = OffenderTransactionBuilderFactory(
+      detailBuilderFactory = OffenderTransactionDetailBuilderFactory(),
+    ),
+  ),
   private val exclusionBuilderFactory: OffenderActivityExclusionBuilderFactory = OffenderActivityExclusionBuilderFactory(),
 ) {
   fun builder() = CourseAllocationBuilder(
@@ -119,19 +123,21 @@ class CourseAllocationBuilder(
     toInternalLocationId: Long?,
     outcomeReasonCode: String?,
     pay: Boolean?,
-    paidTransactionId: Long?,
+    dsl: CourseAttendanceDsl.() -> Unit,
   ) =
-    courseAttendanceBuilderFactory.builder().build(
-      courseAllocation,
-      courseSchedule,
-      eventId,
-      eventStatusCode,
-      toInternalLocationId,
-      outcomeReasonCode,
-      pay,
-      paidTransactionId,
-    )
-      .also { courseAllocation.offenderCourseAttendances += it }
+    courseAttendanceBuilderFactory.builder().let { builder ->
+      builder.build(
+        courseAllocation,
+        courseSchedule,
+        eventId,
+        eventStatusCode,
+        toInternalLocationId,
+        outcomeReasonCode,
+        pay,
+      )
+        .also { courseAllocation.offenderCourseAttendances += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun exclusion(
     slotCategory: SlotCategory?,

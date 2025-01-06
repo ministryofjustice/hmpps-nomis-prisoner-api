@@ -36,7 +36,7 @@ data class CourseActivity(
   val code: String? = null,
 
   @Column
-  val caseloadId: String? = null,
+  val caseloadId: String,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
@@ -138,9 +138,7 @@ data class CourseActivity(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(courseActivityId = $courseActivityId, desc = $description )"
-  }
+  override fun toString(): String = this::class.simpleName + "(courseActivityId = $courseActivityId, desc = $description )"
 }
 
 enum class PayPerSession { F, H }
