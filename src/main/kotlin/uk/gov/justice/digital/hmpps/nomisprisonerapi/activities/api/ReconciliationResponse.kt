@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotNull
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -27,7 +28,7 @@ data class AttendanceReconciliationResponse(
   val date: LocalDate,
   @Schema(description = "All active bookings and their attendance count", example = "[ { bookingId: 1234567, count: 2 } ]")
   @NotNull
-  val bookings: List<BookingCount>,
+  val bookings: List<BookingCountWithPay>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -39,4 +40,18 @@ data class BookingCount(
   @Schema(description = "The count for the offender booking", example = "2")
   @NotNull
   val count: Long,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "A count and sum of pay for an offender booking")
+data class BookingCountWithPay(
+  @Schema(description = "The offender booking id", example = "1234567")
+  @NotNull
+  val bookingId: Long,
+  @Schema(description = "The count for the offender booking", example = "2")
+  @NotNull
+  val count: Long,
+  @Schema(description = "The total paid for all of the attendances", example = "2.3")
+  @NotNull
+  val totalPay: BigDecimal,
 )

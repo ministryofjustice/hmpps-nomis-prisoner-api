@@ -235,7 +235,11 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           offender {
             offenderBooking = booking {
               allocation = courseAllocation(courseActivity) {
-                attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
+                attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP") {
+                  transaction {
+                    detail(payAmount = 100)
+                  }
+                }
               }
             }
           }
@@ -954,7 +958,11 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         offender {
           offenderBooking = booking {
             courseAllocation(courseActivity) {
-              attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP", paidTransactionId = 123456)
+              attendance = courseAttendance(courseSchedule, eventStatusCode = "COMP") {
+                transaction {
+                  detail(payAmount = 100)
+                }
+              }
             }
           }
         }
