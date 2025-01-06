@@ -141,6 +141,7 @@ class ActivityRepositoryTest {
         iepLevel = seedIep,
         internalLocation = seedRoom,
         payPerSession = PayPerSession.H,
+        caseloadId = seedPrison.id,
       ),
     )
 

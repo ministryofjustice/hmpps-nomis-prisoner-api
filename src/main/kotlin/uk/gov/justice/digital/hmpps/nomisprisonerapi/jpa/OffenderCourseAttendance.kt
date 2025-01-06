@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
@@ -9,7 +10,9 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -128,8 +131,14 @@ class OffenderCourseAttendance(
   @Column
   var commentText: String? = null,
 
-  @Column(name = "TXN_ID", updatable = false)
-  val paidTransactionId: Long? = null,
+  @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @JoinColumns(
+    value = [
+      JoinColumn(name = "TXN_ID", referencedColumnName = "TXN_ID"),
+      JoinColumn(name = "TXN_ENTRY_SEQ", referencedColumnName = "TXN_ENTRY_SEQ"),
+    ],
+  )
+  var transaction: OffenderTransaction? = null,
 
   @Column(name = "REFERENCE_ID")
   val referenceId: Long? = null,
@@ -144,7 +153,7 @@ class OffenderCourseAttendance(
       field = value?.setScale(3, RoundingMode.HALF_UP)
     }
 
-  fun isPaid() = paidTransactionId != null
+  fun isPaid() = transaction != null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
