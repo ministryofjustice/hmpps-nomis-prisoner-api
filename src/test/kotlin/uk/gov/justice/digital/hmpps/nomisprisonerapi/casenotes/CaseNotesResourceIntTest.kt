@@ -193,6 +193,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
         caseNoteType = "ALL",
         caseNoteSubType = "SA",
         occurrenceDateTime = LocalDateTime.now(),
+        creationDateTime = LocalDateTime.parse("2021-02-03T04:05:06"),
         authorUsername = "JANE.PEEL",
         caseNoteText = "the contents",
       )
@@ -233,6 +234,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
         caseNoteType = "GEN",
         caseNoteSubType = "HIS",
         occurrenceDateTime = LocalDateTime.now(),
+        creationDateTime = LocalDateTime.parse("2021-02-03T04:05:06"),
         authorUsername = "JANE.NARK",
         caseNoteText = "the contents",
       )
@@ -305,6 +307,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
                 "caseNoteType": "ACP",
                  "caseNoteSubType": "SOU",
                  "occurrenceDateTime": "2024-06-01T15:00",
+                 "creationDateTime": "2024-06-02T15:00",
                  "authorUsername": "JANE.NARK",
                  "caseNoteText": "the contents"
               }
@@ -334,8 +337,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           assertThat(newCaseNote.caseNoteText).isEqualTo("the contents")
           assertThat(newCaseNote.amendmentFlag).isFalse()
           assertThat(newCaseNote.noteSourceCode).isEqualTo(NoteSourceCode.INST)
-          assertThat(newCaseNote.dateCreation).isEqualTo(newCaseNote.occurrenceDate.atStartOfDay())
-          assertThat(newCaseNote.timeCreation).isEqualTo(newCaseNote.occurrenceDateTime)
+          assertThat(newCaseNote.dateCreation).isEqualTo(LocalDateTime.parse("2024-06-02T00:00"))
+          assertThat(newCaseNote.timeCreation).isEqualTo(LocalDateTime.parse("2024-06-02T15:00"))
           assertThat(newCaseNote.createdDatetime).isCloseTo(LocalDateTime.now(), within(5, SECONDS))
           assertThat(newCaseNote.createdUserId).isEqualTo("SA")
 

@@ -80,9 +80,8 @@ class CaseNotesService(
         agencyLocation = offenderBooking.location,
         caseNoteText = request.caseNoteText.truncate(),
         amendmentFlag = false,
-        // Use date/timeCreation rather than createdDatetime. both provided for now
-        dateCreation = request.occurrenceDateTime.truncatedTo(ChronoUnit.DAYS),
-        timeCreation = request.occurrenceDateTime,
+        dateCreation = request.creationDateTime.truncatedTo(ChronoUnit.DAYS),
+        timeCreation = request.creationDateTime,
         noteSourceCode = NoteSourceCode.INST,
       ),
     )
