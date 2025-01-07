@@ -46,7 +46,4 @@ data class GetAllocationResponse(
 
   @Schema(description = "Rules for creating schedules - days and times")
   val scheduleRules: List<ScheduleRulesResponse> = listOf(),
-
-  @Schema(description = "The start date of the activity", example = "2023-03-12")
-  val activityStartDate: LocalDate,
 )

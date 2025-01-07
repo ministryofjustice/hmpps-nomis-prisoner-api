@@ -988,29 +988,25 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
             }
           }
           offender {
-            // wrong prison
-            booking(agencyLocationId = "LEI") {
+            booking(agencyLocationId = "LEI") { // wrong prison
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
               courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
             }
           }
           offender {
-            // wrong prison
-            booking(agencyLocationId = "LEI") {
+            booking(agencyLocationId = "LEI") { // wrong prison
               courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
               courseAllocation(courseActivity = otherCourseActivityUnknownIncentive, startDate = "$today")
             }
           }
           offender {
-            // wrong prison
-            booking(agencyLocationId = "LEI") {
+            booking(agencyLocationId = "LEI") { // wrong prison
               courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
               courseAllocation(courseActivity = otherCourseActivity, startDate = "$today", suspended = true)
             }
           }
           offender {
-            // wrong prison
-            booking(agencyLocationId = "LEI") {
+            booking(agencyLocationId = "LEI") { // wrong prison
               incentive(iepLevelCode = "BAS")
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
               courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
@@ -1527,7 +1523,6 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .jsonPath("payBand").isEqualTo("1")
           .jsonPath("livingUnitDescription").isEqualTo("BXI-A-1-016")
           .jsonPath("exclusions").isEmpty
-          .jsonPath("activityStartDate").isEqualTo("${courseActivity.scheduleStartDate}")
       }
 
       @Test
