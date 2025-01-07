@@ -123,6 +123,7 @@ class AllocationService(
             )
           },
           scheduleRules = scheduleRuleService.mapRules(it.courseActivity.courseScheduleRules),
+          activityStartDate = it.courseActivity.scheduleStartDate,
         )
       }
       ?: throw NotFoundException("Offender program profile with id=$allocationId does not exist")
