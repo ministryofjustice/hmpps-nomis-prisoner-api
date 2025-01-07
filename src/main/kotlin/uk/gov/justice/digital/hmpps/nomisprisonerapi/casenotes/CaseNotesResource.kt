@@ -285,8 +285,11 @@ data class CreateCaseNoteRequest(
   @Schema(description = "The case note subtype")
   val caseNoteSubType: String,
 
-  @Schema(description = "Date case note occurred")
+  @Schema(description = "Date and time case note occurred")
   val occurrenceDateTime: LocalDateTime,
+
+  @Schema(description = "Date and time case note was created")
+  val creationDateTime: LocalDateTime,
 
   @NotBlank
   @Schema(description = "Free format text of person or department that created the case note")
