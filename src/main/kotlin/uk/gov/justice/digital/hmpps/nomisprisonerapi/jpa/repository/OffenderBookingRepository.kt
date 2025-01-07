@@ -48,15 +48,16 @@ interface OffenderBookingRepository :
 
   @Query(
     """
-      select 
-       o.OFFENDER_ID_DISPLAY as prisonerid, 
-       b.OFFENDER_BOOK_ID    as bookingid
-      from OFFENDER_BOOKINGS b join OFFENDERS o on b.offender_id = o.offender_id
-      where OFFENDER_BOOK_ID > :bookingId
-        and b.BOOKING_SEQ = 1
-        and b.ACTIVE_FLAG = 'Y'
-        and rownum <= :pageSize
-      order by OFFENDER_BOOK_ID
+      select * from (
+        select 
+         o.OFFENDER_ID_DISPLAY as prisonerid, 
+         b.OFFENDER_BOOK_ID    as bookingid
+        from OFFENDER_BOOKINGS b join OFFENDERS o on b.offender_id = o.offender_id
+        where OFFENDER_BOOK_ID > :bookingId
+          and b.BOOKING_SEQ = 1
+          and b.ACTIVE_FLAG = 'Y'
+        order by OFFENDER_BOOK_ID) 
+      where rownum <= :pageSize
     """,
     nativeQuery = true,
   )
