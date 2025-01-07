@@ -358,11 +358,7 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         offender {
           offenderBooking = booking {
             courseAllocation(courseActivity) {
-              courseAttendance(courseSchedule, pay = true) {
-                transaction {
-                  detail(payAmount = 123)
-                }
-              }
+              courseAttendance(courseSchedule, pay = true)
             }
           }
         }
@@ -373,7 +369,6 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         .jsonPath("bookings.size()").isEqualTo(1)
         .jsonPath("bookings[0].bookingId").isEqualTo(offenderBooking.bookingId)
         .jsonPath("bookings[0].count").isEqualTo("1")
-        .jsonPath("bookings[0].totalPay").isEqualTo("1.23")
     }
 
     @Test
@@ -404,11 +399,7 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         offender {
           offenderBooking = booking(agencyLocationId = "MDI") {
             courseAllocation(courseActivity) {
-              courseAttendance(courseSchedule, pay = true) {
-                transaction {
-                  detail(payAmount = 123)
-                }
-              }
+              courseAttendance(courseSchedule, pay = true)
             }
           }
         }
@@ -430,11 +421,7 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         offender {
           offenderBooking = booking {
             courseAllocation(courseActivity) {
-              courseAttendance(courseSchedule, pay = true) {
-                transaction {
-                  detail(payAmount = 123)
-                }
-              }
+              courseAttendance(courseSchedule, pay = true)
             }
           }
         }
@@ -458,16 +445,8 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         offender {
           offenderBooking = booking {
             courseAllocation(courseActivity) {
-              courseAttendance(courseSchedule, pay = true) {
-                transaction {
-                  detail(payAmount = 123)
-                }
-              }
-              courseAttendance(courseSchedule2, pay = true) {
-                transaction {
-                  detail(payAmount = 134)
-                }
-              }
+              courseAttendance(courseSchedule, pay = true)
+              courseAttendance(courseSchedule2, pay = true)
             }
           }
         }
@@ -478,7 +457,6 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         .jsonPath("bookings.size()").isEqualTo(1)
         .jsonPath("bookings[0].bookingId").isEqualTo(offenderBooking.bookingId)
         .jsonPath("bookings[0].count").isEqualTo("2")
-        .jsonPath("bookings[0].totalPay").isEqualTo("2.57")
     }
 
     @Test
@@ -488,22 +466,14 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         offender(nomsId = "A1234AA") {
           offenderBooking = booking {
             courseAllocation(courseActivity) {
-              courseAttendance(courseSchedule, pay = true) {
-                transaction {
-                  detail(payAmount = 123)
-                }
-              }
+              courseAttendance(courseSchedule, pay = true)
             }
           }
         }
         offender(nomsId = "A1234BB") {
           offenderBooking2 = booking {
             courseAllocation(courseActivity) {
-              courseAttendance(courseSchedule, pay = true) {
-                transaction {
-                  detail(payAmount = 134)
-                }
-              }
+              courseAttendance(courseSchedule, pay = true)
             }
           }
         }
@@ -514,10 +484,8 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         .jsonPath("bookings.size()").isEqualTo(2)
         .jsonPath("bookings[0].bookingId").isEqualTo(offenderBooking.bookingId)
         .jsonPath("bookings[0].count").isEqualTo("1")
-        .jsonPath("bookings[0].totalPay").isEqualTo("1.23")
         .jsonPath("bookings[1].bookingId").isEqualTo(offenderBooking2.bookingId)
         .jsonPath("bookings[1].count").isEqualTo("1")
-        .jsonPath("bookings[1].totalPay").isEqualTo("1.34")
     }
   }
 }

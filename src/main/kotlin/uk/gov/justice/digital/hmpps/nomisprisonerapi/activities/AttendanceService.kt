@@ -187,7 +187,7 @@ class AttendanceService(
     val booking = offenderBookingRepository.findByIdOrNull(bookingId) ?: throw NotFoundException("Booking $bookingId not found")
     attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, booking)
       ?.run {
-        if (transaction != null) throw BadDataException("Attendance for course schedule $courseScheduleId and booking $bookingId has already been paid")
+        if (paidTransactionId != null) throw BadDataException("Attendance for course schedule $courseScheduleId and booking $bookingId has already been paid")
         attendanceRepository.delete(this)
       }
       ?: throw NotFoundException("Attendance for course schedule $courseScheduleId and booking $bookingId not found")
