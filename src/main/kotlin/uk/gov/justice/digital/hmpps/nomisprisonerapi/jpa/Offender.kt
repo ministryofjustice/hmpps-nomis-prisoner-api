@@ -16,7 +16,9 @@ import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.springframework.data.annotation.CreatedDate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity.Companion.ETHNICITY
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender.Companion.SEX
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title.Companion.TITLE
 import java.time.LocalDate
 
 @Entity
@@ -43,6 +45,24 @@ data class Offender(
   )
   val gender: Gender,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(formula = JoinFormula(value = "'$TITLE'", referencedColumnName = "domain")),
+      JoinColumnOrFormula(column = JoinColumn(name = "TITLE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val title: Title? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(formula = JoinFormula(value = "'$ETHNICITY'", referencedColumnName = "domain")),
+      JoinColumnOrFormula(column = JoinColumn(name = "RACE_CODE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val ethnicity: Ethnicity? = null,
+
   @Column(name = "ID_SOURCE_CODE", nullable = false)
   val idSourceCode: String = "SEQ",
 
@@ -65,8 +85,11 @@ data class Offender(
   @Column(name = "MIDDLE_NAME_2")
   val middleName2: String? = null,
 
-  @Column(name = "BIRTH_DATE", nullable = false)
+  @Column(name = "BIRTH_DATE")
   val birthDate: LocalDate? = null,
+
+  @Column(name = "BIRTH_PLACE")
+  val birthPlace: String? = null,
 
   @Column(name = "ROOT_OFFENDER_ID")
   var rootOffenderId: Long? = null,

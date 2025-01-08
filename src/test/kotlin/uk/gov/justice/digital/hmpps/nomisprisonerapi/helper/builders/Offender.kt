@@ -70,7 +70,7 @@ class OffenderBuilder(
     nomsId: String,
     lastName: String,
     firstName: String,
-    birthDate: LocalDate,
+    birthDate: LocalDate?,
     genderCode: String,
   ): Offender = Offender(
     nomsId = nomsId,
