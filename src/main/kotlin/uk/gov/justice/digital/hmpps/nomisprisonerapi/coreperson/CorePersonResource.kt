@@ -74,7 +74,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 data class CorePerson(
   @Schema(description = "The prison number")
   val prisonNumber: String,
@@ -94,6 +94,31 @@ data class CorePerson(
   val dateOfBirth: LocalDate?,
   @Schema(description = "Birth place of the person")
   val birthPlace: String?,
+  @Schema(description = "Race of the person")
+  val race: CodeDescription?,
+  @Schema(description = "Sex of the person")
+  val sex: CodeDescription?,
+  @Schema(description = "List of aliases for the person. These are the other offender records.")
+  val aliases: List<Alias>,
+)
+
+@Schema(description = "The data held in NOMIS for an offender alias")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Alias(
+  @Schema(description = "The offender id")
+  val offenderId: Long,
+  @Schema(description = "Title of the person")
+  val title: CodeDescription?,
+  @Schema(description = "First name of the person")
+  val firstName: String,
+  @Schema(description = "Middle name of the person")
+  val middleName1: String?,
+  @Schema(description = "Second middle name of the person")
+  val middleName2: String?,
+  @Schema(description = "Surname name of the person")
+  val lastName: String,
+  @Schema(description = "Date of birth of the person")
+  val dateOfBirth: LocalDate?,
   @Schema(description = "Race of the person")
   val race: CodeDescription?,
   @Schema(description = "Sex of the person")

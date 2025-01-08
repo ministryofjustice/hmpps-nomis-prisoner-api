@@ -25,6 +25,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   inner class GetOffender {
     private lateinit var offenderMinimal: Offender
     private lateinit var offenderFull: Offender
+    private lateinit var alias: Offender
 
     @BeforeEach
     fun setUp() {
@@ -51,6 +52,17 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           ethnicityCode = "M3",
           genderCode = "F",
         ) {
+          alias = alias(
+            titleCode = "MR",
+            lastName = "NTHANDA",
+            firstName = "LEKAN",
+            middleName = "Fred",
+            middleName2 = "Johas",
+            birthDate = LocalDate.parse("1965-07-19"),
+            ethnicityCode = "M1",
+            genderCode = "M",
+          ) {
+          }
         }
       }
     }
@@ -119,6 +131,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("race").doesNotExist()
           .jsonPath("sex.code").isEqualTo("M")
           .jsonPath("sex.description").isEqualTo("Male")
+          .jsonPath("aliases").doesNotExist()
       }
 
       @Test
@@ -143,6 +156,19 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("race.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("sex.code").isEqualTo("F")
           .jsonPath("sex.description").isEqualTo("Female")
+          .jsonPath("aliases.length()").isEqualTo(1)
+          .jsonPath("aliases[0].offenderId").isEqualTo(alias.id)
+          .jsonPath("aliases[0].title.code").isEqualTo("MR")
+          .jsonPath("aliases[0].title.description").isEqualTo("Mr")
+          .jsonPath("aliases[0].firstName").isEqualTo("LEKAN")
+          .jsonPath("aliases[0].middleName1").isEqualTo("Fred")
+          .jsonPath("aliases[0].middleName2").isEqualTo("Johas")
+          .jsonPath("aliases[0].lastName").isEqualTo("NTHANDA")
+          .jsonPath("aliases[0].dateOfBirth").isEqualTo("1965-07-19")
+          .jsonPath("aliases[0].race.code").isEqualTo("M1")
+          .jsonPath("aliases[0].race.description").isEqualTo("Mixed: White and Black Caribbean")
+          .jsonPath("aliases[0].sex.code").isEqualTo("M")
+          .jsonPath("aliases[0].sex.description").isEqualTo("Male")
       }
     }
   }

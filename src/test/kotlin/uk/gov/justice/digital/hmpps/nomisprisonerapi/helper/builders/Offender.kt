@@ -34,9 +34,13 @@ interface OffenderDsl {
 
   @AliasDslMarker
   fun alias(
+    titleCode: String? = null,
     lastName: String = "NTHANDA",
     firstName: String = "LEKAN",
+    middleName: String? = null,
+    middleName2: String? = null,
     birthDate: LocalDate = LocalDate.of(1965, 7, 19),
+    ethnicityCode: String? = null,
     genderCode: String = "M",
     dsl: AliasDsl.() -> Unit = {},
   ): Offender
@@ -135,14 +139,18 @@ class OffenderBuilder(
     }
 
   override fun alias(
+    titleCode: String?,
     lastName: String,
     firstName: String,
+    middleName: String?,
+    middleName2: String?,
     birthDate: LocalDate,
+    ethnicityCode: String?,
     genderCode: String,
     dsl: AliasDsl.() -> Unit,
   ): Offender = aliasBuilderFactory.builder(this)
     .let { builder ->
-      builder.build(lastName, firstName, birthDate, genderCode)
+      builder.build(titleCode, lastName, firstName, middleName, middleName2, birthDate, ethnicityCode, genderCode)
         .also { builder.apply(dsl) }
     }
 }

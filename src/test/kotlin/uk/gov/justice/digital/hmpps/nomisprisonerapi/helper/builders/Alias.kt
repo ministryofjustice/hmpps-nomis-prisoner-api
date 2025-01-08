@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -32,10 +34,14 @@ interface AliasDsl {
 @Component
 class AliasBuilderRepository(
   private val offenderRepository: OffenderRepository,
+  private val ethnicityRepository: ReferenceCodeRepository<Ethnicity>,
   private val genderRepository: ReferenceCodeRepository<Gender>,
+  private val titleRepository: ReferenceCodeRepository<Title>,
 ) {
   fun save(offender: Offender): Offender = offenderRepository.save(offender)
-  fun gender(genderCode: String) = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
+  fun ethnicity(ethnicityCode: String): Ethnicity = ethnicityRepository.findByIdOrNull(ReferenceCode.Pk(Ethnicity.ETHNICITY, ethnicityCode))!!
+  fun gender(genderCode: String): Gender = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
+  fun title(titleCode: String): Title = titleRepository.findByIdOrNull(ReferenceCode.Pk(Title.TITLE, titleCode))!!
 }
 
 @Component
@@ -55,15 +61,23 @@ class AliasBuilder(
   private lateinit var aliasOffender: Offender
 
   fun build(
+    titleCode: String?,
     lastName: String,
     firstName: String,
+    middleName: String?,
+    middleName2: String?,
     birthDate: LocalDate,
+    ethnicityCode: String?,
     genderCode: String,
   ): Offender = Offender(
     nomsId = offenderBuilder.rootOffender.nomsId,
+    title = titleCode?.let { repository.title(titleCode) },
     lastName = lastName,
     firstName = firstName,
+    middleName = middleName,
+    middleName2 = middleName2,
     birthDate = birthDate,
+    ethnicity = ethnicityCode?.let { repository.ethnicity(ethnicityCode) },
     gender = repository.gender(genderCode),
     lastNameKey = lastName.uppercase(),
     rootOffenderId = offenderBuilder.rootOffender.rootOffenderId,
