@@ -10,6 +10,9 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
+import jakarta.persistence.NamedSubgraph
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -28,6 +31,18 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "OFFENDER_CASE_NOTES")
 @EntityOpen
+@NamedEntityGraph(
+  name = "offender-case-note",
+  attributeNodes = [
+    NamedAttributeNode(value = "offenderBooking"),
+    NamedAttributeNode(value = "author", subgraph = "staff-accounts"),
+    NamedAttributeNode(value = "caseNoteType"),
+    NamedAttributeNode(value = "caseNoteSubType"),
+  ],
+  subgraphs = [
+    NamedSubgraph(name = "staff-accounts", attributeNodes = [NamedAttributeNode("accounts")]),
+  ],
+)
 class OffenderCaseNote(
   @Id
   @Column(name = "CASE_NOTE_ID", nullable = false)
