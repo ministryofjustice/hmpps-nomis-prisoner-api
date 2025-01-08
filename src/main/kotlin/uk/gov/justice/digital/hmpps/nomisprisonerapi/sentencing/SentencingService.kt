@@ -1158,12 +1158,17 @@ private fun OffenderCharge.toOffenderCharge(): OffenderChargeResponse = Offender
   cjitCode2 = this.cjitCode2,
   cjitCode3 = this.cjitCode3,
   chargeStatus = this.chargeStatus?.toCodeDescription(),
-  resultCode1 = this.resultCode1?.toCodeDescription(),
-  resultCode2 = this.resultCode2?.toCodeDescription(),
-  resultCode1Indicator = this.resultCode1Indicator,
-  resultCode2Indicator = this.resultCode2Indicator,
+  resultCode1 = this.resultCode1?.toOffenceResultCodeResponse(),
+  resultCode2 = this.resultCode2?.toOffenceResultCodeResponse(),
   mostSeriousFlag = this.mostSeriousFlag,
   lidsOffenceNumber = this.lidsOffenceNumber,
+)
+
+private fun OffenceResultCode.toOffenceResultCodeResponse(): OffenceResultCodeResponse = OffenceResultCodeResponse(
+  code = this.code,
+  description = this.description,
+  chargeStatus = this.chargeStatus,
+  dispositionCode = this.dispositionCode,
 )
 
 private fun Offence.toOffence(): OffenceResponse = OffenceResponse(
@@ -1185,10 +1190,8 @@ private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse =
     cjitCode1 = this.cjitCode1,
     cjitCode2 = this.cjitCode2,
     cjitCode3 = this.cjitCode3,
-    resultCode1 = this.resultCode1?.toCodeDescription(),
-    resultCode2 = this.resultCode2?.toCodeDescription(),
-    resultCode1Indicator = this.resultCode1Indicator,
-    resultCode2Indicator = this.resultCode2Indicator,
+    resultCode1 = this.resultCode1?.toOffenceResultCodeResponse(),
+    resultCode2 = this.resultCode2?.toOffenceResultCodeResponse(),
     mostSeriousFlag = this.mostSeriousFlag,
   )
 
@@ -1202,7 +1205,7 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   directionCode = this.directionCode?.toCodeDescription(),
   judgeName = this.judgeName,
   courtId = this.court.id,
-  outcomeReasonCode = this.outcomeReasonCode?.toCodeDescription(),
+  outcomeReasonCode = this.outcomeReasonCode?.toOffenceResultCodeResponse(),
   commentText = this.commentText,
   orderRequestedFlag = this.orderRequestedFlag,
   holdFlag = this.holdFlag,

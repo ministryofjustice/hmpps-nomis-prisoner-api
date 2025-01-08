@@ -1367,7 +1367,7 @@ data class CourtEventResponse(
   val directionCode: CodeDescription?,
   val judgeName: String?,
   val courtId: String,
-  val outcomeReasonCode: CodeDescription?,
+  val outcomeReasonCode: OffenceResultCodeResponse?,
   val commentText: String?,
   val orderRequestedFlag: Boolean?,
   val holdFlag: Boolean?,
@@ -1393,13 +1393,21 @@ data class OffenderChargeResponse(
   val cjitCode1: String?,
   val cjitCode2: String?,
   val cjitCode3: String?,
+  // derived field. OffenceResultCodeResponse contains the reference data version of charge status
   val chargeStatus: CodeDescription?,
-  val resultCode1: CodeDescription?,
-  val resultCode2: CodeDescription?,
-  val resultCode1Indicator: String?,
-  val resultCode2Indicator: String?,
+  val resultCode1: OffenceResultCodeResponse?,
+  val resultCode2: OffenceResultCodeResponse?,
   val mostSeriousFlag: Boolean,
   val lidsOffenceNumber: Int?,
+)
+
+@Schema(description = "Offence Result Code")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenceResultCodeResponse(
+  val chargeStatus: String,
+  val code: String,
+  val description: String,
+  val dispositionCode: String,
 )
 
 @Schema(description = "Offence")
@@ -1424,10 +1432,8 @@ data class CourtEventChargeResponse(
   val cjitCode1: String?,
   val cjitCode2: String?,
   val cjitCode3: String?,
-  val resultCode1: CodeDescription?,
-  val resultCode2: CodeDescription?,
-  val resultCode1Indicator: String?,
-  val resultCode2Indicator: String?,
+  val resultCode1: OffenceResultCodeResponse?,
+  val resultCode2: OffenceResultCodeResponse?,
   val mostSeriousFlag: Boolean,
 )
 
