@@ -115,7 +115,7 @@ class NomisData(
     nomsId: String,
     lastName: String,
     firstName: String,
-    birthDate: LocalDate,
+    birthDate: LocalDate?,
     genderCode: String,
     dsl: OffenderDsl.() -> Unit,
   ): Offender = offenderBuilderFactory!!.builder()
@@ -409,7 +409,7 @@ interface NomisDataDsl {
     nomsId: String = "A5194DY",
     lastName: String = "NTHANDA",
     firstName: String = "LEKAN",
-    birthDate: LocalDate = LocalDate.of(1965, 7, 19),
+    birthDate: LocalDate? = LocalDate.of(1965, 7, 19),
     genderCode: String = "M",
     dsl: OffenderDsl.() -> Unit = {},
   ): Offender
