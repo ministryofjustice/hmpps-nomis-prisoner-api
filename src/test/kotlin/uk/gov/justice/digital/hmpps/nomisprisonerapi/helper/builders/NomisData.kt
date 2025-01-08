@@ -113,14 +113,19 @@ class NomisData(
 
   override fun offender(
     nomsId: String,
+    titleCode: String?,
     lastName: String,
     firstName: String,
+    middleName: String?,
+    middleName2: String?,
     birthDate: LocalDate?,
+    birthPlace: String?,
+    ethnicityCode: String?,
     genderCode: String,
     dsl: OffenderDsl.() -> Unit,
   ): Offender = offenderBuilderFactory!!.builder()
     .let { builder ->
-      builder.build(nomsId, lastName, firstName, birthDate, genderCode)
+      builder.build(nomsId, titleCode, lastName, firstName, middleName, middleName2, birthDate, birthPlace, ethnicityCode, genderCode)
         .also {
           builder.apply(dsl)
         }
@@ -407,9 +412,14 @@ interface NomisDataDsl {
   @OffenderDslMarker
   fun offender(
     nomsId: String = "A5194DY",
+    titleCode: String? = null,
     lastName: String = "NTHANDA",
     firstName: String = "LEKAN",
+    middleName: String? = null,
+    middleName2: String? = null,
     birthDate: LocalDate? = LocalDate.of(1965, 7, 19),
+    birthPlace: String? = null,
+    ethnicityCode: String? = null,
     genderCode: String = "M",
     dsl: OffenderDsl.() -> Unit = {},
   ): Offender

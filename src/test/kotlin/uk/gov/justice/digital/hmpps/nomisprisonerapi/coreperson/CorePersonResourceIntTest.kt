@@ -41,9 +41,14 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
         }
         offenderFull = offender(
           nomsId = "B1234CD",
+          titleCode = "MRS",
           firstName = "JANE",
+          middleName = "Mary",
+          middleName2 = "Ann",
           lastName = "NARK",
           birthDate = LocalDate.parse("1999-12-22"),
+          birthPlace = "LONDON",
+          ethnicityCode = "M3",
           genderCode = "F",
         ) {
         }
@@ -104,9 +109,14 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("prisonNumber").isEqualTo(offenderMinimal.nomsId)
           .jsonPath("offenderId").isEqualTo(offenderMinimal.id)
+          .jsonPath("title").doesNotExist()
           .jsonPath("firstName").isEqualTo("JOHN")
+          .jsonPath("middleName1").doesNotExist()
+          .jsonPath("middleName2").doesNotExist()
           .jsonPath("lastName").isEqualTo("BOG")
           .jsonPath("dateOfBirth").doesNotExist()
+          .jsonPath("birthPlace").doesNotExist()
+          .jsonPath("race").doesNotExist()
           .jsonPath("sex.code").isEqualTo("M")
           .jsonPath("sex.description").isEqualTo("Male")
       }
@@ -121,9 +131,16 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("prisonNumber").isEqualTo(offenderFull.nomsId)
           .jsonPath("offenderId").isEqualTo(offenderFull.id)
+          .jsonPath("title.code").isEqualTo("MRS")
+          .jsonPath("title.description").isEqualTo("Mrs")
           .jsonPath("firstName").isEqualTo("JANE")
+          .jsonPath("middleName1").isEqualTo("Mary")
+          .jsonPath("middleName2").isEqualTo("Ann")
           .jsonPath("lastName").isEqualTo("NARK")
           .jsonPath("dateOfBirth").isEqualTo("1999-12-22")
+          .jsonPath("birthPlace").isEqualTo("LONDON")
+          .jsonPath("race.code").isEqualTo("M3")
+          .jsonPath("race.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("sex.code").isEqualTo("F")
           .jsonPath("sex.description").isEqualTo("Female")
       }
