@@ -25,6 +25,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   inner class GetOffender {
     private lateinit var offenderMinimal: Offender
     private lateinit var offenderFull: Offender
+    private lateinit var alias: Offender
 
     @BeforeEach
     fun setUp() {
@@ -41,11 +42,27 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
         }
         offenderFull = offender(
           nomsId = "B1234CD",
+          titleCode = "MRS",
           firstName = "JANE",
+          middleName = "Mary",
+          middleName2 = "Ann",
           lastName = "NARK",
           birthDate = LocalDate.parse("1999-12-22"),
+          birthPlace = "LONDON",
+          ethnicityCode = "M3",
           genderCode = "F",
         ) {
+          alias = alias(
+            titleCode = "MR",
+            lastName = "NTHANDA",
+            firstName = "LEKAN",
+            middleName = "Fred",
+            middleName2 = "Johas",
+            birthDate = LocalDate.parse("1965-07-19"),
+            ethnicityCode = "M1",
+            genderCode = "M",
+          ) {
+          }
         }
       }
     }
@@ -104,11 +121,17 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("prisonNumber").isEqualTo(offenderMinimal.nomsId)
           .jsonPath("offenderId").isEqualTo(offenderMinimal.id)
+          .jsonPath("title").doesNotExist()
           .jsonPath("firstName").isEqualTo("JOHN")
+          .jsonPath("middleName1").doesNotExist()
+          .jsonPath("middleName2").doesNotExist()
           .jsonPath("lastName").isEqualTo("BOG")
           .jsonPath("dateOfBirth").doesNotExist()
+          .jsonPath("birthPlace").doesNotExist()
+          .jsonPath("race").doesNotExist()
           .jsonPath("sex.code").isEqualTo("M")
           .jsonPath("sex.description").isEqualTo("Male")
+          .jsonPath("aliases").doesNotExist()
       }
 
       @Test
@@ -121,11 +144,31 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("prisonNumber").isEqualTo(offenderFull.nomsId)
           .jsonPath("offenderId").isEqualTo(offenderFull.id)
+          .jsonPath("title.code").isEqualTo("MRS")
+          .jsonPath("title.description").isEqualTo("Mrs")
           .jsonPath("firstName").isEqualTo("JANE")
+          .jsonPath("middleName1").isEqualTo("Mary")
+          .jsonPath("middleName2").isEqualTo("Ann")
           .jsonPath("lastName").isEqualTo("NARK")
           .jsonPath("dateOfBirth").isEqualTo("1999-12-22")
+          .jsonPath("birthPlace").isEqualTo("LONDON")
+          .jsonPath("race.code").isEqualTo("M3")
+          .jsonPath("race.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("sex.code").isEqualTo("F")
           .jsonPath("sex.description").isEqualTo("Female")
+          .jsonPath("aliases.length()").isEqualTo(1)
+          .jsonPath("aliases[0].offenderId").isEqualTo(alias.id)
+          .jsonPath("aliases[0].title.code").isEqualTo("MR")
+          .jsonPath("aliases[0].title.description").isEqualTo("Mr")
+          .jsonPath("aliases[0].firstName").isEqualTo("LEKAN")
+          .jsonPath("aliases[0].middleName1").isEqualTo("Fred")
+          .jsonPath("aliases[0].middleName2").isEqualTo("Johas")
+          .jsonPath("aliases[0].lastName").isEqualTo("NTHANDA")
+          .jsonPath("aliases[0].dateOfBirth").isEqualTo("1965-07-19")
+          .jsonPath("aliases[0].race.code").isEqualTo("M1")
+          .jsonPath("aliases[0].race.description").isEqualTo("Mixed: White and Black Caribbean")
+          .jsonPath("aliases[0].sex.code").isEqualTo("M")
+          .jsonPath("aliases[0].sex.description").isEqualTo("Male")
       }
     }
   }

@@ -14,21 +14,34 @@ class CorePersonService(
   fun getOffender(prisonNumber: String): CorePerson {
     val allOffenders = offenderRepository.findByNomsIdOrderedWithBookings(prisonNumber)
     val currentAlias = allOffenders.firstOrNull() ?: throw NotFoundException("Offender not found $prisonNumber")
-    // val aliases = allOffenders.drop(1)
+    val aliases = allOffenders.drop(1)
 
-    return currentAlias.let {
+    return currentAlias.let { o ->
       CorePerson(
-        prisonNumber = it.nomsId,
-        offenderId = it.id,
-        title = it.title?.toCodeDescription(),
-        firstName = it.firstName,
-        middleName1 = it.middleName,
-        middleName2 = it.middleName2,
-        lastName = it.lastName,
-        dateOfBirth = it.birthDate,
-        birthPlace = it.birthPlace,
-        race = it.ethnicity?.toCodeDescription(),
-        sex = it.gender.toCodeDescription(),
+        prisonNumber = o.nomsId,
+        offenderId = o.id,
+        title = o.title?.toCodeDescription(),
+        firstName = o.firstName,
+        middleName1 = o.middleName,
+        middleName2 = o.middleName2,
+        lastName = o.lastName,
+        dateOfBirth = o.birthDate,
+        birthPlace = o.birthPlace,
+        race = o.ethnicity?.toCodeDescription(),
+        sex = o.gender.toCodeDescription(),
+        aliases = aliases.map { a ->
+          Alias(
+            offenderId = a.id,
+            title = a.title?.toCodeDescription(),
+            firstName = a.firstName,
+            middleName1 = a.middleName,
+            middleName2 = a.middleName2,
+            lastName = a.lastName,
+            dateOfBirth = a.birthDate,
+            race = a.ethnicity?.toCodeDescription(),
+            sex = a.gender.toCodeDescription(),
+          )
+        },
       )
     }
   }

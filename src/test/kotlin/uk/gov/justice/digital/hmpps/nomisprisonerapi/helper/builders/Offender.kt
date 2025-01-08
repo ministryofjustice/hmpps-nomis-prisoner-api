@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -32,9 +34,13 @@ interface OffenderDsl {
 
   @AliasDslMarker
   fun alias(
+    titleCode: String? = null,
     lastName: String = "NTHANDA",
     firstName: String = "LEKAN",
+    middleName: String? = null,
+    middleName2: String? = null,
     birthDate: LocalDate = LocalDate.of(1965, 7, 19),
+    ethnicityCode: String? = null,
     genderCode: String = "M",
     dsl: AliasDsl.() -> Unit = {},
   ): Offender
@@ -43,10 +49,14 @@ interface OffenderDsl {
 @Component
 class OffenderBuilderRepository(
   private val offenderRepository: OffenderRepository,
+  private val ethnicityRepository: ReferenceCodeRepository<Ethnicity>,
   private val genderRepository: ReferenceCodeRepository<Gender>,
+  private val titleRepository: ReferenceCodeRepository<Title>,
 ) {
   fun save(offender: Offender): Offender = offenderRepository.save(offender)
-  fun gender(genderCode: String) = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
+  fun ethnicity(ethnicityCode: String): Ethnicity = ethnicityRepository.findByIdOrNull(ReferenceCode.Pk(Ethnicity.ETHNICITY, ethnicityCode))!!
+  fun gender(genderCode: String): Gender = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
+  fun title(titleCode: String): Title = titleRepository.findByIdOrNull(ReferenceCode.Pk(Title.TITLE, titleCode))!!
 }
 
 @Component
@@ -68,15 +78,25 @@ class OffenderBuilder(
 
   fun build(
     nomsId: String,
+    titleCode: String?,
     lastName: String,
     firstName: String,
+    middleName: String?,
+    middleName2: String?,
     birthDate: LocalDate?,
+    birthPlace: String?,
+    ethnicityCode: String?,
     genderCode: String,
   ): Offender = Offender(
     nomsId = nomsId,
+    title = titleCode?.let { repository.title(it) },
     lastName = lastName,
     firstName = firstName,
+    middleName = middleName,
+    middleName2 = middleName2,
     birthDate = birthDate,
+    birthPlace = birthPlace,
+    ethnicity = ethnicityCode?.let { repository.ethnicity(ethnicityCode) },
     gender = repository.gender(genderCode),
     lastNameKey = lastName.uppercase(),
   )
@@ -119,14 +139,18 @@ class OffenderBuilder(
     }
 
   override fun alias(
+    titleCode: String?,
     lastName: String,
     firstName: String,
+    middleName: String?,
+    middleName2: String?,
     birthDate: LocalDate,
+    ethnicityCode: String?,
     genderCode: String,
     dsl: AliasDsl.() -> Unit,
   ): Offender = aliasBuilderFactory.builder(this)
     .let { builder ->
-      builder.build(lastName, firstName, birthDate, genderCode)
+      builder.build(titleCode, lastName, firstName, middleName, middleName2, birthDate, ethnicityCode, genderCode)
         .also { builder.apply(dsl) }
     }
 }
