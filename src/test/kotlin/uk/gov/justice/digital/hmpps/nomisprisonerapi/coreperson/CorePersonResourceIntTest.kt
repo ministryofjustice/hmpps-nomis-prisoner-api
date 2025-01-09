@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class CorePersonResourceIntTest : IntegrationTestBase() {
 
@@ -25,7 +26,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   inner class GetOffender {
     private lateinit var offenderMinimal: Offender
     private lateinit var offenderFull: Offender
-    private lateinit var alias: Offender
 
     @BeforeEach
     fun setUp() {
@@ -51,18 +51,9 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           birthPlace = "LONDON",
           ethnicityCode = "M3",
           genderCode = "F",
+          whoCreated = "KOFEADDY",
+          whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
-          alias = alias(
-            titleCode = "MR",
-            lastName = "NTHANDA",
-            firstName = "LEKAN",
-            middleName = "Fred",
-            middleName2 = "Johas",
-            birthDate = LocalDate.parse("1965-07-19"),
-            ethnicityCode = "M1",
-            genderCode = "M",
-          ) {
-          }
         }
       }
     }
@@ -132,6 +123,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("sex.code").isEqualTo("M")
           .jsonPath("sex.description").isEqualTo("Male")
           .jsonPath("aliases").doesNotExist()
+          .jsonPath("audit.createUsername").isNotEmpty
+          .jsonPath("audit.createDatetime").isNotEmpty
       }
 
       @Test
@@ -156,6 +149,58 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("race.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("sex.code").isEqualTo("F")
           .jsonPath("sex.description").isEqualTo("Female")
+          .jsonPath("audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+      }
+    }
+
+    @Nested
+    inner class Aliases {
+      private lateinit var offender: Offender
+      private lateinit var alias: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff(firstName = "KOFE", lastName = "ADDY") {
+            account(username = "KOFEADDY", type = "GENERAL")
+          }
+          offender = offender(
+            nomsId = "C1234EF",
+            firstName = "JANE",
+            lastName = "NARK",
+            birthDate = LocalDate.parse("1999-12-22"),
+          ) {
+            alias = alias(
+              titleCode = "MR",
+              lastName = "NTHANDA",
+              firstName = "LEKAN",
+              middleName = "Fred",
+              middleName2 = "Johas",
+              birthDate = LocalDate.parse("1965-07-19"),
+              ethnicityCode = "M1",
+              genderCode = "M",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            ) {
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return aliases`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("prisonNumber").isEqualTo(offender.nomsId)
+          .jsonPath("offenderId").isEqualTo(offender.id)
+          .jsonPath("firstName").isEqualTo("JANE")
+          .jsonPath("lastName").isEqualTo("NARK")
           .jsonPath("aliases.length()").isEqualTo(1)
           .jsonPath("aliases[0].offenderId").isEqualTo(alias.id)
           .jsonPath("aliases[0].title.code").isEqualTo("MR")
@@ -169,6 +214,9 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("aliases[0].race.description").isEqualTo("Mixed: White and Black Caribbean")
           .jsonPath("aliases[0].sex.code").isEqualTo("M")
           .jsonPath("aliases[0].sex.description").isEqualTo("Male")
+          .jsonPath("aliases[0].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("aliases[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("aliases[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
     }
   }
