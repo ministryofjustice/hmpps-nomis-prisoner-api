@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
 
 @RestController
@@ -69,7 +70,10 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ],
   )
   fun getOffender(
-    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC") @PathVariable prisonNumber: String,
+    @Schema(
+      description = "Prison number aka noms id / offender id display",
+      example = "A1234BC",
+    ) @PathVariable prisonNumber: String,
   ): CorePerson = corePersonService.getOffender(prisonNumber)
 }
 
@@ -100,6 +104,8 @@ data class CorePerson(
   val sex: CodeDescription?,
   @Schema(description = "List of aliases for the person. These are the other offender records.")
   val aliases: List<Alias>,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS for an offender alias")
@@ -123,4 +129,6 @@ data class Alias(
   val race: CodeDescription?,
   @Schema(description = "Sex of the person")
   val sex: CodeDescription?,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
