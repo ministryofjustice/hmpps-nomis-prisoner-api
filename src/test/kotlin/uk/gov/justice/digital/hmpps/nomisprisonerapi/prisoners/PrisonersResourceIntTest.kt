@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -31,6 +32,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun `DSL setup check - latest booking on root`() {
     lateinit var rootOffender: Offender
     lateinit var aliasOffender1: Offender
@@ -144,6 +146,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
   }
 
   @Test
+  @Transactional
   fun `DSL setup check - latest booking on alias`() {
     lateinit var rootOffender: Offender
     lateinit var aliasOffender1: Offender
