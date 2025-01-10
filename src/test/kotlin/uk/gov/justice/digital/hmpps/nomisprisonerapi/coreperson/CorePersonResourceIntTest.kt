@@ -183,8 +183,14 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               genderCode = "M",
               whoCreated = "KOFEADDY",
               whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
-            ) {
-            }
+            ) {}
+            identifier(
+              type = "PNC",
+              identifier = "20/0071818T",
+              issuedAuthority = "Met Police",
+              issuedDate = LocalDate.parse("2020-01-01"),
+              verified = true,
+            )
           }
         }
       }
@@ -217,6 +223,64 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("aliases[0].audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("aliases[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("aliases[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+      }
+    }
+
+    @Nested
+    inner class Identifiers {
+      private lateinit var offender: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff(firstName = "KOFE", lastName = "ADDY") {
+            account(username = "KOFEADDY", type = "GENERAL")
+          }
+          offender = offender(
+            nomsId = "C1234EF",
+            firstName = "JANE",
+            lastName = "NARK",
+            birthDate = LocalDate.parse("1999-12-22"),
+          ) {
+            identifier(
+              type = "PNC",
+              identifier = "20/0071818T",
+              issuedAuthority = "Met Police",
+              issuedDate = LocalDate.parse("2020-01-01"),
+              verified = true,
+            )
+            identifier(type = "STAFF", identifier = "123")
+          }
+        }
+      }
+
+      @Test
+      fun `will return identifiers`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON"))).exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("identifiers.length()").isEqualTo(2)
+          .jsonPath("identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("identifiers[0].offenderId").isEqualTo(offender.id)
+          .jsonPath("identifiers[0].type.code").isEqualTo("PNC")
+          .jsonPath("identifiers[0].type.description").isEqualTo("PNC Number")
+          .jsonPath("identifiers[0].issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("identifiers[0].issuedDate").isEqualTo("2020-01-01")
+          .jsonPath("identifiers[0].verified").isEqualTo(true)
+          .jsonPath("identifiers[1].sequence").isEqualTo(2)
+          .jsonPath("identifiers[1].offenderId").isEqualTo(offender.id)
+          .jsonPath("identifiers[1].type.code").isEqualTo("STAFF")
+          .jsonPath("identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("identifiers[1].issuedAuthority").doesNotExist()
+          .jsonPath("identifiers[1].issuedDate").doesNotExist()
+          .jsonPath("identifiers[1].verified").isEqualTo(false)
+      }
+
+      @Test
+      fun `will return identifiers from all offender records rather than just the current alias`() {
+        // TODO: write this test
       }
     }
   }

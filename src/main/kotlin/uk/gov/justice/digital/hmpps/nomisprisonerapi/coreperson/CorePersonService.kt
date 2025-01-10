@@ -44,6 +44,18 @@ class CorePersonService(
             audit = a.toAudit(),
           )
         },
+        // TODO: return identifiers from all offender records rather than just the current alias
+        identifiers = o.identifiers.map { i ->
+          Identifier(
+            sequence = i.id.sequence,
+            offenderId = i.id.offender.id,
+            type = i.identifierType.toCodeDescription(),
+            identifier = i.identifier,
+            issuedAuthority = i.issuedAuthority,
+            issuedDate = i.issuedDate,
+            verified = i.verified ?: false,
+          )
+        },
         audit = o.toAudit(),
       )
     }
