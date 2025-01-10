@@ -85,6 +85,20 @@ class CorePersonService(
             },
           )
         },
+        phoneNumbers = o.phones.map { number ->
+          OffenderPhoneNumber(
+            phoneId = number.phoneId,
+            number = number.phoneNo,
+            type = number.phoneType.toCodeDescription(),
+            extension = number.extNo,
+          )
+        },
+        emailAddresses = o.internetAddresses.map { address ->
+          OffenderEmailAddress(
+            emailAddressId = address.internetAddressId,
+            email = address.internetAddress,
+          )
+        },
         audit = o.toAudit(),
       )
     }

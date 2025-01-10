@@ -9,6 +9,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -82,6 +84,24 @@ interface OffenderDsl {
     whoCreated: String? = null,
     dsl: OffenderAddressDsl.() -> Unit = {},
   ): OffenderAddress
+
+  @OffenderPhoneDslMarker
+  fun phone(
+    phoneType: String,
+    phoneNo: String,
+    extNo: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
+    dsl: OffenderPhoneDsl.() -> Unit = {},
+  ): OffenderPhone
+
+  @OffenderEmailDslMarker
+  fun email(
+    emailAddress: String,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
+    dsl: OffenderEmailDsl.() -> Unit = {},
+  ): OffenderInternetAddress
 }
 
 @Component
@@ -109,8 +129,18 @@ class OffenderBuilderFactory(
   private val aliasBuilderFactory: AliasBuilderFactory,
   private val offenderIdentifierBuilderFactory: OffenderIdentifierBuilderFactory,
   private val offenderAddressBuilderFactory: OffenderAddressBuilderFactory,
+  private val offenderPhoneBuilderFactory: OffenderPhoneBuilderFactory,
+  private val offenderEmailBuilderFactory: OffenderEmailBuilderFactory,
 ) {
-  fun builder(): OffenderBuilder = OffenderBuilder(repository, bookingBuilderFactory, aliasBuilderFactory, offenderIdentifierBuilderFactory, offenderAddressBuilderFactory)
+  fun builder(): OffenderBuilder = OffenderBuilder(
+    repository,
+    bookingBuilderFactory,
+    aliasBuilderFactory,
+    offenderIdentifierBuilderFactory,
+    offenderAddressBuilderFactory,
+    offenderPhoneBuilderFactory,
+    offenderEmailBuilderFactory,
+  )
 }
 
 class OffenderBuilder(
@@ -119,6 +149,8 @@ class OffenderBuilder(
   private val aliasBuilderFactory: AliasBuilderFactory,
   private val offenderIdentifierBuilderFactory: OffenderIdentifierBuilderFactory,
   private val offenderAddressBuilderFactory: OffenderAddressBuilderFactory,
+  private val offenderPhoneBuilderFactory: OffenderPhoneBuilderFactory,
+  private val offenderEmailBuilderFactory: OffenderEmailBuilderFactory,
 ) : OffenderDsl {
   lateinit var rootOffender: Offender
   var nextBookingSequence: Int = 1
@@ -283,6 +315,44 @@ class OffenderBuilder(
         whenCreated = whenCreated,
       )
         .also { rootOffender.addresses += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun phone(
+    phoneType: String,
+    phoneNo: String,
+    extNo: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: OffenderPhoneDsl.() -> Unit,
+  ): OffenderPhone =
+    offenderPhoneBuilderFactory.builder().let { builder ->
+      builder.build(
+        offender = rootOffender,
+        phoneType = phoneType,
+        phoneNo = phoneNo,
+        extNo = extNo,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
+      )
+        .also { rootOffender.phones += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun email(
+    emailAddress: String,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: OffenderEmailDsl.() -> Unit,
+  ): OffenderInternetAddress =
+    offenderEmailBuilderFactory.builder().let { builder ->
+      builder.build(
+        offender = rootOffender,
+        emailAddress = emailAddress,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
+      )
+        .also { rootOffender.internetAddresses += it }
         .also { builder.apply(dsl) }
     }
 }
