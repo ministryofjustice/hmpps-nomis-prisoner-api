@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
@@ -58,6 +59,29 @@ interface OffenderDsl {
     verified: Boolean? = null,
     dsl: OffenderIdentifierDsl.() -> Unit = {},
   ): OffenderIdentifier
+
+  @OffenderAddressDslMarker
+  fun address(
+    type: String? = null,
+    premise: String? = "41",
+    street: String? = "High Street",
+    locality: String? = "Sheffield",
+    flat: String? = null,
+    postcode: String? = null,
+    city: String? = null,
+    county: String? = null,
+    country: String? = null,
+    validatedPAF: Boolean = false,
+    noFixedAddress: Boolean? = null,
+    primaryAddress: Boolean = false,
+    mailAddress: Boolean = false,
+    comment: String? = null,
+    startDate: String? = null,
+    endDate: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
+    dsl: OffenderAddressDsl.() -> Unit = {},
+  ): OffenderAddress
 }
 
 @Component
@@ -84,8 +108,9 @@ class OffenderBuilderFactory(
   private val bookingBuilderFactory: BookingBuilderFactory,
   private val aliasBuilderFactory: AliasBuilderFactory,
   private val offenderIdentifierBuilderFactory: OffenderIdentifierBuilderFactory,
+  private val offenderAddressBuilderFactory: OffenderAddressBuilderFactory,
 ) {
-  fun builder(): OffenderBuilder = OffenderBuilder(repository, bookingBuilderFactory, aliasBuilderFactory, offenderIdentifierBuilderFactory)
+  fun builder(): OffenderBuilder = OffenderBuilder(repository, bookingBuilderFactory, aliasBuilderFactory, offenderIdentifierBuilderFactory, offenderAddressBuilderFactory)
 }
 
 class OffenderBuilder(
@@ -93,6 +118,7 @@ class OffenderBuilder(
   private val bookingBuilderFactory: BookingBuilderFactory,
   private val aliasBuilderFactory: AliasBuilderFactory,
   private val offenderIdentifierBuilderFactory: OffenderIdentifierBuilderFactory,
+  private val offenderAddressBuilderFactory: OffenderAddressBuilderFactory,
 ) : OffenderDsl {
   lateinit var rootOffender: Offender
   var nextBookingSequence: Int = 1
@@ -212,4 +238,51 @@ class OffenderBuilder(
       .also { rootOffender.identifiers += it }
       .also { builder.apply(dsl) }
   }
+
+  override fun address(
+    type: String?,
+    premise: String?,
+    street: String?,
+    locality: String?,
+    flat: String?,
+    postcode: String?,
+    city: String?,
+    county: String?,
+    country: String?,
+    validatedPAF: Boolean,
+    noFixedAddress: Boolean?,
+    primaryAddress: Boolean,
+    mailAddress: Boolean,
+    comment: String?,
+    startDate: String?,
+    endDate: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: OffenderAddressDsl.() -> Unit,
+  ): OffenderAddress =
+    offenderAddressBuilderFactory.builder().let { builder ->
+      builder.build(
+        type = type,
+        offender = rootOffender,
+        premise = premise,
+        street = street,
+        locality = locality,
+        flat = flat,
+        postcode = postcode,
+        city = city,
+        county = county,
+        country = country,
+        validatedPAF = validatedPAF,
+        noFixedAddress = noFixedAddress,
+        primaryAddress = primaryAddress,
+        mailAddress = mailAddress,
+        comment = comment,
+        startDate = startDate?.let { LocalDate.parse(it) },
+        endDate = endDate?.let { LocalDate.parse(it) },
+        whoCreated = whoCreated,
+        whenCreated = whenCreated,
+      )
+        .also { rootOffender.addresses += it }
+        .also { builder.apply(dsl) }
+    }
 }

@@ -106,6 +106,8 @@ data class CorePerson(
   val aliases: List<Alias>,
   @Schema(description = "List of identifiers for the person.")
   val identifiers: List<Identifier>,
+  @Schema(description = "List of addresses for the person")
+  val addresses: List<OffenderAddress>,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -152,4 +154,58 @@ data class Identifier(
   val issuedDate: LocalDate?,
   @Schema(description = "Verified")
   val verified: Boolean,
+)
+
+@Schema(description = "The data held in NOMIS about a address number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderAddress(
+  @Schema(description = "Unique NOMIS Id of number")
+  val addressId: Long,
+  @Schema(description = "Address type")
+  val type: CodeDescription?,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String?,
+  @Schema(description = "Premise", example = "22")
+  val premise: String?,
+  @Schema(description = "Street", example = "West Street")
+  val street: String?,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String?,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String?,
+  @Schema(description = "City")
+  val city: CodeDescription?,
+  @Schema(description = "County")
+  val county: CodeDescription?,
+  @Schema(description = "Country")
+  val country: CodeDescription?,
+  @Schema(description = "List of phone numbers for the address")
+  val phoneNumbers: List<OffenderPhoneNumber>,
+  @Schema(description = "true if address validated by Post Office Address file??")
+  val validatedPAF: Boolean,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean?,
+  @Schema(description = "true if this is the person's primary address")
+  val primaryAddress: Boolean,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean,
+  @Schema(description = "Free format comment about the address")
+  val comment: String?,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate?,
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate?,
+)
+
+@Schema(description = "The data held in NOMIS about a phone number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderPhoneNumber(
+  @Schema(description = "Unique NOMIS Id of number")
+  val phoneId: Long,
+  @Schema(description = "The number")
+  val number: String,
+  @Schema(description = "Extension")
+  val extension: String?,
+  @Schema(description = "Phone type")
+  val type: CodeDescription,
 )
