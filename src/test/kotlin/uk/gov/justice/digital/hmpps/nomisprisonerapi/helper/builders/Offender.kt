@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -47,6 +48,16 @@ interface OffenderDsl {
     whoCreated: String? = null,
     dsl: AliasDsl.() -> Unit = {},
   ): Offender
+
+  @OffenderIdentifierDslMarker
+  fun identifier(
+    type: String = "NINO",
+    identifier: String = "NE112233T",
+    issuedAuthority: String? = null,
+    issuedDate: LocalDate? = null,
+    verified: Boolean? = null,
+    dsl: OffenderIdentifierDsl.() -> Unit = {},
+  ): OffenderIdentifier
 }
 
 @Component
@@ -72,14 +83,16 @@ class OffenderBuilderFactory(
   private val repository: OffenderBuilderRepository,
   private val bookingBuilderFactory: BookingBuilderFactory,
   private val aliasBuilderFactory: AliasBuilderFactory,
+  private val offenderIdentifierBuilderFactory: OffenderIdentifierBuilderFactory,
 ) {
-  fun builder(): OffenderBuilder = OffenderBuilder(repository, bookingBuilderFactory, aliasBuilderFactory)
+  fun builder(): OffenderBuilder = OffenderBuilder(repository, bookingBuilderFactory, aliasBuilderFactory, offenderIdentifierBuilderFactory)
 }
 
 class OffenderBuilder(
   private val repository: OffenderBuilderRepository,
   private val bookingBuilderFactory: BookingBuilderFactory,
   private val aliasBuilderFactory: AliasBuilderFactory,
+  private val offenderIdentifierBuilderFactory: OffenderIdentifierBuilderFactory,
 ) : OffenderDsl {
   lateinit var rootOffender: Offender
   var nextBookingSequence: Int = 1
@@ -164,7 +177,39 @@ class OffenderBuilder(
     dsl: AliasDsl.() -> Unit,
   ): Offender = aliasBuilderFactory.builder(this)
     .let { builder ->
-      builder.build(titleCode, lastName, firstName, middleName, middleName2, birthDate, ethnicityCode, genderCode, whenCreated, whoCreated)
+      builder.build(
+        titleCode = titleCode,
+        lastName = lastName,
+        firstName = firstName,
+        middleName = middleName,
+        middleName2 = middleName2,
+        birthDate = birthDate,
+        ethnicityCode = ethnicityCode,
+        genderCode = genderCode,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
+      )
         .also { builder.apply(dsl) }
     }
+
+  override fun identifier(
+    type: String,
+    identifier: String,
+    issuedAuthority: String?,
+    issuedDate: LocalDate?,
+    verified: Boolean?,
+    dsl: OffenderIdentifierDsl.() -> Unit,
+  ): OffenderIdentifier = offenderIdentifierBuilderFactory.builder().let { builder ->
+    builder.build(
+      offender = rootOffender,
+      sequence = rootOffender.identifiers.size + 1L,
+      type = type,
+      identifier = identifier,
+      issuedAuthority = issuedAuthority,
+      issuedDate = issuedDate,
+      verified = verified,
+    )
+      .also { rootOffender.identifiers += it }
+      .also { builder.apply(dsl) }
+  }
 }

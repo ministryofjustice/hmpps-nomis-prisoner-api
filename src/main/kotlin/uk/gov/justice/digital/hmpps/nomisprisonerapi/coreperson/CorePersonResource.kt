@@ -104,6 +104,8 @@ data class CorePerson(
   val sex: CodeDescription?,
   @Schema(description = "List of aliases for the person. These are the other offender records.")
   val aliases: List<Alias>,
+  @Schema(description = "List of identifiers for the person.")
+  val identifiers: List<Identifier>,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -131,4 +133,23 @@ data class Alias(
   val sex: CodeDescription?,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
+)
+
+@Schema(description = "The data held in NOMIS for an offender's identifiers")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Identifier(
+  @Schema(description = "Unique NOMIS sequence for this identifier for this person")
+  val sequence: Long,
+  @Schema(description = "The offender id")
+  val offenderId: Long,
+  @Schema(description = "The identifier type")
+  val type: CodeDescription,
+  @Schema(description = "The identifier value", example = "NE121212T")
+  val identifier: String,
+  @Schema(description = "The issued authority", example = "Police")
+  val issuedAuthority: String?,
+  @Schema(description = "The issued date")
+  val issuedDate: LocalDate?,
+  @Schema(description = "Verified")
+  val verified: Boolean,
 )

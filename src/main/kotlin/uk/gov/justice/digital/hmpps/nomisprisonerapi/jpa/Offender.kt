@@ -102,8 +102,8 @@ data class Offender(
   @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   private val allBookings: MutableList<OffenderBooking> = mutableListOf(),
 
-  @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  val identifiers: List<OffenderIdentifier> = ArrayList(),
+  @OneToMany(mappedBy = "id.offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val identifiers: MutableList<OffenderIdentifier> = mutableListOf(),
 
   @Column(name = "LAST_NAME_KEY", nullable = false)
   var lastNameKey: String? = null,
