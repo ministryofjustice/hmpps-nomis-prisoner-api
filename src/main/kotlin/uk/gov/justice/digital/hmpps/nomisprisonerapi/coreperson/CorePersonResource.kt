@@ -108,6 +108,10 @@ data class CorePerson(
   val identifiers: List<Identifier>,
   @Schema(description = "List of addresses for the person")
   val addresses: List<OffenderAddress>,
+  @Schema(description = "List of phone numbers for the person")
+  val phoneNumbers: List<OffenderPhoneNumber>,
+  @Schema(description = "List of email addresses for the person")
+  val emailAddresses: List<OffenderEmailAddress>,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -208,4 +212,13 @@ data class OffenderPhoneNumber(
   val extension: String?,
   @Schema(description = "Phone type")
   val type: CodeDescription,
+)
+
+@Schema(description = "The data held in NOMIS about a email address")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderEmailAddress(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val emailAddressId: Long,
+  @Schema(description = "The email address", example = "john.smith@internet.co.uk")
+  val email: String,
 )
