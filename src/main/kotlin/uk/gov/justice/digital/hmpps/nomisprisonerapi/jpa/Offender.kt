@@ -4,6 +4,7 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -15,6 +16,7 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.SQLRestriction
 import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity.Companion.ETHNICITY
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender.Companion.SEX
@@ -104,6 +106,10 @@ data class Offender(
 
   @OneToMany(mappedBy = "id.offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val identifiers: MutableList<OffenderIdentifier> = mutableListOf(),
+
+  @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = LAZY)
+  @SQLRestriction("OWNER_CLASS = '${OffenderAddress.ADDR_TYPE}'")
+  val addresses: MutableList<OffenderAddress> = mutableListOf(),
 
   @Column(name = "LAST_NAME_KEY", nullable = false)
   var lastNameKey: String? = null,

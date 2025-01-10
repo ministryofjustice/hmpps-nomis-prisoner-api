@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -281,6 +282,131 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return identifiers from all offender records rather than just the current alias`() {
         // TODO: write this test
+      }
+    }
+
+    @Nested
+    inner class Addresses {
+      private lateinit var offender: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            address(
+              premise = null,
+              street = null,
+              locality = null,
+              postcode = "S1 3GG",
+            )
+            address(
+              type = "HOME",
+              flat = "3B",
+              premise = "Brown Court",
+              street = "Scotland Street",
+              locality = "Hunters Bar",
+              postcode = "S1 3GG",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+              validatedPAF = true,
+              noFixedAddress = false,
+              primaryAddress = true,
+              mailAddress = true,
+              comment = "Not to be used",
+              startDate = "2024-10-01",
+              endDate = "2024-11-01",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            ) {
+              phone(
+                phoneType = "MOB",
+                phoneNo = "07399999999",
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+              phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+            }
+            address(
+              noFixedAddress = true,
+              primaryAddress = false,
+              premise = null,
+              street = null,
+              locality = null,
+            )
+          }
+        }
+      }
+
+      @Test
+      fun `will return addresses`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].addressId").isEqualTo(offender.addresses[0].addressId)
+          .jsonPath("addresses[0].type").doesNotExist()
+          .jsonPath("addresses[0].flat").doesNotExist()
+          .jsonPath("addresses[0].premise").doesNotExist()
+          .jsonPath("addresses[0].street").doesNotExist()
+          .jsonPath("addresses[0].locality").doesNotExist()
+          .jsonPath("addresses[0].city").doesNotExist()
+          .jsonPath("addresses[0].county").doesNotExist()
+          .jsonPath("addresses[0].country").doesNotExist()
+          .jsonPath("addresses[0].validatedPAF").isEqualTo(false)
+          .jsonPath("addresses[0].noFixedAddress").doesNotExist()
+          .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
+          .jsonPath("addresses[0].mailAddress").isEqualTo(false)
+          .jsonPath("addresses[0].comment").doesNotExist()
+          .jsonPath("addresses[0].startDate").doesNotExist()
+          .jsonPath("addresses[0].endDate").doesNotExist()
+          .jsonPath("addresses[1].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].type.code").isEqualTo("HOME")
+          .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
+          .jsonPath("addresses[1].flat").isEqualTo("3B")
+          .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
+          .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
+          .jsonPath("addresses[1].locality").isEqualTo("Hunters Bar")
+          .jsonPath("addresses[1].postcode").isEqualTo("S1 3GG")
+          .jsonPath("addresses[1].city.code").isEqualTo("25343")
+          .jsonPath("addresses[1].city.description").isEqualTo("Sheffield")
+          .jsonPath("addresses[1].county.code").isEqualTo("S.YORKSHIRE")
+          .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
+          .jsonPath("addresses[1].country.code").isEqualTo("ENG")
+          .jsonPath("addresses[1].country.description").isEqualTo("England")
+          .jsonPath("addresses[1].validatedPAF").isEqualTo(true)
+          .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
+          .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
+          .jsonPath("addresses[1].mailAddress").isEqualTo(true)
+          .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
+          .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
+          .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
+          .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
+      }
+
+      @Test
+      fun `will return phone numbers associated with addresses`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(offender.addresses[1].phones[0].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
+          .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(offender.addresses[1].phones[1].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
+          .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
+          .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
+          .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
       }
     }
   }
