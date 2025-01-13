@@ -28,7 +28,7 @@ class CorePersonService(
         lastName = o.lastName,
         dateOfBirth = o.birthDate,
         birthPlace = o.birthPlace,
-        race = o.ethnicity?.toCodeDescription(),
+        ethnicity = o.ethnicity?.toCodeDescription(),
         sex = o.gender.toCodeDescription(),
         aliases = aliases.map { a ->
           Alias(
@@ -39,7 +39,7 @@ class CorePersonService(
             middleName2 = a.middleName2,
             lastName = a.lastName,
             dateOfBirth = a.birthDate,
-            race = a.ethnicity?.toCodeDescription(),
+            ethnicity = a.ethnicity?.toCodeDescription(),
             sex = a.gender.toCodeDescription(),
             audit = a.toAudit(),
           )
