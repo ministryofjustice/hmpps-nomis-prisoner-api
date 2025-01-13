@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
+import java.time.LocalDate
 
 @RestController
 @Validated
@@ -83,4 +86,18 @@ data class CorporateOrganisation(
   val id: Long,
   @Schema(description = "The corporate name", example = "Boots")
   val name: String,
+  @Schema(description = "The associated caseload e.g COOKHAM WOOD (HMP)")
+  val caseload: CodeDescription? = null,
+  @Schema(description = "User comment")
+  val comment: String? = null,
+  @Schema(description = "Programme number")
+  val programmeNumber: String? = null,
+  @Schema(description = "VAT number")
+  val vatNumber: String? = null,
+  @Schema(description = "Is active")
+  val active: Boolean = true,
+  @Schema(description = "Date made inactive")
+  val expiryDate: LocalDate? = null,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
