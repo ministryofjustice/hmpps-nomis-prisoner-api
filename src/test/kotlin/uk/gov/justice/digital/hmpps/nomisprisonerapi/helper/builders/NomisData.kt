@@ -302,26 +302,28 @@ class NomisData(
   override fun corporate(
     corporateName: String,
     caseloadId: String?,
-    createdDate: LocalDateTime,
     commentText: String?,
     suspended: Boolean,
     feiNumber: String?,
     active: Boolean,
     expiryDate: LocalDate?,
     taxNo: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
     dsl: CorporateDsl.() -> Unit,
   ): Corporate = corporateBuilderFactory!!.builder()
     .let { builder ->
       builder.build(
         corporateName = corporateName,
         caseloadId = caseloadId,
-        createdDate = createdDate,
         commentText = commentText,
         suspended = suspended,
         feiNumber = feiNumber,
         active = active,
         expiryDate = expiryDate,
         taxNo = taxNo,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
       )
         .also {
           builder.apply(dsl)
@@ -570,13 +572,14 @@ interface NomisDataDsl {
   fun corporate(
     corporateName: String,
     caseloadId: String? = null,
-    createdDate: LocalDateTime = LocalDateTime.now(),
     commentText: String? = null,
     suspended: Boolean = false,
     feiNumber: String? = null,
     active: Boolean = true,
     expiryDate: LocalDate? = null,
     taxNo: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
     dsl: CorporateDsl.() -> Unit = {},
   ): Corporate
 }
