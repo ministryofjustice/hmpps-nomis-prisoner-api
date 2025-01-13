@@ -120,6 +120,7 @@ class NomisData(
     middleName2: String?,
     birthDate: LocalDate?,
     birthPlace: String?,
+    birthCountryCode: String?,
     ethnicityCode: String?,
     genderCode: String,
     whenCreated: LocalDateTime?,
@@ -127,7 +128,7 @@ class NomisData(
     dsl: OffenderDsl.() -> Unit,
   ): Offender = offenderBuilderFactory!!.builder()
     .let { builder ->
-      builder.build(nomsId, titleCode, lastName, firstName, middleName, middleName2, birthDate, birthPlace, ethnicityCode, genderCode, whenCreated, whoCreated)
+      builder.build(nomsId, titleCode, lastName, firstName, middleName, middleName2, birthDate, birthPlace, birthCountryCode, ethnicityCode, genderCode, whenCreated, whoCreated)
         .also {
           builder.apply(dsl)
         }
@@ -423,6 +424,7 @@ interface NomisDataDsl {
     middleName2: String? = null,
     birthDate: LocalDate? = LocalDate.of(1965, 7, 19),
     birthPlace: String? = null,
+    birthCountryCode: String? = null,
     ethnicityCode: String? = null,
     genderCode: String = "M",
     whenCreated: LocalDateTime? = null,

@@ -50,6 +50,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           lastName = "NARK",
           birthDate = LocalDate.parse("1999-12-22"),
           birthPlace = "LONDON",
+          birthCountryCode = "ATA",
           ethnicityCode = "M3",
           genderCode = "F",
           whoCreated = "KOFEADDY",
@@ -120,6 +121,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("lastName").isEqualTo("BOG")
           .jsonPath("dateOfBirth").doesNotExist()
           .jsonPath("birthPlace").doesNotExist()
+          .jsonPath("birthCountry").doesNotExist()
           .jsonPath("ethnicity").doesNotExist()
           .jsonPath("sex.code").isEqualTo("M")
           .jsonPath("sex.description").isEqualTo("Male")
@@ -146,6 +148,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("lastName").isEqualTo("NARK")
           .jsonPath("dateOfBirth").isEqualTo("1999-12-22")
           .jsonPath("birthPlace").isEqualTo("LONDON")
+          .jsonPath("birthCountry.code").isEqualTo("ATA")
+          .jsonPath("birthCountry.description").isEqualTo("Antarctica")
           .jsonPath("ethnicity.code").isEqualTo("M3")
           .jsonPath("ethnicity.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("sex.code").isEqualTo("F")

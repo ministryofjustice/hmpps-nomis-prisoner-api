@@ -93,6 +93,15 @@ data class Offender(
   @Column(name = "BIRTH_PLACE")
   val birthPlace: String? = null,
 
+  @ManyToOne(fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(formula = JoinFormula(value = ("'${Country.COUNTRY}'"), referencedColumnName = "domain")),
+      JoinColumnOrFormula(column = JoinColumn(name = "BIRTH_COUNTRY_CODE", referencedColumnName = "code")),
+    ],
+  )
+  val birthCountry: Country? = null,
+
   @Column(name = "ROOT_OFFENDER_ID")
   var rootOffenderId: Long? = null,
 
