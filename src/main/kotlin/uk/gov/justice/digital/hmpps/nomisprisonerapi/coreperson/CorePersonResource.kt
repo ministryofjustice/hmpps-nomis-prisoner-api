@@ -99,7 +99,7 @@ data class CorePerson(
   @Schema(description = "Birth place of the person")
   val birthPlace: String?,
   @Schema(description = "Race of the person")
-  val race: CodeDescription?,
+  val ethnicity: CodeDescription?,
   @Schema(description = "Sex of the person")
   val sex: CodeDescription?,
   @Schema(description = "List of aliases for the person. These are the other offender records.")
@@ -134,7 +134,7 @@ data class Alias(
   @Schema(description = "Date of birth of the person")
   val dateOfBirth: LocalDate?,
   @Schema(description = "Race of the person")
-  val race: CodeDescription?,
+  val ethnicity: CodeDescription?,
   @Schema(description = "Sex of the person")
   val sex: CodeDescription?,
   @Schema(description = "Audit data associated with the records")
