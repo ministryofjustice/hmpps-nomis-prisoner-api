@@ -15,7 +15,7 @@ class Caseload(
   var id: String,
   @Column(name = "DESCRIPTION", nullable = false)
   val description: String,
-) : NomisAuditableEntity() {
+) {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
