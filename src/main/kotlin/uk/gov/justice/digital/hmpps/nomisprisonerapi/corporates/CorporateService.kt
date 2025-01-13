@@ -3,8 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.corporates
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 
@@ -17,7 +17,7 @@ class CorporateService(private val corporateRepository: CorporateRepository) {
       CorporateOrganisation(
         id = it.id,
         name = it.corporateName,
-        caseload = it.caseload?.let { caseload -> CodeDescription(caseload.id, caseload.description) },
+        caseload = it.caseload.toCodeDescription(),
         comment = it.commentText,
         programmeNumber = it.feiNumber,
         vatNumber = it.taxNo,
