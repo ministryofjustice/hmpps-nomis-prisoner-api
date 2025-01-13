@@ -238,7 +238,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       val nomsIdMissingPayBand = "P1234PP"
 
       @Test
-      fun `should not include future course activities`() {
+      fun `should include future course activities`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$tomorrow")
@@ -249,46 +249,52 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocation = courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
-          offender {
+          offender(nomsId = nomsIdUnknownIncentive) {
             booking {
-              courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
+              courseAllocationUnknownIncentive = courseAllocation(courseActivity = courseActivityUnknownIncentive, startDate = "$today")
             }
           }
-          offender {
+          offender(nomsId = nomsIdSuspended) {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
+              courseAllocationSuspended = courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
             }
           }
-          offender {
+          offender(nomsId = nomsIdMissingPayBand) {
             booking {
               incentive(iepLevelCode = "BAS")
-              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocationMissingPayBand = courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
 
         webTestClient.getActiveAllocations()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
+          .jsonPath("content.size()").isEqualTo(4)
 
         webTestClient.getActiveActivities()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
+          .jsonPath("content.size()").isEqualTo(2)
+          .jsonPath("content[*].courseActivityId").value<List<Int>> {
+            assertThat(it).containsExactlyInAnyOrder(courseActivity.courseActivityId.toInt(), courseActivityUnknownIncentive.courseActivityId.toInt())
+          }
 
         webTestClient.getPayRatesWithUnknownIncentives()
           .expectBody()
-          .jsonPath("$.size()").isEqualTo(0)
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].courseActivityId").isEqualTo(courseActivityUnknownIncentive.courseActivityId)
 
         webTestClient.getSuspendedAllocations()
           .expectBody()
-          .jsonPath("$.size()").isEqualTo(0)
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdSuspended)
 
         webTestClient.getAllocationsWithMissingPayBands()
           .expectBody()
-          .jsonPath("$.size()").isEqualTo(0)
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].offenderNo").isEqualTo(nomsIdMissingPayBand)
       }
 
       @Test

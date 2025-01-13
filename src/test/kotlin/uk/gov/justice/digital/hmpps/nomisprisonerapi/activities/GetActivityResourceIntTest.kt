@@ -215,7 +215,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       private lateinit var courseActivity: CourseActivity
 
       @Test
-      fun `should not include future course activities`() {
+      fun `should include future course activities`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$tomorrow")
@@ -229,7 +229,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActiveActivities()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
       }
 
       @Test
