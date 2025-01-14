@@ -95,6 +95,9 @@ class CorporateAddressBuilder(
     comment: String?,
     startDate: LocalDate?,
     endDate: LocalDate?,
+    isServices: Boolean,
+    businessHours: String?,
+    contactPersonName: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
   ): CorporateAddress =
@@ -116,6 +119,9 @@ class CorporateAddressBuilder(
       comment = comment,
       startDate = startDate,
       endDate = endDate,
+      isServices = isServices,
+      businessHours = businessHours,
+      contactPersonName = contactPersonName,
     ).let { corporateAddressBuilderRepository.save(it) }
       .also {
         if (whenCreated != null) {

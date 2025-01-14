@@ -44,6 +44,9 @@ interface CorporateDsl {
     comment: String? = null,
     startDate: String? = null,
     endDate: String? = null,
+    isServices: Boolean = false,
+    businessHours: String? = null,
+    contactPersonName: String? = null,
     whenCreated: LocalDateTime? = null,
     whoCreated: String? = null,
     dsl: CorporateAddressDsl.() -> Unit = {},
@@ -163,6 +166,9 @@ class CorporateBuilder(
     comment: String?,
     startDate: String?,
     endDate: String?,
+    isServices: Boolean,
+    businessHours: String?,
+    contactPersonName: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: CorporateAddressDsl.() -> Unit,
@@ -188,6 +194,9 @@ class CorporateBuilder(
         endDate = endDate?.let { LocalDate.parse(it) },
         whoCreated = whoCreated,
         whenCreated = whenCreated,
+        isServices = isServices,
+        businessHours = businessHours,
+        contactPersonName = contactPersonName,
       )
         .also { corporate.addresses += it }
         .also { builder.apply(dsl) }

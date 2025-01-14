@@ -129,13 +129,20 @@ abstract class Address(
   @Column(name = "COMMENT_TEXT")
   open var comment: String? = null,
 
+  @Column(name = "SERVICES_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  open var isServices: Boolean = false,
+
+  @Column(name = "BUSINESS_HOUR")
+  open var businessHours: String? = null,
+
+  @Column(name = "CONTACT_PERSON_NAME")
+  open var contactPersonName: String? = null,
+
   /* Not mapped
   CAPACITY - always null
-  SERVICES_FLAG - always for N for personal addresses - may need mapping for corporate address
   SPECIAL_NEEDS_CODE - always null
-  BUSINESS_HOUR - always null for personal addresses - may need mapping for corporate address
   CITY_NAME - always null
-  ADDRESS_USAGE - not used for personal addresses
    */
 ) : NomisAuditableEntity() {
   @Id
