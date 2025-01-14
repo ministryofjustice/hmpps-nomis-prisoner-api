@@ -81,7 +81,26 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
 data class CorePerson(
   @Schema(description = "The prison number")
   val prisonNumber: String,
-  @Schema(description = "The offender id. This will change if a different alias is made current")
+  @Schema(description = "In/Out Status", example = "IN, OUT, TRN")
+  val inOutStatus: String?,
+  @Schema(description = "Indicates that the person is currently in prison")
+  val activeFlag: Boolean,
+  @Schema(description = "List of offender records for the person.")
+  val offenders: List<Offender>,
+  @Schema(description = "List of identifiers for the person.")
+  val identifiers: List<Identifier>,
+  @Schema(description = "List of addresses for the person")
+  val addresses: List<OffenderAddress>,
+  @Schema(description = "List of phone numbers for the person")
+  val phoneNumbers: List<OffenderPhoneNumber>,
+  @Schema(description = "List of email addresses for the person")
+  val emailAddresses: List<OffenderEmailAddress>,
+)
+
+@Schema(description = "The data held in NOMIS for an offender.")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Offender(
+  @Schema(description = "The offender id")
   val offenderId: Long,
   @Schema(description = "Title of the person")
   val title: CodeDescription?,
@@ -103,43 +122,8 @@ data class CorePerson(
   val ethnicity: CodeDescription?,
   @Schema(description = "Sex of the person")
   val sex: CodeDescription?,
-  @Schema(description = "In/Out Status", example = "IN, OUT, TRN")
-  val inOutStatus: String?,
-  @Schema(description = "Indicates that the person is currently in prison")
-  val activeFlag: Boolean,
-  @Schema(description = "List of aliases for the person. These are the other offender records.")
-  val aliases: List<Alias>,
-  @Schema(description = "List of identifiers for the person.")
-  val identifiers: List<Identifier>,
-  @Schema(description = "List of addresses for the person")
-  val addresses: List<OffenderAddress>,
-  @Schema(description = "List of phone numbers for the person")
-  val phoneNumbers: List<OffenderPhoneNumber>,
-  @Schema(description = "List of email addresses for the person")
-  val emailAddresses: List<OffenderEmailAddress>,
-)
-
-@Schema(description = "The data held in NOMIS for an offender alias")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class Alias(
-  @Schema(description = "The offender id")
-  val offenderId: Long,
-  @Schema(description = "Title of the person")
-  val title: CodeDescription?,
-  @Schema(description = "First name of the person")
-  val firstName: String,
-  @Schema(description = "Middle name of the person")
-  val middleName1: String?,
-  @Schema(description = "Second middle name of the person")
-  val middleName2: String?,
-  @Schema(description = "Surname name of the person")
-  val lastName: String,
-  @Schema(description = "Date of birth of the person")
-  val dateOfBirth: LocalDate?,
-  @Schema(description = "Race of the person")
-  val ethnicity: CodeDescription?,
-  @Schema(description = "Sex of the person")
-  val sex: CodeDescription?,
+  @Schema(description = "The offender record associated with the current booking")
+  val workingName: Boolean,
 )
 
 @Schema(description = "The data held in NOMIS for an offender's identifiers")

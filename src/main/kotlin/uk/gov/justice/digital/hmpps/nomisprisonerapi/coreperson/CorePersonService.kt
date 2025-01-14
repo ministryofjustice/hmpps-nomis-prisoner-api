@@ -14,27 +14,15 @@ class CorePersonService(
   fun getOffender(prisonNumber: String): CorePerson {
     val allOffenders = offenderRepository.findByNomsIdOrderedWithBookings(prisonNumber)
     val currentAlias = allOffenders.firstOrNull() ?: throw NotFoundException("Offender not found $prisonNumber")
-    val aliases = allOffenders.drop(1)
     val latestBooking = currentAlias.getAllBookings()?.firstOrNull { it.bookingSequence == 1 }
 
     return currentAlias.let { o ->
       CorePerson(
         prisonNumber = o.nomsId,
-        offenderId = o.id,
-        title = o.title?.toCodeDescription(),
-        firstName = o.firstName,
-        middleName1 = o.middleName,
-        middleName2 = o.middleName2,
-        lastName = o.lastName,
-        dateOfBirth = o.birthDate,
-        birthPlace = o.birthPlace,
-        birthCountry = o.birthCountry?.toCodeDescription(),
-        ethnicity = o.ethnicity?.toCodeDescription(),
-        sex = o.gender.toCodeDescription(),
         inOutStatus = latestBooking?.inOutStatus ?: "OUT",
         activeFlag = latestBooking?.active ?: false,
-        aliases = aliases.map { a ->
-          Alias(
+        offenders = allOffenders.mapIndexed { i, a ->
+          Offender(
             offenderId = a.id,
             title = a.title?.toCodeDescription(),
             firstName = a.firstName,
@@ -42,8 +30,11 @@ class CorePersonService(
             middleName2 = a.middleName2,
             lastName = a.lastName,
             dateOfBirth = a.birthDate,
+            birthPlace = a.birthPlace,
+            birthCountry = a.birthCountry?.toCodeDescription(),
             ethnicity = a.ethnicity?.toCodeDescription(),
             sex = a.gender.toCodeDescription(),
+            workingName = i == 0,
           )
         },
         // TODO: return identifiers from all offender records rather than just the current alias
