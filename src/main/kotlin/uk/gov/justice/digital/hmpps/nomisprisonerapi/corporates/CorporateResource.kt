@@ -98,6 +98,17 @@ data class CorporateOrganisation(
   val active: Boolean = true,
   @Schema(description = "Date made inactive")
   val expiryDate: LocalDate? = null,
+  @Schema(description = "List of types this organisation is associated with, for instance ACCOM - Accommodation Provider")
+  val types: List<CorporateOrganisationType> = listOf(),
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
+)
+
+@Schema(description = "The data held in NOMIS about a corporate entity")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorporateOrganisationType(
+  @Schema(description = "The type of corporate, for instance ACCOM - Accommodation Provider ")
+  val type: CodeDescription,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )

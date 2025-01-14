@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import java.time.LocalDate
@@ -14,13 +15,20 @@ import java.time.LocalDateTime
 annotation class CorporateDslMarker
 
 @NomisDataDslMarker
-interface CorporateDsl
+interface CorporateDsl {
+  @CorporateTypeDslMarker
+  fun type(
+    typeCode: String = "YOTWORKER",
+    dsl: CorporateTypeDsl.() -> Unit = { },
+  ): CorporateType
+}
 
 @Component
 class CorporateBuilderFactory(
   private val repository: CorporateBuilderRepository,
+  private val corporateTypeBuilderFactory: CorporateTypeBuilderFactory,
 ) {
-  fun builder(): CorporateBuilder = CorporateBuilder(repository)
+  fun builder(): CorporateBuilder = CorporateBuilder(repository, corporateTypeBuilderFactory)
 }
 
 @Component
@@ -41,6 +49,7 @@ class CorporateBuilderRepository(
 
 class CorporateBuilder(
   private val repository: CorporateBuilderRepository,
+  private val corporateTypeBuilderFactory: CorporateTypeBuilderFactory,
 ) : CorporateDsl {
   private lateinit var corporate: Corporate
 
@@ -75,4 +84,13 @@ class CorporateBuilder(
       }
     }
     .also { corporate = it }
+
+  override fun type(typeCode: String, dsl: CorporateTypeDsl.() -> Unit): CorporateType = corporateTypeBuilderFactory.builder().let { builder ->
+    builder.build(
+      corporate = corporate,
+      typeCode = typeCode,
+    )
+      .also { corporate.types += it }
+      .also { builder.apply(dsl) }
+  }
 }
