@@ -238,6 +238,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Identifiers {
       private lateinit var offender: Offender
+      private lateinit var alias: Offender
 
       @BeforeEach
       fun setUp() {
@@ -259,6 +260,9 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               verified = true,
             )
             identifier(type = "STAFF", identifier = "123")
+            alias = alias {
+              identifier(type = "STAFF", identifier = "456")
+            }
           }
         }
       }
@@ -270,9 +274,10 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("identifiers.length()").isEqualTo(2)
+          .jsonPath("identifiers.length()").isEqualTo(3)
           .jsonPath("identifiers[0].sequence").isEqualTo(1)
           .jsonPath("identifiers[0].offenderId").isEqualTo(offender.id)
+          .jsonPath("identifiers[0].identifier").isEqualTo("20/0071818T")
           .jsonPath("identifiers[0].type.code").isEqualTo("PNC")
           .jsonPath("identifiers[0].type.description").isEqualTo("PNC Number")
           .jsonPath("identifiers[0].issuedAuthority").isEqualTo("Met Police")
@@ -280,11 +285,20 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("identifiers[0].verified").isEqualTo(true)
           .jsonPath("identifiers[1].sequence").isEqualTo(2)
           .jsonPath("identifiers[1].offenderId").isEqualTo(offender.id)
+          .jsonPath("identifiers[1].identifier").isEqualTo("123")
           .jsonPath("identifiers[1].type.code").isEqualTo("STAFF")
           .jsonPath("identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
           .jsonPath("identifiers[1].issuedAuthority").doesNotExist()
           .jsonPath("identifiers[1].issuedDate").doesNotExist()
           .jsonPath("identifiers[1].verified").isEqualTo(false)
+          .jsonPath("identifiers[2].sequence").isEqualTo(1)
+          .jsonPath("identifiers[2].offenderId").isEqualTo(alias.id)
+          .jsonPath("identifiers[2].identifier").isEqualTo("456")
+          .jsonPath("identifiers[2].type.code").isEqualTo("STAFF")
+          .jsonPath("identifiers[2].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("identifiers[2].issuedAuthority").doesNotExist()
+          .jsonPath("identifiers[2].issuedDate").doesNotExist()
+          .jsonPath("identifiers[2].verified").isEqualTo(false)
       }
 
       @Test
