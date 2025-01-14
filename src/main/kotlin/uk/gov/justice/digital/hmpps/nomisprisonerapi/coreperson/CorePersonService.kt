@@ -37,17 +37,18 @@ class CorePersonService(
             workingName = i == 0,
           )
         },
-        // TODO: return identifiers from all offender records rather than just the current alias
-        identifiers = o.identifiers.map { i ->
-          Identifier(
-            sequence = i.id.sequence,
-            offenderId = i.id.offender.id,
-            type = i.identifierType.toCodeDescription(),
-            identifier = i.identifier,
-            issuedAuthority = i.issuedAuthority,
-            issuedDate = i.issuedDate,
-            verified = i.verified ?: false,
-          )
+        identifiers = allOffenders.flatMap {
+          it.identifiers.map { i ->
+            Identifier(
+              sequence = i.id.sequence,
+              offenderId = i.id.offender.id,
+              type = i.identifierType.toCodeDescription(),
+              identifier = i.identifier,
+              issuedAuthority = i.issuedAuthority,
+              issuedDate = i.issuedDate,
+              verified = i.verified ?: false,
+            )
+          }
         },
         addresses = o.addresses.map { address ->
           OffenderAddress(
