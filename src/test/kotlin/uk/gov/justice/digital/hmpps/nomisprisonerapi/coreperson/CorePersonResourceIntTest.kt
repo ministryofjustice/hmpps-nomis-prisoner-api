@@ -50,11 +50,13 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           lastName = "NARK",
           birthDate = LocalDate.parse("1999-12-22"),
           birthPlace = "LONDON",
+          birthCountryCode = "ATA",
           ethnicityCode = "M3",
           genderCode = "F",
           whoCreated = "KOFEADDY",
           whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
+          booking { }
         }
       }
     }
@@ -120,12 +122,17 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("lastName").isEqualTo("BOG")
           .jsonPath("dateOfBirth").doesNotExist()
           .jsonPath("birthPlace").doesNotExist()
+          .jsonPath("birthCountry").doesNotExist()
           .jsonPath("ethnicity").doesNotExist()
           .jsonPath("sex.code").isEqualTo("M")
           .jsonPath("sex.description").isEqualTo("Male")
+          .jsonPath("inOutStatus").isEqualTo("OUT")
+          .jsonPath("activeFlag").isEqualTo("false")
           .jsonPath("aliases").doesNotExist()
-          .jsonPath("audit.createUsername").isNotEmpty
-          .jsonPath("audit.createDatetime").isNotEmpty
+          .jsonPath("emailAddresses").doesNotExist()
+          .jsonPath("phoneNumbers").doesNotExist()
+          .jsonPath("identifiers").doesNotExist()
+          .jsonPath("addresses").doesNotExist()
       }
 
       @Test
@@ -146,13 +153,14 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("lastName").isEqualTo("NARK")
           .jsonPath("dateOfBirth").isEqualTo("1999-12-22")
           .jsonPath("birthPlace").isEqualTo("LONDON")
+          .jsonPath("birthCountry.code").isEqualTo("ATA")
+          .jsonPath("birthCountry.description").isEqualTo("Antarctica")
           .jsonPath("ethnicity.code").isEqualTo("M3")
           .jsonPath("ethnicity.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("sex.code").isEqualTo("F")
           .jsonPath("sex.description").isEqualTo("Female")
-          .jsonPath("audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("audit.createDisplayName").isEqualTo("KOFE ADDY")
-          .jsonPath("audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("inOutStatus").isEqualTo("IN")
+          .jsonPath("activeFlag").isEqualTo("true")
       }
     }
 
@@ -221,9 +229,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("aliases[0].ethnicity.description").isEqualTo("Mixed: White and Black Caribbean")
           .jsonPath("aliases[0].sex.code").isEqualTo("M")
           .jsonPath("aliases[0].sex.description").isEqualTo("Male")
-          .jsonPath("aliases[0].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("aliases[0].audit.createDisplayName").isEqualTo("KOFE ADDY")
-          .jsonPath("aliases[0].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
     }
 

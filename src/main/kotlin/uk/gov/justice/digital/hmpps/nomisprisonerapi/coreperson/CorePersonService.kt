@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 
 @Transactional
@@ -16,6 +15,7 @@ class CorePersonService(
     val allOffenders = offenderRepository.findByNomsIdOrderedWithBookings(prisonNumber)
     val currentAlias = allOffenders.firstOrNull() ?: throw NotFoundException("Offender not found $prisonNumber")
     val aliases = allOffenders.drop(1)
+    val latestBooking = currentAlias.getAllBookings()?.firstOrNull { it.bookingSequence == 1 }
 
     return currentAlias.let { o ->
       CorePerson(
@@ -28,8 +28,11 @@ class CorePersonService(
         lastName = o.lastName,
         dateOfBirth = o.birthDate,
         birthPlace = o.birthPlace,
+        birthCountry = o.birthCountry?.toCodeDescription(),
         ethnicity = o.ethnicity?.toCodeDescription(),
         sex = o.gender.toCodeDescription(),
+        inOutStatus = latestBooking?.inOutStatus ?: "OUT",
+        activeFlag = latestBooking?.active ?: false,
         aliases = aliases.map { a ->
           Alias(
             offenderId = a.id,
@@ -41,7 +44,6 @@ class CorePersonService(
             dateOfBirth = a.birthDate,
             ethnicity = a.ethnicity?.toCodeDescription(),
             sex = a.gender.toCodeDescription(),
-            audit = a.toAudit(),
           )
         },
         // TODO: return identifiers from all offender records rather than just the current alias
@@ -99,7 +101,6 @@ class CorePersonService(
             email = address.internetAddress,
           )
         },
-        audit = o.toAudit(),
       )
     }
   }

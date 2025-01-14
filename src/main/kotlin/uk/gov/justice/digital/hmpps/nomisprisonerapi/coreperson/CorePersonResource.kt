@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
 
 @RestController
@@ -98,10 +97,16 @@ data class CorePerson(
   val dateOfBirth: LocalDate?,
   @Schema(description = "Birth place of the person")
   val birthPlace: String?,
+  @Schema(description = "Birth country of the person")
+  val birthCountry: CodeDescription?,
   @Schema(description = "Race of the person")
   val ethnicity: CodeDescription?,
   @Schema(description = "Sex of the person")
   val sex: CodeDescription?,
+  @Schema(description = "In/Out Status", example = "IN, OUT, TRN")
+  val inOutStatus: String?,
+  @Schema(description = "Indicates that the person is currently in prison")
+  val activeFlag: Boolean,
   @Schema(description = "List of aliases for the person. These are the other offender records.")
   val aliases: List<Alias>,
   @Schema(description = "List of identifiers for the person.")
@@ -112,8 +117,6 @@ data class CorePerson(
   val phoneNumbers: List<OffenderPhoneNumber>,
   @Schema(description = "List of email addresses for the person")
   val emailAddresses: List<OffenderEmailAddress>,
-  @Schema(description = "Audit data associated with the records")
-  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS for an offender alias")
@@ -137,8 +140,6 @@ data class Alias(
   val ethnicity: CodeDescription?,
   @Schema(description = "Sex of the person")
   val sex: CodeDescription?,
-  @Schema(description = "Audit data associated with the records")
-  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS for an offender's identifiers")
