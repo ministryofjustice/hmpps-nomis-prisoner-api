@@ -51,6 +51,7 @@ class CorePersonService(
             )
           }
         },
+        sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList() ?: emptyList(),
         nationalities = allBookings?.flatMap { b ->
           b.profileDetails.filter { pd -> pd.id.profileType.type == "NAT" }.map { n ->
             OffenderNationality(
