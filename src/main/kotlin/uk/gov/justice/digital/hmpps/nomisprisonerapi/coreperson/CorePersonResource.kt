@@ -101,6 +101,12 @@ data class CorePerson(
   val nationalities: List<OffenderNationality>,
   @Schema(description = "List of nationality details for the person")
   val nationalityDetails: List<OffenderNationalityDetails>,
+  @Schema(description = "List of sexual orientations for the person")
+  val sexualOrientations: List<OffenderSexualOrientation>,
+  @Schema(description = "List of disabilities for the person")
+  val disabilities: List<OffenderDisability>,
+  @Schema(description = "List of disabilities for the person")
+  val interestsToImmigration: List<OffenderInterestToImmigration>,
 )
 
 @Schema(description = "The data held in NOMIS for an offender.")
@@ -230,4 +236,31 @@ data class OffenderNationalityDetails(
   val bookingId: Long,
   @Schema(description = "Details on the nationality")
   val details: String?,
+)
+
+@Schema(description = "Sexual orientation details held against a booking")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderSexualOrientation(
+  @Schema(description = "The booking's unique identifier", example = "1234567")
+  val bookingId: Long,
+  @Schema(description = "The value of the profile info")
+  val sexualOrientation: CodeDescription?,
+)
+
+@Schema(description = "Disability details held against a booking")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderDisability(
+  @Schema(description = "The booking's unique identifier", example = "1234567")
+  val bookingId: Long,
+  @Schema(description = "The value of the profile info")
+  val disability: Boolean?,
+)
+
+@Schema(description = "Interest to immigration details held against a booking")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderInterestToImmigration(
+  @Schema(description = "The booking's unique identifier", example = "1234567")
+  val bookingId: Long,
+  @Schema(description = "The value of the profile info")
+  val interestToImmigration: Boolean?,
 )

@@ -68,6 +68,30 @@ class CorePersonService(
             )
           }
         } ?: emptyList(),
+        sexualOrientations = allBookings?.flatMap { b ->
+          b.profileDetails.filter { pd -> pd.id.profileType.type == "SEXO" }.map { n ->
+            OffenderSexualOrientation(
+              bookingId = b.bookingId,
+              sexualOrientation = n.profileCode?.toCodeDescription(),
+            )
+          }
+        } ?: emptyList(),
+        disabilities = allBookings?.flatMap { b ->
+          b.profileDetails.filter { pd -> pd.id.profileType.type == "DISABILITY" }.map { n ->
+            OffenderDisability(
+              bookingId = b.bookingId,
+              disability = n.profileCodeId?.equals("Y"),
+            )
+          }
+        } ?: emptyList(),
+        interestsToImmigration = allBookings?.flatMap { b ->
+          b.profileDetails.filter { pd -> pd.id.profileType.type == "IMM" }.map { n ->
+            OffenderInterestToImmigration(
+              bookingId = b.bookingId,
+              interestToImmigration = n.profileCodeId?.equals("Y"),
+            )
+          }
+        } ?: emptyList(),
         addresses = o.addresses.map { address ->
           OffenderAddress(
             addressId = address.addressId,
