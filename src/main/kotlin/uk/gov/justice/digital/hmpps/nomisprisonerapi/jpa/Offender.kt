@@ -136,7 +136,7 @@ data class Offender(
 
   @Column(name = "LAST_NAME_ALPHA_KEY")
   val lastNameAlphaKey: String? = null,
-) : NomisAuditableEntity() {
+) {
 
   fun getAllBookings(): MutableList<OffenderBooking>? = rootOffender?.allBookings
 
