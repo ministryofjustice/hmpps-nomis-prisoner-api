@@ -386,6 +386,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[0].comment").doesNotExist()
           .jsonPath("addresses[0].startDate").doesNotExist()
           .jsonPath("addresses[0].endDate").doesNotExist()
+          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
           .jsonPath("addresses[1].addressId").isEqualTo(offender.addresses[1].addressId)
           .jsonPath("addresses[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
