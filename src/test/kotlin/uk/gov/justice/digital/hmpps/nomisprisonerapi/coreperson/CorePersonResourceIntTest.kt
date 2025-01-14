@@ -532,7 +532,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             }
             alias {
               aliasBooking = booking {
-                profileDetail(profileType = "NAT", profileCode = "LA")
+                profileDetail(profileType = "NAT", profileCode = null)
               }
             }
           }
@@ -547,7 +547,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .consumeWith(System.out::println)
           .jsonPath("nationalities[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("nationalities[0].nationality.code").isEqualTo("MG")
           .jsonPath("nationalities[0].nationality.description").isEqualTo("Malagasy")
@@ -555,8 +554,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("nationalities[1].nationality.code").isEqualTo("BRIT")
           .jsonPath("nationalities[1].nationality.description").isEqualTo("British")
           .jsonPath("nationalities[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("nationalities[2].nationality.code").isEqualTo("LA")
-          .jsonPath("nationalities[2].nationality.description").isEqualTo("Laotian")
+          .jsonPath("nationalities[2].nationality").doesNotExist()
       }
     }
 
@@ -597,13 +595,152 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .consumeWith(System.out::println)
           .jsonPath("nationalityDetails[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("nationalityDetails[0].details").isEqualTo("Claims to be from Madagascar")
           .jsonPath("nationalityDetails[1].bookingId").isEqualTo(booking2.bookingId)
           .jsonPath("nationalityDetails[1].details").isEqualTo("ROTL 23/01/2023")
           .jsonPath("nationalityDetails[2].bookingId").isEqualTo(aliasBooking.bookingId)
           .jsonPath("nationalityDetails[2].details").doesNotExist()
+      }
+    }
+
+    @Nested
+    inner class OffenderSexualOrientations {
+      private lateinit var offender: Offender
+      private lateinit var booking1: OffenderBooking
+      private lateinit var booking2: OffenderBooking
+      private lateinit var aliasBooking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking1 = booking {
+              profileDetail(profileType = "SEXO", profileCode = "HET")
+            }
+            booking2 = booking(active = false) {
+              profileDetail(profileType = "SEXO", profileCode = "ND")
+            }
+            alias {
+              aliasBooking = booking {
+                profileDetail(profileType = "SEXO", profileCode = null)
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return sexual orientations`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("sexualOrientations[0].bookingId").isEqualTo(booking1.bookingId)
+          .jsonPath("sexualOrientations[0].sexualOrientation.code").isEqualTo("HET")
+          .jsonPath("sexualOrientations[0].sexualOrientation.description").isEqualTo("Heterosexual / Straight")
+          .jsonPath("sexualOrientations[1].bookingId").isEqualTo(booking2.bookingId)
+          .jsonPath("sexualOrientations[1].sexualOrientation.code").isEqualTo("ND")
+          .jsonPath("sexualOrientations[1].sexualOrientation.description").isEqualTo("Not Disclosed")
+          .jsonPath("sexualOrientations[2].bookingId").isEqualTo(aliasBooking.bookingId)
+          .jsonPath("sexualOrientations[2].sexualOrientation").doesNotExist()
+      }
+    }
+
+    @Nested
+    inner class OffenderDisabilities {
+      private lateinit var offender: Offender
+      private lateinit var booking1: OffenderBooking
+      private lateinit var booking2: OffenderBooking
+      private lateinit var aliasBooking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking1 = booking {
+              profileDetail(profileType = "DISABILITY", profileCode = "Y")
+            }
+            booking2 = booking(active = false) {
+              profileDetail(profileType = "DISABILITY", profileCode = "N")
+            }
+            alias {
+              aliasBooking = booking {
+                profileDetail(profileType = "DISABILITY", profileCode = null)
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return disabilities`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("disabilities[0].bookingId").isEqualTo(booking1.bookingId)
+          .jsonPath("disabilities[0].disability").isEqualTo(true)
+          .jsonPath("disabilities[1].bookingId").isEqualTo(booking2.bookingId)
+          .jsonPath("disabilities[1].disability").isEqualTo(false)
+          .jsonPath("disabilities[2].bookingId").isEqualTo(aliasBooking.bookingId)
+          .jsonPath("disabilities[2].disability").doesNotExist()
+      }
+    }
+
+    @Nested
+    inner class OffenderInterestsToImmigration {
+      private lateinit var offender: Offender
+      private lateinit var booking1: OffenderBooking
+      private lateinit var booking2: OffenderBooking
+      private lateinit var aliasBooking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking1 = booking {
+              profileDetail(profileType = "IMM", profileCode = "Y")
+            }
+            booking2 = booking(active = false) {
+              profileDetail(profileType = "IMM", profileCode = "N")
+            }
+            alias {
+              aliasBooking = booking {
+                profileDetail(profileType = "IMM", profileCode = null)
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return interests to immigration`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("interestsToImmigration[0].bookingId").isEqualTo(booking1.bookingId)
+          .jsonPath("interestsToImmigration[0].interestToImmigration").isEqualTo(true)
+          .jsonPath("interestsToImmigration[1].bookingId").isEqualTo(booking2.bookingId)
+          .jsonPath("interestsToImmigration[1].interestToImmigration").isEqualTo(false)
+          .jsonPath("interestsToImmigration[2].bookingId").isEqualTo(aliasBooking.bookingId)
+          .jsonPath("interestsToImmigration[2].interestToImmigration").doesNotExist()
       }
     }
 
@@ -645,7 +782,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .consumeWith(System.out::println)
           .jsonPath("sentenceStartDates.length()").isEqualTo(3)
           .jsonPath("sentenceStartDates[0]").isEqualTo("2020-01-01")
           .jsonPath("sentenceStartDates[1]").isEqualTo("2020-01-02")
