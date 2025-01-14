@@ -14,7 +14,8 @@ class CorePersonService(
   fun getOffender(prisonNumber: String): CorePerson {
     val allOffenders = offenderRepository.findByNomsIdOrderedWithBookings(prisonNumber)
     val currentAlias = allOffenders.firstOrNull() ?: throw NotFoundException("Offender not found $prisonNumber")
-    val latestBooking = currentAlias.getAllBookings()?.firstOrNull { it.bookingSequence == 1 }
+    val allBookings = currentAlias.getAllBookings()
+    val latestBooking = allBookings?.firstOrNull { it.bookingSequence == 1 }
 
     return currentAlias.let { o ->
       CorePerson(
@@ -37,8 +38,8 @@ class CorePersonService(
             workingName = i == 0,
           )
         },
-        identifiers = allOffenders.flatMap {
-          it.identifiers.map { i ->
+        identifiers = allOffenders.flatMap { ao ->
+          ao.identifiers.map { i ->
             Identifier(
               sequence = i.id.sequence,
               offenderId = i.id.offender.id,
@@ -50,6 +51,14 @@ class CorePersonService(
             )
           }
         },
+        nationalities = allBookings?.flatMap { b ->
+          b.profileDetails.filter { pd -> pd.id.profileType.type == "NAT" }.map { n ->
+            OffenderNationality(
+              bookingId = b.bookingId,
+              nationality = n.profileCode?.toCodeDescription(),
+            )
+          }
+        } ?: emptyList(),
         addresses = o.addresses.map { address ->
           OffenderAddress(
             addressId = address.addressId,

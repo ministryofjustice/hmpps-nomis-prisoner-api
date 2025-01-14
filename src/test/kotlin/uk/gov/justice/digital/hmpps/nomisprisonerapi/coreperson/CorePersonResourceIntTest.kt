@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -300,11 +301,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("identifiers[2].issuedDate").doesNotExist()
           .jsonPath("identifiers[2].verified").isEqualTo(false)
       }
-
-      @Test
-      fun `will return identifiers from all offender records rather than just the current alias`() {
-        // TODO: write this test
-      }
     }
 
     @Nested
@@ -508,6 +504,56 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
           .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(offender.internetAddresses[1].internetAddressId)
           .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
+      }
+    }
+
+    @Nested
+    inner class OffenderNationalities {
+      private lateinit var offender: Offender
+      private lateinit var booking1: OffenderBooking
+      private lateinit var booking2: OffenderBooking
+      private lateinit var aliasBooking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking1 = booking {
+              profileDetail(profileType = "NAT", profileCode = "MG")
+            }
+            booking2 = booking(active = false) {
+              profileDetail(profileType = "NAT", profileCode = "BRIT")
+            }
+            alias {
+              aliasBooking = booking {
+                profileDetail(profileType = "NAT", profileCode = "LA")
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return nationalities`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .consumeWith(System.out::println)
+          .jsonPath("nationalities[0].bookingId").isEqualTo(booking1.bookingId)
+          .jsonPath("nationalities[0].nationality.code").isEqualTo("MG")
+          .jsonPath("nationalities[0].nationality.description").isEqualTo("Malagasy")
+          .jsonPath("nationalities[1].bookingId").isEqualTo(booking2.bookingId)
+          .jsonPath("nationalities[1].nationality.code").isEqualTo("BRIT")
+          .jsonPath("nationalities[1].nationality.description").isEqualTo("British")
+          .jsonPath("nationalities[2].bookingId").isEqualTo(aliasBooking.bookingId)
+          .jsonPath("nationalities[2].nationality.code").isEqualTo("LA")
+          .jsonPath("nationalities[2].nationality.description").isEqualTo("Laotian")
       }
     }
   }

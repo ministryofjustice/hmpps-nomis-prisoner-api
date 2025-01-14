@@ -6,3 +6,4 @@ fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.toCodeDescri
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation.toCodeDescription() = CodeDescription(id, description)
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode.toCodeDescription() = CodeDescription(code, description)
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload?.toCodeDescription() = this?.let { CodeDescription(id, description) }
+fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileCode.toCodeDescription() = CodeDescription(id.code, description)
