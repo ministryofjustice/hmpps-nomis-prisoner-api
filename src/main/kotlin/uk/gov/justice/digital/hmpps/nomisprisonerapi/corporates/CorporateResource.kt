@@ -134,7 +134,7 @@ data class CorporatePhoneNumber(
   val audit: NomisAudit,
 )
 
-@Schema(description = "The data held in NOMIS about a address number")
+@Schema(description = "The data held in NOMIS about an address")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CorporateAddress(
   @Schema(description = "Unique NOMIS Id of number")
@@ -177,12 +177,12 @@ data class CorporateAddress(
   val audit: NomisAudit,
 )
 
-@Schema(description = "The data held in NOMIS about a internetAddress address")
+@Schema(description = "The data held in NOMIS about a internet address")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CorporateInternetAddress(
-  @Schema(description = "Unique NOMIS Id of internetAddress address")
+  @Schema(description = "Unique NOMIS Id of internet address")
   val id: Long,
-  @Schema(description = "The internetAddress address", example = "john.smith@internet.co.uk")
+  @Schema(description = "The internet address", example = "john.smith@internet.co.uk")
   val internetAddress: String,
   @Schema(description = "Type of address", examples = ["WEB", "EMAIL"])
   val type: String,
