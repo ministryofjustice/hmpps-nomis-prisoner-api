@@ -66,6 +66,9 @@ class CorporateService(private val corporateRepository: CorporateRepository) {
             comment = address.comment,
             startDate = address.startDate,
             endDate = address.endDate,
+            isServices = address.isServices,
+            businessHours = address.businessHours,
+            contactPersonName = address.contactPersonName,
             audit = address.toAudit(),
             phoneNumbers = address.phones.map { number ->
               CorporatePhoneNumber(
