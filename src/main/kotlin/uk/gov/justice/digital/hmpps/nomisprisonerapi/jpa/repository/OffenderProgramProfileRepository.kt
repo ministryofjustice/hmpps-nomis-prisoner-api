@@ -51,7 +51,6 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ob.location.id = :prisonId
        and ca.prison.id = :prisonId
        and ca.active = true
-       and ca.scheduleStartDate <= current_date
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
        and ca.program.programCode not in :excludeProgramCodes
        and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
@@ -79,7 +78,6 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ob.location.id = :prisonId
        and ca.prison.id = :prisonId
        and ca.active = true
-       and ca.scheduleStartDate <= current_date
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
        and ca.program.programCode not in :excludeProgramCodes
        and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
@@ -110,7 +108,6 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ob.location.id = :prisonId
        and ca.prison.id = :prisonId
        and ca.active = true
-       and ca.scheduleStartDate <= current_date
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
        and ca.program.programCode not in :excludeProgramCodes
        and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)

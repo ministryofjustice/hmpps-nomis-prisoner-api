@@ -18,7 +18,6 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     join CourseScheduleRule csr on ca = csr.courseActivity
     where ca.prison.id = :prisonId
     and ca.active = true
-    and ca.scheduleStartDate <= current_date 
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
     and ca.program.programCode not in :excludeProgramCodes
     and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
@@ -52,7 +51,6 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       and pil.active = true and (pil.expiryDate is null or pil.expiryDate > current_date)
     where ca.prison.id = :prisonId
     and ca.active = true
-    and ca.scheduleStartDate <= current_date 
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
     and ca.program.programCode not in :excludeProgramCodes
     and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
@@ -83,7 +81,6 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     left join CourseScheduleRule csr on ca = csr.courseActivity
     where ca.prison.id = :prisonId
     and ca.active = true
-    and ca.scheduleStartDate <= current_date 
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
     and ca.program.programCode not in :excludeProgramCodes
     and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
