@@ -95,6 +95,8 @@ data class CorePerson(
   val phoneNumbers: List<OffenderPhoneNumber>,
   @Schema(description = "List of email addresses for the person")
   val emailAddresses: List<OffenderEmailAddress>,
+  @Schema(description = "List of nationalities for the person")
+  val nationalities: List<OffenderNationality>,
 )
 
 @Schema(description = "The data held in NOMIS for an offender.")
@@ -206,4 +208,13 @@ data class OffenderEmailAddress(
   val emailAddressId: Long,
   @Schema(description = "The email address", example = "john.smith@internet.co.uk")
   val email: String,
+)
+
+@Schema(description = "Profile details held against a booking")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderNationality(
+  @Schema(description = "The booking's unique identifier", example = "1234567")
+  val bookingId: Long,
+  @Schema(description = "The value of the profile info")
+  val nationality: CodeDescription?,
 )
