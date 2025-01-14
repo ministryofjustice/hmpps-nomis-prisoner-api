@@ -100,6 +100,12 @@ data class CorporateOrganisation(
   val expiryDate: LocalDate? = null,
   @Schema(description = "List of types this organisation is associated with, for instance ACCOM - Accommodation Provider")
   val types: List<CorporateOrganisationType> = listOf(),
+  @Schema(description = "List of phone numbers for the corporate")
+  val phoneNumbers: List<CorporatePhoneNumber>,
+  @Schema(description = "List of addresses for the corporate")
+  val addresses: List<CorporateAddress>,
+  @Schema(description = "List of internet addresses for the corporate")
+  val internetAddresses: List<CorporateInternetAddress>,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -109,6 +115,77 @@ data class CorporateOrganisation(
 data class CorporateOrganisationType(
   @Schema(description = "The type of corporate, for instance ACCOM - Accommodation Provider ")
   val type: CodeDescription,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
+)
+
+@Schema(description = "The data held in NOMIS about a phone number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorporatePhoneNumber(
+  @Schema(description = "Unique NOMIS Id of number")
+  val id: Long,
+  @Schema(description = "The number")
+  val number: String,
+  @Schema(description = "Extension")
+  val extension: String?,
+  @Schema(description = "Phone type")
+  val type: CodeDescription,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
+)
+
+@Schema(description = "The data held in NOMIS about a address number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorporateAddress(
+  @Schema(description = "Unique NOMIS Id of number")
+  val id: Long,
+  @Schema(description = "Address type")
+  val type: CodeDescription?,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String?,
+  @Schema(description = "Premise", example = "22")
+  val premise: String?,
+  @Schema(description = "Street", example = "West Street")
+  val street: String?,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String?,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String?,
+  @Schema(description = "City")
+  val city: CodeDescription?,
+  @Schema(description = "County")
+  val county: CodeDescription?,
+  @Schema(description = "Country")
+  val country: CodeDescription?,
+  @Schema(description = "List of phone numbers for the address")
+  val phoneNumbers: List<CorporatePhoneNumber>,
+  @Schema(description = "true if address validated by Post Office Address file??")
+  val validatedPAF: Boolean,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean?,
+  @Schema(description = "true if this is the corporate's primary address")
+  val primaryAddress: Boolean,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean,
+  @Schema(description = "Free format comment about the address")
+  val comment: String?,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate?,
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate?,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
+)
+
+@Schema(description = "The data held in NOMIS about a internetAddress address")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorporateInternetAddress(
+  @Schema(description = "Unique NOMIS Id of internetAddress address")
+  val id: Long,
+  @Schema(description = "The internetAddress address", example = "john.smith@internet.co.uk")
+  val internetAddress: String,
+  @Schema(description = "Type of address", examples = ["WEB", "EMAIL"])
+  val type: String,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )

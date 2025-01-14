@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.SQLRestriction
 import org.hibernate.type.YesNoConverter
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -51,6 +52,18 @@ class Corporate(
 
   @OneToMany(mappedBy = "id.corporate", cascade = [CascadeType.ALL], fetch = LAZY, orphanRemoval = true)
   val types: MutableList<CorporateType> = mutableListOf(),
+
+  @OneToMany(mappedBy = "corporate", cascade = [CascadeType.ALL], fetch = LAZY)
+  @SQLRestriction("OWNER_CLASS = '${CorporateAddress.ADDR_TYPE}'")
+  val addresses: MutableList<CorporateAddress> = mutableListOf(),
+
+  @OneToMany(mappedBy = "corporate", cascade = [CascadeType.ALL], fetch = LAZY)
+  @SQLRestriction("OWNER_CLASS = '${CorporatePhone.PHONE_TYPE}'")
+  val phones: MutableList<CorporatePhone> = mutableListOf(),
+
+  @OneToMany(mappedBy = "corporate", cascade = [CascadeType.ALL], fetch = LAZY)
+  @SQLRestriction("OWNER_CLASS = '${CorporateInternetAddress.TYPE}'")
+  val internetAddresses: MutableList<CorporateInternetAddress> = mutableListOf(),
 
   /*
   Not mapped:
