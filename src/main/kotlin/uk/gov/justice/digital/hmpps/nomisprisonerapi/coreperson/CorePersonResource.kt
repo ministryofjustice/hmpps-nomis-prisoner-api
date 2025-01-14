@@ -97,6 +97,8 @@ data class CorePerson(
   val emailAddresses: List<OffenderEmailAddress>,
   @Schema(description = "List of nationalities for the person")
   val nationalities: List<OffenderNationality>,
+  @Schema(description = "List of nationality details for the person")
+  val nationalityDetails: List<OffenderNationalityDetails>,
 )
 
 @Schema(description = "The data held in NOMIS for an offender.")
@@ -210,11 +212,20 @@ data class OffenderEmailAddress(
   val email: String,
 )
 
-@Schema(description = "Profile details held against a booking")
+@Schema(description = "Nationality details held against a booking")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderNationality(
   @Schema(description = "The booking's unique identifier", example = "1234567")
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
   val nationality: CodeDescription?,
+)
+
+@Schema(description = "Further nationality details held against a booking")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderNationalityDetails(
+  @Schema(description = "The booking's unique identifier", example = "1234567")
+  val bookingId: Long,
+  @Schema(description = "Details on the nationality")
+  val details: String?,
 )

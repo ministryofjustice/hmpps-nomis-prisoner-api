@@ -134,6 +134,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses").doesNotExist()
           .jsonPath("phoneNumbers").doesNotExist()
           .jsonPath("emailAddresses").doesNotExist()
+          .jsonPath("nationalities").doesNotExist()
+          .jsonPath("nationalityDetails").doesNotExist()
       }
 
       @Test
@@ -554,6 +556,53 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("nationalities[2].bookingId").isEqualTo(aliasBooking.bookingId)
           .jsonPath("nationalities[2].nationality.code").isEqualTo("LA")
           .jsonPath("nationalities[2].nationality.description").isEqualTo("Laotian")
+      }
+    }
+
+    @Nested
+    inner class OffenderNationalityDetails {
+      private lateinit var offender: Offender
+      private lateinit var booking1: OffenderBooking
+      private lateinit var booking2: OffenderBooking
+      private lateinit var aliasBooking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking1 = booking {
+              profileDetail(profileType = "NATIO", profileCode = "Claims to be from Madagascar")
+            }
+            booking2 = booking(active = false) {
+              profileDetail(profileType = "NATIO", profileCode = "ROTL 23/01/2023")
+            }
+            alias {
+              aliasBooking = booking {
+                profileDetail(profileType = "NATIO", profileCode = null)
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return nationalities`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .consumeWith(System.out::println)
+          .jsonPath("nationalityDetails[0].bookingId").isEqualTo(booking1.bookingId)
+          .jsonPath("nationalityDetails[0].details").isEqualTo("Claims to be from Madagascar")
+          .jsonPath("nationalityDetails[1].bookingId").isEqualTo(booking2.bookingId)
+          .jsonPath("nationalityDetails[1].details").isEqualTo("ROTL 23/01/2023")
+          .jsonPath("nationalityDetails[2].bookingId").isEqualTo(aliasBooking.bookingId)
+          .jsonPath("nationalityDetails[2].details").doesNotExist()
       }
     }
   }
