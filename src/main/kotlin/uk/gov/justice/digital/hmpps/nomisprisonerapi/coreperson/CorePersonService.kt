@@ -28,6 +28,7 @@ class CorePersonService(
         lastName = o.lastName,
         dateOfBirth = o.birthDate,
         birthPlace = o.birthPlace,
+        birthCountry = o.birthCountry?.toCodeDescription(),
         ethnicity = o.ethnicity?.toCodeDescription(),
         sex = o.gender.toCodeDescription(),
         aliases = aliases.map { a ->

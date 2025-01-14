@@ -98,6 +98,8 @@ data class CorePerson(
   val dateOfBirth: LocalDate?,
   @Schema(description = "Birth place of the person")
   val birthPlace: String?,
+  @Schema(description = "Birth country of the person")
+  val birthCountry: CodeDescription?,
   @Schema(description = "Race of the person")
   val ethnicity: CodeDescription?,
   @Schema(description = "Sex of the person")
