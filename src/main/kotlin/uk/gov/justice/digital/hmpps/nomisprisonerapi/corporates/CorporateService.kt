@@ -24,6 +24,12 @@ class CorporateService(private val corporateRepository: CorporateRepository) {
         active = it.active,
         expiryDate = it.expiryDate,
         audit = it.toAudit(),
+        types = it.types.map { corporateType ->
+          CorporateOrganisationType(
+            type = corporateType.type.toCodeDescription(),
+            audit = corporateType.toAudit(),
+          )
+        },
       )
     } ?: throw NotFoundException("Corporate not found $corporateId")
 }

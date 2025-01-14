@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
@@ -97,7 +98,10 @@ class CorporateResourceIntTest : IntegrationTestBase() {
             whoCreated = "M.BOLD",
             whenCreated = LocalDateTime.parse("2023-03-22T10:20:30"),
 
-          )
+          ) {
+            type("YOTWORKER")
+            type("TEA")
+          }
         }
       }
 
@@ -131,6 +135,31 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isEqualTo(LocalDate.parse("2023-04-01"))
           assertThat(audit.createDatetime).isEqualTo(LocalDateTime.parse("2023-03-22T10:20:30"))
           assertThat(audit.createUsername).isEqualTo("M.BOLD")
+        }
+      }
+
+      @Test
+      fun `will return any associated corporate types`() {
+        val corporateOrganisation: CorporateOrganisation = webTestClient.get().uri("/corporates/${hotel.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+
+        with(corporateOrganisation) {
+          assertThat(types).hasSize(2)
+          assertThat(types[0].type).isEqualTo(
+            CodeDescription(
+              code = "YOTWORKER",
+              description = "YOT Offender Supervisor/Manager",
+            ),
+          )
+          assertThat(types[1].type).isEqualTo(
+            CodeDescription(
+              code = "TEA",
+              description = "Teacher",
+            ),
+          )
         }
       }
     }
