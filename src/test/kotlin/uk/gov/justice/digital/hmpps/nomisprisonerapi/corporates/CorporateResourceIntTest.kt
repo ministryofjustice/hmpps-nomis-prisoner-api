@@ -392,4 +392,238 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /corporates/ids")
+  @Nested
+  inner class GetCorporateIds {
+    private var lowestCorporateId = 0L
+    private var highestCorporateId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        lowestCorporateId = (1..20).map {
+          corporate(
+            corporateName = "BOOTS",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00").minusMinutes(it.toLong()),
+          )
+        }.first().id
+        (1..20).forEach { _ ->
+          corporate(
+            corporateName = "BOOTS",
+            whenCreated = LocalDateTime.parse("2022-01-01T00:00"),
+          )
+        }
+        highestCorporateId = (1..20).map {
+          corporate(
+            corporateName = "BOOTS",
+            whenCreated = LocalDateTime.parse("2024-01-01T10:00").minusMinutes(it.toLong()),
+          )
+        }.last().id
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/corporates/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/corporates/ids")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/corporates/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return first 20 or all corporates`() {
+        webTestClient.get().uri {
+          it.path("/corporates/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(60)
+          .jsonPath("numberOfElements").isEqualTo(20)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(3)
+          .jsonPath("size").isEqualTo(20)
+      }
+
+      @Test
+      fun `can set page size`() {
+        webTestClient.get().uri {
+          it.path("/corporates/ids")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(60)
+          .jsonPath("numberOfElements").isEqualTo(1)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(60)
+          .jsonPath("size").isEqualTo(1)
+      }
+    }
+
+    @Test
+    fun `can filter by fromDate`() {
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("fromDate", "2020-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(40)
+        .jsonPath("numberOfElements").isEqualTo(20)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(2)
+        .jsonPath("size").isEqualTo(20)
+    }
+
+    @Test
+    fun `can filter by toDate`() {
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("toDate", "2020-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+        .jsonPath("numberOfElements").isEqualTo(20)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(1)
+        .jsonPath("size").isEqualTo(20)
+    }
+
+    @Test
+    fun `can filter by fromDate and toDate`() {
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("fromDate", "2020-01-02")
+          .queryParam("toDate", "2022-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+        .jsonPath("numberOfElements").isEqualTo(20)
+        .jsonPath("number").isEqualTo(0)
+        .jsonPath("totalPages").isEqualTo(1)
+        .jsonPath("size").isEqualTo(20)
+    }
+
+    @Test
+    fun `will return corporate Ids create at midnight on the day matching the filter `() {
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("fromDate", "2021-12-31")
+          .queryParam("toDate", "2022-01-01")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("fromDate", "2021-12-31")
+          .queryParam("toDate", "2021-12-31")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(0)
+
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("fromDate", "2022-01-01")
+          .queryParam("toDate", "2022-01-01")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("fromDate", "2022-01-01")
+          .queryParam("toDate", "2022-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(20)
+
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("fromDate", "2022-01-02")
+          .queryParam("toDate", "2022-01-02")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("totalElements").isEqualTo(0)
+    }
+
+    @Test
+    fun `will order by corporateId ascending`() {
+      webTestClient.get().uri {
+        it.path("/corporates/ids")
+          .queryParam("size", "60")
+          .build()
+      }
+        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("numberOfElements").isEqualTo(60)
+        .jsonPath("content[0].corporateId").isEqualTo(lowestCorporateId)
+        .jsonPath("content[59].corporateId").isEqualTo(highestCorporateId)
+    }
+  }
 }
