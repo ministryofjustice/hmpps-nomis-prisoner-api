@@ -158,7 +158,7 @@ data class Identifier(
 )
 
 @Schema(description = "The data held in NOMIS about a address number")
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 data class OffenderAddress(
   @Schema(description = "Unique NOMIS Id of number")
   val addressId: Long,
