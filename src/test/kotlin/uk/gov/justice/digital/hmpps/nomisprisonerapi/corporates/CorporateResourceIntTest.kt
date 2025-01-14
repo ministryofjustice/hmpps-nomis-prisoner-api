@@ -247,6 +247,9 @@ class CorporateResourceIntTest : IntegrationTestBase() {
                 comment = "Not to be used",
                 startDate = "2024-10-01",
                 endDate = "2024-11-01",
+                isServices = true,
+                businessHours = "Monday to Friday 08:00 to 16:00",
+                contactPersonName = "Jim Bob",
                 whoCreated = "KOFEADDY",
                 whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
               ) {
@@ -290,6 +293,9 @@ class CorporateResourceIntTest : IntegrationTestBase() {
             .jsonPath("addresses[0].noFixedAddress").doesNotExist()
             .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
             .jsonPath("addresses[0].mailAddress").isEqualTo(false)
+            .jsonPath("addresses[0].isServices").isEqualTo(false)
+            .jsonPath("addresses[0].businessHours").doesNotExist()
+            .jsonPath("addresses[0].contactPersonName").doesNotExist()
             .jsonPath("addresses[0].comment").doesNotExist()
             .jsonPath("addresses[0].startDate").doesNotExist()
             .jsonPath("addresses[0].endDate").doesNotExist()
@@ -314,6 +320,9 @@ class CorporateResourceIntTest : IntegrationTestBase() {
             .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
             .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
             .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
+            .jsonPath("addresses[1].isServices").isEqualTo(true)
+            .jsonPath("addresses[1].businessHours").isEqualTo("Monday to Friday 08:00 to 16:00")
+            .jsonPath("addresses[1].contactPersonName").isEqualTo("Jim Bob")
             .jsonPath("addresses[1].audit.createUsername").isEqualTo("KOFEADDY")
             .jsonPath("addresses[1].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
             .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)

@@ -173,6 +173,12 @@ data class CorporateAddress(
   val startDate: LocalDate?,
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate?,
+  @Schema(description = "True if this is a service organisation")
+  val isServices: Boolean,
+  @Schema(description = "Business hours")
+  val businessHours: String?,
+  @Schema(description = "Contact person")
+  val contactPersonName: String?,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )

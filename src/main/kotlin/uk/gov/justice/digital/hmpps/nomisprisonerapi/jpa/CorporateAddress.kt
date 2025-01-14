@@ -30,6 +30,9 @@ class CorporateAddress(
   primaryAddress: Boolean = false,
   mailAddress: Boolean = false,
   comment: String? = null,
+  isServices: Boolean = false,
+  businessHours: String? = null,
+  contactPersonName: String? = null,
 ) : Address(
   addressType = addressType,
   premise = premise,
@@ -48,6 +51,9 @@ class CorporateAddress(
   primaryAddress = primaryAddress,
   mailAddress = mailAddress,
   comment = comment,
+  isServices = isServices,
+  businessHours = businessHours,
+  contactPersonName = contactPersonName,
 ) {
   companion object {
     const val ADDR_TYPE = "CORP"
