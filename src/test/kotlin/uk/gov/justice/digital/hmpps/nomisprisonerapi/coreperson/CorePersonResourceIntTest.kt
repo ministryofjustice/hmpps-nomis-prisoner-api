@@ -56,6 +56,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           whoCreated = "KOFEADDY",
           whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
+          booking { }
         }
       }
     }
@@ -125,7 +126,13 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("ethnicity").doesNotExist()
           .jsonPath("sex.code").isEqualTo("M")
           .jsonPath("sex.description").isEqualTo("Male")
+          .jsonPath("inOutStatus").isEqualTo("OUT")
+          .jsonPath("activeFlag").isEqualTo("false")
           .jsonPath("aliases").doesNotExist()
+          .jsonPath("emailAddresses").doesNotExist()
+          .jsonPath("phoneNumbers").doesNotExist()
+          .jsonPath("identifiers").doesNotExist()
+          .jsonPath("addresses").doesNotExist()
       }
 
       @Test
@@ -152,6 +159,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("ethnicity.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("sex.code").isEqualTo("F")
           .jsonPath("sex.description").isEqualTo("Female")
+          .jsonPath("inOutStatus").isEqualTo("IN")
+          .jsonPath("activeFlag").isEqualTo("true")
       }
     }
 

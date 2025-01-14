@@ -103,6 +103,10 @@ data class CorePerson(
   val ethnicity: CodeDescription?,
   @Schema(description = "Sex of the person")
   val sex: CodeDescription?,
+  @Schema(description = "In/Out Status", example = "IN, OUT, TRN")
+  val inOutStatus: String?,
+  @Schema(description = "Indicates that the person is currently in prison")
+  val activeFlag: Boolean,
   @Schema(description = "List of aliases for the person. These are the other offender records.")
   val aliases: List<Alias>,
   @Schema(description = "List of identifiers for the person.")

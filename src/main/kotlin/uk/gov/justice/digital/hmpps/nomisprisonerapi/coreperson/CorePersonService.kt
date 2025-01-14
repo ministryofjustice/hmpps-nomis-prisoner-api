@@ -15,6 +15,7 @@ class CorePersonService(
     val allOffenders = offenderRepository.findByNomsIdOrderedWithBookings(prisonNumber)
     val currentAlias = allOffenders.firstOrNull() ?: throw NotFoundException("Offender not found $prisonNumber")
     val aliases = allOffenders.drop(1)
+    val latestBooking = currentAlias.getAllBookings()?.firstOrNull { it.bookingSequence == 1 }
 
     return currentAlias.let { o ->
       CorePerson(
@@ -30,6 +31,8 @@ class CorePersonService(
         birthCountry = o.birthCountry?.toCodeDescription(),
         ethnicity = o.ethnicity?.toCodeDescription(),
         sex = o.gender.toCodeDescription(),
+        inOutStatus = latestBooking?.inOutStatus ?: "OUT",
+        activeFlag = latestBooking?.active ?: false,
         aliases = aliases.map { a ->
           Alias(
             offenderId = a.id,
