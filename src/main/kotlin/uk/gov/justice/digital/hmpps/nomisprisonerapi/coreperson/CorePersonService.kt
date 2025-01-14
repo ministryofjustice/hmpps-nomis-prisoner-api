@@ -59,6 +59,14 @@ class CorePersonService(
             )
           }
         } ?: emptyList(),
+        nationalityDetails = allBookings?.flatMap { b ->
+          b.profileDetails.filter { pd -> pd.id.profileType.type == "NATIO" }.map { n ->
+            OffenderNationalityDetails(
+              bookingId = b.bookingId,
+              details = n.profileCodeId,
+            )
+          }
+        } ?: emptyList(),
         addresses = o.addresses.map { address ->
           OffenderAddress(
             addressId = address.addressId,
