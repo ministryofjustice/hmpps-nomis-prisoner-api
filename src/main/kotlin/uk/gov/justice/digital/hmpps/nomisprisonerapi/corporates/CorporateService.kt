@@ -1,12 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.corporates
 
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -83,4 +86,24 @@ class CorporateService(private val corporateRepository: CorporateRepository) {
         },
       )
     } ?: throw NotFoundException("Corporate not found $corporateId")
+
+  fun findCorporateIdsByFilter(
+    pageRequest: Pageable,
+    filter: CorporateFilter,
+  ): Page<CorporateOrganisationIdResponse> = if (filter.toDate == null && filter.fromDate == null) {
+    corporateRepository.findAllCorporateIds(
+      pageRequest,
+    )
+  } else {
+    corporateRepository.findAllCorporateIds(
+      fromDate = filter.fromDate?.atStartOfDay(),
+      toDate = filter.toDate?.atStartOfDay(),
+      pageRequest,
+    )
+  }.map { CorporateOrganisationIdResponse(corporateId = it.corporateId) }
 }
+
+data class CorporateFilter(
+  val fromDate: LocalDate?,
+  val toDate: LocalDate?,
+)
