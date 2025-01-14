@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 
 @Transactional
@@ -42,7 +41,6 @@ class CorePersonService(
             dateOfBirth = a.birthDate,
             ethnicity = a.ethnicity?.toCodeDescription(),
             sex = a.gender.toCodeDescription(),
-            audit = a.toAudit(),
           )
         },
         // TODO: return identifiers from all offender records rather than just the current alias
@@ -100,7 +98,6 @@ class CorePersonService(
             email = address.internetAddress,
           )
         },
-        audit = o.toAudit(),
       )
     }
   }
