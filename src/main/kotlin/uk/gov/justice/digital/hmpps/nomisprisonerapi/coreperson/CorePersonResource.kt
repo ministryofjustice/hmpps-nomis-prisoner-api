@@ -85,10 +85,12 @@ data class CorePerson(
   val inOutStatus: String?,
   @Schema(description = "Indicates that the person is currently in prison")
   val activeFlag: Boolean,
-  @Schema(description = "List of offender records for the person.")
+  @Schema(description = "List of offender records for the person")
   val offenders: List<Offender>,
-  @Schema(description = "List of identifiers for the person.")
+  @Schema(description = "List of identifiers for the person")
   val identifiers: List<Identifier>,
+  @Schema(description = "List of distinct sentence start dates")
+  val sentenceStartDates: List<LocalDate>,
   @Schema(description = "List of addresses for the person")
   val addresses: List<OffenderAddress>,
   @Schema(description = "List of phone numbers for the person")

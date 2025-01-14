@@ -131,6 +131,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("inOutStatus").isEqualTo("OUT")
           .jsonPath("activeFlag").isEqualTo("false")
           .jsonPath("identifiers").doesNotExist()
+          .jsonPath("sentenceStartDates").doesNotExist()
           .jsonPath("addresses").doesNotExist()
           .jsonPath("phoneNumbers").doesNotExist()
           .jsonPath("emailAddresses").doesNotExist()
@@ -603,6 +604,52 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("nationalityDetails[1].details").isEqualTo("ROTL 23/01/2023")
           .jsonPath("nationalityDetails[2].bookingId").isEqualTo(aliasBooking.bookingId)
           .jsonPath("nationalityDetails[2].details").doesNotExist()
+      }
+    }
+
+    @Nested
+    inner class OffenderSentenceStartDates {
+      private lateinit var offender: Offender
+      private lateinit var booking1: OffenderBooking
+      private lateinit var booking2: OffenderBooking
+      private lateinit var aliasBooking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking1 = booking {
+              sentence(startDate = LocalDate.parse("2023-01-01"))
+              sentence(startDate = LocalDate.parse("2020-01-01"))
+            }
+            booking2 = booking(active = false) {
+              sentence(startDate = LocalDate.parse("2020-01-01"))
+            }
+            alias {
+              aliasBooking = booking(active = false) {
+                sentence(startDate = LocalDate.parse("2020-01-02"))
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return sentence start dates`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .consumeWith(System.out::println)
+          .jsonPath("sentenceStartDates.length()").isEqualTo(3)
+          .jsonPath("sentenceStartDates[0]").isEqualTo("2020-01-01")
+          .jsonPath("sentenceStartDates[1]").isEqualTo("2020-01-02")
+          .jsonPath("sentenceStartDates[2]").isEqualTo("2023-01-01")
       }
     }
   }
