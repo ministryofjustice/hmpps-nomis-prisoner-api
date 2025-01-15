@@ -26,7 +26,7 @@ class CorePersonService(
         inOutStatus = latestBooking?.inOutStatus ?: "OUT",
         activeFlag = latestBooking?.active ?: false,
         offenders = allOffenders.mapIndexed { i, a ->
-          Offender(
+          CoreOffender(
             offenderId = a.id,
             title = a.title?.toCodeDescription(),
             firstName = a.firstName,
