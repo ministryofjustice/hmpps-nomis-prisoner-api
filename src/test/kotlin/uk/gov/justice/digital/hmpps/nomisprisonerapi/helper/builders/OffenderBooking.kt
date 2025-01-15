@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBookingImage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
@@ -320,6 +321,19 @@ interface BookingDsl {
     commentText: String? = "head tattoo left front",
     dsl: OffenderIdentifyingMarkDsl.() -> Unit = {},
   ): OffenderIdentifyingMark
+
+  @OffenderBeliefDslMarker
+  fun belief(
+    beliefCode: String,
+    startDate: LocalDate = LocalDate.parse("2021-01-01"),
+    endDate: LocalDate? = null,
+    changeReason: Boolean? = null,
+    comments: String? = null,
+    verified: Boolean? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
+    dsl: OffenderBeliefDsl.() -> Unit = {},
+  ): OffenderBelief
 }
 
 @Component
@@ -356,6 +370,7 @@ class BookingBuilderFactory(
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
+  private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -378,6 +393,7 @@ class BookingBuilderFactory(
     profileDetailBuilderFactory,
     offenderBookingImageBuilderFactory,
     offenderIdentifyingMarkBuilderFactory,
+    offenderBeliefBuilderFactory,
   )
 }
 
@@ -402,6 +418,7 @@ class BookingBuilder(
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
+  private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -1023,6 +1040,33 @@ class BookingBuilder(
         commentText = commentText,
       )
         .also { offenderBooking.identifyingMarks += it }
+        .also { builder.apply(dsl) }
+    }
+
+  override fun belief(
+    beliefCode: String,
+    startDate: LocalDate,
+    endDate: LocalDate?,
+    changeReason: Boolean?,
+    comments: String?,
+    verified: Boolean?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: OffenderBeliefDsl.() -> Unit,
+  ): OffenderBelief =
+    offenderBeliefBuilderFactory.builder().let { builder ->
+      builder.build(
+        booking = offenderBooking,
+        offender = offenderBooking.offender,
+        beliefCode = beliefCode,
+        startDate = startDate,
+        endDate = endDate,
+        changeReason = changeReason,
+        comments = comments,
+        verified = verified,
+        whenCreated = whenCreated,
+        whoCreated = whoCreated,
+      )
         .also { builder.apply(dsl) }
     }
 }
