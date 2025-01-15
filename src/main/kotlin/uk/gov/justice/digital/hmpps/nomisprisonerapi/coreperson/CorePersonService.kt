@@ -4,12 +4,15 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 
 @Transactional
 @Service
 class CorePersonService(
   private val offenderRepository: OffenderRepository,
+  private val offenderBeliefRepository: OffenderBeliefRepository,
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val allOffenders = offenderRepository.findByNomsIdOrderedWithBookings(prisonNumber)
@@ -133,6 +136,18 @@ class CorePersonService(
           OffenderEmailAddress(
             emailAddressId = address.internetAddressId,
             email = address.internetAddress,
+          )
+        },
+        beliefs = offenderBeliefRepository.findByRootOffenderOrderByStartDateDesc(o).map { belief ->
+          OffenderBelief(
+            beliefId = belief.beliefId,
+            belief = belief.beliefCode.toCodeDescription(),
+            startDate = belief.startDate,
+            endDate = belief.endDate,
+            changeReason = belief.changeReason,
+            comments = belief.comments,
+            verified = belief.verified ?: false,
+            audit = belief.toAudit(),
           )
         },
       )

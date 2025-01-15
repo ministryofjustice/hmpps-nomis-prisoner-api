@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
@@ -137,6 +138,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("emailAddresses").doesNotExist()
           .jsonPath("nationalities").doesNotExist()
           .jsonPath("nationalityDetails").doesNotExist()
+          .jsonPath("beliefs").doesNotExist()
       }
 
       @Test
@@ -787,6 +789,87 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceStartDates[0]").isEqualTo("2020-01-01")
           .jsonPath("sentenceStartDates[1]").isEqualTo("2020-01-02")
           .jsonPath("sentenceStartDates[2]").isEqualTo("2023-01-01")
+      }
+    }
+
+    @Nested
+    inner class OffenderBeliefs {
+      private lateinit var offender: Offender
+      private lateinit var belief1: OffenderBelief
+      private lateinit var belief2: OffenderBelief
+      private lateinit var belief3: OffenderBelief
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking {
+              belief2 = belief(
+                beliefCode = "JAIN",
+                changeReason = true,
+                comments = "No longer believes in Zoroastrianism",
+                verified = true,
+              )
+              belief1 = belief(
+                beliefCode = "ZORO",
+                startDate = LocalDate.parse("2018-01-01"),
+                endDate = LocalDate.parse("2019-02-03"),
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+            }
+            booking(active = false) {
+              belief3 = belief(
+                beliefCode = "DRU",
+                startDate = LocalDate.parse("2023-01-01"),
+                changeReason = false,
+                verified = false,
+              )
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return beliefs`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("beliefs.length()").isEqualTo(3)
+          .jsonPath("beliefs[0].beliefId").isEqualTo(belief3.beliefId)
+          .jsonPath("beliefs[0].belief.code").isEqualTo("DRU")
+          .jsonPath("beliefs[0].belief.description").isEqualTo("Druid")
+          .jsonPath("beliefs[0].startDate").isEqualTo("2023-01-01")
+          .jsonPath("beliefs[0].changeReason").isEqualTo(false)
+          .jsonPath("beliefs[0].comments").doesNotExist()
+          .jsonPath("beliefs[0].verified").isEqualTo(false)
+          .jsonPath("beliefs[1].beliefId").isEqualTo(belief2.beliefId)
+          .jsonPath("beliefs[1].belief.code").isEqualTo("JAIN")
+          .jsonPath("beliefs[1].belief.description").isEqualTo("Jain")
+          .jsonPath("beliefs[1].startDate").isEqualTo("2021-01-01")
+          .jsonPath("beliefs[1].endDate").doesNotExist()
+          .jsonPath("beliefs[1].changeReason").isEqualTo(true)
+          .jsonPath("beliefs[1].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .jsonPath("beliefs[1].verified").isEqualTo(true)
+          .jsonPath("beliefs[1].audit.createUsername").isNotEmpty
+          .jsonPath("beliefs[1].audit.createDatetime").isNotEmpty
+          .jsonPath("beliefs[2].beliefId").isEqualTo(belief1.beliefId)
+          .jsonPath("beliefs[2].belief.code").isEqualTo("ZORO")
+          .jsonPath("beliefs[2].belief.description").isEqualTo("Zoroastrian")
+          .jsonPath("beliefs[2].startDate").isEqualTo("2018-01-01")
+          .jsonPath("beliefs[2].endDate").isEqualTo("2019-02-03")
+          .jsonPath("beliefs[2].changeReason").doesNotExist()
+          .jsonPath("beliefs[2].comments").doesNotExist()
+          .jsonPath("beliefs[2].verified").isEqualTo(false)
+          .jsonPath("beliefs[2].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("beliefs[2].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("beliefs[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
     }
   }

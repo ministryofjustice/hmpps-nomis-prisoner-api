@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
 
 @RestController
@@ -107,6 +108,8 @@ data class CorePerson(
   val disabilities: List<OffenderDisability>,
   @Schema(description = "List of disabilities for the person")
   val interestsToImmigration: List<OffenderInterestToImmigration>,
+  @Schema(description = "Current belief and history of all beliefs for the person")
+  val beliefs: List<OffenderBelief>,
 )
 
 @Schema(description = "The data held in NOMIS for an offender.")
@@ -263,4 +266,25 @@ data class OffenderInterestToImmigration(
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
   val interestToImmigration: Boolean?,
+)
+
+@Schema(description = "Offender beliefs")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderBelief(
+  @Schema(description = "Offender belief id", example = "1123456")
+  val beliefId: Long,
+  @Schema(description = "Belief", example = "SCIE")
+  val belief: CodeDescription,
+  @Schema(description = "Date the belief started", example = "2024-01-01")
+  val startDate: LocalDate,
+  @Schema(description = "Date the belief ended", example = "2024-12-12")
+  val endDate: LocalDate? = null,
+  @Schema(description = "Was a reason given for change of belief?")
+  val changeReason: Boolean? = null,
+  @Schema(description = "Comments describing reason for change of belief")
+  val comments: String? = null,
+  @Schema(description = "Verified flag")
+  val verified: Boolean,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
