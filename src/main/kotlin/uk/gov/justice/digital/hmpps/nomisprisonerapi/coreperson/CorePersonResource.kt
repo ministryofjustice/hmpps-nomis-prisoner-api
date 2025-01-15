@@ -87,7 +87,7 @@ data class CorePerson(
   @Schema(description = "Indicates that the person is currently in prison")
   val activeFlag: Boolean,
   @Schema(description = "List of offender records for the person")
-  val offenders: List<Offender>,
+  val offenders: List<CoreOffender>,
   @Schema(description = "List of identifiers for the person")
   val identifiers: List<Identifier>,
   @Schema(description = "List of distinct sentence start dates")
@@ -114,7 +114,7 @@ data class CorePerson(
 
 @Schema(description = "The data held in NOMIS for an offender.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Offender(
+data class CoreOffender(
   @Schema(description = "The offender id")
   val offenderId: Long,
   @Schema(description = "Title of the person")
