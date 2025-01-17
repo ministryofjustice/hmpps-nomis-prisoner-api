@@ -1647,4 +1647,54 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
       )
     }
   }
+
+  @Nested
+  inner class GetNonAssociationsByBookingId {
+
+    @BeforeEach
+    internal fun createNonAssociations() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) { nonAssociationDetail() }
+        nonAssociation(offenderAtLeeds, offenderAtMoorlands) { nonAssociationDetail() }
+        nonAssociation(offenderAtMoorlands, offenderAtShrewsbury) { nonAssociationDetail() }
+        nonAssociation(offenderAtShrewsbury, offenderAtMoorlands) { nonAssociationDetail() }
+        nonAssociation(offenderAtLeeds, offenderAtShrewsbury) { nonAssociationDetail() }
+        nonAssociation(offenderAtShrewsbury, offenderAtLeeds) { nonAssociationDetail() }
+      }
+    }
+
+    @Test
+    fun `get by booking id`() {
+      webTestClient
+        .get().uri("/non-associations/booking/${offenderAtLeeds.latestBooking().bookingId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(2)
+        .jsonPath("$[0].offenderNo1").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$[0].offenderNo2").isEqualTo(offenderAtMoorlands.nomsId)
+        .jsonPath("$[1].offenderNo1").isEqualTo(offenderAtLeeds.nomsId)
+        .jsonPath("$[1].offenderNo2").isEqualTo(offenderAtShrewsbury.nomsId)
+    }
+
+    @Test
+    fun `non-associations not found`() {
+      webTestClient.get().uri("/non-associations/booking/999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get non-associations prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get()
+          .uri("/non-associations/booking/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+  }
 }
