@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -230,6 +231,12 @@ data class OffenderNationality(
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
   val nationality: CodeDescription?,
+  @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  val endDateTime: LocalDateTime?,
+  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  val latestBooking: Boolean,
 )
 
 @Schema(description = "Further nationality details held against a booking")
@@ -239,6 +246,12 @@ data class OffenderNationalityDetails(
   val bookingId: Long,
   @Schema(description = "Details on the nationality")
   val details: String?,
+  @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  val endDateTime: LocalDateTime?,
+  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  val latestBooking: Boolean,
 )
 
 @Schema(description = "Sexual orientation details held against a booking")
@@ -248,6 +261,12 @@ data class OffenderSexualOrientation(
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
   val sexualOrientation: CodeDescription?,
+  @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  val endDateTime: LocalDateTime?,
+  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  val latestBooking: Boolean,
 )
 
 @Schema(description = "Disability details held against a booking")
@@ -257,6 +276,12 @@ data class OffenderDisability(
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
   val disability: Boolean?,
+  @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  val endDateTime: LocalDateTime?,
+  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  val latestBooking: Boolean,
 )
 
 @Schema(description = "Interest to immigration details held against a booking")
@@ -266,6 +291,12 @@ data class OffenderInterestToImmigration(
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
   val interestToImmigration: Boolean?,
+  @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  val endDateTime: LocalDateTime?,
+  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  val latestBooking: Boolean,
 )
 
 @Schema(description = "Offender beliefs")

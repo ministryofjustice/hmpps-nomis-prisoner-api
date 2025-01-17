@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTime
 
 @Transactional
 @Service
@@ -59,6 +60,9 @@ class CorePersonService(
           b.profileDetails.filter { pd -> pd.id.profileType.type == "NAT" }.map { n ->
             OffenderNationality(
               bookingId = b.bookingId,
+              startDateTime = b.bookingBeginDate,
+              endDateTime = b.getReleaseTime(),
+              latestBooking = b.bookingSequence == 1,
               nationality = n.profileCode?.toCodeDescription(),
             )
           }
@@ -68,6 +72,9 @@ class CorePersonService(
             OffenderNationalityDetails(
               bookingId = b.bookingId,
               details = n.profileCodeId,
+              startDateTime = b.bookingBeginDate,
+              endDateTime = b.getReleaseTime(),
+              latestBooking = b.bookingSequence == 1,
             )
           }
         } ?: emptyList(),
@@ -76,6 +83,9 @@ class CorePersonService(
             OffenderSexualOrientation(
               bookingId = b.bookingId,
               sexualOrientation = n.profileCode?.toCodeDescription(),
+              startDateTime = b.bookingBeginDate,
+              endDateTime = b.getReleaseTime(),
+              latestBooking = b.bookingSequence == 1,
             )
           }
         } ?: emptyList(),
@@ -84,6 +94,9 @@ class CorePersonService(
             OffenderDisability(
               bookingId = b.bookingId,
               disability = n.profileCodeId?.equals("Y"),
+              startDateTime = b.bookingBeginDate,
+              endDateTime = b.getReleaseTime(),
+              latestBooking = b.bookingSequence == 1,
             )
           }
         } ?: emptyList(),
@@ -92,6 +105,9 @@ class CorePersonService(
             OffenderInterestToImmigration(
               bookingId = b.bookingId,
               interestToImmigration = n.profileCodeId?.equals("Y"),
+              startDateTime = b.bookingBeginDate,
+              endDateTime = b.getReleaseTime(),
+              latestBooking = b.bookingSequence == 1,
             )
           }
         } ?: emptyList(),
