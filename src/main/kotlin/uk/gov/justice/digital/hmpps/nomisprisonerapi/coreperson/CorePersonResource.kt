@@ -230,7 +230,7 @@ data class OffenderNationality(
   @Schema(description = "The booking's unique identifier", example = "1234567")
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
-  val nationality: CodeDescription?,
+  val nationality: CodeDescription,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
   @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
@@ -245,7 +245,7 @@ data class OffenderNationalityDetails(
   @Schema(description = "The booking's unique identifier", example = "1234567")
   val bookingId: Long,
   @Schema(description = "Details on the nationality")
-  val details: String?,
+  val details: String,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
   @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
@@ -260,7 +260,7 @@ data class OffenderSexualOrientation(
   @Schema(description = "The booking's unique identifier", example = "1234567")
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
-  val sexualOrientation: CodeDescription?,
+  val sexualOrientation: CodeDescription,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
   @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
@@ -275,7 +275,7 @@ data class OffenderDisability(
   @Schema(description = "The booking's unique identifier", example = "1234567")
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
-  val disability: Boolean?,
+  val disability: Boolean,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
   @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
@@ -290,7 +290,7 @@ data class OffenderInterestToImmigration(
   @Schema(description = "The booking's unique identifier", example = "1234567")
   val bookingId: Long,
   @Schema(description = "The value of the profile info")
-  val interestToImmigration: Boolean?,
+  val interestToImmigration: Boolean,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
   @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")

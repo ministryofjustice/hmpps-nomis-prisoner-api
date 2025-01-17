@@ -57,59 +57,69 @@ class CorePersonService(
         },
         sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList() ?: emptyList(),
         nationalities = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "NAT" }.map { n ->
-            OffenderNationality(
-              bookingId = b.bookingId,
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-              nationality = n.profileCode?.toCodeDescription(),
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "NAT" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderNationality(
+                bookingId = b.bookingId,
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+                nationality = n.profileCode!!.toCodeDescription(),
+              )
+            }
         } ?: emptyList(),
         nationalityDetails = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "NATIO" }.map { n ->
-            OffenderNationalityDetails(
-              bookingId = b.bookingId,
-              details = n.profileCodeId,
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "NATIO" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderNationalityDetails(
+                bookingId = b.bookingId,
+                details = n.profileCodeId!!,
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         sexualOrientations = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "SEXO" }.map { n ->
-            OffenderSexualOrientation(
-              bookingId = b.bookingId,
-              sexualOrientation = n.profileCode?.toCodeDescription(),
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "SEXO" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderSexualOrientation(
+                bookingId = b.bookingId,
+                sexualOrientation = n.profileCode!!.toCodeDescription(),
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         disabilities = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "DISABILITY" }.map { n ->
-            OffenderDisability(
-              bookingId = b.bookingId,
-              disability = n.profileCodeId?.equals("Y"),
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "DISABILITY" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderDisability(
+                bookingId = b.bookingId,
+                disability = n.profileCodeId == "Y",
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         interestsToImmigration = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "IMM" }.map { n ->
-            OffenderInterestToImmigration(
-              bookingId = b.bookingId,
-              interestToImmigration = n.profileCodeId?.equals("Y"),
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "IMM" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderInterestToImmigration(
+                bookingId = b.bookingId,
+                interestToImmigration = n.profileCodeId == "Y",
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         addresses = o.addresses.map { address ->
           OffenderAddress(
