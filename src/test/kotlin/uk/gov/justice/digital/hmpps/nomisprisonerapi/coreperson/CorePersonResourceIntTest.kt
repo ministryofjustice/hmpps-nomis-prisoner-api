@@ -585,10 +585,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("nationalities[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
           .jsonPath("nationalities[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
           .jsonPath("nationalities[1].latestBooking").isEqualTo(false)
-          .jsonPath("nationalities[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("nationalities[2].nationality").doesNotExist()
-          .jsonPath("nationalities[2].startDateTime").isEqualTo("2020-02-03T12:20:30")
-          .jsonPath("nationalities[2].endDateTime").doesNotExist()
+          .jsonPath("nationalities.length()").isEqualTo(2)
       }
     }
 
@@ -643,10 +640,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("nationalityDetails[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
           .jsonPath("nationalityDetails[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
           .jsonPath("nationalityDetails[1].latestBooking").isEqualTo(false)
-          .jsonPath("nationalityDetails[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("nationalityDetails[2].details").doesNotExist()
-          .jsonPath("nationalityDetails[2].startDateTime").isEqualTo("2020-02-03T12:20:30")
-          .jsonPath("nationalityDetails[2].endDateTime").doesNotExist()
+          .jsonPath("nationalityDetails.length()").isEqualTo(2)
       }
     }
 
@@ -703,10 +697,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("sexualOrientations[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
           .jsonPath("sexualOrientations[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
           .jsonPath("sexualOrientations[1].latestBooking").isEqualTo(false)
-          .jsonPath("sexualOrientations[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("sexualOrientations[2].sexualOrientation").doesNotExist()
-          .jsonPath("sexualOrientations[2].startDateTime").isEqualTo("2020-02-03T12:20:30")
-          .jsonPath("sexualOrientations[2].endDateTime").doesNotExist()
+          .jsonPath("sexualOrientations.length()").isEqualTo(2)
       }
     }
 
@@ -761,10 +752,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("disabilities[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
           .jsonPath("disabilities[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
           .jsonPath("disabilities[1].latestBooking").isEqualTo(false)
-          .jsonPath("disabilities[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("disabilities[2].disability").doesNotExist()
-          .jsonPath("disabilities[2].startDateTime").isEqualTo("2020-02-03T12:20:30")
-          .jsonPath("disabilities[2].endDateTime").doesNotExist()
+          .jsonPath("disabilities.length()").isEqualTo(2)
       }
     }
 
@@ -819,10 +807,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("interestsToImmigration[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
           .jsonPath("interestsToImmigration[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
           .jsonPath("interestsToImmigration[1].latestBooking").isEqualTo(false)
-          .jsonPath("interestsToImmigration[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("interestsToImmigration[2].interestToImmigration").doesNotExist()
-          .jsonPath("interestsToImmigration[2].startDateTime").isEqualTo("2020-02-03T12:20:30")
-          .jsonPath("interestsToImmigration[2].endDateTime").doesNotExist()
+          .jsonPath("interestsToImmigration.length()").isEqualTo(2)
       }
     }
 
