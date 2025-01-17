@@ -166,8 +166,6 @@ data class Identifier(
 data class OffenderAddress(
   @Schema(description = "Unique NOMIS Id of number")
   val addressId: Long,
-  @Schema(description = "Address type")
-  val type: CodeDescription?,
   @Schema(description = "Flat name or number", example = "Apartment 3")
   val flat: String?,
   @Schema(description = "Premise", example = "22")
@@ -200,6 +198,8 @@ data class OffenderAddress(
   val startDate: LocalDate?,
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate?,
+  @Schema(description = "Usages for the address, also known as types")
+  val usages: List<OffenderAddressUsage>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -318,4 +318,15 @@ data class OffenderBelief(
   val verified: Boolean,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
+)
+
+@Schema(description = "Offender address usage")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderAddressUsage(
+  @Schema(description = "Offender belief id", example = "1123456")
+  val addressId: Long,
+  @Schema(description = "Address usage")
+  val usage: CodeDescription,
+  @Schema(description = "Whether the address usage is active")
+  val active: Boolean,
 )

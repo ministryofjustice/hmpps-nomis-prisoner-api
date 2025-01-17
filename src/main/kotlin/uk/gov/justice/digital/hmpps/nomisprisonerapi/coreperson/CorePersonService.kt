@@ -114,7 +114,6 @@ class CorePersonService(
         addresses = o.addresses.map { address ->
           OffenderAddress(
             addressId = address.addressId,
-            type = address.addressType?.toCodeDescription(),
             flat = address.flat,
             premise = address.premise,
             street = address.street,
@@ -136,6 +135,13 @@ class CorePersonService(
                 number = number.phoneNo,
                 type = number.phoneType.toCodeDescription(),
                 extension = number.extNo,
+              )
+            },
+            usages = address.usages.map { u ->
+              OffenderAddressUsage(
+                addressId = address.addressId,
+                usage = u.addressUsage.toCodeDescription(),
+                active = u.active,
               )
             },
           )
