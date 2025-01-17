@@ -23,4 +23,13 @@ interface OffenderNonAssociationRepository :
            and na.id.offenderId < na.id.nsOffenderId""",
   )
   fun findAllNomsIds(pageable: Pageable): Page<NonAssociationIdResponse>
+
+  @Query(
+    """select new uk.gov.justice.digital.hmpps.nomisprisonerapi.nonassociations.NonAssociationIdResponse(o1.nomsId, o2.nomsId)
+         from OffenderNonAssociation na, Offender o1, Offender o2 
+         where na.id.offenderId = o1.id
+           and na.id.nsOffenderId = o2.id
+           and na.offenderBookingId = :bookingId""",
+  )
+  fun findByOffenderBookingId(bookingId: Long): List<NonAssociationIdResponse>
 }
