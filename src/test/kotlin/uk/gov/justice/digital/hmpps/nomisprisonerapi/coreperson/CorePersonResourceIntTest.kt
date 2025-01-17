@@ -352,6 +352,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
                 whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
               )
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+              usage(usageCode = "DAP", active = true)
+              usage(usageCode = "CURFEW", active = false)
             }
             address(
               noFixedAddress = true,
@@ -373,7 +375,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBody()
           .jsonPath("addresses[0].addressId").isEqualTo(offender.addresses[0].addressId)
-          .jsonPath("addresses[0].type").doesNotExist()
           .jsonPath("addresses[0].flat").doesNotExist()
           .jsonPath("addresses[0].premise").doesNotExist()
           .jsonPath("addresses[0].street").doesNotExist()
@@ -390,8 +391,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[0].endDate").doesNotExist()
           .jsonPath("addresses[0].phoneNumbers").doesNotExist()
           .jsonPath("addresses[1].addressId").isEqualTo(offender.addresses[1].addressId)
-          .jsonPath("addresses[1].type.code").isEqualTo("HOME")
-          .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
           .jsonPath("addresses[1].flat").isEqualTo("3B")
           .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
           .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
@@ -421,6 +420,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
+          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
           .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(offender.addresses[1].phones[0].phoneId)
           .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
           .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
@@ -431,6 +431,25 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
           .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
           .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
+      }
+
+      @Test
+      fun `will return address usages associated with addresses`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].usages").doesNotExist()
+          .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[0].usage.code").isEqualTo("CURFEW")
+          .jsonPath("addresses[1].usages[0].usage.description").isEqualTo("Curfew Order")
+          .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
+          .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
+          .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
+          .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
       }
     }
 

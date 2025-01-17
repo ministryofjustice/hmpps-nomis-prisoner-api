@@ -6,12 +6,14 @@ import jakarta.persistence.Convert
 import jakarta.persistence.DiscriminatorColumn
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.Inheritance
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OrderBy
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -117,6 +119,10 @@ abstract class Address(
     ],
   )
   open var country: Country? = null,
+
+  @OneToMany(mappedBy = "id.address", cascade = [CascadeType.ALL], fetch = LAZY, orphanRemoval = true)
+  @OrderBy("id.usageCode")
+  val usages: MutableList<AddressUsage> = mutableListOf(),
 
   @Column(name = "VALIDATED_PAF_FLAG")
   @Convert(converter = YesNoConverter::class)

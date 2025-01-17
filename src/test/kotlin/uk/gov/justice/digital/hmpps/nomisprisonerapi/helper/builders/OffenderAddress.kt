@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
@@ -34,17 +35,25 @@ interface OffenderAddressDsl {
     whoCreated: String? = null,
     dsl: AddressPhoneDsl.() -> Unit = {},
   ): AddressPhone
+
+  @AddressUsageDslMarker
+  fun usage(
+    usageCode: String,
+    active: Boolean = true,
+    dsl: AddressUsageDsl.() -> Unit = {},
+  ): AddressUsage
 }
 
 @Component
 class OffenderAddressBuilderFactory(
   private val addressPhoneBuilderFactory: AddressPhoneBuilderFactory,
   private val offenderAddressBuilderRepository: OffenderAddressBuilderRepository,
-
+  private val addressUsageBuilderFactory: AddressUsageBuilderFactory,
 ) {
   fun builder() = OffenderAddressBuilder(
     addressPhoneBuilderFactory = addressPhoneBuilderFactory,
     offenderAddressBuilderRepository = offenderAddressBuilderRepository,
+    addressUsageBuilderFactory = addressUsageBuilderFactory,
   )
 }
 
@@ -73,6 +82,7 @@ class OffenderAddressBuilderRepository(
 class OffenderAddressBuilder(
   private val addressPhoneBuilderFactory: AddressPhoneBuilderFactory,
   private val offenderAddressBuilderRepository: OffenderAddressBuilderRepository,
+  private val addressUsageBuilderFactory: AddressUsageBuilderFactory,
 ) : OffenderAddressDsl {
 
   private lateinit var address: OffenderAddress
@@ -147,4 +157,18 @@ class OffenderAddressBuilder(
         .also { address.phones += it }
         .also { builder.apply(dsl) }
     }
+
+  override fun usage(
+    usageCode: String,
+    active: Boolean,
+    dsl: AddressUsageDsl.() -> Unit,
+  ): AddressUsage = addressUsageBuilderFactory.builder().let { builder ->
+    builder.build(
+      address = address,
+      usageCode = usageCode,
+      active = active,
+    )
+      .also { address.usages += it }
+      .also { builder.apply(dsl) }
+  }
 }
