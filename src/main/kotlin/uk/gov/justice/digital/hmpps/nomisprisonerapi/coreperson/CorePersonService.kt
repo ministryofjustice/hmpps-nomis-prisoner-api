@@ -40,20 +40,17 @@ class CorePersonService(
             ethnicity = a.ethnicity?.toCodeDescription(),
             sex = a.gender.toCodeDescription(),
             workingName = i == 0,
+            identifiers = a.identifiers.map { id ->
+              Identifier(
+                sequence = id.id.sequence,
+                type = id.identifierType.toCodeDescription(),
+                identifier = id.identifier,
+                issuedAuthority = id.issuedAuthority,
+                issuedDate = id.issuedDate,
+                verified = id.verified ?: false,
+              )
+            },
           )
-        },
-        identifiers = allOffenders.flatMap { ao ->
-          ao.identifiers.map { i ->
-            Identifier(
-              sequence = i.id.sequence,
-              offenderId = i.id.offender.id,
-              type = i.identifierType.toCodeDescription(),
-              identifier = i.identifier,
-              issuedAuthority = i.issuedAuthority,
-              issuedDate = i.issuedDate,
-              verified = i.verified ?: false,
-            )
-          }
         },
         sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList() ?: emptyList(),
         nationalities = allBookings?.flatMap { b ->
