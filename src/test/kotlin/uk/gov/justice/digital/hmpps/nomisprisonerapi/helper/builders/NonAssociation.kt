@@ -21,10 +21,10 @@ interface NonAssociationDsl {
   @NonAssociationDetailDslMarker
   fun nonAssociationDetail(
     typeSeq: Int = 1,
-    nonAssociationReason: String,
+    nonAssociationReason: String = "BUL",
     recipNonAssociationReason: String? = null,
-    nonAssociationType: String,
-    effectiveDate: LocalDate,
+    nonAssociationType: String = "WING",
+    effectiveDate: LocalDate = LocalDate.now(),
     expiryDate: LocalDate? = null,
     authorisedBy: String? = null,
     modifiedBy: String? = null,

@@ -239,6 +239,37 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     }
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @GetMapping("/non-associations/booking/{bookingId}")
+  @Operation(
+    summary = "Get non-associations by booking ID",
+    description = "Get non-associations for the given booking ID. Requires role NOMIS_NON_ASSOCIATIONS",
+    responses = [
+      ApiResponse(responseCode = "200", description = "List of non-associations"),
+      ApiResponse(
+        responseCode = "404",
+        description = "No non-associations found for the given booking ID",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getByBookingId(
+    @Parameter(description = "Booking ID", example = "12345", required = true)
+    @PathVariable
+    bookingId: Long,
+  ): List<NonAssociationIdResponse> =
+    nonAssociationService.getByBookingId(bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/all")
   @Operation(
     summary = "Get all non-associations for the two offender numbers",
