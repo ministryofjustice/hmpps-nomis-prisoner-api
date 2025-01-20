@@ -89,8 +89,6 @@ data class CorePerson(
   val activeFlag: Boolean,
   @Schema(description = "List of offender records for the person")
   val offenders: List<CoreOffender>,
-  @Schema(description = "List of identifiers for the person")
-  val identifiers: List<Identifier>,
   @Schema(description = "List of distinct sentence start dates")
   val sentenceStartDates: List<LocalDate>,
   @Schema(description = "List of addresses for the person")
@@ -118,28 +116,30 @@ data class CorePerson(
 data class CoreOffender(
   @Schema(description = "The offender id")
   val offenderId: Long,
-  @Schema(description = "Title of the person")
+  @Schema(description = "Title of this offender record")
   val title: CodeDescription?,
-  @Schema(description = "First name of the person")
+  @Schema(description = "First name of this offender record")
   val firstName: String,
-  @Schema(description = "Middle name of the person")
+  @Schema(description = "Middle name of this offender record")
   val middleName1: String?,
-  @Schema(description = "Second middle name of the person")
+  @Schema(description = "Second middle name of this offender record")
   val middleName2: String?,
-  @Schema(description = "Surname name of the person")
+  @Schema(description = "Surname name of this offender record")
   val lastName: String,
-  @Schema(description = "Date of birth of the person")
+  @Schema(description = "Date of birth of this offender record")
   val dateOfBirth: LocalDate?,
-  @Schema(description = "Birth place of the person")
+  @Schema(description = "Birth place of this offender record")
   val birthPlace: String?,
-  @Schema(description = "Birth country of the person")
+  @Schema(description = "Birth country of this offender record")
   val birthCountry: CodeDescription?,
-  @Schema(description = "Race of the person")
+  @Schema(description = "Race of this offender record")
   val ethnicity: CodeDescription?,
-  @Schema(description = "Sex of the person")
+  @Schema(description = "Sex of this offender record")
   val sex: CodeDescription?,
   @Schema(description = "The offender record associated with the current booking")
   val workingName: Boolean,
+  @Schema(description = "List of identifiers for the offender")
+  val identifiers: List<Identifier>,
 )
 
 @Schema(description = "The data held in NOMIS for an offender's identifiers")
@@ -147,8 +147,6 @@ data class CoreOffender(
 data class Identifier(
   @Schema(description = "Unique NOMIS sequence for this identifier for this person")
   val sequence: Long,
-  @Schema(description = "The offender id")
-  val offenderId: Long,
   @Schema(description = "The identifier type")
   val type: CodeDescription,
   @Schema(description = "The identifier value", example = "NE121212T")
