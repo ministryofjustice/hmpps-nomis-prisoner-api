@@ -118,6 +118,7 @@ class CaseNotesService(
     // see https://mojdt.slack.com/archives/C06G85DCF8T/p1726158063333349?thread_ts=1726156937.043299&cid=C06G85DCF8T
     authorFirstName = author.firstName,
     authorLastName = author.lastName,
+    authorUsernames = author.accounts.map { it.username },
     prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
     caseNoteText = parseMainText(caseNoteText),
     amendments = parseAmendments(this),
@@ -176,7 +177,7 @@ class CaseNotesService(
    * For reconciliation or migration
    */
   fun getCaseNotes(offenderNo: String): PrisonerCaseNotesResponse {
-    offenderRepository.findByNomsId(offenderNo).ifEmpty {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("offender $offenderNo not found")
     }
 

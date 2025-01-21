@@ -540,6 +540,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       nomisDataBuilder.build {
         staff1 = staff(firstName = "JANE", lastName = "NARK") {
           account(username = "JANE.NARK")
+          account(username = "JANE.NARK_ADM", type = "ADMIN")
         }
         staff(firstName = "TREVOR", lastName = "NACK") {
           account(username = "TREV.NACK")
@@ -670,6 +671,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseNotes[0].caseNoteType.code").isEqualTo("ACP")
           .jsonPath("caseNotes[0].caseNoteSubType.code").isEqualTo("POPEM")
           .jsonPath("caseNotes[0].authorUsername").isEqualTo("JANE.NARK")
+          .jsonPath("caseNotes[0].authorUsernames[0]").isEqualTo("JANE.NARK")
+          .jsonPath("caseNotes[0].authorUsernames[1]").isEqualTo("JANE.NARK_ADM")
           .jsonPath("caseNotes[0].caseNoteText").isEqualTo("Note 1")
           .jsonPath("caseNotes[1].caseNoteId").isEqualTo(id2)
           .jsonPath("caseNotes[1].bookingId").isEqualTo(latestBookingIdA1234AB)

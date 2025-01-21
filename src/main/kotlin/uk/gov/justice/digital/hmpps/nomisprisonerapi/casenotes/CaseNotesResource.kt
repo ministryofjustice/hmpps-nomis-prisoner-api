@@ -251,6 +251,8 @@ data class CaseNoteResponse(
   val authorFirstName: String?,
   @Schema(description = "Author last name")
   val authorLastName: String,
+  @Schema(description = "List of all usernames for authorStaffId")
+  val authorUsernames: List<String>?,
 
   @Schema(description = "Prison id")
   val prisonId: String? = null,
