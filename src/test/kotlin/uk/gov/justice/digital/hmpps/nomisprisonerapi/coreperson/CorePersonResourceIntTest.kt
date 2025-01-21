@@ -55,6 +55,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           birthCountryCode = "ATA",
           ethnicityCode = "M3",
           genderCode = "F",
+          nameTypeCode = "MAID",
           whoCreated = "KOFEADDY",
           whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
@@ -128,6 +129,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[0].ethnicity").doesNotExist()
           .jsonPath("offenders[0].sex.code").isEqualTo("M")
           .jsonPath("offenders[0].sex.description").isEqualTo("Male")
+          .jsonPath("offenders[0].nameType").doesNotExist()
           .jsonPath("offenders[0].workingName").isEqualTo(true)
           .jsonPath("inOutStatus").isEqualTo("OUT")
           .jsonPath("activeFlag").isEqualTo("false")
@@ -167,6 +169,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[0].ethnicity.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("offenders[0].sex.code").isEqualTo("F")
           .jsonPath("offenders[0].sex.description").isEqualTo("Female")
+          .jsonPath("offenders[0].nameType.code").isEqualTo("MAID")
+          .jsonPath("offenders[0].nameType.description").isEqualTo("Maiden")
           .jsonPath("offenders[0].workingName").isEqualTo(true)
       }
     }
