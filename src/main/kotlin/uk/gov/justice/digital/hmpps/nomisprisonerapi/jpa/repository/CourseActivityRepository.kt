@@ -19,7 +19,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     where ca.prison.id = :prisonId
     and ca.active = true
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
-    and ca.program.programCode not in :excludeProgramCodes
+    and ca.auditModuleName != 'DPS_SYNCHRONISATION'
     and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
     and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
     and ca.courseActivityId in
@@ -35,7 +35,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       )   
   """,
   )
-  fun findActiveActivities(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageRequest: Pageable): Page<Long>
+  fun findActiveActivities(prisonId: String, courseActivityId: Long?, pageRequest: Pageable): Page<Long>
 
   @Query(
     value = """
@@ -52,7 +52,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     where ca.prison.id = :prisonId
     and ca.active = true
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
-    and ca.program.programCode not in :excludeProgramCodes
+    and ca.auditModuleName != 'DPS_SYNCHRONISATION'
     and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
     and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
     and ca.courseActivityId in
@@ -70,7 +70,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     and pil.iepLevelCode is null
   """,
   )
-  fun findPayRatesWithUnknownIncentive(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<PayRateWithUnknownIncentive>
+  fun findPayRatesWithUnknownIncentive(prisonId: String, courseActivityId: Long?): List<PayRateWithUnknownIncentive>
 
   @Query(
     value = """
@@ -82,7 +82,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     where ca.prison.id = :prisonId
     and ca.active = true
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
-    and ca.program.programCode not in :excludeProgramCodes
+    and ca.auditModuleName != 'DPS_SYNCHRONISATION'
     and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
     and csr is null
     and ca.courseActivityId in
@@ -98,7 +98,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       )   
   """,
   )
-  fun findActivitiesWithoutScheduleRules(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<ActivityWithoutScheduleRule>
+  fun findActivitiesWithoutScheduleRules(prisonId: String, courseActivityId: Long?): List<ActivityWithoutScheduleRule>
 
   @Modifying
   @Query(

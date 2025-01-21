@@ -96,7 +96,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `finds an active activity with an allocation`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             offenderBooking = booking {
@@ -117,7 +117,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(pageSize + 1) {
-              courseActivities += courseActivity(startDate = "$today")
+              courseActivities += courseActivity(startDate = "$today", createdByDps = false)
             }
           }
           offender {
@@ -144,7 +144,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(pageSize + 1) {
-              courseActivities += courseActivity(startDate = "$today")
+              courseActivities += courseActivity(startDate = "$today", createdByDps = false)
             }
           }
           offender {
@@ -168,7 +168,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(50) {
-              courseActivities += courseActivity(startDate = "$today")
+              courseActivities += courseActivity(startDate = "$today", createdByDps = false)
             }
           }
           courseActivities.forEachIndexed { index, activity ->
@@ -218,7 +218,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should include future course activities`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$tomorrow")
+            courseActivity = courseActivity(startDate = "$tomorrow", createdByDps = false)
           }
           offender {
             booking {
@@ -237,7 +237,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include ended course activities`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday")
+            courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday", createdByDps = false)
           }
           offender {
             booking {
@@ -255,7 +255,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include activities with no prisoners`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
         }
 
@@ -268,7 +268,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner allocation has ended status`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking {
@@ -286,7 +286,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner allocation past end date`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking {
@@ -304,7 +304,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should include if prisoner allocation in future`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking {
@@ -323,7 +323,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner active in different prison`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking(agencyLocationId = "LEI") {
@@ -341,7 +341,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner is inactive`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking(active = false) {
@@ -359,7 +359,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should include if prisoner is ACTIVE OUT`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking(active = true, inOutStatus = "OUT") {
@@ -375,18 +375,10 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should not include if course activity not in program`() {
+      fun `should not include if course activity created by DPS`() {
         nomisDataBuilder.build {
-          programService(programCode = "INTTEST") {
-            courseActivity = courseActivity(startDate = "$today")
-          }
-          offender {
-            booking {
-              courseAllocation(courseActivity = courseActivity, startDate = "$today")
-            }
-          }
-          programService(programCode = "ANOTHER_PROGRAM") {
-            courseActivity = courseActivity(startDate = "$today")
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = true)
           }
           offender {
             booking {
@@ -404,7 +396,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should not include if there are no schedule rules`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$yesterday") {} // no schedule rules
+            courseActivity = courseActivity(startDate = "$yesterday", createdByDps = false) {} // no schedule rules
           }
           offender {
             booking {
@@ -422,7 +414,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       fun `should only include once if there are multiple schedule rules`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$yesterday") {
+            courseActivity = courseActivity(startDate = "$yesterday", createdByDps = false) {
               courseScheduleRule(startTimeHours = 9, startTimeMinutes = 30, endTimeHours = 11, endTimeMinutes = 30)
               courseScheduleRule(startTimeHours = 13, startTimeMinutes = 30, endTimeHours = 15, endTimeMinutes = 30)
             }
@@ -444,8 +436,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         lateinit var otherCourseActivity: CourseActivity
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            otherCourseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            otherCourseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking {
@@ -466,8 +458,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         lateinit var otherCourseActivity: CourseActivity
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            otherCourseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            otherCourseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking(agencyLocationId = "LEI") {
@@ -537,7 +529,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     fun `should return activities with a pay rate for an inactive incentive level`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             payRate(iepLevelCode = "ENT", payBandCode = "5") // incentive level not active
@@ -563,7 +555,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     fun `should ignore activities where the bad pay rate has expired`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             payRate(iepLevelCode = "ENT", endDate = "$yesterday") // inactive incentive level on expired pay rate
@@ -631,7 +623,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     fun `should return active activities without schedule rules`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {}
+          courseActivity = courseActivity(createdByDps = false) {}
         }
         offender {
           booking {
@@ -654,9 +646,9 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {}
-          courseActivity2 = courseActivity {}
-          courseActivity3 = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {}
+          courseActivity2 = courseActivity(createdByDps = false) {}
+          courseActivity3 = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
           }
@@ -686,8 +678,8 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {}
-          courseActivity2 = courseActivity {}
+          courseActivity = courseActivity(createdByDps = false) {}
+          courseActivity2 = courseActivity(createdByDps = false) {}
         }
         listOf(courseActivity, courseActivity2).forEach {
           offender {
@@ -709,7 +701,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     fun `should ignore inactive activities without schedule rules`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity(endDate = "$yesterday")
+          courseActivity = courseActivity(endDate = "$yesterday", createdByDps = false)
         }
         offender {
           booking {
@@ -727,7 +719,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     fun `should ignore active activities with schedule rules`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
           }
@@ -748,7 +740,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     fun `should ignore activities without allocations`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity {
+          courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
           }
