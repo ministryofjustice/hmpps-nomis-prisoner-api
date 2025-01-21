@@ -39,6 +39,7 @@ class CorePersonService(
             birthCountry = a.birthCountry?.toCodeDescription(),
             ethnicity = a.ethnicity?.toCodeDescription(),
             sex = a.gender.toCodeDescription(),
+            nameType = a.nameType?.toCodeDescription(),
             workingName = i == 0,
             identifiers = a.identifiers.map { id ->
               Identifier(

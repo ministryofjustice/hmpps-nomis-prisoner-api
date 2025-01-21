@@ -136,6 +136,8 @@ data class CoreOffender(
   val ethnicity: CodeDescription?,
   @Schema(description = "Sex of this offender record")
   val sex: CodeDescription?,
+  @Schema(description = "Name type of this offender record")
+  val nameType: CodeDescription?,
   @Schema(description = "The offender record associated with the current booking")
   val workingName: Boolean,
   @Schema(description = "List of identifiers for the offender")

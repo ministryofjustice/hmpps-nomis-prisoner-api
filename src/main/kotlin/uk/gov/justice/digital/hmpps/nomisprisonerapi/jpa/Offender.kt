@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
@@ -20,6 +19,7 @@ import org.hibernate.annotations.SQLRestriction
 import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity.Companion.ETHNICITY
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender.Companion.SEX
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NameType.Companion.NAME_TYPE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title.Companion.TITLE
 import java.time.LocalDate
 
@@ -38,7 +38,7 @@ data class Offender(
   @Column(name = "LAST_NAME", nullable = false)
   val lastName: String,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(formula = JoinFormula(value = "'$SEX'", referencedColumnName = "domain")),
@@ -47,7 +47,7 @@ data class Offender(
   )
   val gender: Gender,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(formula = JoinFormula(value = "'$TITLE'", referencedColumnName = "domain")),
@@ -56,7 +56,7 @@ data class Offender(
   )
   val title: Title? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(formula = JoinFormula(value = "'$ETHNICITY'", referencedColumnName = "domain")),
@@ -64,6 +64,16 @@ data class Offender(
     ],
   )
   val ethnicity: Ethnicity? = null,
+
+  // Note that NAME_TYPE is always null in NOMIS, instead ALIAS_NAME_TYPE is used
+  @ManyToOne(fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(formula = JoinFormula(value = "'$NAME_TYPE'", referencedColumnName = "domain")),
+      JoinColumnOrFormula(column = JoinColumn(name = "ALIAS_NAME_TYPE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val nameType: NameType? = null,
 
   @Column(name = "ID_SOURCE_CODE", nullable = false)
   val idSourceCode: String = "SEQ",
@@ -105,15 +115,15 @@ data class Offender(
   @Column(name = "ROOT_OFFENDER_ID")
   var rootOffenderId: Long? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "ROOT_OFFENDER_ID", updatable = false, insertable = false)
   var rootOffender: Offender? = null,
 
   // CAUTION: this list is only populated for the root offender; normally the function getAllBookings() below should be used instead
-  @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+  @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = LAZY, orphanRemoval = true)
   private val allBookings: MutableList<OffenderBooking> = mutableListOf(),
 
-  @OneToMany(mappedBy = "id.offender", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "id.offender", cascade = [CascadeType.ALL], fetch = LAZY)
   val identifiers: MutableList<OffenderIdentifier> = mutableListOf(),
 
   @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = LAZY)

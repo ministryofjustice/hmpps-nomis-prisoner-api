@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NameType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -112,6 +113,7 @@ class OffenderBuilderRepository(
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
   private val countryRepository: ReferenceCodeRepository<Country>,
+  private val nameTypeRepository: ReferenceCodeRepository<NameType>,
   private val jdbcTemplate: JdbcTemplate,
 ) {
   fun save(offender: Offender): Offender = offenderRepository.saveAndFlush(offender)
@@ -119,6 +121,7 @@ class OffenderBuilderRepository(
   fun gender(genderCode: String): Gender = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
   fun title(titleCode: String): Title = titleRepository.findByIdOrNull(ReferenceCode.Pk(Title.TITLE, titleCode))!!
   fun country(birthCountryCode: String): Country = countryRepository.findByIdOrNull(ReferenceCode.Pk(Country.COUNTRY, birthCountryCode))!!
+  fun nameType(nameTypeCode: String): NameType = nameTypeRepository.findByIdOrNull(ReferenceCode.Pk(NameType.NAME_TYPE, nameTypeCode))!!
   fun updateCreateDatetime(offender: Offender, whenCreated: LocalDateTime) =
     jdbcTemplate.update("update OFFENDERS set CREATE_DATETIME = ? where OFFENDER_ID = ?", whenCreated, offender.id)
   fun updateCreateUsername(offender: Offender, whoCreated: String) =
@@ -170,6 +173,7 @@ class OffenderBuilder(
     birthCountryCode: String?,
     ethnicityCode: String?,
     genderCode: String,
+    nameTypeCode: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
   ): Offender = Offender(
@@ -184,6 +188,7 @@ class OffenderBuilder(
     birthCountry = birthCountryCode?.let { repository.country(birthCountryCode) },
     ethnicity = ethnicityCode?.let { repository.ethnicity(ethnicityCode) },
     gender = repository.gender(genderCode),
+    nameType = nameTypeCode?.let { repository.nameType(nameTypeCode) },
     lastNameKey = lastName.uppercase(),
   )
     .let { repository.save(it) }
