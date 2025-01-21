@@ -4,12 +4,16 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTime
 
 @Transactional
 @Service
 class CorePersonService(
   private val offenderRepository: OffenderRepository,
+  private val offenderBeliefRepository: OffenderBeliefRepository,
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val allOffenders = offenderRepository.findByNomsIdOrderedWithBookings(prisonNumber)
@@ -23,7 +27,7 @@ class CorePersonService(
         inOutStatus = latestBooking?.inOutStatus ?: "OUT",
         activeFlag = latestBooking?.active ?: false,
         offenders = allOffenders.mapIndexed { i, a ->
-          Offender(
+          CoreOffender(
             offenderId = a.id,
             title = a.title?.toCodeDescription(),
             firstName = a.firstName,
@@ -35,67 +39,89 @@ class CorePersonService(
             birthCountry = a.birthCountry?.toCodeDescription(),
             ethnicity = a.ethnicity?.toCodeDescription(),
             sex = a.gender.toCodeDescription(),
+            nameType = a.nameType?.toCodeDescription(),
             workingName = i == 0,
+            identifiers = a.identifiers.map { id ->
+              Identifier(
+                sequence = id.id.sequence,
+                type = id.identifierType.toCodeDescription(),
+                identifier = id.identifier,
+                issuedAuthority = id.issuedAuthority,
+                issuedDate = id.issuedDate,
+                verified = id.verified ?: false,
+              )
+            },
           )
-        },
-        identifiers = allOffenders.flatMap { ao ->
-          ao.identifiers.map { i ->
-            Identifier(
-              sequence = i.id.sequence,
-              offenderId = i.id.offender.id,
-              type = i.identifierType.toCodeDescription(),
-              identifier = i.identifier,
-              issuedAuthority = i.issuedAuthority,
-              issuedDate = i.issuedDate,
-              verified = i.verified ?: false,
-            )
-          }
         },
         sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList() ?: emptyList(),
         nationalities = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "NAT" }.map { n ->
-            OffenderNationality(
-              bookingId = b.bookingId,
-              nationality = n.profileCode?.toCodeDescription(),
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "NAT" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderNationality(
+                bookingId = b.bookingId,
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+                nationality = n.profileCode!!.toCodeDescription(),
+              )
+            }
         } ?: emptyList(),
         nationalityDetails = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "NATIO" }.map { n ->
-            OffenderNationalityDetails(
-              bookingId = b.bookingId,
-              details = n.profileCodeId,
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "NATIO" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderNationalityDetails(
+                bookingId = b.bookingId,
+                details = n.profileCodeId!!,
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         sexualOrientations = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "SEXO" }.map { n ->
-            OffenderSexualOrientation(
-              bookingId = b.bookingId,
-              sexualOrientation = n.profileCode?.toCodeDescription(),
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "SEXO" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderSexualOrientation(
+                bookingId = b.bookingId,
+                sexualOrientation = n.profileCode!!.toCodeDescription(),
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         disabilities = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "DISABILITY" }.map { n ->
-            OffenderDisability(
-              bookingId = b.bookingId,
-              disability = n.profileCodeId?.equals("Y"),
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "DISABILITY" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderDisability(
+                bookingId = b.bookingId,
+                disability = n.profileCodeId == "Y",
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         interestsToImmigration = allBookings?.flatMap { b ->
-          b.profileDetails.filter { pd -> pd.id.profileType.type == "IMM" }.map { n ->
-            OffenderInterestToImmigration(
-              bookingId = b.bookingId,
-              interestToImmigration = n.profileCodeId?.equals("Y"),
-            )
-          }
+          b.profileDetails.filter { it.id.profileType.type == "IMM" }
+            .filter { it.profileCodeId != null }
+            .map { n ->
+              OffenderInterestToImmigration(
+                bookingId = b.bookingId,
+                interestToImmigration = n.profileCodeId == "Y",
+                startDateTime = b.bookingBeginDate,
+                endDateTime = b.getReleaseTime(),
+                latestBooking = b.bookingSequence == 1,
+              )
+            }
         } ?: emptyList(),
         addresses = o.addresses.map { address ->
           OffenderAddress(
             addressId = address.addressId,
-            type = address.addressType?.toCodeDescription(),
             flat = address.flat,
             premise = address.premise,
             street = address.street,
@@ -119,6 +145,13 @@ class CorePersonService(
                 extension = number.extNo,
               )
             },
+            usages = address.usages.map { u ->
+              OffenderAddressUsage(
+                addressId = address.addressId,
+                usage = u.addressUsage.toCodeDescription(),
+                active = u.active,
+              )
+            },
           )
         },
         phoneNumbers = o.phones.map { number ->
@@ -133,6 +166,18 @@ class CorePersonService(
           OffenderEmailAddress(
             emailAddressId = address.internetAddressId,
             email = address.internetAddress,
+          )
+        },
+        beliefs = offenderBeliefRepository.findByRootOffenderOrderByStartDateDesc(o).map { belief ->
+          OffenderBelief(
+            beliefId = belief.beliefId,
+            belief = belief.beliefCode.toCodeDescription(),
+            startDate = belief.startDate,
+            endDate = belief.endDate,
+            changeReason = belief.changeReason,
+            comments = belief.comments,
+            verified = belief.verified ?: false,
+            audit = belief.toAudit(),
           )
         },
       )

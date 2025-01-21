@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
@@ -54,6 +55,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           birthCountryCode = "ATA",
           ethnicityCode = "M3",
           genderCode = "F",
+          nameTypeCode = "MAID",
           whoCreated = "KOFEADDY",
           whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
@@ -127,6 +129,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[0].ethnicity").doesNotExist()
           .jsonPath("offenders[0].sex.code").isEqualTo("M")
           .jsonPath("offenders[0].sex.description").isEqualTo("Male")
+          .jsonPath("offenders[0].nameType").doesNotExist()
           .jsonPath("offenders[0].workingName").isEqualTo(true)
           .jsonPath("inOutStatus").isEqualTo("OUT")
           .jsonPath("activeFlag").isEqualTo("false")
@@ -137,6 +140,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("emailAddresses").doesNotExist()
           .jsonPath("nationalities").doesNotExist()
           .jsonPath("nationalityDetails").doesNotExist()
+          .jsonPath("beliefs").doesNotExist()
       }
 
       @Test
@@ -165,6 +169,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[0].ethnicity.description").isEqualTo("Mixed: White and Asian")
           .jsonPath("offenders[0].sex.code").isEqualTo("F")
           .jsonPath("offenders[0].sex.description").isEqualTo("Female")
+          .jsonPath("offenders[0].nameType.code").isEqualTo("MAID")
+          .jsonPath("offenders[0].nameType.description").isEqualTo("Maiden")
           .jsonPath("offenders[0].workingName").isEqualTo(true)
       }
     }
@@ -278,31 +284,31 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("identifiers.length()").isEqualTo(3)
-          .jsonPath("identifiers[0].sequence").isEqualTo(1)
-          .jsonPath("identifiers[0].offenderId").isEqualTo(offender.id)
-          .jsonPath("identifiers[0].identifier").isEqualTo("20/0071818T")
-          .jsonPath("identifiers[0].type.code").isEqualTo("PNC")
-          .jsonPath("identifiers[0].type.description").isEqualTo("PNC Number")
-          .jsonPath("identifiers[0].issuedAuthority").isEqualTo("Met Police")
-          .jsonPath("identifiers[0].issuedDate").isEqualTo("2020-01-01")
-          .jsonPath("identifiers[0].verified").isEqualTo(true)
-          .jsonPath("identifiers[1].sequence").isEqualTo(2)
-          .jsonPath("identifiers[1].offenderId").isEqualTo(offender.id)
-          .jsonPath("identifiers[1].identifier").isEqualTo("123")
-          .jsonPath("identifiers[1].type.code").isEqualTo("STAFF")
-          .jsonPath("identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
-          .jsonPath("identifiers[1].issuedAuthority").doesNotExist()
-          .jsonPath("identifiers[1].issuedDate").doesNotExist()
-          .jsonPath("identifiers[1].verified").isEqualTo(false)
-          .jsonPath("identifiers[2].sequence").isEqualTo(1)
-          .jsonPath("identifiers[2].offenderId").isEqualTo(alias.id)
-          .jsonPath("identifiers[2].identifier").isEqualTo("456")
-          .jsonPath("identifiers[2].type.code").isEqualTo("STAFF")
-          .jsonPath("identifiers[2].type.description").isEqualTo("Staff Pass/ Identity Card")
-          .jsonPath("identifiers[2].issuedAuthority").doesNotExist()
-          .jsonPath("identifiers[2].issuedDate").doesNotExist()
-          .jsonPath("identifiers[2].verified").isEqualTo(false)
+          .jsonPath("offenders[0].offenderId").isEqualTo(offender.id)
+          .jsonPath("offenders[0].identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("offenders[0].identifiers[0].identifier").isEqualTo("20/0071818T")
+          .jsonPath("offenders[0].identifiers[0].type.code").isEqualTo("PNC")
+          .jsonPath("offenders[0].identifiers[0].type.description").isEqualTo("PNC Number")
+          .jsonPath("offenders[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("offenders[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
+          .jsonPath("offenders[0].identifiers[0].verified").isEqualTo(true)
+          .jsonPath("offenders[0].identifiers[1].sequence").isEqualTo(2)
+          .jsonPath("offenders[0].identifiers[1].identifier").isEqualTo("123")
+          .jsonPath("offenders[0].identifiers[1].type.code").isEqualTo("STAFF")
+          .jsonPath("offenders[0].identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("offenders[0].identifiers[1].issuedAuthority").doesNotExist()
+          .jsonPath("offenders[0].identifiers[1].issuedDate").doesNotExist()
+          .jsonPath("offenders[0].identifiers[1].verified").isEqualTo(false)
+          .jsonPath("offenders[0].identifiers.length()").isEqualTo(2)
+          .jsonPath("offenders[1].offenderId").isEqualTo(alias.id)
+          .jsonPath("offenders[1].identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("offenders[1].identifiers[0].identifier").isEqualTo("456")
+          .jsonPath("offenders[1].identifiers[0].type.code").isEqualTo("STAFF")
+          .jsonPath("offenders[1].identifiers[0].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("offenders[1].identifiers[0].issuedAuthority").doesNotExist()
+          .jsonPath("offenders[1].identifiers[0].issuedDate").doesNotExist()
+          .jsonPath("offenders[1].identifiers[0].verified").isEqualTo(false)
+          .jsonPath("offenders[1].identifiers.length()").isEqualTo(1)
       }
     }
 
@@ -350,6 +356,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
                 whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
               )
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+              usage(usageCode = "DAP", active = true)
+              usage(usageCode = "CURFEW", active = false)
             }
             address(
               noFixedAddress = true,
@@ -371,7 +379,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBody()
           .jsonPath("addresses[0].addressId").isEqualTo(offender.addresses[0].addressId)
-          .jsonPath("addresses[0].type").doesNotExist()
           .jsonPath("addresses[0].flat").doesNotExist()
           .jsonPath("addresses[0].premise").doesNotExist()
           .jsonPath("addresses[0].street").doesNotExist()
@@ -388,8 +395,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[0].endDate").doesNotExist()
           .jsonPath("addresses[0].phoneNumbers").doesNotExist()
           .jsonPath("addresses[1].addressId").isEqualTo(offender.addresses[1].addressId)
-          .jsonPath("addresses[1].type.code").isEqualTo("HOME")
-          .jsonPath("addresses[1].type.description").isEqualTo("Home Address")
           .jsonPath("addresses[1].flat").isEqualTo("3B")
           .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
           .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
@@ -419,6 +424,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
+          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
           .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(offender.addresses[1].phones[0].phoneId)
           .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
           .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
@@ -429,6 +435,25 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
           .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
           .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
+      }
+
+      @Test
+      fun `will return address usages associated with addresses`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].usages").doesNotExist()
+          .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[0].usage.code").isEqualTo("CURFEW")
+          .jsonPath("addresses[1].usages[0].usage.description").isEqualTo("Curfew Order")
+          .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
+          .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
+          .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
+          .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
       }
     }
 
@@ -525,14 +550,18 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            booking1 = booking {
+            booking1 = booking(bookingBeginDate = LocalDateTime.parse("2024-02-03T12:20:30")) {
               profileDetail(profileType = "NAT", profileCode = "MG")
             }
-            booking2 = booking(active = false) {
+            booking2 = booking(
+              active = false,
+              bookingBeginDate = LocalDateTime.parse("2022-02-03T12:20:30"),
+              bookingEndDate = LocalDate.parse("2023-01-23"),
+            ) {
               profileDetail(profileType = "NAT", profileCode = "BRIT")
             }
             alias {
-              aliasBooking = booking {
+              aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
                 profileDetail(profileType = "NAT", profileCode = null)
               }
             }
@@ -551,11 +580,16 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("nationalities[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("nationalities[0].nationality.code").isEqualTo("MG")
           .jsonPath("nationalities[0].nationality.description").isEqualTo("Malagasy")
+          .jsonPath("nationalities[0].startDateTime").isEqualTo("2024-02-03T12:20:30")
+          .jsonPath("nationalities[0].endDateTime").doesNotExist()
+          .jsonPath("nationalities[0].latestBooking").isEqualTo(true)
           .jsonPath("nationalities[1].bookingId").isEqualTo(booking2.bookingId)
           .jsonPath("nationalities[1].nationality.code").isEqualTo("BRIT")
           .jsonPath("nationalities[1].nationality.description").isEqualTo("British")
-          .jsonPath("nationalities[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("nationalities[2].nationality").doesNotExist()
+          .jsonPath("nationalities[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
+          .jsonPath("nationalities[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
+          .jsonPath("nationalities[1].latestBooking").isEqualTo(false)
+          .jsonPath("nationalities.length()").isEqualTo(2)
       }
     }
 
@@ -573,14 +607,18 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            booking1 = booking {
+            booking1 = booking(bookingBeginDate = LocalDateTime.parse("2024-02-03T12:20:30")) {
               profileDetail(profileType = "NATIO", profileCode = "Claims to be from Madagascar")
             }
-            booking2 = booking(active = false) {
+            booking2 = booking(
+              active = false,
+              bookingBeginDate = LocalDateTime.parse("2022-02-03T12:20:30"),
+              bookingEndDate = LocalDate.parse("2023-01-23"),
+            ) {
               profileDetail(profileType = "NATIO", profileCode = "ROTL 23/01/2023")
             }
             alias {
-              aliasBooking = booking {
+              aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
                 profileDetail(profileType = "NATIO", profileCode = null)
               }
             }
@@ -598,10 +636,15 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("nationalityDetails[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("nationalityDetails[0].details").isEqualTo("Claims to be from Madagascar")
+          .jsonPath("nationalityDetails[0].startDateTime").isEqualTo("2024-02-03T12:20:30")
+          .jsonPath("nationalityDetails[0].endDateTime").doesNotExist()
+          .jsonPath("nationalityDetails[0].latestBooking").isEqualTo(true)
           .jsonPath("nationalityDetails[1].bookingId").isEqualTo(booking2.bookingId)
           .jsonPath("nationalityDetails[1].details").isEqualTo("ROTL 23/01/2023")
-          .jsonPath("nationalityDetails[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("nationalityDetails[2].details").doesNotExist()
+          .jsonPath("nationalityDetails[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
+          .jsonPath("nationalityDetails[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
+          .jsonPath("nationalityDetails[1].latestBooking").isEqualTo(false)
+          .jsonPath("nationalityDetails.length()").isEqualTo(2)
       }
     }
 
@@ -619,14 +662,18 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            booking1 = booking {
+            booking1 = booking(bookingBeginDate = LocalDateTime.parse("2024-02-03T12:20:30")) {
               profileDetail(profileType = "SEXO", profileCode = "HET")
             }
-            booking2 = booking(active = false) {
+            booking2 = booking(
+              active = false,
+              bookingBeginDate = LocalDateTime.parse("2022-02-03T12:20:30"),
+              bookingEndDate = LocalDate.parse("2023-01-23"),
+            ) {
               profileDetail(profileType = "SEXO", profileCode = "ND")
             }
             alias {
-              aliasBooking = booking {
+              aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
                 profileDetail(profileType = "SEXO", profileCode = null)
               }
             }
@@ -645,11 +692,16 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("sexualOrientations[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("sexualOrientations[0].sexualOrientation.code").isEqualTo("HET")
           .jsonPath("sexualOrientations[0].sexualOrientation.description").isEqualTo("Heterosexual / Straight")
+          .jsonPath("sexualOrientations[0].startDateTime").isEqualTo("2024-02-03T12:20:30")
+          .jsonPath("sexualOrientations[0].endDateTime").doesNotExist()
+          .jsonPath("sexualOrientations[0].latestBooking").isEqualTo(true)
           .jsonPath("sexualOrientations[1].bookingId").isEqualTo(booking2.bookingId)
           .jsonPath("sexualOrientations[1].sexualOrientation.code").isEqualTo("ND")
           .jsonPath("sexualOrientations[1].sexualOrientation.description").isEqualTo("Not Disclosed")
-          .jsonPath("sexualOrientations[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("sexualOrientations[2].sexualOrientation").doesNotExist()
+          .jsonPath("sexualOrientations[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
+          .jsonPath("sexualOrientations[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
+          .jsonPath("sexualOrientations[1].latestBooking").isEqualTo(false)
+          .jsonPath("sexualOrientations.length()").isEqualTo(2)
       }
     }
 
@@ -667,14 +719,18 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            booking1 = booking {
+            booking1 = booking(bookingBeginDate = LocalDateTime.parse("2024-02-03T12:20:30")) {
               profileDetail(profileType = "DISABILITY", profileCode = "Y")
             }
-            booking2 = booking(active = false) {
+            booking2 = booking(
+              active = false,
+              bookingBeginDate = LocalDateTime.parse("2022-02-03T12:20:30"),
+              bookingEndDate = LocalDate.parse("2023-01-23"),
+            ) {
               profileDetail(profileType = "DISABILITY", profileCode = "N")
             }
             alias {
-              aliasBooking = booking {
+              aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
                 profileDetail(profileType = "DISABILITY", profileCode = null)
               }
             }
@@ -692,10 +748,15 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("disabilities[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("disabilities[0].disability").isEqualTo(true)
+          .jsonPath("disabilities[0].startDateTime").isEqualTo("2024-02-03T12:20:30")
+          .jsonPath("disabilities[0].endDateTime").doesNotExist()
+          .jsonPath("disabilities[0].latestBooking").isEqualTo(true)
           .jsonPath("disabilities[1].bookingId").isEqualTo(booking2.bookingId)
           .jsonPath("disabilities[1].disability").isEqualTo(false)
-          .jsonPath("disabilities[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("disabilities[2].disability").doesNotExist()
+          .jsonPath("disabilities[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
+          .jsonPath("disabilities[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
+          .jsonPath("disabilities[1].latestBooking").isEqualTo(false)
+          .jsonPath("disabilities.length()").isEqualTo(2)
       }
     }
 
@@ -713,14 +774,18 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            booking1 = booking {
+            booking1 = booking(bookingBeginDate = LocalDateTime.parse("2024-02-03T12:20:30")) {
               profileDetail(profileType = "IMM", profileCode = "Y")
             }
-            booking2 = booking(active = false) {
+            booking2 = booking(
+              active = false,
+              bookingBeginDate = LocalDateTime.parse("2022-02-03T12:20:30"),
+              bookingEndDate = LocalDate.parse("2023-01-23"),
+            ) {
               profileDetail(profileType = "IMM", profileCode = "N")
             }
             alias {
-              aliasBooking = booking {
+              aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
                 profileDetail(profileType = "IMM", profileCode = null)
               }
             }
@@ -738,10 +803,15 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("interestsToImmigration[0].bookingId").isEqualTo(booking1.bookingId)
           .jsonPath("interestsToImmigration[0].interestToImmigration").isEqualTo(true)
+          .jsonPath("interestsToImmigration[0].startDateTime").isEqualTo("2024-02-03T12:20:30")
+          .jsonPath("interestsToImmigration[0].endDateTime").doesNotExist()
+          .jsonPath("interestsToImmigration[0].latestBooking").isEqualTo(true)
           .jsonPath("interestsToImmigration[1].bookingId").isEqualTo(booking2.bookingId)
           .jsonPath("interestsToImmigration[1].interestToImmigration").isEqualTo(false)
-          .jsonPath("interestsToImmigration[2].bookingId").isEqualTo(aliasBooking.bookingId)
-          .jsonPath("interestsToImmigration[2].interestToImmigration").doesNotExist()
+          .jsonPath("interestsToImmigration[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
+          .jsonPath("interestsToImmigration[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
+          .jsonPath("interestsToImmigration[1].latestBooking").isEqualTo(false)
+          .jsonPath("interestsToImmigration.length()").isEqualTo(2)
       }
     }
 
@@ -759,15 +829,19 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            booking1 = booking {
+            booking1 = booking(bookingBeginDate = LocalDateTime.parse("2024-02-03T12:20:30")) {
               sentence(startDate = LocalDate.parse("2023-01-01"))
               sentence(startDate = LocalDate.parse("2020-01-01"))
             }
-            booking2 = booking(active = false) {
+            booking2 = booking(
+              active = false,
+              bookingBeginDate = LocalDateTime.parse("2022-02-03T12:20:30"),
+              bookingEndDate = LocalDate.parse("2023-01-23"),
+            ) {
               sentence(startDate = LocalDate.parse("2020-01-01"))
             }
             alias {
-              aliasBooking = booking(active = false) {
+              aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
                 sentence(startDate = LocalDate.parse("2020-01-02"))
               }
             }
@@ -787,6 +861,87 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceStartDates[0]").isEqualTo("2020-01-01")
           .jsonPath("sentenceStartDates[1]").isEqualTo("2020-01-02")
           .jsonPath("sentenceStartDates[2]").isEqualTo("2023-01-01")
+      }
+    }
+
+    @Nested
+    inner class OffenderBeliefs {
+      private lateinit var offender: Offender
+      private lateinit var belief1: OffenderBelief
+      private lateinit var belief2: OffenderBelief
+      private lateinit var belief3: OffenderBelief
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking {
+              belief2 = belief(
+                beliefCode = "JAIN",
+                changeReason = true,
+                comments = "No longer believes in Zoroastrianism",
+                verified = true,
+              )
+              belief1 = belief(
+                beliefCode = "ZORO",
+                startDate = LocalDate.parse("2018-01-01"),
+                endDate = LocalDate.parse("2019-02-03"),
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+            }
+            booking(active = false) {
+              belief3 = belief(
+                beliefCode = "DRU",
+                startDate = LocalDate.parse("2023-01-01"),
+                changeReason = false,
+                verified = false,
+              )
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return beliefs`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("beliefs.length()").isEqualTo(3)
+          .jsonPath("beliefs[0].beliefId").isEqualTo(belief3.beliefId)
+          .jsonPath("beliefs[0].belief.code").isEqualTo("DRU")
+          .jsonPath("beliefs[0].belief.description").isEqualTo("Druid")
+          .jsonPath("beliefs[0].startDate").isEqualTo("2023-01-01")
+          .jsonPath("beliefs[0].changeReason").isEqualTo(false)
+          .jsonPath("beliefs[0].comments").doesNotExist()
+          .jsonPath("beliefs[0].verified").isEqualTo(false)
+          .jsonPath("beliefs[1].beliefId").isEqualTo(belief2.beliefId)
+          .jsonPath("beliefs[1].belief.code").isEqualTo("JAIN")
+          .jsonPath("beliefs[1].belief.description").isEqualTo("Jain")
+          .jsonPath("beliefs[1].startDate").isEqualTo("2021-01-01")
+          .jsonPath("beliefs[1].endDate").doesNotExist()
+          .jsonPath("beliefs[1].changeReason").isEqualTo(true)
+          .jsonPath("beliefs[1].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .jsonPath("beliefs[1].verified").isEqualTo(true)
+          .jsonPath("beliefs[1].audit.createUsername").isNotEmpty
+          .jsonPath("beliefs[1].audit.createDatetime").isNotEmpty
+          .jsonPath("beliefs[2].beliefId").isEqualTo(belief1.beliefId)
+          .jsonPath("beliefs[2].belief.code").isEqualTo("ZORO")
+          .jsonPath("beliefs[2].belief.description").isEqualTo("Zoroastrian")
+          .jsonPath("beliefs[2].startDate").isEqualTo("2018-01-01")
+          .jsonPath("beliefs[2].endDate").isEqualTo("2019-02-03")
+          .jsonPath("beliefs[2].changeReason").doesNotExist()
+          .jsonPath("beliefs[2].comments").doesNotExist()
+          .jsonPath("beliefs[2].verified").isEqualTo(false)
+          .jsonPath("beliefs[2].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("beliefs[2].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("beliefs[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
     }
   }

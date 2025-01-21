@@ -113,38 +113,29 @@ class ActivityService(
       .let { CreateActivityResponse(it) }
   }
 
-  fun findActiveActivityIds(pageRequest: Pageable, prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): Page<FindActiveActivityIdsResponse> {
-    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
-    return findPrisonOrThrow(prisonId)
-      .let { courseActivityRepository.findActiveActivities(prisonId, excludePrograms, courseActivityId, pageRequest) }
-      .map { FindActiveActivityIdsResponse(it) }
-  }
+  fun findActiveActivityIds(pageRequest: Pageable, prisonId: String, courseActivityId: Long?): Page<FindActiveActivityIdsResponse> = findPrisonOrThrow(prisonId)
+    .let { courseActivityRepository.findActiveActivities(prisonId, courseActivityId, pageRequest) }
+    .map { FindActiveActivityIdsResponse(it) }
 
-  fun findPayRatesWithUnknownIncentive(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindPayRateWithUnknownIncentiveResponse> {
-    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
-    return findPrisonOrThrow(prisonId)
-      .let { courseActivityRepository.findPayRatesWithUnknownIncentive(prisonId, excludePrograms, courseActivityId) }
-      .map {
-        FindPayRateWithUnknownIncentiveResponse(
-          courseActivityId = it.getCourseActivityId(),
-          courseActivityDescription = it.getCourseActivityDescription(),
-          payBandCode = it.getPayBandCode(),
-          incentiveLevelCode = it.getIncentiveLevelCode(),
-        )
-      }
-  }
+  fun findPayRatesWithUnknownIncentive(prisonId: String, courseActivityId: Long?): List<FindPayRateWithUnknownIncentiveResponse> = findPrisonOrThrow(prisonId)
+    .let { courseActivityRepository.findPayRatesWithUnknownIncentive(prisonId, courseActivityId) }
+    .map {
+      FindPayRateWithUnknownIncentiveResponse(
+        courseActivityId = it.getCourseActivityId(),
+        courseActivityDescription = it.getCourseActivityDescription(),
+        payBandCode = it.getPayBandCode(),
+        incentiveLevelCode = it.getIncentiveLevelCode(),
+      )
+    }
 
-  fun findActivitiesWithoutScheduleRules(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindActivitiesWithoutScheduleRulesResponse> {
-    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
-    return findPrisonOrThrow(prisonId)
-      .let { courseActivityRepository.findActivitiesWithoutScheduleRules(prisonId, excludePrograms, courseActivityId) }
-      .map {
-        FindActivitiesWithoutScheduleRulesResponse(
-          courseActivityId = it.getCourseActivityId(),
-          courseActivityDescription = it.getCourseActivityDescription(),
-        )
-      }
-  }
+  fun findActivitiesWithoutScheduleRules(prisonId: String, courseActivityId: Long?): List<FindActivitiesWithoutScheduleRulesResponse> = findPrisonOrThrow(prisonId)
+    .let { courseActivityRepository.findActivitiesWithoutScheduleRules(prisonId, courseActivityId) }
+    .map {
+      FindActivitiesWithoutScheduleRulesResponse(
+        courseActivityId = it.getCourseActivityId(),
+        courseActivityDescription = it.getCourseActivityDescription(),
+      )
+    }
 
   fun getActivity(courseActivityId: Long): GetActivityResponse? =
     findCourseActivityOrThrow(courseActivityId)

@@ -75,14 +75,12 @@ class CourseActivityBuilderFactory(
   private val courseScheduleBuilderFactory: CourseScheduleBuilderFactory = CourseScheduleBuilderFactory(),
   private val courseScheduleRuleBuilderFactory: CourseScheduleRuleBuilderFactory = CourseScheduleRuleBuilderFactory(),
 ) {
-  fun builder(): CourseActivityBuilder {
-    return CourseActivityBuilder(
-      repository,
-      courseActivityPayRateBuilderFactory,
-      courseScheduleBuilderFactory,
-      courseScheduleRuleBuilderFactory,
-    )
-  }
+  fun builder(): CourseActivityBuilder = CourseActivityBuilder(
+    repository,
+    courseActivityPayRateBuilderFactory,
+    courseScheduleBuilderFactory,
+    courseScheduleRuleBuilderFactory,
+  )
 }
 
 class CourseActivityBuilder(
@@ -108,6 +106,7 @@ class CourseActivityBuilder(
     excludeBankHolidays: Boolean,
     payPerSession: PayPerSession,
     outsideWork: Boolean,
+    createdByDps: Boolean,
   ): CourseActivity =
     CourseActivity(
       courseActivityId = courseActivityId,
@@ -130,6 +129,7 @@ class CourseActivityBuilder(
       excludeBankHolidays = excludeBankHolidays,
       payPerSession = payPerSession,
       outsideWork = outsideWork,
+      auditModuleName = if (createdByDps) "DPS_SYNCHRONISATION" else "A_NOMIS_MODULE",
     )
       .also { courseActivity = it }
 

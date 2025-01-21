@@ -126,6 +126,9 @@ data class CourseActivity(
   @PrimaryKeyJoinColumn
   @OneToOne(mappedBy = "courseActivity", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   var area: CourseActivityArea? = null,
+
+  @Column
+  val auditModuleName: String? = "",
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -138,9 +141,7 @@ data class CourseActivity(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(courseActivityId = $courseActivityId, desc = $description )"
-  }
+  override fun toString(): String = this::class.simpleName + "(courseActivityId = $courseActivityId, desc = $description )"
 }
 
 enum class PayPerSession { F, H }

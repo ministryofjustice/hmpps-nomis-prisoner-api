@@ -25,6 +25,7 @@ interface ProgramServiceDsl {
     excludeBankHolidays: Boolean = false,
     payPerSession: String = "H",
     outsideWork: Boolean = false,
+    createdByDps: Boolean = true,
     dsl: CourseActivityDsl.() -> Unit = {
       courseSchedule()
       courseScheduleRule()
@@ -83,6 +84,7 @@ class ProgramServiceBuilder(
     excludeBankHolidays: Boolean,
     payPerSession: String,
     outsideWork: Boolean,
+    createdByDps: Boolean,
     dsl: CourseActivityDsl.() -> Unit,
   ): CourseActivity = courseActivityBuilderFactory.builder().let { builder ->
     builder.build(
@@ -99,6 +101,7 @@ class ProgramServiceBuilder(
       excludeBankHolidays,
       PayPerSession.valueOf(payPerSession),
       outsideWork,
+      createdByDps,
     )
       .also { programService.courseActivities += it }
       .also { builder.apply(dsl) }

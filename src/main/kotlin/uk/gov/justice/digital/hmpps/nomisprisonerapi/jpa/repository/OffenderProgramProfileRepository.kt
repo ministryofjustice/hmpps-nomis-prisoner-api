@@ -52,12 +52,12 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ca.prison.id = :prisonId
        and ca.active = true
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
-       and ca.program.programCode not in :excludeProgramCodes
+       and ca.auditModuleName != 'DPS_SYNCHRONISATION'
        and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
        and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
   """,
   )
-  fun findActiveAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?, pageable: Pageable): Page<Long>
+  fun findActiveAllocations(prisonId: String, courseActivityId: Long?, pageable: Pageable): Page<Long>
 
   @Query(
     value = """
@@ -79,12 +79,12 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ca.prison.id = :prisonId
        and ca.active = true
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
-       and ca.program.programCode not in :excludeProgramCodes
+       and ca.auditModuleName != 'DPS_SYNCHRONISATION'
        and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
        and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
   """,
   )
-  fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<SuspendedAllocations>
+  fun findSuspendedAllocations(prisonId: String, courseActivityId: Long?): List<SuspendedAllocations>
 
   @Query(
     value = """
@@ -109,7 +109,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and ca.prison.id = :prisonId
        and ca.active = true
        and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
-       and ca.program.programCode not in :excludeProgramCodes
+       and ca.auditModuleName != 'DPS_SYNCHRONISATION'
        and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
        and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
        and (oppb.endDate is null or oppb.endDate > current_date)
@@ -118,7 +118,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and 0 < (select count(*) from CourseActivityPayRate capr2 where capr2.id.courseActivity = ca)
   """,
   )
-  fun findAllocationsMissingPayBands(prisonId: String, excludeProgramCodes: List<String>, courseActivityId: Long?): List<AllocationsMissingPayRates>
+  fun findAllocationsMissingPayBands(prisonId: String, courseActivityId: Long?): List<AllocationsMissingPayRates>
 
   @Suppress("SqlNoDataSourceInspection")
   @Modifying

@@ -67,39 +67,30 @@ class AllocationService(
       }
   }
 
-  fun findActiveAllocations(pageRequest: Pageable, prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): Page<FindActiveAllocationIdsResponse> {
-    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
-    return findPrisonOrThrow(prisonId)
-      .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, excludePrograms, courseActivityId, pageRequest) }
-      .map { FindActiveAllocationIdsResponse(it) }
-  }
+  fun findActiveAllocations(pageRequest: Pageable, prisonId: String, courseActivityId: Long?): Page<FindActiveAllocationIdsResponse> = findPrisonOrThrow(prisonId)
+    .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, courseActivityId, pageRequest) }
+    .map { FindActiveAllocationIdsResponse(it) }
 
-  fun findSuspendedAllocations(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindSuspendedAllocationsResponse> {
-    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
-    return findPrisonOrThrow(prisonId)
-      .let { offenderProgramProfileRepository.findSuspendedAllocations(prisonId, excludePrograms, courseActivityId) }
-      .map {
-        FindSuspendedAllocationsResponse(
-          offenderNo = it.getNomsId(),
-          courseActivityId = it.getCourseActivityId(),
-          courseActivityDescription = it.getCourseActivityDescription(),
-        )
-      }
-  }
+  fun findSuspendedAllocations(prisonId: String, courseActivityId: Long?): List<FindSuspendedAllocationsResponse> = findPrisonOrThrow(prisonId)
+    .let { offenderProgramProfileRepository.findSuspendedAllocations(prisonId, courseActivityId) }
+    .map {
+      FindSuspendedAllocationsResponse(
+        offenderNo = it.getNomsId(),
+        courseActivityId = it.getCourseActivityId(),
+        courseActivityDescription = it.getCourseActivityDescription(),
+      )
+    }
 
-  fun findAllocationsMissingPayBands(prisonId: String, excludeProgramCodes: List<String>?, courseActivityId: Long?): List<FindAllocationsMissingPayBandsResponse> {
-    val excludePrograms = excludeProgramCodes?.takeIf { it.isNotEmpty() } ?: listOf(" ") // for unknown reasons the SQL fails on Oracle with an empty list or a zero length string
-    return findPrisonOrThrow(prisonId)
-      .let { offenderProgramProfileRepository.findAllocationsMissingPayBands(prisonId, excludePrograms, courseActivityId) }
-      .map {
-        FindAllocationsMissingPayBandsResponse(
-          offenderNo = it.getNomsId(),
-          incentiveLevel = it.getIncentiveLevelCode(),
-          courseActivityId = it.getCourseActivityId(),
-          courseActivityDescription = it.getCourseActivityDescription(),
-        )
-      }
-  }
+  fun findAllocationsMissingPayBands(prisonId: String, courseActivityId: Long?): List<FindAllocationsMissingPayBandsResponse> = findPrisonOrThrow(prisonId)
+    .let { offenderProgramProfileRepository.findAllocationsMissingPayBands(prisonId, courseActivityId) }
+    .map {
+      FindAllocationsMissingPayBandsResponse(
+        offenderNo = it.getNomsId(),
+        incentiveLevel = it.getIncentiveLevelCode(),
+        courseActivityId = it.getCourseActivityId(),
+        courseActivityDescription = it.getCourseActivityDescription(),
+      )
+    }
 
   fun getAllocation(allocationId: Long): GetAllocationResponse =
     offenderProgramProfileRepository.findByIdOrNull(allocationId)

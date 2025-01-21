@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.transaction.annotation.Transactional
@@ -416,18 +418,11 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectStatus().isUnauthorized
       }
 
-      @Test
-      fun `access allowed for SYNCHRONISATION_REPORTING`() {
+      @ParameterizedTest
+      @CsvSource("ROLE_NOMIS_ALERTS", "ROLE_SYNCHRONISATION_REPORTING")
+      fun `access allowed for role`(role: String) {
         webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
-          .exchange()
-          .expectStatus().isOk
-      }
-
-      @Test
-      fun `access allowed for NOMIS_ALERTS`() {
-        webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf(role)))
           .exchange()
           .expectStatus().isOk
       }
@@ -522,18 +517,16 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectStatus().isUnauthorized
       }
 
-      @Test
-      fun `access allowed for SYNCHRONISATION_REPORTING`() {
+      @ParameterizedTest
+      @CsvSource(
+        "ROLE_NOMIS_ALERTS",
+        "ROLE_NOMIS_CORE_PERSON",
+        "ROLE_NOMIS_PRISON_PERSON",
+        "ROLE_SYNCHRONISATION_REPORTING",
+      )
+      fun `access allowed for role`(role: String) {
         webTestClient.get().uri("/prisoners/ids/all")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
-          .exchange()
-          .expectStatus().isOk
-      }
-
-      @Test
-      fun `access allowed for NOMIS_ALERTS`() {
-        webTestClient.get().uri("/prisoners/ids/all")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf(role)))
           .exchange()
           .expectStatus().isOk
       }
