@@ -79,7 +79,10 @@ class SentencingAdjustmentService(
       this.fromDate = request.adjustmentFromDate
       this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
       this.comment = request.comment
-      this.active = request.active
+      request.active?.also {
+        // only set when supplied - currently DPS never overwrite this
+        this.active = it
+      }
       this.sentenceSequence = sentence.id.sequence
       telemetryClient.trackEvent(
         "sentence-adjustment-updated",
@@ -172,7 +175,10 @@ class SentencingAdjustmentService(
     this.fromDate = request.adjustmentFromDate
     this.toDate = request.adjustmentFromDate.plusDays(request.adjustmentDays - 1)
     this.comment = request.comment
-    this.active = request.active
+    request.active?.also {
+      // only set when supplied - currently DPS never overwrite this
+      this.active = it
+    }
     entityManager.flush()
     storedProcedureRepository.postKeyDateAdjustmentUpsert(
       keyDateAdjustmentId = adjustmentId,

@@ -430,7 +430,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         anotherPrisoner = offender(nomsId = "A1239TX") {
           booking = booking {
             sentence {}
-            adjustment = adjustment {}
+            adjustment = adjustment(active = false) {}
           }
         }
       }
@@ -612,7 +612,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
           .jsonPath("adjustmentToDate").isEqualTo("2023-01-11")
           .jsonPath("comment").doesNotExist()
-          .jsonPath("active").isEqualTo(true)
+          .jsonPath("active").isEqualTo(false)
       }
 
       @Test
@@ -629,7 +629,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDate": "2023-01-18",
               "adjustmentFromDate": "2023-01-02",
               "comment": "12 days",
-              "active": false
+              "active": true
               }
               """,
             ),
@@ -651,7 +651,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentToDate").isEqualTo("2023-01-13")
           .jsonPath("adjustmentDays").isEqualTo(12)
           .jsonPath("comment").isEqualTo("12 days")
-          .jsonPath("active").isEqualTo(false)
+          .jsonPath("active").isEqualTo(true)
       }
 
       @Test
@@ -1364,7 +1364,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         anotherPrisoner = offender(nomsId = "A1239TX") {
           booking = booking {
             sentenceSequence = sentence {
-              adjustment = adjustment {}
+              adjustment = adjustment(active = false) {}
             }.id.sequence
             anotherSentenceSequence = sentence {
             }.id.sequence
@@ -1583,7 +1583,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentFromDate").doesNotExist()
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("comment").doesNotExist()
-          .jsonPath("active").isEqualTo(true)
+          .jsonPath("active").isEqualTo(false)
       }
 
       @Test
@@ -1601,7 +1601,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDate": "2023-01-18",
               "adjustmentFromDate": "2023-01-02",
               "comment": "12 days",
-              "active": false
+              "active": true
               }
               """,
             ),
@@ -1624,7 +1624,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentToDate").isEqualTo("2023-01-13")
           .jsonPath("adjustmentDays").isEqualTo(12)
           .jsonPath("comment").isEqualTo("12 days")
-          .jsonPath("active").isEqualTo(false)
+          .jsonPath("active").isEqualTo(true)
       }
 
       @Test
