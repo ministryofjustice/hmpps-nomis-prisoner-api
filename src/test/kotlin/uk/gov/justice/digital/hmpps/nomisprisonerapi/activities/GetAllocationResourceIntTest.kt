@@ -97,7 +97,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `finds an active allocation`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
             booking {
@@ -119,7 +119,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(pageSize + 1) {
-              courseActivities += courseActivity(startDate = "$today")
+              courseActivities += courseActivity(startDate = "$today", createdByDps = false)
             }
           }
           offender {
@@ -147,7 +147,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(pageSize + 1) {
-              courseActivities += courseActivity(startDate = "$today")
+              courseActivities += courseActivity(startDate = "$today", createdByDps = false)
             }
           }
           offender {
@@ -171,7 +171,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           programService {
             repeat(50) {
-              courseActivities += courseActivity(startDate = "$today")
+              courseActivities += courseActivity(startDate = "$today", createdByDps = false)
             }
           }
           courseActivities.forEachIndexed { index, activity ->
@@ -241,8 +241,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should include future course activities`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$tomorrow")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$tomorrow") {
+            courseActivity = courseActivity(startDate = "$tomorrow", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$tomorrow", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -301,8 +301,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should not include ended course activities`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday", endDate = "$yesterday") {
+            courseActivity = courseActivity(startDate = "$yesterday", endDate = "$yesterday", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday", endDate = "$yesterday", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -355,8 +355,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should not include activities with no prisoners`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -388,8 +388,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner allocation has ended status`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -442,8 +442,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner allocation past end date`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -496,8 +496,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should include if prisoner allocation in future`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -554,8 +554,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner active in different prison`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(prisonId = "BXI", startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(prisonId = "BXI", startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -608,8 +608,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should not include if prisoner is inactive`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -662,8 +662,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should include if prisoner is ACTIVE OUT`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -716,11 +716,11 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should not include if course activity not in program`() {
+      fun `should not include if course activity created by DPS`() {
         nomisDataBuilder.build {
-          programService("INTTEST") {
-            courseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = true)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = true) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -746,8 +746,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
-          programService("ANOTHER_PROGRAM") {
-            courseActivity = courseActivity(startDate = "$today")
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = true)
           }
           offender {
             booking {
@@ -792,8 +792,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should not include if there are no course schedule rules`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$yesterday") {} // no schedule rules
-            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday") {
+            courseActivity = courseActivity(startDate = "$yesterday", createdByDps = false) {} // no schedule rules
+            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday", createdByDps = false) {
               payRate(iepLevelCode = "ENT")
             }
           }
@@ -845,12 +845,12 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       fun `should only include once if there are multiple course schedule rules`() {
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$yesterday") {
+            courseActivity = courseActivity(startDate = "$yesterday", createdByDps = false) {
               courseScheduleRule(startTimeHours = 9, startTimeMinutes = 30, endTimeHours = 11, endTimeMinutes = 30)
               courseScheduleRule(startTimeHours = 13, startTimeMinutes = 30, endTimeHours = 15, endTimeMinutes = 30)
               payRate()
             }
-            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday") {
+            courseActivityUnknownIncentive = courseActivity(startDate = "$yesterday", createdByDps = false) {
               courseScheduleRule(startTimeHours = 9, startTimeMinutes = 30, endTimeHours = 11, endTimeMinutes = 30)
               courseScheduleRule(startTimeHours = 13, startTimeMinutes = 30, endTimeHours = 15, endTimeMinutes = 30)
               payRate(iepLevelCode = "ENT")
@@ -910,13 +910,13 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            otherCourseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            otherCourseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
-            otherCourseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            otherCourseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -982,13 +982,13 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(startDate = "$today")
-            otherCourseActivity = courseActivity(startDate = "$today")
-            courseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            otherCourseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            courseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
-            otherCourseActivityUnknownIncentive = courseActivity(startDate = "$today") {
+            otherCourseActivityUnknownIncentive = courseActivity(startDate = "$today", createdByDps = false) {
               courseScheduleRule()
               payRate(iepLevelCode = "ENT")
             }
@@ -1141,8 +1141,8 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       lateinit var courseActivity2: CourseActivity
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity(startDate = "$today")
-          courseActivity2 = courseActivity(startDate = "$today")
+          courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+          courseActivity2 = courseActivity(startDate = "$today", createdByDps = false)
         }
         offender(nomsId = "A1234AA") {
           booking {
@@ -1223,7 +1223,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     fun `should return allocations with a missing pay band`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             payRate(payBandCode = "5", iepLevelCode = "STD")
@@ -1260,7 +1260,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     fun `should return allocations with correct pay band on wrong incentive level`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             payRate(payBandCode = "5", iepLevelCode = "STD")
@@ -1297,7 +1297,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     fun `should not return allocations with match on expired pay band`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             payRate(payBandCode = "5", iepLevelCode = "STD")
@@ -1335,7 +1335,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     fun `should not return allocations with match on expired pay rate`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             payRate(payBandCode = "5", iepLevelCode = "STD", endDate = "$yesterday")
@@ -1373,7 +1373,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     fun `should not return allocations where course activity has no pay rates`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             // no pay rates
@@ -1395,7 +1395,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     fun `should return allocations where matching incentive level not the latest`() {
       nomisDataBuilder.build {
         programService {
-          courseActivity = courseActivity {
+          courseActivity = courseActivity(createdByDps = false) {
             courseSchedule()
             courseScheduleRule()
             payRate(payBandCode = "5", iepLevelCode = "STD")

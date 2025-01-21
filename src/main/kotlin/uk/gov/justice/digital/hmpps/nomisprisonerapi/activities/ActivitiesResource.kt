@@ -376,12 +376,12 @@ class ActivitiesResource(
   fun findActiveActivities(
     @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode")
+    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> =
-    activityService.findActiveActivityIds(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
+    activityService.findActiveActivityIds(pageRequest, prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/rates-with-unknown-incentives")
@@ -418,10 +418,11 @@ class ActivitiesResource(
   )
   fun findRatesWithUnknownIncentiveLevel(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode") @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
+    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
+    @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindPayRateWithUnknownIncentiveResponse> =
-    activityService.findPayRatesWithUnknownIncentive(prisonId, excludeProgramCodes, courseActivityId)
+    activityService.findPayRatesWithUnknownIncentive(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/without-schedule-rules")
@@ -458,10 +459,11 @@ class ActivitiesResource(
   )
   fun findActivitiesWithoutScheduleRules(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode") @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
+    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
+    @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindActivitiesWithoutScheduleRulesResponse> =
-    activityService.findActivitiesWithoutScheduleRules(prisonId, excludeProgramCodes, courseActivityId)
+    activityService.findActivitiesWithoutScheduleRules(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/{courseActivityId}")
@@ -551,12 +553,12 @@ class ActivitiesResource(
   fun findActiveAllocations(
     @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode")
+    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveAllocationIdsResponse> =
-    allocationService.findActiveAllocations(pageRequest, prisonId, excludeProgramCodes, courseActivityId)
+    allocationService.findActiveAllocations(pageRequest, prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/suspended")
@@ -593,12 +595,12 @@ class ActivitiesResource(
   )
   fun findSuspendedAllocations(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode")
+    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindSuspendedAllocationsResponse> =
-    allocationService.findSuspendedAllocations(prisonId, excludeProgramCodes, courseActivityId)
+    allocationService.findSuspendedAllocations(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/missing-pay-bands")
@@ -635,12 +637,12 @@ class ActivitiesResource(
   )
   fun findAllocationsWithMissingPayBands(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "Exclude program codes", name = "excludeProgramCode")
+    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
     @RequestParam(name = "excludeProgramCode")
     excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindAllocationsMissingPayBandsResponse> =
-    allocationService.findAllocationsMissingPayBands(prisonId, excludeProgramCodes, courseActivityId)
+    allocationService.findAllocationsMissingPayBands(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/{allocationId}")
