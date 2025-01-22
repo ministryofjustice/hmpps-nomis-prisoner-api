@@ -376,9 +376,6 @@ class ActivitiesResource(
   fun findActiveActivities(
     @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
-    @RequestParam(name = "excludeProgramCode")
-    excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> =
     activityService.findActiveActivityIds(pageRequest, prisonId, courseActivityId)
@@ -418,8 +415,6 @@ class ActivitiesResource(
   )
   fun findRatesWithUnknownIncentiveLevel(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
-    @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindPayRateWithUnknownIncentiveResponse> =
     activityService.findPayRatesWithUnknownIncentive(prisonId, courseActivityId)
@@ -459,8 +454,6 @@ class ActivitiesResource(
   )
   fun findActivitiesWithoutScheduleRules(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
-    @RequestParam(name = "excludeProgramCode") excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindActivitiesWithoutScheduleRulesResponse> =
     activityService.findActivitiesWithoutScheduleRules(prisonId, courseActivityId)
@@ -553,9 +546,6 @@ class ActivitiesResource(
   fun findActiveAllocations(
     @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
-    @RequestParam(name = "excludeProgramCode")
-    excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveAllocationIdsResponse> =
     allocationService.findActiveAllocations(pageRequest, prisonId, courseActivityId)
@@ -595,9 +585,6 @@ class ActivitiesResource(
   )
   fun findSuspendedAllocations(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
-    @RequestParam(name = "excludeProgramCode")
-    excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindSuspendedAllocationsResponse> =
     allocationService.findSuspendedAllocations(prisonId, courseActivityId)
@@ -637,9 +624,6 @@ class ActivitiesResource(
   )
   fun findAllocationsWithMissingPayBands(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
-    @Schema(description = "TODO: remove this parameter after removing from clients", name = "excludeProgramCode")
-    @RequestParam(name = "excludeProgramCode")
-    excludeProgramCodes: List<String>?,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindAllocationsMissingPayBandsResponse> =
     allocationService.findAllocationsMissingPayBands(prisonId, courseActivityId)
