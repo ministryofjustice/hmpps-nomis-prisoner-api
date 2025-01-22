@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
-import org.springframework.util.LinkedMultiValueMap
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -767,23 +766,23 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveAllocations(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
+        webTestClient.getActiveAllocations()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
-        webTestClient.getActiveActivities(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
+        webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
 
-        webTestClient.getPayRatesWithUnknownIncentives(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
+        webTestClient.getPayRatesWithUnknownIncentives()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
 
-        webTestClient.getSuspendedAllocations(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
+        webTestClient.getSuspendedAllocations()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
 
-        webTestClient.getAllocationsWithMissingPayBands(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
+        webTestClient.getAllocationsWithMissingPayBands()
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
       }
@@ -1050,7 +1049,6 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       pageSize: Int = 10,
       page: Int = 0,
       prison: String = "BXI",
-      excludeProgramCodes: List<String> = listOf(),
       courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
@@ -1058,7 +1056,6 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
-          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
@@ -1070,7 +1067,6 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       pageSize: Int = 10,
       page: Int = 0,
       prison: String = "BXI",
-      excludeProgramCodes: List<String> = listOf(),
       courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
@@ -1078,7 +1074,6 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
-          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
@@ -1088,13 +1083,11 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.getPayRatesWithUnknownIncentives(
       prison: String = "BXI",
-      excludeProgramCodes: List<String> = listOf(),
       courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/activities/rates-with-unknown-incentives")
           .queryParam("prisonId", prison)
-          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
@@ -1172,13 +1165,11 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
   private fun WebTestClient.getSuspendedAllocations(
     prison: String = "BXI",
-    excludeProgramCodes: List<String> = listOf(),
     courseActivityId: Long? = null,
   ): WebTestClient.ResponseSpec =
     get().uri {
       it.path("/allocations/suspended")
         .queryParam("prisonId", prison)
-        .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
         .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
         .build()
     }
@@ -1432,13 +1423,11 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
 
   private fun WebTestClient.getAllocationsWithMissingPayBands(
     prison: String = "BXI",
-    excludeProgramCodes: List<String> = listOf(),
     courseActivityId: Long? = null,
   ): WebTestClient.ResponseSpec =
     get().uri {
       it.path("/allocations/missing-pay-bands")
         .queryParam("prisonId", prison)
-        .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
         .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
         .build()
     }
