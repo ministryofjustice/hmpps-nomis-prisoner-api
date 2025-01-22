@@ -185,6 +185,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[0].sex.description").isEqualTo("Female")
           .jsonPath("offenders[0].nameType.code").isEqualTo("MAID")
           .jsonPath("offenders[0].nameType.description").isEqualTo("Maiden")
+          .jsonPath("offenders[0].createDate").isEqualTo("2020-03-20")
           .jsonPath("offenders[0].workingName").isEqualTo(true)
       }
     }

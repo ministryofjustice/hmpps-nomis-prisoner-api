@@ -44,6 +44,7 @@ class CorePersonService(
           ethnicity = a.ethnicity?.toCodeDescription(),
           sex = a.gender.toCodeDescription(),
           nameType = a.nameType?.toCodeDescription(),
+          createDate = a.createDate,
           workingName = a.id == currentAlias.id,
           identifiers = a.identifiers.map { id ->
             Identifier(
