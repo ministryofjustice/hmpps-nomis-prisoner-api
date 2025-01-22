@@ -88,27 +88,27 @@ data class CorePerson(
   @Schema(description = "Indicates that the person is currently in prison")
   val activeFlag: Boolean,
   @Schema(description = "List of offender records for the person")
-  val offenders: List<CoreOffender>,
+  val offenders: List<CoreOffender>?,
   @Schema(description = "List of distinct sentence start dates")
-  val sentenceStartDates: List<LocalDate>,
+  val sentenceStartDates: List<LocalDate>?,
   @Schema(description = "List of addresses for the person")
-  val addresses: List<OffenderAddress>,
+  val addresses: List<OffenderAddress>?,
   @Schema(description = "List of phone numbers for the person")
-  val phoneNumbers: List<OffenderPhoneNumber>,
+  val phoneNumbers: List<OffenderPhoneNumber>?,
   @Schema(description = "List of email addresses for the person")
-  val emailAddresses: List<OffenderEmailAddress>,
+  val emailAddresses: List<OffenderEmailAddress>?,
   @Schema(description = "List of nationalities for the person")
-  val nationalities: List<OffenderNationality>,
+  val nationalities: List<OffenderNationality>?,
   @Schema(description = "List of nationality details for the person")
-  val nationalityDetails: List<OffenderNationalityDetails>,
+  val nationalityDetails: List<OffenderNationalityDetails>?,
   @Schema(description = "List of sexual orientations for the person")
-  val sexualOrientations: List<OffenderSexualOrientation>,
+  val sexualOrientations: List<OffenderSexualOrientation>?,
   @Schema(description = "List of disabilities for the person")
-  val disabilities: List<OffenderDisability>,
+  val disabilities: List<OffenderDisability>?,
   @Schema(description = "List of disabilities for the person")
-  val interestsToImmigration: List<OffenderInterestToImmigration>,
+  val interestsToImmigration: List<OffenderInterestToImmigration>?,
   @Schema(description = "Current belief and history of all beliefs for the person")
-  val beliefs: List<OffenderBelief>,
+  val beliefs: List<OffenderBelief>?,
 )
 
 @Schema(description = "The data held in NOMIS for an offender.")
@@ -183,7 +183,7 @@ data class OffenderAddress(
   @Schema(description = "Country")
   val country: CodeDescription?,
   @Schema(description = "List of phone numbers for the address")
-  val phoneNumbers: List<OffenderPhoneNumber>,
+  val phoneNumbers: List<OffenderPhoneNumber>?,
   @Schema(description = "true if address validated by Post Office Address file??")
   val validatedPAF: Boolean,
   @Schema(description = "true if address not fixed. for example homeless")
@@ -199,7 +199,7 @@ data class OffenderAddress(
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate?,
   @Schema(description = "Usages for the address, also known as types")
-  val usages: List<OffenderAddressUsage>,
+  val usages: List<OffenderAddressUsage>?,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")

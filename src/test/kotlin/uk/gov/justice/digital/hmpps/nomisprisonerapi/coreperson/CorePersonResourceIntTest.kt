@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -141,6 +142,19 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("nationalities").doesNotExist()
           .jsonPath("nationalityDetails").doesNotExist()
           .jsonPath("beliefs").doesNotExist()
+      }
+
+      @Test
+      fun `is able to re-hydrate the core person`() {
+        val person = webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .returnResult(CorePerson::class.java).responseBody.blockFirst()!!
+
+        assertThat(person.prisonNumber).isEqualTo(offenderMinimal.nomsId)
+        assertThat(person.addresses).isNull()
       }
 
       @Test
@@ -518,6 +532,20 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
           .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
           .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
+      }
+
+      @Test
+      fun `is able to re-hydrate the core person`() {
+        val person = webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .returnResult(CorePerson::class.java).responseBody.blockFirst()!!
+
+        assertThat(person.prisonNumber).isEqualTo(offender.nomsId)
+        assertThat(person.addresses?.get(0)?.usages).isNull()
+        assertThat(person.addresses?.get(1)?.usages).hasSize(2)
       }
     }
 
