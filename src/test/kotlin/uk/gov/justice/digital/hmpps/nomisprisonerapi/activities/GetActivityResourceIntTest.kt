@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
-import org.springframework.util.LinkedMultiValueMap
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -387,7 +386,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        webTestClient.getActiveActivities(excludeProgramCodes = listOf("INTTEST", "ANOTHER_PROGRAM"))
+        webTestClient.getActiveActivities()
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -480,7 +479,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       pageSize: Int = 10,
       page: Int = 0,
       prison: String = "BXI",
-      excludeProgramCodes: List<String> = listOf(),
       courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
@@ -488,7 +486,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .queryParam("prisonId", prison)
           .queryParam("size", pageSize)
           .queryParam("page", page)
-          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
@@ -576,13 +573,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.getPayRatesWithUnknownIncentives(
       prison: String = "BXI",
-      excludeProgramCodes: List<String> = listOf(),
       courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/activities/rates-with-unknown-incentives")
           .queryParam("prisonId", prison)
-          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
@@ -754,13 +749,11 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.getActivitiesWithoutScheduleRules(
       prison: String = "BXI",
-      excludeProgramCodes: List<String> = listOf(),
       courseActivityId: Long? = null,
     ): WebTestClient.ResponseSpec =
       get().uri {
         it.path("/activities/without-schedule-rules")
           .queryParam("prisonId", prison)
-          .queryParams(LinkedMultiValueMap<String, String>().apply { addAll("excludeProgramCode", excludeProgramCodes) })
           .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
           .build()
       }
