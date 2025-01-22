@@ -138,6 +138,8 @@ data class CoreOffender(
   val sex: CodeDescription?,
   @Schema(description = "Name type of this offender record")
   val nameType: CodeDescription?,
+  @Schema(description = "Date this offender record was created. This is separate from the CREATE_DATETIME audit column.")
+  val createDate: LocalDate?,
   @Schema(description = "The offender record associated with the current booking")
   val workingName: Boolean,
   @Schema(description = "List of identifiers for the offender")

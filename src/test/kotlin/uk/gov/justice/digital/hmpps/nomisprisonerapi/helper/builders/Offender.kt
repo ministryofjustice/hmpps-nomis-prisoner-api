@@ -174,6 +174,7 @@ class OffenderBuilder(
     ethnicityCode: String?,
     genderCode: String,
     nameTypeCode: String?,
+    createDate: LocalDate,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
   ): Offender = Offender(
@@ -189,6 +190,7 @@ class OffenderBuilder(
     ethnicity = ethnicityCode?.let { repository.ethnicity(ethnicityCode) },
     gender = repository.gender(genderCode),
     nameType = nameTypeCode?.let { repository.nameType(nameTypeCode) },
+    createDate = createDate,
     lastNameKey = lastName.uppercase(),
   )
     .let { repository.save(it) }
