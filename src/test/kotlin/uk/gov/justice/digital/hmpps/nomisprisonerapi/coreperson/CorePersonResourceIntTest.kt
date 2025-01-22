@@ -178,7 +178,9 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Offenders {
       private lateinit var offender: Offender
+      private lateinit var offender2: Offender
       private lateinit var alias: Offender
+      private lateinit var alias2: Offender
 
       @BeforeEach
       fun setUp() {
@@ -212,6 +214,17 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               verified = true,
             )
           }
+          offender2 = offender(
+            nomsId = "C1234EG",
+            firstName = "JOHN",
+            lastName = "BARK",
+          ) {
+            alias2 = alias(
+              firstName = "AJOHN",
+              lastName = "ABARK",
+              birthDate = LocalDate.parse("1965-07-19"),
+            ) { booking(bookingSequence = 1) { } }
+          }
         }
       }
 
@@ -242,6 +255,26 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[1].sex.code").isEqualTo("M")
           .jsonPath("offenders[1].sex.description").isEqualTo("Male")
           .jsonPath("offenders[1].workingName").isEqualTo(false)
+      }
+
+      @Test
+      fun `will set working name to offender record linked to active booking`() {
+        webTestClient.get().uri("/core-person/${offender2.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("prisonNumber").isEqualTo(offender2.nomsId)
+          .jsonPath("offenders.length()").isEqualTo(2)
+          .jsonPath("offenders[0].offenderId").isEqualTo(offender2.id)
+          .jsonPath("offenders[0].firstName").isEqualTo("JOHN")
+          .jsonPath("offenders[0].lastName").isEqualTo("BARK")
+          .jsonPath("offenders[0].workingName").isEqualTo(false)
+          .jsonPath("offenders[1].offenderId").isEqualTo(alias2.id)
+          .jsonPath("offenders[1].firstName").isEqualTo("AJOHN")
+          .jsonPath("offenders[1].lastName").isEqualTo("ABARK")
+          .jsonPath("offenders[1].workingName").isEqualTo(true)
       }
     }
 
@@ -315,6 +348,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Addresses {
       private lateinit var offender: Offender
+      private lateinit var offenderWithActiveAlias: Offender
 
       @BeforeEach
       fun setUp() {
@@ -367,6 +401,22 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               locality = null,
             )
           }
+          offenderWithActiveAlias = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BK",
+          ) {
+            address(
+              type = "HOME",
+              flat = "3B",
+              premise = "Brown Court",
+              postcode = "S1 3GG",
+            )
+            booking(bookingSequence = 2, active = false) { }
+            alias {
+              booking(bookingSequence = 1) { }
+            }
+          }
         }
       }
 
@@ -417,6 +467,20 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will return addresses for offender with active alias`() {
+        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].addressId").isEqualTo(offenderWithActiveAlias.addresses[0].addressId)
+          .jsonPath("addresses[0].flat").isEqualTo("3B")
+          .jsonPath("addresses[0].premise").isEqualTo("Brown Court")
+          .jsonPath("addresses[0].postcode").isEqualTo("S1 3GG")
+      }
+
+      @Test
       fun `will return phone numbers associated with addresses`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
@@ -460,6 +524,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class OffenderPhoneNumbers {
       private lateinit var offender: Offender
+      private lateinit var offenderWithActiveAlias: Offender
 
       @BeforeEach
       fun setUp() {
@@ -475,6 +540,17 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
             )
             phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+          }
+          offenderWithActiveAlias = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BD",
+          ) {
+            phone(phoneType = "HOME", phoneNo = "01142561919")
+            booking(bookingSequence = 2, active = false) { }
+            alias {
+              booking(bookingSequence = 1) { }
+            }
           }
         }
       }
@@ -498,11 +574,26 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("phoneNumbers[1].number").isEqualTo("01142561919")
           .jsonPath("phoneNumbers[1].extension").isEqualTo("123")
       }
+
+      @Test
+      fun `will return phone numbers for offender with active alias`() {
+        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderWithActiveAlias.phones[0].phoneId)
+          .jsonPath("phoneNumbers[0].type.code").isEqualTo("HOME")
+          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Home")
+          .jsonPath("phoneNumbers[0].number").isEqualTo("01142561919")
+      }
     }
 
     @Nested
     inner class OffenderEmailOffenderAddress {
       private lateinit var offender: Offender
+      private lateinit var offenderWithActiveAlias: Offender
 
       @BeforeEach
       fun setUp() {
@@ -517,6 +608,17 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
             )
             email(emailAddress = "john.bog@gmail.com")
+          }
+          offenderWithActiveAlias = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BE",
+          ) {
+            email(emailAddress = "0114@2561919.com")
+            booking(bookingSequence = 2, active = false) { }
+            alias {
+              booking(bookingSequence = 1) { }
+            }
           }
         }
       }
@@ -533,6 +635,18 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
           .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(offender.internetAddresses[1].internetAddressId)
           .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
+      }
+
+      @Test
+      fun `will return email address for offender with active alias`() {
+        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offenderWithActiveAlias.internetAddresses[0].internetAddressId)
+          .jsonPath("emailAddresses[0].email").isEqualTo("0114@2561919.com")
       }
     }
 

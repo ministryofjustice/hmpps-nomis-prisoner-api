@@ -16,9 +16,15 @@ interface OffenderRepository :
 
   fun findByNomsId(nomsId: String): List<Offender>
 
+  /**
+   * This returns the root offender first followed by all other offender records.
+   * The current offender record (linked to the booking with sequence 1) is only returned first if it is also the
+   * root offender record.
+   **/
   @Query("select o from Offender o left join fetch o.allBookings b WHERE o.nomsId = :nomsId order by b.bookingSequence asc")
   fun findByNomsIdOrderedWithBookings(nomsId: String): List<Offender>
 
+  /** This returns the root offender id or null if the offender doesn't have any bookings */
   @Query("select o.id from Offender o join o.allBookings b WHERE o.nomsId = :nomsId and b.bookingSequence = 1")
   fun findCurrentIdByNomsId(nomsId: String): Long?
 
