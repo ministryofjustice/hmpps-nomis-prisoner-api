@@ -150,10 +150,10 @@ class CorePersonService(
               extension = number.extNo,
             )
           },
-          usages = address.usages.map { u ->
+          usages = address.usages.filter { u -> u.addressUsage != null }.map { u ->
             OffenderAddressUsage(
               addressId = address.addressId,
-              usage = u.addressUsage.toCodeDescription(),
+              usage = u.addressUsage!!.toCodeDescription(),
               active = u.active,
             )
           },

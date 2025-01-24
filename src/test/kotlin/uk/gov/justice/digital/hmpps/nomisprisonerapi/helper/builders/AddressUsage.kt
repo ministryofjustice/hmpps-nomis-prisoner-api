@@ -25,7 +25,7 @@ class AddressUsageBuilderFactory(
 class AddressUsageBuilderRepository(
   private val addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
 ) {
-  fun addressUsageTypeOf(code: String): AddressUsageType = addressUsageTypeRepository.findByIdOrNull(AddressUsageType.pk(code))!!
+  fun addressUsageTypeOf(code: String): AddressUsageType? = addressUsageTypeRepository.findByIdOrNull(AddressUsageType.pk(code))
 }
 
 class AddressUsageBuilder(
