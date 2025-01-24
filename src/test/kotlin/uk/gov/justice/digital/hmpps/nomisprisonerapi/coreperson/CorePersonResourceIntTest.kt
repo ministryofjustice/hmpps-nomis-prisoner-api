@@ -407,6 +407,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
               usage(usageCode = "DAP", active = true)
               usage(usageCode = "CURFEW", active = false)
+              // following row will be filtered out as invalid
+              usage(usageCode = "NOT_FOUND", active = false)
             }
             address(
               noFixedAddress = true,

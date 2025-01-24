@@ -46,7 +46,7 @@ class AddressUsage(
       JoinColumnOrFormula(column = JoinColumn(name = "ADDRESS_USAGE", referencedColumnName = "code", nullable = false, insertable = false, updatable = false)),
     ],
   )
-  val addressUsage: AddressUsageType,
+  val addressUsage: AddressUsageType?,
 ) : Serializable {
 
   override fun equals(other: Any?): Boolean {
