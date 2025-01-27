@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Componen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.trackEvent
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAreaOfWork
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPAttendee
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPChild
@@ -308,7 +309,7 @@ class CSIPService(
               caseNote = request.caseNote
               closeCSIP = request.closeCSIP
               peopleInformed = request.peopleInformed
-              summary = request.summary
+              summary = request.summary?.truncateToUtf8Length(4000)
               nextReviewDate = request.nextReviewDate
               closeDate = request.closeDate
             }
@@ -321,7 +322,7 @@ class CSIPService(
             caseNote = request.caseNote,
             closeCSIP = request.closeCSIP,
             peopleInformed = request.peopleInformed,
-            summary = request.summary,
+            summary = request.summary?.truncateToUtf8Length(4000),
             nextReviewDate = request.nextReviewDate,
             closeDate = request.closeDate,
             recordedDate = request.recordedDate,
