@@ -51,6 +51,5 @@ data class OffenderActivityExclusion(
 
   override fun hashCode(): Int = javaClass.hashCode()
 
-  override fun toString(): String =
-    "OffenderActivityExclusion(id = $id , offenderBooking.bookingId = ${offenderBooking.bookingId} , allocation.offenderProgramProfileReferenceId = ${offenderProgramProfile.offenderProgramReferenceId} , courseActivity.courseActivityId = ${courseActivity.courseActivityId} , slotCategory = $slotCategory , excludeDay = $excludeDay)"
+  override fun toString(): String = "OffenderActivityExclusion(id = $id , offenderBooking.bookingId = ${offenderBooking.bookingId} , allocation.offenderProgramProfileReferenceId = ${offenderProgramProfile.offenderProgramReferenceId} , courseActivity.courseActivityId = ${courseActivity.courseActivityId} , slotCategory = $slotCategory , excludeDay = $excludeDay)"
 }

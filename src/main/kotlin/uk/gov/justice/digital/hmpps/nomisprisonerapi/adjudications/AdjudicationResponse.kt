@@ -281,12 +281,11 @@ data class HearingResultAward(
   val createdDateTime: LocalDateTime,
 )
 
-fun Offender.toPrisoner(createUsername: String, dateAddedToIncident: LocalDate, comment: String? = null) =
-  Prisoner(
-    offenderNo = nomsId,
-    firstName = firstName,
-    lastName = lastName,
-    createdByUsername = createUsername,
-    dateAddedToIncident = dateAddedToIncident,
-    comment = comment,
-  )
+fun Offender.toPrisoner(createUsername: String, dateAddedToIncident: LocalDate, comment: String? = null) = Prisoner(
+  offenderNo = nomsId,
+  firstName = firstName,
+  lastName = lastName,
+  createdByUsername = createUsername,
+  dateAddedToIncident = dateAddedToIncident,
+  comment = comment,
+)

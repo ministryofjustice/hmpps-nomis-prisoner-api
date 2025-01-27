@@ -75,7 +75,5 @@ data class Questionnaire(
   override fun hashCode(): Int = id.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(id = $id, code = $code, description = $description)"
-  }
+  override fun toString(): String = this::class.simpleName + "(id = $id, code = $code, description = $description)"
 }

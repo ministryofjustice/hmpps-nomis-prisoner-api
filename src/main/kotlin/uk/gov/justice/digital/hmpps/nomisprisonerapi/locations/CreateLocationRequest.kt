@@ -81,25 +81,24 @@ data class CreateLocationRequest(
     housingUnitType: HousingUnitType?,
     agency: AgencyLocation,
     parent: AgencyInternalLocation?,
-  ): AgencyInternalLocation =
-    AgencyInternalLocation(
-      active = true,
-      certified = certified,
-      tracking = true,
-      locationCode = locationCode,
-      locationType = locationType,
-      description = description,
-      unitType = housingUnitType,
-      agency = agency,
-      parentLocation = parent,
-      currentOccupancy = 0,
-      operationalCapacity = operationalCapacity,
-      userDescription = userDescription,
-      capacity = capacity,
-      listSequence = listSequence,
-      cnaCapacity = cnaCapacity,
-      comment = comment,
-    )
+  ): AgencyInternalLocation = AgencyInternalLocation(
+    active = true,
+    certified = certified,
+    tracking = true,
+    locationCode = locationCode,
+    locationType = locationType,
+    description = description,
+    unitType = housingUnitType,
+    agency = agency,
+    parentLocation = parent,
+    currentOccupancy = 0,
+    operationalCapacity = operationalCapacity,
+    userDescription = userDescription,
+    capacity = capacity,
+    listSequence = listSequence,
+    cnaCapacity = cnaCapacity,
+    comment = comment,
+  )
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

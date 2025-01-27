@@ -172,35 +172,34 @@ class CorporateBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: CorporateAddressDsl.() -> Unit,
-  ): CorporateAddress =
-    corporateAddressBuilderFactory.builder().let { builder ->
-      builder.build(
-        type = type,
-        corporate = corporate,
-        premise = premise,
-        street = street,
-        locality = locality,
-        flat = flat,
-        postcode = postcode,
-        city = city,
-        county = county,
-        country = country,
-        validatedPAF = validatedPAF,
-        noFixedAddress = noFixedAddress,
-        primaryAddress = primaryAddress,
-        mailAddress = mailAddress,
-        comment = comment,
-        startDate = startDate?.let { LocalDate.parse(it) },
-        endDate = endDate?.let { LocalDate.parse(it) },
-        whoCreated = whoCreated,
-        whenCreated = whenCreated,
-        isServices = isServices,
-        businessHours = businessHours,
-        contactPersonName = contactPersonName,
-      )
-        .also { corporate.addresses += it }
-        .also { builder.apply(dsl) }
-    }
+  ): CorporateAddress = corporateAddressBuilderFactory.builder().let { builder ->
+    builder.build(
+      type = type,
+      corporate = corporate,
+      premise = premise,
+      street = street,
+      locality = locality,
+      flat = flat,
+      postcode = postcode,
+      city = city,
+      county = county,
+      country = country,
+      validatedPAF = validatedPAF,
+      noFixedAddress = noFixedAddress,
+      primaryAddress = primaryAddress,
+      mailAddress = mailAddress,
+      comment = comment,
+      startDate = startDate?.let { LocalDate.parse(it) },
+      endDate = endDate?.let { LocalDate.parse(it) },
+      whoCreated = whoCreated,
+      whenCreated = whenCreated,
+      isServices = isServices,
+      businessHours = businessHours,
+      contactPersonName = contactPersonName,
+    )
+      .also { corporate.addresses += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun phone(
     phoneType: String,
@@ -209,19 +208,18 @@ class CorporateBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: CorporatePhoneDsl.() -> Unit,
-  ): CorporatePhone =
-    corporatePhoneBuilderFactory.builder().let { builder ->
-      builder.build(
-        corporate = corporate,
-        phoneType = phoneType,
-        phoneNo = phoneNo,
-        extNo = extNo,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { corporate.phones += it }
-        .also { builder.apply(dsl) }
-    }
+  ): CorporatePhone = corporatePhoneBuilderFactory.builder().let { builder ->
+    builder.build(
+      corporate = corporate,
+      phoneType = phoneType,
+      phoneNo = phoneNo,
+      extNo = extNo,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { corporate.phones += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun internetAddress(
     internetAddress: String,
@@ -229,16 +227,15 @@ class CorporateBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: CorporateInternetAddressDsl.() -> Unit,
-  ): CorporateInternetAddress =
-    corporateInternetAddressBuilderFactory.builder().let { builder ->
-      builder.build(
-        corporate = corporate,
-        internetAddress = internetAddress,
-        internetAddressClass = internetAddressClass,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { corporate.internetAddresses += it }
-        .also { builder.apply(dsl) }
-    }
+  ): CorporateInternetAddress = corporateInternetAddressBuilderFactory.builder().let { builder ->
+    builder.build(
+      corporate = corporate,
+      internetAddress = internetAddress,
+      internetAddressClass = internetAddressClass,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { corporate.internetAddresses += it }
+      .also { builder.apply(dsl) }
+  }
 }

@@ -75,17 +75,16 @@ class OffenderIdentifyingMarkBuilder(
     sideCode: String?,
     partOrientationCode: String?,
     commentText: String?,
-  ): OffenderIdentifyingMark =
-    OffenderIdentifyingMark(
-      id = OffenderIdentifyingMarkId(offenderBooking, sequence),
-      bodyPart = findBodyPart(bodyPartCode),
-      markType = findMarkType(markTypeCode),
-      side = sideCode?.let { findSide(sideCode) },
-      partOrientation = partOrientationCode?.let { findPartOrientation(partOrientationCode) },
-      commentText = commentText,
-    )
-      .let { repository.save(it) }
-      .also { identifyingMark = it }
+  ): OffenderIdentifyingMark = OffenderIdentifyingMark(
+    id = OffenderIdentifyingMarkId(offenderBooking, sequence),
+    bodyPart = findBodyPart(bodyPartCode),
+    markType = findMarkType(markTypeCode),
+    side = sideCode?.let { findSide(sideCode) },
+    partOrientation = partOrientationCode?.let { findPartOrientation(partOrientationCode) },
+    commentText = commentText,
+  )
+    .let { repository.save(it) }
+    .also { identifyingMark = it }
 
   override fun image(
     captureDateTime: LocalDateTime,
@@ -96,19 +95,18 @@ class OffenderIdentifyingMarkBuilder(
     orientationTypeCode: String,
     imageViewTypeCode: String,
     dsl: OffenderIdentifyingMarkImageDsl.() -> Unit,
-  ): OffenderIdentifyingMarkImage =
-    imageBuilderFactory.builder().let { builder ->
-      builder.build(
-        identifyingMark = identifyingMark,
-        captureDateTime = captureDateTime,
-        fullSizeImage = fullSizeImage,
-        thumbnailImage = thumbnailImage,
-        active = active,
-        imageSourceCode = imageSourceCode,
-        orientationTypeCode = orientationTypeCode,
-        imageViewType = imageViewTypeCode,
-      )
-        .also { identifyingMark.images += it }
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderIdentifyingMarkImage = imageBuilderFactory.builder().let { builder ->
+    builder.build(
+      identifyingMark = identifyingMark,
+      captureDateTime = captureDateTime,
+      fullSizeImage = fullSizeImage,
+      thumbnailImage = thumbnailImage,
+      active = active,
+      imageSourceCode = imageSourceCode,
+      orientationTypeCode = orientationTypeCode,
+      imageViewType = imageViewTypeCode,
+    )
+      .also { identifyingMark.images += it }
+      .also { builder.apply(dsl) }
+  }
 }

@@ -152,14 +152,12 @@ class ExceptionHandler {
   }
 
   @ExceptionHandler(ImageNotFoundException::class)
-  fun handleImageException(e: ImageNotFoundException): ResponseEntity<Unit> =
-    ResponseEntity.status(NOT_FOUND).build<Unit>()
-      .also { log.info("Image not found exception: {}", e.message) }
+  fun handleImageException(e: ImageNotFoundException): ResponseEntity<Unit> = ResponseEntity.status(NOT_FOUND).build<Unit>()
+    .also { log.info("Image not found exception: {}", e.message) }
 
   @ExceptionHandler(ImageBadDataException::class)
-  fun handleImageException(e: ImageBadDataException): ResponseEntity<Unit> =
-    ResponseEntity.status(BAD_REQUEST).build<Unit>()
-      .also { log.info("Image bad data exception: {}", e.message) }
+  fun handleImageException(e: ImageBadDataException): ResponseEntity<Unit> = ResponseEntity.status(BAD_REQUEST).build<Unit>()
+    .also { log.info("Image bad data exception: {}", e.message) }
 
   @ExceptionHandler(java.lang.Exception::class)
   fun handleException(e: java.lang.Exception): ResponseEntity<ErrorResponse?>? {

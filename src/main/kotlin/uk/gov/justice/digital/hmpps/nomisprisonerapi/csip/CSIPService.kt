@@ -91,17 +91,15 @@ class CSIPService(
       }
   }
 
-  private fun findLatestBooking(offenderNo: String): OffenderBooking =
-    offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
-      ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
+  private fun findLatestBooking(offenderNo: String): OffenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+    ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
 
-  fun getCSIPs(offenderNo: String): PrisonerCSIPsResponse =
-    offenderRepository.findByNomsId(offenderNo).takeIf { it.isNotEmpty() }
-      ?.let {
-        PrisonerCSIPsResponse(
-          csipRepository.findAllByOffenderBookingOffenderNomsId(offenderNo).map { it.toCSIPResponse() },
-        )
-      } ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any csips")
+  fun getCSIPs(offenderNo: String): PrisonerCSIPsResponse = offenderRepository.findByNomsId(offenderNo).takeIf { it.isNotEmpty() }
+    ?.let {
+      PrisonerCSIPsResponse(
+        csipRepository.findAllByOffenderBookingOffenderNomsId(offenderNo).map { it.toCSIPResponse() },
+      )
+    } ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any csips")
 
   fun getCSIP(csipId: Long, includeDocumentIds: Boolean): CSIPResponse? {
     val csip = csipRepository.findByIdOrNull(csipId)
@@ -115,10 +113,9 @@ class CSIPService(
     return csip.toCSIPResponse(documentIds)
   }
 
-  fun getCSIPIdsForBooking(bookingId: Long): List<CSIPIdResponse> =
-    offenderBookingRepository.findByIdOrNull(bookingId)
-      ?.let { csipRepository.findIdsByOffenderBookingBookingId(bookingId).map { csipId -> CSIPIdResponse(csipId) } }
-      ?: throw NotFoundException("Prisoner with booking $bookingId not found")
+  fun getCSIPIdsForBooking(bookingId: Long): List<CSIPIdResponse> = offenderBookingRepository.findByIdOrNull(bookingId)
+    ?.let { csipRepository.findIdsByOffenderBookingBookingId(bookingId).map { csipId -> CSIPIdResponse(csipId) } }
+    ?: throw NotFoundException("Prisoner with booking $bookingId not found")
 
   fun findIdsByFilter(pageRequest: Pageable, csipFilter: CSIPFilter): Page<CSIPIdResponse> {
     log.info("CSIP Id filter request : $csipFilter with page request $pageRequest")
@@ -133,15 +130,13 @@ class CSIPService(
     fromDate: LocalDateTime?,
     toDate: LocalDateTime?,
     pageRequest: Pageable,
-  ): Page<Long> =
-
-    if (fromDate == null && toDate == null) {
-      csipRepository.findAllCSIPIds(pageRequest)
-    } else {
-      // optimisation: only do the complex SQL if we have a filter
-      // typically we won't when run in production
-      csipRepository.findAllCSIPIds(fromDate, toDate, pageRequest)
-    }
+  ): Page<Long> = if (fromDate == null && toDate == null) {
+    csipRepository.findAllCSIPIds(pageRequest)
+  } else {
+    // optimisation: only do the complex SQL if we have a filter
+    // typically we won't when run in production
+    csipRepository.findAllCSIPIds(fromDate, toDate, pageRequest)
+  }
 
   fun getCSIPCount(): Long = csipRepository.count()
 
@@ -177,23 +172,22 @@ class CSIPService(
     }
   }
 
-  private fun updateCSIPReport(request: UpsertCSIPRequest): CSIPReport =
-    csipRepository.findByIdOrNull(request.id!!)?.apply {
-      incidentDate = request.incidentDate
-      incidentTime = request.incidentTime?.atDate(incidentDate)
+  private fun updateCSIPReport(request: UpsertCSIPRequest): CSIPReport = csipRepository.findByIdOrNull(request.id!!)?.apply {
+    incidentDate = request.incidentDate
+    incidentTime = request.incidentTime?.atDate(incidentDate)
 
-      type = lookupIncidentType(request.typeCode)
-      location = lookupLocation(request.locationCode)
-      areaOfWork = lookupAreaOfWork(request.areaOfWorkCode)
+    type = lookupIncidentType(request.typeCode)
+    location = lookupLocation(request.locationCode)
+    areaOfWork = lookupAreaOfWork(request.areaOfWorkCode)
 
-      reportedBy = request.reportedBy
-      reportedDate = request.reportedDate
-      logNumber = request.logNumber
-      proActiveReferral = request.proActiveReferral
-      staffAssaulted = request.staffAssaulted
-      staffAssaultedName = request.staffAssaultedName
-      addNonMandatoryFields(request)
-    } ?: throw NotFoundException("CSIP Report with id=${request.id} does not exist")
+    reportedBy = request.reportedBy
+    reportedDate = request.reportedDate
+    logNumber = request.logNumber
+    proActiveReferral = request.proActiveReferral
+    staffAssaulted = request.staffAssaulted
+    staffAssaultedName = request.staffAssaultedName
+    addNonMandatoryFields(request)
+  } ?: throw NotFoundException("CSIP Report with id=${request.id} does not exist")
 
   private fun CSIPReport.addNonMandatoryFields(currentRequest: UpsertCSIPRequest) {
     // Release date is not added as part of this request as it is only set when the
@@ -429,19 +423,17 @@ class CSIPService(
     ?: throw BadDataException("Factor type $code not found")
 }
 
-fun CSIPReport.identifyNewComponents(request: UpsertCSIPRequest): List<CSIPComponent> =
-  identifyNewChildComponents(request.reportDetailRequest?.factors, factors, FACTOR) +
-    identifyNewChildComponents(request.plans, plans, PLAN) +
-    identifyNewChildComponents(request.investigation?.interviews, interviews, INTERVIEW) +
-    identifyNewReviewsAndAttendees(request)
+fun CSIPReport.identifyNewComponents(request: UpsertCSIPRequest): List<CSIPComponent> = identifyNewChildComponents(request.reportDetailRequest?.factors, factors, FACTOR) +
+  identifyNewChildComponents(request.plans, plans, PLAN) +
+  identifyNewChildComponents(request.investigation?.interviews, interviews, INTERVIEW) +
+  identifyNewReviewsAndAttendees(request)
 
-fun CSIPReport.identifyNewReviewsAndAttendees(request: UpsertCSIPRequest): List<CSIPComponent> =
-  request.reviews?.let {
-    identifyNewChildComponents(request.reviews, reviews, REVIEW) +
-      it.zip(reviews) { reviewReq, existingReview ->
-        identifyNewChildComponents(reviewReq.attendees, existingReview.attendees, ATTENDEE)
-      }.flatten()
-  } ?: listOf()
+fun CSIPReport.identifyNewReviewsAndAttendees(request: UpsertCSIPRequest): List<CSIPComponent> = request.reviews?.let {
+  identifyNewChildComponents(request.reviews, reviews, REVIEW) +
+    it.zip(reviews) { reviewReq, existingReview ->
+      identifyNewChildComponents(reviewReq.attendees, existingReview.attendees, ATTENDEE)
+    }.flatten()
+} ?: listOf()
 
 fun identifyNewChildComponents(requestList: List<CSIPChildRequest>?, existingList: List<CSIPChild>, component: CSIPComponent.Component): List<CSIPComponent> {
   val componentsList = mutableListOf<CSIPComponent>()

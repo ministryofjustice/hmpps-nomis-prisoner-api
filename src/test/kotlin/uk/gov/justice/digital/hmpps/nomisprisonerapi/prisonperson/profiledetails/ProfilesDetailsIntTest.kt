@@ -387,12 +387,11 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       }
     }
 
-    fun WebTestClient.getProfileDetailsOk(offenderNo: String) =
-      this.get().uri("/prisoners/$offenderNo/profile-details")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody<PrisonerProfileDetailsResponse>()
+    fun WebTestClient.getProfileDetailsOk(offenderNo: String) = this.get().uri("/prisoners/$offenderNo/profile-details")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody<PrisonerProfileDetailsResponse>()
   }
 
   @Nested
@@ -789,21 +788,18 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
 
     private fun findBooking(bookingId: Long = booking.bookingId) = offenderBookingRepository.findByIdOrNull(bookingId)!!
 
-    fun WebTestClient.upsertProfileDetailsOk(offenderNo: String, profileType: String, profileCode: String?) =
-      upsertProfileDetails(offenderNo, profileType, profileCode)
-        .expectStatus().isOk
-        .expectBody<UpsertProfileDetailsResponse>()
+    fun WebTestClient.upsertProfileDetailsOk(offenderNo: String, profileType: String, profileCode: String?) = upsertProfileDetails(offenderNo, profileType, profileCode)
+      .expectStatus().isOk
+      .expectBody<UpsertProfileDetailsResponse>()
 
-    fun WebTestClient.upsertProfileDetails(offenderNo: String, profileType: String, profileCode: String?) =
-      put().uri("/prisoners/$offenderNo/profile-details")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
-        .bodyValue(UpsertProfileDetailsRequest(profileType, profileCode))
-        .exchange()
+    fun WebTestClient.upsertProfileDetails(offenderNo: String, profileType: String, profileCode: String?) = put().uri("/prisoners/$offenderNo/profile-details")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+      .bodyValue(UpsertProfileDetailsRequest(profileType, profileCode))
+      .exchange()
 
-    fun WebTestClient.ResponseSpec.expectErrorContaining(partialMessage: String) =
-      expectBody<ErrorResponse>()
-        .consumeWith {
-          assertThat(it.responseBody!!.userMessage).contains(partialMessage)
-        }
+    fun WebTestClient.ResponseSpec.expectErrorContaining(partialMessage: String) = expectBody<ErrorResponse>()
+      .consumeWith {
+        assertThat(it.responseBody!!.userMessage).contains(partialMessage)
+      }
   }
 }

@@ -51,22 +51,21 @@ class VisitorRestrictsBuilderRepositoryBuilder(private val repository: VisitorRe
     expiryDate: LocalDate?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): VisitorRestriction =
-    VisitorRestriction(
-      person = person,
-      restrictionType = repository.restrictionTypeOf(restrictionType),
-      enteredStaff = enteredStaff,
-      comment = comment,
-      effectiveDate = effectiveDate,
-      expiryDate = expiryDate,
-    )
-      .let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): VisitorRestriction = VisitorRestriction(
+    person = person,
+    restrictionType = repository.restrictionTypeOf(restrictionType),
+    enteredStaff = enteredStaff,
+    comment = comment,
+    effectiveDate = effectiveDate,
+    expiryDate = expiryDate,
+  )
+    .let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

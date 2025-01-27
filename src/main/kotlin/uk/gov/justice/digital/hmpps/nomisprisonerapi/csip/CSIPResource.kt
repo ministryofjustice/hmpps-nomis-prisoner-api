@@ -185,14 +185,13 @@ class CSIPResource(private val csipService: CSIPService) {
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-  ): Page<CSIPIdResponse> =
-    csipService.findIdsByFilter(
-      pageRequest = pageRequest,
-      CSIPFilter(
-        toDate = toDate,
-        fromDate = fromDate,
-      ),
-    )
+  ): Page<CSIPIdResponse> = csipService.findIdsByFilter(
+    pageRequest = pageRequest,
+    CSIPFilter(
+      toDate = toDate,
+      fromDate = fromDate,
+    ),
+  )
 
   @GetMapping("/csip/{id}")
   @Operation(

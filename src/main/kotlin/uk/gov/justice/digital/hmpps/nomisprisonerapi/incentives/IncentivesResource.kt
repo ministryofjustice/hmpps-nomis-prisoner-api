@@ -91,8 +91,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     bookingId: Long,
     @RequestBody @Valid
     createIncentiveRequest: CreateIncentiveRequest,
-  ): CreateIncentiveResponse =
-    incentivesService.createIncentive(bookingId, createIncentiveRequest)
+  ): CreateIncentiveResponse = incentivesService.createIncentive(bookingId, createIncentiveRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @GetMapping("/incentives/ids")
@@ -149,15 +148,14 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       example = "true",
     )
     latestOnly: Boolean? = false,
-  ): Page<IncentiveIdResponse> =
-    incentivesService.findIncentiveIdsByFilter(
-      pageRequest = pageRequest,
-      IncentiveFilter(
-        toDate = toDate,
-        fromDate = fromDate,
-        latestOnly = latestOnly ?: false,
-      ),
-    )
+  ): Page<IncentiveIdResponse> = incentivesService.findIncentiveIdsByFilter(
+    pageRequest = pageRequest,
+    IncentiveFilter(
+      toDate = toDate,
+      fromDate = fromDate,
+      latestOnly = latestOnly ?: false,
+    ),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @GetMapping("/incentives/booking-id/{bookingId}/incentive-sequence/{incentiveSequence}")
@@ -198,11 +196,10 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     @Schema(description = "NOMIS Incentive sequence ", example = "1", required = true)
     @PathVariable
     incentiveSequence: Long,
-  ): IncentiveResponse =
-    incentivesService.getIncentive(
-      bookingId = bookingId,
-      incentiveSequence = incentiveSequence,
-    )
+  ): IncentiveResponse = incentivesService.getIncentive(
+    bookingId = bookingId,
+    incentiveSequence = incentiveSequence,
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @GetMapping("/incentives/booking-id/{bookingId}/current")
@@ -240,10 +237,9 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     @Schema(description = "NOMIS booking Id", example = "12345", required = true)
     @PathVariable
     bookingId: Long,
-  ): IncentiveResponse =
-    incentivesService.getCurrentIncentive(
-      bookingId = bookingId,
-    )
+  ): IncentiveResponse = incentivesService.getCurrentIncentive(
+    bookingId = bookingId,
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @PostMapping("/prisoners/booking-id/{bookingId}/incentives/reorder")
@@ -291,8 +287,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     @Schema(description = "Offender Booking Id", example = "1234567", required = true)
     @PathVariable
     bookingId: Long,
-  ): Unit =
-    incentivesService.reorderCurrentIncentives(bookingId)
+  ): Unit = incentivesService.reorderCurrentIncentives(bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @PostMapping("/incentives/reference-codes")
@@ -338,8 +333,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   fun createGlobalIncentiveLevel(
     @RequestBody @Valid
     createIncentiveRequest: CreateGlobalIncentiveRequest,
-  ): ReferenceCode =
-    incentivesService.createGlobalIncentiveLevel(createIncentiveRequest)
+  ): ReferenceCode = incentivesService.createGlobalIncentiveLevel(createIncentiveRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @PutMapping("/incentives/reference-codes/{code}")
@@ -398,8 +392,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     code: String,
     @RequestBody @Valid
     updateIncentiveRequest: UpdateGlobalIncentiveRequest,
-  ): ReferenceCode =
-    incentivesService.updateGlobalIncentiveLevel(code, updateIncentiveRequest)
+  ): ReferenceCode = incentivesService.updateGlobalIncentiveLevel(code, updateIncentiveRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @GetMapping("/incentives/reference-codes/{code}")
@@ -438,8 +431,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     @Schema(description = "Incentive reference code", example = "STD", required = true)
     @PathVariable
     code: String,
-  ): ReferenceCode =
-    incentivesService.getGlobalIncentiveLevel(code)
+  ): ReferenceCode = incentivesService.getGlobalIncentiveLevel(code)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @PostMapping("/incentives/reference-codes/reorder")
@@ -578,8 +570,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     prison: String,
     @RequestBody @Valid
     createIncentiveRequest: CreatePrisonIncentiveRequest,
-  ): PrisonIncentiveLevelDataResponse =
-    incentivesService.createPrisonIncentiveLevelData(prison, createIncentiveRequest)
+  ): PrisonIncentiveLevelDataResponse = incentivesService.createPrisonIncentiveLevelData(prison, createIncentiveRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @PutMapping("/incentives/prison/{prison}/code/{code}")
@@ -631,8 +622,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     code: String,
     @RequestBody @Valid
     updateIncentiveRequest: UpdatePrisonIncentiveRequest,
-  ): PrisonIncentiveLevelDataResponse =
-    incentivesService.updatePrisonIncentiveLevelData(prison, code, updateIncentiveRequest)
+  ): PrisonIncentiveLevelDataResponse = incentivesService.updatePrisonIncentiveLevelData(prison, code, updateIncentiveRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @GetMapping("/incentives/prison/{prison}/code/{code}")
@@ -674,8 +664,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     @Schema(description = "Incentive level code", example = "STD", required = true)
     @PathVariable
     code: String,
-  ): PrisonIncentiveLevelDataResponse =
-    incentivesService.getPrisonIncentiveLevel(prison, code)
+  ): PrisonIncentiveLevelDataResponse = incentivesService.getPrisonIncentiveLevel(prison, code)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
   @DeleteMapping("/incentives/prison/{prison}/code/{code}")

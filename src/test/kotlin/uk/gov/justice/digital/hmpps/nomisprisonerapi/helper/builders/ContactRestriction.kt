@@ -51,22 +51,21 @@ class OffenderPersonRestrictsBuilderRepositoryBuilder(private val repository: Of
     expiryDate: LocalDate?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): OffenderPersonRestrict =
-    OffenderPersonRestrict(
-      contactPerson = contactPerson,
-      restrictionType = repository.restrictionTypeOf(restrictionType),
-      enteredStaff = enteredStaff,
-      comment = comment,
-      effectiveDate = effectiveDate,
-      expiryDate = expiryDate,
-    )
-      .let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): OffenderPersonRestrict = OffenderPersonRestrict(
+    contactPerson = contactPerson,
+    restrictionType = repository.restrictionTypeOf(restrictionType),
+    enteredStaff = enteredStaff,
+    comment = comment,
+    effectiveDate = effectiveDate,
+    expiryDate = expiryDate,
+  )
+    .let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

@@ -38,14 +38,11 @@ class NonAssociationBuilderRepository(
   private val nonAssociationTypeRepository: ReferenceCodeRepository<NonAssociationType>,
   private val nonAssociationRepository: OffenderNonAssociationRepository,
 ) {
-  fun lookupNonAssociationReason(code: String): NonAssociationReason =
-    nonAssociationReasonRepository.findByIdOrNull(ReferenceCode.Pk(NonAssociationReason.DOMAIN, code))!!
+  fun lookupNonAssociationReason(code: String): NonAssociationReason = nonAssociationReasonRepository.findByIdOrNull(ReferenceCode.Pk(NonAssociationReason.DOMAIN, code))!!
 
-  fun lookupNonAssociationType(code: String): NonAssociationType =
-    nonAssociationTypeRepository.findByIdOrNull(ReferenceCode.Pk(NonAssociationType.DOMAIN, code))!!
+  fun lookupNonAssociationType(code: String): NonAssociationType = nonAssociationTypeRepository.findByIdOrNull(ReferenceCode.Pk(NonAssociationType.DOMAIN, code))!!
 
-  fun save(nonAssociation: OffenderNonAssociation) =
-    nonAssociationRepository.findByIdOrNull(nonAssociation.id) ?: nonAssociationRepository.save(nonAssociation)
+  fun save(nonAssociation: OffenderNonAssociation) = nonAssociationRepository.findByIdOrNull(nonAssociation.id) ?: nonAssociationRepository.save(nonAssociation)
 }
 
 @Component
@@ -53,12 +50,10 @@ class NonAssociationBuilderFactory(
   private val repository: NonAssociationBuilderRepository? = null,
   private val nonAssociationDetailBuilderFactory: NonAssociationDetailBuilderFactory = NonAssociationDetailBuilderFactory(),
 ) {
-  fun builder(): NonAssociationBuilder {
-    return NonAssociationBuilder(
-      repository,
-      nonAssociationDetailBuilderFactory,
-    )
-  }
+  fun builder(): NonAssociationBuilder = NonAssociationBuilder(
+    repository,
+    nonAssociationDetailBuilderFactory,
+  )
 }
 
 class NonAssociationBuilder(
@@ -75,19 +70,18 @@ class NonAssociationBuilder(
     nsOffenderBooking: OffenderBooking,
     nonAssociationReason: String,
     recipNonAssociationReason: String,
-  ): OffenderNonAssociation =
-    OffenderNonAssociation(
-      OffenderNonAssociationId(
-        offenderId = offenderId,
-        nsOffenderId = nsOffenderId,
-      ),
-      offenderBookingId = offenderBooking.bookingId,
-      nsOffenderBookingId = nsOffenderBooking.bookingId,
-      nonAssociationReason = repository?.lookupNonAssociationReason(nonAssociationReason),
-      recipNonAssociationReason = repository?.lookupNonAssociationReason(recipNonAssociationReason),
-    )
-      .let { save(it) }
-      .also { nonAssociation = it }
+  ): OffenderNonAssociation = OffenderNonAssociation(
+    OffenderNonAssociationId(
+      offenderId = offenderId,
+      nsOffenderId = nsOffenderId,
+    ),
+    offenderBookingId = offenderBooking.bookingId,
+    nsOffenderBookingId = nsOffenderBooking.bookingId,
+    nonAssociationReason = repository?.lookupNonAssociationReason(nonAssociationReason),
+    recipNonAssociationReason = repository?.lookupNonAssociationReason(recipNonAssociationReason),
+  )
+    .let { save(it) }
+    .also { nonAssociation = it }
 
   override fun nonAssociationDetail(
     typeSeq: Int,

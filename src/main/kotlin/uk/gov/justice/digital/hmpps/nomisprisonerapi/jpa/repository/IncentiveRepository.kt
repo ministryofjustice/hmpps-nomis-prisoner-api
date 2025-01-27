@@ -11,7 +11,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import java.time.LocalDate
 
 @Repository
-interface IncentiveRepository : CrudRepository<Incentive, IncentiveId>, JpaSpecificationExecutor<Incentive> {
+interface IncentiveRepository :
+  CrudRepository<Incentive, IncentiveId>,
+  JpaSpecificationExecutor<Incentive> {
   // current IEP - determined first by IEP date, secondly by IEP sequence - if more than 1 on the same date
   fun findFirstByIdOffenderBookingOrderByIepDateDescIdSequenceDesc(
     offenderBooking: OffenderBooking,

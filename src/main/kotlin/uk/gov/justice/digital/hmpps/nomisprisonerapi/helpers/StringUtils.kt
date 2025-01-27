@@ -16,5 +16,4 @@ private fun String.truncateByOneCharacterUntilFitToUtf8Length(maxLength: Int): S
 }
 
 // Utf8.encodedLength will throw if the resulting String is cut at the incorrect boundary
-private fun String.isStillValid(): Boolean =
-  runCatching { Utf8.encodedLength(this) }.map { true }.getOrDefault(false)
+private fun String.isStillValid(): Boolean = runCatching { Utf8.encodedLength(this) }.map { true }.getOrDefault(false)

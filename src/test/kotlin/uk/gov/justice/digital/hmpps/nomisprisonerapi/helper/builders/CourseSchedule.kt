@@ -14,7 +14,7 @@ annotation class CourseScheduleDslMarker
 interface CourseScheduleDsl
 
 @Component
-class CourseScheduleBuilderFactory() {
+class CourseScheduleBuilderFactory {
   fun builder() = CourseScheduleBuilder()
 }
 
@@ -27,16 +27,15 @@ class CourseScheduleBuilder : CourseScheduleDsl {
     endTime: String,
     slotCategory: SlotCategory,
     scheduleStatus: String,
-  ) =
-    LocalDate.parse(scheduleDate).let { date ->
-      CourseSchedule(
-        courseScheduleId = courseScheduleId,
-        courseActivity = courseActivity,
-        scheduleDate = date,
-        startTime = date.atTime(LocalTime.parse(startTime)),
-        endTime = date.atTime(LocalTime.parse(endTime)),
-        slotCategory = slotCategory,
-        scheduleStatus = scheduleStatus,
-      )
-    }
+  ) = LocalDate.parse(scheduleDate).let { date ->
+    CourseSchedule(
+      courseScheduleId = courseScheduleId,
+      courseActivity = courseActivity,
+      scheduleDate = date,
+      startTime = date.atTime(LocalTime.parse(startTime)),
+      endTime = date.atTime(LocalTime.parse(endTime)),
+      slotCategory = slotCategory,
+      scheduleStatus = scheduleStatus,
+    )
+  }
 }

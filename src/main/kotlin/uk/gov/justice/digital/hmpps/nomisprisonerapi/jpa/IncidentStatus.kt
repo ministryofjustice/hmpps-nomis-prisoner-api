@@ -45,9 +45,7 @@ class IncidentStatus(
     return code == other.code
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(code)
-  }
+  override fun hashCode(): Int = Objects.hashCode(code)
 
   companion object {
     val openStatusValues = listOf("AWAN", "INAN", "INREQ", "INAME", "PIU", "IUP")

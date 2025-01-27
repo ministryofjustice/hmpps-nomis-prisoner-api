@@ -31,11 +31,10 @@ class VisitVisitorBuilderRepositoryBuilder(private val repository: VisitVisitorB
     visit: Visit,
     person: Person,
     groupLeader: Boolean,
-  ): VisitVisitor =
-    VisitVisitor(
-      visit = visit,
-      person = person,
-      groupLeader = groupLeader,
-    )
-      .let { repository.save(it) }
+  ): VisitVisitor = VisitVisitor(
+    visit = visit,
+    person = person,
+    groupLeader = groupLeader,
+  )
+    .let { repository.save(it) }
 }

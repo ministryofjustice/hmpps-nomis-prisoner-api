@@ -19,17 +19,14 @@ interface AdjudicationEvidenceDsl
 class AdjudicationEvidenceBuilderFactory(
   private val repository: AdjudicationEvidenceBuilderRepository,
 ) {
-  fun builder(): AdjudicationEvidenceBuilder {
-    return AdjudicationEvidenceBuilder(repository)
-  }
+  fun builder(): AdjudicationEvidenceBuilder = AdjudicationEvidenceBuilder(repository)
 }
 
 @Component
 class AdjudicationEvidenceBuilderRepository(
   val evidenceTypeRepository: ReferenceCodeRepository<AdjudicationEvidenceType>,
 ) {
-  fun lookupAdjudicationEvidenceType(code: String): AdjudicationEvidenceType =
-    evidenceTypeRepository.findByIdOrNull(Pk(AdjudicationEvidenceType.OIC_STMT_TYP, code))!!
+  fun lookupAdjudicationEvidenceType(code: String): AdjudicationEvidenceType = evidenceTypeRepository.findByIdOrNull(Pk(AdjudicationEvidenceType.OIC_STMT_TYP, code))!!
 }
 
 class AdjudicationEvidenceBuilder(

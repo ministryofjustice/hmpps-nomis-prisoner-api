@@ -64,8 +64,7 @@ class CourseActivityBuilderRepository(
 ) {
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository?.findByIdOrNull(id)!!
 
-  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
-    agencyInternalLocationRepository?.findByIdOrNull(locationId)
+  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? = agencyInternalLocationRepository?.findByIdOrNull(locationId)
 }
 
 @Component
@@ -107,31 +106,30 @@ class CourseActivityBuilder(
     payPerSession: PayPerSession,
     outsideWork: Boolean,
     createdByDps: Boolean,
-  ): CourseActivity =
-    CourseActivity(
-      courseActivityId = courseActivityId,
-      code = code,
-      program = programService,
-      caseloadId = prisonId,
-      prison = lookupAgency(prisonId),
-      description = description,
-      capacity = capacity,
-      active = active,
-      scheduleStartDate = LocalDate.parse(startDate),
-      scheduleEndDate = endDate?.let { LocalDate.parse(it) },
-      internalLocation = internalLocationId?.let {
-        lookupAgencyInternalLocation(
-          it,
-          "CLAS",
-          lookupAgency(prisonId),
-        )
-      },
-      excludeBankHolidays = excludeBankHolidays,
-      payPerSession = payPerSession,
-      outsideWork = outsideWork,
-      auditModuleName = if (createdByDps) "DPS_SYNCHRONISATION" else "A_NOMIS_MODULE",
-    )
-      .also { courseActivity = it }
+  ): CourseActivity = CourseActivity(
+    courseActivityId = courseActivityId,
+    code = code,
+    program = programService,
+    caseloadId = prisonId,
+    prison = lookupAgency(prisonId),
+    description = description,
+    capacity = capacity,
+    active = active,
+    scheduleStartDate = LocalDate.parse(startDate),
+    scheduleEndDate = endDate?.let { LocalDate.parse(it) },
+    internalLocation = internalLocationId?.let {
+      lookupAgencyInternalLocation(
+        it,
+        "CLAS",
+        lookupAgency(prisonId),
+      )
+    },
+    excludeBankHolidays = excludeBankHolidays,
+    payPerSession = payPerSession,
+    outsideWork = outsideWork,
+    auditModuleName = if (createdByDps) "DPS_SYNCHRONISATION" else "A_NOMIS_MODULE",
+  )
+    .also { courseActivity = it }
 
   override fun payRate(
     iepLevelCode: String,
@@ -139,16 +137,15 @@ class CourseActivityBuilder(
     startDate: String,
     endDate: String?,
     halfDayRate: Double,
-  ) =
-    courseActivityPayRateBuilderFactory.builder().build(
-      courseActivity,
-      iepLevelCode,
-      payBandCode,
-      startDate,
-      endDate,
-      halfDayRate,
-    )
-      .also { courseActivity.payRates += it }
+  ) = courseActivityPayRateBuilderFactory.builder().build(
+    courseActivity,
+    iepLevelCode,
+    payBandCode,
+    startDate,
+    endDate,
+    halfDayRate,
+  )
+    .also { courseActivity.payRates += it }
 
   override fun courseSchedule(
     courseScheduleId: Long,
@@ -209,14 +206,13 @@ class CourseActivityBuilder(
     internalLocationId: Long,
     locationType: String,
     prison: AgencyLocation,
-  ) =
-    repository?.lookupAgencyInternalLocation(internalLocationId)
-      ?: AgencyInternalLocation(
-        locationId = internalLocationId,
-        active = true,
-        locationType = locationType,
-        agency = prison,
-        description = "Classroom 1",
-        locationCode = internalLocationId.toString(),
-      )
+  ) = repository?.lookupAgencyInternalLocation(internalLocationId)
+    ?: AgencyInternalLocation(
+      locationId = internalLocationId,
+      active = true,
+      locationType = locationType,
+      agency = prison,
+      description = "Classroom 1",
+      locationCode = internalLocationId.toString(),
+    )
 }

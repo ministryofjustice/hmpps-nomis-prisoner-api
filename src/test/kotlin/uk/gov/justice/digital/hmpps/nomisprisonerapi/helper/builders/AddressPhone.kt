@@ -48,21 +48,20 @@ class AddressPhoneBuilderRepositoryBuilder(private val repository: AddressPhoneB
     extNo: String? = null,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): AddressPhone =
-    AddressPhone(
-      address = address,
-      phoneNo = phoneNo,
-      phoneType = repository.phoneUsageOf(phoneType),
-      extNo = extNo,
-    ).let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): AddressPhone = AddressPhone(
+    address = address,
+    phoneNo = phoneNo,
+    phoneType = repository.phoneUsageOf(phoneType),
+    extNo = extNo,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
   fun build(
     address: OffenderAddress,
     phoneType: String,
@@ -70,21 +69,20 @@ class AddressPhoneBuilderRepositoryBuilder(private val repository: AddressPhoneB
     extNo: String? = null,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): AddressPhone =
-    AddressPhone(
-      address = address,
-      phoneNo = phoneNo,
-      phoneType = repository.phoneUsageOf(phoneType),
-      extNo = extNo,
-    ).let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): AddressPhone = AddressPhone(
+    address = address,
+    phoneNo = phoneNo,
+    phoneType = repository.phoneUsageOf(phoneType),
+    extNo = extNo,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 
   fun build(
     address: CorporateAddress,
@@ -93,19 +91,18 @@ class AddressPhoneBuilderRepositoryBuilder(private val repository: AddressPhoneB
     extNo: String? = null,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): AddressPhone =
-    AddressPhone(
-      address = address,
-      phoneNo = phoneNo,
-      phoneType = repository.phoneUsageOf(phoneType),
-      extNo = extNo,
-    ).let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): AddressPhone = AddressPhone(
+    address = address,
+    phoneNo = phoneNo,
+    phoneType = repository.phoneUsageOf(phoneType),
+    extNo = extNo,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

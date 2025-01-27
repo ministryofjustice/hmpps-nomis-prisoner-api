@@ -25,9 +25,7 @@ class OffenderCaseIdentifierPK(
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   val courtCase: CourtCase,
 ) : Serializable {
-  override fun toString(): String {
-    return "OffenderCaseIdentifierPK(identifierType='$identifierType', reference='$reference', courtCase=$courtCase)"
-  }
+  override fun toString(): String = "OffenderCaseIdentifierPK(identifierType='$identifierType', reference='$reference', courtCase=$courtCase)"
 }
 
 @Entity
@@ -37,9 +35,7 @@ class OffenderCaseIdentifier(
   val id: OffenderCaseIdentifierPK,
 ) {
 
-  fun isDpsCaseInfoNumber(): Boolean {
-    return CaseIdentifierType.DPS_CASE_REFERENCE.equals(id.identifierType)
-  }
+  fun isDpsCaseInfoNumber(): Boolean = CaseIdentifierType.DPS_CASE_REFERENCE.equals(id.identifierType)
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

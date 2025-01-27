@@ -60,7 +60,5 @@ data class CourseSchedule(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(courseScheduleId = $courseScheduleId, courseActivityId = ${courseActivity.courseActivityId}, scheduleDate = $scheduleDate, startTime = $startTime, endTime = $endTime)"
-  }
+  override fun toString(): String = this::class.simpleName + "(courseScheduleId = $courseScheduleId, courseActivityId = ${courseActivity.courseActivityId}, scheduleDate = $scheduleDate, startTime = $startTime, endTime = $endTime)"
 }

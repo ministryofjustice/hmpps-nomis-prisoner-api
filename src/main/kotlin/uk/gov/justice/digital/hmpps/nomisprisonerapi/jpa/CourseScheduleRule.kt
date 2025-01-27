@@ -83,6 +83,5 @@ data class CourseScheduleRule(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
-  override fun toString(): String =
-    "CourseScheduleRule(id=$id, courseActivityId=${courseActivity.courseActivityId}, startTime=$startTime)"
+  override fun toString(): String = "CourseScheduleRule(id=$id, courseActivityId=${courseActivity.courseActivityId}, startTime=$startTime)"
 }

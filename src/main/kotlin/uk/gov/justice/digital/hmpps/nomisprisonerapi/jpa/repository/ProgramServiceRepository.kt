@@ -6,6 +6,8 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 
 @Repository
-interface ProgramServiceRepository : CrudRepository<ProgramService, Long>, JpaSpecificationExecutor<ProgramService> {
+interface ProgramServiceRepository :
+  CrudRepository<ProgramService, Long>,
+  JpaSpecificationExecutor<ProgramService> {
   fun findByProgramCode(programCode: String): ProgramService?
 }

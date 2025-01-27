@@ -69,13 +69,11 @@ class CourtEventBuilderFactory(
   private val courtEventChargeBuilderFactory: CourtEventChargeBuilderFactory,
   private val courtOrderBuilderFactory: CourtOrderBuilderFactory,
 ) {
-  fun builder(): CourtEventBuilder {
-    return CourtEventBuilder(
-      repository,
-      courtEventChargeBuilderFactory,
-      courtOrderBuilderFactory,
-    )
-  }
+  fun builder(): CourtEventBuilder = CourtEventBuilder(
+    repository,
+    courtEventChargeBuilderFactory,
+    courtOrderBuilderFactory,
+  )
 }
 
 @Component
@@ -87,19 +85,15 @@ class CourtEventBuilderRepository(
   val agencyLocationRepository: AgencyLocationRepository,
   val offenceResultCodeRepository: OffenceResultCodeRepository,
 ) {
-  fun save(courtEvent: CourtEvent): CourtEvent =
-    repository.save(courtEvent)
+  fun save(courtEvent: CourtEvent): CourtEvent = repository.save(courtEvent)
 
-  fun lookupEventStatus(code: String): EventStatus =
-    eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
+  fun lookupEventStatus(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
 
   fun lookupOffenceResultCode(code: String): OffenceResultCode = offenceResultCodeRepository.findByIdOrNull(code)!!
 
-  fun lookupDirectionType(code: String): DirectionType =
-    directionTypeRepository.findByIdOrNull(DirectionType.pk(code))!!
+  fun lookupDirectionType(code: String): DirectionType = directionTypeRepository.findByIdOrNull(DirectionType.pk(code))!!
 
-  fun lookupCourtEventType(code: String): MovementReason =
-    courtEventTypeRepository.findByIdOrNull(MovementReason.pk(code))!!
+  fun lookupCourtEventType(code: String): MovementReason = courtEventTypeRepository.findByIdOrNull(MovementReason.pk(code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 }
@@ -160,30 +154,29 @@ class CourtEventBuilder(
     mostSeriousFlag: Boolean,
     whenModified: LocalDateTime?,
     dsl: CourtEventChargeDsl.() -> Unit,
-  ) =
-    courtEventChargeBuilderFactory.builder().let { builder ->
-      builder.build(
-        courtEvent = courtEvent,
-        offenderCharge = offenderCharge,
-        offencesCount = offencesCount,
-        offenceDate = offenceDate,
-        offenceEndDate = offenceEndDate,
-        plea = plea,
-        propertyValue = propertyValue,
-        totalPropertyValue = totalPropertyValue,
-        cjitCode1 = cjitCode1,
-        cjitCode2 = cjitCode2,
-        cjitCode3 = cjitCode3,
-        resultCode1 = resultCode1,
-        resultCode2 = resultCode2,
-        resultCode1Indicator = resultCode1Indicator,
-        resultCode2Indicator = resultCode2Indicator,
-        mostSeriousFlag = mostSeriousFlag,
-        whenModified = whenModified,
-      )
-        .also { courtEvent.courtEventCharges += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = courtEventChargeBuilderFactory.builder().let { builder ->
+    builder.build(
+      courtEvent = courtEvent,
+      offenderCharge = offenderCharge,
+      offencesCount = offencesCount,
+      offenceDate = offenceDate,
+      offenceEndDate = offenceEndDate,
+      plea = plea,
+      propertyValue = propertyValue,
+      totalPropertyValue = totalPropertyValue,
+      cjitCode1 = cjitCode1,
+      cjitCode2 = cjitCode2,
+      cjitCode3 = cjitCode3,
+      resultCode1 = resultCode1,
+      resultCode2 = resultCode2,
+      resultCode1Indicator = resultCode1Indicator,
+      resultCode2Indicator = resultCode2Indicator,
+      mostSeriousFlag = mostSeriousFlag,
+      whenModified = whenModified,
+    )
+      .also { courtEvent.courtEventCharges += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun courtOrder(
     courtDate: LocalDate,
@@ -197,22 +190,21 @@ class CourtEventBuilder(
     commentText: String?,
     nonReportFlag: Boolean,
     dsl: CourtOrderDsl.() -> Unit,
-  ) =
-    courtOrderBuilderFactory.builder().let { builder ->
-      builder.build(
-        courtEvent = courtEvent,
-        courtDate = courtDate,
-        issuingCourt = issuingCourt,
-        orderType = orderType,
-        orderStatus = orderStatus,
-        requestDate = requestDate,
-        dueDate = dueDate,
-        courtInfoId = courtInfoId,
-        seriousnessLevel = seriousnessLevel,
-        commentText = commentText,
-        nonReportFlag = nonReportFlag,
-      )
-        .also { courtEvent.courtOrders += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = courtOrderBuilderFactory.builder().let { builder ->
+    builder.build(
+      courtEvent = courtEvent,
+      courtDate = courtDate,
+      issuingCourt = issuingCourt,
+      orderType = orderType,
+      orderStatus = orderStatus,
+      requestDate = requestDate,
+      dueDate = dueDate,
+      courtInfoId = courtInfoId,
+      seriousnessLevel = seriousnessLevel,
+      commentText = commentText,
+      nonReportFlag = nonReportFlag,
+    )
+      .also { courtEvent.courtOrders += it }
+      .also { builder.apply(dsl) }
+  }
 }

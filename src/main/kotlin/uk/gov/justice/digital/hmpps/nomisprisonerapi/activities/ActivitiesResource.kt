@@ -90,8 +90,7 @@ class ActivitiesResource(
   fun createActivity(
     @RequestBody @Valid
     createActivityRequest: CreateActivityRequest,
-  ): CreateActivityResponse =
-    activityService.createActivity(createActivityRequest)
+  ): CreateActivityResponse = activityService.createActivity(createActivityRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}")
@@ -189,8 +188,7 @@ class ActivitiesResource(
     @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     upsertRequest: UpsertAllocationRequest,
-  ) =
-    allocationService.upsertAllocation(courseActivityId, upsertRequest)
+  ) = allocationService.upsertAllocation(courseActivityId, upsertRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/{courseActivityId}/schedule")
@@ -244,8 +242,7 @@ class ActivitiesResource(
     @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
     @RequestBody @Valid
     updateRequest: CourseScheduleRequest,
-  ) =
-    scheduleService.updateCourseSchedule(courseActivityId, updateRequest)
+  ) = scheduleService.updateCourseSchedule(courseActivityId, updateRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/schedules/{courseScheduleId}/booking/{bookingId}/attendance")
@@ -290,8 +287,7 @@ class ActivitiesResource(
     @Schema(description = "Booking id") @PathVariable bookingId: Long,
     @RequestBody @Valid
     upsertAttendanceRequest: UpsertAttendanceRequest,
-  ) =
-    attendanceService.upsertAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
+  ) = attendanceService.upsertAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @DeleteMapping("/schedules/{courseScheduleId}/booking/{bookingId}/attendance")
@@ -330,8 +326,7 @@ class ActivitiesResource(
   fun deleteAttendance(
     @Schema(description = "Course schedule id") @PathVariable courseScheduleId: Long,
     @Schema(description = "Booking id") @PathVariable bookingId: Long,
-  ) =
-    attendanceService.deleteAttendance(courseScheduleId, bookingId)
+  ) = attendanceService.deleteAttendance(courseScheduleId, bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/ids")
@@ -377,8 +372,7 @@ class ActivitiesResource(
     @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): Page<FindActiveActivityIdsResponse> =
-    activityService.findActiveActivityIds(pageRequest, prisonId, courseActivityId)
+  ): Page<FindActiveActivityIdsResponse> = activityService.findActiveActivityIds(pageRequest, prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/rates-with-unknown-incentives")
@@ -416,8 +410,7 @@ class ActivitiesResource(
   fun findRatesWithUnknownIncentiveLevel(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): List<FindPayRateWithUnknownIncentiveResponse> =
-    activityService.findPayRatesWithUnknownIncentive(prisonId, courseActivityId)
+  ): List<FindPayRateWithUnknownIncentiveResponse> = activityService.findPayRatesWithUnknownIncentive(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/without-schedule-rules")
@@ -455,8 +448,7 @@ class ActivitiesResource(
   fun findActivitiesWithoutScheduleRules(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): List<FindActivitiesWithoutScheduleRulesResponse> =
-    activityService.findActivitiesWithoutScheduleRules(prisonId, courseActivityId)
+  ): List<FindActivitiesWithoutScheduleRulesResponse> = activityService.findActivitiesWithoutScheduleRules(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/activities/{courseActivityId}")
@@ -500,8 +492,7 @@ class ActivitiesResource(
   )
   fun getActivity(
     @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
-  ) =
-    activityService.getActivity(courseActivityId)
+  ) = activityService.getActivity(courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/ids")
@@ -547,8 +538,7 @@ class ActivitiesResource(
     @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): Page<FindActiveAllocationIdsResponse> =
-    allocationService.findActiveAllocations(pageRequest, prisonId, courseActivityId)
+  ): Page<FindActiveAllocationIdsResponse> = allocationService.findActiveAllocations(pageRequest, prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/suspended")
@@ -586,8 +576,7 @@ class ActivitiesResource(
   fun findSuspendedAllocations(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): List<FindSuspendedAllocationsResponse> =
-    allocationService.findSuspendedAllocations(prisonId, courseActivityId)
+  ): List<FindSuspendedAllocationsResponse> = allocationService.findSuspendedAllocations(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/missing-pay-bands")
@@ -625,8 +614,7 @@ class ActivitiesResource(
   fun findAllocationsWithMissingPayBands(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): List<FindAllocationsMissingPayBandsResponse> =
-    allocationService.findAllocationsMissingPayBands(prisonId, courseActivityId)
+  ): List<FindAllocationsMissingPayBandsResponse> = allocationService.findAllocationsMissingPayBands(prisonId, courseActivityId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/{allocationId}")
@@ -670,8 +658,7 @@ class ActivitiesResource(
   )
   fun getAllocation(
     @Schema(description = "Allocation id") @PathVariable allocationId: Long,
-  ) =
-    allocationService.getAllocation(allocationId)
+  ) = allocationService.getAllocation(allocationId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @DeleteMapping("/activities/{courseActivityId}")
@@ -803,8 +790,7 @@ class ActivitiesResource(
   fun endActivity(
     @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
     @Schema(description = "End comment") @RequestParam endComment: String?,
-  ) =
-    activityService.endActivity(courseActivityId, LocalDate.now(), endComment)
+  ) = activityService.endActivity(courseActivityId, LocalDate.now(), endComment)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/end")
@@ -856,8 +842,7 @@ class ActivitiesResource(
   )
   fun endActivities(
     @Schema(description = "End activities request") @RequestBody request: EndActivitiesRequest,
-  ) =
-    activityService.endActivities(request.courseActivityIds, LocalDate.now())
+  ) = activityService.endActivities(request.courseActivityIds, LocalDate.now())
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/reconciliation/{prisonId}")
@@ -894,8 +879,7 @@ class ActivitiesResource(
   )
   fun getAllocationReconciliationSummary(
     @Schema(description = "Prison id") @PathVariable prisonId: String,
-  ) =
-    allocationService.findActiveAllocationsSummary(prisonId)
+  ) = allocationService.findActiveAllocationsSummary(prisonId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/attendances/reconciliation/{prisonId}")
@@ -933,8 +917,7 @@ class ActivitiesResource(
   fun getAttendanceReconciliationSummary(
     @Schema(description = "Prison id") @PathVariable prisonId: String,
     @Schema(description = "Date") @RequestParam date: LocalDate,
-  ) =
-    attendanceService.findPaidAttendancesSummary(prisonId, date)
+  ) = attendanceService.findPaidAttendancesSummary(prisonId, date)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/schedules/max-id")

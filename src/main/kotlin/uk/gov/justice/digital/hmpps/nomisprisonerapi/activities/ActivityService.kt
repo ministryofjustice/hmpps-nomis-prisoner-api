@@ -40,26 +40,25 @@ class ActivityService(
   private val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createActivity(request: CreateActivityRequest): CreateActivityResponse =
-    mapActivityModel(request)
-      .apply { payRates.addAll(payRatesService.mapRates(request, this)) }
-      .apply { courseSchedules.addAll(scheduleService.mapSchedules(request.schedules, this)) }
-      .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(request, this)) }
-      .let { activityRepository.save(it) }
-      .also {
-        telemetryClient.trackEvent(
-          "activity-created",
-          mapOf(
-            "nomisCourseActivityId" to it.courseActivityId.toString(),
-            "prisonId" to it.prison.id,
-            "nomisCourseScheduleIds" to it.courseSchedules.map { schedule -> schedule.courseScheduleId }.toString(),
-            "nomisCourseActivityPayRateIds" to it.payRates.map { payRate -> payRate.id.toTelemetry() }.toString(),
-            "nomisCourseScheduleRuleIds" to it.courseScheduleRules.map { rule -> rule.id }.toString(),
-          ),
-          null,
-        )
-      }
-      .let { CreateActivityResponse(it) }
+  fun createActivity(request: CreateActivityRequest): CreateActivityResponse = mapActivityModel(request)
+    .apply { payRates.addAll(payRatesService.mapRates(request, this)) }
+    .apply { courseSchedules.addAll(scheduleService.mapSchedules(request.schedules, this)) }
+    .apply { courseScheduleRules.addAll(scheduleRuleService.mapRules(request, this)) }
+    .let { activityRepository.save(it) }
+    .also {
+      telemetryClient.trackEvent(
+        "activity-created",
+        mapOf(
+          "nomisCourseActivityId" to it.courseActivityId.toString(),
+          "prisonId" to it.prison.id,
+          "nomisCourseScheduleIds" to it.courseSchedules.map { schedule -> schedule.courseScheduleId }.toString(),
+          "nomisCourseActivityPayRateIds" to it.payRates.map { payRate -> payRate.id.toTelemetry() }.toString(),
+          "nomisCourseScheduleRuleIds" to it.courseScheduleRules.map { rule -> rule.id }.toString(),
+        ),
+        null,
+      )
+    }
+    .let { CreateActivityResponse(it) }
 
   private fun mapActivityModel(request: CreateActivityRequest): CourseActivity {
     val prison = findPrisonOrThrow(request.prisonId)
@@ -137,28 +136,27 @@ class ActivityService(
       )
     }
 
-  fun getActivity(courseActivityId: Long): GetActivityResponse? =
-    findCourseActivityOrThrow(courseActivityId)
-      .let {
-        GetActivityResponse(
-          courseActivityId = it.courseActivityId,
-          programCode = it.program.programCode,
-          prisonId = it.prison.id,
-          startDate = it.scheduleStartDate,
-          endDate = it.scheduleEndDate,
-          internalLocationId = it.internalLocation?.locationId,
-          internalLocationCode = it.internalLocation?.locationCode,
-          internalLocationDescription = it.internalLocation?.description,
-          capacity = it.capacity ?: 0,
-          description = it.description ?: "",
-          minimumIncentiveLevel = it.iepLevel?.code,
-          excludeBankHolidays = it.excludeBankHolidays,
-          payPerSession = it.payPerSession.name,
-          scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
-          payRates = payRatesService.mapRates(it.payRates),
-          outsideWork = it.outsideWork,
-        )
-      }
+  fun getActivity(courseActivityId: Long): GetActivityResponse? = findCourseActivityOrThrow(courseActivityId)
+    .let {
+      GetActivityResponse(
+        courseActivityId = it.courseActivityId,
+        programCode = it.program.programCode,
+        prisonId = it.prison.id,
+        startDate = it.scheduleStartDate,
+        endDate = it.scheduleEndDate,
+        internalLocationId = it.internalLocation?.locationId,
+        internalLocationCode = it.internalLocation?.locationCode,
+        internalLocationDescription = it.internalLocation?.description,
+        capacity = it.capacity ?: 0,
+        description = it.description ?: "",
+        minimumIncentiveLevel = it.iepLevel?.code,
+        excludeBankHolidays = it.excludeBankHolidays,
+        payPerSession = it.payPerSession.name,
+        scheduleRules = scheduleRuleService.mapRules(it.courseScheduleRules),
+        payRates = payRatesService.mapRates(it.payRates),
+        outsideWork = it.outsideWork,
+      )
+    }
 
   private fun mapActivityModel(existingActivity: CourseActivity, request: UpdateActivityRequest): CourseActivity {
     val location = request.internalLocationId
@@ -201,18 +199,16 @@ class ActivityService(
     return existingActivity
   }
 
-  private fun checkDatesInOrder(startDate: LocalDate, endDate: LocalDate?) =
-    endDate?.run {
-      if (startDate > endDate) {
-        throw BadDataException("Start date $startDate must not be after end date $endDate")
-      }
+  private fun checkDatesInOrder(startDate: LocalDate, endDate: LocalDate?) = endDate?.run {
+    if (startDate > endDate) {
+      throw BadDataException("Start date $startDate must not be after end date $endDate")
     }
+  }
 
-  private fun findProgramServiceOrThrow(programCode: String) =
-    (
-      programServiceRepository.findByProgramCode(programCode)
-        ?: throw BadDataException("Program Service with code=$programCode does not exist")
-      )
+  private fun findProgramServiceOrThrow(programCode: String) = (
+    programServiceRepository.findByProgramCode(programCode)
+      ?: throw BadDataException("Program Service with code=$programCode does not exist")
+    )
 
   private fun findLocationInPrisonOrThrow(internalLocationId: Long?, prisonId: String): AgencyInternalLocation? {
     val location = internalLocationId?.let {
@@ -226,17 +222,14 @@ class ActivityService(
     return location
   }
 
-  private fun findCswapLocationInPrisonOrThrow(prisonId: String): AgencyInternalLocation =
-    agencyInternalLocationRepository.findByAgencyIdAndLocationCodeAndActive(prisonId, "CSWAP", active = true)
-      ?: throw BadDataException("CSWAP location for prison $prisonId does not exist. Activities need a location otherwise they are missed off NART reports and we use CSWAP as the default location where DPS provides none.")
+  private fun findCswapLocationInPrisonOrThrow(prisonId: String): AgencyInternalLocation = agencyInternalLocationRepository.findByAgencyIdAndLocationCodeAndActive(prisonId, "CSWAP", active = true)
+    ?: throw BadDataException("CSWAP location for prison $prisonId does not exist. Activities need a location otherwise they are missed off NART reports and we use CSWAP as the default location where DPS provides none.")
 
-  private fun findPrisonOrThrow(prisonId: String) =
-    agencyLocationRepository.findByIdOrNull(prisonId)
-      ?: throw BadDataException("Prison with id=$prisonId does not exist")
+  private fun findPrisonOrThrow(prisonId: String) = agencyLocationRepository.findByIdOrNull(prisonId)
+    ?: throw BadDataException("Prison with id=$prisonId does not exist")
 
-  private fun findCourseActivityOrThrow(courseActivityId: Long) =
-    courseActivityRepository.findByIdOrNull(courseActivityId)
-      ?: throw NotFoundException("Course Activity with id=$courseActivityId does not exist")
+  private fun findCourseActivityOrThrow(courseActivityId: Long) = courseActivityRepository.findByIdOrNull(courseActivityId)
+    ?: throw NotFoundException("Course Activity with id=$courseActivityId does not exist")
 
   fun deleteActivity(courseActivityId: Long) = activityRepository.deleteById(courseActivityId)
 

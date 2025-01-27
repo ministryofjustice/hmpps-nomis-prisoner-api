@@ -19,8 +19,7 @@ class IncidentResponseBuilderFactory {
   fun builder() = IncidentResponseBuilder()
 }
 
-class IncidentResponseBuilder :
-  IncidentResponseDsl {
+class IncidentResponseBuilder : IncidentResponseDsl {
 
   fun build(
     incidentQuestion: IncidentQuestion,
@@ -29,12 +28,11 @@ class IncidentResponseBuilder :
     comment: String?,
     responseDate: LocalDate?,
     recordingStaff: Staff,
-  ): IncidentResponse =
-    IncidentResponse(
-      id = IncidentResponseId(incidentQuestion, answerSequence),
-      answer = answer,
-      comment = comment,
-      responseDate = responseDate,
-      recordingStaff = recordingStaff,
-    )
+  ): IncidentResponse = IncidentResponse(
+    id = IncidentResponseId(incidentQuestion, answerSequence),
+    answer = answer,
+    comment = comment,
+    responseDate = responseDate,
+    recordingStaff = recordingStaff,
+  )
 }

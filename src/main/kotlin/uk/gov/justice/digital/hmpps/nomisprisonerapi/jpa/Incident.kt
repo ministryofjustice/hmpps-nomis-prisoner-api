@@ -118,7 +118,5 @@ class Incident(
   override fun hashCode(): Int = id.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(id = $id, description = $description)"
-  }
+  override fun toString(): String = this::class.simpleName + "(id = $id, description = $description)"
 }

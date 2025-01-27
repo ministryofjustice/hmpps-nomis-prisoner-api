@@ -14,15 +14,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SplashScreen
 class SplashScreenService(
   private val splashScreenRepository: SplashScreenRepository,
 ) {
-  fun getSplashScreen(moduleName: String): SplashScreenDto =
-    splashScreenRepository.findByModuleName(moduleName)
-      ?.toDto()
-      ?: throw NotFoundException("Splash screen with screen/module name $moduleName does not exist")
+  fun getSplashScreen(moduleName: String): SplashScreenDto = splashScreenRepository.findByModuleName(moduleName)
+    ?.toDto()
+    ?: throw NotFoundException("Splash screen with screen/module name $moduleName does not exist")
 
-  fun getBlockedPrisons(moduleName: String): List<PrisonDto> =
-    splashScreenRepository.findByModuleName(moduleName)
-      ?.blockedList()?.map { PrisonDto(prisonId = it) }
-      ?: listOf()
+  fun getBlockedPrisons(moduleName: String): List<PrisonDto> = splashScreenRepository.findByModuleName(moduleName)
+    ?.blockedList()?.map { PrisonDto(prisonId = it) }
+    ?: listOf()
 }
 
 fun SplashScreen.toDto() = SplashScreenDto(

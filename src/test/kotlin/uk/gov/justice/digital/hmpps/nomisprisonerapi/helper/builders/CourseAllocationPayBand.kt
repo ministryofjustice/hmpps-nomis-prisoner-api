@@ -25,8 +25,7 @@ class CourseAllocationPayBandBuilderRepository(
 @Component
 class CourseAllocationPayBandBuilderFactory(private val repository: CourseAllocationPayBandBuilderRepository? = null) {
 
-  fun builder() =
-    CourseAllocationPayBandBuilder(repository)
+  fun builder() = CourseAllocationPayBandBuilder(repository)
 }
 
 class CourseAllocationPayBandBuilder(
@@ -38,15 +37,14 @@ class CourseAllocationPayBandBuilder(
     startDate: String,
     endDate: String?,
     payBandCode: String,
-  ) =
-    OffenderProgramProfilePayBand(
-      id = OffenderProgramProfilePayBandId(
-        offenderProgramProfile = courseAllocation,
-        startDate = LocalDate.parse(startDate),
-      ),
-      endDate = endDate?.let { LocalDate.parse(endDate) },
-      payBand = payBand(payBandCode),
-    )
+  ) = OffenderProgramProfilePayBand(
+    id = OffenderProgramProfilePayBandId(
+      offenderProgramProfile = courseAllocation,
+      startDate = LocalDate.parse(startDate),
+    ),
+    endDate = endDate?.let { LocalDate.parse(endDate) },
+    payBand = payBand(payBandCode),
+  )
 
   private fun payBand(payBandCode: String) = repository?.payBand(payBandCode)
     ?: PayBand(code = payBandCode, description = payBandCode)

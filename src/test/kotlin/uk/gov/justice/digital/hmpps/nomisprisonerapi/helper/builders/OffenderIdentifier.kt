@@ -53,15 +53,14 @@ class OffenderIdentifierBuilder(
     issuedAuthority: String?,
     issuedDate: LocalDate?,
     verified: Boolean?,
-  ): OffenderIdentifier =
-    OffenderIdentifier(
-      id = OffenderIdentifierPK(offender, sequence),
-      identifierType = repository.identifierTypeOf(type),
-      identifier = identifier,
-      issuedAuthority = issuedAuthority,
-      issuedDate = issuedDate,
-      verified = verified,
-    )
-      .let { repository.save(it) }
-      .also { offenderIdentifier = it }
+  ): OffenderIdentifier = OffenderIdentifier(
+    id = OffenderIdentifierPK(offender, sequence),
+    identifierType = repository.identifierTypeOf(type),
+    identifier = identifier,
+    issuedAuthority = issuedAuthority,
+    issuedDate = issuedDate,
+    verified = verified,
+  )
+    .let { repository.save(it) }
+    .also { offenderIdentifier = it }
 }

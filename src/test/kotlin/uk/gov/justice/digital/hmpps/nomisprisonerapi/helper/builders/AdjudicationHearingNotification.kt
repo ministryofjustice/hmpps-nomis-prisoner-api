@@ -15,13 +15,11 @@ annotation class AdjudicationHearingNotificationDslMarker
 interface AdjudicationHearingNotificationDsl
 
 @Component
-class AdjudicationHearingNotificationBuilderFactory() {
-  fun builder(): AdjudicationHearingNotificationBuilder {
-    return AdjudicationHearingNotificationBuilder()
-  }
+class AdjudicationHearingNotificationBuilderFactory {
+  fun builder(): AdjudicationHearingNotificationBuilder = AdjudicationHearingNotificationBuilder()
 }
 
-class AdjudicationHearingNotificationBuilder() : AdjudicationHearingNotificationDsl {
+class AdjudicationHearingNotificationBuilder : AdjudicationHearingNotificationDsl {
   private lateinit var adjudicationHearingNotification: AdjudicationHearingNotification
 
   fun build(
@@ -31,14 +29,13 @@ class AdjudicationHearingNotificationBuilder() : AdjudicationHearingNotification
     deliveryDate: LocalDate,
     comment: String?,
     index: Int,
-  ): AdjudicationHearingNotification =
-    AdjudicationHearingNotification(
-      id = AdjudicationHearingNotificationId(hearing.id, index),
-      deliveryStaff = staff,
-      deliveryDate = deliveryDate,
-      deliveryDateTime = deliveryDateTime,
-      comment = comment,
-      hearing = hearing,
-    )
-      .also { adjudicationHearingNotification = it }
+  ): AdjudicationHearingNotification = AdjudicationHearingNotification(
+    id = AdjudicationHearingNotificationId(hearing.id, index),
+    deliveryStaff = staff,
+    deliveryDate = deliveryDate,
+    deliveryDateTime = deliveryDateTime,
+    comment = comment,
+    hearing = hearing,
+  )
+    .also { adjudicationHearingNotification = it }
 }

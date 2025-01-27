@@ -12,11 +12,11 @@ annotation class AgencyInternalLocationProfileDslMarker
 interface AgencyInternalLocationProfileDsl
 
 @Component
-class AgencyInternalLocationProfileBuilderFactory() {
+class AgencyInternalLocationProfileBuilderFactory {
   fun builder() = AgencyInternalLocationProfileBuilder()
 }
 
-class AgencyInternalLocationProfileBuilder() : AgencyInternalLocationProfileDsl {
+class AgencyInternalLocationProfileBuilder : AgencyInternalLocationProfileDsl {
 
   fun build(
     profileType: String,

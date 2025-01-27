@@ -13,7 +13,7 @@ annotation class CourseScheduleRuleDslMarker
 interface CourseScheduleRuleDsl
 
 @Component
-class CourseScheduleRuleBuilderFactory() {
+class CourseScheduleRuleBuilderFactory {
   fun builder(): CourseScheduleRuleBuilder = CourseScheduleRuleBuilder()
 }
 

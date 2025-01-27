@@ -59,8 +59,7 @@ class PrisonResource(val prisonService: PrisonService) {
   )
   fun getPrisonIncentiveLevels(
     @Schema(description = "The prison ID") @PathVariable prisonId: String,
-  ): List<IncentiveLevel> =
-    prisonService.getPrisonIepLevels(prisonId)
+  ): List<IncentiveLevel> = prisonService.getPrisonIepLevels(prisonId)
 }
 
 @Schema(description = "An incentive levels")

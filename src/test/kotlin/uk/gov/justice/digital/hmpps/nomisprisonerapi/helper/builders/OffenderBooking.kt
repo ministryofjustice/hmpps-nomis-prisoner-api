@@ -344,8 +344,7 @@ class BookingBuilderRepository(
 ) {
   fun save(offenderBooking: OffenderBooking): OffenderBooking = offenderBookingRepository.save(offenderBooking)
   fun lookupAgencyLocation(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
-  fun lookupAgencyInternalLocation(id: Long): AgencyInternalLocation =
-    agencyInternalLocationRepository.findByIdOrNull(id)!!
+  fun lookupAgencyInternalLocation(id: Long): AgencyInternalLocation = agencyInternalLocationRepository.findByIdOrNull(id)!!
 }
 
 @Component
@@ -473,22 +472,21 @@ class BookingBuilder(
     endComment: String?,
     suspended: Boolean,
     dsl: CourseAllocationDsl.() -> Unit,
-  ) =
-    courseAllocationBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          offenderBooking,
-          startDate,
-          programStatusCode,
-          endDate,
-          endReasonCode,
-          endComment,
-          suspended,
-          courseActivity,
-        )
-          .also { offenderBooking.offenderProgramProfiles += it }
-          .also { builder.apply(dsl) }
-      }
+  ) = courseAllocationBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking,
+        startDate,
+        programStatusCode,
+        endDate,
+        endReasonCode,
+        endComment,
+        suspended,
+        courseActivity,
+      )
+        .also { offenderBooking.offenderProgramProfiles += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun sentence(
     calculationType: String,
@@ -535,60 +533,59 @@ class BookingBuilder(
     sled2Calc: LocalDate?,
     startDate2Calc: LocalDate?,
     dsl: OffenderSentenceDsl.() -> Unit,
-  ): OffenderSentence =
-    offenderSentenceBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          calculationType = calculationType,
-          category = category,
-          startDate = startDate,
-          status = status,
-          offenderBooking = offenderBooking,
-          sequence = offenderBooking.sentences.size.toLong() + 1,
-          sentenceLevel = sentenceLevel,
-          consecSequence = consecSequence,
-          // todo
-          courtOrder = null,
-          endDate = endDate,
-          commentText = commentText,
-          absenceCount = absenceCount,
-          etdCalculatedDate = etdCalculatedDate,
-          mtdCalculatedDate = mtdCalculatedDate,
-          ltdCalculatedDate = ltdCalculatedDate,
-          ardCalculatedDate = ardCalculatedDate,
-          crdCalculatedDate = crdCalculatedDate,
-          pedCalculatedDate = pedCalculatedDate,
-          npdCalculatedDate = npdCalculatedDate,
-          ledCalculatedDate = ledCalculatedDate,
-          sedCalculatedDate = sedCalculatedDate,
-          prrdCalculatedDate = prrdCalculatedDate,
-          tariffCalculatedDate = tariffCalculatedDate,
-          dprrdCalculatedDate = dprrdCalculatedDate,
-          tusedCalculatedDate = tusedCalculatedDate,
-          aggAdjustDays = aggAdjustDays,
-          aggSentenceSequence = aggSentenceSequence,
-          extendedDays = extendedDays,
-          counts = counts,
-          statusUpdateReason = statusUpdateReason,
-          statusUpdateComment = statusUpdateComment,
-          statusUpdateDate = statusUpdateDate,
-          statusUpdateStaff = statusUpdateStaff,
-          fineAmount = fineAmount,
-          dischargeDate = dischargeDate,
-          nomSentDetailRef = nomSentDetailRef,
-          nomConsToSentDetailRef = nomConsToSentDetailRef,
-          nomConsFromSentDetailRef = nomConsFromSentDetailRef,
-          nomConsWithSentDetailRef = nomConsWithSentDetailRef,
-          lineSequence = lineSequence,
-          hdcExclusionFlag = hdcExclusionFlag,
-          hdcExclusionReason = hdcExclusionReason,
-          cjaAct = cjaAct,
-          sled2Calc = sled2Calc,
-          startDate2Calc = startDate2Calc,
-        )
-          .also { offenderBooking.sentences += it }
-          .also { builder.apply(dsl) }
-      }
+  ): OffenderSentence = offenderSentenceBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        calculationType = calculationType,
+        category = category,
+        startDate = startDate,
+        status = status,
+        offenderBooking = offenderBooking,
+        sequence = offenderBooking.sentences.size.toLong() + 1,
+        sentenceLevel = sentenceLevel,
+        consecSequence = consecSequence,
+        // todo
+        courtOrder = null,
+        endDate = endDate,
+        commentText = commentText,
+        absenceCount = absenceCount,
+        etdCalculatedDate = etdCalculatedDate,
+        mtdCalculatedDate = mtdCalculatedDate,
+        ltdCalculatedDate = ltdCalculatedDate,
+        ardCalculatedDate = ardCalculatedDate,
+        crdCalculatedDate = crdCalculatedDate,
+        pedCalculatedDate = pedCalculatedDate,
+        npdCalculatedDate = npdCalculatedDate,
+        ledCalculatedDate = ledCalculatedDate,
+        sedCalculatedDate = sedCalculatedDate,
+        prrdCalculatedDate = prrdCalculatedDate,
+        tariffCalculatedDate = tariffCalculatedDate,
+        dprrdCalculatedDate = dprrdCalculatedDate,
+        tusedCalculatedDate = tusedCalculatedDate,
+        aggAdjustDays = aggAdjustDays,
+        aggSentenceSequence = aggSentenceSequence,
+        extendedDays = extendedDays,
+        counts = counts,
+        statusUpdateReason = statusUpdateReason,
+        statusUpdateComment = statusUpdateComment,
+        statusUpdateDate = statusUpdateDate,
+        statusUpdateStaff = statusUpdateStaff,
+        fineAmount = fineAmount,
+        dischargeDate = dischargeDate,
+        nomSentDetailRef = nomSentDetailRef,
+        nomConsToSentDetailRef = nomConsToSentDetailRef,
+        nomConsFromSentDetailRef = nomConsFromSentDetailRef,
+        nomConsWithSentDetailRef = nomConsWithSentDetailRef,
+        lineSequence = lineSequence,
+        hdcExclusionFlag = hdcExclusionFlag,
+        hdcExclusionReason = hdcExclusionReason,
+        cjaAct = cjaAct,
+        sled2Calc = sled2Calc,
+        startDate2Calc = startDate2Calc,
+      )
+        .also { offenderBooking.sentences += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun csipReport(
     type: String,
@@ -612,36 +609,35 @@ class BookingBuilder(
     firstCaseReviewDate: LocalDate?,
     logNumber: String?,
     dsl: CSIPReportDsl.() -> Unit,
-  ): CSIPReport =
-    csipReportBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          offenderBooking = offenderBooking,
-          type = type,
-          location = location,
-          areaOfWork = areaOfWork,
-          reportedBy = reportedBy,
-          incidentDate = incidentDate,
-          incidentTime = incidentTime,
-          releaseDate = releaseDate,
-          involvement = involvement,
-          concern = concern,
-          staffAssaulted = staffAssaulted,
-          staffAssaultedName = staffAssaultedName,
-          knownReasons = knownReasons,
-          otherInformation = otherInformation,
-          referralComplete = referralComplete,
-          referralCompletedBy = referralCompletedBy,
-          referralCompletedDate = referralCompletedDate,
-          caseManager = caseManager,
-          planReason = planReason,
-          firstCaseReviewDate = firstCaseReviewDate,
-          logNumber = logNumber,
-        )
-          .also {
-            builder.apply(dsl)
-          }
-      }
+  ): CSIPReport = csipReportBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        type = type,
+        location = location,
+        areaOfWork = areaOfWork,
+        reportedBy = reportedBy,
+        incidentDate = incidentDate,
+        incidentTime = incidentTime,
+        releaseDate = releaseDate,
+        involvement = involvement,
+        concern = concern,
+        staffAssaulted = staffAssaulted,
+        staffAssaultedName = staffAssaultedName,
+        knownReasons = knownReasons,
+        otherInformation = otherInformation,
+        referralComplete = referralComplete,
+        referralCompletedBy = referralCompletedBy,
+        referralCompletedDate = referralCompletedDate,
+        caseManager = caseManager,
+        planReason = planReason,
+        firstCaseReviewDate = firstCaseReviewDate,
+        logNumber = logNumber,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 
   @CourtCaseDslMarker
   override fun courtCase(
@@ -790,59 +786,55 @@ class BookingBuilder(
     profileType: String,
     profileCode: String?,
     sequence: Long,
-  ): OffenderProfileDetail =
-    profileDetailBuilderFactory.builder().build(
-      listSequence = listSequence,
-      profileTypeId = profileType,
-      profileCodeId = profileCode,
-      offenderBooking = offenderBooking,
-      sequence = sequence,
-    ).also {
-      offenderBooking.profileDetails += it
-    }
+  ): OffenderProfileDetail = profileDetailBuilderFactory.builder().build(
+    listSequence = listSequence,
+    profileTypeId = profileType,
+    profileCodeId = profileCode,
+    offenderBooking = offenderBooking,
+    sequence = sequence,
+  ).also {
+    offenderBooking.profileDetails += it
+  }
 
   override fun prisonTransfer(
     from: String,
     to: String,
     date: LocalDateTime,
-  ): Pair<OffenderExternalMovement, OffenderExternalMovement> =
-    offenderExternalMovementBuilderFactory.builder()
-      .let { builder ->
-        builder.buildTransfer(
-          offenderBooking = offenderBooking,
-          fromPrisonId = from,
-          toPrisonId = to,
-          date = date,
-        )
-          .also { offenderBooking.externalMovements.forEach { it.active = false } }
-          .also { offenderBooking.externalMovements += it.first }
-          .also { offenderBooking.externalMovements += it.second }
-      }
+  ): Pair<OffenderExternalMovement, OffenderExternalMovement> = offenderExternalMovementBuilderFactory.builder()
+    .let { builder ->
+      builder.buildTransfer(
+        offenderBooking = offenderBooking,
+        fromPrisonId = from,
+        toPrisonId = to,
+        date = date,
+      )
+        .also { offenderBooking.externalMovements.forEach { it.active = false } }
+        .also { offenderBooking.externalMovements += it.first }
+        .also { offenderBooking.externalMovements += it.second }
+    }
 
   override fun release(
     date: LocalDateTime,
-  ): OffenderExternalMovement =
-    offenderExternalMovementBuilderFactory.builder()
-      .let { builder ->
-        builder.buildRelease(
-          offenderBooking = offenderBooking,
-          date = date,
-        )
-          .also { offenderBooking.externalMovements.forEach { it.active = false } }
-          .also { offenderBooking.externalMovements += it }
-      }
+  ): OffenderExternalMovement = offenderExternalMovementBuilderFactory.builder()
+    .let { builder ->
+      builder.buildRelease(
+        offenderBooking = offenderBooking,
+        date = date,
+      )
+        .also { offenderBooking.externalMovements.forEach { it.active = false } }
+        .also { offenderBooking.externalMovements += it }
+    }
 
   override fun receive(
     date: LocalDateTime,
-  ): OffenderExternalMovement =
-    offenderExternalMovementBuilderFactory.builder()
-      .let { builder ->
-        builder.buildReceive(
-          offenderBooking = offenderBooking,
-          date = date,
-        )
-          .also { offenderBooking.externalMovements += it }
-      }
+  ): OffenderExternalMovement = offenderExternalMovementBuilderFactory.builder()
+    .let { builder ->
+      builder.buildReceive(
+        offenderBooking = offenderBooking,
+        date = date,
+      )
+        .also { offenderBooking.externalMovements += it }
+    }
 
   override fun visitBalance(
     remainingVisitOrders: Int,
@@ -940,18 +932,17 @@ class BookingBuilder(
     commentText: String,
     auditModuleName: String?,
     iepDateTime: LocalDateTime,
-  ) =
-    incentiveBuilderFactory.builder()
-      .build(
-        offenderBooking,
-        iepLevelCode,
-        userId,
-        sequence,
-        commentText,
-        auditModuleName,
-        iepDateTime,
-      )
-      .also { offenderBooking.incentives += it }
+  ) = incentiveBuilderFactory.builder()
+    .build(
+      offenderBooking,
+      iepLevelCode,
+      userId,
+      sequence,
+      commentText,
+      auditModuleName,
+      iepDateTime,
+    )
+    .also { offenderBooking.incentives += it }
 
   override fun adjudicationParty(
     incident: AdjudicationIncident,
@@ -962,23 +953,22 @@ class BookingBuilder(
     adjudicationNumber: Long?,
     actionDecision: String,
     dsl: AdjudicationPartyDsl.() -> Unit,
-  ) =
-    adjudicationPartyBuilderFactory.builder().let { builder ->
-      builder.build(
-        adjudicationNumber = adjudicationNumber,
-        comment = comment,
-        staff = staff,
-        incidentRole = role.code,
-        actionDecision = actionDecision,
-        partyAddedDate = partyAddedDate,
-        incident = incident,
-        offenderBooking = offenderBooking,
-        whenCreated = LocalDateTime.now(),
-        index = incident.parties.size + 1,
-      )
-        .also { incident.parties += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationPartyBuilderFactory.builder().let { builder ->
+    builder.build(
+      adjudicationNumber = adjudicationNumber,
+      comment = comment,
+      staff = staff,
+      incidentRole = role.code,
+      actionDecision = actionDecision,
+      partyAddedDate = partyAddedDate,
+      incident = incident,
+      offenderBooking = offenderBooking,
+      whenCreated = LocalDateTime.now(),
+      index = incident.parties.size + 1,
+    )
+      .also { incident.parties += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun document(
     fileName: String,
@@ -986,18 +976,17 @@ class BookingBuilder(
     status: String,
     body: String?,
     dsl: IWPDocumentDsl.() -> Unit,
-  ) =
-    documentBuilderFactory.builder().let { builder ->
-      builder.build(
-        fileName = fileName,
-        offenderBooking = offenderBooking,
-        status = status,
-        template = template,
-        body = body,
-      )
-        .also { offenderBooking.documents += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = documentBuilderFactory.builder().let { builder ->
+    builder.build(
+      fileName = fileName,
+      offenderBooking = offenderBooking,
+      status = status,
+      template = template,
+      body = body,
+    )
+      .also { offenderBooking.documents += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun image(
     captureDateTime: LocalDateTime,
@@ -1006,19 +995,18 @@ class BookingBuilder(
     active: Boolean,
     imageSourceCode: String,
     dsl: OffenderBookingImageDsl.() -> Unit,
-  ): OffenderBookingImage =
-    offenderBookingImageBuilderFactory.builder().let { builder ->
-      builder.build(
-        offenderBooking = offenderBooking,
-        captureDateTime = captureDateTime,
-        fullSizeImage = fullSizeImage,
-        thumbnailImage = thumbnailImage,
-        active = active,
-        imageSourceCode = imageSourceCode,
-      )
-        .also { offenderBooking.images += it }
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderBookingImage = offenderBookingImageBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderBooking,
+      captureDateTime = captureDateTime,
+      fullSizeImage = fullSizeImage,
+      thumbnailImage = thumbnailImage,
+      active = active,
+      imageSourceCode = imageSourceCode,
+    )
+      .also { offenderBooking.images += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun identifyingMark(
     sequence: Long,
@@ -1028,20 +1016,19 @@ class BookingBuilder(
     partOrientationCode: String?,
     commentText: String?,
     dsl: OffenderIdentifyingMarkDsl.() -> Unit,
-  ): OffenderIdentifyingMark =
-    offenderIdentifyingMarkBuilderFactory.builder().let { builder ->
-      builder.build(
-        offenderBooking = offenderBooking,
-        sequence = sequence,
-        bodyPartCode = bodyPartCode,
-        markTypeCode = markTypeCode,
-        sideCode = sideCode,
-        partOrientationCode = partOrientationCode,
-        commentText = commentText,
-      )
-        .also { offenderBooking.identifyingMarks += it }
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderIdentifyingMark = offenderIdentifyingMarkBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderBooking,
+      sequence = sequence,
+      bodyPartCode = bodyPartCode,
+      markTypeCode = markTypeCode,
+      sideCode = sideCode,
+      partOrientationCode = partOrientationCode,
+      commentText = commentText,
+    )
+      .also { offenderBooking.identifyingMarks += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun belief(
     beliefCode: String,
@@ -1053,20 +1040,19 @@ class BookingBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: OffenderBeliefDsl.() -> Unit,
-  ): OffenderBelief =
-    offenderBeliefBuilderFactory.builder().let { builder ->
-      builder.build(
-        booking = offenderBooking,
-        offender = offenderBooking.offender,
-        beliefCode = beliefCode,
-        startDate = startDate,
-        endDate = endDate,
-        changeReason = changeReason,
-        comments = comments,
-        verified = verified,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderBelief = offenderBeliefBuilderFactory.builder().let { builder ->
+    builder.build(
+      booking = offenderBooking,
+      offender = offenderBooking.offender,
+      beliefCode = beliefCode,
+      startDate = startDate,
+      endDate = endDate,
+      changeReason = changeReason,
+      comments = comments,
+      verified = verified,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { builder.apply(dsl) }
+  }
 }

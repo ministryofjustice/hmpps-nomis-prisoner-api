@@ -122,10 +122,8 @@ class OffenderBuilderRepository(
   fun title(titleCode: String): Title = titleRepository.findByIdOrNull(ReferenceCode.Pk(Title.TITLE, titleCode))!!
   fun country(birthCountryCode: String): Country = countryRepository.findByIdOrNull(ReferenceCode.Pk(Country.COUNTRY, birthCountryCode))!!
   fun nameType(nameTypeCode: String): NameType = nameTypeRepository.findByIdOrNull(ReferenceCode.Pk(NameType.NAME_TYPE, nameTypeCode))!!
-  fun updateCreateDatetime(offender: Offender, whenCreated: LocalDateTime) =
-    jdbcTemplate.update("update OFFENDERS set CREATE_DATETIME = ? where OFFENDER_ID = ?", whenCreated, offender.id)
-  fun updateCreateUsername(offender: Offender, whoCreated: String) =
-    jdbcTemplate.update("update OFFENDERS set CREATE_USER_ID = ? where OFFENDER_ID = ?", whoCreated, offender.id)
+  fun updateCreateDatetime(offender: Offender, whenCreated: LocalDateTime) = jdbcTemplate.update("update OFFENDERS set CREATE_DATETIME = ? where OFFENDER_ID = ?", whenCreated, offender.id)
+  fun updateCreateUsername(offender: Offender, whoCreated: String) = jdbcTemplate.update("update OFFENDERS set CREATE_USER_ID = ? where OFFENDER_ID = ?", whoCreated, offender.id)
 }
 
 @Component
@@ -303,32 +301,31 @@ class OffenderBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: OffenderAddressDsl.() -> Unit,
-  ): OffenderAddress =
-    offenderAddressBuilderFactory.builder().let { builder ->
-      builder.build(
-        type = type,
-        offender = rootOffender,
-        premise = premise,
-        street = street,
-        locality = locality,
-        flat = flat,
-        postcode = postcode,
-        city = city,
-        county = county,
-        country = country,
-        validatedPAF = validatedPAF,
-        noFixedAddress = noFixedAddress,
-        primaryAddress = primaryAddress,
-        mailAddress = mailAddress,
-        comment = comment,
-        startDate = startDate?.let { LocalDate.parse(it) },
-        endDate = endDate?.let { LocalDate.parse(it) },
-        whoCreated = whoCreated,
-        whenCreated = whenCreated,
-      )
-        .also { rootOffender.addresses += it }
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderAddress = offenderAddressBuilderFactory.builder().let { builder ->
+    builder.build(
+      type = type,
+      offender = rootOffender,
+      premise = premise,
+      street = street,
+      locality = locality,
+      flat = flat,
+      postcode = postcode,
+      city = city,
+      county = county,
+      country = country,
+      validatedPAF = validatedPAF,
+      noFixedAddress = noFixedAddress,
+      primaryAddress = primaryAddress,
+      mailAddress = mailAddress,
+      comment = comment,
+      startDate = startDate?.let { LocalDate.parse(it) },
+      endDate = endDate?.let { LocalDate.parse(it) },
+      whoCreated = whoCreated,
+      whenCreated = whenCreated,
+    )
+      .also { rootOffender.addresses += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun phone(
     phoneType: String,
@@ -337,34 +334,32 @@ class OffenderBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: OffenderPhoneDsl.() -> Unit,
-  ): OffenderPhone =
-    offenderPhoneBuilderFactory.builder().let { builder ->
-      builder.build(
-        offender = rootOffender,
-        phoneType = phoneType,
-        phoneNo = phoneNo,
-        extNo = extNo,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { rootOffender.phones += it }
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderPhone = offenderPhoneBuilderFactory.builder().let { builder ->
+    builder.build(
+      offender = rootOffender,
+      phoneType = phoneType,
+      phoneNo = phoneNo,
+      extNo = extNo,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { rootOffender.phones += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun email(
     emailAddress: String,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: OffenderEmailDsl.() -> Unit,
-  ): OffenderInternetAddress =
-    offenderEmailBuilderFactory.builder().let { builder ->
-      builder.build(
-        offender = rootOffender,
-        emailAddress = emailAddress,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { rootOffender.internetAddresses += it }
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderInternetAddress = offenderEmailBuilderFactory.builder().let { builder ->
+    builder.build(
+      offender = rootOffender,
+      emailAddress = emailAddress,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { rootOffender.internetAddresses += it }
+      .also { builder.apply(dsl) }
+  }
 }

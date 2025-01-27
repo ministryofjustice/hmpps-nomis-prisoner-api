@@ -13,11 +13,11 @@ annotation class InternalLocationUsageLocationDslMarker
 interface InternalLocationUsageLocationDsl
 
 @Component
-class InternalLocationUsageLocationBuilderFactory() {
+class InternalLocationUsageLocationBuilderFactory {
   fun builder() = InternalLocationUsageLocationBuilder()
 }
 
-class InternalLocationUsageLocationBuilder() : InternalLocationUsageLocationDsl {
+class InternalLocationUsageLocationBuilder : InternalLocationUsageLocationDsl {
 
   fun build(
     internalLocationUsage: InternalLocationUsage,

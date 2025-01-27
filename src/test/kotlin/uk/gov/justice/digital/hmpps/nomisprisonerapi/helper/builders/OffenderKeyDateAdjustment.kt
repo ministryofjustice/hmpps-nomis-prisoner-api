@@ -20,9 +20,7 @@ interface OffenderKeyDateAdjustmentDsl
 class OffenderKeyDateAdjustmentBuilderFactory(
   private val repository: OffenderKeyDateAdjustmentBuilderRepository,
 ) {
-  fun builder(): OffenderKeyDateAdjustmentBuilder {
-    return OffenderKeyDateAdjustmentBuilder(repository)
-  }
+  fun builder(): OffenderKeyDateAdjustmentBuilder = OffenderKeyDateAdjustmentBuilder(repository)
 }
 
 @Component
@@ -31,8 +29,7 @@ class OffenderKeyDateAdjustmentBuilderRepository(
   val offenderKeyDateAdjustmentRepository: OffenderKeyDateAdjustmentRepository,
 ) {
   fun lookupKeyDateAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
-  fun save(adjustment: OffenderKeyDateAdjustment): OffenderKeyDateAdjustment =
-    offenderKeyDateAdjustmentRepository.save(adjustment)
+  fun save(adjustment: OffenderKeyDateAdjustment): OffenderKeyDateAdjustment = offenderKeyDateAdjustmentRepository.save(adjustment)
 }
 
 class OffenderKeyDateAdjustmentBuilder(

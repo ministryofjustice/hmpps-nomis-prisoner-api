@@ -363,13 +363,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    private fun createActivityExpectingBadRequest(body: String) =
-      webTestClient.post().uri("/activities")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(body))
-        .exchange()
-        .expectStatus().isBadRequest
+    private fun createActivityExpectingBadRequest(body: String) = webTestClient.post().uri("/activities")
+      .contentType(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .body(BodyInserters.fromValue(body))
+      .exchange()
+      .expectStatus().isBadRequest
 
     private fun callCreateEndpoint(request: String = validJsonRequest()): Long {
       val response = callCreateEndpointAndExpect(request)
@@ -379,13 +378,12 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       return response!!.courseActivityId
     }
 
-    private fun callCreateEndpointAndExpect(request: String = validJsonRequest()) =
-      webTestClient.post().uri("/activities")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(request))
-        .exchange()
-        .expectStatus().isCreated
+    private fun callCreateEndpointAndExpect(request: String = validJsonRequest()) = webTestClient.post().uri("/activities")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .contentType(MediaType.APPLICATION_JSON)
+      .body(BodyInserters.fromValue(request))
+      .exchange()
+      .expectStatus().isCreated
 
     private fun validJsonRequest(
       schedulesJson: String = """
@@ -1207,8 +1205,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         )
       }
 
-      private fun findPayRate(rates: List<CourseActivityPayRate>, halfDayRate: Double) =
-        rates.find { it.halfDayRate.setScale(3, RoundingMode.HALF_UP).equals(BigDecimal(halfDayRate).setScale(3, RoundingMode.HALF_UP)) }!!
+      private fun findPayRate(rates: List<CourseActivityPayRate>, halfDayRate: Double) = rates.find { it.halfDayRate.setScale(3, RoundingMode.HALF_UP).equals(BigDecimal(halfDayRate).setScale(3, RoundingMode.HALF_UP)) }!!
     }
 
     @Nested
@@ -1729,15 +1726,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    private fun CourseActivity.getProgramCode(bookingId: Long): String =
-      offenderProgramProfiles.first { it.offenderBooking.bookingId == bookingId }.program.programCode
+    private fun CourseActivity.getProgramCode(bookingId: Long): String = offenderProgramProfiles.first { it.offenderBooking.bookingId == bookingId }.program.programCode
 
-    private fun callUpdateEndpoint(courseActivityId: Long, jsonBody: String) =
-      webTestClient.put().uri("/activities/$courseActivityId")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(jsonBody))
-        .exchange()
+    private fun callUpdateEndpoint(courseActivityId: Long, jsonBody: String) = webTestClient.put().uri("/activities/$courseActivityId")
+      .contentType(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .body(BodyInserters.fromValue(jsonBody))
+      .exchange()
   }
 
   @Nested
@@ -1821,15 +1816,14 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private lateinit var courseActivity: CourseActivity
 
-    private fun WebTestClient.endAllocation(courseActivityId: Long, endComment: String? = null) =
-      put().uri {
-        it.path("/activities/$courseActivityId/end")
-          .apply { endComment?.run { it.queryParam("endComment", endComment) } }
-          .build()
-      }
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
+    private fun WebTestClient.endAllocation(courseActivityId: Long, endComment: String? = null) = put().uri {
+      it.path("/activities/$courseActivityId/end")
+        .apply { endComment?.run { it.queryParam("endComment", endComment) } }
+        .build()
+    }
+      .contentType(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
 
     @Test
     fun `access forbidden when no authority`() {
@@ -2025,12 +2019,11 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private lateinit var courseActivity: CourseActivity
 
-    private fun WebTestClient.endActivities(courseActivityIds: Collection<Long>) =
-      put().uri("/activities/end")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds }"""))
-        .exchange()
+    private fun WebTestClient.endActivities(courseActivityIds: Collection<Long>) = put().uri("/activities/end")
+      .contentType(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds }"""))
+      .exchange()
 
     @Test
     fun `access forbidden when no authority`() {

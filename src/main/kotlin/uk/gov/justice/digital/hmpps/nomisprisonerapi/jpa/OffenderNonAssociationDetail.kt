@@ -109,11 +109,10 @@ data class OffenderNonAssociationDetail(
 
   override fun hashCode(): Int = javaClass.hashCode()
 
-  override fun toString(): String =
-    this::class.simpleName +
-      "((${id.offenderId},${id.nsOffenderId},${id.typeSequence}), offenderBooking=$offenderBookingId," +
-      " nsOffenderBooking=$nsOffenderBookingId, nonAssociationReason=${nonAssociationReason.code}, " +
-      "recipNonAssociationReason=$recipNonAssociationReason, nonAssociationType=${nonAssociationType.code}, " +
-      "effectiveDate=$effectiveDate, expiryDate=$expiryDate, authorisedBy=$authorisedBy, modifiedBy=$modifiedBy, comment=$comment"
+  override fun toString(): String = this::class.simpleName +
+    "((${id.offenderId},${id.nsOffenderId},${id.typeSequence}), offenderBooking=$offenderBookingId," +
+    " nsOffenderBooking=$nsOffenderBookingId, nonAssociationReason=${nonAssociationReason.code}, " +
+    "recipNonAssociationReason=$recipNonAssociationReason, nonAssociationType=${nonAssociationType.code}, " +
+    "effectiveDate=$effectiveDate, expiryDate=$expiryDate, authorisedBy=$authorisedBy, modifiedBy=$modifiedBy, comment=$comment"
   // Omit offenderNonAssociation parent to avoid infinite recursion
 }

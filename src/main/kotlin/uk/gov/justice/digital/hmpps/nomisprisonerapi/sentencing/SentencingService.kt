@@ -103,10 +103,8 @@ class SentencingService(
       ?: throw NotFoundException("Court case $id not found")
   }
 
-  fun getCourtCaseForMigration(id: Long): CourtCaseResponse {
-    return courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
-      ?: throw NotFoundException("Court case $id not found")
-  }
+  fun getCourtCaseForMigration(id: Long): CourtCaseResponse = courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
+    ?: throw NotFoundException("Court case $id not found")
 
   fun getCourtCasesByOffender(offenderNo: String): List<CourtCaseResponse> {
     findLatestBooking(offenderNo)
@@ -117,156 +115,149 @@ class SentencingService(
       }
   }
 
-  fun getCourtCasesByOffenderBooking(bookingId: Long): List<CourtCaseResponse> {
-    return findOffenderBooking(bookingId).let {
-      courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(it)
-        .map { courtCase ->
-          courtCase.toCourtCaseResponse()
-        }
-    }
+  fun getCourtCasesByOffenderBooking(bookingId: Long): List<CourtCaseResponse> = findOffenderBooking(bookingId).let {
+    courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(it)
+      .map { courtCase ->
+        courtCase.toCourtCaseResponse()
+      }
   }
 
-  fun getOffenderCharge(id: Long): OffenderCharge {
-    return offenderChargeRepository.findByIdOrNull(id)
-      ?: throw NotFoundException("Offender Charge $id not found")
-  }
+  fun getOffenderCharge(id: Long): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Offender Charge $id not found")
 
   @Audit
-  fun createCourtCaseHierachy(offenderNo: String, request: CreateCourtCaseRequest) =
-    findLatestBooking(offenderNo).let { booking ->
+  fun createCourtCaseHierachy(offenderNo: String, request: CreateCourtCaseRequest) = findLatestBooking(offenderNo).let { booking ->
 
-      val courtCase = courtCaseRepository.saveAndFlush(
-        CourtCase(
-          offenderBooking = booking,
-          legalCaseType = lookupLegalCaseType(request.legalCaseType),
-          beginDate = request.startDate,
-          caseStatus = lookupCaseStatus(request.status),
-          court = lookupEstablishment(request.courtId),
-          caseSequence = courtCaseRepository.getNextCaseSequence(booking),
-          primaryCaseInfoNumber = request.caseReference,
-        ),
+    val courtCase = courtCaseRepository.saveAndFlush(
+      CourtCase(
+        offenderBooking = booking,
+        legalCaseType = lookupLegalCaseType(request.legalCaseType),
+        beginDate = request.startDate,
+        caseStatus = lookupCaseStatus(request.status),
+        court = lookupEstablishment(request.courtId),
+        caseSequence = courtCaseRepository.getNextCaseSequence(booking),
+        primaryCaseInfoNumber = request.caseReference,
+      ),
+    )
+    val mandatoryCourtAppearanceRequest = request.courtAppearance!!
+    courtCase.courtEvents.addAll(
+      mandatoryCourtAppearanceRequest.let { courtAppearanceRequest ->
+        mutableListOf(
+          CourtEvent(
+            offenderBooking = booking,
+            courtCase = courtCase,
+            eventDate = courtAppearanceRequest.eventDateTime.toLocalDate(),
+            startTime = courtAppearanceRequest.eventDateTime,
+            courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+            eventStatus = determineEventStatus(
+              courtAppearanceRequest.eventDateTime.toLocalDate(),
+              booking,
+            ),
+            court = lookupEstablishment(courtAppearanceRequest.courtId),
+            outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
+            nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
+            nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
+            directionCode = lookupDirectionType(DirectionType.OUT),
+          ).also { courtEvent ->
+            mandatoryCourtAppearanceRequest.courtEventChargesToCreate.map { offenderChargeRequest ->
+              val resultCode =
+                offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) } ?: courtEvent.outcomeReasonCode
+              // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
+              val offenderCharge = OffenderCharge(
+                courtCase = courtCase,
+                offenderBooking = booking,
+                offence = lookupOffence(offenderChargeRequest.offenceCode),
+                offenceDate = offenderChargeRequest.offenceDate,
+                offenceEndDate = offenderChargeRequest.offenceEndDate,
+                resultCode1 = resultCode,
+                resultCode1Indicator = resultCode?.dispositionCode,
+                chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) },
+              )
+              courtCase.offenderCharges.add(offenderCharge)
+              courtCaseRepository.saveAndFlush(courtCase) // to access the newly created offender charges
+            }
+            courtEvent.initialiseCourtEventCharges()
+          },
+        )
+      },
+    )
+    courtCaseRepository.saveAndFlush(courtCase).also {
+      refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = booking.bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
       )
-      val mandatoryCourtAppearanceRequest = request.courtAppearance!!
-      courtCase.courtEvents.addAll(
-        mandatoryCourtAppearanceRequest.let { courtAppearanceRequest ->
-          mutableListOf(
-            CourtEvent(
-              offenderBooking = booking,
-              courtCase = courtCase,
-              eventDate = courtAppearanceRequest.eventDateTime.toLocalDate(),
-              startTime = courtAppearanceRequest.eventDateTime,
-              courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-              eventStatus = determineEventStatus(
-                courtAppearanceRequest.eventDateTime.toLocalDate(),
-                booking,
-              ),
-              court = lookupEstablishment(courtAppearanceRequest.courtId),
-              outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
-              nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
-              nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
-              directionCode = lookupDirectionType(DirectionType.OUT),
-            ).also { courtEvent ->
-              mandatoryCourtAppearanceRequest.courtEventChargesToCreate.map { offenderChargeRequest ->
-                val resultCode =
-                  offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) } ?: courtEvent.outcomeReasonCode
-                // for the initial create - the duplicate fields on CourtEventCharge and OffenderCharge are identical
-                val offenderCharge = OffenderCharge(
-                  courtCase = courtCase,
-                  offenderBooking = booking,
-                  offence = lookupOffence(offenderChargeRequest.offenceCode),
-                  offenceDate = offenderChargeRequest.offenceDate,
-                  offenceEndDate = offenderChargeRequest.offenceEndDate,
-                  resultCode1 = resultCode,
-                  resultCode1Indicator = resultCode?.dispositionCode,
-                  chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) },
-                )
-                courtCase.offenderCharges.add(offenderCharge)
-                courtCaseRepository.saveAndFlush(courtCase) // to access the newly created offender charges
-              }
-              courtEvent.initialiseCourtEventCharges()
+    }
+    CreateCourtCaseResponse(
+      id = courtCase.id,
+      courtAppearanceIds = courtCase.courtEvents.map
+        {
+          CreateCourtAppearanceResponse(
+            id = it.id,
+            courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
+              OffenderChargeIdResponse(
+                courtEventCharge.id.offenderCharge.id,
+              )
             },
           )
         },
+    ).also {
+      telemetryClient.trackEvent(
+        "court-case-created",
+        mapOf(
+          "courtCaseId" to courtCase.id.toString(),
+          "bookingId" to booking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+          "court" to request.courtId,
+          "legalCaseType" to request.legalCaseType,
+          "courtEventId" to it.courtAppearanceIds[0].id.toString(),
+        ),
+        null,
       )
-      courtCaseRepository.saveAndFlush(courtCase).also {
-        refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
-        storedProcedureRepository.imprisonmentStatusUpdate(
-          bookingId = booking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-        )
-      }
-      CreateCourtCaseResponse(
-        id = courtCase.id,
-        courtAppearanceIds = courtCase.courtEvents.map
-          {
-            CreateCourtAppearanceResponse(
-              id = it.id,
-              courtEventChargesIds = it.courtEventCharges.map { courtEventCharge ->
-                OffenderChargeIdResponse(
-                  courtEventCharge.id.offenderCharge.id,
-                )
-              },
-            )
-          },
-      ).also {
-        telemetryClient.trackEvent(
-          "court-case-created",
-          mapOf(
-            "courtCaseId" to courtCase.id.toString(),
-            "bookingId" to booking.bookingId.toString(),
-            "offenderNo" to offenderNo,
-            "court" to request.courtId,
-            "legalCaseType" to request.legalCaseType,
-            "courtEventId" to it.courtAppearanceIds[0].id.toString(),
-          ),
-          null,
-        )
-      }
     }
+  }
 
   @Audit
-  fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) =
-    findLatestBooking(offenderNo).let { booking ->
+  fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) = findLatestBooking(offenderNo).let { booking ->
 
-      val courtCase = courtCaseRepository.saveAndFlush(
-        CourtCase(
-          offenderBooking = booking,
-          legalCaseType = lookupLegalCaseType(request.legalCaseType),
-          beginDate = request.startDate,
-          caseStatus = lookupCaseStatus(request.status),
-          court = lookupEstablishment(request.courtId),
-          caseSequence = courtCaseRepository.getNextCaseSequence(booking),
+    val courtCase = courtCaseRepository.saveAndFlush(
+      CourtCase(
+        offenderBooking = booking,
+        legalCaseType = lookupLegalCaseType(request.legalCaseType),
+        beginDate = request.startDate,
+        caseStatus = lookupCaseStatus(request.status),
+        court = lookupEstablishment(request.courtId),
+        caseSequence = courtCaseRepository.getNextCaseSequence(booking),
+      ),
+    )
+    courtCaseRepository.saveAndFlush(courtCase)
+    CreateCourtCaseResponse(
+      id = courtCase.id,
+      courtAppearanceIds = emptyList(),
+    ).also {
+      telemetryClient.trackEvent(
+        "court-case-created",
+        mapOf(
+          "courtCaseId" to courtCase.id.toString(),
+          "bookingId" to booking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+          "court" to request.courtId,
+          "legalCaseType" to request.legalCaseType,
         ),
+        null,
       )
-      courtCaseRepository.saveAndFlush(courtCase)
-      CreateCourtCaseResponse(
-        id = courtCase.id,
-        courtAppearanceIds = emptyList(),
-      ).also {
-        telemetryClient.trackEvent(
-          "court-case-created",
-          mapOf(
-            "courtCaseId" to courtCase.id.toString(),
-            "bookingId" to booking.bookingId.toString(),
-            "offenderNo" to offenderNo,
-            "court" to request.courtId,
-            "legalCaseType" to request.legalCaseType,
-          ),
-          null,
-        )
-      }
     }
+  }
 
-  fun findCourtCaseIdsByFilter(pageRequest: Pageable, courtCaseFilter: CourtCaseFilter): Page<CourtCaseIdResponse> =
-    if (courtCaseFilter.toDateTime == null && courtCaseFilter.fromDateTime == null) {
-      courtCaseRepository.findAllCourtCaseIds(pageable = pageRequest).map { CourtCaseIdResponse(it) }
-    } else {
-      courtCaseRepository.findAllCourtCaseIds(
-        fromDateTime = courtCaseFilter.fromDateTime,
-        toDateTime = courtCaseFilter.toDateTime,
-        pageable = pageRequest,
-      ).map { CourtCaseIdResponse(it) }
-    }
+  fun findCourtCaseIdsByFilter(pageRequest: Pageable, courtCaseFilter: CourtCaseFilter): Page<CourtCaseIdResponse> = if (courtCaseFilter.toDateTime == null && courtCaseFilter.fromDateTime == null) {
+    courtCaseRepository.findAllCourtCaseIds(pageable = pageRequest).map { CourtCaseIdResponse(it) }
+  } else {
+    courtCaseRepository.findAllCourtCaseIds(
+      fromDateTime = courtCaseFilter.fromDateTime,
+      toDateTime = courtCaseFilter.toDateTime,
+      pageable = pageRequest,
+    ).map { CourtCaseIdResponse(it) }
+  }
 
   // TODO not currently updating the EXISTING offendercharge - eg with new offenceresultcode
   @Audit
@@ -614,84 +605,83 @@ class SentencingService(
   }
 
   @Audit
-  fun createSentence(offenderNo: String, request: CreateSentenceRequest) =
-    findLatestBooking(offenderNo).let { booking ->
+  fun createSentence(offenderNo: String, request: CreateSentenceRequest) = findLatestBooking(offenderNo).let { booking ->
 
-      val sentence = OffenderSentence(
-        id = SentenceId(booking, sequence = offenderSentenceRepository.getNextSequence(booking)),
-        category = lookupSentenceCategory(request.sentenceCategory),
-        calculationType = lookupSentenceCalculationType(
-          categoryCode = request.sentenceCategory,
-          calcType = request.sentenceCalcType,
+    val sentence = OffenderSentence(
+      id = SentenceId(booking, sequence = offenderSentenceRepository.getNextSequence(booking)),
+      category = lookupSentenceCategory(request.sentenceCategory),
+      calculationType = lookupSentenceCalculationType(
+        categoryCode = request.sentenceCategory,
+        calcType = request.sentenceCalcType,
+      ),
+      courtCase = request.caseId?.let { findCourtCase(id = it, offenderNo = offenderNo) },
+      startDate = request.startDate,
+      endDate = request.endDate,
+      status = request.status,
+      fineAmount = request.fine,
+      sentenceLevel = request.sentenceLevel,
+      courtOrder = request.caseId?.let { existingCourtOrderByCaseId(it) },
+    )
+    sentence.offenderSentenceTerms.add(
+      OffenderSentenceTerm(
+        id = OffenderSentenceTermId(
+          offenderBooking = booking,
+          sentenceSequence = sentence.id.sequence,
+          termSequence = offenderSentenceTermRepository.getNextTermSequence(
+            offenderBookId = booking.bookingId,
+            sentenceSeq = sentence.id.sequence,
+          ),
         ),
-        courtCase = request.caseId?.let { findCourtCase(id = it, offenderNo = offenderNo) },
-        startDate = request.startDate,
-        endDate = request.endDate,
-        status = request.status,
-        fineAmount = request.fine,
-        sentenceLevel = request.sentenceLevel,
-        courtOrder = request.caseId?.let { existingCourtOrderByCaseId(it) },
-      )
-      sentence.offenderSentenceTerms.add(
-        OffenderSentenceTerm(
-          id = OffenderSentenceTermId(
+        years = request.sentenceTerm.years,
+        months = request.sentenceTerm.months,
+        weeks = request.sentenceTerm.weeks,
+        days = request.sentenceTerm.days,
+        hours = request.sentenceTerm.hours,
+        lifeSentenceFlag = request.sentenceTerm.lifeSentenceFlag,
+        offenderSentence = sentence,
+        startDate = request.sentenceTerm.startDate,
+        endDate = request.sentenceTerm.endDate,
+        sentenceTermType = lookupSentenceTermType(request.sentenceTerm.sentenceTermType),
+      ),
+    )
+
+    sentence.offenderSentenceCharges.addAll(
+      request.offenderChargeIds.map { chargeId ->
+        OffenderSentenceCharge(
+          id = OffenderSentenceChargeId(
             offenderBooking = booking,
-            sentenceSequence = sentence.id.sequence,
-            termSequence = offenderSentenceTermRepository.getNextTermSequence(
-              offenderBookId = booking.bookingId,
-              sentenceSeq = sentence.id.sequence,
-            ),
+            sequence = sentence.id.sequence,
+            offenderChargeId = chargeId,
           ),
-          years = request.sentenceTerm.years,
-          months = request.sentenceTerm.months,
-          weeks = request.sentenceTerm.weeks,
-          days = request.sentenceTerm.days,
-          hours = request.sentenceTerm.hours,
-          lifeSentenceFlag = request.sentenceTerm.lifeSentenceFlag,
           offenderSentence = sentence,
-          startDate = request.sentenceTerm.startDate,
-          endDate = request.sentenceTerm.endDate,
-          sentenceTermType = lookupSentenceTermType(request.sentenceTerm.sentenceTermType),
-        ),
-      )
-
-      sentence.offenderSentenceCharges.addAll(
-        request.offenderChargeIds.map { chargeId ->
-          OffenderSentenceCharge(
-            id = OffenderSentenceChargeId(
-              offenderBooking = booking,
-              sequence = sentence.id.sequence,
-              offenderChargeId = chargeId,
-            ),
-            offenderSentence = sentence,
-            offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId),
-          )
-        },
-      )
-
-      offenderSentenceRepository.saveAndFlush(sentence).also {
-        storedProcedureRepository.imprisonmentStatusUpdate(
-          bookingId = booking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+          offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId),
         )
-      }
+      },
+    )
 
-      CreateSentenceResponse(
-        sentenceSeq = sentence.id.sequence,
-        termSeq = sentence.offenderSentenceTerms[0].id.termSequence,
-      ).also { response ->
-        telemetryClient.trackEvent(
-          "sentence-created",
-          mapOf(
-            "sentenceSeq" to response.sentenceSeq.toString(),
-            "termSeq" to response.termSeq.toString(),
-            "bookingId" to booking.bookingId.toString(),
-            "offenderNo" to offenderNo,
-          ),
-          null,
-        )
-      }
+    offenderSentenceRepository.saveAndFlush(sentence).also {
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = booking.bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
     }
+
+    CreateSentenceResponse(
+      sentenceSeq = sentence.id.sequence,
+      termSeq = sentence.offenderSentenceTerms[0].id.termSequence,
+    ).also { response ->
+      telemetryClient.trackEvent(
+        "sentence-created",
+        mapOf(
+          "sentenceSeq" to response.sentenceSeq.toString(),
+          "termSeq" to response.termSeq.toString(),
+          "bookingId" to booking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+        ),
+        null,
+      )
+    }
+  }
 
   @Audit
   fun deleteSentence(bookingId: Long, sentenceSequence: Long) {
@@ -850,33 +840,28 @@ class SentencingService(
     }
   }
 
-  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean =
-    this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
+  fun OffenceResultCode.resultRequiresACourtOrder(): Boolean = this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
 
-  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) =
-    courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
+  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
 
-  private fun existingCourtOrderByCaseId(caseId: Long) =
-    courtOrderRepository.findFirstByCourtCase_IdAndOrderTypeOrderByCourtDateDesc(caseId = caseId)
+  private fun existingCourtOrderByCaseId(caseId: Long) = courtOrderRepository.findFirstByCourtCase_IdAndOrderTypeOrderByCourtDateDesc(caseId = caseId)
 
-  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus {
-    return if (eventDate < booking.bookingBeginDate.toLocalDate()
-        .plusDays(1)
-    ) {
-      lookupEventStatusType(EventStatus.COMPLETED)
-    } else {
-      booking.externalMovements.maxByOrNull { it.id.sequence }?.let { lastMovement ->
-        if (eventDate < lastMovement.movementDate) {
-          lookupEventStatusType(EventStatus.COMPLETED)
-        } else {
-          lookupEventStatusType(
-            EventStatus.SCHEDULED,
-          )
-        }
-      } ?: lookupEventStatusType(
-        EventStatus.SCHEDULED,
-      )
-    }
+  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
+      .plusDays(1)
+  ) {
+    lookupEventStatusType(EventStatus.COMPLETED)
+  } else {
+    booking.externalMovements.maxByOrNull { it.id.sequence }?.let { lastMovement ->
+      if (eventDate < lastMovement.movementDate) {
+        lookupEventStatusType(EventStatus.COMPLETED)
+      } else {
+        lookupEventStatusType(
+          EventStatus.SCHEDULED,
+        )
+      }
+    } ?: lookupEventStatusType(
+      EventStatus.SCHEDULED,
+    )
   }
 
   fun getOffenderSentence(sentenceSequence: Long, bookingId: Long): SentenceResponse {
@@ -1000,47 +985,32 @@ class SentencingService(
     courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
   }
 
-  private fun findLatestBooking(offenderNo: String): OffenderBooking =
-    offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
-      ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
+  private fun findLatestBooking(offenderNo: String): OffenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+    ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
 
-  private fun findOffenderBooking(id: Long): OffenderBooking {
-    return offenderBookingRepository.findByIdOrNull(id)
-      ?: throw NotFoundException("Offender booking $id not found")
-  }
+  private fun findOffenderBooking(id: Long): OffenderBooking = offenderBookingRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Offender booking $id not found")
 
-  private fun findCourtCase(id: Long, offenderNo: String): CourtCase {
-    return courtCaseRepository.findByIdOrNull(id)
-      ?: throw NotFoundException("Court case $id for $offenderNo not found")
-  }
+  private fun findCourtCase(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court case $id for $offenderNo not found")
 
-  private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent {
-    return courtEventRepository.findByIdOrNull(id)
-      ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
-  }
+  private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
-  private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence {
-    return offenderSentenceRepository.findByIdOrNull(SentenceId(sequence = sentenceSequence, offenderBooking = booking))
-      ?: throw NotFoundException("Sentence for booking ${booking.bookingId} and sentence sequence $sentenceSequence not found")
-  }
+  private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNull(SentenceId(sequence = sentenceSequence, offenderBooking = booking))
+    ?: throw NotFoundException("Sentence for booking ${booking.bookingId} and sentence sequence $sentenceSequence not found")
 
-  private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge {
-    return offenderChargeRepository.findByIdOrNull(id)
-      ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
-  }
+  private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
 
-  private fun findCourtEventCharge(id: CourtEventChargeId, offenderNo: String): CourtEventCharge {
-    return courtEventChargeRepository.findByIdOrNull(id)
-      ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
-  }
+  private fun findCourtEventCharge(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
 
-  private fun findLastModifiedCourtEventCharge(offenderChargeId: Long, offenderNo: String): CourtEventCharge {
-    return courtEventChargeRepository.findFirstByIdOffenderChargeIdOrderByLastModifiedDateTimeDesc(offenderChargeId)
-      .also { courtEventCharge ->
-        log.info("BLA BLA BLA " + courtEventCharge?.id?.offenderCharge?.id.toString() + " ${courtEventCharge?.lastModifiedDateTime}")
-      }
-      ?: throw NotFoundException("Last modified Court event charge with offenderChargeId $offenderChargeId for $offenderNo not found")
-  }
+  private fun findLastModifiedCourtEventCharge(offenderChargeId: Long, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findFirstByIdOffenderChargeIdOrderByLastModifiedDateTimeDesc(offenderChargeId)
+    .also { courtEventCharge ->
+      log.info("BLA BLA BLA " + courtEventCharge?.id?.offenderCharge?.id.toString() + " ${courtEventCharge?.lastModifiedDateTime}")
+    }
+    ?: throw NotFoundException("Last modified Court event charge with offenderChargeId $offenderChargeId for $offenderNo not found")
 
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(
     LegalCaseType.pk(code),
@@ -1054,11 +1024,10 @@ class SentencingService(
     SentenceCategoryType.pk(code),
   ) ?: throw BadDataException("Sentence category $code not found")
 
-  private fun lookupSentenceCalculationType(categoryCode: String, calcType: String): SentenceCalculationType =
-    sentenceCalculationTypeRepository.findByIdOrNull(
-      SentenceCalculationTypeId(calculationType = calcType, category = categoryCode),
-    )
-      ?: throw BadDataException("Sentence calculation with category $categoryCode and calculation type $calcType not found")
+  private fun lookupSentenceCalculationType(categoryCode: String, calcType: String): SentenceCalculationType = sentenceCalculationTypeRepository.findByIdOrNull(
+    SentenceCalculationTypeId(calculationType = calcType, category = categoryCode),
+  )
+    ?: throw BadDataException("Sentence calculation with category $categoryCode and calculation type $calcType not found")
 
   private fun lookupDirectionType(code: String): DirectionType = directionTypeRepository.findByIdOrNull(
     DirectionType.pk(code),
@@ -1068,10 +1037,8 @@ class SentencingService(
     CaseStatus.pk(code),
   ) ?: throw BadDataException("Case status $code not found")
 
-  private fun lookupEstablishment(courtId: String): AgencyLocation {
-    return agencyLocationRepository.findByIdOrNull(courtId)
-      ?: throw BadDataException("Establishment $courtId not found")
-  }
+  private fun lookupEstablishment(courtId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(courtId)
+    ?: throw BadDataException("Establishment $courtId not found")
 
   private fun lookupEventStatusType(code: String): EventStatus = eventStatusTypeRepository.findByIdOrNull(
     EventStatus.pk(code),
@@ -1087,24 +1054,21 @@ class SentencingService(
       ?: throw BadDataException("Offence with offence code $offenceCode: and statute code: $statuteCode not found")
   }
 
-  private fun lookupOffenceResultCode(code: String): OffenceResultCode {
-    return offenceResultCodeRepository.findByIdOrNull(code)
-      ?: throw BadDataException("Offence result code $code not found")
-  }
+  private fun lookupOffenceResultCode(code: String): OffenceResultCode = offenceResultCodeRepository.findByIdOrNull(code)
+    ?: throw BadDataException("Offence result code $code not found")
 
   private fun lookupChargeStatusType(code: String): ChargeStatusType = chargeStatusTypeRepository.findByIdOrNull(
     ChargeStatusType.pk(code),
   ) ?: throw BadDataException("Charge status Type $code not found")
 }
 
-private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest =
-  ExistingOffenderChargeRequest(
-    offenceCode = this.offenceCode,
-    offenceDate = this.offenceDate,
-    offenceEndDate = this.offenceEndDate,
-    resultCode1 = this.resultCode1,
-    offenderChargeId = chargeId,
-  )
+private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest = ExistingOffenderChargeRequest(
+  offenceCode = this.offenceCode,
+  offenceDate = this.offenceDate,
+  offenceEndDate = this.offenceEndDate,
+  resultCode1 = this.resultCode1,
+  offenderChargeId = chargeId,
+)
 
 private fun CourtCase.getOffenderChargesNotAssociatedWithCourtAppearances(): List<OffenderCharge> {
   val referencedOffenderCharges =
@@ -1177,23 +1141,22 @@ private fun Offence.toOffence(): OffenceResponse = OffenceResponse(
   description = this.description,
 )
 
-private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse =
-  CourtEventChargeResponse(
-    offenderCharge = this.id.offenderCharge.toOffenderCharge(),
-    eventId = this.id.courtEvent.id,
-    offencesCount = this.offencesCount,
-    offenceDate = this.offenceDate,
-    offenceEndDate = this.offenceEndDate,
-    plea = this.plea?.toCodeDescription(),
-    propertyValue = this.propertyValue,
-    totalPropertyValue = totalPropertyValue,
-    cjitCode1 = this.cjitCode1,
-    cjitCode2 = this.cjitCode2,
-    cjitCode3 = this.cjitCode3,
-    resultCode1 = this.resultCode1?.toOffenceResultCodeResponse(),
-    resultCode2 = this.resultCode2?.toOffenceResultCodeResponse(),
-    mostSeriousFlag = this.mostSeriousFlag,
-  )
+private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse = CourtEventChargeResponse(
+  offenderCharge = this.id.offenderCharge.toOffenderCharge(),
+  eventId = this.id.courtEvent.id,
+  offencesCount = this.offencesCount,
+  offenceDate = this.offenceDate,
+  offenceEndDate = this.offenceEndDate,
+  plea = this.plea?.toCodeDescription(),
+  propertyValue = this.propertyValue,
+  totalPropertyValue = totalPropertyValue,
+  cjitCode1 = this.cjitCode1,
+  cjitCode2 = this.cjitCode2,
+  cjitCode3 = this.cjitCode3,
+  resultCode1 = this.resultCode1?.toOffenceResultCodeResponse(),
+  resultCode2 = this.resultCode2?.toOffenceResultCodeResponse(),
+  mostSeriousFlag = this.mostSeriousFlag,
+)
 
 private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   id = this.id,
@@ -1224,39 +1187,36 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   courtOrders = this.courtOrders.map { it.toCourtOrder() },
 )
 
-private fun CourtOrder.toCourtOrder(): CourtOrderResponse =
-  CourtOrderResponse(
-    id = this.id,
-    courtDate = this.courtDate,
-    issuingCourt = this.issuingCourt.id,
-    courtInfoId = this.courtInfoId,
-    orderType = this.orderType,
-    orderStatus = this.orderStatus,
-    dueDate = this.dueDate,
-    requestDate = this.requestDate,
-    seriousnessLevel = this.seriousnessLevel?.toCodeDescription(),
-    commentText = this.commentText,
-    nonReportFlag = this.nonReportFlag,
-    sentencePurposes = this.sentencePurposes.map { it.toSentencePurpose() },
-  )
+private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
+  id = this.id,
+  courtDate = this.courtDate,
+  issuingCourt = this.issuingCourt.id,
+  courtInfoId = this.courtInfoId,
+  orderType = this.orderType,
+  orderStatus = this.orderStatus,
+  dueDate = this.dueDate,
+  requestDate = this.requestDate,
+  seriousnessLevel = this.seriousnessLevel?.toCodeDescription(),
+  commentText = this.commentText,
+  nonReportFlag = this.nonReportFlag,
+  sentencePurposes = this.sentencePurposes.map { it.toSentencePurpose() },
+)
 
-private fun SentencePurpose.toSentencePurpose(): SentencePurposeResponse =
-  SentencePurposeResponse(
-    orderId = this.id.orderId,
-    orderPartyCode = this.id.orderPartyCode,
-    purposeCode = this.id.purposeCode,
-  )
+private fun SentencePurpose.toSentencePurpose(): SentencePurposeResponse = SentencePurposeResponse(
+  orderId = this.id.orderId,
+  orderPartyCode = this.id.orderPartyCode,
+  purposeCode = this.id.purposeCode,
+)
 
-private fun OffenderSentenceTerm.toSentenceTermResponse(): SentenceTermResponse =
-  SentenceTermResponse(
-    termSequence = this.id.termSequence,
-    years = this.years,
-    months = this.months,
-    weeks = this.weeks,
-    days = this.days,
-    hours = this.hours,
-    startDate = this.startDate,
-    endDate = this.endDate,
-    lifeSentenceFlag = this.lifeSentenceFlag,
-    sentenceTermType = this.sentenceTermType.toCodeDescription(),
-  )
+private fun OffenderSentenceTerm.toSentenceTermResponse(): SentenceTermResponse = SentenceTermResponse(
+  termSequence = this.id.termSequence,
+  years = this.years,
+  months = this.months,
+  weeks = this.weeks,
+  days = this.days,
+  hours = this.hours,
+  startDate = this.startDate,
+  endDate = this.endDate,
+  lifeSentenceFlag = this.lifeSentenceFlag,
+  sentenceTermType = this.sentenceTermType.toCodeDescription(),
+)

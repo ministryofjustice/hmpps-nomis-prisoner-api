@@ -11,7 +11,5 @@ import java.util.Optional
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
 @Service(value = "auditorAware")
 class AuditorAwareImpl(private val authenticationHolder: HmppsAuthenticationHolder) : AuditorAware<String> {
-  override fun getCurrentAuditor(): Optional<String> {
-    return Optional.ofNullable(authenticationHolder.principal)
-  }
+  override fun getCurrentAuditor(): Optional<String> = Optional.ofNullable(authenticationHolder.principal)
 }

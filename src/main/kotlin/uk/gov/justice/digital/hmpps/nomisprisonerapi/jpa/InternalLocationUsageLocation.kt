@@ -65,6 +65,5 @@ data class InternalLocationUsageLocation(
 
   override fun hashCode(): Int = Objects.hashCode(usageLocationId)
 
-  override fun toString(): String =
-    "InternalLocationUsageLocation(usageLocationId=$usageLocationId, internalLocationUsage=$internalLocationUsage, capacity=$capacity, usageLocationType=$usageLocationType, listSequence=$listSequence)"
+  override fun toString(): String = "InternalLocationUsageLocation(usageLocationId=$usageLocationId, internalLocationUsage=$internalLocationUsage, capacity=$capacity, usageLocationType=$usageLocationType, listSequence=$listSequence)"
 }

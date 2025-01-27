@@ -34,7 +34,5 @@ class Offence(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
-  override fun toString(): String {
-    return "Offence(id=$id, description='$description')"
-  }
+  override fun toString(): String = "Offence(id=$id, description='$description')"
 }

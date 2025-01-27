@@ -10,7 +10,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import java.time.LocalDateTime
 
 @Repository
-interface CSIPReportRepository : CrudRepository<CSIPReport, Long>, JpaSpecificationExecutor<CSIPReport> {
+interface CSIPReportRepository :
+  CrudRepository<CSIPReport, Long>,
+  JpaSpecificationExecutor<CSIPReport> {
   @Query(
     """
       select 

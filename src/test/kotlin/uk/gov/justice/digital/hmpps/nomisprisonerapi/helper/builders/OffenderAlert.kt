@@ -54,9 +54,7 @@ class OffenderAlertBuilderFactory(
   private val repository: OffenderAlertBuilderRepository,
   private val workFlowLogBuilderFactory: WorkFlowLogBuilderFactory,
 ) {
-  fun builder(): OffenderAlertBuilder {
-    return OffenderAlertBuilder(repository, workFlowLogBuilderFactory)
-  }
+  fun builder(): OffenderAlertBuilder = OffenderAlertBuilder(repository, workFlowLogBuilderFactory)
 }
 
 @Component
@@ -67,8 +65,7 @@ class OffenderAlertBuilderRepository(
   private val workFlowActionRepository: ReferenceCodeRepository<WorkFlowAction>,
   private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) {
-  fun save(alert: OffenderAlert): OffenderAlert =
-    repository.saveAndFlush(alert)
+  fun save(alert: OffenderAlert): OffenderAlert = repository.saveAndFlush(alert)
 
   fun updateAudit(
     id: OffenderAlertId,
@@ -120,14 +117,11 @@ class OffenderAlertBuilderRepository(
     )
   }
 
-  fun lookupAlertCode(code: String): AlertCode =
-    alertCodeRepository.findByIdOrNull(AlertCode.pk(code))!!
+  fun lookupAlertCode(code: String): AlertCode = alertCodeRepository.findByIdOrNull(AlertCode.pk(code))!!
 
-  fun lookupAlertType(code: String): AlertType =
-    alertTypeRepository.findByIdOrNull(AlertType.pk(code))!!
+  fun lookupAlertType(code: String): AlertType = alertTypeRepository.findByIdOrNull(AlertType.pk(code))!!
 
-  fun lookupWorkFLowAction(code: String): WorkFlowAction =
-    workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(code))!!
+  fun lookupWorkFLowAction(code: String): WorkFlowAction = workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(code))!!
 }
 
 class OffenderAlertBuilder(

@@ -72,42 +72,39 @@ class QuestionnaireBuilder(
     question: String,
     multipleAnswers: Boolean,
     dsl: QuestionnaireQuestionDsl.() -> Unit,
-  ): QuestionnaireQuestion =
-    questionnaireQuestionBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          question = question,
-          questionSequence = questionnaire.questions.size + 1,
-          listSequence = questionnaire.questions.size + 1,
-          multipleAnswers = multipleAnswers,
-        )
-          .also { questionnaire.questions += it }
-          .also { builder.apply(dsl) }
-      }
+  ): QuestionnaireQuestion = questionnaireQuestionBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        question = question,
+        questionSequence = questionnaire.questions.size + 1,
+        listSequence = questionnaire.questions.size + 1,
+        multipleAnswers = multipleAnswers,
+      )
+        .also { questionnaire.questions += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun offenderRoles(
     roles: List<String>,
     dsl: QuestionnaireOffenderRoleDsl.() -> Unit,
-  ): QuestionnaireOffenderRole =
-    questionnaireOffenderRoleBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          questionnaireId = questionnaire.id,
-          role = roles[0],
-        )
-          .also { questionnaire.offenderRoles += it }
-      }
+  ): QuestionnaireOffenderRole = questionnaireOffenderRoleBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        questionnaireId = questionnaire.id,
+        role = roles[0],
+      )
+        .also { questionnaire.offenderRoles += it }
+    }
 
   override fun offenderRole(
     role: String,
     dsl: QuestionnaireOffenderRoleDsl.() -> Unit,
-  ): QuestionnaireOffenderRole =
-    questionnaireOffenderRoleBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          questionnaireId = questionnaire.id,
-          role = role,
-        )
-          .also { questionnaire.offenderRoles += it }
-      }
+  ): QuestionnaireOffenderRole = questionnaireOffenderRoleBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        questionnaireId = questionnaire.id,
+        role = role,
+      )
+        .also { questionnaire.offenderRoles += it }
+    }
 }

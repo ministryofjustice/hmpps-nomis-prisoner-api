@@ -25,9 +25,7 @@ interface AdjudicationInvestigationDsl {
 class AdjudicationInvestigationBuilderFactory(
   private val adjudicationEvidenceBuilderFactory: AdjudicationEvidenceBuilderFactory,
 ) {
-  fun builder(): AdjudicationInvestigationBuilder {
-    return AdjudicationInvestigationBuilder(adjudicationEvidenceBuilderFactory)
-  }
+  fun builder(): AdjudicationInvestigationBuilder = AdjudicationInvestigationBuilder(adjudicationEvidenceBuilderFactory)
 }
 
 class AdjudicationInvestigationBuilder(
@@ -48,15 +46,14 @@ class AdjudicationInvestigationBuilder(
   )
     .also { adjudicationInvestigation = it }
 
-  override fun evidence(detail: String, type: String, date: LocalDate, dsl: AdjudicationEvidenceDsl.() -> Unit) =
-    adjudicationEvidenceBuilderFactory.builder().let { builder ->
-      builder.build(
-        detail = detail,
-        type = type,
-        date = date,
-        investigation = adjudicationInvestigation,
-      )
-        .also { adjudicationInvestigation.evidence += it }
-        .also { builder.apply(dsl) }
-    }
+  override fun evidence(detail: String, type: String, date: LocalDate, dsl: AdjudicationEvidenceDsl.() -> Unit) = adjudicationEvidenceBuilderFactory.builder().let { builder ->
+    builder.build(
+      detail = detail,
+      type = type,
+      date = date,
+      investigation = adjudicationInvestigation,
+    )
+      .also { adjudicationInvestigation.evidence += it }
+      .also { builder.apply(dsl) }
+  }
 }

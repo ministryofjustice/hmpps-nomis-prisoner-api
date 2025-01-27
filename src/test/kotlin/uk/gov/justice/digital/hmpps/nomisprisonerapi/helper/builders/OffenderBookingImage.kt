@@ -37,14 +37,13 @@ class OffenderBookingImageBuilder(
     thumbnailImage: ByteArray,
     active: Boolean,
     imageSourceCode: String,
-  ): OffenderBookingImage =
-    OffenderBookingImage(
-      offenderBooking = offenderBooking,
-      captureDateTime = captureDateTime,
-      fullSizeImage = fullSizeImage,
-      thumbnailImage = thumbnailImage,
-      active = active,
-      imageSource = findImageSource(imageSourceCode),
-    )
-      .let { repository.save(it) }
+  ): OffenderBookingImage = OffenderBookingImage(
+    offenderBooking = offenderBooking,
+    captureDateTime = captureDateTime,
+    fullSizeImage = fullSizeImage,
+    thumbnailImage = thumbnailImage,
+    active = active,
+    imageSource = findImageSource(imageSourceCode),
+  )
+    .let { repository.save(it) }
 }

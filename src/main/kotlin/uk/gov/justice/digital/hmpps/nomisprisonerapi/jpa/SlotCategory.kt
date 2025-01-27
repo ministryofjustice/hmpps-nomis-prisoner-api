@@ -13,11 +13,10 @@ enum class SlotCategory {
   ;
 
   companion object {
-    fun of(start: LocalTime): SlotCategory =
-      when {
-        start.hour < 12 -> AM
-        start.hour < 17 -> PM
-        else -> ED
-      }
+    fun of(start: LocalTime): SlotCategory = when {
+      start.hour < 12 -> AM
+      start.hour < 17 -> PM
+      else -> ED
+    }
   }
 }

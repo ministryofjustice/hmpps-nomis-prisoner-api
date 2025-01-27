@@ -80,9 +80,7 @@ class CourtCaseBuilderFactory(
   private val offenderChargeBuilderFactory: OffenderChargeBuilderFactory,
   private val offenderCaseIdentifierBuilderFactory: OffenderCaseIdentifierBuilderFactory,
 ) {
-  fun builder(): CourtCaseBuilder {
-    return CourtCaseBuilder(repository, courtEventBuilderFactory, offenderChargeBuilderFactory, offenderCaseIdentifierBuilderFactory)
-  }
+  fun builder(): CourtCaseBuilder = CourtCaseBuilder(repository, courtEventBuilderFactory, offenderChargeBuilderFactory, offenderCaseIdentifierBuilderFactory)
 }
 
 @Component
@@ -93,14 +91,11 @@ class CourtCaseBuilderRepository(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) {
-  fun save(courtCase: CourtCase): CourtCase =
-    repository.saveAndFlush(courtCase)
+  fun save(courtCase: CourtCase): CourtCase = repository.saveAndFlush(courtCase)
 
-  fun lookupCaseType(code: String): LegalCaseType =
-    legalCaseTypeRepository.findByIdOrNull(LegalCaseType.pk(code))!!
+  fun lookupCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(LegalCaseType.pk(code))!!
 
-  fun lookupCaseStatus(code: String): CaseStatus =
-    caseStatusRepository.findByIdOrNull(CaseStatus.pk(code))!!
+  fun lookupCaseStatus(code: String): CaseStatus = caseStatusRepository.findByIdOrNull(CaseStatus.pk(code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 
@@ -186,29 +181,28 @@ class CourtCaseBuilder(
     plea: String?,
     lidsOffenceNumber: Int?,
     dsl: OffenderChargeDsl.() -> Unit,
-  ) =
-    offenderChargeBuilderFactory.builder().let { builder ->
-      builder.build(
-        offenderBooking = courtCase.offenderBooking,
-        courtCase = courtCase,
-        offenceDate = offenceDate,
-        offenceEndDate = offenceEndDate,
-        offenceCode = offenceCode,
-        offencesCount = offencesCount,
-        cjitCode1 = cjitCode1,
-        cjitCode2 = cjitCode2,
-        cjitCode3 = cjitCode3,
-        resultCode1 = resultCode1,
-        resultCode2 = resultCode2,
-        mostSeriousFlag = mostSeriousFlag,
-        lidsOffenceNumber = lidsOffenceNumber,
-        propertyValue = propertyValue,
-        totalPropertyValue = totalPropertyValue,
-        plea = plea,
-      )
-        .also { courtCase.offenderCharges += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = offenderChargeBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = courtCase.offenderBooking,
+      courtCase = courtCase,
+      offenceDate = offenceDate,
+      offenceEndDate = offenceEndDate,
+      offenceCode = offenceCode,
+      offencesCount = offencesCount,
+      cjitCode1 = cjitCode1,
+      cjitCode2 = cjitCode2,
+      cjitCode3 = cjitCode3,
+      resultCode1 = resultCode1,
+      resultCode2 = resultCode2,
+      mostSeriousFlag = mostSeriousFlag,
+      lidsOffenceNumber = lidsOffenceNumber,
+      propertyValue = propertyValue,
+      totalPropertyValue = totalPropertyValue,
+      plea = plea,
+    )
+      .also { courtCase.offenderCharges += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun offenderCaseIdentifier(
     reference: String,
@@ -235,24 +229,23 @@ class CourtCaseBuilder(
     nextEventDateTime: LocalDateTime?,
     orderRequestedFlag: Boolean?,
     dsl: CourtEventDsl.() -> Unit,
-  ) =
-    courtEventBuilderFactory.builder().let { builder ->
-      builder.build(
-        commentText = commentText,
-        prison = prison,
-        courtEventType = courtEventType,
-        eventStatusCode = eventStatusCode,
-        outcomeReasonCode = outcomeReasonCode,
-        judgeName = judgeName,
-        eventDateTime = eventDateTime,
-        nextEventDateTime = nextEventDateTime,
-        offenderBooking = courtCase.offenderBooking,
-        courtCase = courtCase,
-        orderRequestedFlag = orderRequestedFlag,
-      )
-        .also { courtCase.courtEvents += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = courtEventBuilderFactory.builder().let { builder ->
+    builder.build(
+      commentText = commentText,
+      prison = prison,
+      courtEventType = courtEventType,
+      eventStatusCode = eventStatusCode,
+      outcomeReasonCode = outcomeReasonCode,
+      judgeName = judgeName,
+      eventDateTime = eventDateTime,
+      nextEventDateTime = nextEventDateTime,
+      offenderBooking = courtCase.offenderBooking,
+      courtCase = courtCase,
+      orderRequestedFlag = orderRequestedFlag,
+    )
+      .also { courtCase.courtEvents += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun audit(
     createDatetime: LocalDateTime,

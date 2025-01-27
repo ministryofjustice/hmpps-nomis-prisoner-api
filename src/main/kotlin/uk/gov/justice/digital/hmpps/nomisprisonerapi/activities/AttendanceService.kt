@@ -127,56 +127,50 @@ class AttendanceService(
     referenceId = courseSchedule.courseScheduleId,
   )
 
-  private fun findAttendanceOutcomeOrThrow(it: String) =
-    (
-      attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(it))
-        ?: throw BadDataException("Attendance outcome code $it does not exist")
-      )
+  private fun findAttendanceOutcomeOrThrow(it: String) = (
+    attendanceOutcomeRepository.findByIdOrNull(AttendanceOutcome.pk(it))
+      ?: throw BadDataException("Attendance outcome code $it does not exist")
+    )
 
-  private fun findEventStatusOrThrow(eventStatusCode: String) =
-    (
-      eventStatusRepository.findByIdOrNull(EventStatus.pk(eventStatusCode))
-        ?: throw BadDataException(message = "Event status code $eventStatusCode does not exist")
-      )
+  private fun findEventStatusOrThrow(eventStatusCode: String) = (
+    eventStatusRepository.findByIdOrNull(EventStatus.pk(eventStatusCode))
+      ?: throw BadDataException(message = "Event status code $eventStatusCode does not exist")
+    )
 
   private fun findAttendance(
     courseSchedule: CourseSchedule,
     offenderBooking: OffenderBooking,
-  ): OffenderCourseAttendance? =
-    attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, offenderBooking)
+  ): OffenderCourseAttendance? = attendanceRepository.findByCourseScheduleAndOffenderBooking(courseSchedule, offenderBooking)
 
   private fun findUpdatableAttendanceOrThrow(
     courseSchedule: CourseSchedule,
     offenderBooking: OffenderBooking,
-  ): OffenderCourseAttendance? =
-    findAttendance(courseSchedule, offenderBooking)
-      ?.also {
-        if (it.isPaid()) {
-          throw BadDataException(
-            message = "Attendance ${it.eventId} cannot be changed after it has already been paid",
-            error = BadRequestError.ATTENDANCE_PAID,
-          )
-        }
+  ): OffenderCourseAttendance? = findAttendance(courseSchedule, offenderBooking)
+    ?.also {
+      if (it.isPaid()) {
+        throw BadDataException(
+          message = "Attendance ${it.eventId} cannot be changed after it has already been paid",
+          error = BadRequestError.ATTENDANCE_PAID,
+        )
       }
+    }
 
   private fun findOffenderProgramProfileOrThrow(
     courseSchedule: CourseSchedule,
     offenderBooking: OffenderBooking,
     bookingId: Long,
-  ) =
-    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseSchedule.courseActivity, offenderBooking)
-      .maxByOrNull {
-        it.startDate
-        it.endDate ?: LocalDate.MAX
-      }
-      ?: throw BadDataException("Offender program profile for offender booking with id=$bookingId and course activity id=${courseSchedule.courseActivity.courseActivityId} not found")
+  ) = offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseSchedule.courseActivity, offenderBooking)
+    .maxByOrNull {
+      it.startDate
+      it.endDate ?: LocalDate.MAX
+    }
+    ?: throw BadDataException("Offender program profile for offender booking with id=$bookingId and course activity id=${courseSchedule.courseActivity.courseActivityId} not found")
 
   private fun findOffenderBookingOrThrow(bookingId: Long) = offenderBookingRepository.findByIdOrNull(bookingId)
     ?: throw BadDataException("Offender booking with id=$bookingId not found")
 
-  private fun findCourseScheduleOrThrow(courseScheduleId: Long) =
-    scheduleRepository.findByIdOrNull(courseScheduleId)
-      ?: throw BadDataException("Course schedule for courseScheduleId=$courseScheduleId not found")
+  private fun findCourseScheduleOrThrow(courseScheduleId: Long) = scheduleRepository.findByIdOrNull(courseScheduleId)
+    ?: throw BadDataException("Course schedule for courseScheduleId=$courseScheduleId not found")
 
   private fun getEventStatus(requestStatus: EventStatus, oldStatus: EventStatus) = if (oldStatus.code == "COMP" && requestStatus.code != "CANC") oldStatus else requestStatus
 
@@ -193,13 +187,12 @@ class AttendanceService(
       ?: throw NotFoundException("Attendance for course schedule $courseScheduleId and booking $bookingId not found")
   }
 
-  fun findPaidAttendancesSummary(prisonId: String, date: LocalDate) =
-    attendanceRepository.findBookingPaidAttendanceCountsByPrisonAndDate(prisonId, date)
-      .let {
-        AttendanceReconciliationResponse(
-          prisonId = prisonId,
-          date = date,
-          bookings = it,
-        )
-      }
+  fun findPaidAttendancesSummary(prisonId: String, date: LocalDate) = attendanceRepository.findBookingPaidAttendanceCountsByPrisonAndDate(prisonId, date)
+    .let {
+      AttendanceReconciliationResponse(
+        prisonId = prisonId,
+        date = date,
+        bookings = it,
+      )
+    }
 }

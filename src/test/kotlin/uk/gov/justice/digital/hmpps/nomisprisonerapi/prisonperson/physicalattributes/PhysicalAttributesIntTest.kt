@@ -494,12 +494,11 @@ class PhysicalAttributesIntTest : IntegrationTestBase() {
     }
   }
 
-  fun WebTestClient.getPhysicalAttributesOk(offenderNo: String) =
-    this.get().uri("/prisoners/$offenderNo/physical-attributes")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
-      .exchange()
-      .expectStatus().isOk
-      .expectBody<PrisonerPhysicalAttributesResponse>()
+  fun WebTestClient.getPhysicalAttributesOk(offenderNo: String) = this.get().uri("/prisoners/$offenderNo/physical-attributes")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+    .exchange()
+    .expectStatus().isOk
+    .expectBody<PrisonerPhysicalAttributesResponse>()
 
   @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/physical-attributes")
@@ -780,12 +779,11 @@ class PhysicalAttributesIntTest : IntegrationTestBase() {
       }
     }
 
-    fun WebTestClient.upsertPhysicalAttributesOk(offenderNo: String, height: Int?, weight: Int?) =
-      this.put().uri("/prisoners/$offenderNo/physical-attributes")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
-        .bodyValue(UpsertPhysicalAttributesRequest(height, weight))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody<UpsertPhysicalAttributesResponse>()
+    fun WebTestClient.upsertPhysicalAttributesOk(offenderNo: String, height: Int?, weight: Int?) = this.put().uri("/prisoners/$offenderNo/physical-attributes")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+      .bodyValue(UpsertPhysicalAttributesRequest(height, weight))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody<UpsertPhysicalAttributesResponse>()
   }
 }

@@ -77,42 +77,39 @@ class VisitBuilderRepositoryBuilder(
     endDateTimeString: String,
     agyLocId: String,
     agencyInternalLocationDescription: String?,
-  ): Visit =
-    Visit(
-      offenderBooking = offenderBooking,
-      startDateTime = LocalDateTime.parse(startDateTimeString),
-      endDateTime = LocalDateTime.parse(endDateTimeString),
-      visitDate = LocalDateTime.parse(startDateTimeString).toLocalDate(),
-      visitType = repository.lookupVisitType(visitTypeCode),
-      visitStatus = repository.lookupVisitStatus(visitStatusCode),
-      location = repository.lookupAgency(agyLocId),
-      agencyInternalLocation = agencyInternalLocationDescription?.run {
-        repository.lookupAgencyInternalLocationByDescription(
-          this,
-        )
-      },
+  ): Visit = Visit(
+    offenderBooking = offenderBooking,
+    startDateTime = LocalDateTime.parse(startDateTimeString),
+    endDateTime = LocalDateTime.parse(endDateTimeString),
+    visitDate = LocalDateTime.parse(startDateTimeString).toLocalDate(),
+    visitType = repository.lookupVisitType(visitTypeCode),
+    visitStatus = repository.lookupVisitStatus(visitStatusCode),
+    location = repository.lookupAgency(agyLocId),
+    agencyInternalLocation = agencyInternalLocationDescription?.run {
+      repository.lookupAgencyInternalLocationByDescription(
+        this,
+      )
+    },
+  )
+    .let { repository.save(it) }
+    .also { visit = it }
+
+  override fun visitor(person: Person, groupLeader: Boolean, dsl: VisitVisitorDsl.() -> Unit): VisitVisitor = visitVisitorBuilderFactory.builder().let { builder ->
+    builder.build(
+      visit = visit,
+      person = person,
+      groupLeader = groupLeader,
     )
-      .let { repository.save(it) }
-      .also { visit = it }
+      .also { visit.visitors += it }
+      .also { builder.apply(dsl) }
+  }
 
-  override fun visitor(person: Person, groupLeader: Boolean, dsl: VisitVisitorDsl.() -> Unit): VisitVisitor =
-    visitVisitorBuilderFactory.builder().let { builder ->
-      builder.build(
-        visit = visit,
-        person = person,
-        groupLeader = groupLeader,
-      )
-        .also { visit.visitors += it }
-        .also { builder.apply(dsl) }
-    }
-
-  override fun visitOutcome(outcomeReason: String, dsl: VisitOutcomeDsl.() -> Unit): VisitVisitor =
-    visitOutcomeBuilderFactory.builder().let { builder ->
-      builder.build(
-        visit = visit,
-        outcomeReason = outcomeReason,
-      )
-        .also { visit.visitors += it }
-        .also { builder.apply(dsl) }
-    }
+  override fun visitOutcome(outcomeReason: String, dsl: VisitOutcomeDsl.() -> Unit): VisitVisitor = visitOutcomeBuilderFactory.builder().let { builder ->
+    builder.build(
+      visit = visit,
+      outcomeReason = outcomeReason,
+    )
+      .also { visit.visitors += it }
+      .also { builder.apply(dsl) }
+  }
 }

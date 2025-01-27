@@ -105,12 +105,11 @@ class AdjudicationService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse =
-    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {
-      val hearings = adjudicationHearingRepository.findByAdjudicationNumber(adjudicationNumber)
-      return mapAdjudication(it, hearings)
-    }
-      ?: throw NotFoundException("Adjudication not found")
+  fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {
+    val hearings = adjudicationHearingRepository.findByAdjudicationNumber(adjudicationNumber)
+    return mapAdjudication(it, hearings)
+  }
+    ?: throw NotFoundException("Adjudication not found")
 
   fun getAdjudicationByCharge(adjudicationNumber: Long, chargeSequence: Int): AdjudicationChargeResponse {
     getAdjudication(adjudicationNumber).let { adjudication ->
@@ -385,11 +384,9 @@ class AdjudicationService(
     incidentRole = VICTIM_ROLE,
   )
 
-  private fun lookupPlacedOnReportIncidentAction(): IncidentDecisionAction =
-    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(PLACED_ON_REPORT_ACTION_CODE))!!
+  private fun lookupPlacedOnReportIncidentAction(): IncidentDecisionAction = incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(PLACED_ON_REPORT_ACTION_CODE))!!
 
-  private fun lookupNoFurtherActionIncidentAction(): IncidentDecisionAction =
-    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(NO_FURTHER_ACTION_CODE))!!
+  private fun lookupNoFurtherActionIncidentAction(): IncidentDecisionAction = incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(NO_FURTHER_ACTION_CODE))!!
 
   private fun createIncidentCharge(
     incident: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident,
@@ -454,9 +451,8 @@ class AdjudicationService(
     }
   }
 
-  fun getHearing(hearingId: Long): Hearing =
-    adjudicationHearingRepository.findByIdOrNull(hearingId)?.toHearing()
-      ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
+  fun getHearing(hearingId: Long): Hearing = adjudicationHearingRepository.findByIdOrNull(hearingId)?.toHearing()
+    ?: throw NotFoundException("Hearing not found. Hearing Id: $hearingId")
 
   private fun findPrison(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)
     ?: throw BadDataException("Prison $prisonId not found")
@@ -464,16 +460,14 @@ class AdjudicationService(
   private fun findInternalLocation(internalLocationId: Long): AgencyInternalLocation = agencyInternalLocationRepository.findByIdOrNull(internalLocationId)
     ?: throw BadDataException("Prison internal location $internalLocationId not found")
 
-  private fun findLatestBooking(offenderNo: String): OffenderBooking =
-    offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
-      ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
+  private fun findLatestBooking(offenderNo: String): OffenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+    ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
 
   private fun findStaffByUsername(reportingStaffUsername: String): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff = staffUserAccountRepository.findByUsername(reportingStaffUsername)?.staff
     ?: throw BadDataException("Staff $reportingStaffUsername not found")
 
-  private fun lookupOffence(offenceCode: String): AdjudicationIncidentOffence =
-    adjudicationIncidentOffenceRepository.findByCode(offenceCode)
-      ?: throw BadDataException("Offence $offenceCode not found")
+  private fun lookupOffence(offenceCode: String): AdjudicationIncidentOffence = adjudicationIncidentOffenceRepository.findByCode(offenceCode)
+    ?: throw BadDataException("Offence $offenceCode not found")
 
   private fun lookupEvidenceType(code: String): AdjudicationEvidenceType = evidenceTypeRepository.findByIdOrNull(
     AdjudicationEvidenceType.pk(code),
@@ -487,10 +481,9 @@ class AdjudicationService(
     AdjudicationHearingType.pk(code),
   ) ?: throw BadDataException("Hearing type $code not found")
 
-  private fun lookupPleaFindingType(code: String): AdjudicationPleaFindingType =
-    pleaFindingTypeRepository.findByIdOrNull(
-      AdjudicationPleaFindingType.pk(code),
-    ) ?: throw BadDataException("Plea finding type $code not found")
+  private fun lookupPleaFindingType(code: String): AdjudicationPleaFindingType = pleaFindingTypeRepository.findByIdOrNull(
+    AdjudicationPleaFindingType.pk(code),
+  ) ?: throw BadDataException("Plea finding type $code not found")
 
   private fun lookupFindingType(code: String): AdjudicationFindingType = findingTypeRepository.findByIdOrNull(
     AdjudicationFindingType.pk(code),
@@ -692,10 +685,9 @@ class AdjudicationService(
     }
   }
 
-  fun getHearingResult(hearingId: Long, chargeSequence: Int): HearingResult =
-    adjudicationHearingResultRepository.findFirstOrNullByIdOicHearingIdAndChargeSequence(hearingId, chargeSequence)
-      ?.toHearingResult()
-      ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, charge sequence: $chargeSequence")
+  fun getHearingResult(hearingId: Long, chargeSequence: Int): HearingResult = adjudicationHearingResultRepository.findFirstOrNullByIdOicHearingIdAndChargeSequence(hearingId, chargeSequence)
+    ?.toHearingResult()
+    ?: throw NotFoundException("Hearing Result not found. Hearing Id: $hearingId, charge sequence: $chargeSequence")
 
   fun deleteHearingResult(adjudicationNumber: Long, hearingId: Long, chargeSequence: Int): DeleteHearingResultResponse {
     // allow delete request to fail if adjudication doesn't exist as should never happen
@@ -969,23 +961,21 @@ class AdjudicationService(
     adjudicationNumber: Long,
     chargeSequence: Int,
     sanctionCode: String,
-  ): AdjudicationHearingResultAward =
-    adjudicationHearingResultAwardRepository.findFirstOrNullByIncidentPartyAdjudicationNumberAndSanctionCodeAndHearingResultChargeSequence(
-      adjudicationNumber = adjudicationNumber,
-      sanctionCode = sanctionCode,
-      chargeSequence = chargeSequence,
-    )
-      ?: throw BadDataException("Matching consecutive adjudication award not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence, sanction code: $sanctionCode")
+  ): AdjudicationHearingResultAward = adjudicationHearingResultAwardRepository.findFirstOrNullByIncidentPartyAdjudicationNumberAndSanctionCodeAndHearingResultChargeSequence(
+    adjudicationNumber = adjudicationNumber,
+    sanctionCode = sanctionCode,
+    chargeSequence = chargeSequence,
+  )
+    ?: throw BadDataException("Matching consecutive adjudication award not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence, sanction code: $sanctionCode")
 
-  fun getHearingResultAward(bookingId: Long, sanctionSequence: Int): HearingResultAward =
-    adjudicationHearingResultAwardRepository.findByIdOrNull(
-      AdjudicationHearingResultAwardId(
-        bookingId,
-        sanctionSequence,
-      ),
-    )
-      ?.toAward()
-      ?: throw NotFoundException("Hearing Result Award not found. booking Id: $bookingId, sanction sequence: $sanctionSequence")
+  fun getHearingResultAward(bookingId: Long, sanctionSequence: Int): HearingResultAward = adjudicationHearingResultAwardRepository.findByIdOrNull(
+    AdjudicationHearingResultAwardId(
+      bookingId,
+      sanctionSequence,
+    ),
+  )
+    ?.toAward()
+    ?: throw NotFoundException("Hearing Result Award not found. booking Id: $bookingId, sanction sequence: $sanctionSequence")
 
   fun upsertResultWithDummyHearing(
     adjudicationNumber: Long,
@@ -1160,8 +1150,7 @@ class AdjudicationService(
     )
   }
 
-  private fun AdjudicationHearingResultAward.asDays() =
-    this.sanctionDays + this.sanctionMonths.asDays(this.effectiveDate)
+  private fun AdjudicationHearingResultAward.asDays() = this.sanctionDays + this.sanctionMonths.asDays(this.effectiveDate)
 
   private operator fun Int?.plus(second: Int?): Int? = when {
     this == null && second == null -> null
@@ -1170,8 +1159,7 @@ class AdjudicationService(
     else -> this + second
   }
 
-  private fun Int?.asDays(effectiveDate: LocalDate): Int? =
-    this?.let { ChronoUnit.DAYS.between(effectiveDate, effectiveDate.plusMonths(this.toLong())).toInt() }
+  private fun Int?.asDays(effectiveDate: LocalDate): Int? = this?.let { ChronoUnit.DAYS.between(effectiveDate, effectiveDate.plusMonths(this.toLong())).toInt() }
 
   fun getADAHearingResultAwardSummary(bookingId: Long): AdjudicationADAAwardSummaryResponse {
     val booking = offenderBookingRepository.findByIdOrNull(bookingId)
@@ -1198,8 +1186,7 @@ class AdjudicationService(
   }
 }
 
-private fun Iterable<AdjudicationHearingResult>.highestSequence(): Int =
-  this.maxOfOrNull { it.id.resultSequence } ?: 0
+private fun Iterable<AdjudicationHearingResult>.highestSequence(): Int = this.maxOfOrNull { it.id.resultSequence } ?: 0
 
 private fun AdjudicationIncidentParty.generateOffenceIds() {
   this.charges
@@ -1226,8 +1213,7 @@ private fun AdjudicationHearingResult.toHearingResult(): HearingResult = Hearing
 // edge case for NOMIS merge where two sets of sanctions for different bookings attached
 // to same hearing result. There is only one case of this in production so this simple fix is preferred over
 // a complicated mapping change
-private fun AdjudicationHearingResultAward.matchesAdjudicationParty(): Boolean =
-  this.id.offenderBookId == this.incidentParty.offenderBooking?.bookingId
+private fun AdjudicationHearingResultAward.matchesAdjudicationParty(): Boolean = this.id.offenderBookId == this.incidentParty.offenderBooking?.bookingId
 
 private fun AdjudicationHearing.toHearing(): Hearing = Hearing(
   hearingId = this.id,
@@ -1270,30 +1256,24 @@ private fun AdjudicationEvidence.toEvidence(): Evidence = Evidence(
   createdByUsername = this.createUsername,
 )
 
-private fun AdjudicationIncidentParty.toEvidenceList(): List<Evidence> =
-  this.investigations.flatMap { investigation -> investigation.evidence.map { it.toEvidence() } }
+private fun AdjudicationIncidentParty.toEvidenceList(): List<Evidence> = this.investigations.flatMap { investigation -> investigation.evidence.map { it.toEvidence() } }
 
-private fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> =
-  this.incident.parties.filter { it.staff != null }
+private fun AdjudicationIncidentParty.staffParties(): List<AdjudicationIncidentParty> = this.incident.parties.filter { it.staff != null }
 
-private fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncidentParty> =
-  this.incident.parties.filter { it.offenderBooking != null }
+private fun AdjudicationIncidentParty.prisonerParties(): List<AdjudicationIncidentParty> = this.incident.parties.filter { it.offenderBooking != null }
 
-private fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> =
-  this.staffParties().filter { filter(it) }
-    .map { it.staffParty().toStaff(it.createUsername, it.partyAddedDate, it.comment) }
+private fun AdjudicationIncidentParty.staffInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Staff> = this.staffParties().filter { filter(it) }
+  .map { it.staffParty().toStaff(it.createUsername, it.partyAddedDate, it.comment) }
 
-private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> =
-  this.prisonerParties().filter { filter(it) && it != this }
-    .map { it.prisonerParty().toPrisoner(it.createUsername, it.partyAddedDate, it.comment) }
+private fun AdjudicationIncidentParty.otherPrisonersInIncident(filter: (AdjudicationIncidentParty) -> Boolean): List<Prisoner> = this.prisonerParties().filter { filter(it) && it != this }
+  .map { it.prisonerParty().toPrisoner(it.createUsername, it.partyAddedDate, it.comment) }
 
-private fun AdjudicationIncidentRepair.toRepair(): Repair =
-  Repair(
-    type = this.type.toCodeDescription(),
-    comment = this.comment,
-    cost = this.repairCost,
-    createdByUsername = this.createUsername,
-  )
+private fun AdjudicationIncidentRepair.toRepair(): Repair = Repair(
+  type = this.type.toCodeDescription(),
+  comment = this.comment,
+  cost = this.repairCost,
+  createdByUsername = this.createUsername,
+)
 
 fun AdjudicationIncidentCharge.toCharge(): AdjudicationCharge = AdjudicationCharge(
   offence = this.offence.toOffence(),
@@ -1309,54 +1289,50 @@ fun AdjudicationIncidentOffence.toOffence(): AdjudicationOffence = AdjudicationO
   type = this.type?.toCodeDescription(),
 )
 
-fun AgencyInternalLocation.toInternalLocation() =
-  InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
+fun AgencyInternalLocation.toInternalLocation() = InternalLocation(locationId = this.locationId, code = this.locationCode, description = this.description)
 
 fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff(
   createUsername: String,
   dateAddedToIncident: LocalDate,
   comment: String? = null,
-) =
-  Staff(
-    staffId = id,
-    firstName = firstName,
-    lastName = lastName,
-    username = accounts.usernamePreferringGeneralAccount(),
-    createdByUsername = createUsername,
-    dateAddedToIncident = dateAddedToIncident,
-    comment = comment,
-  )
+) = Staff(
+  staffId = id,
+  firstName = firstName,
+  lastName = lastName,
+  username = accounts.usernamePreferringGeneralAccount(),
+  createdByUsername = createUsername,
+  dateAddedToIncident = dateAddedToIncident,
+  comment = comment,
+)
 
-fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() =
-  Staff(
-    staffId = id,
-    firstName = firstName,
-    lastName = lastName,
-    username = accounts.usernamePreferringGeneralAccount(),
-  )
+fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff.toStaff() = Staff(
+  staffId = id,
+  firstName = firstName,
+  lastName = lastName,
+  username = accounts.usernamePreferringGeneralAccount(),
+)
 
-fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward =
-  HearingResultAward(
-    sequence = this.id.sanctionSequence,
-    // we must have result for there to be an award
-    chargeSequence = this.hearingResult?.chargeSequence!!,
-    adjudicationNumber = this.hearingResult.hearing.adjudicationNumber,
-    sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
-      sanctionCode,
-      "Unknown Sanction Code",
-    ),
-    sanctionStatus = this.sanctionStatus?.toCodeDescription(),
-    comment = this.comment,
-    effectiveDate = this.effectiveDate,
-    statusDate = this.statusDate,
-    sanctionDays = this.sanctionDays,
-    sanctionMonths = this.sanctionMonths,
-    createdByUsername = this.createUsername,
-    createdDateTime = this.whenCreated,
-    compensationAmount = this.compensationAmount,
-    consecutiveAward = if (!isConsecutiveAward) {
-      this.consecutiveHearingResultAward?.toAward(true)
-    } else {
-      null
-    },
-  )
+fun AdjudicationHearingResultAward.toAward(isConsecutiveAward: Boolean = false): HearingResultAward = HearingResultAward(
+  sequence = this.id.sanctionSequence,
+  // we must have result for there to be an award
+  chargeSequence = this.hearingResult?.chargeSequence!!,
+  adjudicationNumber = this.hearingResult.hearing.adjudicationNumber,
+  sanctionType = this.sanctionType?.toCodeDescription() ?: CodeDescription(
+    sanctionCode,
+    "Unknown Sanction Code",
+  ),
+  sanctionStatus = this.sanctionStatus?.toCodeDescription(),
+  comment = this.comment,
+  effectiveDate = this.effectiveDate,
+  statusDate = this.statusDate,
+  sanctionDays = this.sanctionDays,
+  sanctionMonths = this.sanctionMonths,
+  createdByUsername = this.createUsername,
+  createdDateTime = this.whenCreated,
+  compensationAmount = this.compensationAmount,
+  consecutiveAward = if (!isConsecutiveAward) {
+    this.consecutiveHearingResultAward?.toAward(true)
+  } else {
+    null
+  },
+)

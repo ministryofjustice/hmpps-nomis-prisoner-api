@@ -183,12 +183,11 @@ class IdentifyingMarkImagesIntTest : IntegrationTestBase() {
       }
     }
 
-    fun WebTestClient.getIdentifyingMarkImageDetailsOk(imageId: Long) =
-      this.get().uri("/identifying-marks/images/{imageId}/details", imageId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody<IdentifyingMarkImageDetailsResponse>()
+    fun WebTestClient.getIdentifyingMarkImageDetailsOk(imageId: Long) = this.get().uri("/identifying-marks/images/{imageId}/details", imageId)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody<IdentifyingMarkImageDetailsResponse>()
   }
 
   @DisplayName("GET /identifying-marks/images/{imageId}/data")

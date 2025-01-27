@@ -48,9 +48,8 @@ class CaseNotesService(
   private val dateTimeFormat: DateTimeFormatter =
     DateTimeFormatter.ofPattern("[dd/MM/yyyy][dd-MM-yyyy][yyyy/MM/dd] HH:mm:ss")
 
-  fun getCaseNote(caseNoteId: Long): CaseNoteResponse =
-    offenderCaseNoteRepository.findByIdOrNull(caseNoteId)?.toCaseNoteResponse()
-      ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
+  fun getCaseNote(caseNoteId: Long): CaseNoteResponse = offenderCaseNoteRepository.findByIdOrNull(caseNoteId)?.toCaseNoteResponse()
+    ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
 
   @Audit
   fun createCaseNote(offenderNo: String, request: CreateCaseNoteRequest): CreateCaseNoteResponse {
@@ -133,12 +132,10 @@ class CaseNotesService(
     },
   )
 
-  internal fun parseMainText(caseNoteText: String): String {
-    return pattern
-      .find(caseNoteText)
-      ?.let { caseNoteText.slice(0..it.range.first - 1) }
-      ?: caseNoteText
-  }
+  internal fun parseMainText(caseNoteText: String): String = pattern
+    .find(caseNoteText)
+    ?.let { caseNoteText.slice(0..it.range.first - 1) }
+    ?: caseNoteText
 
   internal fun parseAmendments(caseNote: OffenderCaseNote): List<CaseNoteAmendment> {
     val caseNoteText = caseNote.caseNoteText
@@ -203,8 +200,7 @@ class CaseNotesService(
     return text.truncate()
   }
 
-  private fun String.truncate(): String =
-    // encodedLength always >= length
+  private fun String.truncate(): String = // encodedLength always >= length
     if (Utf8.encodedLength(this) <= MAX_CASENOTE_LENGTH_BYTES) {
       this
     } else {

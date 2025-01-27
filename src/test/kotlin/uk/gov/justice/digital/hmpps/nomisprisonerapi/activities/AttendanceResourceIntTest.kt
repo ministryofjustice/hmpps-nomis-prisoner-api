@@ -58,38 +58,30 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         }
     """.trimIndent()
 
-    private fun String.withScheduleDate(scheduleDate: String?) =
-      replace(""""scheduleDate": "2022-11-01",""", scheduleDate?.let { """"scheduleDate": "$scheduleDate",""" } ?: "")
+    private fun String.withScheduleDate(scheduleDate: String?) = replace(""""scheduleDate": "2022-11-01",""", scheduleDate?.let { """"scheduleDate": "$scheduleDate",""" } ?: "")
 
-    private fun String.withStartTime(startTime: String?) =
-      replace(""""startTime": "08:00",""", startTime?.let { """"startTime": "$startTime",""" } ?: "")
+    private fun String.withStartTime(startTime: String?) = replace(""""startTime": "08:00",""", startTime?.let { """"startTime": "$startTime",""" } ?: "")
 
-    private fun String.withEndTime(endTime: String?) =
-      replace(""""endTime": "11:00",""", endTime?.let { """"endTime": "$endTime",""" } ?: "")
+    private fun String.withEndTime(endTime: String?) = replace(""""endTime": "11:00",""", endTime?.let { """"endTime": "$endTime",""" } ?: "")
 
-    private fun String.withEventStatusCode(eventStatusCode: String?) =
-      replace(
-        """"eventStatusCode": "SCH",""",
-        eventStatusCode?.let { """"eventStatusCode": "$eventStatusCode",""" } ?: "",
-      )
+    private fun String.withEventStatusCode(eventStatusCode: String?) = replace(
+      """"eventStatusCode": "SCH",""",
+      eventStatusCode?.let { """"eventStatusCode": "$eventStatusCode",""" } ?: "",
+    )
 
-    private fun String.withEventOutcomeCode(eventOutcomeCode: String?) =
-      replace(
-        """"eventOutcomeCode": null,""",
-        eventOutcomeCode?.let { """"eventOutcomeCode": "$eventOutcomeCode",""" } ?: "",
-      )
+    private fun String.withEventOutcomeCode(eventOutcomeCode: String?) = replace(
+      """"eventOutcomeCode": null,""",
+      eventOutcomeCode?.let { """"eventOutcomeCode": "$eventOutcomeCode",""" } ?: "",
+    )
 
-    private fun String.withUnexcusedAbsence(unexcusedAbsence: String?) =
-      replace(
-        """"unexcusedAbsence": null,""",
-        unexcusedAbsence?.let { """"unexcusedAbsence": $unexcusedAbsence,""" } ?: "",
-      )
+    private fun String.withUnexcusedAbsence(unexcusedAbsence: String?) = replace(
+      """"unexcusedAbsence": null,""",
+      unexcusedAbsence?.let { """"unexcusedAbsence": $unexcusedAbsence,""" } ?: "",
+    )
 
-    private fun String.withPaidFlag(paidFlag: String?) =
-      replace(""""paid": null,""", paidFlag?.let { """"paid": $paidFlag,""" } ?: "")
+    private fun String.withPaidFlag(paidFlag: String?) = replace(""""paid": null,""", paidFlag?.let { """"paid": $paidFlag,""" } ?: "")
 
-    private fun String.withBonusPay(bonusPay: String?) =
-      replace(""""bonusPay": null""", bonusPay?.let { """"bonusPay": $bonusPay""" } ?: "")
+    private fun String.withBonusPay(bonusPay: String?) = replace(""""bonusPay": null""", bonusPay?.let { """"bonusPay": $bonusPay""" } ?: "")
 
     @BeforeEach
     fun setUp() {
@@ -837,12 +829,11 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       courseScheduleId: Long,
       bookingId: Long,
       jsonRequest: String = validJsonRequest,
-    ) =
-      put().uri("/schedules/$courseScheduleId/booking/$bookingId/attendance")
-        .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .body(BodyInserters.fromValue(jsonRequest))
-        .exchange()
+    ) = put().uri("/schedules/$courseScheduleId/booking/$bookingId/attendance")
+      .contentType(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .body(BodyInserters.fromValue(jsonRequest))
+      .exchange()
   }
 
   @Nested

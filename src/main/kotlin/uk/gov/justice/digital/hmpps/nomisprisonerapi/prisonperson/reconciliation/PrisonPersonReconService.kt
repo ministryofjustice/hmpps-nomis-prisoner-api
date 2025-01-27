@@ -41,6 +41,5 @@ class PrisonPersonReconService(
     )
   }
 
-  private fun List<OffenderProfileDetail>.findProfileCode(profileType: String) =
-    find { it.id.profileType.type == profileType }?.profileCodeId
+  private fun List<OffenderProfileDetail>.findProfileCode(profileType: String) = find { it.id.profileType.type == profileType }?.profileCodeId
 }

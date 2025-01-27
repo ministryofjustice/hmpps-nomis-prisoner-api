@@ -63,11 +63,9 @@ class OffenderSentenceBuilderRepository(
   val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
   val offenderSentenceRepository: OffenderSentenceRepository,
 ) {
-  fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType =
-    sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
+  fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType = sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
 
-  fun lookupSentenceCategoryType(code: String): SentenceCategoryType =
-    sentenceCategoryTypeRepository.findByIdOrNull(SentenceCategoryType.pk(code))!!
+  fun lookupSentenceCategoryType(code: String): SentenceCategoryType = sentenceCategoryTypeRepository.findByIdOrNull(SentenceCategoryType.pk(code))!!
 
   fun save(sentence: OffenderSentence): OffenderSentence = offenderSentenceRepository.save(sentence)
 }
@@ -79,14 +77,12 @@ class OffenderSentenceBuilderFactory(
   private val sentenceAdjustmentBuilderFactory: OffenderSentenceAdjustmentBuilderFactory,
   private val repository: OffenderSentenceBuilderRepository,
 ) {
-  fun builder(): OffenderSentenceBuilder {
-    return OffenderSentenceBuilder(
-      sentenceAdjustmentBuilderFactory,
-      sentenceTermBuilderFactory,
-      sentenceChargeBuilderFactory,
-      repository,
-    )
-  }
+  fun builder(): OffenderSentenceBuilder = OffenderSentenceBuilder(
+    sentenceAdjustmentBuilderFactory,
+    sentenceTermBuilderFactory,
+    sentenceChargeBuilderFactory,
+    repository,
+  )
 }
 
 class OffenderSentenceBuilder(

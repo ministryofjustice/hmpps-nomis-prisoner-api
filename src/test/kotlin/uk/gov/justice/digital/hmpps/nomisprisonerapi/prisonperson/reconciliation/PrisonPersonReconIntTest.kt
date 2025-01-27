@@ -463,11 +463,10 @@ class PrisonPersonReconIntTest : IntegrationTestBase() {
       }
     }
 
-    fun WebTestClient.getReconciliationOk(offenderNo: String) =
-      this.get().uri("/prisoners/$offenderNo/prison-person/reconciliation")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody<PrisonPersonReconciliationResponse>()
+    fun WebTestClient.getReconciliationOk(offenderNo: String) = this.get().uri("/prisoners/$offenderNo/prison-person/reconciliation")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody<PrisonPersonReconciliationResponse>()
   }
 }

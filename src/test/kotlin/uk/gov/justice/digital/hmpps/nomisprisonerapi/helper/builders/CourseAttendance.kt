@@ -53,32 +53,31 @@ class CourseAttendanceBuilder(
     outcomeReasonCode: String?,
     pay: Boolean?,
     paidTransactionId: Long?,
-  ): OffenderCourseAttendance =
-    OffenderCourseAttendance(
-      eventId = eventId,
-      offenderBooking = courseAllocation.offenderBooking,
-      eventDate = courseSchedule.scheduleDate,
-      startTime = courseSchedule.startTime,
-      endTime = courseSchedule.endTime,
-      eventStatus = eventStatus(eventStatusCode),
-      toInternalLocation = toInternalLocationId?.let {
-        agencyInternalLocation(
-          toInternalLocationId,
-          "CLAS",
-          lookupAgency("LEI"),
-        )
-      },
-      courseSchedule = courseSchedule,
-      attendanceOutcome = outcomeReasonCode?.let { attendanceOutcome(outcomeReasonCode) },
-      offenderProgramProfile = courseAllocation,
-      inTime = courseSchedule.startTime,
-      outTime = courseSchedule.endTime,
-      courseActivity = courseSchedule.courseActivity,
-      prison = courseSchedule.courseActivity.prison,
-      program = courseSchedule.courseActivity.program,
-      pay = pay,
-      paidTransactionId = paidTransactionId,
-    )
+  ): OffenderCourseAttendance = OffenderCourseAttendance(
+    eventId = eventId,
+    offenderBooking = courseAllocation.offenderBooking,
+    eventDate = courseSchedule.scheduleDate,
+    startTime = courseSchedule.startTime,
+    endTime = courseSchedule.endTime,
+    eventStatus = eventStatus(eventStatusCode),
+    toInternalLocation = toInternalLocationId?.let {
+      agencyInternalLocation(
+        toInternalLocationId,
+        "CLAS",
+        lookupAgency("LEI"),
+      )
+    },
+    courseSchedule = courseSchedule,
+    attendanceOutcome = outcomeReasonCode?.let { attendanceOutcome(outcomeReasonCode) },
+    offenderProgramProfile = courseAllocation,
+    inTime = courseSchedule.startTime,
+    outTime = courseSchedule.endTime,
+    courseActivity = courseSchedule.courseActivity,
+    prison = courseSchedule.courseActivity.prison,
+    program = courseSchedule.courseActivity.program,
+    pay = pay,
+    paidTransactionId = paidTransactionId,
+  )
 
   private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
     ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)

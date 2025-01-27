@@ -34,10 +34,9 @@ class CSIPFactorBuilder(
     csipReport: CSIPReport,
     type: String,
     comment: String?,
-  ): CSIPFactor =
-    CSIPFactor(
-      csipReport = csipReport,
-      type = repository.lookupFactorType(type),
-      comment = comment,
-    )
+  ): CSIPFactor = CSIPFactor(
+    csipReport = csipReport,
+    type = repository.lookupFactorType(type),
+    comment = comment,
+  )
 }

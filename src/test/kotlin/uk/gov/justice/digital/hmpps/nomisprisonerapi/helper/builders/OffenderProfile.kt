@@ -24,14 +24,13 @@ class OffenderProfileBuilder : OffenderProfileDsl {
     offenderBooking: OffenderBooking,
     checkDate: LocalDate,
     sequence: Long,
-  ): OffenderProfile =
-    OffenderProfile(
-      id = OffenderProfileId(
-        offenderBooking = offenderBooking,
-        sequence = sequence,
-      ),
-      checkDate = checkDate,
-    ).also {
-      offenderProfile = it
-    }
+  ): OffenderProfile = OffenderProfile(
+    id = OffenderProfileId(
+      offenderBooking = offenderBooking,
+      sequence = sequence,
+    ),
+    checkDate = checkDate,
+  ).also {
+    offenderProfile = it
+  }
 }

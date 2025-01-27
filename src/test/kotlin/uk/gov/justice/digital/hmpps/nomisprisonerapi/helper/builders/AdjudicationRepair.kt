@@ -19,17 +19,14 @@ interface AdjudicationRepairDsl
 class AdjudicationRepairBuilderFactory(
   private val repository: AdjudicationRepairBuilderRepository,
 ) {
-  fun builder(): AdjudicationRepairBuilder {
-    return AdjudicationRepairBuilder(repository)
-  }
+  fun builder(): AdjudicationRepairBuilder = AdjudicationRepairBuilder(repository)
 }
 
 @Component
 class AdjudicationRepairBuilderRepository(
   val repairTypeRepository: ReferenceCodeRepository<AdjudicationRepairType>,
 ) {
-  fun lookupRepairType(code: String): AdjudicationRepairType =
-    repairTypeRepository.findByIdOrNull(AdjudicationRepairType.pk(code))!!
+  fun lookupRepairType(code: String): AdjudicationRepairType = repairTypeRepository.findByIdOrNull(AdjudicationRepairType.pk(code))!!
 }
 
 class AdjudicationRepairBuilder(

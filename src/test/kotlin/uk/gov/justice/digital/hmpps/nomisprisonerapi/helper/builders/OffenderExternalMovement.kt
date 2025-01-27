@@ -37,17 +37,13 @@ class OffenderExternalMovementBuilderRepository(
   val agencyLocationRepository: AgencyLocationRepository,
   val offenderExternalMovementRepository: OffenderExternalMovementRepository,
 ) {
-  fun lookupMovementReason(code: String): MovementReason =
-    movementReasonRepository.findByIdOrNull(Pk(MovementReason.MOVE_RSN, code))!!
+  fun lookupMovementReason(code: String): MovementReason = movementReasonRepository.findByIdOrNull(Pk(MovementReason.MOVE_RSN, code))!!
 
-  fun lookupMovementType(code: String): MovementType =
-    movementTypeRepository.findByIdOrNull(Pk(MovementType.MOVE_TYPE, code))!!
+  fun lookupMovementType(code: String): MovementType = movementTypeRepository.findByIdOrNull(Pk(MovementType.MOVE_TYPE, code))!!
 
-  fun lookupAgency(prisonId: String): AgencyLocation =
-    agencyLocationRepository.findByIdOrNull(prisonId)!!
+  fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)!!
 
-  fun save(movement: OffenderExternalMovement): OffenderExternalMovement =
-    offenderExternalMovementRepository.save(movement)
+  fun save(movement: OffenderExternalMovement): OffenderExternalMovement = offenderExternalMovementRepository.save(movement)
 }
 
 class OffenderExternalMovementBuilder(
@@ -58,91 +54,88 @@ class OffenderExternalMovementBuilder(
     toPrisonId: String,
     date: LocalDateTime,
     offenderBooking: OffenderBooking,
-  ): Pair<OffenderExternalMovement, OffenderExternalMovement> =
-    repository.save(
-      OffenderExternalMovement(
-        id = OffenderExternalMovementId(
-          offenderBooking,
-          offenderBooking.externalMovements.size + 1L,
-        ),
-        movementDate = date.toLocalDate(),
-        movementTime = date,
-        movementDirection = OUT,
-        movementType = repository.lookupMovementType("TRN"),
-        movementReason = repository.lookupMovementReason("28"),
-        fromAgency = repository.lookupAgency(fromPrisonId),
-        toAgency = repository.lookupAgency(toPrisonId),
-        active = false,
+  ): Pair<OffenderExternalMovement, OffenderExternalMovement> = repository.save(
+    OffenderExternalMovement(
+      id = OffenderExternalMovementId(
+        offenderBooking,
+        offenderBooking.externalMovements.size + 1L,
       ),
-    ) to repository.save(
-      OffenderExternalMovement(
-        id = OffenderExternalMovementId(
-          offenderBooking,
-          offenderBooking.externalMovements.size + 1L,
-        ),
-        movementDate = date.toLocalDate(),
-        movementTime = date.plusSeconds(1),
-        movementDirection = IN,
-        movementType = repository.lookupMovementType("ADM"),
-        movementReason = repository.lookupMovementReason("INT"),
-        fromAgency = repository.lookupAgency(fromPrisonId),
-        toAgency = repository.lookupAgency(toPrisonId),
-        active = true,
+      movementDate = date.toLocalDate(),
+      movementTime = date,
+      movementDirection = OUT,
+      movementType = repository.lookupMovementType("TRN"),
+      movementReason = repository.lookupMovementReason("28"),
+      fromAgency = repository.lookupAgency(fromPrisonId),
+      toAgency = repository.lookupAgency(toPrisonId),
+      active = false,
+    ),
+  ) to repository.save(
+    OffenderExternalMovement(
+      id = OffenderExternalMovementId(
+        offenderBooking,
+        offenderBooking.externalMovements.size + 1L,
       ),
-    )
+      movementDate = date.toLocalDate(),
+      movementTime = date.plusSeconds(1),
+      movementDirection = IN,
+      movementType = repository.lookupMovementType("ADM"),
+      movementReason = repository.lookupMovementReason("INT"),
+      fromAgency = repository.lookupAgency(fromPrisonId),
+      toAgency = repository.lookupAgency(toPrisonId),
+      active = true,
+    ),
+  )
   fun buildRelease(
     date: LocalDateTime,
     offenderBooking: OffenderBooking,
-  ): OffenderExternalMovement =
-    repository.save(
-      OffenderExternalMovement(
-        id = OffenderExternalMovementId(
-          offenderBooking,
-          offenderBooking.externalMovements.size + 1L,
-        ),
-        movementDate = date.toLocalDate(),
-        movementTime = date,
-        movementDirection = OUT,
-        movementType = repository.lookupMovementType("REL"),
-        movementReason = repository.lookupMovementReason("CR"),
-        fromAgency = offenderBooking.location,
-        toAgency = null,
-        active = true,
+  ): OffenderExternalMovement = repository.save(
+    OffenderExternalMovement(
+      id = OffenderExternalMovementId(
+        offenderBooking,
+        offenderBooking.externalMovements.size + 1L,
       ),
-    ).also {
-      offenderBooking.inOutStatus = "OUT"
-      offenderBooking.location = repository.lookupAgency("OUT")
-      offenderBooking.active = false
-      if (offenderBooking.bookingEndDate == null) {
-        offenderBooking.bookingEndDate = date.truncatedTo(ChronoUnit.DAYS)
-      }
+      movementDate = date.toLocalDate(),
+      movementTime = date,
+      movementDirection = OUT,
+      movementType = repository.lookupMovementType("REL"),
+      movementReason = repository.lookupMovementReason("CR"),
+      fromAgency = offenderBooking.location,
+      toAgency = null,
+      active = true,
+    ),
+  ).also {
+    offenderBooking.inOutStatus = "OUT"
+    offenderBooking.location = repository.lookupAgency("OUT")
+    offenderBooking.active = false
+    if (offenderBooking.bookingEndDate == null) {
+      offenderBooking.bookingEndDate = date.truncatedTo(ChronoUnit.DAYS)
     }
+  }
 
   fun buildReceive(
     date: LocalDateTime,
     offenderBooking: OffenderBooking,
-  ): OffenderExternalMovement =
-    repository.save(
-      OffenderExternalMovement(
-        id = OffenderExternalMovementId(
-          offenderBooking,
-          offenderBooking.externalMovements.size + 1L,
-        ),
-        movementDate = date.toLocalDate(),
-        movementTime = date,
-        movementDirection = IN,
-        movementType = repository.lookupMovementType("ADM"),
-        movementReason = repository.lookupMovementReason("N"),
-        toAgency = offenderBooking.location,
-        fromAgency = null,
-        active = false,
+  ): OffenderExternalMovement = repository.save(
+    OffenderExternalMovement(
+      id = OffenderExternalMovementId(
+        offenderBooking,
+        offenderBooking.externalMovements.size + 1L,
       ),
-    ).also {
-      offenderBooking.inOutStatus = "IN"
-      offenderBooking.location = offenderBooking.location
-      offenderBooking.active = true
-      offenderBooking.bookingEndDate = null
-    }
+      movementDate = date.toLocalDate(),
+      movementTime = date,
+      movementDirection = IN,
+      movementType = repository.lookupMovementType("ADM"),
+      movementReason = repository.lookupMovementReason("N"),
+      toAgency = offenderBooking.location,
+      fromAgency = null,
+      active = false,
+    ),
+  ).also {
+    offenderBooking.inOutStatus = "IN"
+    offenderBooking.location = offenderBooking.location
+    offenderBooking.active = true
+    offenderBooking.bookingEndDate = null
+  }
 
   fun build(
     fromPrisonId: String,
@@ -151,21 +144,20 @@ class OffenderExternalMovementBuilder(
     offenderBooking: OffenderBooking,
     movementType: String,
     movementReason: String,
-  ): OffenderExternalMovement =
-    repository.save(
-      OffenderExternalMovement(
-        id = OffenderExternalMovementId(
-          offenderBooking,
-          offenderBooking.externalMovements.size + 1L,
-        ),
-        movementDate = date.toLocalDate(),
-        movementTime = date,
-        movementDirection = IN,
-        movementType = repository.lookupMovementType(movementType),
-        movementReason = repository.lookupMovementReason(movementReason),
-        fromAgency = repository.lookupAgency(fromPrisonId),
-        toAgency = repository.lookupAgency(toPrisonId),
-        active = true,
+  ): OffenderExternalMovement = repository.save(
+    OffenderExternalMovement(
+      id = OffenderExternalMovementId(
+        offenderBooking,
+        offenderBooking.externalMovements.size + 1L,
       ),
-    )
+      movementDate = date.toLocalDate(),
+      movementTime = date,
+      movementDirection = IN,
+      movementType = repository.lookupMovementType(movementType),
+      movementReason = repository.lookupMovementReason(movementReason),
+      fromAgency = repository.lookupAgency(fromPrisonId),
+      toAgency = repository.lookupAgency(toPrisonId),
+      active = true,
+    ),
+  )
 }

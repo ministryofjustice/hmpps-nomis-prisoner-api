@@ -503,33 +503,32 @@ fun caseNote(
   auditModuleName: String = "a-module",
   modifiedUserId: String? = "my-user-name",
   modifiedDateTime: LocalDateTime? = LocalDateTime.now(),
-) =
-  OffenderCaseNote(
-    offenderBooking = OffenderBooking(
-      offender = Offender(
-        nomsId = "A1234AA",
-        gender = Gender("MALE", "DESC"),
-        firstName = "First",
-        lastName = "Last",
-      ),
-      bookingBeginDate = LocalDateTime.now(),
+) = OffenderCaseNote(
+  offenderBooking = OffenderBooking(
+    offender = Offender(
+      nomsId = "A1234AA",
+      gender = Gender("MALE", "DESC"),
+      firstName = "First",
+      lastName = "Last",
     ),
-    occurrenceDate = LocalDate.parse("2024-03-04"),
-    occurrenceDateTime = LocalDateTime.now(),
-    caseNoteType = TaskType("CODE", "desc"),
-    caseNoteSubType = TaskSubType("SUBCODE", "desc"),
-    author = Staff(firstName = "Joe", lastName = "Bloggs")
-      .apply {
-        accounts.add(StaffUserAccount(username = "USER", staff = this, type = "type", source = "source"))
-      },
-    caseNoteText = caseNoteText,
-    amendmentFlag = true,
-    noteSourceCode = NoteSourceCode.INST,
+    bookingBeginDate = LocalDateTime.now(),
+  ),
+  occurrenceDate = LocalDate.parse("2024-03-04"),
+  occurrenceDateTime = LocalDateTime.now(),
+  caseNoteType = TaskType("CODE", "desc"),
+  caseNoteSubType = TaskSubType("SUBCODE", "desc"),
+  author = Staff(firstName = "Joe", lastName = "Bloggs")
+    .apply {
+      accounts.add(StaffUserAccount(username = "USER", staff = this, type = "type", source = "source"))
+    },
+  caseNoteText = caseNoteText,
+  amendmentFlag = true,
+  noteSourceCode = NoteSourceCode.INST,
 
-    dateCreation = LocalDateTime.now(),
-    createdUserId = "created-user_id",
-    auditModuleName = auditModuleName,
+  dateCreation = LocalDateTime.now(),
+  createdUserId = "created-user_id",
+  auditModuleName = auditModuleName,
 
-    modifiedUserId = modifiedUserId,
-    modifiedDatetime = modifiedDateTime,
-  )
+  modifiedUserId = modifiedUserId,
+  modifiedDatetime = modifiedDateTime,
+)

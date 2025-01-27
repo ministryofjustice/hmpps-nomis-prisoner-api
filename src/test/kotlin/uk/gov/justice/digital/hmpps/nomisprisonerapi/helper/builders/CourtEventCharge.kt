@@ -26,11 +26,9 @@ interface CourtEventChargeDsl
 class CourtEventChargeBuilderFactory(
   private val repository: CourtEventChargeBuilderRepository,
 ) {
-  fun builder(): CourtEventChargeBuilder {
-    return CourtEventChargeBuilder(
-      repository,
-    )
-  }
+  fun builder(): CourtEventChargeBuilder = CourtEventChargeBuilder(
+    repository,
+  )
 }
 
 @Component
@@ -50,8 +48,7 @@ class CourtEventChargeBuilderRepository(
     )
   }
 
-  fun lookupPleaStatus(code: String): PleaStatusType =
-    pleaStatusTypeRepository.findByIdOrNull(PleaStatusType.pk(code))!!
+  fun lookupPleaStatus(code: String): PleaStatusType = pleaStatusTypeRepository.findByIdOrNull(PleaStatusType.pk(code))!!
 
   fun lookupOffenceResultCode(code: String): OffenceResultCode = offenceResultCodeRepository.findByIdOrNull(code)!!
 }

@@ -215,32 +215,31 @@ class PersonBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: PersonAddressDsl.() -> Unit,
-  ): PersonAddress =
-    personAddressBuilderFactory.builder().let { builder ->
-      builder.build(
-        type = type,
-        person = person,
-        premise = premise,
-        street = street,
-        locality = locality,
-        flat = flat,
-        postcode = postcode,
-        city = city,
-        county = county,
-        country = country,
-        validatedPAF = validatedPAF,
-        noFixedAddress = noFixedAddress,
-        primaryAddress = primaryAddress,
-        mailAddress = mailAddress,
-        comment = comment,
-        startDate = startDate?.let { LocalDate.parse(it) },
-        endDate = endDate?.let { LocalDate.parse(it) },
-        whoCreated = whoCreated,
-        whenCreated = whenCreated,
-      )
-        .also { person.addresses += it }
-        .also { builder.apply(dsl) }
-    }
+  ): PersonAddress = personAddressBuilderFactory.builder().let { builder ->
+    builder.build(
+      type = type,
+      person = person,
+      premise = premise,
+      street = street,
+      locality = locality,
+      flat = flat,
+      postcode = postcode,
+      city = city,
+      county = county,
+      country = country,
+      validatedPAF = validatedPAF,
+      noFixedAddress = noFixedAddress,
+      primaryAddress = primaryAddress,
+      mailAddress = mailAddress,
+      comment = comment,
+      startDate = startDate?.let { LocalDate.parse(it) },
+      endDate = endDate?.let { LocalDate.parse(it) },
+      whoCreated = whoCreated,
+      whenCreated = whenCreated,
+    )
+      .also { person.addresses += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun phone(
     phoneType: String,
@@ -249,36 +248,34 @@ class PersonBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: PersonPhoneDsl.() -> Unit,
-  ): PersonPhone =
-    personPhoneBuilderFactory.builder().let { builder ->
-      builder.build(
-        person = person,
-        phoneType = phoneType,
-        phoneNo = phoneNo,
-        extNo = extNo,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { person.phones += it }
-        .also { builder.apply(dsl) }
-    }
+  ): PersonPhone = personPhoneBuilderFactory.builder().let { builder ->
+    builder.build(
+      person = person,
+      phoneType = phoneType,
+      phoneNo = phoneNo,
+      extNo = extNo,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { person.phones += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun email(
     emailAddress: String,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: PersonEmailDsl.() -> Unit,
-  ): PersonInternetAddress =
-    personEmailBuilderFactory.builder().let { builder ->
-      builder.build(
-        person = person,
-        emailAddress = emailAddress,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { person.internetAddresses += it }
-        .also { builder.apply(dsl) }
-    }
+  ): PersonInternetAddress = personEmailBuilderFactory.builder().let { builder ->
+    builder.build(
+      person = person,
+      emailAddress = emailAddress,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { person.internetAddresses += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun employment(
     employerCorporate: Corporate,
@@ -286,19 +283,18 @@ class PersonBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: PersonEmploymentDsl.() -> Unit,
-  ): PersonEmployment =
-    personEmploymentBuilderFactory.builder().let { builder ->
-      builder.build(
-        person = person,
-        sequence = person.employments.size + 1L,
-        employerCorporate = employerCorporate,
-        active = active,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { person.employments += it }
-        .also { builder.apply(dsl) }
-    }
+  ): PersonEmployment = personEmploymentBuilderFactory.builder().let { builder ->
+    builder.build(
+      person = person,
+      sequence = person.employments.size + 1L,
+      employerCorporate = employerCorporate,
+      active = active,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { person.employments += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun identifier(
     type: String,
@@ -307,20 +303,19 @@ class PersonBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: PersonIdentifierDsl.() -> Unit,
-  ): PersonIdentifier =
-    personIdentifierBuilderFactory.builder().let { builder ->
-      builder.build(
-        person = person,
-        sequence = person.identifiers.size + 1L,
-        type = type,
-        identifier = identifier,
-        issuedAuthority = issuedAuthority,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { person.identifiers += it }
-        .also { builder.apply(dsl) }
-    }
+  ): PersonIdentifier = personIdentifierBuilderFactory.builder().let { builder ->
+    builder.build(
+      person = person,
+      sequence = person.identifiers.size + 1L,
+      type = type,
+      identifier = identifier,
+      issuedAuthority = issuedAuthority,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { person.identifiers += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun restriction(
     restrictionType: String,
@@ -331,19 +326,18 @@ class PersonBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: VisitorRestrictsDsl.() -> Unit,
-  ): VisitorRestriction =
-    visitorRestrictsBuilderFactory.builder().let { builder ->
-      builder.build(
-        person = person,
-        restrictionType = restrictionType,
-        enteredStaff = enteredStaff,
-        comment = comment,
-        effectiveDate = LocalDate.parse(effectiveDate),
-        expiryDate = expiryDate?.let { LocalDate.parse(it) },
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { person.restrictions += it }
-        .also { builder.apply(dsl) }
-    }
+  ): VisitorRestriction = visitorRestrictsBuilderFactory.builder().let { builder ->
+    builder.build(
+      person = person,
+      restrictionType = restrictionType,
+      enteredStaff = enteredStaff,
+      comment = comment,
+      effectiveDate = LocalDate.parse(effectiveDate),
+      expiryDate = expiryDate?.let { LocalDate.parse(it) },
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { person.restrictions += it }
+      .also { builder.apply(dsl) }
+  }
 }

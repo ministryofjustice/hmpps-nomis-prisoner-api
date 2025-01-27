@@ -18,17 +18,14 @@ class ServiceAgencySwitchesService(
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
 
-  fun getServicePrisons(serviceCode: String): List<PrisonDetails> =
-    findExternalServiceOrThrow(serviceCode)
-      .serviceAgencySwitches
-      .map { PrisonDetails(it.id.agencyLocation.id, it.id.agencyLocation.description) }
+  fun getServicePrisons(serviceCode: String): List<PrisonDetails> = findExternalServiceOrThrow(serviceCode)
+    .serviceAgencySwitches
+    .map { PrisonDetails(it.id.agencyLocation.id, it.id.agencyLocation.description) }
 
-  private fun findExternalServiceOrThrow(serviceCode: String) =
-    externalServiceRepository.findByIdOrNull(serviceCode)
-      ?: throw NotFoundException("Service code $serviceCode does not exist")
+  private fun findExternalServiceOrThrow(serviceCode: String) = externalServiceRepository.findByIdOrNull(serviceCode)
+    ?: throw NotFoundException("Service code $serviceCode does not exist")
 
-  fun checkServicePrison(serviceCode: String, prisonId: String): Boolean =
-    serviceAgencySwitchesRepository.existsByIdExternalServiceServiceNameAndIdAgencyLocationId(serviceCode, prisonId)
+  fun checkServicePrison(serviceCode: String, prisonId: String): Boolean = serviceAgencySwitchesRepository.existsByIdExternalServiceServiceNameAndIdAgencyLocationId(serviceCode, prisonId)
 
   fun createServicePrison(serviceCode: String, prisonId: String) {
     val service = externalServiceRepository.findByIdOrNull(serviceCode) ?: throw NotFoundException("Service $serviceCode does not exist")

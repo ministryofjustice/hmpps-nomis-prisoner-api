@@ -20,8 +20,7 @@ class IncidentRequirementBuilderFactory(
   private val repository: IncidentRequirementBuilderRepository,
 ) {
 
-  fun builder() =
-    IncidentRequirementBuilder(repository)
+  fun builder() = IncidentRequirementBuilder(repository)
 }
 
 @Component
@@ -33,8 +32,7 @@ class IncidentRequirementBuilderRepository(
 
 class IncidentRequirementBuilder(
   private val repository: IncidentRequirementBuilderRepository,
-) :
-  IncidentRequirementDsl {
+) : IncidentRequirementDsl {
   private lateinit var incidentRequirement: IncidentRequirement
 
   fun build(

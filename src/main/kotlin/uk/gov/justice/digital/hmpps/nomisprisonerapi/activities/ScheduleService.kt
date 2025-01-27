@@ -22,20 +22,19 @@ class ScheduleService(
   private val telemetryClient: TelemetryClient,
 ) {
 
-  fun mapSchedules(requests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> =
-    requests.map {
-      it.validate(courseActivity)
+  fun mapSchedules(requests: List<CourseScheduleRequest>, courseActivity: CourseActivity): List<CourseSchedule> = requests.map {
+    it.validate(courseActivity)
 
-      CourseSchedule(
-        courseScheduleId = it.id ?: 0,
-        courseActivity = courseActivity,
-        scheduleDate = it.date,
-        startTime = it.date.atTime(it.startTime),
-        endTime = it.date.atTime(it.endTime),
-        slotCategory = SlotCategory.of(it.startTime),
-        scheduleStatus = it.getScheduleStatus(),
-      )
-    }.toList()
+    CourseSchedule(
+      courseScheduleId = it.id ?: 0,
+      courseActivity = courseActivity,
+      scheduleDate = it.date,
+      startTime = it.date.atTime(it.startTime),
+      endTime = it.date.atTime(it.endTime),
+      slotCategory = SlotCategory.of(it.startTime),
+      scheduleStatus = it.getScheduleStatus(),
+    )
+  }.toList()
 
   private fun CourseScheduleRequest.getScheduleStatus() = if (cancelled) "CANC" else "SCH"
 
@@ -52,8 +51,7 @@ class ScheduleService(
     val immutableIds = immutableSchedules.map { it.courseScheduleId }
 
     val requestedSchedules = mapSchedules(scheduleRequests.filter { !immutableIds.contains(it.id) }, courseActivity)
-    val updatableSchedules = requestedSchedules.mapNotNull {
-        req ->
+    val updatableSchedules = requestedSchedules.mapNotNull { req ->
       courseActivity.courseSchedules
         .find { req.courseScheduleId == it.courseScheduleId }
         ?.update(req)
@@ -66,14 +64,12 @@ class ScheduleService(
 
   private fun CourseSchedule.isImmutable() = this.scheduleDate < LocalDate.now()
 
-  private fun CourseSchedule.update(requested: CourseSchedule): CourseSchedule {
-    return this.apply {
-      scheduleDate = requested.scheduleDate
-      startTime = requested.startTime
-      endTime = requested.endTime
-      slotCategory = requested.slotCategory
-      scheduleStatus = requested.scheduleStatus
-    }
+  private fun CourseSchedule.update(requested: CourseSchedule): CourseSchedule = this.apply {
+    scheduleDate = requested.scheduleDate
+    startTime = requested.startTime
+    endTime = requested.endTime
+    slotCategory = requested.slotCategory
+    scheduleStatus = requested.scheduleStatus
   }
 
   private fun CourseScheduleRequest.validate(courseActivity: CourseActivity) {
@@ -123,14 +119,12 @@ class ScheduleService(
     return UpdateCourseScheduleResponse(schedule.courseScheduleId)
   }
 
-  private fun CourseSchedule.update(requested: CourseScheduleRequest): CourseSchedule {
-    return this.apply {
-      scheduleDate = requested.date
-      startTime = requested.date.atTime(requested.startTime)
-      endTime = requested.date.atTime(requested.endTime)
-      slotCategory = SlotCategory.of(requested.startTime)
-      scheduleStatus = requested.getScheduleStatus()
-    }
+  private fun CourseSchedule.update(requested: CourseScheduleRequest): CourseSchedule = this.apply {
+    scheduleDate = requested.date
+    startTime = requested.date.atTime(requested.startTime)
+    endTime = requested.date.atTime(requested.endTime)
+    slotCategory = SlotCategory.of(requested.startTime)
+    scheduleStatus = requested.getScheduleStatus()
   }
 
   fun buildUpdateTelemetry(savedSchedules: List<CourseSchedule>, newSchedules: List<CourseSchedule>): Map<String, String> {
@@ -150,19 +144,17 @@ class ScheduleService(
     return telemetry
   }
 
-  private fun List<CourseSchedule>.findUpdatedSchedules(newSchedules: List<CourseSchedule>): List<Long> =
-    mapNotNull { savedSchedule ->
-      newSchedules
-        .find { newSchedule -> newSchedule.courseScheduleId == savedSchedule.courseScheduleId }
-        ?.takeIf { newSchedule -> savedSchedule.isChanged(newSchedule) }
-    }
-      .map { it.courseScheduleId }
+  private fun List<CourseSchedule>.findUpdatedSchedules(newSchedules: List<CourseSchedule>): List<Long> = mapNotNull { savedSchedule ->
+    newSchedules
+      .find { newSchedule -> newSchedule.courseScheduleId == savedSchedule.courseScheduleId }
+      ?.takeIf { newSchedule -> savedSchedule.isChanged(newSchedule) }
+  }
+    .map { it.courseScheduleId }
 
-  private fun CourseSchedule.isChanged(other: CourseSchedule) =
-    scheduleDate != other.scheduleDate ||
-      startTime != other.startTime ||
-      endTime != other.endTime ||
-      scheduleStatus != other.scheduleStatus
+  private fun CourseSchedule.isChanged(other: CourseSchedule) = scheduleDate != other.scheduleDate ||
+    startTime != other.startTime ||
+    endTime != other.endTime ||
+    scheduleStatus != other.scheduleStatus
 
   fun getMaxCourseScheduleId() = scheduleRepository.findTopByOrderByCourseScheduleIdDesc()?.courseScheduleId ?: 0
 }

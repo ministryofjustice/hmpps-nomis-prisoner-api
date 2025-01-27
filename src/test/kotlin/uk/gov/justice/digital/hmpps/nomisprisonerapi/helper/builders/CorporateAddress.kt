@@ -100,38 +100,37 @@ class CorporateAddressBuilder(
     contactPersonName: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): CorporateAddress =
-    CorporateAddress(
-      addressType = corporateAddressBuilderRepository.addressTypeOf(type),
-      corporate = corporate,
-      premise = premise,
-      street = street,
-      locality = locality,
-      flat = flat,
-      postalCode = postcode,
-      city = corporateAddressBuilderRepository.cityOf(city),
-      county = corporateAddressBuilderRepository.countyOf(county),
-      country = corporateAddressBuilderRepository.countryOf(country),
-      validatedPAF = validatedPAF,
-      noFixedAddress = noFixedAddress,
-      primaryAddress = primaryAddress,
-      mailAddress = mailAddress,
-      comment = comment,
-      startDate = startDate,
-      endDate = endDate,
-      isServices = isServices,
-      businessHours = businessHours,
-      contactPersonName = contactPersonName,
-    ).let { corporateAddressBuilderRepository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          corporateAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          corporateAddressBuilderRepository.updateCreateUsername(it, whoCreated)
-        }
+  ): CorporateAddress = CorporateAddress(
+    addressType = corporateAddressBuilderRepository.addressTypeOf(type),
+    corporate = corporate,
+    premise = premise,
+    street = street,
+    locality = locality,
+    flat = flat,
+    postalCode = postcode,
+    city = corporateAddressBuilderRepository.cityOf(city),
+    county = corporateAddressBuilderRepository.countyOf(county),
+    country = corporateAddressBuilderRepository.countryOf(country),
+    validatedPAF = validatedPAF,
+    noFixedAddress = noFixedAddress,
+    primaryAddress = primaryAddress,
+    mailAddress = mailAddress,
+    comment = comment,
+    startDate = startDate,
+    endDate = endDate,
+    isServices = isServices,
+    businessHours = businessHours,
+    contactPersonName = contactPersonName,
+  ).let { corporateAddressBuilderRepository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        corporateAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
       }
-      .also { address = it }
+      if (whoCreated != null) {
+        corporateAddressBuilderRepository.updateCreateUsername(it, whoCreated)
+      }
+    }
+    .also { address = it }
 
   override fun phone(
     phoneType: String,
@@ -140,17 +139,16 @@ class CorporateAddressBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: AddressPhoneDsl.() -> Unit,
-  ): AddressPhone =
-    addressPhoneBuilderFactory.builder().let { builder ->
-      builder.build(
-        address = address,
-        phoneType = phoneType,
-        extNo = extNo,
-        phoneNo = phoneNo,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { address.phones += it }
-        .also { builder.apply(dsl) }
-    }
+  ): AddressPhone = addressPhoneBuilderFactory.builder().let { builder ->
+    builder.build(
+      address = address,
+      phoneType = phoneType,
+      extNo = extNo,
+      phoneNo = phoneNo,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { address.phones += it }
+      .also { builder.apply(dsl) }
+  }
 }

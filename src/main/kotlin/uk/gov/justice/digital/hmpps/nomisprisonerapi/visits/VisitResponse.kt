@@ -180,5 +180,4 @@ private val Phone.lastChanged: LocalDateTime
     return modifyDatetime ?: createDatetime
   }
 
-fun Visit.outcomeVisitor(): VisitVisitor? =
-  this.visitors.find { it.person == null }
+fun Visit.outcomeVisitor(): VisitVisitor? = this.visitors.find { it.person == null }

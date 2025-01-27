@@ -67,22 +67,19 @@ class AdjudicationPartyBuilderFactory(
   private val adjudicationInvestigationBuilderFactory: AdjudicationInvestigationBuilderFactory,
   private val adjudicationHearingBuilderFactory: AdjudicationHearingBuilderFactory,
 ) {
-  fun builder(): AdjudicationPartyBuilder {
-    return AdjudicationPartyBuilder(
-      repository,
-      adjudicationChargeBuilderFactory,
-      adjudicationInvestigationBuilderFactory,
-      adjudicationHearingBuilderFactory,
-    )
-  }
+  fun builder(): AdjudicationPartyBuilder = AdjudicationPartyBuilder(
+    repository,
+    adjudicationChargeBuilderFactory,
+    adjudicationInvestigationBuilderFactory,
+    adjudicationHearingBuilderFactory,
+  )
 }
 
 @Component
 class AdjudicationPartyBuilderRepository(
   val incidentDecisionActionRepository: ReferenceCodeRepository<IncidentDecisionAction>,
 ) {
-  fun lookupActionDecision(code: String = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE): IncidentDecisionAction =
-    incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(code))!!
+  fun lookupActionDecision(code: String = IncidentDecisionAction.PLACED_ON_REPORT_ACTION_CODE): IncidentDecisionAction = incidentDecisionActionRepository.findByIdOrNull(IncidentDecisionAction.pk(code))!!
 }
 
 class AdjudicationPartyBuilder(
@@ -123,17 +120,16 @@ class AdjudicationPartyBuilder(
     comment: String?,
     assignedDate: LocalDate,
     dsl: AdjudicationInvestigationDsl.() -> Unit,
-  ) =
-    adjudicationInvestigationBuilderFactory.builder().let { builder ->
-      builder.build(
-        investigator = investigator,
-        comment = comment,
-        assignedDate = assignedDate,
-        incidentParty = adjudicationParty,
-      )
-        .also { adjudicationParty.investigations += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationInvestigationBuilderFactory.builder().let { builder ->
+    builder.build(
+      investigator = investigator,
+      comment = comment,
+      assignedDate = assignedDate,
+      incidentParty = adjudicationParty,
+    )
+      .also { adjudicationParty.investigations += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun charge(
     offenceCode: String,
@@ -142,20 +138,19 @@ class AdjudicationPartyBuilder(
     dsl: AdjudicationChargeDsl.() -> Unit,
     whenCreated: LocalDateTime,
     generateOfficeId: Boolean,
-  ) =
-    adjudicationChargeBuilderFactory.builder().let { builder ->
-      builder.build(
-        offenceCode = offenceCode,
-        guiltyEvidence = guiltyEvidence,
-        reportDetail = reportDetail,
-        incidentParty = adjudicationParty,
-        chargeSequence = adjudicationParty.incident.parties.sumOf { it.charges.size } + 1,
-        whenCreated = whenCreated,
-        generateOfficeId = generateOfficeId,
-      )
-        .also { adjudicationParty.charges += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationChargeBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenceCode = offenceCode,
+      guiltyEvidence = guiltyEvidence,
+      reportDetail = reportDetail,
+      incidentParty = adjudicationParty,
+      chargeSequence = adjudicationParty.incident.parties.sumOf { it.charges.size } + 1,
+      whenCreated = whenCreated,
+      generateOfficeId = generateOfficeId,
+    )
+      .also { adjudicationParty.charges += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun hearing(
     internalLocationId: Long?,
@@ -169,23 +164,22 @@ class AdjudicationPartyBuilder(
     comment: String,
     representativeText: String,
     dsl: AdjudicationHearingDsl.() -> Unit,
-  ) =
-    adjudicationHearingBuilderFactory.builder().let { builder ->
-      builder.build(
-        agencyInternalLocationId = internalLocationId,
-        scheduledDate = scheduleDate,
-        scheduledDateTime = scheduleTime,
-        hearingDate = hearingDate,
-        hearingDateTime = hearingTime,
-        hearingStaff = hearingStaff,
-        hearingTypeCode = hearingTypeCode,
-        eventStatusCode = eventStatusCode,
-        comment = comment,
-        representativeText = representativeText,
-        incidentParty = adjudicationParty,
-      )
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationHearingBuilderFactory.builder().let { builder ->
+    builder.build(
+      agencyInternalLocationId = internalLocationId,
+      scheduledDate = scheduleDate,
+      scheduledDateTime = scheduleTime,
+      hearingDate = hearingDate,
+      hearingDateTime = hearingTime,
+      hearingStaff = hearingStaff,
+      hearingTypeCode = hearingTypeCode,
+      eventStatusCode = eventStatusCode,
+      comment = comment,
+      representativeText = representativeText,
+      incidentParty = adjudicationParty,
+    )
+      .also { builder.apply(dsl) }
+  }
 }
 
 enum class PartyRole(val code: String) {

@@ -40,17 +40,16 @@ class OffenderEmailBuilder(val repository: OffenderEmailBuilderRepository) : Off
     emailAddress: String,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): OffenderInternetAddress =
-    OffenderInternetAddress(
-      offender = offender,
-      emailAddress = emailAddress,
-    ).let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): OffenderInternetAddress = OffenderInternetAddress(
+    offender = offender,
+    emailAddress = emailAddress,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

@@ -92,32 +92,31 @@ class AllocationService(
       )
     }
 
-  fun getAllocation(allocationId: Long): GetAllocationResponse =
-    offenderProgramProfileRepository.findByIdOrNull(allocationId)
-      ?.let {
-        GetAllocationResponse(
-          prisonId = it.prison!!.id,
-          courseActivityId = it.courseActivity.courseActivityId,
-          nomisId = it.offenderBooking.offender.nomsId,
-          bookingId = it.offenderBooking.bookingId,
-          startDate = it.startDate,
-          endDate = it.endDate,
-          endComment = it.endComment,
-          endReasonCode = it.endReason?.code,
-          suspended = it.suspended,
-          payBand = it.payBands.firstOrNull(OffenderProgramProfilePayBand::isActive)?.payBand?.code,
-          livingUnitDescription = it.offenderBooking.assignedLivingUnit?.description,
-          exclusions = it.offenderExclusions.map { exclusion ->
-            AllocationExclusion(
-              day = exclusion.excludeDay.name,
-              slot = exclusion.slotCategory?.name,
-            )
-          },
-          scheduleRules = scheduleRuleService.mapRules(it.courseActivity.courseScheduleRules),
-          activityStartDate = it.courseActivity.scheduleStartDate,
-        )
-      }
-      ?: throw NotFoundException("Offender program profile with id=$allocationId does not exist")
+  fun getAllocation(allocationId: Long): GetAllocationResponse = offenderProgramProfileRepository.findByIdOrNull(allocationId)
+    ?.let {
+      GetAllocationResponse(
+        prisonId = it.prison!!.id,
+        courseActivityId = it.courseActivity.courseActivityId,
+        nomisId = it.offenderBooking.offender.nomsId,
+        bookingId = it.offenderBooking.bookingId,
+        startDate = it.startDate,
+        endDate = it.endDate,
+        endComment = it.endComment,
+        endReasonCode = it.endReason?.code,
+        suspended = it.suspended,
+        payBand = it.payBands.firstOrNull(OffenderProgramProfilePayBand::isActive)?.payBand?.code,
+        livingUnitDescription = it.offenderBooking.assignedLivingUnit?.description,
+        exclusions = it.offenderExclusions.map { exclusion ->
+          AllocationExclusion(
+            day = exclusion.excludeDay.name,
+            slot = exclusion.slotCategory?.name,
+          )
+        },
+        scheduleRules = scheduleRuleService.mapRules(it.courseActivity.courseScheduleRules),
+        activityStartDate = it.courseActivity.scheduleStartDate,
+      )
+    }
+    ?: throw NotFoundException("Offender program profile with id=$allocationId does not exist")
 
   private fun toOffenderProgramProfile(courseActivityId: Long, request: UpsertAllocationRequest): OffenderProgramProfile {
     val existingAllocation =
@@ -158,23 +157,20 @@ class AllocationService(
     }
   }
 
-  private fun findEndedAllocation(courseActivityId: Long, request: UpsertAllocationRequest): OffenderProgramProfile? =
-    offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCodeAndStartDate(
-      courseActivityId,
-      request.bookingId,
-      "END",
-      request.startDate,
-    )
+  private fun findEndedAllocation(courseActivityId: Long, request: UpsertAllocationRequest): OffenderProgramProfile? = offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingIdAndProgramStatusCodeAndStartDate(
+    courseActivityId,
+    request.bookingId,
+    "END",
+    request.startDate,
+  )
 
-  private fun findProgramStatus(programStatusCode: String): OffenderProgramStatus =
-    offenderProgramStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(programStatusCode))
-      ?: throw BadDataException("Program status code=$programStatusCode does not exist")
+  private fun findProgramStatus(programStatusCode: String): OffenderProgramStatus = offenderProgramStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(programStatusCode))
+    ?: throw BadDataException("Program status code=$programStatusCode does not exist")
 
-  private fun findEndReasonOrThrow(endReason: String?): ProgramServiceEndReason? =
-    endReason?.let {
-      programServiceEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(it))
-        ?: throw BadDataException("End reason code=$endReason does not exist")
-    }
+  private fun findEndReasonOrThrow(endReason: String?): ProgramServiceEndReason? = endReason?.let {
+    programServiceEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(it))
+      ?: throw BadDataException("End reason code=$endReason does not exist")
+  }
 
   private fun findCourseActivityOrThrow(
     courseActivityId: Long,
@@ -198,15 +194,13 @@ class AllocationService(
     return courseActivity
   }
 
-  private fun findOffenderBookingOrThrow(bookingId: Long): OffenderBooking =
-    offenderBookingRepository.findByIdOrNull(bookingId)
-      ?: throw BadDataException("Booking with id=$bookingId does not exist")
+  private fun findOffenderBookingOrThrow(bookingId: Long): OffenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
+    ?: throw BadDataException("Booking with id=$bookingId does not exist")
 
-  private fun findPayBandOrThrow(payBandCode: String?): PayBand? =
-    payBandCode?.let {
-      payBandRepository.findByIdOrNull(PayBand.pk(payBandCode))
-        ?: throw BadDataException("Pay band code $payBandCode does not exist")
-    }
+  private fun findPayBandOrThrow(payBandCode: String?): PayBand? = payBandCode?.let {
+    payBandRepository.findByIdOrNull(PayBand.pk(payBandCode))
+      ?: throw BadDataException("Pay band code $payBandCode does not exist")
+  }
 
   private fun OffenderProgramProfile.updatePayBands(requestedPayBand: PayBand?, request: UpsertAllocationRequest) {
     val today = LocalDate.now()
@@ -258,15 +252,14 @@ class AllocationService(
     }
   }
 
-  private fun OffenderProgramProfile.payBand(payBand: PayBand, startDate: LocalDate, endDate: LocalDate?) =
-    OffenderProgramProfilePayBand(
-      id = OffenderProgramProfilePayBandId(
-        offenderProgramProfile = this,
-        startDate = startDate,
-      ),
-      payBand = payBand,
-      endDate = endDate,
-    )
+  private fun OffenderProgramProfile.payBand(payBand: PayBand, startDate: LocalDate, endDate: LocalDate?) = OffenderProgramProfilePayBand(
+    id = OffenderProgramProfilePayBandId(
+      offenderProgramProfile = this,
+      startDate = startDate,
+    ),
+    payBand = payBand,
+    endDate = endDate,
+  )
 
   private fun OffenderProgramProfile.updateExclusions(requestedExclusions: List<AllocationExclusion>) {
     requestedExclusions
@@ -277,68 +270,62 @@ class AllocationService(
       }
   }
 
-  private fun OffenderProgramProfile.findOrCreateExclusion(requestedExclusion: AllocationExclusion) =
-    offenderExclusions.find { existing ->
-      requestedExclusion.day == existing.excludeDay.name && requestedExclusion.slot == existing.slotCategory?.name
-    }
-      ?: OffenderActivityExclusion(
-        offenderBooking = offenderBooking,
-        courseActivity = courseActivity,
-        offenderProgramProfile = this,
-        excludeDay = findExcludeDay(requestedExclusion.day),
-        slotCategory = requestedExclusion.slot?.let { findSlotCategory(requestedExclusion.slot) },
-      )
+  private fun OffenderProgramProfile.findOrCreateExclusion(requestedExclusion: AllocationExclusion) = offenderExclusions.find { existing ->
+    requestedExclusion.day == existing.excludeDay.name && requestedExclusion.slot == existing.slotCategory?.name
+  }
+    ?: OffenderActivityExclusion(
+      offenderBooking = offenderBooking,
+      courseActivity = courseActivity,
+      offenderProgramProfile = this,
+      excludeDay = findExcludeDay(requestedExclusion.day),
+      slotCategory = requestedExclusion.slot?.let { findSlotCategory(requestedExclusion.slot) },
+    )
 
-  private fun findExcludeDay(day: String): WeekDay =
-    WeekDay.entries.find { it.name == day }
-      ?: throw BadDataException("Exclusion day $day does not exist")
+  private fun findExcludeDay(day: String): WeekDay = WeekDay.entries.find { it.name == day }
+    ?: throw BadDataException("Exclusion day $day does not exist")
 
-  private fun findSlotCategory(slot: String): SlotCategory =
-    SlotCategory.entries.find { it.name == slot }
-      ?: throw BadDataException("Exclusion slot $slot does not exist")
+  private fun findSlotCategory(slot: String): SlotCategory = SlotCategory.entries.find { it.name == slot }
+    ?: throw BadDataException("Exclusion slot $slot does not exist")
 
-  private fun updateEndComment(request: UpsertAllocationRequest) =
-    if (request.endDate != null) {
-      request.endComment
-    } else if (request.suspended == true) {
-      request.suspendedComment
-    } else {
-      null
-    }
+  private fun updateEndComment(request: UpsertAllocationRequest) = if (request.endDate != null) {
+    request.endComment
+  } else if (request.suspended == true) {
+    request.suspendedComment
+  } else {
+    null
+  }
 
   private fun newAllocation(
     request: UpsertAllocationRequest,
     offenderBooking: OffenderBooking,
     courseActivity: CourseActivity,
     payBand: PayBand?,
-  ) =
-    OffenderProgramProfile(
-      offenderBooking = offenderBooking,
-      program = courseActivity.program,
-      startDate = request.startDate,
-      programStatus = offenderProgramStatusRepository.findById(OffenderProgramStatus.pk("ALLOC")).get(),
-      courseActivity = courseActivity,
-      prison = courseActivity.prison,
-    )
-      .apply {
-        payBand?.also {
-          payBands.add(
-            OffenderProgramProfilePayBand(
-              id = OffenderProgramProfilePayBandId(
-                offenderProgramProfile = this,
-                startDate = request.startDate,
-              ),
-              payBand = payBand,
+  ) = OffenderProgramProfile(
+    offenderBooking = offenderBooking,
+    program = courseActivity.program,
+    startDate = request.startDate,
+    programStatus = offenderProgramStatusRepository.findById(OffenderProgramStatus.pk("ALLOC")).get(),
+    courseActivity = courseActivity,
+    prison = courseActivity.prison,
+  )
+    .apply {
+      payBand?.also {
+        payBands.add(
+          OffenderProgramProfilePayBand(
+            id = OffenderProgramProfilePayBandId(
+              offenderProgramProfile = this,
+              startDate = request.startDate,
             ),
-          )
-        }
+            payBand = payBand,
+          ),
+        )
       }
+    }
 
   fun deleteAllocation(referenceId: Long) = offenderProgramProfileRepository.deleteById(referenceId)
 
-  private fun findPrisonOrThrow(prisonId: String) =
-    agencyLocationRepository.findByIdOrNull(prisonId)
-      ?: throw BadDataException("Prison with id=$prisonId does not exist")
+  private fun findPrisonOrThrow(prisonId: String) = agencyLocationRepository.findByIdOrNull(prisonId)
+    ?: throw BadDataException("Prison with id=$prisonId does not exist")
 
   fun endAllocation(courseAllocation: OffenderProgramProfile, date: LocalDate, endAllocationComment: String? = null) {
     courseAllocation.endDate = date
@@ -351,12 +338,11 @@ class AllocationService(
     offenderProgramProfileRepository.endAllocations(courseActivityIds, date)
   }
 
-  fun findActiveAllocationsSummary(prisonId: String): AllocationReconciliationResponse =
-    offenderProgramProfileRepository.findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId, "ALLOC")
-      .let {
-        AllocationReconciliationResponse(
-          prisonId = prisonId,
-          bookings = it,
-        )
-      }
+  fun findActiveAllocationsSummary(prisonId: String): AllocationReconciliationResponse = offenderProgramProfileRepository.findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId, "ALLOC")
+    .let {
+      AllocationReconciliationResponse(
+        prisonId = prisonId,
+        bookings = it,
+      )
+    }
 }

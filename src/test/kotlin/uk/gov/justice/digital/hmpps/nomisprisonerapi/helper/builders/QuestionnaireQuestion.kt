@@ -26,8 +26,7 @@ class QuestionnaireQuestionBuilderFactory(
 
 class QuestionnaireQuestionBuilder(
   private val questionnaireAnswerBuilderFactory: QuestionnaireAnswerBuilderFactory,
-) :
-  QuestionnaireQuestionDsl {
+) : QuestionnaireQuestionDsl {
   private lateinit var questionnaireQuestion: QuestionnaireQuestion
 
   fun build(
@@ -47,16 +46,15 @@ class QuestionnaireQuestionBuilder(
     answer: String,
     nextQuestion: QuestionnaireQuestion?,
     dsl: QuestionnaireAnswerDsl.() -> Unit,
-  ): QuestionnaireAnswer =
-    questionnaireAnswerBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          answer = answer,
-          answerSequence = questionnaireQuestion.answers.size,
-          listSequence = questionnaireQuestion.answers.size,
-          nextQuestion = nextQuestion,
-        )
-          .also { questionnaireQuestion.answers += it }
-          .also { builder.apply(dsl) }
-      }
+  ): QuestionnaireAnswer = questionnaireAnswerBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        answer = answer,
+        answerSequence = questionnaireQuestion.answers.size,
+        listSequence = questionnaireQuestion.answers.size,
+        nextQuestion = nextQuestion,
+      )
+        .also { questionnaireQuestion.answers += it }
+        .also { builder.apply(dsl) }
+    }
 }

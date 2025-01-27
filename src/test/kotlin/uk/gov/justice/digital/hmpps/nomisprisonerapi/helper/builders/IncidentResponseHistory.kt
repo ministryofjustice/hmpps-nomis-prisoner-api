@@ -19,8 +19,7 @@ class IncidentResponseHistoryBuilderFactory {
   fun builder() = IncidentResponseHistoryBuilder()
 }
 
-class IncidentResponseHistoryBuilder :
-  IncidentResponseHistoryDsl {
+class IncidentResponseHistoryBuilder : IncidentResponseHistoryDsl {
 
   fun build(
     incidentQuestionHistory: IncidentQuestionHistory,
@@ -29,12 +28,11 @@ class IncidentResponseHistoryBuilder :
     comment: String?,
     responseDate: LocalDate?,
     recordingStaff: Staff,
-  ): IncidentResponseHistory =
-    IncidentResponseHistory(
-      id = IncidentResponseHistoryId(incidentQuestionHistory, answerHistorySequence),
-      answer = answer,
-      comment = comment,
-      responseDate = responseDate,
-      recordingStaff = recordingStaff,
-    )
+  ): IncidentResponseHistory = IncidentResponseHistory(
+    id = IncidentResponseHistoryId(incidentQuestionHistory, answerHistorySequence),
+    answer = answer,
+    comment = comment,
+    responseDate = responseDate,
+    recordingStaff = recordingStaff,
+  )
 }

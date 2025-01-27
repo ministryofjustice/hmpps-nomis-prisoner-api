@@ -20,9 +20,7 @@ interface WorkFlowLogDsl
 class WorkFlowLogBuilderFactory(
   private val repository: WorkFlowLogBuilderRepository,
 ) {
-  fun builder(): WorkFlowLogBuilder {
-    return WorkFlowLogBuilder(repository)
-  }
+  fun builder(): WorkFlowLogBuilder = WorkFlowLogBuilder(repository)
 }
 
 @Component
@@ -30,11 +28,9 @@ class WorkFlowLogBuilderRepository(
   private val workFlowActionRepository: ReferenceCodeRepository<WorkFlowAction>,
   private val workFlowLogRepository: WorkFlowLogRepository,
 ) {
-  fun lookupWorkFlowAction(code: String): WorkFlowAction =
-    workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(code))!!
+  fun lookupWorkFlowAction(code: String): WorkFlowAction = workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(code))!!
 
-  fun save(workFlowLog: WorkFlowLog): WorkFlowLog =
-    workFlowLogRepository.save(workFlowLog)
+  fun save(workFlowLog: WorkFlowLog): WorkFlowLog = workFlowLogRepository.save(workFlowLog)
 }
 
 class WorkFlowLogBuilder(

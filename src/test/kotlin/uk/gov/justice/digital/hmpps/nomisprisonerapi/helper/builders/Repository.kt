@@ -151,27 +151,22 @@ class Repository(
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
   fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
-  fun deleteStaffByAccount(vararg staffUserAccount: StaffUserAccount) =
-    staffUserAccount.map { it.staff }.forEach { staffRepository.delete(it) }
+  fun deleteStaffByAccount(vararg staffUserAccount: StaffUserAccount) = staffUserAccount.map { it.staff }.forEach { staffRepository.delete(it) }
   fun deleteStaff() = staffRepository.deleteAll()
 
   fun save(staff: Staff): Staff = staffRepository.save(staff)
 
-  fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule =
-    offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
+  fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule = offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
 
-  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) =
-    offenderRepository.deleteById(offenderIndividualSchedule.eventId)
+  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) = offenderRepository.deleteById(offenderIndividualSchedule.eventId)
 
   fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
-  fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) =
-    adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
+  fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) = adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
 
   fun delete(courtCase: CourtCase) = courtCaseRepository.deleteById(courtCase.id)
   fun delete(courtEvent: CourtEvent) = courtEventRepository.deleteById(courtEvent.id)
 
-  fun deleteOffenderChargeByBooking(bookingId: Long) =
-    offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
+  fun deleteOffenderChargeByBooking(bookingId: Long) = offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
 
   fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
 
@@ -186,15 +181,13 @@ class Repository(
   fun lookupIepLevel(code: String): IEPLevel = iepLevelRepository.findByIdOrNull(Pk(IEPLevel.IEP_LEVEL, code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
-  fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation? =
-    agencyInternalLocationRepository.findOneByDescription(description).getOrNull()
-      ?.also { it.toString() } // hydrate
+  fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation? = agencyInternalLocationRepository.findOneByDescription(description).getOrNull()
+    ?.also { it.toString() } // hydrate
 
-  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
-    agencyInternalLocationRepository.findByIdOrNull(locationId).also {
-      it?.profiles?.size // hydrate
-      it?.usages?.map { m -> m.toString() }
-    }
+  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? = agencyInternalLocationRepository.findByIdOrNull(locationId).also {
+    it?.profiles?.size // hydrate
+    it?.usages?.map { m -> m.toString() }
+  }
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
@@ -223,8 +216,7 @@ class Repository(
     return visit
   }
 
-  fun getAttendance(eventId: Long): OffenderCourseAttendance =
-    offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
+  fun getAttendance(eventId: Long): OffenderCourseAttendance = offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
 
   fun getSchedule(id: Long): CourseSchedule = courseScheduleRepository.findByIdOrNull(id)!!
 
@@ -237,15 +229,13 @@ class Repository(
   fun getOffenderProgramProfiles(
     courseActivity: CourseActivity,
     booking: OffenderBooking,
-  ): List<OffenderProgramProfile> =
-    offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking)
-      .onEach { it.payBands.size }
+  ): List<OffenderProgramProfile> = offenderProgramProfileRepository.findByCourseActivityAndOffenderBooking(courseActivity, booking)
+    .onEach { it.payBands.size }
 
-  fun getOffenderProgramProfile(id: Long): OffenderProgramProfile =
-    offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
-      it.payBands.size
-      it.offenderExclusions.size
-    }
+  fun getOffenderProgramProfile(id: Long): OffenderProgramProfile = offenderProgramProfileRepository.findByIdOrNull(id)!!.also {
+    it.payBands.size
+    it.offenderExclusions.size
+  }
 
   fun getAppointment(id: Long): OffenderIndividualSchedule? = offenderIndividualScheduleRepository.findByIdOrNull(id)
     ?.also {
@@ -264,44 +254,36 @@ class Repository(
     jdbcTemplate.execute(sql)
   }
 
-  fun getAllAgencyVisitSlots(prisonId: String): List<AgencyVisitSlot> =
-    agencyVisitSlotRepository.findByLocationId(prisonId)
+  fun getAllAgencyVisitSlots(prisonId: String): List<AgencyVisitSlot> = agencyVisitSlotRepository.findByLocationId(prisonId)
 
-  fun getAllAgencyVisitTimes(prisonId: String): List<AgencyVisitTime> =
-    agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationId(prisonId)
+  fun getAllAgencyVisitTimes(prisonId: String): List<AgencyVisitTime> = agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationId(prisonId)
 
-  fun getAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? =
-    agencyVisitDayRepository.findByAgencyVisitDayIdWeekDayAndAgencyVisitDayIdLocationId(weekDay, prisonId)
+  fun getAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? = agencyVisitDayRepository.findByAgencyVisitDayIdWeekDayAndAgencyVisitDayIdLocationId(weekDay, prisonId)
 
-  fun getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncident? =
-    adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.incident
+  fun getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncident? = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.incident
 
-  fun getInternalLocationByDescription(locationDescription: String, prisonId: String): AgencyInternalLocation =
-    agencyInternalLocationRepository.findByDescriptionAndAgencyId(locationDescription, prisonId)!!
+  fun getInternalLocationByDescription(locationDescription: String, prisonId: String): AgencyInternalLocation = agencyInternalLocationRepository.findByDescriptionAndAgencyId(locationDescription, prisonId)!!
 
   fun deleteAllVisitSlots() = agencyVisitSlotRepository.deleteAll()
   fun deleteAllVisitDays() = agencyVisitDayRepository.deleteAll()
   fun deleteAllVisitTimes() = agencyVisitTimeRepository.deleteAll()
   fun <T> runInTransaction(block: () -> T) = block()
 
-  fun getNonAssociation(first: Long, second: Long): OffenderNonAssociation =
-    offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
-      .also {
-        it.toString() // hydrate
-      }
+  fun getNonAssociation(first: Long, second: Long): OffenderNonAssociation = offenderNonAssociationRepository.findById(OffenderNonAssociationId(first, second)).orElseThrow()
+    .also {
+      it.toString() // hydrate
+    }
 
-  fun getNonAssociationOrNull(first: Long, second: Long): OffenderNonAssociation? =
-    offenderNonAssociationRepository.findByIdOrNull(OffenderNonAssociationId(first, second))
-      ?.also {
-        it.toString() // hydrate
-      }
+  fun getNonAssociationOrNull(first: Long, second: Long): OffenderNonAssociation? = offenderNonAssociationRepository.findByIdOrNull(OffenderNonAssociationId(first, second))
+    ?.also {
+      it.toString() // hydrate
+    }
 
   fun deleteAllNonAssociations() = offenderNonAssociationRepository.deleteAll()
 
   fun delete(adjustment: OffenderSentenceAdjustment) = offenderSentenceAdjustmentRepository.delete(adjustment)
 
-  fun delete(agencyInternalLocation: AgencyInternalLocation) =
-    agencyInternalLocationRepository.delete(agencyInternalLocation)
+  fun delete(agencyInternalLocation: AgencyInternalLocation) = agencyInternalLocationRepository.delete(agencyInternalLocation)
 
   fun deleteAgencyInternalLocationById(id: Long) = agencyInternalLocationRepository.deleteById(id)
 

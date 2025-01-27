@@ -103,8 +103,7 @@ class VisitResource(private val visitService: VisitService) {
     offenderNo: String,
     @RequestBody @Valid
     createVisitRequest: CreateVisitRequest,
-  ): CreateVisitResponse =
-    visitService.createVisit(offenderNo, createVisitRequest)
+  ): CreateVisitResponse = visitService.createVisit(offenderNo, createVisitRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @PutMapping("/prisoners/{offenderNo}/visits/{visitId}")
@@ -166,8 +165,7 @@ class VisitResource(private val visitService: VisitService) {
     visitId: Long,
     @RequestBody @Valid
     updateVisitRequest: UpdateVisitRequest,
-  ): Unit =
-    visitService.updateVisit(offenderNo, visitId, updateVisitRequest)
+  ): Unit = visitService.updateVisit(offenderNo, visitId, updateVisitRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @PutMapping("/prisoners/{offenderNo}/visits/{visitId}/cancel")
@@ -262,8 +260,7 @@ class VisitResource(private val visitService: VisitService) {
     @Schema(description = "Nomis Visit Id", example = "12345", required = true)
     @PathVariable
     visitId: Long,
-  ): VisitResponse =
-    visitService.getVisit(visitId)
+  ): VisitResponse = visitService.getVisit(visitId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @GetMapping("/visits/ids")
@@ -316,16 +313,15 @@ class VisitResource(private val visitService: VisitService) {
       example = "2021-11-03T09:00:00",
     )
     toDateTime: LocalDateTime?,
-  ): Page<VisitIdResponse> =
-    visitService.findVisitIdsByFilter(
-      pageRequest = pageRequest,
-      VisitFilter(
-        visitTypes = visitTypes ?: listOf(),
-        prisonIds = prisonIds ?: listOf(),
-        toDateTime = toDateTime,
-        fromDateTime = fromDateTime,
-      ),
-    )
+  ): Page<VisitIdResponse> = visitService.findVisitIdsByFilter(
+    pageRequest = pageRequest,
+    VisitFilter(
+      visitTypes = visitTypes ?: listOf(),
+      prisonIds = prisonIds ?: listOf(),
+      toDateTime = toDateTime,
+      fromDateTime = fromDateTime,
+    ),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @GetMapping("/visits/rooms/usage-count")
@@ -384,16 +380,15 @@ class VisitResource(private val visitService: VisitService) {
       example = "true",
     )
     futureVisitsOnly: Boolean?,
-  ): List<VisitRoomCountResponse> =
-    visitService.findRoomCountsByFilter(
-      VisitFilter(
-        visitTypes = visitTypes ?: listOf(),
-        prisonIds = prisonIds ?: listOf(),
-        toDateTime = toDateTime,
-        fromDateTime = fromDateTime,
-        futureVisits = futureVisitsOnly ?: true,
-        // apply filtering of bad data if only restricting usage to future dates
-        excludeExtremeFutureDates = futureVisitsOnly ?: true,
-      ),
-    )
+  ): List<VisitRoomCountResponse> = visitService.findRoomCountsByFilter(
+    VisitFilter(
+      visitTypes = visitTypes ?: listOf(),
+      prisonIds = prisonIds ?: listOf(),
+      toDateTime = toDateTime,
+      fromDateTime = fromDateTime,
+      futureVisits = futureVisitsOnly ?: true,
+      // apply filtering of bad data if only restricting usage to future dates
+      excludeExtremeFutureDates = futureVisitsOnly ?: true,
+    ),
+  )
 }

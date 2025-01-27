@@ -36,6 +36,5 @@ data class CourseActivityArea(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
-  override fun toString(): String =
-    "CourseActivityArea(courseActivityId=$courseActivityId, areaCode=$areaCode)"
+  override fun toString(): String = "CourseActivityArea(courseActivityId=$courseActivityId, areaCode=$areaCode)"
 }

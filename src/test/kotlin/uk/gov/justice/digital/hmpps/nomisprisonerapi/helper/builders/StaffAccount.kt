@@ -15,9 +15,7 @@ interface StaffUserAccountDsl
 class StaffUserAccountBuilderFactory(
   private val repository: StaffUserAccountBuilderRepository,
 ) {
-  fun builder(): StaffUserAccountBuilder {
-    return StaffUserAccountBuilder(repository)
-  }
+  fun builder(): StaffUserAccountBuilder = StaffUserAccountBuilder(repository)
 }
 
 @Component

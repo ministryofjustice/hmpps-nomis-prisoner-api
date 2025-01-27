@@ -29,8 +29,7 @@ class IncidentHistoryBuilderFactory(
 class IncidentHistoryBuilder(
   private val incidentQuestionHistoryBuilderFactory: IncidentQuestionHistoryBuilderFactory,
 
-) :
-  IncidentHistoryDsl {
+) : IncidentHistoryDsl {
   private lateinit var incidentHistory: IncidentHistory
 
   fun build(
@@ -45,14 +44,13 @@ class IncidentHistoryBuilder(
   override fun historyQuestion(
     question: QuestionnaireQuestion,
     dsl: IncidentQuestionHistoryDsl.() -> Unit,
-  ): IncidentQuestionHistory =
-    incidentQuestionHistoryBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          incidentHistory = incidentHistory,
-          question = question,
-        )
-          .also { incidentHistory.questions += it }
-          .also { builder.apply(dsl) }
-      }
+  ): IncidentQuestionHistory = incidentQuestionHistoryBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        incidentHistory = incidentHistory,
+        question = question,
+      )
+        .also { incidentHistory.questions += it }
+        .also { builder.apply(dsl) }
+    }
 }

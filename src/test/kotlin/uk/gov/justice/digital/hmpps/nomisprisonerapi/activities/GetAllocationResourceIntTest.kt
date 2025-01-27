@@ -1050,50 +1050,47 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       page: Int = 0,
       prison: String = "BXI",
       courseActivityId: Long? = null,
-    ): WebTestClient.ResponseSpec =
-      get().uri {
-        it.path("/allocations/ids")
-          .queryParam("prisonId", prison)
-          .queryParam("size", pageSize)
-          .queryParam("page", page)
-          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    ): WebTestClient.ResponseSpec = get().uri {
+      it.path("/allocations/ids")
+        .queryParam("prisonId", prison)
+        .queryParam("size", pageSize)
+        .queryParam("page", page)
+        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+        .build()
+    }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
 
     fun WebTestClient.getActiveActivities(
       pageSize: Int = 10,
       page: Int = 0,
       prison: String = "BXI",
       courseActivityId: Long? = null,
-    ): WebTestClient.ResponseSpec =
-      get().uri {
-        it.path("/activities/ids")
-          .queryParam("prisonId", prison)
-          .queryParam("size", pageSize)
-          .queryParam("page", page)
-          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    ): WebTestClient.ResponseSpec = get().uri {
+      it.path("/activities/ids")
+        .queryParam("prisonId", prison)
+        .queryParam("size", pageSize)
+        .queryParam("page", page)
+        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+        .build()
+    }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
 
     private fun WebTestClient.getPayRatesWithUnknownIncentives(
       prison: String = "BXI",
       courseActivityId: Long? = null,
-    ): WebTestClient.ResponseSpec =
-      get().uri {
-        it.path("/activities/rates-with-unknown-incentives")
-          .queryParam("prisonId", prison)
-          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    ): WebTestClient.ResponseSpec = get().uri {
+      it.path("/activities/rates-with-unknown-incentives")
+        .queryParam("prisonId", prison)
+        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+        .build()
+    }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
   }
 
   /*
@@ -1166,16 +1163,15 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
   private fun WebTestClient.getSuspendedAllocations(
     prison: String = "BXI",
     courseActivityId: Long? = null,
-  ): WebTestClient.ResponseSpec =
-    get().uri {
-      it.path("/allocations/suspended")
-        .queryParam("prisonId", prison)
-        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-        .build()
-    }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-      .exchange()
-      .expectStatus().isOk
+  ): WebTestClient.ResponseSpec = get().uri {
+    it.path("/allocations/suspended")
+      .queryParam("prisonId", prison)
+      .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+      .build()
+  }
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .exchange()
+    .expectStatus().isOk
 
   /*
    * This endpoint is closely related to `GET /allocations/ids` and any changes to the allocation selection rules should
@@ -1424,16 +1420,15 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
   private fun WebTestClient.getAllocationsWithMissingPayBands(
     prison: String = "BXI",
     courseActivityId: Long? = null,
-  ): WebTestClient.ResponseSpec =
-    get().uri {
-      it.path("/allocations/missing-pay-bands")
-        .queryParam("prisonId", prison)
-        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-        .build()
-    }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-      .exchange()
-      .expectStatus().isOk
+  ): WebTestClient.ResponseSpec = get().uri {
+    it.path("/allocations/missing-pay-bands")
+      .queryParam("prisonId", prison)
+      .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+      .build()
+  }
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .exchange()
+    .expectStatus().isOk
 
   @Nested
   @DisplayName("GET /allocations/{allocationId}")
@@ -1631,10 +1626,9 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    private fun WebTestClient.getAllocationDetails(): WebTestClient.ResponseSpec =
-      get().uri("/allocations/${courseAllocation.offenderProgramReferenceId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    private fun WebTestClient.getAllocationDetails(): WebTestClient.ResponseSpec = get().uri("/allocations/${courseAllocation.offenderProgramReferenceId}")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
   }
 }

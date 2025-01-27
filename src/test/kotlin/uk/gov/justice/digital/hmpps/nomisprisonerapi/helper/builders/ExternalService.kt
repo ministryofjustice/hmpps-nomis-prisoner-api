@@ -20,9 +20,8 @@ interface ExternalServiceDsl {
 
 @Component
 class ExternalServiceBuilderRepository(private val externalServiceRepository: ExternalServiceRepository) {
-  fun save(externalService: ExternalService): ExternalService =
-    externalServiceRepository.findByIdOrNull(externalService.serviceName)
-      ?: externalServiceRepository.save(externalService)
+  fun save(externalService: ExternalService): ExternalService = externalServiceRepository.findByIdOrNull(externalService.serviceName)
+    ?: externalServiceRepository.save(externalService)
 }
 
 @Component
@@ -51,10 +50,9 @@ class ExternalServiceBuilder(
 
   override fun serviceAgencySwitch(
     prisonId: String,
-  ): ServiceAgencySwitch =
-    serviceAgencySwitchBuilderFactory.builder().build(
-      externalService,
-      prisonId,
-    )
-      .also { externalService.serviceAgencySwitches += it }
+  ): ServiceAgencySwitch = serviceAgencySwitchBuilderFactory.builder().build(
+    externalService,
+    prisonId,
+  )
+    .also { externalService.serviceAgencySwitches += it }
 }

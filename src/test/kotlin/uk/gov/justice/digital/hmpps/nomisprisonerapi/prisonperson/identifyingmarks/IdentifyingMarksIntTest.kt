@@ -225,11 +225,10 @@ class IdentifyingMarksIntTest : IntegrationTestBase() {
       }
     }
 
-    fun WebTestClient.getIdentifyingMarksOk(bookingId: Long) =
-      this.get().uri("/bookings/$bookingId/identifying-marks")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody<BookingIdentifyingMarksResponse>()
+    fun WebTestClient.getIdentifyingMarksOk(bookingId: Long) = this.get().uri("/bookings/$bookingId/identifying-marks")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody<BookingIdentifyingMarksResponse>()
   }
 }

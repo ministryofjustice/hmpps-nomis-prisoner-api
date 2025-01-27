@@ -64,14 +64,13 @@ data class SplashScreen(
   override fun hashCode(): Int = javaClass.hashCode()
 }
 
-fun SplashScreen.blockedList(): List<String> =
-  if (isBlockedAccess()) {
-    this.conditions.map { it.value }
-  } else if (isConditionalAccess()) {
-    this.conditions.filter { it.accessBlocked }.map { it.value }
-  } else {
-    listOf()
-  }
+fun SplashScreen.blockedList(): List<String> = if (isBlockedAccess()) {
+  this.conditions.map { it.value }
+} else if (isConditionalAccess()) {
+  this.conditions.filter { it.accessBlocked }.map { it.value }
+} else {
+  listOf()
+}
 
 fun SplashScreen.isBlockedAccess(): Boolean = accessBlockedType.code == "YES"
 fun SplashScreen.isConditionalAccess(): Boolean = accessBlockedType.code == "COND"

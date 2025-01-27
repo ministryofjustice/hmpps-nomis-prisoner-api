@@ -107,35 +107,34 @@ class OffenderAddressBuilder(
     endDate: LocalDate?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): OffenderAddress =
-    OffenderAddress(
-      addressType = offenderAddressBuilderRepository.addressTypeOf(type),
-      offender = offender,
-      premise = premise,
-      street = street,
-      locality = locality,
-      flat = flat,
-      postalCode = postcode,
-      city = offenderAddressBuilderRepository.cityOf(city),
-      county = offenderAddressBuilderRepository.countyOf(county),
-      country = offenderAddressBuilderRepository.countryOf(country),
-      validatedPAF = validatedPAF,
-      noFixedAddress = noFixedAddress,
-      primaryAddress = primaryAddress,
-      mailAddress = mailAddress,
-      comment = comment,
-      startDate = startDate,
-      endDate = endDate,
-    ).let { offenderAddressBuilderRepository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          offenderAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          offenderAddressBuilderRepository.updateCreateUsername(it, whoCreated)
-        }
+  ): OffenderAddress = OffenderAddress(
+    addressType = offenderAddressBuilderRepository.addressTypeOf(type),
+    offender = offender,
+    premise = premise,
+    street = street,
+    locality = locality,
+    flat = flat,
+    postalCode = postcode,
+    city = offenderAddressBuilderRepository.cityOf(city),
+    county = offenderAddressBuilderRepository.countyOf(county),
+    country = offenderAddressBuilderRepository.countryOf(country),
+    validatedPAF = validatedPAF,
+    noFixedAddress = noFixedAddress,
+    primaryAddress = primaryAddress,
+    mailAddress = mailAddress,
+    comment = comment,
+    startDate = startDate,
+    endDate = endDate,
+  ).let { offenderAddressBuilderRepository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        offenderAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
       }
-      .also { address = it }
+      if (whoCreated != null) {
+        offenderAddressBuilderRepository.updateCreateUsername(it, whoCreated)
+      }
+    }
+    .also { address = it }
 
   override fun phone(
     phoneType: String,
@@ -144,19 +143,18 @@ class OffenderAddressBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: AddressPhoneDsl.() -> Unit,
-  ): AddressPhone =
-    addressPhoneBuilderFactory.builder().let { builder ->
-      builder.build(
-        address = address,
-        phoneType = phoneType,
-        extNo = extNo,
-        phoneNo = phoneNo,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { address.phones += it }
-        .also { builder.apply(dsl) }
-    }
+  ): AddressPhone = addressPhoneBuilderFactory.builder().let { builder ->
+    builder.build(
+      address = address,
+      phoneType = phoneType,
+      extNo = extNo,
+      phoneNo = phoneNo,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { address.phones += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun usage(
     usageCode: String,

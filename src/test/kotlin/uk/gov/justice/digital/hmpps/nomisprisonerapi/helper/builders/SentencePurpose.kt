@@ -12,13 +12,11 @@ annotation class SentencePurposeDslMarker
 interface SentencePurposeDsl
 
 @Component
-class SentencePurposeBuilderFactory() {
-  fun builder(): SentencePurposeBuilder {
-    return SentencePurposeBuilder()
-  }
+class SentencePurposeBuilderFactory {
+  fun builder(): SentencePurposeBuilder = SentencePurposeBuilder()
 }
 
-class SentencePurposeBuilder() : SentencePurposeDsl {
+class SentencePurposeBuilder : SentencePurposeDsl {
   private lateinit var sentencePurpose: SentencePurpose
 
   fun build(

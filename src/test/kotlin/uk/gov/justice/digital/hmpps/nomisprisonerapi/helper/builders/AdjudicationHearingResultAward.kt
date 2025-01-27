@@ -22,9 +22,7 @@ interface AdjudicationHearingResultAwardDsl
 class AdjudicationHearingResultAwardBuilderFactory(
   private val repository: AdjudicationHearingResultAwardBuilderRepository,
 ) {
-  fun builder(): AdjudicationHearingResultAwardBuilder {
-    return AdjudicationHearingResultAwardBuilder(repository)
-  }
+  fun builder(): AdjudicationHearingResultAwardBuilder = AdjudicationHearingResultAwardBuilder(repository)
 }
 
 @Component
@@ -32,11 +30,9 @@ class AdjudicationHearingResultAwardBuilderRepository(
   val sanctionStatusRepository: ReferenceCodeRepository<AdjudicationSanctionStatus>,
   val sanctionTypeRepository: ReferenceCodeRepository<AdjudicationSanctionType>,
 ) {
-  fun lookupSanctionStatus(code: String): AdjudicationSanctionStatus =
-    sanctionStatusRepository.findByIdOrNull(AdjudicationSanctionStatus.pk(code))!!
+  fun lookupSanctionStatus(code: String): AdjudicationSanctionStatus = sanctionStatusRepository.findByIdOrNull(AdjudicationSanctionStatus.pk(code))!!
 
-  fun lookupSanctionType(code: String): AdjudicationSanctionType =
-    sanctionTypeRepository.findByIdOrNull(AdjudicationSanctionType.pk(code))!!
+  fun lookupSanctionType(code: String): AdjudicationSanctionType = sanctionTypeRepository.findByIdOrNull(AdjudicationSanctionType.pk(code))!!
 }
 
 class AdjudicationHearingResultAwardBuilder(

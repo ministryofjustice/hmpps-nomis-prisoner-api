@@ -18,17 +18,14 @@ interface AdjudicationChargeDsl
 class AdjudicationChargeBuilderFactory(
   private val repository: AdjudicationChargeBuilderRepository,
 ) {
-  fun builder(): AdjudicationChargeBuilder {
-    return AdjudicationChargeBuilder(repository)
-  }
+  fun builder(): AdjudicationChargeBuilder = AdjudicationChargeBuilder(repository)
 }
 
 @Component
 class AdjudicationChargeBuilderRepository(
   val adjudicationIncidentOffenceRepository: AdjudicationIncidentOffenceRepository,
 ) {
-  fun lookupAdjudicationOffence(code: String): AdjudicationIncidentOffence =
-    adjudicationIncidentOffenceRepository.findByCode(code)!!
+  fun lookupAdjudicationOffence(code: String): AdjudicationIncidentOffence = adjudicationIncidentOffenceRepository.findByCode(code)!!
 }
 
 class AdjudicationChargeBuilder(

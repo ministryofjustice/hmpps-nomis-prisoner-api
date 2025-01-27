@@ -74,14 +74,13 @@ class QuestionnaireResource(private val questionnaireService: QuestionnaireServi
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-  ): Page<QuestionnaireIdResponse> =
-    questionnaireService.findIdsByFilter(
-      pageRequest = pageRequest,
-      QuestionnaireFilter(
-        toDate = toDate,
-        fromDate = fromDate,
-      ),
-    )
+  ): Page<QuestionnaireIdResponse> = questionnaireService.findIdsByFilter(
+    pageRequest = pageRequest,
+    QuestionnaireFilter(
+      toDate = toDate,
+      fromDate = fromDate,
+    ),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/{questionnaireId}")

@@ -106,8 +106,7 @@ class DocumentResource(private val documentService: DocumentService) {
       example = "CSIP_FAC",
     )
     templateNames: List<String>,
-  ) =
-    documentService.findAllIds(bookingId, templateNames)
+  ) = documentService.findAllIds(bookingId, templateNames)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -47,19 +47,18 @@ class CorporatePhoneBuilder(private val repository: CorporatePhoneBuilderReposit
     extNo: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): CorporatePhone =
-    CorporatePhone(
-      corporate = corporate,
-      phoneType = repository.phoneUsageOf(phoneType),
-      phoneNo = phoneNo,
-      extNo = extNo,
-    ).let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): CorporatePhone = CorporatePhone(
+    corporate = corporate,
+    phoneType = repository.phoneUsageOf(phoneType),
+    phoneNo = phoneNo,
+    extNo = extNo,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

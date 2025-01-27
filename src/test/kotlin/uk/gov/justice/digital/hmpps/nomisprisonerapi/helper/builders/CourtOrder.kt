@@ -30,12 +30,10 @@ class CourtOrderBuilderFactory(
   private val repository: CourtOrderBuilderRepository,
   private val sentencePurposeBuilderFactory: SentencePurposeBuilderFactory,
 ) {
-  fun builder(): CourtOrderBuilder {
-    return CourtOrderBuilder(
-      repository,
-      sentencePurposeBuilderFactory,
-    )
-  }
+  fun builder(): CourtOrderBuilder = CourtOrderBuilder(
+    repository,
+    sentencePurposeBuilderFactory,
+  )
 }
 
 @Component
@@ -44,8 +42,7 @@ class CourtOrderBuilderRepository(
   val agencyLocationRepository: AgencyLocationRepository,
   val seriousnessLevelTypeRepository: ReferenceCodeRepository<SeriousnessLevelType>,
 ) {
-  fun save(courtOrder: CourtOrder): CourtOrder =
-    repository.save(courtOrder)
+  fun save(courtOrder: CourtOrder): CourtOrder = repository.save(courtOrder)
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 
@@ -95,14 +92,13 @@ class CourtOrderBuilder(
     purposeCode: String,
     orderPartyCode: String,
     dsl: SentencePurposeDsl.() -> Unit,
-  ) =
-    sentencePurposeBuilderFactory.builder().let { builder ->
-      builder.build(
-        purposeCode = purposeCode,
-        orderPartyCode = orderPartyCode,
-        courtOrder = courtOrder,
-      )
-        .also { courtOrder.sentencePurposes += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = sentencePurposeBuilderFactory.builder().let { builder ->
+    builder.build(
+      purposeCode = purposeCode,
+      orderPartyCode = orderPartyCode,
+      courtOrder = courtOrder,
+    )
+      .also { courtOrder.sentencePurposes += it }
+      .also { builder.apply(dsl) }
+  }
 }

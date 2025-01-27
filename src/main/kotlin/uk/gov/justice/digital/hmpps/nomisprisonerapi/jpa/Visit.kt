@@ -138,9 +138,7 @@ data class Visit(
   override fun hashCode(): Int = javaClass.hashCode()
 
   // omit visitors to avoid recursion
-  override fun toString(): String {
-    return "Visit(id=$id, offenderBooking=$offenderBooking, commentText=$commentText, visitorConcernText=$visitorConcernText, visitDate=$visitDate, startDateTime=$startDateTime, endDateTime=$endDateTime, visitType=$visitType, visitStatus=$visitStatus, searchLevel=$searchLevel, location=$location, agencyInternalLocation=$agencyInternalLocation)"
-  }
+  override fun toString(): String = "Visit(id=$id, offenderBooking=$offenderBooking, commentText=$commentText, visitorConcernText=$visitorConcernText, visitDate=$visitDate, startDateTime=$startDateTime, endDateTime=$endDateTime, visitType=$visitType, visitStatus=$visitStatus, searchLevel=$searchLevel, location=$location, agencyInternalLocation=$agencyInternalLocation)"
 
   /* fields not used in production for info:
 

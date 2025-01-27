@@ -8,8 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
 
 @Repository
-interface OffenderExternalMovementRepository :
-  CrudRepository<OffenderExternalMovement, OffenderExternalMovementId> {
+interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMovement, OffenderExternalMovementId> {
   @Query(
     """
       select 
