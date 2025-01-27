@@ -671,6 +671,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseNotes[0].caseNoteType.code").isEqualTo("ACP")
           .jsonPath("caseNotes[0].caseNoteSubType.code").isEqualTo("POPEM")
           .jsonPath("caseNotes[0].authorUsername").isEqualTo("JANE.NARK")
+          .jsonPath("caseNotes[0].authorUsernames.size()").isEqualTo(2)
           .jsonPath("caseNotes[0].authorUsernames[0]").isEqualTo("JANE.NARK")
           .jsonPath("caseNotes[0].authorUsernames[1]").isEqualTo("JANE.NARK_ADM")
           .jsonPath("caseNotes[0].caseNoteText").isEqualTo("Note 1")

@@ -246,6 +246,7 @@ data class CaseNoteResponse(
   @Schema(description = "Author STAFF_ID")
   val authorStaffId: Long,
   @Schema(description = "Author username or login name")
+  @Deprecated("There could be more than one for this staff id - Use authorUsernames instead")
   val authorUsername: String,
   @Schema(description = "Author first name")
   val authorFirstName: String?,
