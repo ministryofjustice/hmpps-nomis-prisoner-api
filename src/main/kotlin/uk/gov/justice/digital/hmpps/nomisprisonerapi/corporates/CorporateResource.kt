@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -17,6 +18,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -30,60 +33,6 @@ import java.time.LocalDate
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class CorporateResource(private val corporateService: CorporateService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
-  @GetMapping("/corporates/{corporateId}")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-    summary = "Get a corporate by corporateId Id",
-    description = "Retrieves a corporate and details. Requires ROLE_NOMIS_CONTACTPERSONS",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Corporate Information Returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CorporateOrganisation::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Corporate does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getCorporateById(
-    @Schema(description = "Corporate Id", example = "12345")
-    @PathVariable
-    corporateId: Long,
-  ): CorporateOrganisation = corporateService.getCorporateById(corporateId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/corporates/ids")
@@ -142,6 +91,109 @@ class CorporateResource(private val corporateService: CorporateService) {
       fromDate = fromDate,
     ),
   )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @GetMapping("/corporates/{corporateId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a corporate by corporateId Id",
+    description = "Retrieves a corporate and details. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Corporate Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CorporateOrganisation::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCorporateById(
+    @Schema(description = "Corporate Id", example = "12345")
+    @PathVariable
+    corporateId: Long,
+  ): CorporateOrganisation = corporateService.getCorporateById(corporateId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/corporates")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a corporate organisation",
+    description = "Creates a new corporate record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate creates",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Caseload does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporate(
+    @RequestBody @Valid
+    request: CreateCorporateOrganisationRequest,
+  ) = corporateService.createCorporate(request)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -264,4 +316,25 @@ data class CorporateInternetAddress(
 data class CorporateOrganisationIdResponse(
   @Schema(description = "The corporate Id")
   val corporateId: Long,
+)
+
+@Schema(description = "Request to create a corporate organisation in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateCorporateOrganisationRequest(
+  @Schema(description = "Unique Id of corporate")
+  val id: Long,
+  @Schema(description = "The corporate name", example = "Boots")
+  val name: String,
+  @Schema(description = "Is active")
+  val active: Boolean = true,
+  @Schema(description = "Date made inactive")
+  val expiryDate: LocalDate? = null,
+  @Schema(description = "The associated caseload code", example = "WWI")
+  val caseloadId: String? = null,
+  @Schema(description = "User comment")
+  val comment: String? = null,
+  @Schema(description = "Programme number")
+  val programmeNumber: String? = null,
+  @Schema(description = "VAT number")
+  val vatNumber: String? = null,
 )
