@@ -1301,6 +1301,35 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `summary will be truncated when over 4000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith3999Characters = "A".repeat(3999)
+        val textWith3996Characters = "A".repeat(3996)
+        val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest().copy(reviews = listOf(reviewRequest.copy(summary = veryLongSummary)))
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val newCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          // Reviews
+          assertThat(newCsip.reviews.size).isEqualTo(1)
+          assertThat(newCsip.reviews[0].summary).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+        }
+      }
+
+      @Test
       fun `will track telemetry event for create with minimal data`() {
         val validCSIP = createUpsertCSIPRequestMinimalData()
 
@@ -1662,6 +1691,35 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(updatedCsip.reviews[0].attendees[0].role).isEqualTo("person")
           assertThat(updatedCsip.reviews[0].attendees[0].attended).isEqualTo(true)
           assertThat(updatedCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
+        }
+      }
+
+      @Test
+      fun `summary will be truncated when over 4000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith3999Characters = "A".repeat(3999)
+        val textWith3996Characters = "A".repeat(3996)
+        val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip2.id).copy(reviews = listOf(reviewRequest.copy(summary = veryLongSummary)))
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val updatedCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          // Reviews
+          assertThat(updatedCsip.reviews.size).isEqualTo(1)
+          assertThat(updatedCsip.reviews[0].summary).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
         }
       }
 
