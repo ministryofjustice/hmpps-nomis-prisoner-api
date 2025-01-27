@@ -5,15 +5,54 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import java.time.LocalDate
 
 @Service
 @Transactional
-class CorporateService(private val corporateRepository: CorporateRepository) {
+class CorporateService(
+  private val corporateRepository: CorporateRepository,
+  private val caseloadRepository: CaseloadRepository,
+) {
+  fun findCorporateIdsByFilter(
+    pageRequest: Pageable,
+    filter: CorporateFilter,
+  ): Page<CorporateOrganisationIdResponse> = if (filter.toDate == null && filter.fromDate == null) {
+    corporateRepository.findAllCorporateIds(
+      pageRequest,
+    )
+  } else {
+    corporateRepository.findAllCorporateIds(
+      fromDate = filter.fromDate?.atStartOfDay(),
+      toDate = filter.toDate?.atStartOfDay(),
+      pageRequest,
+    )
+  }.map { CorporateOrganisationIdResponse(corporateId = it.corporateId) }
+
+  fun createCorporate(request: CreateCorporateOrganisationRequest) {
+    corporateRepository.save(
+      request.let {
+        Corporate(
+          id = it.id,
+          corporateName = it.name,
+          caseload = caseloadOf(it.caseloadId),
+          commentText = it.comment,
+          suspended = false,
+          feiNumber = it.programmeNumber,
+          active = it.active,
+          expiryDate = it.expiryDate,
+          taxNo = it.vatNumber,
+        )
+      },
+    )
+  }
 
   fun getCorporateById(corporateId: Long): CorporateOrganisation =
     corporateRepository.findByIdOrNull(corporateId)?.let {
@@ -87,20 +126,7 @@ class CorporateService(private val corporateRepository: CorporateRepository) {
       )
     } ?: throw NotFoundException("Corporate not found $corporateId")
 
-  fun findCorporateIdsByFilter(
-    pageRequest: Pageable,
-    filter: CorporateFilter,
-  ): Page<CorporateOrganisationIdResponse> = if (filter.toDate == null && filter.fromDate == null) {
-    corporateRepository.findAllCorporateIds(
-      pageRequest,
-    )
-  } else {
-    corporateRepository.findAllCorporateIds(
-      fromDate = filter.fromDate?.atStartOfDay(),
-      toDate = filter.toDate?.atStartOfDay(),
-      pageRequest,
-    )
-  }.map { CorporateOrganisationIdResponse(corporateId = it.corporateId) }
+  fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
 }
 
 data class CorporateFilter(

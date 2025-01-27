@@ -10,7 +10,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLRestriction
@@ -21,7 +20,7 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "CORPORATES")
 class Corporate(
-  @SequenceGenerator(name = "CORPORATE_ID", sequenceName = "CORPORATE_ID", allocationSize = 1)
+  @SequenceOrUseId(name = "CORPORATE_ID")
   @GeneratedValue(generator = "CORPORATE_ID")
   @Id
   @Column(name = "CORPORATE_ID", nullable = false)
