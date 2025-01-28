@@ -2211,7 +2211,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("POST /persons/{personId}/address/{addressId}")
+  @DisplayName("PUT /persons/{personId}/address/{addressId}")
   @Nested
   inner class UpdatePersonAddress {
     private val validAddressRequest = UpdatePersonAddressRequest(

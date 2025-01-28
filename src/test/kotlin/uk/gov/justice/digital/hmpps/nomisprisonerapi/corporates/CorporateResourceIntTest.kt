@@ -1127,6 +1127,174 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("PUT /corporates/{corporateId}/address/{addressId}")
+  @Nested
+  inner class UpdateCorporateAddress {
+    private val validAddressRequest = UpdateCorporateAddressRequest(
+      mailAddress = true,
+      primaryAddress = true,
+    )
+
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingAddress = address()
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.put().uri("/corporates/9999/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/99999")
+          .bodyValue(validAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when city code does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when county code does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when country code does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when address type code does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a address`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .bodyValue(
+            validAddressRequest.copy(
+              typeCode = "HOME",
+              flat = "1A",
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+              locality = "Broomhill",
+              cityCode = SHEFFIELD,
+              countyCode = "S.YORKSHIRE",
+              countryCode = "GBR",
+              postcode = "S10 2HH",
+              primaryAddress = true,
+              mailAddress = true,
+              noFixedAddress = false,
+              startDate = LocalDate.parse("2001-01-01"),
+              endDate = LocalDate.parse("2032-12-31"),
+              isServices = true,
+              contactPersonName = "BOBBY",
+              businessHours = "10-12am",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        with(corporateAddressRepository.findByIdOrNull(existingAddress.addressId)!!) {
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(addressType?.description).isEqualTo("Home Address")
+          assertThat(flat).isEqualTo("1A")
+          assertThat(premise).isEqualTo("Bolden Court")
+          assertThat(street).isEqualTo("Fulwood Road")
+          assertThat(locality).isEqualTo("Broomhill")
+          assertThat(city?.description).isEqualTo("Sheffield")
+          assertThat(county?.description).isEqualTo("South Yorkshire")
+          assertThat(country?.description).isEqualTo("United Kingdom")
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+          assertThat(noFixedAddress).isFalse()
+          assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
+          assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
+          assertThat(isServices).isTrue()
+          assertThat(contactPersonName).isEqualTo("BOBBY")
+          assertThat(businessHours).isEqualTo("10-12am")
+        }
+      }
+    }
+  }
 }
 
 private inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!

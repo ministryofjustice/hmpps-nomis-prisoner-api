@@ -360,6 +360,68 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: CreateCorporateAddressRequest,
   ) = corporateService.createCorporateAddress(corporateId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}/address/{addressId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update a corporate address",
+    description = "Updates a corporate address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate address updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate or address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporateAddress(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporateAddressRequest,
+  ) = corporateService.updateCorporateAddress(corporateId = corporateId, addressId = addressId, request = request)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -568,4 +630,45 @@ data class CreateCorporateAddressRequest(
 data class CreateCorporateAddressResponse(
   @Schema(description = "The address Id")
   val id: Long,
+)
+
+@Schema(description = "Request to update a corporate organisation address in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateCorporateAddressRequest(
+  @Schema(description = "Address type", example = "BUS")
+  val typeCode: String? = null,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String? = null,
+  @Schema(description = "Premise", example = "22")
+  val premise: String? = null,
+  @Schema(description = "Street", example = "West Street")
+  val street: String? = null,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String? = null,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String? = null,
+  @Schema(description = "City code", example = "25343")
+  val cityCode: String? = null,
+  @Schema(description = "County code", example = "S.YORKSHIRE")
+  val countyCode: String? = null,
+  @Schema(description = "Country code", example = "ENG")
+  val countryCode: String? = null,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean = false,
+  @Schema(description = "true if this is the corporate's primary address")
+  val primaryAddress: Boolean = false,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean = false,
+  @Schema(description = "Free format comment about the address")
+  val comment: String? = null,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate? = null,
+  @Schema(description = "True if this is a service organisation")
+  val isServices: Boolean = false,
+  @Schema(description = "Business hours")
+  val businessHours: String? = null,
+  @Schema(description = "Contact person")
+  val contactPersonName: String? = null,
 )
