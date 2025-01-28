@@ -19,6 +19,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -194,6 +195,65 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: CreateCorporateOrganisationRequest,
   ) = corporateService.createCorporate(request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}")
+  @Operation(
+    summary = "Update corporate organisation",
+    description = "Updates an existing corporate record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Corporate updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Caseload does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporate(
+    @PathVariable
+    corporateId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporateOrganisationRequest,
+  ) = corporateService.updateCorporate(corporateId, request)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -323,6 +383,25 @@ data class CorporateOrganisationIdResponse(
 data class CreateCorporateOrganisationRequest(
   @Schema(description = "Unique Id of corporate")
   val id: Long,
+  @Schema(description = "The corporate name", example = "Boots")
+  val name: String,
+  @Schema(description = "Is active")
+  val active: Boolean = true,
+  @Schema(description = "Date made inactive")
+  val expiryDate: LocalDate? = null,
+  @Schema(description = "The associated caseload code", example = "WWI")
+  val caseloadId: String? = null,
+  @Schema(description = "User comment")
+  val comment: String? = null,
+  @Schema(description = "Programme number")
+  val programmeNumber: String? = null,
+  @Schema(description = "VAT number")
+  val vatNumber: String? = null,
+)
+
+@Schema(description = "Request to update a corporate organisation in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateCorporateOrganisationRequest(
   @Schema(description = "The corporate name", example = "Boots")
   val name: String,
   @Schema(description = "Is active")

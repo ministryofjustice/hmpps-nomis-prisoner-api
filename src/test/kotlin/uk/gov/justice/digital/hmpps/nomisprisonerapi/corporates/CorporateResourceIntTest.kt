@@ -385,6 +385,146 @@ class CorporateResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("PUT /corporates")
+  inner class UpdateCorporate {
+    private val corporateRequest = UpdateCorporateOrganisationRequest(name = "Police")
+    private lateinit var corporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        corporate = corporate(corporateName = "Shipley Young Hope") {
+          type("YOTWORKER")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(corporateRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(corporateRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/corporates/${corporate.id}")
+          .bodyValue(corporateRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if corporate does not exist`() {
+        webTestClient.put().uri("/corporates/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(corporateRequest)
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Not Found: Corporate 99999 not found")
+      }
+
+      @Test
+      fun `will return 400 if corporate caseload code does not exist`() {
+        webTestClient.put().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(corporateRequest.copy(caseloadId = "ZZZ"))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Caseload ZZZ not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a corporate with minimal data`() {
+        webTestClient.put().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(corporateRequest.copy(name = "Bingahm Solicitors"))
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          with(corporateRepository.findByIdOrNull(corporate.id)!!) {
+            assertThat(corporateName).isEqualTo("Bingahm Solicitors")
+            assertThat(active).isTrue()
+            assertThat(caseload).isNull()
+            assertThat(commentText).isNull()
+            assertThat(feiNumber).isNull()
+            assertThat(taxNo).isNull()
+            assertThat(expiryDate).isNull()
+            assertThat(suspended).isFalse()
+            assertThat(addresses).isEmpty()
+            assertThat(phones).isEmpty()
+            assertThat(types).hasSize(1)
+          }
+        }
+      }
+
+      @Test
+      fun `will update a corporate with maximum data`() {
+        webTestClient.put().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .bodyValue(
+            corporateRequest.copy(
+              name = "Bright Solicitors",
+              caseloadId = "LEI",
+              comment = "Some comment",
+              programmeNumber = "123456",
+              vatNumber = "1234567890",
+              active = false,
+              expiryDate = LocalDate.now(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          with(corporateRepository.findByIdOrNull(corporate.id)!!) {
+            assertThat(corporateName).isEqualTo("Bright Solicitors")
+            assertThat(active).isFalse()
+            assertThat(caseload?.id).isEqualTo("LEI")
+            assertThat(caseload?.description).isEqualTo("LEEDS (HMP)")
+            assertThat(commentText).isEqualTo("Some comment")
+            assertThat(feiNumber).isEqualTo("123456")
+            assertThat(taxNo).isEqualTo("1234567890")
+            assertThat(expiryDate).isEqualTo(LocalDate.now())
+            assertThat(suspended).isFalse()
+            assertThat(addresses).isEmpty()
+            assertThat(phones).isEmpty()
+            assertThat(types).hasSize(1)
+          }
+        }
+      }
+    }
+  }
+
+  @Nested
   @DisplayName("GET /corporates/{corporateId}")
   inner class GetCorporate {
     @AfterEach
