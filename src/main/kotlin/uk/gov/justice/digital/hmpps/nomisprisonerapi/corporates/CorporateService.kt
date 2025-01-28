@@ -205,6 +205,13 @@ class CorporateService(
     }
   }
 
+  fun deleteCorporateAddress(corporateId: Long, addressId: Long) {
+    corporateAddressRepository.findByIdOrNull(addressId)?.also {
+      if (it.corporate.id != corporateId) throw BadDataException("Address of $addressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
+    }
+    corporateAddressRepository.deleteById(addressId)
+  }
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }

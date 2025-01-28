@@ -422,6 +422,56 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: UpdateCorporateAddressRequest,
   ) = corporateService.updateCorporateAddress(corporateId = corporateId, addressId = addressId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/address/{addressId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate address",
+    description = "Deletes a corporate address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate address deleted",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The address exists but not for the supplied corporate",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporateAddress(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+  ) = corporateService.deleteCorporateAddress(corporateId = corporateId, addressId = addressId)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
