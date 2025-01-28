@@ -180,12 +180,38 @@ class CorporateService(
     },
   ).let { CreateCorporateAddressResponse(id = it.addressId) }
 
+  fun updateCorporateAddress(corporateId: Long, addressId: Long, request: UpdateCorporateAddressRequest) {
+    addressOf(corporateId = corporateId, addressId = addressId).run {
+      request.also {
+        addressType = addressTypeOf(it.typeCode)
+        premise = it.premise
+        street = it.street
+        locality = it.locality
+        flat = it.flat
+        postalCode = it.postcode
+        city = cityOf(it.cityCode)
+        county = countyOf(it.countyCode)
+        country = countryOf(it.countryCode)
+        noFixedAddress = it.noFixedAddress
+        primaryAddress = it.primaryAddress
+        mailAddress = it.mailAddress
+        comment = it.comment
+        startDate = it.startDate
+        endDate = it.endDate
+        contactPersonName = it.contactPersonName
+        isServices = it.isServices
+        businessHours = it.businessHours
+      }
+    }
+  }
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
   fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) ?: throw BadDataException("County with code $code does not exist") }
   fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
   fun corporateOf(corporateId: Long): Corporate = corporateRepository.findByIdOrNull(corporateId) ?: throw NotFoundException("Corporate with id=$corporateId does not exist")
+  fun addressOf(corporateId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress = (corporateAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Address with id=$addressId on Corporate with id=$corporateId does not exist")
 }
 
 data class CorporateFilter(
