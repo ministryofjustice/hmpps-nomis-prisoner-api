@@ -54,6 +54,21 @@ class CorporateService(
     )
   }
 
+  fun updateCorporate(corporateId: Long, request: UpdateCorporateOrganisationRequest) {
+    request.also {
+      corporateRepository.findByIdOrNull(corporateId)?.run {
+        corporateName = it.name
+        caseload = caseloadOf(it.caseloadId)
+        commentText = it.comment
+        suspended = false
+        feiNumber = it.programmeNumber
+        active = it.active
+        expiryDate = it.expiryDate
+        taxNo = it.vatNumber
+      } ?: throw NotFoundException("Corporate $corporateId not found")
+    }
+  }
+
   fun getCorporateById(corporateId: Long): CorporateOrganisation =
     corporateRepository.findByIdOrNull(corporateId)?.let {
       CorporateOrganisation(
@@ -124,7 +139,7 @@ class CorporateService(
           )
         },
       )
-    } ?: throw NotFoundException("Corporate not found $corporateId")
+    } ?: throw NotFoundException("Corporate $corporateId not found")
 
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
 }
