@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -254,6 +255,44 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: UpdateCorporateOrganisationRequest,
   ) = corporateService.updateCorporate(corporateId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @DeleteMapping("/corporates/{corporateId}")
+  @Operation(
+    summary = "Delete corporate organisation",
+    description = "Deletes an existing corporate record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate deleted or did not exist",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporate(
+    @PathVariable
+    corporateId: Long,
+  ) = corporateService.deleteCorporate(corporateId)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")

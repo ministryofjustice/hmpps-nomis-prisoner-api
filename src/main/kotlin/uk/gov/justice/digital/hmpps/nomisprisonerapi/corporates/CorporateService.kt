@@ -69,6 +69,8 @@ class CorporateService(
     }
   }
 
+  fun deleteCorporate(corporateId: Long) = corporateRepository.deleteById(corporateId)
+
   fun getCorporateById(corporateId: Long): CorporateOrganisation =
     corporateRepository.findByIdOrNull(corporateId)?.let {
       CorporateOrganisation(
