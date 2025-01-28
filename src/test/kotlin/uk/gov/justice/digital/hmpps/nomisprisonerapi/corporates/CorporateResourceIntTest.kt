@@ -385,7 +385,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("PUT /corporates")
+  @DisplayName("PUT /corporates/{corporateId}")
   inner class UpdateCorporate {
     private val corporateRequest = UpdateCorporateOrganisationRequest(name = "Police")
     private lateinit var corporate: Corporate
@@ -520,6 +520,77 @@ class CorporateResourceIntTest : IntegrationTestBase() {
             assertThat(types).hasSize(1)
           }
         }
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("DELETE /corporates/{corporateId}")
+  inner class DeleteCorporate {
+    private lateinit var corporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        corporate = corporate(corporateName = "Shipley Young Hope") {
+          type("YOTWORKER")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${corporate.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 204 if corporate does not exist`() {
+        webTestClient.delete().uri("/corporates/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the corporate`() {
+        assertThat(corporateRepository.findByIdOrNull(corporate.id)).isNotNull
+        webTestClient.delete().uri("/corporates/${corporate.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+        assertThat(corporateRepository.findByIdOrNull(corporate.id)).isNull()
       }
     }
   }
