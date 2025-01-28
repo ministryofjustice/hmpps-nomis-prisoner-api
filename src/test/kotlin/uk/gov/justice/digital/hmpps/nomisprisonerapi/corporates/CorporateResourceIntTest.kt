@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
@@ -16,8 +17,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -28,6 +29,9 @@ class CorporateResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var corporateRepository: CorporateRepository
+
+  @Autowired
+  private lateinit var corporateAddressRepository: CorporateAddressRepository
 
   @DisplayName("GET /corporates/ids")
   @Nested
@@ -467,7 +471,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .bodyValue(corporateRequest.copy(name = "Bingahm Solicitors"))
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isNoContent
 
         nomisDataBuilder.runInTransaction {
           with(corporateRepository.findByIdOrNull(corporate.id)!!) {
@@ -502,7 +506,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isNoContent
 
         nomisDataBuilder.runInTransaction {
           with(corporateRepository.findByIdOrNull(corporate.id)!!) {
@@ -960,4 +964,169 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("POST /corporates/{corporateId}/address")
+  @Nested
+  inner class CreateCorporateAddress {
+    private val validAddressRequest = CreateCorporateAddressRequest(
+      mailAddress = true,
+      primaryAddress = true,
+      isServices = false,
+      noFixedAddress = false,
+    )
+
+    private lateinit var existingCorporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(corporateName = "Police")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.post().uri("/corporates/999/address")
+          .bodyValue(validAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when city code does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when county code does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when country code does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when address type code does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an address for the corporate`() {
+        val response: CreateCorporateAddressResponse = webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
+          .bodyValue(
+            validAddressRequest.copy(
+              typeCode = "BUS",
+              flat = "1A",
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+              locality = "Broomhill",
+              cityCode = SHEFFIELD,
+              countyCode = "S.YORKSHIRE",
+              countryCode = "GBR",
+              postcode = "S10 2HH",
+              primaryAddress = true,
+              mailAddress = true,
+              noFixedAddress = false,
+              startDate = LocalDate.parse("2001-01-01"),
+              endDate = LocalDate.parse("2032-12-31"),
+              isServices = true,
+              contactPersonName = "BOBBY",
+              businessHours = "10-12am",
+
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(corporateAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(addressId).isEqualTo(response.id)
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(addressType?.description).isEqualTo("Business Address")
+          assertThat(flat).isEqualTo("1A")
+          assertThat(premise).isEqualTo("Bolden Court")
+          assertThat(street).isEqualTo("Fulwood Road")
+          assertThat(locality).isEqualTo("Broomhill")
+          assertThat(city?.description).isEqualTo("Sheffield")
+          assertThat(county?.description).isEqualTo("South Yorkshire")
+          assertThat(country?.description).isEqualTo("United Kingdom")
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+          assertThat(noFixedAddress).isFalse()
+          assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
+          assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
+          assertThat(isServices).isTrue()
+          assertThat(contactPersonName).isEqualTo("BOBBY")
+          assertThat(businessHours).isEqualTo("10-12am")
+        }
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.addresses).anyMatch { it.addressId == response.id }
+        }
+      }
+    }
+  }
 }
+
+private inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!
