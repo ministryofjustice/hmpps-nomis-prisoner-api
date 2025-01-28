@@ -13,18 +13,17 @@ class OffenderBookingDataBuilder(
   var agencyLocationId: String = "BXI",
   val repository: Repository? = null,
 ) {
-  fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking =
-    OffenderBooking(
-      offender = offender,
-      rootOffender = offender.rootOffender,
-      bookingBeginDate = bookingBeginDate,
-      active = active,
-      inOutStatus = inOutStatus,
-      youthAdultCode = youthAdultCode,
-      bookingSequence = bookingSequence,
-      createLocation = agencyLocation,
-      location = agencyLocation,
-    ).apply {
-      offender.getAllBookings()?.add(this)
-    }
+  fun build(offender: Offender, bookingSequence: Int, agencyLocation: AgencyLocation): OffenderBooking = OffenderBooking(
+    offender = offender,
+    rootOffender = offender.rootOffender,
+    bookingBeginDate = bookingBeginDate,
+    active = active,
+    inOutStatus = inOutStatus,
+    youthAdultCode = youthAdultCode,
+    bookingSequence = bookingSequence,
+    createLocation = agencyLocation,
+    location = agencyLocation,
+  ).apply {
+    offender.getAllBookings()?.add(this)
+  }
 }

@@ -25,8 +25,7 @@ class CourseActivityPayRateBuilderRepository(
   val iepLevelRepository: ReferenceCodeRepository<IEPLevel>,
 ) {
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
-  fun lookupIepLevel(code: String): IEPLevel =
-    iepLevelRepository.findByIdOrNull(ReferenceCode.Pk(IEPLevel.IEP_LEVEL, code))!!
+  fun lookupIepLevel(code: String): IEPLevel = iepLevelRepository.findByIdOrNull(ReferenceCode.Pk(IEPLevel.IEP_LEVEL, code))!!
 }
 
 @Component
@@ -42,19 +41,18 @@ class CourseActivityPayRateBuilder(val repository: CourseActivityPayRateBuilderR
     startDate: String,
     endDate: String?,
     halfDayRate: Double,
-  ) =
-    CourseActivityPayRate(
-      id = CourseActivityPayRateId(
-        courseActivity = courseActivity,
-        iepLevelCode = iepLevelCode,
-        payBandCode = payBandCode,
-        startDate = LocalDate.parse(startDate),
-      ),
-      payBand = lookupPayBandCode(payBandCode),
-      iepLevel = lookupIepLevel(iepLevelCode),
-      endDate = endDate?.let { LocalDate.parse(endDate) },
-      halfDayRate = BigDecimal(halfDayRate).setScale(3, RoundingMode.HALF_UP),
-    )
+  ) = CourseActivityPayRate(
+    id = CourseActivityPayRateId(
+      courseActivity = courseActivity,
+      iepLevelCode = iepLevelCode,
+      payBandCode = payBandCode,
+      startDate = LocalDate.parse(startDate),
+    ),
+    payBand = lookupPayBandCode(payBandCode),
+    iepLevel = lookupIepLevel(iepLevelCode),
+    endDate = endDate?.let { LocalDate.parse(endDate) },
+    halfDayRate = BigDecimal(halfDayRate).setScale(3, RoundingMode.HALF_UP),
+  )
 
   private fun lookupPayBandCode(payBandCode: String) = repository?.lookupPayBandCode(payBandCode)
     ?: PayBand(code = payBandCode, description = payBandCode)

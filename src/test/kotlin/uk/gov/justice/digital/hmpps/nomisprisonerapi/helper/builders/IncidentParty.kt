@@ -24,8 +24,7 @@ interface IncidentPartyDsl
 class IncidentPartyBuilderFactory(
   private val repository: IncidentPartyBuilderRepository,
 ) {
-  fun builder() =
-    IncidentPartyBuilder(repository)
+  fun builder() = IncidentPartyBuilder(repository)
 }
 
 @Component
@@ -42,8 +41,7 @@ class IncidentPartyBuilderRepository(
 class IncidentPartyBuilder(
   private val repository: IncidentPartyBuilderRepository,
 
-) :
-  IncidentPartyDsl {
+) : IncidentPartyDsl {
   private lateinit var incidentParty: IncidentParty
 
   fun buildOffender(
@@ -53,15 +51,14 @@ class IncidentPartyBuilder(
     comment: String?,
     outcome: String?,
     index: Int,
-  ): IncidentOffenderParty =
-    IncidentOffenderParty(
-      id = IncidentPartyId(incident.id, index),
-      role = repository.lookupOffenderRole(role),
-      outcome = outcome?.let { repository.lookupOutcome(it) },
-      offenderBooking = offenderBooking,
-      comment = comment,
-    )
-      .also { incidentParty = it }
+  ): IncidentOffenderParty = IncidentOffenderParty(
+    id = IncidentPartyId(incident.id, index),
+    role = repository.lookupOffenderRole(role),
+    outcome = outcome?.let { repository.lookupOutcome(it) },
+    offenderBooking = offenderBooking,
+    comment = comment,
+  )
+    .also { incidentParty = it }
 
   fun buildStaff(
     role: String,
@@ -69,12 +66,11 @@ class IncidentPartyBuilder(
     staff: Staff,
     comment: String?,
     partySequence: Int,
-  ): IncidentStaffParty =
-    IncidentStaffParty(
-      id = IncidentPartyId(incident.id, partySequence),
-      role = repository.lookupStaffRole(role),
-      staff = staff,
-      comment = comment,
-    )
-      .also { incidentParty = it }
+  ): IncidentStaffParty = IncidentStaffParty(
+    id = IncidentPartyId(incident.id, partySequence),
+    role = repository.lookupStaffRole(role),
+    staff = staff,
+    comment = comment,
+  )
+    .also { incidentParty = it }
 }

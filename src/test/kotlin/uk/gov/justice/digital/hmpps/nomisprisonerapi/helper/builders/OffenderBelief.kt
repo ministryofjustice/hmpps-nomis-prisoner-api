@@ -57,24 +57,23 @@ class OffenderBeliefBuilder(
     verified: Boolean?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): OffenderBelief =
-    OffenderBelief(
-      booking = booking,
-      rootOffender = offender,
-      beliefCode = repository.profileCodeOf(beliefCode),
-      startDate = startDate,
-      endDate = endDate,
-      changeReason = changeReason,
-      comments = comments,
-      verified = verified,
-    )
-      .let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): OffenderBelief = OffenderBelief(
+    booking = booking,
+    rootOffender = offender,
+    beliefCode = repository.profileCodeOf(beliefCode),
+    startDate = startDate,
+    endDate = endDate,
+    changeReason = changeReason,
+    comments = comments,
+    verified = verified,
+  )
+    .let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

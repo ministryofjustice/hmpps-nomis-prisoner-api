@@ -66,7 +66,5 @@ class IncidentQuestion(
   override fun hashCode(): Int = id.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(id = $id ), question = ${question.questionText})"
-  }
+  override fun toString(): String = this::class.simpleName + "(id = $id ), question = ${question.questionText})"
 }

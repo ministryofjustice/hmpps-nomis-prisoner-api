@@ -39,12 +39,11 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
     lateinit var courseActivity: CourseActivity
     lateinit var offenderBooking: OffenderBooking
 
-    private fun WebTestClient.getAllocationReconciliation(prisonId: String = "BXI") =
-      get()
-        .uri("/allocations/reconciliation/$prisonId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    private fun WebTestClient.getAllocationReconciliation(prisonId: String = "BXI") = get()
+      .uri("/allocations/reconciliation/$prisonId")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
 
     @BeforeEach
     fun `create an activity in BXI`() {
@@ -290,12 +289,11 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
     lateinit var offenderBooking: OffenderBooking
     lateinit var courseSchedule: CourseSchedule
 
-    private fun WebTestClient.getAttendanceReconciliation(prisonId: String = "BXI") =
-      get()
-        .uri("/attendances/reconciliation/$prisonId?date=$today")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    private fun WebTestClient.getAttendanceReconciliation(prisonId: String = "BXI") = get()
+      .uri("/attendances/reconciliation/$prisonId?date=$today")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
 
     @BeforeEach
     fun `create an activity in BXI with a course scheduled for today`() {

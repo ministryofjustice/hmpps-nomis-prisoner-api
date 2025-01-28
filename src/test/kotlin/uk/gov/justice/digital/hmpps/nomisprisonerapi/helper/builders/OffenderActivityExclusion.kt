@@ -27,12 +27,11 @@ class OffenderActivityExclusionBuilder : OffenderActivityExclusionDsl {
     courseActivity: CourseActivity,
     slotCategory: SlotCategory?,
     excludeDay: WeekDay,
-  ): OffenderActivityExclusion =
-    OffenderActivityExclusion(
-      offenderBooking = offenderBooking,
-      offenderProgramProfile = courseAllocation,
-      courseActivity = courseActivity,
-      slotCategory = slotCategory,
-      excludeDay = excludeDay,
-    )
+  ): OffenderActivityExclusion = OffenderActivityExclusion(
+    offenderBooking = offenderBooking,
+    offenderProgramProfile = courseAllocation,
+    courseActivity = courseActivity,
+    slotCategory = slotCategory,
+    excludeDay = excludeDay,
+  )
 }

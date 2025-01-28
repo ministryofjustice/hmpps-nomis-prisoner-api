@@ -18,9 +18,7 @@ interface IWPDocumentDsl
 class IWPDocumentBuilderFactory(
   private val repository: IWPDocumentBuilderRepository,
 ) {
-  fun builder(): IWPDocumentBuilder {
-    return IWPDocumentBuilder(repository)
-  }
+  fun builder(): IWPDocumentBuilder = IWPDocumentBuilder(repository)
 }
 
 @Component

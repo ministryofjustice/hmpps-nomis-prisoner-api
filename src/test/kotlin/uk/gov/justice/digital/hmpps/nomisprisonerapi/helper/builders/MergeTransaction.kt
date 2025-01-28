@@ -23,8 +23,7 @@ class MergeTransactionBuilderFactory(private val repository: MergeTransactionBui
   fun builder() = MergeTransactionBuilder(repository)
 }
 
-class MergeTransactionBuilder(private val repository: MergeTransactionBuilderRepository) :
-  MergeTransactionDsl {
+class MergeTransactionBuilder(private val repository: MergeTransactionBuilderRepository) : MergeTransactionDsl {
   fun build(
     requestDate: LocalDateTime,
     requestStatusCode: String,
@@ -41,23 +40,22 @@ class MergeTransactionBuilder(private val repository: MergeTransactionBuilderRep
     nomsId2: String,
     lastName2: String,
     firstName2: String,
-  ): MergeTransaction =
-    MergeTransaction(
-      requestDate = requestDate,
-      requestStatusCode = requestStatusCode,
-      transactionSource = transactionSource,
-      offenderBookId1 = offenderBookId1,
-      rootOffenderId1 = rootOffenderId1,
-      offenderId1 = offenderId1,
-      nomsId1 = nomsId1,
-      lastName1 = lastName1,
-      firstName1 = firstName1,
-      offenderBookId2 = offenderBookId2,
-      rootOffenderId2 = rootOffenderId2,
-      offenderId2 = offenderId2,
-      nomsId2 = nomsId2,
-      lastName2 = lastName2,
-      firstName2 = firstName2,
-    )
-      .let { repository.save(it) }
+  ): MergeTransaction = MergeTransaction(
+    requestDate = requestDate,
+    requestStatusCode = requestStatusCode,
+    transactionSource = transactionSource,
+    offenderBookId1 = offenderBookId1,
+    rootOffenderId1 = rootOffenderId1,
+    offenderId1 = offenderId1,
+    nomsId1 = nomsId1,
+    lastName1 = lastName1,
+    firstName1 = firstName1,
+    offenderBookId2 = offenderBookId2,
+    rootOffenderId2 = rootOffenderId2,
+    offenderId2 = offenderId2,
+    nomsId2 = nomsId2,
+    lastName2 = lastName2,
+    firstName2 = firstName2,
+  )
+    .let { repository.save(it) }
 }

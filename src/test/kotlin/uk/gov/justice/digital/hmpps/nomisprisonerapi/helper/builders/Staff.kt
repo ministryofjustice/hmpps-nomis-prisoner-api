@@ -54,14 +54,13 @@ class StaffBuilder(
     .let { repository.save(it) }
     .also { staff = it }
 
-  override fun account(username: String, type: String, dsl: StaffUserAccountDsl.() -> Unit): StaffUserAccount =
-    staffUserAccountBuilderFactory.builder().let { builder ->
-      builder.build(
-        username = username,
-        staff = staff,
-        type = type,
-      )
-        .also { staff.accounts += it }
-        .also { builder.apply(dsl) }
-    }
+  override fun account(username: String, type: String, dsl: StaffUserAccountDsl.() -> Unit): StaffUserAccount = staffUserAccountBuilderFactory.builder().let { builder ->
+    builder.build(
+      username = username,
+      staff = staff,
+      type = type,
+    )
+      .also { staff.accounts += it }
+      .also { builder.apply(dsl) }
+  }
 }

@@ -15,8 +15,7 @@ class CSIPAttendeeBuilderFactory {
   fun builder() = CSIPAttendeeBuilder()
 }
 
-class CSIPAttendeeBuilder :
-  CSIPAttendeeDsl {
+class CSIPAttendeeBuilder : CSIPAttendeeDsl {
 
   fun build(
     csipReview: CSIPReview,
@@ -24,12 +23,11 @@ class CSIPAttendeeBuilder :
     role: String?,
     attended: Boolean,
     contribution: String?,
-  ): CSIPAttendee =
-    CSIPAttendee(
-      csipReview = csipReview,
-      name = name,
-      role = role,
-      attended = attended,
-      contribution = contribution,
-    )
+  ): CSIPAttendee = CSIPAttendee(
+    csipReview = csipReview,
+    name = name,
+    role = role,
+    attended = attended,
+    contribution = contribution,
+  )
 }

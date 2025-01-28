@@ -24,8 +24,7 @@ class OffenderIdentifyingMarkImageBuilderFactory(
   private val bodyPartRepository: ReferenceCodeRepository<BodyPart>,
   private val markTypeRepository: ReferenceCodeRepository<MarkType>,
 ) {
-  fun builder(): OffenderIdentifyingMarkImageBuilder =
-    OffenderIdentifyingMarkImageBuilder(repository, imageSourceRepository, bodyPartRepository, markTypeRepository)
+  fun builder(): OffenderIdentifyingMarkImageBuilder = OffenderIdentifyingMarkImageBuilder(repository, imageSourceRepository, bodyPartRepository, markTypeRepository)
 }
 
 class OffenderIdentifyingMarkImageBuilder(
@@ -48,16 +47,15 @@ class OffenderIdentifyingMarkImageBuilder(
     imageSourceCode: String,
     orientationTypeCode: String,
     imageViewType: String,
-  ): OffenderIdentifyingMarkImage =
-    OffenderIdentifyingMarkImage(
-      identifyingMark = identifyingMark,
-      captureDateTime = captureDateTime,
-      fullSizeImage = fullSizeImage,
-      thumbnailImage = thumbnailImage,
-      active = active,
-      imageSource = findImageSource(imageSourceCode),
-      orientationType = findBodyPart(orientationTypeCode),
-      imageViewType = findMarkType(imageViewType),
-    )
-      .let { repository.save(it) }
+  ): OffenderIdentifyingMarkImage = OffenderIdentifyingMarkImage(
+    identifyingMark = identifyingMark,
+    captureDateTime = captureDateTime,
+    fullSizeImage = fullSizeImage,
+    thumbnailImage = thumbnailImage,
+    active = active,
+    imageSource = findImageSource(imageSourceCode),
+    orientationType = findBodyPart(orientationTypeCode),
+    imageViewType = findMarkType(imageViewType),
+  )
+    .let { repository.save(it) }
 }

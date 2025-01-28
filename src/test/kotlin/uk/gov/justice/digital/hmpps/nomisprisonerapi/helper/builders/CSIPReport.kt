@@ -121,15 +121,13 @@ class CSIPReportBuilderFactory(
   private val csipFactorBuilderFactory: CSIPFactorBuilderFactory,
 
 ) {
-  fun builder(): CSIPReportBuilder {
-    return CSIPReportBuilder(
-      repository,
-      csipInterviewBuilderFactory,
-      csipPlanBuilderFactory,
-      csipReviewBuilderFactory,
-      csipFactorBuilderFactory,
-    )
-  }
+  fun builder(): CSIPReportBuilder = CSIPReportBuilder(
+    repository,
+    csipInterviewBuilderFactory,
+    csipPlanBuilderFactory,
+    csipReviewBuilderFactory,
+    csipFactorBuilderFactory,
+  )
 }
 
 @Component
@@ -185,34 +183,33 @@ class CSIPReportBuilder(
     planReason: String?,
     firstCaseReviewDate: LocalDate?,
     logNumber: String?,
-  ): CSIPReport =
-    CSIPReport(
-      offenderBooking = offenderBooking,
-      rootOffender = offenderBooking.rootOffender,
-      originalAgencyId = offenderBooking.location?.id,
-      type = repository.lookupType(type),
-      location = repository.lookupLocation(location),
-      areaOfWork = repository.lookupAreaOfWork(areaOfWork),
-      reportedBy = reportedBy,
-      incidentDate = incidentDate,
-      incidentTime = incidentTime?.let { LocalDateTime.of(LocalDate.now(), incidentTime) },
-      staffAssaulted = staffAssaulted,
-      staffAssaultedName = staffAssaultedName,
-      releaseDate = releaseDate,
-      involvement = involvement?.let { repository.lookupInvolvement(involvement) },
-      concernDescription = concern,
-      knownReasons = knownReasons,
-      otherInformation = otherInformation,
-      referralComplete = referralComplete,
-      referralCompletedBy = referralCompletedBy,
-      referralCompletedDate = referralCompletedDate,
-      caseManager = caseManager,
-      reasonForPlan = planReason,
-      firstCaseReviewDate = firstCaseReviewDate,
-      logNumber = logNumber,
-    )
-      .let { repository.save(it) }
-      .also { csipReport = it }
+  ): CSIPReport = CSIPReport(
+    offenderBooking = offenderBooking,
+    rootOffender = offenderBooking.rootOffender,
+    originalAgencyId = offenderBooking.location?.id,
+    type = repository.lookupType(type),
+    location = repository.lookupLocation(location),
+    areaOfWork = repository.lookupAreaOfWork(areaOfWork),
+    reportedBy = reportedBy,
+    incidentDate = incidentDate,
+    incidentTime = incidentTime?.let { LocalDateTime.of(LocalDate.now(), incidentTime) },
+    staffAssaulted = staffAssaulted,
+    staffAssaultedName = staffAssaultedName,
+    releaseDate = releaseDate,
+    involvement = involvement?.let { repository.lookupInvolvement(involvement) },
+    concernDescription = concern,
+    knownReasons = knownReasons,
+    otherInformation = otherInformation,
+    referralComplete = referralComplete,
+    referralCompletedBy = referralCompletedBy,
+    referralCompletedDate = referralCompletedDate,
+    caseManager = caseManager,
+    reasonForPlan = planReason,
+    firstCaseReviewDate = firstCaseReviewDate,
+    logNumber = logNumber,
+  )
+    .let { repository.save(it) }
+    .also { csipReport = it }
 
   override fun factor(
     type: String,

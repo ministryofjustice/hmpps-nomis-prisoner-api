@@ -65,8 +65,7 @@ data class OffenderNonAssociation(
   val offenderNonAssociationDetails: MutableList<OffenderNonAssociationDetail> = mutableListOf(),
 
 ) {
-  fun getOpenNonAssociationDetail(): OffenderNonAssociationDetail? =
-    offenderNonAssociationDetails.firstOrNull { it.expiryDate == null }
+  fun getOpenNonAssociationDetail(): OffenderNonAssociationDetail? = offenderNonAssociationDetails.firstOrNull { it.expiryDate == null }
 
   fun nextAvailableSequence(): Int = offenderNonAssociationDetails.maxByOrNull {
     it.id.typeSequence
@@ -81,9 +80,8 @@ data class OffenderNonAssociation(
 
   override fun hashCode(): Int = javaClass.hashCode()
 
-  override fun toString(): String =
-    this::class.simpleName +
-      "(id = (${id.offenderId},${id.nsOffenderId}), offenderBooking=$offenderBookingId, nsOffenderBooking=$nsOffenderBookingId, nonAssociationReason=${nonAssociationReason?.code}, recipNonAssociationReason=${recipNonAssociationReason?.code}, offenderNonAssociationDetails=$offenderNonAssociationDetails)"
+  override fun toString(): String = this::class.simpleName +
+    "(id = (${id.offenderId},${id.nsOffenderId}), offenderBooking=$offenderBookingId, nsOffenderBooking=$nsOffenderBookingId, nonAssociationReason=${nonAssociationReason?.code}, recipNonAssociationReason=${recipNonAssociationReason?.code}, offenderNonAssociationDetails=$offenderNonAssociationDetails)"
 }
 
 @Entity

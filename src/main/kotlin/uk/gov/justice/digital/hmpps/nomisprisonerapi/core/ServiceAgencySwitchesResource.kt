@@ -57,8 +57,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
   )
   fun getServicePrisons(
     @Schema(description = "The code of the service from the EXTERNAL_SERVICES table") @PathVariable serviceCode: String,
-  ): List<PrisonDetails> =
-    service.getServicePrisons(serviceCode)
+  ): List<PrisonDetails> = service.getServicePrisons(serviceCode)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/service-prisons/{serviceCode}/prison/{prisonId}")

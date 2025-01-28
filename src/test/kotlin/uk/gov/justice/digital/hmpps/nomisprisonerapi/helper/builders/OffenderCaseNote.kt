@@ -23,9 +23,7 @@ interface OffenderCaseNoteDsl
 class OffenderCaseNoteBuilderFactory(
   private val repository: OffenderCaseNoteBuilderRepository,
 ) {
-  fun builder(): OffenderCaseNoteBuilder {
-    return OffenderCaseNoteBuilder(repository)
-  }
+  fun builder(): OffenderCaseNoteBuilder = OffenderCaseNoteBuilder(repository)
 }
 
 @Component
@@ -34,14 +32,11 @@ class OffenderCaseNoteBuilderRepository(
   private val taskTypeRepository: ReferenceCodeRepository<TaskType>,
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType>,
 ) {
-  fun save(casenote: OffenderCaseNote): OffenderCaseNote =
-    repository.saveAndFlush(casenote)
+  fun save(casenote: OffenderCaseNote): OffenderCaseNote = repository.saveAndFlush(casenote)
 
-  fun lookupTaskType(code: String): TaskType =
-    taskTypeRepository.findByIdOrNull(TaskType.pk(code))!!
+  fun lookupTaskType(code: String): TaskType = taskTypeRepository.findByIdOrNull(TaskType.pk(code))!!
 
-  fun lookupTaskSubType(code: String): TaskSubType =
-    taskSubTypeRepository.findByIdOrNull(TaskSubType.pk(code))!!
+  fun lookupTaskSubType(code: String): TaskSubType = taskSubTypeRepository.findByIdOrNull(TaskSubType.pk(code))!!
 }
 
 class OffenderCaseNoteBuilder(

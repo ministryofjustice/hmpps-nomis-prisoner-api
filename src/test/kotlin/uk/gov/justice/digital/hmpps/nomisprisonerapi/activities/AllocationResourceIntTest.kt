@@ -74,47 +74,38 @@ class AllocationResourceIntTest : IntegrationTestBase() {
   }
   """.trimIndent()
 
-  private fun String.withBookingId(newBookingId: String?) =
-    replace(""""bookingId": $bookingId,""", newBookingId?.let { """"bookingId": $newBookingId,""" } ?: "")
+  private fun String.withBookingId(newBookingId: String?) = replace(""""bookingId": $bookingId,""", newBookingId?.let { """"bookingId": $newBookingId,""" } ?: "")
 
-  private fun String.withStartDate(newStartDate: String?) =
-    replace(""""startDate": "2022-11-14",""", newStartDate?.let { """"startDate": "$newStartDate",""" } ?: "")
+  private fun String.withStartDate(newStartDate: String?) = replace(""""startDate": "2022-11-14",""", newStartDate?.let { """"startDate": "$newStartDate",""" } ?: "")
 
-  private fun String.withPayBandCode(newPayBandCode: String?) =
-    replace(""""payBandCode": "5",""", newPayBandCode?.let { """"payBandCode": "$newPayBandCode",""" } ?: "")
+  private fun String.withPayBandCode(newPayBandCode: String?) = replace(""""payBandCode": "5",""", newPayBandCode?.let { """"payBandCode": "$newPayBandCode",""" } ?: "")
 
-  private fun String.withProgramStatusCode(programStatusCode: String?) =
-    replace(""""programStatusCode": "ALLOC",""", programStatusCode?.let { """"programStatusCode": "$programStatusCode",""" } ?: "")
+  private fun String.withProgramStatusCode(programStatusCode: String?) = replace(""""programStatusCode": "ALLOC",""", programStatusCode?.let { """"programStatusCode": "$programStatusCode",""" } ?: "")
 
-  private fun String.withPrisonerExclusions(exclusions: List<Pair<String, String?>>) =
-    replace(
-      """"exclusions": []""",
-      """"exclusions": [${exclusions.joinToString(", ") { ex -> """{"day": "${ex.first}", "slot": ${ex.second?.let { "\"$it\"" } ?: "null"}}""" }}]""",
-    )
+  private fun String.withPrisonerExclusions(exclusions: List<Pair<String, String?>>) = replace(
+    """"exclusions": []""",
+    """"exclusions": [${exclusions.joinToString(", ") { ex -> """{"day": "${ex.first}", "slot": ${ex.second?.let { "\"$it\"" } ?: "null"}}""" }}]""",
+  )
 
-  private fun String.withEndDate(newEndDate: String?) =
-    replace("}", newEndDate?.let { """, "endDate": "$newEndDate" }""" } ?: "}")
+  private fun String.withEndDate(newEndDate: String?) = replace("}", newEndDate?.let { """, "endDate": "$newEndDate" }""" } ?: "}")
 
-  private fun String.withAdditionalJson(additionalJson: String) =
-    replace("}", """, $additionalJson }""")
+  private fun String.withAdditionalJson(additionalJson: String) = replace("}", """, $additionalJson }""")
 
-  private fun upsertAllocationIsBadRequest(request: String = upsertRequest()) =
-    webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
-      .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-      .body(BodyInserters.fromValue(request))
-      .exchange()
-      .expectStatus().isBadRequest
+  private fun upsertAllocationIsBadRequest(request: String = upsertRequest()) = webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
+    .contentType(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .body(BodyInserters.fromValue(request))
+    .exchange()
+    .expectStatus().isBadRequest
 
-  private fun upsertAllocationIsOk(request: String = upsertRequest()) =
-    webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
-      .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-      .body(BodyInserters.fromValue(request))
-      .exchange()
-      .expectStatus().isOk
-      .expectBody(UpsertAllocationResponse::class.java)
-      .returnResult().responseBody
+  private fun upsertAllocationIsOk(request: String = upsertRequest()) = webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
+    .contentType(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .body(BodyInserters.fromValue(request))
+    .exchange()
+    .expectStatus().isOk
+    .expectBody(UpsertAllocationResponse::class.java)
+    .returnResult().responseBody
 
   @Nested
   inner class Api {

@@ -37,12 +37,11 @@ class CSIPInterviewBuilder(
     interviewDate: LocalDate,
     role: String,
     comments: String?,
-  ): CSIPInterview =
-    CSIPInterview(
-      csipReport = csipReport,
-      interviewee = interviewee,
-      interviewDate = interviewDate,
-      role = repository.lookupRole(role),
-      comments = comments,
-    )
+  ): CSIPInterview = CSIPInterview(
+    csipReport = csipReport,
+    interviewee = interviewee,
+    interviewDate = interviewDate,
+    role = repository.lookupRole(role),
+    comments = comments,
+  )
 }

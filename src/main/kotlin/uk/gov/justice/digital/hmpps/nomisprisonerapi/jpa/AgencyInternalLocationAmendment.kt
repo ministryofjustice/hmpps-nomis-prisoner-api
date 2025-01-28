@@ -65,6 +65,5 @@ data class AgencyInternalLocationAmendment(
 
   override fun hashCode(): Int = Objects.hashCode(amendmentId)
 
-  override fun toString(): String =
-    "AgencyInternalLocationAmendment(amendmentId=$amendmentId, amendDateTime=$amendDateTime, columnName=$columnName, oldValue=$oldValue, newValue=$newValue, amendUserId=$amendUserId)"
+  override fun toString(): String = "AgencyInternalLocationAmendment(amendmentId=$amendmentId, amendDateTime=$amendDateTime, columnName=$columnName, oldValue=$oldValue, newValue=$newValue, amendUserId=$amendUserId)"
 }

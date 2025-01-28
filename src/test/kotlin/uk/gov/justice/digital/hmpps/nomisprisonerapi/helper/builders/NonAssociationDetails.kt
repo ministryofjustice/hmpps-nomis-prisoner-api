@@ -15,7 +15,7 @@ annotation class NonAssociationDetailDslMarker
 interface NonAssociationDetailDsl
 
 @Component
-class NonAssociationDetailBuilderFactory() {
+class NonAssociationDetailBuilderFactory {
   fun builder() = NonAssociationDetailBuilder()
 }
 
@@ -35,23 +35,22 @@ class NonAssociationDetailBuilder : NonAssociationDetailDsl {
     modifiedBy: String?,
     comment: String?,
     nonAssociation: OffenderNonAssociation,
-  ): OffenderNonAssociationDetail =
-    OffenderNonAssociationDetail(
-      id = OffenderNonAssociationDetailId(
-        offenderId = offenderId,
-        nsOffenderId = nsOffenderId,
-        typeSeq,
-      ),
-      offenderBookingId = offenderBookingId,
-      nsOffenderBookingId = nsOffenderBookingId,
-      nonAssociationReason = nonAssociationReason,
-      recipNonAssociationReason = recipNonAssociationReason,
-      nonAssociationType = nonAssociationType,
-      effectiveDate = effectiveDate,
-      expiryDate = expiryDate,
-      authorisedBy = authorisedBy,
-      modifiedBy = modifiedBy,
-      comment = comment,
-      nonAssociation = nonAssociation,
-    )
+  ): OffenderNonAssociationDetail = OffenderNonAssociationDetail(
+    id = OffenderNonAssociationDetailId(
+      offenderId = offenderId,
+      nsOffenderId = nsOffenderId,
+      typeSeq,
+    ),
+    offenderBookingId = offenderBookingId,
+    nsOffenderBookingId = nsOffenderBookingId,
+    nonAssociationReason = nonAssociationReason,
+    recipNonAssociationReason = recipNonAssociationReason,
+    nonAssociationType = nonAssociationType,
+    effectiveDate = effectiveDate,
+    expiryDate = expiryDate,
+    authorisedBy = authorisedBy,
+    modifiedBy = modifiedBy,
+    comment = comment,
+    nonAssociation = nonAssociation,
+  )
 }

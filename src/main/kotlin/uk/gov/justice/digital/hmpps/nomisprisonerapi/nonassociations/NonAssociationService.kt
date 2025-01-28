@@ -286,23 +286,22 @@ class NonAssociationService(
     existing: OffenderNonAssociation,
     dto: CreateNonAssociationRequest,
     typeSequence: Int,
-  ) =
-    OffenderNonAssociationDetail(
-      id = OffenderNonAssociationDetailId(
-        offenderId = existing.id.offenderId,
-        nsOffenderId = existing.id.nsOffenderId,
-        typeSequence = typeSequence,
-      ),
-      offenderBookingId = existing.offenderBookingId,
-      nsOffenderBookingId = existing.nsOffenderBookingId,
-      nonAssociationReason = reason,
-      nonAssociation = existing,
-      effectiveDate = dto.effectiveDate,
-      comment = dto.comment,
-      nonAssociationType = typeRepository.findByIdOrNull(NonAssociationType.pk(dto.type))
-        ?: throw BadDataException("Type with code=${dto.type} does not exist"),
-      authorisedBy = dto.authorisedBy,
-    )
+  ) = OffenderNonAssociationDetail(
+    id = OffenderNonAssociationDetailId(
+      offenderId = existing.id.offenderId,
+      nsOffenderId = existing.id.nsOffenderId,
+      typeSequence = typeSequence,
+    ),
+    offenderBookingId = existing.offenderBookingId,
+    nsOffenderBookingId = existing.nsOffenderBookingId,
+    nonAssociationReason = reason,
+    nonAssociation = existing,
+    effectiveDate = dto.effectiveDate,
+    comment = dto.comment,
+    nonAssociationType = typeRepository.findByIdOrNull(NonAssociationType.pk(dto.type))
+      ?: throw BadDataException("Type with code=${dto.type} does not exist"),
+    authorisedBy = dto.authorisedBy,
+  )
 
   fun getNonAssociation(
     offenderNo: String,
@@ -329,16 +328,14 @@ class NonAssociationService(
       }
   }
 
-  fun getByBookingId(bookingId: Long): List<NonAssociationIdResponse> =
-    offenderNonAssociationRepository.findByOffenderBookingId(bookingId)
-      .ifEmpty {
-        throw NotFoundException("No non-associations found for bookingId=$bookingId")
-      }
+  fun getByBookingId(bookingId: Long): List<NonAssociationIdResponse> = offenderNonAssociationRepository.findByOffenderBookingId(bookingId)
+    .ifEmpty {
+      throw NotFoundException("No non-associations found for bookingId=$bookingId")
+    }
 
   fun findIdsByFilter(
     pageRequest: Pageable,
-  ): Page<NonAssociationIdResponse> =
-    offenderNonAssociationRepository.findAllNomsIds(pageRequest)
+  ): Page<NonAssociationIdResponse> = offenderNonAssociationRepository.findAllNomsIds(pageRequest)
 
   private fun mapModel(
     entity: OffenderNonAssociation,
@@ -346,31 +343,31 @@ class NonAssociationService(
     nsOffenderNo: String,
     typeSequence: Int?,
     getAll: Boolean,
-  ): List<NonAssociationResponse> =
-    entity.offenderNonAssociationDetails
-      .filter {
-        getAll || if (typeSequence != null) {
+  ): List<NonAssociationResponse> = entity.offenderNonAssociationDetails
+    .filter {
+      getAll ||
+        if (typeSequence != null) {
           it.id.typeSequence == typeSequence
         } else {
           it.expiryDate == null
         }
-      }
-      .map { detail ->
-        NonAssociationResponse(
-          offenderNo = offenderNo,
-          nsOffenderNo = nsOffenderNo,
-          typeSequence = detail.id.typeSequence,
-          reason = detail.nonAssociationReason.code,
-          // Always set in prod
-          recipReason = entity.recipNonAssociationReason?.code!!,
-          type = detail.nonAssociationType.code,
-          effectiveDate = detail.effectiveDate,
-          expiryDate = detail.expiryDate,
-          authorisedBy = detail.authorisedBy,
-          updatedBy = detail.updatedBy,
-          comment = detail.comment,
-        )
-      }
+    }
+    .map { detail ->
+      NonAssociationResponse(
+        offenderNo = offenderNo,
+        nsOffenderNo = nsOffenderNo,
+        typeSequence = detail.id.typeSequence,
+        reason = detail.nonAssociationReason.code,
+        // Always set in prod
+        recipReason = entity.recipNonAssociationReason?.code!!,
+        type = detail.nonAssociationType.code,
+        effectiveDate = detail.effectiveDate,
+        expiryDate = detail.expiryDate,
+        authorisedBy = detail.authorisedBy,
+        updatedBy = detail.updatedBy,
+        comment = detail.comment,
+      )
+    }
 }
 
 private val OffenderNonAssociationDetail.updatedBy: String

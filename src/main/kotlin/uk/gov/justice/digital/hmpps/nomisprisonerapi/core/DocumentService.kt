@@ -9,10 +9,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IWPDocumentR
 @Service
 @Transactional
 class DocumentService(private val documentRepository: IWPDocumentRepository) {
-  fun getDocumentById(documentId: Long) =
-    documentRepository.findByIdOrNull(documentId)?.body
-      ?: throw NotFoundException("Document with id $documentId does not exist")
+  fun getDocumentById(documentId: Long) = documentRepository.findByIdOrNull(documentId)?.body
+    ?: throw NotFoundException("Document with id $documentId does not exist")
 
-  fun findAllIds(bookingId: Long, templateNames: List<String>): List<DocumentIdResponse> =
-    documentRepository.findAllDocumentIds(bookingId, templateNames).map { DocumentIdResponse(it) }
+  fun findAllIds(bookingId: Long, templateNames: List<String>): List<DocumentIdResponse> = documentRepository.findAllDocumentIds(bookingId, templateNames).map { DocumentIdResponse(it) }
 }

@@ -88,29 +88,27 @@ class CourseAllocationBuilder(
     endComment: String?,
     suspended: Boolean,
     courseActivity: CourseActivity,
-  ) =
-    OffenderProgramProfile(
-      offenderBooking = offenderBooking,
-      program = courseActivity.program,
-      startDate = LocalDate.parse(startDate),
-      programStatus = programStatus(programStatusCode),
-      courseActivity = courseActivity,
-      prison = courseActivity.prison,
-      endDate = endDate?.let { LocalDate.parse(endDate) },
-      endReason = endReasonCode?.let { programEndReason(endReasonCode) },
-      endComment = endComment,
-      suspended = suspended,
-    )
-      .also { courseAllocation = it }
+  ) = OffenderProgramProfile(
+    offenderBooking = offenderBooking,
+    program = courseActivity.program,
+    startDate = LocalDate.parse(startDate),
+    programStatus = programStatus(programStatusCode),
+    courseActivity = courseActivity,
+    prison = courseActivity.prison,
+    endDate = endDate?.let { LocalDate.parse(endDate) },
+    endReason = endReasonCode?.let { programEndReason(endReasonCode) },
+    endComment = endComment,
+    suspended = suspended,
+  )
+    .also { courseAllocation = it }
 
   override fun payBand(
     startDate: String,
     endDate: String?,
     payBandCode: String,
-  ): OffenderProgramProfilePayBand =
-    payBandBuilderFactory.builder()
-      .build(courseAllocation, startDate, endDate, payBandCode)
-      .also { courseAllocation.payBands += it }
+  ): OffenderProgramProfilePayBand = payBandBuilderFactory.builder()
+    .build(courseAllocation, startDate, endDate, payBandCode)
+    .also { courseAllocation.payBands += it }
 
   override fun courseAttendance(
     courseSchedule: CourseSchedule,
@@ -120,31 +118,29 @@ class CourseAllocationBuilder(
     outcomeReasonCode: String?,
     pay: Boolean?,
     paidTransactionId: Long?,
-  ) =
-    courseAttendanceBuilderFactory.builder().build(
-      courseAllocation,
-      courseSchedule,
-      eventId,
-      eventStatusCode,
-      toInternalLocationId,
-      outcomeReasonCode,
-      pay,
-      paidTransactionId,
-    )
-      .also { courseAllocation.offenderCourseAttendances += it }
+  ) = courseAttendanceBuilderFactory.builder().build(
+    courseAllocation,
+    courseSchedule,
+    eventId,
+    eventStatusCode,
+    toInternalLocationId,
+    outcomeReasonCode,
+    pay,
+    paidTransactionId,
+  )
+    .also { courseAllocation.offenderCourseAttendances += it }
 
   override fun exclusion(
     slotCategory: SlotCategory?,
     excludeDay: WeekDay,
-  ): OffenderActivityExclusion =
-    exclusionBuilderFactory.builder().build(
-      courseAllocation.offenderBooking,
-      courseAllocation,
-      courseAllocation.courseActivity,
-      slotCategory,
-      excludeDay,
-    )
-      .also { courseAllocation.offenderExclusions += it }
+  ): OffenderActivityExclusion = exclusionBuilderFactory.builder().build(
+    courseAllocation.offenderBooking,
+    courseAllocation,
+    courseAllocation.courseActivity,
+    slotCategory,
+    excludeDay,
+  )
+    .also { courseAllocation.offenderExclusions += it }
 
   private fun programStatus(programStatusCode: String) = repository?.programStatus(programStatusCode)
     ?: OffenderProgramStatus(code = programStatusCode, description = programStatusCode)

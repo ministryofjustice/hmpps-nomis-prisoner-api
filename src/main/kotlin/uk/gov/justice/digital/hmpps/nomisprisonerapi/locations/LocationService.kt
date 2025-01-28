@@ -205,9 +205,8 @@ class LocationService(
     )
   }
 
-  fun getLocation(id: Long): LocationResponse =
-    agencyInternalLocationRepository.findByIdOrNull(id)?.toLocationResponse()
-      ?: throw NotFoundException("Location with id=$id does not exist")
+  fun getLocation(id: Long): LocationResponse = agencyInternalLocationRepository.findByIdOrNull(id)?.toLocationResponse()
+    ?: throw NotFoundException("Location with id=$id does not exist")
 
   fun getLocationByKey(key: String): LocationResponse = agencyInternalLocationRepository.findOneByDescription(key)
     .orElseThrow(NotFoundException("Location with business key=$key does not exist"))
@@ -249,9 +248,10 @@ class LocationService(
     usages: List<UsageRequest>?,
   ) {
     agencyInternalLocation.usages.removeIf { usage ->
-      usages == null || usages.none {
-        it.internalLocationUsageType == usage.internalLocationUsage.internalLocationUsage
-      }
+      usages == null ||
+        usages.none {
+          it.internalLocationUsageType == usage.internalLocationUsage.internalLocationUsage
+        }
     }
     usages?.forEach { usageRequest ->
       val usage = findExistingUsage(agencyInternalLocation, usageRequest)
@@ -259,7 +259,8 @@ class LocationService(
         agencyInternalLocation.usages.add(
           InternalLocationUsageLocation(
             internalLocationUsage = internalLocationUsageRepository.findOneByAgency_IdAndInternalLocationUsage(
-              agencyInternalLocation.agency.id, usageRequest.internalLocationUsageType,
+              agencyInternalLocation.agency.id,
+              usageRequest.internalLocationUsageType,
             )
               ?: throw BadDataException("Internal location usage with code=${usageRequest.internalLocationUsageType} at prison ${agencyInternalLocation.agency.id} does not exist"),
             capacity = usageRequest.capacity,
@@ -277,49 +278,44 @@ class LocationService(
   private fun findExistingProfile(
     agencyInternalLocation: AgencyInternalLocation,
     profileRequest: ProfileRequest,
-  ): AgencyInternalLocationProfile? {
-    return agencyInternalLocation.profiles.find {
-      it.id.profileType == profileRequest.profileType && it.id.profileCode == profileRequest.profileCode
-    }
+  ): AgencyInternalLocationProfile? = agencyInternalLocation.profiles.find {
+    it.id.profileType == profileRequest.profileType && it.id.profileCode == profileRequest.profileCode
   }
 
   private fun findExistingUsage(
     agencyInternalLocation: AgencyInternalLocation,
     usageRequest: UsageRequest,
-  ): InternalLocationUsageLocation? {
-    return agencyInternalLocation.usages.find {
-      it.internalLocationUsage.internalLocationUsage == usageRequest.internalLocationUsageType
-    }
+  ): InternalLocationUsageLocation? = agencyInternalLocation.usages.find {
+    it.internalLocationUsage.internalLocationUsage == usageRequest.internalLocationUsageType
   }
 
-  private fun AgencyInternalLocation.toLocationResponse(): LocationResponse =
-    LocationResponse(
-      locationId = locationId,
-      description = description,
-      locationType = locationType,
-      prisonId = agency.id,
-      parentLocationId = parentLocation?.locationId,
-      parentKey = parentLocation?.description,
-      operationalCapacity = operationalCapacity,
-      cnaCapacity = cnaCapacity,
-      userDescription = userDescription,
-      locationCode = locationCode,
-      capacity = capacity,
-      listSequence = listSequence,
-      comment = comment,
-      unitType = unitType?.code,
-      certified = certified,
-      active = active,
-      deactivateDate = deactivateDate,
-      reactivateDate = reactivateDate,
-      reasonCode = deactivateReason?.code,
-      profiles = profiles.map { toProfileResponse(it.id) },
-      usages = usages.map { toUsageResponse(it) },
-      amendments = amendments.map { toAmendmentResponse(it) },
-      createDatetime = createDatetime,
-      createUsername = createUsername,
-      modifyUsername = modifyUsername,
-    )
+  private fun AgencyInternalLocation.toLocationResponse(): LocationResponse = LocationResponse(
+    locationId = locationId,
+    description = description,
+    locationType = locationType,
+    prisonId = agency.id,
+    parentLocationId = parentLocation?.locationId,
+    parentKey = parentLocation?.description,
+    operationalCapacity = operationalCapacity,
+    cnaCapacity = cnaCapacity,
+    userDescription = userDescription,
+    locationCode = locationCode,
+    capacity = capacity,
+    listSequence = listSequence,
+    comment = comment,
+    unitType = unitType?.code,
+    certified = certified,
+    active = active,
+    deactivateDate = deactivateDate,
+    reactivateDate = reactivateDate,
+    reasonCode = deactivateReason?.code,
+    profiles = profiles.map { toProfileResponse(it.id) },
+    usages = usages.map { toUsageResponse(it) },
+    amendments = amendments.map { toAmendmentResponse(it) },
+    createDatetime = createDatetime,
+    createUsername = createUsername,
+    modifyUsername = modifyUsername,
+  )
 
   private fun toProfileResponse(id: AgencyInternalLocationProfileId) = ProfileRequest(
     profileType = id.profileType,

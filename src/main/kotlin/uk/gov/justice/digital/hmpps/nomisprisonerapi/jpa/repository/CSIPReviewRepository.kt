@@ -7,7 +7,9 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 
 @Repository
-interface CSIPReviewRepository : CrudRepository<CSIPReview, Long>, JpaSpecificationExecutor<CSIPReview> {
+interface CSIPReviewRepository :
+  CrudRepository<CSIPReview, Long>,
+  JpaSpecificationExecutor<CSIPReview> {
   @Query("select coalesce(max(reviewSequence), 0) + 1 from CSIPReview where csipReport.id = :reportId")
   fun getNextSequence(reportId: Long): Int
 }

@@ -526,8 +526,7 @@ class VisitService(
       )
   }
 
-  private fun AgencyInternalLocation.toInternalLocationDescription(isClosedVisit: Boolean) =
-    "$description-VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
+  private fun AgencyInternalLocation.toInternalLocationDescription(isClosedVisit: Boolean) = "$description-VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
 
   private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay = visitDayRepository.save(
     AgencyVisitDay(

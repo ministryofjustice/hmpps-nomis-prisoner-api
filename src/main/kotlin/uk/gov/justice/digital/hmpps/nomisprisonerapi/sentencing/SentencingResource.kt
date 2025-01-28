@@ -409,8 +409,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
     @RequestBody @Valid
     request: CreateSentenceRequest,
-  ): CreateSentenceResponse =
-    sentencingService.createSentence(offenderNo, request)
+  ): CreateSentenceResponse = sentencingService.createSentence(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PutMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
@@ -492,8 +491,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sequence: Long,
     @RequestBody @Valid
     request: CreateSentenceRequest,
-  ) =
-    sentencingService.updateSentence(sentenceSequence = sequence, bookingId = bookingId, request = request)
+  ) = sentencingService.updateSentence(sentenceSequence = sequence, bookingId = bookingId, request = request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -604,9 +602,8 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
     @RequestBody @Valid
     request: CreateCourtCaseRequest,
-  ): CreateCourtCaseResponse =
-    request.courtAppearance?.let { sentencingService.createCourtCaseHierachy(offenderNo, request) }
-      ?: sentencingService.createCourtCase(offenderNo, request)
+  ): CreateCourtCaseResponse = request.courtAppearance?.let { sentencingService.createCourtCaseHierachy(offenderNo, request) }
+    ?: sentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances")
@@ -688,8 +685,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     caseId: Long,
     @RequestBody @Valid
     request: CourtAppearanceRequest,
-  ): CreateCourtAppearanceResponse =
-    sentencingService.createCourtAppearance(offenderNo, caseId, request)
+  ): CreateCourtAppearanceResponse = sentencingService.createCourtAppearance(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/charges")
@@ -855,8 +851,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     eventId: Long,
     @RequestBody @Valid
     request: CourtAppearanceRequest,
-  ): UpdateCourtAppearanceResponse =
-    sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
+  ): UpdateCourtAppearanceResponse = sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
@@ -909,8 +904,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Case appearance Id", example = "34565", required = true)
     @PathVariable
     eventId: Long,
-  ) =
-    sentencingService.deleteCourtAppearance(offenderNo, caseId, eventId)
+  ) = sentencingService.deleteCourtAppearance(offenderNo, caseId, eventId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{courtEventId}/charges/{chargeId}")
@@ -998,8 +992,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     courtEventId: Long,
     @RequestBody @Valid
     request: OffenderChargeRequest,
-  ) =
-    sentencingService.updateCourtCharge(offenderNo, caseId, chargeId, courtEventId, request)
+  ) = sentencingService.updateCourtCharge(offenderNo, caseId, chargeId, courtEventId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{id}")
@@ -1246,14 +1239,13 @@ class SentencingResource(private val sentencingService: SentencingService) {
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-  ): Page<CourtCaseIdResponse> =
-    sentencingService.findCourtCaseIdsByFilter(
-      pageRequest = pageRequest,
-      CourtCaseFilter(
-        toDateTime = toDate?.plusDays(1)?.atStartOfDay(),
-        fromDateTime = fromDate?.atStartOfDay(),
-      ),
-    )
+  ): Page<CourtCaseIdResponse> = sentencingService.findCourtCaseIdsByFilter(
+    pageRequest = pageRequest,
+    CourtCaseFilter(
+      toDateTime = toDate?.plusDays(1)?.atStartOfDay(),
+      fromDateTime = fromDate?.atStartOfDay(),
+    ),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/case-identifiers")

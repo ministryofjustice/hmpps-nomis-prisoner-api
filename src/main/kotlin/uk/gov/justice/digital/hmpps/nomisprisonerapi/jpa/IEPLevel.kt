@@ -13,17 +13,16 @@ class IEPLevel(
   active: Boolean = true,
   sequence: Int = 0,
   expiredDate: LocalDate? = null,
-) :
-  ReferenceCode(
-    domain = IEP_LEVEL,
-    code = code,
-    description = description,
-    active = active,
-    sequence = sequence,
-    parentCode = sequence.toString(),
-    parentDomain = null,
-    expiredDate = expiredDate,
-  ) {
+) : ReferenceCode(
+  domain = IEP_LEVEL,
+  code = code,
+  description = description,
+  active = active,
+  sequence = sequence,
+  parentCode = sequence.toString(),
+  parentDomain = null,
+  expiredDate = expiredDate,
+) {
   companion object {
     const val IEP_LEVEL = "IEP_LEVEL"
     fun pk(code: String): Pk = Pk(IEP_LEVEL, code)

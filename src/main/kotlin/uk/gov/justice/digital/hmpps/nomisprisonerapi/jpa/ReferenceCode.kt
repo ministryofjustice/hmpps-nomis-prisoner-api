@@ -77,13 +77,9 @@ abstract class ReferenceCode(
   }
 
   companion object {
-    fun getDescriptionOrNull(referenceCode: ReferenceCode?): String? {
-      return referenceCode?.description
-    }
+    fun getDescriptionOrNull(referenceCode: ReferenceCode?): String? = referenceCode?.description
 
-    fun getCodeOrNull(referenceCode: ReferenceCode?): String? {
-      return referenceCode?.code
-    }
+    fun getCodeOrNull(referenceCode: ReferenceCode?): String? = referenceCode?.code
   }
 
   @Embeddable

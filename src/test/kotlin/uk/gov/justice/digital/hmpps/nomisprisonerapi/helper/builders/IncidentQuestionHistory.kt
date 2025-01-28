@@ -29,14 +29,12 @@ interface IncidentQuestionHistoryDsl {
 class IncidentQuestionHistoryBuilderFactory(
   private val incidentResponseHistoryBuilderFactory: IncidentResponseHistoryBuilderFactory,
 ) {
-  fun builder() =
-    IncidentQuestionHistoryBuilder(incidentResponseHistoryBuilderFactory)
+  fun builder() = IncidentQuestionHistoryBuilder(incidentResponseHistoryBuilderFactory)
 }
 
 class IncidentQuestionHistoryBuilder(
   private val incidentResponseHistoryBuilderFactory: IncidentResponseHistoryBuilderFactory,
-) :
-  IncidentQuestionHistoryDsl {
+) : IncidentQuestionHistoryDsl {
   private lateinit var incidentQuestionHistory: IncidentQuestionHistory
 
   fun build(
@@ -54,19 +52,17 @@ class IncidentQuestionHistoryBuilder(
     responseDate: LocalDate?,
     recordingStaff: Staff,
     dsl: IncidentResponseHistoryDsl.() -> Unit,
-  ): IncidentResponseHistory =
-    incidentResponseHistoryBuilderFactory.builder()
-      .let {
-          builder ->
-        builder.build(
-          incidentQuestionHistory = incidentQuestionHistory,
-          answerHistorySequence = incidentQuestionHistory.responses.size + 1,
-          answer = answer,
-          comment = comment,
-          responseDate = responseDate,
-          recordingStaff = recordingStaff,
-        )
-          .also { incidentQuestionHistory.responses += it }
-          .also { builder.apply(dsl) }
-      }
+  ): IncidentResponseHistory = incidentResponseHistoryBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        incidentQuestionHistory = incidentQuestionHistory,
+        answerHistorySequence = incidentQuestionHistory.responses.size + 1,
+        answer = answer,
+        comment = comment,
+        responseDate = responseDate,
+        recordingStaff = recordingStaff,
+      )
+        .also { incidentQuestionHistory.responses += it }
+        .also { builder.apply(dsl) }
+    }
 }

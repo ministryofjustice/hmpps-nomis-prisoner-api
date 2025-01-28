@@ -72,15 +72,13 @@ class IncidentBuilderFactory(
   private val incidentQuestionBuilderFactory: IncidentQuestionBuilderFactory,
   private val incidentHistoryBuilderFactory: IncidentHistoryBuilderFactory,
 ) {
-  fun builder(): IncidentBuilder {
-    return IncidentBuilder(
-      repository,
-      incidentPartyBuilderFactory,
-      incidentRequirementBuilderFactory,
-      incidentQuestionBuilderFactory,
-      incidentHistoryBuilderFactory,
-    )
-  }
+  fun builder(): IncidentBuilder = IncidentBuilder(
+    repository,
+    incidentPartyBuilderFactory,
+    incidentRequirementBuilderFactory,
+    incidentQuestionBuilderFactory,
+    incidentHistoryBuilderFactory,
+  )
 }
 
 @Component
@@ -113,23 +111,22 @@ class IncidentBuilder(
     incidentStatus: String,
     followUpDate: LocalDate,
     questionnaire: Questionnaire,
-  ): Incident =
-    Incident(
-      title = title,
-      description = description,
-      agency = repository.lookupAgency(agencyId),
-      reportingStaff = reportingStaff,
-      reportedDate = reportedDateTime.toLocalDate(),
-      reportedTime = reportedDateTime.toLocalTime(),
-      incidentDate = incidentDateTime.toLocalDate(),
-      incidentTime = incidentDateTime.toLocalTime(),
-      status = repository.lookupIncidentStatusCode(incidentStatus),
-      followUpDate = followUpDate,
-      questionnaire = questionnaire,
-      incidentType = questionnaire.code,
-    )
-      .let { repository.save(it) }
-      .also { incident = it }
+  ): Incident = Incident(
+    title = title,
+    description = description,
+    agency = repository.lookupAgency(agencyId),
+    reportingStaff = reportingStaff,
+    reportedDate = reportedDateTime.toLocalDate(),
+    reportedTime = reportedDateTime.toLocalTime(),
+    incidentDate = incidentDateTime.toLocalDate(),
+    incidentTime = incidentDateTime.toLocalTime(),
+    status = repository.lookupIncidentStatusCode(incidentStatus),
+    followUpDate = followUpDate,
+    questionnaire = questionnaire,
+    incidentType = questionnaire.code,
+  )
+    .let { repository.save(it) }
+    .also { incident = it }
 
   override fun staffParty(
     role: String,
@@ -176,47 +173,44 @@ class IncidentBuilder(
     recordingStaff: Staff,
     agencyId: String,
     dsl: IncidentRequirementDsl.() -> Unit,
-  ): IncidentRequirement =
-    incidentRequirementBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          comment = comment,
-          incident = incident,
-          recordingStaff = recordingStaff,
-          agencyId = agencyId,
-          requirementSequence = incident.requirements.size + 1,
-        )
-          .also { incident.requirements += it }
-          .also { builder.apply(dsl) }
-      }
+  ): IncidentRequirement = incidentRequirementBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        comment = comment,
+        incident = incident,
+        recordingStaff = recordingStaff,
+        agencyId = agencyId,
+        requirementSequence = incident.requirements.size + 1,
+      )
+        .also { incident.requirements += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun question(
     question: QuestionnaireQuestion,
     dsl: IncidentQuestionDsl.() -> Unit,
-  ): IncidentQuestion =
-    incidentQuestionBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          incident = incident,
-          question = question,
-          questionSequence = incident.questions.size + 1,
-        )
-          .also { incident.questions += it }
-          .also { builder.apply(dsl) }
-      }
+  ): IncidentQuestion = incidentQuestionBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        incident = incident,
+        question = question,
+        questionSequence = incident.questions.size + 1,
+      )
+        .also { incident.questions += it }
+        .also { builder.apply(dsl) }
+    }
 
   override fun history(
     questionnaire: Questionnaire,
     changeStaff: Staff,
     dsl: IncidentHistoryDsl.() -> Unit,
-  ): IncidentHistory =
-    incidentHistoryBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          questionnaire = questionnaire,
-          changeStaff = changeStaff,
-        )
-          .also { incident.incidentHistory += it }
-          .also { builder.apply(dsl) }
-      }
+  ): IncidentHistory = incidentHistoryBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        questionnaire = questionnaire,
+        changeStaff = changeStaff,
+      )
+        .also { incident.incidentHistory += it }
+        .also { builder.apply(dsl) }
+    }
 }

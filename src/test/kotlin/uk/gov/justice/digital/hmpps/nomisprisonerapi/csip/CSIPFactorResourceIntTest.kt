@@ -29,7 +29,8 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
       offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
         booking(agencyLocationId = "MDI") {
           csip1 = csipReport(
-            staffAssaulted = true, staffAssaultedName = "Assaulted Person",
+            staffAssaulted = true,
+            staffAssaultedName = "Assaulted Person",
             releaseDate = LocalDate.parse("2028-11-25"),
           ) {
             factor()

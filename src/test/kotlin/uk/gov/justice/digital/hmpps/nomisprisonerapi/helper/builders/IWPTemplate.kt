@@ -31,10 +31,9 @@ class IWPTemplateBuilder(
   fun build(
     name: String,
     description: String?,
-  ): IWPTemplate =
-    IWPTemplate(
-      name = name,
-      description = description,
-    )
-      .let { repository.save(it) }
+  ): IWPTemplate = IWPTemplate(
+    name = name,
+    description = description,
+  )
+    .let { repository.save(it) }
 }

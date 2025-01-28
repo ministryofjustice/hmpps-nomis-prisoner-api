@@ -43,19 +43,18 @@ class PersonEmploymentBuilder(val repository: PersonEmploymentBuilderRepository)
     employerCorporate: Corporate,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): PersonEmployment =
-    PersonEmployment(
-      id = PersonEmploymentPK(person, sequence),
-      active = active,
-      employerCorporate = employerCorporate,
-    )
-      .let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): PersonEmployment = PersonEmployment(
+    id = PersonEmploymentPK(person, sequence),
+    active = active,
+    employerCorporate = employerCorporate,
+  )
+    .let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

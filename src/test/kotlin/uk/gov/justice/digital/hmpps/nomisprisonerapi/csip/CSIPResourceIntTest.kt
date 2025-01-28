@@ -2177,44 +2177,42 @@ class CSIPResourceIntTest : IntegrationTestBase() {
   }
 }
 
-private fun createUpsertCSIPRequestMinimalData(csipReportId: Long? = null) =
-  UpsertCSIPRequest(
-    id = csipReportId,
-    offenderNo = "A1234TT",
-    incidentDate = LocalDate.parse("2023-12-15"),
-    typeCode = "VPA",
-    locationCode = "EXY",
-    areaOfWorkCode = "KIT",
-    reportedBy = "Jill Reporter",
-    reportedDate = LocalDate.parse("2024-05-12"),
-  )
+private fun createUpsertCSIPRequestMinimalData(csipReportId: Long? = null) = UpsertCSIPRequest(
+  id = csipReportId,
+  offenderNo = "A1234TT",
+  incidentDate = LocalDate.parse("2023-12-15"),
+  typeCode = "VPA",
+  locationCode = "EXY",
+  areaOfWorkCode = "KIT",
+  reportedBy = "Jill Reporter",
+  reportedDate = LocalDate.parse("2024-05-12"),
+)
 
-private fun createUpsertCSIPRequest(nomisCSIPReportd: Long? = null) =
-  UpsertCSIPRequest(
-    id = nomisCSIPReportd,
-    offenderNo = "A1234TT",
-    incidentDate = LocalDate.parse("2023-12-23"),
-    incidentTime = LocalTime.parse("10:32:12"),
-    prisonCodeWhenRecorded = "RNI",
-    typeCode = "INT",
-    locationCode = "LIB",
-    areaOfWorkCode = "EDU",
-    reportedBy = "Jane Reporter",
-    reportedDate = LocalDate.now(),
-    logNumber = "RNI-001",
-    proActiveReferral = false,
-    staffAssaulted = true,
-    staffAssaultedName = "Assaulted Person",
-    reportDetailRequest = reportDetailRequest,
-    saferCustodyScreening = saferCustodyScreeningRequest,
-    investigation = investigationDetailRequest,
-    caseManager = "A CaseManager",
-    decision = decisionRequest,
-    planReason = "helper",
-    firstCaseReviewDate = LocalDate.parse("2024-04-15"),
-    plans = listOf(planRequest),
-    reviews = listOf(reviewRequest),
-  )
+private fun createUpsertCSIPRequest(nomisCSIPReportd: Long? = null) = UpsertCSIPRequest(
+  id = nomisCSIPReportd,
+  offenderNo = "A1234TT",
+  incidentDate = LocalDate.parse("2023-12-23"),
+  incidentTime = LocalTime.parse("10:32:12"),
+  prisonCodeWhenRecorded = "RNI",
+  typeCode = "INT",
+  locationCode = "LIB",
+  areaOfWorkCode = "EDU",
+  reportedBy = "Jane Reporter",
+  reportedDate = LocalDate.now(),
+  logNumber = "RNI-001",
+  proActiveReferral = false,
+  staffAssaulted = true,
+  staffAssaultedName = "Assaulted Person",
+  reportDetailRequest = reportDetailRequest,
+  saferCustodyScreening = saferCustodyScreeningRequest,
+  investigation = investigationDetailRequest,
+  caseManager = "A CaseManager",
+  decision = decisionRequest,
+  planReason = "helper",
+  firstCaseReviewDate = LocalDate.parse("2024-04-15"),
+  plans = listOf(planRequest),
+  reviews = listOf(reviewRequest),
+)
 
 private val factorRequest = CSIPFactorRequest(
   id = null,

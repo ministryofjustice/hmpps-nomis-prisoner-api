@@ -15,8 +15,7 @@ class QuestionnaireAnswerBuilderFactory {
   fun builder() = QuestionnaireAnswerBuilder()
 }
 
-class QuestionnaireAnswerBuilder() :
-  QuestionnaireAnswerDsl {
+class QuestionnaireAnswerBuilder : QuestionnaireAnswerDsl {
   private lateinit var questionnaireAnswer: QuestionnaireAnswer
 
   fun build(
@@ -24,12 +23,11 @@ class QuestionnaireAnswerBuilder() :
     answerSequence: Int,
     listSequence: Int,
     nextQuestion: QuestionnaireQuestion?,
-  ): QuestionnaireAnswer =
-    QuestionnaireAnswer(
-      answerText = answer,
-      answerSequence = answerSequence,
-      listSequence = listSequence,
-      nextQuestion = nextQuestion,
-    )
-      .also { questionnaireAnswer = it }
+  ): QuestionnaireAnswer = QuestionnaireAnswer(
+    answerText = answer,
+    answerSequence = answerSequence,
+    listSequence = listSequence,
+    nextQuestion = nextQuestion,
+  )
+    .also { questionnaireAnswer = it }
 }

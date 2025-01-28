@@ -31,8 +31,7 @@ class StoredProcedureRepositoryOracle(
   private val keyDateAdjustmentUpsertProcedure: KeyDateAdjustmentUpsert,
   private val keyDateAdjustmentDeleteProcedure: KeyDateAdjustmentDelete,
   private val imprisonmentStatusUpdate: ImprisonmentStatusUpdate,
-) :
-  StoredProcedureRepository {
+) : StoredProcedureRepository {
 
   override fun postKeyDateAdjustmentUpsert(
     keyDateAdjustmentId: Long,
@@ -67,7 +66,7 @@ class StoredProcedureRepositoryOracle(
 
 @Repository
 @Profile("!oracle")
-class StoredProcedureRepositoryH2() : StoredProcedureRepository {
+class StoredProcedureRepositoryH2 : StoredProcedureRepository {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)

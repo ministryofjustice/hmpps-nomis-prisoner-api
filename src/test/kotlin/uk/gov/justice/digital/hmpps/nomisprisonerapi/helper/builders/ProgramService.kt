@@ -36,9 +36,8 @@ interface ProgramServiceDsl {
 
 @Component
 class ProgramServiceBuilderRepository(private val programServiceRepository: ProgramServiceRepository) {
-  fun save(programService: ProgramService) =
-    programServiceRepository.findByProgramCode(programService.programCode)
-      ?: programServiceRepository.save(programService)
+  fun save(programService: ProgramService) = programServiceRepository.findByProgramCode(programService.programCode)
+    ?: programServiceRepository.save(programService)
 }
 
 @Component

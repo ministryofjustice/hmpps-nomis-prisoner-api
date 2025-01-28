@@ -26,7 +26,5 @@ class Statute(
     return code == other.code
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(code)
-  }
+  override fun hashCode(): Int = Objects.hashCode(code)
 }

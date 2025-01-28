@@ -89,8 +89,7 @@ data class CourseActivityPayRate(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
-  override fun toString(): String =
-    "CourseActivityPayRate(courseActivityId=${id.courseActivity.courseActivityId}, iepLevel=${id.iepLevelCode}, payBandCode=${id.payBandCode}, startDate=${id.startDate})"
+  override fun toString(): String = "CourseActivityPayRate(courseActivityId=${id.courseActivity.courseActivityId}, iepLevel=${id.iepLevelCode}, payBandCode=${id.payBandCode}, startDate=${id.startDate})"
 
   fun hasExpiryDate(): Boolean = endDate != null
   fun expire(): CourseActivityPayRate = this.apply { endDate = LocalDate.now() }

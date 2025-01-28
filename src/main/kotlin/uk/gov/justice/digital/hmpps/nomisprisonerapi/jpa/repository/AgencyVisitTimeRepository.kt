@@ -8,8 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import java.time.LocalTime
 
 @Repository
-interface AgencyVisitTimeRepository :
-  JpaRepository<AgencyVisitTime, AgencyVisitTimeId> {
+interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisitTimeId> {
 
   fun findByAgencyVisitTimesIdLocationId(locationId: String): List<AgencyVisitTime>
 

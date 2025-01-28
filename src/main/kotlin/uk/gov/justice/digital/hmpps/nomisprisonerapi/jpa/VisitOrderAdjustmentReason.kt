@@ -5,8 +5,7 @@ import jakarta.persistence.Entity
 
 @Entity
 @DiscriminatorValue(VisitOrderAdjustmentReason.VISIT_ORDER_ADJUSTMENT)
-class VisitOrderAdjustmentReason(code: String, description: String) :
-  ReferenceCode(VISIT_ORDER_ADJUSTMENT, code, description) {
+class VisitOrderAdjustmentReason(code: String, description: String) : ReferenceCode(VISIT_ORDER_ADJUSTMENT, code, description) {
   companion object {
     const val VISIT_ORDER_ISSUE = "VO_ISSUE"
     const val PRIVILEGED_VISIT_ORDER_ISSUE = "PVO_ISSUE"

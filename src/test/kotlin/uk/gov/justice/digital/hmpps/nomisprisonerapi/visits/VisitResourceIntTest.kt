@@ -791,13 +791,12 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun createVisit(startDateTime: String, endTime: String, room: String, openClosedStatus: String, offenderNoForVisit: String = offenderNo) =
-    webTestClient.post().uri("/prisoners/$offenderNoForVisit/visits")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
-      .contentType(MediaType.APPLICATION_JSON)
-      .body(
-        BodyInserters.fromValue(
-          """{
+  private fun createVisit(startDateTime: String, endTime: String, room: String, openClosedStatus: String, offenderNoForVisit: String = offenderNo) = webTestClient.post().uri("/prisoners/$offenderNoForVisit/visits")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+    .contentType(MediaType.APPLICATION_JSON)
+    .body(
+      BodyInserters.fromValue(
+        """{
                   "visitType"         : "SCON",
                   "startDateTime"     : "$startDateTime",
                   "endTime"           : "$endTime",
@@ -809,12 +808,12 @@ class VisitResourceIntTest : IntegrationTestBase() {
                   "room"              : "$room",
                   "openClosedStatus"  : "$openClosedStatus"
                 }""",
-        ),
-      )
-      .exchange()
-      .expectStatus().isCreated
-      .expectBody(CreateVisitResponse::class.java)
-      .returnResult().responseBody!!.visitId
+      ),
+    )
+    .exchange()
+    .expectStatus().isCreated
+    .expectBody(CreateVisitResponse::class.java)
+    .returnResult().responseBody!!.visitId
 
   @DisplayName("Cancel")
   @Nested
@@ -1268,15 +1267,14 @@ class VisitResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun createVisit(offenderNo: String = this.offenderNo, request: CreateVisitRequest = createVisitWithPeople()) =
-    webTestClient.post().uri("/prisoners/$offenderNo/visits")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
-      .contentType(MediaType.APPLICATION_JSON)
-      .body(BodyInserters.fromValue(request))
-      .exchange()
-      .expectStatus().isCreated
-      .expectBody(CreateVisitResponse::class.java)
-      .returnResult().responseBody?.visitId
+  private fun createVisit(offenderNo: String = this.offenderNo, request: CreateVisitRequest = createVisitWithPeople()) = webTestClient.post().uri("/prisoners/$offenderNo/visits")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+    .contentType(MediaType.APPLICATION_JSON)
+    .body(BodyInserters.fromValue(request))
+    .exchange()
+    .expectStatus().isCreated
+    .expectBody(CreateVisitResponse::class.java)
+    .returnResult().responseBody?.visitId
 
   @DisplayName("Get Visit")
   @Nested

@@ -4587,42 +4587,38 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     status: String = "A",
     caseReference: String? = "TT22222222",
     courtAppearance: CourtAppearanceRequest = createCourtAppearanceRequest(),
-  ) =
-
-    CreateCourtCaseRequest(
-      courtId = courtId,
-      legalCaseType = legalCaseType,
-      startDate = startDate,
-      status = status,
-      courtAppearance = courtAppearance,
-      caseReference = caseReference,
-    )
+  ) = CreateCourtCaseRequest(
+    courtId = courtId,
+    legalCaseType = legalCaseType,
+    startDate = startDate,
+    status = status,
+    courtAppearance = courtAppearance,
+    caseReference = caseReference,
+  )
 
   private fun createCourtCaseWithoutAppearance(
     courtId: String = "COURT1",
     legalCaseType: String = "A",
     startDate: LocalDate = LocalDate.of(2023, 1, 1),
     status: String = "A",
-  ) =
-    CreateCourtCaseRequest(
-      courtId = courtId,
-      legalCaseType = legalCaseType,
-      startDate = startDate,
-      status = status,
-    )
+  ) = CreateCourtCaseRequest(
+    courtId = courtId,
+    legalCaseType = legalCaseType,
+    startDate = startDate,
+    status = status,
+  )
 
   private fun createOffenderChargeRequest(
     offenceCode: String = "RT88074",
     offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
     offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
     resultCode1: String? = "1067",
-  ) =
-    OffenderChargeRequest(
-      offenceCode = offenceCode,
-      offenceDate = offenceDate,
-      offenceEndDate = offenceEndDate,
-      resultCode1 = resultCode1,
-    )
+  ) = OffenderChargeRequest(
+    offenceCode = offenceCode,
+    offenceDate = offenceDate,
+    offenceEndDate = offenceEndDate,
+    resultCode1 = resultCode1,
+  )
 
   private fun createExistingOffenderChargeRequest(
     offenderChargeId: Long,
@@ -4630,14 +4626,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
     offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
     resultCode1: String? = "1067",
-  ) =
-    ExistingOffenderChargeRequest(
-      offenderChargeId = offenderChargeId,
-      offenceCode = offenceCode,
-      offenceDate = offenceDate,
-      offenceEndDate = offenceEndDate,
-      resultCode1 = resultCode1,
-    )
+  ) = ExistingOffenderChargeRequest(
+    offenderChargeId = offenderChargeId,
+    offenceCode = offenceCode,
+    offenceDate = offenceDate,
+    offenceEndDate = offenceEndDate,
+    resultCode1 = resultCode1,
+  )
 
   private fun createCourtAppearanceRequest(
     eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
@@ -4648,17 +4643,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     nextCourtId: String = "COURT1",
     courtEventChargesToUpdate: MutableList<ExistingOffenderChargeRequest> = mutableListOf(),
     courtEventChargesToCreate: MutableList<OffenderChargeRequest> = mutableListOf(),
-  ) =
-    CourtAppearanceRequest(
-      eventDateTime = eventDateTime,
-      courtId = courtId,
-      courtEventType = courtEventType,
-      nextEventDateTime = nextEventDateTime,
-      outcomeReasonCode = outcomeReasonCode,
-      nextCourtId = nextCourtId,
-      courtEventChargesToUpdate = courtEventChargesToUpdate,
-      courtEventChargesToCreate = courtEventChargesToCreate,
-    )
+  ) = CourtAppearanceRequest(
+    eventDateTime = eventDateTime,
+    courtId = courtId,
+    courtEventType = courtEventType,
+    nextEventDateTime = nextEventDateTime,
+    outcomeReasonCode = outcomeReasonCode,
+    nextCourtId = nextCourtId,
+    courtEventChargesToUpdate = courtEventChargesToUpdate,
+    courtEventChargesToCreate = courtEventChargesToCreate,
+  )
 
   private fun createSentence(
     caseId: Long,
@@ -4670,28 +4664,26 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     sentenceLevel: String = "IND",
     fine: BigDecimal? = BigDecimal.valueOf(8.5),
     offenderChargeIds: MutableList<Long> = mutableListOf(),
-  ) =
-
-    CreateSentenceRequest(
+  ) = CreateSentenceRequest(
+    startDate = startDate,
+    status = status,
+    endDate = endDate,
+    sentenceCalcType = calcType,
+    sentenceCategory = category,
+    sentenceLevel = sentenceLevel,
+    fine = fine,
+    caseId = caseId,
+    sentenceTerm = SentenceTermRequest(
       startDate = startDate,
-      status = status,
       endDate = endDate,
-      sentenceCalcType = calcType,
-      sentenceCategory = category,
-      sentenceLevel = sentenceLevel,
-      fine = fine,
-      caseId = caseId,
-      sentenceTerm = SentenceTermRequest(
-        startDate = startDate,
-        endDate = endDate,
-        sentenceTermType = "IMP",
-        lifeSentenceFlag = true,
-        years = 7,
-        months = 2,
-        weeks = 3,
-        days = 4,
-        hours = 5,
-      ),
-      offenderChargeIds = offenderChargeIds,
-    )
+      sentenceTermType = "IMP",
+      lifeSentenceFlag = true,
+      years = 7,
+      months = 2,
+      weeks = 3,
+      days = 4,
+      hours = 5,
+    ),
+    offenderChargeIds = offenderChargeIds,
+  )
 }

@@ -40,9 +40,7 @@ class AdjudicationHearingResultBuilderFactory(
   private val repository: AdjudicationHearingResultBuilderRepository,
 
 ) {
-  fun builder(): AdjudicationHearingResultBuilder {
-    return AdjudicationHearingResultBuilder(adjudicationHearingResultAwardBuilderFactory, repository)
-  }
+  fun builder(): AdjudicationHearingResultBuilder = AdjudicationHearingResultBuilder(adjudicationHearingResultAwardBuilderFactory, repository)
 }
 
 @Component
@@ -50,11 +48,9 @@ class AdjudicationHearingResultBuilderRepository(
   val pleaFindingTypeRepository: ReferenceCodeRepository<AdjudicationPleaFindingType>,
   val findingTypeRepository: ReferenceCodeRepository<AdjudicationFindingType>,
 ) {
-  fun lookupHearingResultPleaType(code: String): AdjudicationPleaFindingType =
-    pleaFindingTypeRepository.findByIdOrNull(AdjudicationPleaFindingType.pk(code))!!
+  fun lookupHearingResultPleaType(code: String): AdjudicationPleaFindingType = pleaFindingTypeRepository.findByIdOrNull(AdjudicationPleaFindingType.pk(code))!!
 
-  fun lookupHearingResultFindingType(code: String): AdjudicationFindingType =
-    findingTypeRepository.findByIdOrNull(AdjudicationFindingType.pk(code))!!
+  fun lookupHearingResultFindingType(code: String): AdjudicationFindingType = findingTypeRepository.findByIdOrNull(AdjudicationFindingType.pk(code))!!
 }
 
 class AdjudicationHearingResultBuilder(
@@ -69,20 +65,19 @@ class AdjudicationHearingResultBuilder(
     pleaFindingCode: String,
     findingCode: String,
     index: Int,
-  ): AdjudicationHearingResult =
-    AdjudicationHearingResult(
-      id = AdjudicationHearingResultId(hearing.id, index),
-      chargeSequence = charge.id.chargeSequence,
-      incident = charge.incident,
-      hearing = hearing,
-      offence = charge.offence,
-      incidentCharge = charge,
-      pleaFindingType = repository.lookupHearingResultPleaType(pleaFindingCode),
-      findingType = repository.lookupHearingResultFindingType(findingCode),
-      pleaFindingCode = pleaFindingCode,
-      resultAwards = mutableListOf(),
-    )
-      .also { adjudicationHearingResult = it }
+  ): AdjudicationHearingResult = AdjudicationHearingResult(
+    id = AdjudicationHearingResultId(hearing.id, index),
+    chargeSequence = charge.id.chargeSequence,
+    incident = charge.incident,
+    hearing = hearing,
+    offence = charge.offence,
+    incidentCharge = charge,
+    pleaFindingType = repository.lookupHearingResultPleaType(pleaFindingCode),
+    findingType = repository.lookupHearingResultFindingType(findingCode),
+    pleaFindingCode = pleaFindingCode,
+    resultAwards = mutableListOf(),
+  )
+    .also { adjudicationHearingResult = it }
 
   override fun award(
     statusCode: String,
@@ -96,23 +91,22 @@ class AdjudicationHearingResultBuilder(
     consecutiveHearingResultAward: AdjudicationHearingResultAward?,
     sanctionIndex: Int?,
     dsl: AdjudicationHearingResultAwardDsl.() -> Unit,
-  ) =
-    adjudicationHearingResultAwardBuilderFactory.builder().let { builder ->
-      builder.build(
-        statusCode = statusCode,
-        sanctionDays = sanctionDays,
-        sanctionMonths = sanctionMonths,
-        compensationAmount = compensationAmount,
-        sanctionCode = sanctionCode,
-        comment = comment,
-        effectiveDate = effectiveDate,
-        statusDate = statusDate,
-        result = adjudicationHearingResult,
-        party = adjudicationHearingResult.hearing.hearingParty,
-        sanctionIndex = sanctionIndex ?: (adjudicationHearingResult.resultAwards.size + 1),
-        consecutiveHearingResultAward = consecutiveHearingResultAward,
-      )
-        .also { adjudicationHearingResult.resultAwards += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationHearingResultAwardBuilderFactory.builder().let { builder ->
+    builder.build(
+      statusCode = statusCode,
+      sanctionDays = sanctionDays,
+      sanctionMonths = sanctionMonths,
+      compensationAmount = compensationAmount,
+      sanctionCode = sanctionCode,
+      comment = comment,
+      effectiveDate = effectiveDate,
+      statusDate = statusDate,
+      result = adjudicationHearingResult,
+      party = adjudicationHearingResult.hearing.hearingParty,
+      sanctionIndex = sanctionIndex ?: (adjudicationHearingResult.resultAwards.size + 1),
+      consecutiveHearingResultAward = consecutiveHearingResultAward,
+    )
+      .also { adjudicationHearingResult.resultAwards += it }
+      .also { builder.apply(dsl) }
+  }
 }

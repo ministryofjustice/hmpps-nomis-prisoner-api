@@ -52,21 +52,20 @@ class PersonIdentifierBuilder(
     issuedAuthority: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): PersonIdentifier =
-    PersonIdentifier(
-      id = PersonIdentifierPK(person, sequence),
-      identifierType = repository.identifierTypeOf(type),
-      identifier = identifier,
-      issuedAuthority = issuedAuthority,
-    )
-      .let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): PersonIdentifier = PersonIdentifier(
+    id = PersonIdentifierPK(person, sequence),
+    identifierType = repository.identifierTypeOf(type),
+    identifier = identifier,
+    issuedAuthority = issuedAuthority,
+  )
+    .let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
-      .also { personIdentifier = it }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
+    .also { personIdentifier = it }
 }

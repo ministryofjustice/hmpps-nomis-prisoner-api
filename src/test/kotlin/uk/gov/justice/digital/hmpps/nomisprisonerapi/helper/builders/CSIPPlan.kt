@@ -24,13 +24,12 @@ class CSIPPlanBuilder : CSIPPlanDsl {
     progression: String?,
     referredBy: String,
     targetDate: LocalDate,
-  ): CSIPPlan =
-    CSIPPlan(
-      csipReport = csipReport,
-      identifiedNeed = identifiedNeed,
-      intervention = intervention,
-      progression = progression,
-      referredBy = referredBy,
-      targetDate = targetDate,
-    )
+  ): CSIPPlan = CSIPPlan(
+    csipReport = csipReport,
+    identifiedNeed = identifiedNeed,
+    intervention = intervention,
+    progression = progression,
+    referredBy = referredBy,
+    targetDate = targetDate,
+  )
 }

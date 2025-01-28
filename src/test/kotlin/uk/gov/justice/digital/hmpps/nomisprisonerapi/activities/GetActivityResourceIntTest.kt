@@ -480,18 +480,17 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       page: Int = 0,
       prison: String = "BXI",
       courseActivityId: Long? = null,
-    ): WebTestClient.ResponseSpec =
-      get().uri {
-        it.path("/activities/ids")
-          .queryParam("prisonId", prison)
-          .queryParam("size", pageSize)
-          .queryParam("page", page)
-          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    ): WebTestClient.ResponseSpec = get().uri {
+      it.path("/activities/ids")
+        .queryParam("prisonId", prison)
+        .queryParam("size", pageSize)
+        .queryParam("page", page)
+        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+        .build()
+    }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
   }
 
   @Nested
@@ -574,16 +573,15 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     private fun WebTestClient.getPayRatesWithUnknownIncentives(
       prison: String = "BXI",
       courseActivityId: Long? = null,
-    ): WebTestClient.ResponseSpec =
-      get().uri {
-        it.path("/activities/rates-with-unknown-incentives")
-          .queryParam("prisonId", prison)
-          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    ): WebTestClient.ResponseSpec = get().uri {
+      it.path("/activities/rates-with-unknown-incentives")
+        .queryParam("prisonId", prison)
+        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+        .build()
+    }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
   }
 
   @Nested
@@ -750,16 +748,15 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     private fun WebTestClient.getActivitiesWithoutScheduleRules(
       prison: String = "BXI",
       courseActivityId: Long? = null,
-    ): WebTestClient.ResponseSpec =
-      get().uri {
-        it.path("/activities/without-schedule-rules")
-          .queryParam("prisonId", prison)
-          .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    ): WebTestClient.ResponseSpec = get().uri {
+      it.path("/activities/without-schedule-rules")
+        .queryParam("prisonId", prison)
+        .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+        .build()
+    }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
   }
 
   @Nested
@@ -1021,10 +1018,9 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    private fun WebTestClient.getActivityDetails(): WebTestClient.ResponseSpec =
-      get().uri("/activities/${courseActivity.courseActivityId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-        .exchange()
-        .expectStatus().isOk
+    private fun WebTestClient.getActivityDetails(): WebTestClient.ResponseSpec = get().uri("/activities/${courseActivity.courseActivityId}")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
   }
 }

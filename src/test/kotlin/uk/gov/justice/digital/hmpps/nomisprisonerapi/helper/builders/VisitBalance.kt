@@ -20,11 +20,10 @@ class VisitBalanceBuilder : VisitBalanceDsl {
     offenderBooking: OffenderBooking,
     remainingVisitOrders: Int,
     remainingPrivilegedVisitOrders: Int,
-  ): OffenderVisitBalance =
-    OffenderVisitBalance(
-      offenderBooking = offenderBooking,
-      remainingVisitOrders = remainingVisitOrders,
-      remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
-      visitAllowanceIndicator = false,
-    )
+  ): OffenderVisitBalance = OffenderVisitBalance(
+    offenderBooking = offenderBooking,
+    remainingVisitOrders = remainingVisitOrders,
+    remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
+    visitAllowanceIndicator = false,
+  )
 }

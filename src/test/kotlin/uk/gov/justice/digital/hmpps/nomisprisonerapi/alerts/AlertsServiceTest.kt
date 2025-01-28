@@ -120,12 +120,11 @@ class AlertsServiceTest {
   }
 }
 
-private fun booking(bookingSequence: Int = 1): OffenderBooking =
-  OffenderBooking(
-    bookingSequence = bookingSequence,
-    bookingBeginDate = LocalDateTime.now(),
-    offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),
-  )
+private fun booking(bookingSequence: Int = 1): OffenderBooking = OffenderBooking(
+  bookingSequence = bookingSequence,
+  bookingBeginDate = LocalDateTime.now(),
+  offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),
+)
 
 private fun alert(
   sequence: Long = 1,

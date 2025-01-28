@@ -11,21 +11,19 @@ annotation class QuestionnaireOffenderRoleDslMarker
 interface QuestionnaireOffenderRoleDsl
 
 @Component
-class QuestionnaireOffenderRoleBuilderFactory() {
+class QuestionnaireOffenderRoleBuilderFactory {
   fun builder() = QuestionnaireOffenderRoleBuilder()
 }
 
-class QuestionnaireOffenderRoleBuilder() :
-  QuestionnaireOffenderRoleDsl {
+class QuestionnaireOffenderRoleBuilder : QuestionnaireOffenderRoleDsl {
 
   fun build(
     questionnaireId: Long,
     role: String,
-  ): QuestionnaireOffenderRole =
-    QuestionnaireOffenderRole(
-      QuestionnaireOffenderRoleId(
-        questionnaireId = questionnaireId,
-        offenderRole = role,
-      ),
-    )
+  ): QuestionnaireOffenderRole = QuestionnaireOffenderRole(
+    QuestionnaireOffenderRoleId(
+      questionnaireId = questionnaireId,
+      offenderRole = role,
+    ),
+  )
 }

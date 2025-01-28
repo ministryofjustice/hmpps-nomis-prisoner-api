@@ -16,9 +16,7 @@ interface OffenderPhysicalAttributesDsl
 class OffenderPhysicalAttributesBuilderFactory(
   private val repository: OffenderPhysicalAttributesRepository,
 ) {
-  fun builder(): OffenderPhysicalAttributesBuilder {
-    return OffenderPhysicalAttributesBuilder(repository)
-  }
+  fun builder(): OffenderPhysicalAttributesBuilder = OffenderPhysicalAttributesBuilder(repository)
 }
 
 class OffenderPhysicalAttributesBuilder(
@@ -33,17 +31,16 @@ class OffenderPhysicalAttributesBuilder(
     heightInches: Int?,
     weightKilograms: Int?,
     weightPounds: Int?,
-  ): OffenderPhysicalAttributes =
-    OffenderPhysicalAttributes(
-      id = OffenderPhysicalAttributeId(
-        offenderBooking = offenderBooking,
-        sequence = sequence ?: ((offenderBooking.physicalAttributes.maxByOrNull { it.id.sequence }?.id?.sequence ?: 0) + 1),
-      ),
-      heightCentimetres = heightCentimetres,
-      heightFeet = heightFeet,
-      heightInches = heightInches,
-      weightKilograms = weightKilograms,
-      weightPounds = weightPounds,
-    )
-      .let { repository.save(it) }
+  ): OffenderPhysicalAttributes = OffenderPhysicalAttributes(
+    id = OffenderPhysicalAttributeId(
+      offenderBooking = offenderBooking,
+      sequence = sequence ?: ((offenderBooking.physicalAttributes.maxByOrNull { it.id.sequence }?.id?.sequence ?: 0) + 1),
+    ),
+    heightCentimetres = heightCentimetres,
+    heightFeet = heightFeet,
+    heightInches = heightInches,
+    weightKilograms = weightKilograms,
+    weightPounds = weightPounds,
+  )
+    .let { repository.save(it) }
 }

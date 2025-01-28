@@ -38,43 +38,41 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     )
   }
 
-  private fun webOperation(uri: Pair<String, String>): WebTestClient.RequestHeadersSpec<*> =
-    when (uri.first) {
-      "POST" -> webTestClient.post()
-        .uri(uri.second, -1)
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createLocationRequest()))
+  private fun webOperation(uri: Pair<String, String>): WebTestClient.RequestHeadersSpec<*> = when (uri.first) {
+    "POST" -> webTestClient.post()
+      .uri(uri.second, -1)
+      .contentType(MediaType.APPLICATION_JSON)
+      .body(BodyInserters.fromValue(createLocationRequest()))
 
-      "PUT" -> webTestClient.put()
-        .uri(uri.second, -99999)
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(createLocationRequest()))
+    "PUT" -> webTestClient.put()
+      .uri(uri.second, -99999)
+      .contentType(MediaType.APPLICATION_JSON)
+      .body(BodyInserters.fromValue(createLocationRequest()))
 
-      "DELETE" -> webTestClient.delete()
-        .uri(uri.second, -1)
+    "DELETE" -> webTestClient.delete()
+      .uri(uri.second, -1)
 
-      "GET" -> webTestClient.get()
-        .uri(uri.second, -99999)
+    "GET" -> webTestClient.get()
+      .uri(uri.second, -99999)
 
-      else -> throw IllegalArgumentException("Invalid method ${uri.first}")
-    }
+    else -> throw IllegalArgumentException("Invalid method ${uri.first}")
+  }
 
   @Nested
   @TestInstance(TestInstance.Lifecycle.PER_CLASS)
   inner class SecureEndpoints {
-    private fun secureGetEndpoints() =
-      listOf(
-        "POST" to "/locations",
-        "PUT" to "/locations/{locationId}",
-        "PUT" to "/locations/{locationId}/deactivate",
-        "PUT" to "/locations/{locationId}/reactivate",
-        "PUT" to "/locations/{locationId}/capacity",
-        "PUT" to "/locations/{locationId}/certification",
-        "GET" to "/locations/{locationId}",
-        "GET" to "/locations/key/{key}",
-        "GET" to "/locations/ids",
-        "GET" to "/locations/{locationId}",
-      )
+    private fun secureGetEndpoints() = listOf(
+      "POST" to "/locations",
+      "PUT" to "/locations/{locationId}",
+      "PUT" to "/locations/{locationId}/deactivate",
+      "PUT" to "/locations/{locationId}/reactivate",
+      "PUT" to "/locations/{locationId}/capacity",
+      "PUT" to "/locations/{locationId}/certification",
+      "GET" to "/locations/{locationId}",
+      "GET" to "/locations/key/{key}",
+      "GET" to "/locations/ids",
+      "GET" to "/locations/{locationId}",
+    )
 
     @ParameterizedTest
     @MethodSource("secureGetEndpoints")

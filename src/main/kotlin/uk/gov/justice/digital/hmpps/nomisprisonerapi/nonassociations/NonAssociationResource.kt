@@ -231,12 +231,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Sequence number. If present, get this detail record, otherwise get the open record if there is one.", example = "2")
     @RequestParam("typeSequence", required = false)
     typeSequence: Int?,
-  ): NonAssociationResponse =
-    try {
-      nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, typeSequence, false).first()
-    } catch (e: NoSuchElementException) {
-      throw NotFoundException("No open non-association exists for these offender numbers")
-    }
+  ): NonAssociationResponse = try {
+    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, typeSequence, false).first()
+  } catch (e: NoSuchElementException) {
+    throw NotFoundException("No open non-association exists for these offender numbers")
+  }
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/booking/{bookingId}")
@@ -266,8 +265,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Booking ID", example = "12345", required = true)
     @PathVariable
     bookingId: Long,
-  ): List<NonAssociationIdResponse> =
-    nonAssociationService.getByBookingId(bookingId)
+  ): List<NonAssociationIdResponse> = nonAssociationService.getByBookingId(bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/all")
@@ -300,8 +298,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     @Parameter(description = "Non-association offender", example = "A4578ED", required = true)
     @PathVariable
     nsOffenderNo: String,
-  ): List<NonAssociationResponse> =
-    nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, null, true)
+  ): List<NonAssociationResponse> = nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, null, true)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
   @GetMapping("/non-associations/ids")
@@ -328,8 +325,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   fun getNonAssociationsByFilter(
     @PageableDefault(sort = ["id.offenderId", "id.nsOffenderId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
-  ): Page<NonAssociationIdResponse> =
-    nonAssociationService.findIdsByFilter(
-      pageRequest = pageRequest,
-    )
+  ): Page<NonAssociationIdResponse> = nonAssociationService.findIdsByFilter(
+    pageRequest = pageRequest,
+  )
 }

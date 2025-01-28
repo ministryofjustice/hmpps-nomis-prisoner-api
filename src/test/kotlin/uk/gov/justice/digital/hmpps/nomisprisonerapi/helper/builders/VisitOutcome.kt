@@ -29,12 +29,11 @@ class VisitOutcomeBuilderRepositoryBuilder(private val repository: VisitOutcomeB
   fun build(
     visit: Visit,
     outcomeReason: String,
-  ): VisitVisitor =
-    VisitVisitor(
-      visit = visit,
-      person = null,
-      groupLeader = false,
-      outcomeReasonCode = outcomeReason,
-    )
-      .let { repository.save(it) }
+  ): VisitVisitor = VisitVisitor(
+    visit = visit,
+    person = null,
+    groupLeader = false,
+    outcomeReasonCode = outcomeReason,
+  )
+    .let { repository.save(it) }
 }

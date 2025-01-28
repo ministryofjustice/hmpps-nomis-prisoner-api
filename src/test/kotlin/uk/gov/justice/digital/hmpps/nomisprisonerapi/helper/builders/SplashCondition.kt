@@ -30,8 +30,7 @@ class SplashConditionBuilderRepository(
 class SplashConditionBuilder(
   private val repository: SplashConditionBuilderRepository,
 
-) :
-  SplashConditionDsl {
+) : SplashConditionDsl {
   private lateinit var splashCondition: SplashCondition
 
   fun build(
@@ -39,12 +38,11 @@ class SplashConditionBuilder(
     prisonId: String,
     type: String,
     accessBlocked: Boolean,
-  ): SplashCondition =
-    SplashCondition(
-      splashScreen = splashScreen,
-      type = repository.lookupConditionType(type),
-      value = prisonId,
-      accessBlocked = accessBlocked,
-    )
-      .also { splashCondition = it }
+  ): SplashCondition = SplashCondition(
+    splashScreen = splashScreen,
+    type = repository.lookupConditionType(type),
+    value = prisonId,
+    accessBlocked = accessBlocked,
+  )
+    .also { splashCondition = it }
 }

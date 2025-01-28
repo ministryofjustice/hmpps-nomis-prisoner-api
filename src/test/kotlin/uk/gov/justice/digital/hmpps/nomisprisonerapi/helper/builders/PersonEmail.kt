@@ -40,17 +40,16 @@ class PersonEmailBuilder(val repository: PersonEmailBuilderRepository) : PersonE
     emailAddress: String,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): PersonInternetAddress =
-    PersonInternetAddress(
-      person = person,
-      emailAddress = emailAddress,
-    ).let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): PersonInternetAddress = PersonInternetAddress(
+    person = person,
+    emailAddress = emailAddress,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

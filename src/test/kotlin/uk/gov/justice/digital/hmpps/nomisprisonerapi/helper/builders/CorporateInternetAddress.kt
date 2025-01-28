@@ -46,18 +46,17 @@ class CorporateInternetAddressBuilder(val repository: CorporateInternetAddressBu
     internetAddressClass: String,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): CorporateInternetAddress =
-    CorporateInternetAddress(
-      corporate = corporate,
-      internetAddress = internetAddress,
-      internetAddressClass = internetAddressClass,
-    ).let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): CorporateInternetAddress = CorporateInternetAddress(
+    corporate = corporate,
+    internetAddress = internetAddress,
+    internetAddressClass = internetAddressClass,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
 }

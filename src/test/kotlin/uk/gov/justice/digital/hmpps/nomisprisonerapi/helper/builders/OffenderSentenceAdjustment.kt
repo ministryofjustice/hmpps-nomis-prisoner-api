@@ -20,9 +20,7 @@ interface OffenderSentenceAdjustmentDsl
 class OffenderSentenceAdjustmentBuilderFactory(
   private val repository: OffenderSentenceAdjustmentBuilderRepository,
 ) {
-  fun builder(): OffenderSentenceAdjustmentBuilder {
-    return OffenderSentenceAdjustmentBuilder(repository)
-  }
+  fun builder(): OffenderSentenceAdjustmentBuilder = OffenderSentenceAdjustmentBuilder(repository)
 }
 
 @Component
@@ -31,8 +29,7 @@ class OffenderSentenceAdjustmentBuilderRepository(
   val offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository,
 ) {
   fun lookupSentenceAdjustment(code: String): SentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(code)!!
-  fun save(adjustment: OffenderSentenceAdjustment): OffenderSentenceAdjustment =
-    offenderSentenceAdjustmentRepository.save(adjustment)
+  fun save(adjustment: OffenderSentenceAdjustment): OffenderSentenceAdjustment = offenderSentenceAdjustmentRepository.save(adjustment)
 }
 
 class OffenderSentenceAdjustmentBuilder(

@@ -46,9 +46,7 @@ class AdjudicationHearingBuilderFactory(
   private val adjudicationHearingNotificationBuilderFactory: AdjudicationHearingNotificationBuilderFactory,
   private val repository: AdjudicationHearingBuilderRepository,
 ) {
-  fun builder(): AdjudicationHearingBuilder {
-    return AdjudicationHearingBuilder(adjudicationHearingResultBuilderFactory, adjudicationHearingNotificationBuilderFactory, repository)
-  }
+  fun builder(): AdjudicationHearingBuilder = AdjudicationHearingBuilder(adjudicationHearingResultBuilderFactory, adjudicationHearingNotificationBuilderFactory, repository)
 }
 
 @Component
@@ -58,11 +56,9 @@ class AdjudicationHearingBuilderRepository(
   val hearingTypeRepository: ReferenceCodeRepository<AdjudicationHearingType>,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
 ) {
-  fun lookupHearingType(code: String): AdjudicationHearingType =
-    hearingTypeRepository.findByIdOrNull(AdjudicationHearingType.pk(code))!!
+  fun lookupHearingType(code: String): AdjudicationHearingType = hearingTypeRepository.findByIdOrNull(AdjudicationHearingType.pk(code))!!
 
-  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
-    agencyInternalLocationRepository.findByIdOrNull(locationId)
+  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? = agencyInternalLocationRepository.findByIdOrNull(locationId)
 
   fun lookupEventStatusCode(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
 }
@@ -86,43 +82,41 @@ class AdjudicationHearingBuilder(
     hearingTypeCode: String,
     eventStatusCode: String,
     incidentParty: AdjudicationIncidentParty,
-  ): AdjudicationHearing =
-    AdjudicationHearing(
-      hearingParty = incidentParty,
-      adjudicationNumber = incidentParty.adjudicationNumber!!,
-      hearingDate = hearingDate,
-      hearingDateTime = hearingDateTime,
-      scheduleDate = scheduledDate,
-      scheduleDateTime = scheduledDateTime,
-      hearingStaff = hearingStaff,
-      hearingType = repository.lookupHearingType(hearingTypeCode),
-      agencyInternalLocation = repository.lookupAgencyInternalLocation(agencyInternalLocationId!!),
-      eventStatus = repository.lookupEventStatusCode(eventStatusCode),
-      // undecided what we are doing with this yet
-      eventId = 1,
-      comment = comment,
-      representativeText = representativeText,
-    )
-      .also { repository.adjudicationHearingRepository.save(it) }
-      .also { adjudicationHearing = it }
+  ): AdjudicationHearing = AdjudicationHearing(
+    hearingParty = incidentParty,
+    adjudicationNumber = incidentParty.adjudicationNumber!!,
+    hearingDate = hearingDate,
+    hearingDateTime = hearingDateTime,
+    scheduleDate = scheduledDate,
+    scheduleDateTime = scheduledDateTime,
+    hearingStaff = hearingStaff,
+    hearingType = repository.lookupHearingType(hearingTypeCode),
+    agencyInternalLocation = repository.lookupAgencyInternalLocation(agencyInternalLocationId!!),
+    eventStatus = repository.lookupEventStatusCode(eventStatusCode),
+    // undecided what we are doing with this yet
+    eventId = 1,
+    comment = comment,
+    representativeText = representativeText,
+  )
+    .also { repository.adjudicationHearingRepository.save(it) }
+    .also { adjudicationHearing = it }
 
   override fun result(
     charge: AdjudicationIncidentCharge,
     pleaFindingCode: String,
     findingCode: String,
     dsl: AdjudicationHearingResultDsl.() -> Unit,
-  ) =
-    adjudicationHearingResultBuilderFactory.builder().let { builder ->
-      builder.build(
-        hearing = adjudicationHearing,
-        charge = charge,
-        pleaFindingCode = pleaFindingCode,
-        findingCode = findingCode,
-        index = adjudicationHearing.hearingResults.size + 1,
-      )
-        .also { adjudicationHearing.hearingResults += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationHearingResultBuilderFactory.builder().let { builder ->
+    builder.build(
+      hearing = adjudicationHearing,
+      charge = charge,
+      pleaFindingCode = pleaFindingCode,
+      findingCode = findingCode,
+      index = adjudicationHearing.hearingResults.size + 1,
+    )
+      .also { adjudicationHearing.hearingResults += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun notification(
     staff: Staff,
@@ -130,17 +124,16 @@ class AdjudicationHearingBuilder(
     deliveryDate: LocalDate,
     comment: String?,
     dsl: AdjudicationHearingNotificationDsl.() -> Unit,
-  ) =
-    adjudicationHearingNotificationBuilderFactory.builder().let { builder ->
-      builder.build(
-        hearing = adjudicationHearing,
-        staff = staff,
-        deliveryDateTime = deliveryDateTime,
-        deliveryDate = deliveryDate,
-        comment = comment,
-        index = adjudicationHearing.hearingNotifications.size + 1,
-      )
-        .also { adjudicationHearing.hearingNotifications += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationHearingNotificationBuilderFactory.builder().let { builder ->
+    builder.build(
+      hearing = adjudicationHearing,
+      staff = staff,
+      deliveryDateTime = deliveryDateTime,
+      deliveryDate = deliveryDate,
+      comment = comment,
+      index = adjudicationHearing.hearingNotifications.size + 1,
+    )
+      .also { adjudicationHearing.hearingNotifications += it }
+      .also { builder.apply(dsl) }
+  }
 }

@@ -13,15 +13,14 @@ class OffenderDataBuilder(
   var bookingBuilders: List<OffenderBookingDataBuilder> = mutableListOf(),
   val repository: Repository? = null,
 ) {
-  fun build(gender: Gender): Offender =
-    Offender(
-      nomsId = nomsId,
-      lastName = lastName,
-      firstName = firstName,
-      birthDate = birthDate,
-      gender = gender,
-      lastNameKey = lastName.uppercase(),
-    )
+  fun build(gender: Gender): Offender = Offender(
+    nomsId = nomsId,
+    lastName = lastName,
+    firstName = firstName,
+    birthDate = birthDate,
+    gender = gender,
+    lastNameKey = lastName.uppercase(),
+  )
 
   fun withBooking(vararg bookingBuilder: OffenderBookingDataBuilder): OffenderDataBuilder {
     bookingBuilders = arrayOf(*bookingBuilder).asList()

@@ -49,9 +49,7 @@ data class ProgramService(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(programId = $programId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(programId = $programId )"
 }
 
 /*

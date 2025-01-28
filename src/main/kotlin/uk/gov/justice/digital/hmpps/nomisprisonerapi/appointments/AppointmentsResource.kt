@@ -72,8 +72,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
   fun createAppointment(
     @RequestBody @Valid
     createAppointmentRequest: CreateAppointmentRequest,
-  ): CreateAppointmentResponse =
-    appointmentService.createAppointment(createAppointmentRequest)
+  ): CreateAppointmentResponse = appointmentService.createAppointment(createAppointmentRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
   @PutMapping("/appointments/{nomisEventId}")
@@ -248,8 +247,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     @Schema(description = "Appointment date and start time", example = "2023-02-27T14:40", required = true)
     @PathVariable
     dateTime: LocalDateTime,
-  ): AppointmentResponse =
-    appointmentService.getAppointment(bookingId, locationId, dateTime)
+  ): AppointmentResponse = appointmentService.getAppointment(bookingId, locationId, dateTime)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
   @GetMapping("/appointments/{eventId}")
@@ -285,8 +283,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     @Schema(description = "Event Id", example = "12345678", required = true)
     @PathVariable
     eventId: Long,
-  ): AppointmentResponse =
-    appointmentService.getAppointment(eventId)
+  ): AppointmentResponse = appointmentService.getAppointment(eventId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
   @GetMapping("/appointments/ids")
@@ -333,11 +330,10 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       example = "2022-04-11",
     )
     toDate: LocalDate?,
-  ): Page<AppointmentIdResponse> =
-    appointmentService.findIdsByFilter(
-      pageRequest = pageRequest,
-      AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
-    )
+  ): Page<AppointmentIdResponse> = appointmentService.findIdsByFilter(
+    pageRequest = pageRequest,
+    AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
   @GetMapping("/appointments/counts")
@@ -382,8 +378,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       example = "2022-04-11",
     )
     toDate: LocalDate?,
-  ): List<AppointmentCountsResponse> =
-    appointmentService.findCountsByFilter(
-      AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
-    )
+  ): List<AppointmentCountsResponse> = appointmentService.findCountsByFilter(
+    AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
+  )
 }

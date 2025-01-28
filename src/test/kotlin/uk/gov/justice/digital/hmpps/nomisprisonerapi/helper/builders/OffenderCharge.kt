@@ -27,11 +27,9 @@ interface OffenderChargeDsl
 class OffenderChargeBuilderFactory(
   private val repository: OffenderChargeBuilderRepository,
 ) {
-  fun builder(): OffenderChargeBuilder {
-    return OffenderChargeBuilder(
-      repository,
-    )
-  }
+  fun builder(): OffenderChargeBuilder = OffenderChargeBuilder(
+    repository,
+  )
 }
 
 @Component
@@ -42,19 +40,15 @@ class OffenderChargeBuilderRepository(
   val offenceResultCodeRepository: OffenceResultCodeRepository,
   val offenceRepository: OffenceRepository,
 ) {
-  fun save(offenderCharge: OffenderCharge): OffenderCharge =
-    repository.save(offenderCharge)
+  fun save(offenderCharge: OffenderCharge): OffenderCharge = repository.save(offenderCharge)
 
-  fun lookupChargeStatus(code: String): ChargeStatusType =
-    chargeStatusTypeRepository.findByIdOrNull(ChargeStatusType.pk(code))!!
+  fun lookupChargeStatus(code: String): ChargeStatusType = chargeStatusTypeRepository.findByIdOrNull(ChargeStatusType.pk(code))!!
 
-  fun lookupPleaStatus(code: String): PleaStatusType =
-    pleaStatusTypeRepository.findByIdOrNull(PleaStatusType.pk(code))!!
+  fun lookupPleaStatus(code: String): PleaStatusType = pleaStatusTypeRepository.findByIdOrNull(PleaStatusType.pk(code))!!
 
   fun lookupOffenceResultCode(code: String): OffenceResultCode = offenceResultCodeRepository.findByIdOrNull(code)!!
 
-  fun lookupOffence(offenceCode: String, statuteCode: String): Offence =
-    offenceRepository.findByIdOrNull(OffenceId(offenceCode = offenceCode, statuteCode = statuteCode))!!
+  fun lookupOffence(offenceCode: String, statuteCode: String): Offence = offenceRepository.findByIdOrNull(OffenceId(offenceCode = offenceCode, statuteCode = statuteCode))!!
 }
 
 class OffenderChargeBuilder(

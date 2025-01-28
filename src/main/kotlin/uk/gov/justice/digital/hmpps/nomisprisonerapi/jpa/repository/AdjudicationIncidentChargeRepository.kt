@@ -9,8 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentCha
 import java.time.LocalDateTime
 
 @Repository
-interface AdjudicationIncidentChargeRepository :
-  JpaRepository<AdjudicationIncidentCharge, AdjudicationIncidentChargeId> {
+interface AdjudicationIncidentChargeRepository : JpaRepository<AdjudicationIncidentCharge, AdjudicationIncidentChargeId> {
 
   @Query(
     """

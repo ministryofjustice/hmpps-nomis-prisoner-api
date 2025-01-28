@@ -132,7 +132,5 @@ class OffenderIndividualSchedule(
   override fun hashCode(): Int = javaClass.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(id = $eventId, booking = ${offenderBooking.bookingId}, eventDate = $eventDate, startTime = $startTime)"
-  }
+  override fun toString(): String = this::class.simpleName + "(id = $eventId, booking = ${offenderBooking.bookingId}, eventDate = $eventDate, startTime = $startTime)"
 }

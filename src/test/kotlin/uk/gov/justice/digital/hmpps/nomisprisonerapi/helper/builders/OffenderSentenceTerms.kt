@@ -20,17 +20,14 @@ interface OffenderSentenceTermDsl
 class OffenderSentenceTermBuilderFactory(
   private val repository: OffenderSentenceTermBuilderRepository,
 ) {
-  fun builder(): OffenderSentenceTermBuilder {
-    return OffenderSentenceTermBuilder(repository)
-  }
+  fun builder(): OffenderSentenceTermBuilder = OffenderSentenceTermBuilder(repository)
 }
 
 @Component
 class OffenderSentenceTermBuilderRepository(
   val sentenceTermTypeRepository: ReferenceCodeRepository<SentenceTermType>,
 ) {
-  fun lookupSentenceTerm(code: String): SentenceTermType =
-    sentenceTermTypeRepository.findByIdOrNull(SentenceTermType.pk(code))!!
+  fun lookupSentenceTerm(code: String): SentenceTermType = sentenceTermTypeRepository.findByIdOrNull(SentenceTermType.pk(code))!!
 }
 
 class OffenderSentenceTermBuilder(

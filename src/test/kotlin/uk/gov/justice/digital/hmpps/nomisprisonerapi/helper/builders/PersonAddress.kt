@@ -97,35 +97,34 @@ class PersonAddressBuilder(
     endDate: LocalDate?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): PersonAddress =
-    PersonAddress(
-      addressType = personAddressBuilderRepository.addressTypeOf(type),
-      person = person,
-      premise = premise,
-      street = street,
-      locality = locality,
-      flat = flat,
-      postalCode = postcode,
-      city = personAddressBuilderRepository.cityOf(city),
-      county = personAddressBuilderRepository.countyOf(county),
-      country = personAddressBuilderRepository.countryOf(country),
-      validatedPAF = validatedPAF,
-      noFixedAddress = noFixedAddress,
-      primaryAddress = primaryAddress,
-      mailAddress = mailAddress,
-      comment = comment,
-      startDate = startDate,
-      endDate = endDate,
-    ).let { personAddressBuilderRepository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          personAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          personAddressBuilderRepository.updateCreateUsername(it, whoCreated)
-        }
+  ): PersonAddress = PersonAddress(
+    addressType = personAddressBuilderRepository.addressTypeOf(type),
+    person = person,
+    premise = premise,
+    street = street,
+    locality = locality,
+    flat = flat,
+    postalCode = postcode,
+    city = personAddressBuilderRepository.cityOf(city),
+    county = personAddressBuilderRepository.countyOf(county),
+    country = personAddressBuilderRepository.countryOf(country),
+    validatedPAF = validatedPAF,
+    noFixedAddress = noFixedAddress,
+    primaryAddress = primaryAddress,
+    mailAddress = mailAddress,
+    comment = comment,
+    startDate = startDate,
+    endDate = endDate,
+  ).let { personAddressBuilderRepository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        personAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
       }
-      .also { address = it }
+      if (whoCreated != null) {
+        personAddressBuilderRepository.updateCreateUsername(it, whoCreated)
+      }
+    }
+    .also { address = it }
 
   override fun phone(
     phoneType: String,
@@ -134,17 +133,16 @@ class PersonAddressBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: AddressPhoneDsl.() -> Unit,
-  ): AddressPhone =
-    addressPhoneBuilderFactory.builder().let { builder ->
-      builder.build(
-        address = address,
-        phoneType = phoneType,
-        extNo = extNo,
-        phoneNo = phoneNo,
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { address.phones += it }
-        .also { builder.apply(dsl) }
-    }
+  ): AddressPhone = addressPhoneBuilderFactory.builder().let { builder ->
+    builder.build(
+      address = address,
+      phoneType = phoneType,
+      extNo = extNo,
+      phoneNo = phoneNo,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { address.phones += it }
+      .also { builder.apply(dsl) }
+  }
 }

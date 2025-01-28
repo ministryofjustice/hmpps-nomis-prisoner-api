@@ -29,14 +29,12 @@ interface IncidentQuestionDsl {
 class IncidentQuestionBuilderFactory(
   private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
 ) {
-  fun builder() =
-    IncidentQuestionBuilder(incidentResponseBuilderFactory)
+  fun builder() = IncidentQuestionBuilder(incidentResponseBuilderFactory)
 }
 
 class IncidentQuestionBuilder(
   private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
-) :
-  IncidentQuestionDsl {
+) : IncidentQuestionDsl {
   private lateinit var incidentQuestion: IncidentQuestion
 
   fun build(
@@ -55,18 +53,17 @@ class IncidentQuestionBuilder(
     responseDate: LocalDate?,
     recordingStaff: Staff,
     dsl: IncidentResponseDsl.() -> Unit,
-  ): IncidentResponse =
-    incidentResponseBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          incidentQuestion = incidentQuestion,
-          answerSequence = incidentQuestion.responses.size + 1,
-          answer = answer,
-          comment = comment,
-          responseDate = responseDate,
-          recordingStaff = recordingStaff,
-        )
-          .also { incidentQuestion.responses += it }
-          .also { builder.apply(dsl) }
-      }
+  ): IncidentResponse = incidentResponseBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        incidentQuestion = incidentQuestion,
+        answerSequence = incidentQuestion.responses.size + 1,
+        answer = answer,
+        comment = comment,
+        responseDate = responseDate,
+        recordingStaff = recordingStaff,
+      )
+        .also { incidentQuestion.responses += it }
+        .also { builder.apply(dsl) }
+    }
 }

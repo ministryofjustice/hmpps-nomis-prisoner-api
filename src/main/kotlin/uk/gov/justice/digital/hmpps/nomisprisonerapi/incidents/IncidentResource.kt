@@ -80,14 +80,13 @@ class IncidentResource(private val incidentService: IncidentService) {
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-  ): Page<IncidentIdResponse> =
-    incidentService.findIdsByFilter(
-      pageRequest = pageRequest,
-      IncidentFilter(
-        toDate = toDate,
-        fromDate = fromDate,
-      ),
-    )
+  ): Page<IncidentIdResponse> = incidentService.findIdsByFilter(
+    pageRequest = pageRequest,
+    IncidentFilter(
+      toDate = toDate,
+      fromDate = fromDate,
+    ),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/booking/{bookingId}")

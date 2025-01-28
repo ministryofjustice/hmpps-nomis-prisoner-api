@@ -80,30 +80,29 @@ class OffenderContactPersonBuilderRepositoryBuilder(
     expiryDate: LocalDate?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
-  ): OffenderContactPerson =
-    OffenderContactPerson(
-      offenderBooking = offenderBooking,
-      person = person,
-      rootOffender = null,
-      relationshipType = repository.lookupRelationshipType(relationshipType),
-      contactType = repository.lookupContactType(contactType),
-      active = active,
-      nextOfKin = nextOfKin,
-      emergencyContact = emergencyContact,
-      approvedVisitor = approvedVisitor,
-      comment = comment,
-      expiryDate = expiryDate,
-    )
-      .let { repository.save(it) }
-      .also {
-        if (whenCreated != null) {
-          repository.updateCreateDatetime(it, whenCreated)
-        }
-        if (whoCreated != null) {
-          repository.updateCreateUsername(it, whoCreated)
-        }
+  ): OffenderContactPerson = OffenderContactPerson(
+    offenderBooking = offenderBooking,
+    person = person,
+    rootOffender = null,
+    relationshipType = repository.lookupRelationshipType(relationshipType),
+    contactType = repository.lookupContactType(contactType),
+    active = active,
+    nextOfKin = nextOfKin,
+    emergencyContact = emergencyContact,
+    approvedVisitor = approvedVisitor,
+    comment = comment,
+    expiryDate = expiryDate,
+  )
+    .let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
       }
-      .also { contact = it }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
+    .also { contact = it }
 
   override fun restriction(
     restrictionType: String,
@@ -114,19 +113,18 @@ class OffenderContactPersonBuilderRepositoryBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: OffenderPersonRestrictsDsl.() -> Unit,
-  ): OffenderPersonRestrict =
-    offenderPersonRestrictsBuilderFactory.builder().let { builder ->
-      builder.build(
-        contactPerson = contact,
-        restrictionType = restrictionType,
-        enteredStaff = enteredStaff,
-        comment = comment,
-        effectiveDate = LocalDate.parse(effectiveDate),
-        expiryDate = expiryDate?.let { LocalDate.parse(it) },
-        whenCreated = whenCreated,
-        whoCreated = whoCreated,
-      )
-        .also { contact.restrictions += it }
-        .also { builder.apply(dsl) }
-    }
+  ): OffenderPersonRestrict = offenderPersonRestrictsBuilderFactory.builder().let { builder ->
+    builder.build(
+      contactPerson = contact,
+      restrictionType = restrictionType,
+      enteredStaff = enteredStaff,
+      comment = comment,
+      effectiveDate = LocalDate.parse(effectiveDate),
+      expiryDate = expiryDate?.let { LocalDate.parse(it) },
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { contact.restrictions += it }
+      .also { builder.apply(dsl) }
+  }
 }

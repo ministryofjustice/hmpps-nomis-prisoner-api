@@ -11,7 +11,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import java.time.LocalDateTime
 
 @Repository
-interface IncidentRepository : CrudRepository<Incident, Long>, JpaSpecificationExecutor<Incident> {
+interface IncidentRepository :
+  CrudRepository<Incident, Long>,
+  JpaSpecificationExecutor<Incident> {
 
   @Query(
     """

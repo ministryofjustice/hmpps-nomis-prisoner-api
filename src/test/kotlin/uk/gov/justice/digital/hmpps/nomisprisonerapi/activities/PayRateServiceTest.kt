@@ -675,19 +675,18 @@ class PayRateServiceTest {
       payBandCode: String,
       expired: Boolean = false,
       rate: Double? = null,
-    ): CourseActivityPayRate =
-      firstOrNull {
-        it.id.iepLevelCode == iepLevelCode &&
-          it.id.payBandCode == payBandCode &&
-          (
-            if (expired) {
-              it.endDate != null
-            } else {
-              it.endDate == null
-            }
-            ) &&
-          (rate == null || BigDecimal.valueOf(rate).compareTo(it.halfDayRate) == 0)
-      }!!
+    ): CourseActivityPayRate = firstOrNull {
+      it.id.iepLevelCode == iepLevelCode &&
+        it.id.payBandCode == payBandCode &&
+        (
+          if (expired) {
+            it.endDate != null
+          } else {
+            it.endDate == null
+          }
+          ) &&
+        (rate == null || BigDecimal.valueOf(rate).compareTo(it.halfDayRate) == 0)
+    }!!
   }
 
   @Nested

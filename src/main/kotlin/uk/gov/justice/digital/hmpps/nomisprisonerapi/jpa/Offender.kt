@@ -150,8 +150,7 @@ data class Offender(
 
   fun getAllBookings(): MutableList<OffenderBooking>? = rootOffender?.allBookings
 
-  fun latestBooking(): OffenderBooking =
-    getAllBookings()?.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no active bookings")
+  fun latestBooking(): OffenderBooking = getAllBookings()?.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no active bookings")
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -162,6 +161,5 @@ data class Offender(
 
   override fun hashCode(): Int = javaClass.hashCode()
 
-  override fun toString(): String =
-    "${javaClass.simpleName}(id = $id, nomsId=$nomsId, firstName = $firstName, lastName = $lastName)"
+  override fun toString(): String = "${javaClass.simpleName}(id = $id, nomsId=$nomsId, firstName = $firstName, lastName = $lastName)"
 }

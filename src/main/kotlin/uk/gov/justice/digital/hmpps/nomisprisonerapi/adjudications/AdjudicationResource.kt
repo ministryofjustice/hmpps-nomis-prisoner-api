@@ -90,15 +90,14 @@ class AdjudicationResource(
       example = "MDI",
     )
     prisonIds: List<String>?,
-  ): Page<AdjudicationChargeIdResponse> =
-    adjudicationService.findAdjudicationChargeIdsByFilter(
-      pageRequest = pageRequest,
-      AdjudicationFilter(
-        toDate = toDate,
-        fromDate = fromDate,
-        prisonIds = prisonIds ?: listOf(),
-      ),
-    )
+  ): Page<AdjudicationChargeIdResponse> = adjudicationService.findAdjudicationChargeIdsByFilter(
+    pageRequest = pageRequest,
+    AdjudicationFilter(
+      toDate = toDate,
+      fromDate = fromDate,
+      prisonIds = prisonIds ?: listOf(),
+    ),
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/adjudications/adjudication-number/{adjudicationNumber}")
@@ -153,8 +152,7 @@ class AdjudicationResource(
     @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
-  ): AdjudicationResponse =
-    adjudicationService.getAdjudication(adjudicationNumber)
+  ): AdjudicationResponse = adjudicationService.getAdjudication(adjudicationNumber)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge-sequence/{chargeSequence}")
@@ -212,8 +210,7 @@ class AdjudicationResource(
     @Schema(description = "Charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
-  ): AdjudicationChargeResponse =
-    adjudicationService.getAdjudicationByCharge(adjudicationNumber, chargeSequence)
+  ): AdjudicationChargeResponse = adjudicationService.getAdjudicationByCharge(adjudicationNumber, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/prisoners/{offenderNo}/adjudications")
@@ -662,8 +659,7 @@ class AdjudicationResource(
     @Schema(description = "NOMIS Hearing Id", example = "12345")
     @PathVariable
     hearingId: Long,
-  ): Hearing =
-    adjudicationService.getHearing(hearingId)
+  ): Hearing = adjudicationService.getHearing(hearingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/charge/{chargeSequence}/result")
@@ -846,8 +842,7 @@ class AdjudicationResource(
     @Schema(description = "Nomis charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
-  ): HearingResult =
-    adjudicationService.getHearingResult(hearingId, chargeSequence)
+  ): HearingResult = adjudicationService.getHearingResult(hearingId, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/charge/{chargeSequence}/result")
@@ -907,8 +902,7 @@ class AdjudicationResource(
     @Schema(description = "Nomis charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
-  ): DeleteHearingResultResponse =
-    adjudicationService.deleteHearingResult(adjudicationNumber, hearingId, chargeSequence)
+  ): DeleteHearingResultResponse = adjudicationService.deleteHearingResult(adjudicationNumber, hearingId, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
@@ -1097,8 +1091,7 @@ class AdjudicationResource(
     chargeSequence: Int,
     @RequestBody @Valid
     requests: UpdateHearingResultAwardRequest,
-  ): UpdateHearingResultAwardResponses =
-    adjudicationService.updateCreateAndDeleteHearingResultAwards(adjudicationNumber, chargeSequence, requests)
+  ): UpdateHearingResultAwardResponses = adjudicationService.updateCreateAndDeleteHearingResultAwards(adjudicationNumber, chargeSequence, requests)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
@@ -1165,8 +1158,7 @@ class AdjudicationResource(
     @Schema(description = "Nomis charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
-  ): DeleteHearingResultAwardResponses =
-    adjudicationService.deleteHearingResultAwards(adjudicationNumber, chargeSequence)
+  ): DeleteHearingResultAwardResponses = adjudicationService.deleteHearingResultAwards(adjudicationNumber, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/quash")
@@ -1227,8 +1219,7 @@ class AdjudicationResource(
     @Schema(description = "Nomis charge sequence", example = "1")
     @PathVariable
     chargeSequence: Int,
-  ) =
-    adjudicationService.quashHearingResultAndAwards(adjudicationNumber, chargeSequence)
+  ) = adjudicationService.quashHearingResultAndAwards(adjudicationNumber, chargeSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/unquash")
@@ -1297,8 +1288,7 @@ class AdjudicationResource(
     chargeSequence: Int,
     @RequestBody @Valid
     request: UnquashHearingResultAwardRequest,
-  ): UpdateHearingResultAwardResponses =
-    adjudicationService.unquashHearingResultAndAwards(adjudicationNumber, chargeSequence, request)
+  ): UpdateHearingResultAwardResponses = adjudicationService.unquashHearingResultAndAwards(adjudicationNumber, chargeSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/prisoners/booking-id/{bookingId}/awards/{sanctionSequence}")
@@ -1356,8 +1346,7 @@ class AdjudicationResource(
     @Schema(description = "Nomis sanction sequence", example = "1")
     @PathVariable
     sanctionSequence: Int,
-  ): HearingResultAward =
-    adjudicationService.getHearingResultAward(bookingId, sanctionSequence)
+  ): HearingResultAward = adjudicationService.getHearingResultAward(bookingId, sanctionSequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
   @GetMapping("/prisoners/booking-id/{bookingId}/awards/ada/summary")
@@ -1412,8 +1401,7 @@ class AdjudicationResource(
     @Schema(description = "NOMIS booking Id", example = "12345")
     @PathVariable
     bookingId: Long,
-  ): AdjudicationADAAwardSummaryResponse =
-    adjudicationService.getADAHearingResultAwardSummary(bookingId)
+  ): AdjudicationADAAwardSummaryResponse = adjudicationService.getADAHearingResultAwardSummary(bookingId)
 }
 
 @Schema(description = "adjudication id")

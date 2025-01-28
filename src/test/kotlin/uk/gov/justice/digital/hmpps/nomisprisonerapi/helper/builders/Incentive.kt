@@ -31,8 +31,7 @@ class IncentiveBuilderFactory(private val repository: IncentiveBuilderRepository
   fun builder() = IncentiveBuilder(repository)
 }
 
-class IncentiveBuilder(private val repository: IncentiveBuilderRepository) :
-  IncentiveDsl {
+class IncentiveBuilder(private val repository: IncentiveBuilderRepository) : IncentiveDsl {
   fun build(
     offenderBooking: OffenderBooking,
     iepLevel: String,
@@ -41,16 +40,15 @@ class IncentiveBuilder(private val repository: IncentiveBuilderRepository) :
     commentText: String,
     auditModuleName: String?,
     iepDateTime: LocalDateTime,
-  ): Incentive =
-    Incentive(
-      id = IncentiveId(offenderBooking = offenderBooking, sequence = sequence),
-      commentText = commentText,
-      iepDate = iepDateTime.toLocalDate(),
-      iepTime = iepDateTime,
-      location = offenderBooking.location!!,
-      iepLevel = repository.lookupIepLevel(iepLevel),
-      userId = userId,
-      auditModuleName = auditModuleName,
-    )
-      .let { repository.save(it) }
+  ): Incentive = Incentive(
+    id = IncentiveId(offenderBooking = offenderBooking, sequence = sequence),
+    commentText = commentText,
+    iepDate = iepDateTime.toLocalDate(),
+    iepTime = iepDateTime,
+    location = offenderBooking.location!!,
+    iepLevel = repository.lookupIepLevel(iepLevel),
+    userId = userId,
+    auditModuleName = auditModuleName,
+  )
+    .let { repository.save(it) }
 }

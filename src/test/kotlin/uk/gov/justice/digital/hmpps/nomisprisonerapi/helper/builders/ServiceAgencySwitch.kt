@@ -28,11 +28,10 @@ class ServiceAgencySwitchBuilder(val repository: ServiceAgencySwitchBuilderRepos
   fun build(
     externalService: ExternalService,
     prisonId: String,
-  ) =
-    ServiceAgencySwitch(
-      ServiceAgencySwitchId(
-        externalService = externalService,
-        agencyLocation = repository.lookupAgency(prisonId),
-      ),
-    )
+  ) = ServiceAgencySwitch(
+    ServiceAgencySwitchId(
+      externalService = externalService,
+      agencyLocation = repository.lookupAgency(prisonId),
+    ),
+  )
 }

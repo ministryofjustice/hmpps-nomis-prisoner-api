@@ -55,10 +55,8 @@ class AliasBuilderRepository(
   fun ethnicity(ethnicityCode: String): Ethnicity = ethnicityRepository.findByIdOrNull(ReferenceCode.Pk(Ethnicity.ETHNICITY, ethnicityCode))!!
   fun gender(genderCode: String): Gender = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
   fun title(titleCode: String): Title = titleRepository.findByIdOrNull(ReferenceCode.Pk(Title.TITLE, titleCode))!!
-  fun updateCreateDatetime(offender: Offender, whenCreated: LocalDateTime) =
-    jdbcTemplate.update("update OFFENDERS set CREATE_DATETIME = ? where OFFENDER_ID = ?", whenCreated, offender.id)
-  fun updateCreateUsername(offender: Offender, whoCreated: String) =
-    jdbcTemplate.update("update OFFENDERS set CREATE_USER_ID = ? where OFFENDER_ID = ?", whoCreated, offender.id)
+  fun updateCreateDatetime(offender: Offender, whenCreated: LocalDateTime) = jdbcTemplate.update("update OFFENDERS set CREATE_DATETIME = ? where OFFENDER_ID = ?", whenCreated, offender.id)
+  fun updateCreateUsername(offender: Offender, whoCreated: String) = jdbcTemplate.update("update OFFENDERS set CREATE_USER_ID = ? where OFFENDER_ID = ?", whoCreated, offender.id)
 }
 
 @Component
@@ -67,8 +65,7 @@ class AliasBuilderFactory(
   private val bookingBuilderFactory: BookingBuilderFactory,
   private val offenderIdentifierBuilderFactory: OffenderIdentifierBuilderFactory,
 ) {
-  fun builder(offenderBuilder: OffenderBuilder): AliasBuilder =
-    AliasBuilder(repository, bookingBuilderFactory, offenderIdentifierBuilderFactory, offenderBuilder)
+  fun builder(offenderBuilder: OffenderBuilder): AliasBuilder = AliasBuilder(repository, bookingBuilderFactory, offenderIdentifierBuilderFactory, offenderBuilder)
 }
 
 class AliasBuilder(

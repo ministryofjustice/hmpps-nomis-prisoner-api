@@ -33,8 +33,7 @@ class IncidentStaffParty(
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "STAFF_ID")
   val staff: Staff,
-) :
-  IncidentParty(id, comment)
+) : IncidentParty(id, comment)
 
 // ---- NOT MAPPED columns ---- //
 // PERSON_ID - all are null in prod

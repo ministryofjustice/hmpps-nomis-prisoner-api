@@ -12,11 +12,11 @@ annotation class AgencyInternalLocationAmendmentDslMarker
 interface AgencyInternalLocationAmendmentDsl
 
 @Component
-class AgencyInternalLocationAmendmentBuilderFactory() {
+class AgencyInternalLocationAmendmentBuilderFactory {
   fun builder() = AgencyInternalLocationAmendmentBuilder()
 }
 
-class AgencyInternalLocationAmendmentBuilder() : AgencyInternalLocationAmendmentDsl {
+class AgencyInternalLocationAmendmentBuilder : AgencyInternalLocationAmendmentDsl {
 
   fun build(
     agencyInternalLocation: AgencyInternalLocation,

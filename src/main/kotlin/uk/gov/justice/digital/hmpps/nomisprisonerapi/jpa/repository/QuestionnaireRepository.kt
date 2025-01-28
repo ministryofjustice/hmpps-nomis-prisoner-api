@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 
 @Repository
-interface QuestionnaireRepository : CrudRepository<Questionnaire, Long>, JpaSpecificationExecutor<Questionnaire>
+interface QuestionnaireRepository :
+  CrudRepository<Questionnaire, Long>,
+  JpaSpecificationExecutor<Questionnaire>

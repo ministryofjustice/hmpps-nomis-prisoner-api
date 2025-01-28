@@ -24,9 +24,8 @@ class OffenderCaseIdentifierBuilder : OffenderCaseIdentifierDsl {
     courtCase: CourtCase,
     reference: String,
     type: String,
-  ): OffenderCaseIdentifier =
-    OffenderCaseIdentifier(
-      id = OffenderCaseIdentifierPK(identifierType = type, reference = reference, courtCase = courtCase),
-    )
-      .also { caseIdentifier = it }
+  ): OffenderCaseIdentifier = OffenderCaseIdentifier(
+    id = OffenderCaseIdentifierPK(identifierType = type, reference = reference, courtCase = courtCase),
+  )
+    .also { caseIdentifier = it }
 }

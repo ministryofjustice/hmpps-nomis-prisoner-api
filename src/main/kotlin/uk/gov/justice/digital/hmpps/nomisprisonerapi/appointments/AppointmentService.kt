@@ -29,20 +29,19 @@ class AppointmentService(
   private val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse =
-    mapModel(dto)
-      .also {
-        telemetryClient.trackEvent(
-          "appointment-created",
-          mapOf(
-            "eventId" to it.eventId.toString(),
-            "bookingId" to it.offenderBooking.bookingId.toString(),
-            "location" to it.internalLocation?.locationId.toString(),
-          ),
-          null,
-        )
-      }
-      .let { CreateAppointmentResponse(offenderIndividualScheduleRepository.save(it).eventId) }
+  fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse = mapModel(dto)
+    .also {
+      telemetryClient.trackEvent(
+        "appointment-created",
+        mapOf(
+          "eventId" to it.eventId.toString(),
+          "bookingId" to it.offenderBooking.bookingId.toString(),
+          "location" to it.internalLocation?.locationId.toString(),
+        ),
+        null,
+      )
+    }
+    .let { CreateAppointmentResponse(offenderIndividualScheduleRepository.save(it).eventId) }
 
   fun updateAppointment(eventId: Long, dto: UpdateAppointmentRequest) {
     offenderIndividualScheduleRepository.findByIdOrNull(eventId)
@@ -169,23 +168,21 @@ class AppointmentService(
     )
   }
 
-  fun getAppointment(bookingId: Long, locationId: Long, date: LocalDateTime): AppointmentResponse =
-    offenderIndividualScheduleRepository.findOneByBookingLocationDateAndStartTime(
-      bookingId = bookingId,
-      locationId = locationId,
-      date = date.toLocalDate(),
-      hour = date.hour,
-      minute = date.minute,
-    )?.let {
-      return mapModel(it)
-    }
-      ?: throw NotFoundException("Appointment not found")
+  fun getAppointment(bookingId: Long, locationId: Long, date: LocalDateTime): AppointmentResponse = offenderIndividualScheduleRepository.findOneByBookingLocationDateAndStartTime(
+    bookingId = bookingId,
+    locationId = locationId,
+    date = date.toLocalDate(),
+    hour = date.hour,
+    minute = date.minute,
+  )?.let {
+    return mapModel(it)
+  }
+    ?: throw NotFoundException("Appointment not found")
 
-  fun getAppointment(eventId: Long): AppointmentResponse =
-    offenderIndividualScheduleRepository.findByIdOrNull(eventId)?.let {
-      return mapModel(it)
-    }
-      ?: throw NotFoundException("Appointment not found")
+  fun getAppointment(eventId: Long): AppointmentResponse = offenderIndividualScheduleRepository.findByIdOrNull(eventId)?.let {
+    return mapModel(it)
+  }
+    ?: throw NotFoundException("Appointment not found")
 
   fun findIdsByFilter(pageRequest: Pageable, appointmentFilter: AppointmentFilter): Page<AppointmentIdResponse> {
     val prisons = appointmentFilter.prisonIds
@@ -207,35 +204,33 @@ class AppointmentService(
       .map { AppointmentIdResponse(eventId = it) }
   }
 
-  fun findCountsByFilter(appointmentFilter: AppointmentFilter): List<AppointmentCountsResponse> =
-    offenderIndividualScheduleRepository.findCountsByFilter(
-      appointmentFilter.prisonIds,
-      appointmentFilter.fromDate ?: LocalDate.now().plusYears(-100),
-      appointmentFilter.toDate ?: LocalDate.now().plusYears(100),
-    )
-      .map {
-        AppointmentCountsResponse(
-          prisonId = it.getPrisonId(),
-          eventSubType = it.getEventSubType(),
-          future = it.getPastOrFuture() == "FUTURE",
-          count = it.getAppointmentCount(),
-        )
-      }
+  fun findCountsByFilter(appointmentFilter: AppointmentFilter): List<AppointmentCountsResponse> = offenderIndividualScheduleRepository.findCountsByFilter(
+    appointmentFilter.prisonIds,
+    appointmentFilter.fromDate ?: LocalDate.now().plusYears(-100),
+    appointmentFilter.toDate ?: LocalDate.now().plusYears(100),
+  )
+    .map {
+      AppointmentCountsResponse(
+        prisonId = it.getPrisonId(),
+        eventSubType = it.getEventSubType(),
+        future = it.getPastOrFuture() == "FUTURE",
+        count = it.getAppointmentCount(),
+      )
+    }
 }
 
-private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse =
-  AppointmentResponse(
-    bookingId = entity.offenderBooking.bookingId,
-    offenderNo = entity.offenderBooking.offender.nomsId,
-    startDateTime = entity.startTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
-    endDateTime = entity.endTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
-    status = entity.eventStatus.code,
-    subtype = entity.eventSubType.code,
-    internalLocation = entity.internalLocation?.locationId,
-    prisonId = entity.prison?.id ?: entity.toPrison?.id,
-    comment = entity.comment,
-    createdDate = entity.createdDate!!,
-    createdBy = entity.createdBy!!,
-    modifiedDate = entity.modifiedDate,
-    modifiedBy = entity.modifiedBy,
-  )
+private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse = AppointmentResponse(
+  bookingId = entity.offenderBooking.bookingId,
+  offenderNo = entity.offenderBooking.offender.nomsId,
+  startDateTime = entity.startTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
+  endDateTime = entity.endTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
+  status = entity.eventStatus.code,
+  subtype = entity.eventSubType.code,
+  internalLocation = entity.internalLocation?.locationId,
+  prisonId = entity.prison?.id ?: entity.toPrison?.id,
+  comment = entity.comment,
+  createdDate = entity.createdDate!!,
+  createdBy = entity.createdBy!!,
+  modifiedDate = entity.modifiedDate,
+  modifiedBy = entity.modifiedBy,
+)

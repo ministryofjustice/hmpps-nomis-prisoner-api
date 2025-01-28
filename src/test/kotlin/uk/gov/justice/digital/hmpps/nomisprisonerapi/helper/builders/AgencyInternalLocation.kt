@@ -57,26 +57,20 @@ class AgencyInternalLocationBuilderRepository(
   private val livingUnitReasonRepository: ReferenceCodeRepository<LivingUnitReason>,
   private val internalLocationUsageRepository: InternalLocationUsageRepository,
 ) {
-  fun save(agencyInternalLocation: AgencyInternalLocation): AgencyInternalLocation =
-    agencyInternalLocationRepository.findByIdOrNull(agencyInternalLocation.locationId)
-      ?: agencyInternalLocationRepository.save(agencyInternalLocation)
+  fun save(agencyInternalLocation: AgencyInternalLocation): AgencyInternalLocation = agencyInternalLocationRepository.findByIdOrNull(agencyInternalLocation.locationId)
+    ?: agencyInternalLocationRepository.save(agencyInternalLocation)
 
-  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
-    agencyInternalLocationRepository.findByIdOrNull(locationId)
+  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? = agencyInternalLocationRepository.findByIdOrNull(locationId)
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 
-  fun lookupInternalLocationType(code: String): InternalLocationType =
-    internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(code))!!
+  fun lookupInternalLocationType(code: String): InternalLocationType = internalLocationTypeRepository.findByIdOrNull(InternalLocationType.pk(code))!!
 
-  fun lookupHousingUnitType(code: String): HousingUnitType =
-    housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(code))!!
+  fun lookupHousingUnitType(code: String): HousingUnitType = housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(code))!!
 
-  fun lookupLivingUnitReason(code: String): LivingUnitReason =
-    livingUnitReasonRepository.findByIdOrNull(LivingUnitReason.pk(code))!!
+  fun lookupLivingUnitReason(code: String): LivingUnitReason = livingUnitReasonRepository.findByIdOrNull(LivingUnitReason.pk(code))!!
 
-  fun lookupInternalLocationUsage(id: Long): InternalLocationUsage =
-    internalLocationUsageRepository.findByIdOrNull(id)!!
+  fun lookupInternalLocationUsage(id: Long): InternalLocationUsage = internalLocationUsageRepository.findByIdOrNull(id)!!
 }
 
 @Component
@@ -143,8 +137,7 @@ class AgencyInternalLocationBuilder(
       .also { agencyInternalLocation = it }
   }
 
-  override fun attributes(profileType: String, profileCode: String): AgencyInternalLocationProfile =
-    agencyInternalLocationProfileBuilderFactory.builder().build(profileType, profileCode, agencyInternalLocation)
+  override fun attributes(profileType: String, profileCode: String): AgencyInternalLocationProfile = agencyInternalLocationProfileBuilderFactory.builder().build(profileType, profileCode, agencyInternalLocation)
 
   override fun usages(
     internalLocationUsage: Long,
@@ -152,15 +145,14 @@ class AgencyInternalLocationBuilder(
     usageLocationType: String?,
     listSequence: Int?,
     parentUsage: InternalLocationUsageLocation?,
-  ): InternalLocationUsageLocation =
-    internalLocationUsageLocationBuilderFactory.builder().build(
-      repository.lookupInternalLocationUsage(internalLocationUsage),
-      agencyInternalLocation,
-      capacity,
-      usageLocationType?.let { repository.lookupInternalLocationType(usageLocationType) },
-      listSequence,
-      parentUsage,
-    )
+  ): InternalLocationUsageLocation = internalLocationUsageLocationBuilderFactory.builder().build(
+    repository.lookupInternalLocationUsage(internalLocationUsage),
+    agencyInternalLocation,
+    capacity,
+    usageLocationType?.let { repository.lookupInternalLocationType(usageLocationType) },
+    listSequence,
+    parentUsage,
+  )
 
   override fun amendments(
     amendDateTime: LocalDateTime,
@@ -168,13 +160,12 @@ class AgencyInternalLocationBuilder(
     oldValue: String?,
     newValue: String?,
     amendUserId: String,
-  ): AgencyInternalLocationAmendment =
-    agencyInternalLocationAmendmentBuilderFactory.builder().build(
-      agencyInternalLocation,
-      amendDateTime,
-      columnName,
-      oldValue,
-      newValue,
-      amendUserId,
-    )
+  ): AgencyInternalLocationAmendment = agencyInternalLocationAmendmentBuilderFactory.builder().build(
+    agencyInternalLocation,
+    amendDateTime,
+    columnName,
+    oldValue,
+    newValue,
+    amendUserId,
+  )
 }

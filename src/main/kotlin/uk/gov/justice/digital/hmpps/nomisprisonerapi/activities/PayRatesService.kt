@@ -51,16 +51,15 @@ class PayRatesService(
     }.toMutableList()
   }
 
-  fun mapRates(payRates: List<CourseActivityPayRate>): List<PayRatesResponse> =
-    payRates
-      .filter(CourseActivityPayRate::isActive)
-      .map {
-        PayRatesResponse(
-          incentiveLevelCode = it.iepLevel.code,
-          payBand = it.payBand.code,
-          rate = it.halfDayRate,
-        )
-      }
+  fun mapRates(payRates: List<CourseActivityPayRate>): List<PayRatesResponse> = payRates
+    .filter(CourseActivityPayRate::isActive)
+    .map {
+      PayRatesResponse(
+        incentiveLevelCode = it.iepLevel.code,
+        payBand = it.payBand.code,
+        rate = it.halfDayRate,
+      )
+    }
 
   /*
    * Rebuild the list of pay rates to replace the existing list.
@@ -130,12 +129,11 @@ class PayRatesService(
   private fun PayRateRequest.isActive() = startDate!! <= LocalDate.now() && (endDate == null || endDate >= LocalDate.now())
 
   // Find any rates that are not active in the list of new rates
-  private fun List<CourseActivityPayRate>.filterNotActiveIn(newRates: List<CourseActivityPayRate>) =
-    filter { existing ->
-      newRates.none { new ->
-        new.isActive() && (new.toRateType() == existing.toRateType())
-      }
+  private fun List<CourseActivityPayRate>.filterNotActiveIn(newRates: List<CourseActivityPayRate>) = filter { existing ->
+    newRates.none { new ->
+      new.isActive() && (new.toRateType() == existing.toRateType())
     }
+  }
 
   private data class RateType(val iepLevel: String, val payBand: String)
   private fun PayRateRequest.toRateType() = RateType(incentiveLevel, payBand)
@@ -145,87 +143,79 @@ class PayRatesService(
    * NOMIS needs start and end dates, but DPS only provides start dates (except for on the first rate which has null start date).
    * Map the requested rates to have start and end dates.
    */
-  private fun List<PayRateRequest>.deriveDates(courseStartDate: LocalDate, courseEndDate: LocalDate?): List<PayRateRequest> =
-    this.groupBy { it.toRateType() }
-      .flatMap { (_, requestedRatesForType) ->
-        requestedRatesForType
-          .sortedBy { it.startDate }
-          .windowed(size = 2, step = 1, partialWindows = true)
-          .map {
-            val requestedRate: PayRateRequest = it[0]
-            val nextRequestedRate: PayRateRequest? = if (it.size > 1) it[1] else null
+  private fun List<PayRateRequest>.deriveDates(courseStartDate: LocalDate, courseEndDate: LocalDate?): List<PayRateRequest> = this.groupBy { it.toRateType() }
+    .flatMap { (_, requestedRatesForType) ->
+      requestedRatesForType
+        .sortedBy { it.startDate }
+        .windowed(size = 2, step = 1, partialWindows = true)
+        .map {
+          val requestedRate: PayRateRequest = it[0]
+          val nextRequestedRate: PayRateRequest? = if (it.size > 1) it[1] else null
 
-            val startDate =
-              // Use the start date as requested by DPS
-              requestedRate.startDate
-                // If there is no DPS start date, start at the same time as the course
-                ?: courseStartDate
+          val startDate =
+            // Use the start date as requested by DPS
+            requestedRate.startDate
+              // If there is no DPS start date, start at the same time as the course
+              ?: courseStartDate
 
-            val endDate = if (nextRequestedRate == null) {
-              // this is the last rate so end with the course unless requested to end before then
-              minDate(requestedRate.endDate, courseEndDate)
-            } else {
-              // if there is a next rate then the requested rate ends the day before it
-              nextRequestedRate.startDate!!.minusDays(1)
-            }
-
-            requestedRate.copy(startDate = startDate, endDate = endDate)
+          val endDate = if (nextRequestedRate == null) {
+            // this is the last rate so end with the course unless requested to end before then
+            minDate(requestedRate.endDate, courseEndDate)
+          } else {
+            // if there is a next rate then the requested rate ends the day before it
+            nextRequestedRate.startDate!!.minusDays(1)
           }
-      }
+
+          requestedRate.copy(startDate = startDate, endDate = endDate)
+        }
+    }
 
   /*
    * Expire any active pay rates where the rate has changed in DPS and return them
    */
-  private fun List<CourseActivityPayRate>.expireChangedRates(requestedRates: List<PayRateRequest>): List<CourseActivityPayRate> =
-    this.groupBy { it.toRateType() }
-      .mapNotNull { (rateType, existingRatesForType) ->
-        val requestedRatesForType = requestedRates.filter { it.toRateType() == rateType }
-        val existingActiveRate = existingRatesForType.findActiveRate()
-        val requestedActiveRate = requestedRatesForType.findActiveRate()
+  private fun List<CourseActivityPayRate>.expireChangedRates(requestedRates: List<PayRateRequest>): List<CourseActivityPayRate> = this.groupBy { it.toRateType() }
+    .mapNotNull { (rateType, existingRatesForType) ->
+      val requestedRatesForType = requestedRates.filter { it.toRateType() == rateType }
+      val existingActiveRate = existingRatesForType.findActiveRate()
+      val requestedActiveRate = requestedRatesForType.findActiveRate()
 
-        // The rate has changed - expire the existing rate
-        if (existingActiveRate != null &&
-          requestedActiveRate != null &&
-          existingActiveRate.halfDayRate.compareTo(requestedActiveRate.rate) != 0
-        ) {
-          existingActiveRate.expire()
-        } else {
-          null
-        }
+      // The rate has changed - expire the existing rate
+      if (existingActiveRate != null &&
+        requestedActiveRate != null &&
+        existingActiveRate.halfDayRate.compareTo(requestedActiveRate.rate) != 0
+      ) {
+        existingActiveRate.expire()
+      } else {
+        null
       }
-
-  private fun List<CourseActivityPayRate>.filterExpired(): List<CourseActivityPayRate> =
-    filter { it.endDate != null && it.endDate!! < LocalDate.now() }
-
-  private fun List<PayRateRequest>.filterNotExpired(): List<PayRateRequest> =
-    filter { it.endDate == null || it.endDate >= LocalDate.now() }
-
-  private fun List<PayRateRequest>.findActiveRate(): PayRateRequest? =
-    find { it.startDate!! <= LocalDate.now() && (it.endDate == null || it.endDate >= LocalDate.now()) }
-
-  private fun List<CourseActivityPayRate>.findActiveRate(): CourseActivityPayRate? =
-    find { it.id.startDate <= LocalDate.now() && (it.endDate == null || it.endDate!! >= LocalDate.now()) }
-
-  private fun minDate(date1: LocalDate?, date2: LocalDate?): LocalDate? =
-    when {
-      date1 == null -> date2
-      date2 == null -> date1
-      date1 < date2 -> date1
-      else -> date2
     }
+
+  private fun List<CourseActivityPayRate>.filterExpired(): List<CourseActivityPayRate> = filter { it.endDate != null && it.endDate!! < LocalDate.now() }
+
+  private fun List<PayRateRequest>.filterNotExpired(): List<PayRateRequest> = filter { it.endDate == null || it.endDate >= LocalDate.now() }
+
+  private fun List<PayRateRequest>.findActiveRate(): PayRateRequest? = find { it.startDate!! <= LocalDate.now() && (it.endDate == null || it.endDate >= LocalDate.now()) }
+
+  private fun List<CourseActivityPayRate>.findActiveRate(): CourseActivityPayRate? = find { it.id.startDate <= LocalDate.now() && (it.endDate == null || it.endDate!! >= LocalDate.now()) }
+
+  private fun minDate(date1: LocalDate?, date2: LocalDate?): LocalDate? = when {
+    date1 == null -> date2
+    date2 == null -> date1
+    date1 < date2 -> date1
+    else -> date2
+  }
 
   /*
    * Fails if any of the pay rates are in use, because we are trying to delete the pay rates
    */
-  private fun List<CourseActivityPayRate>.throwIfPayBandsInUse() =
-    this.forEach { activityPayRate ->
-      offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndProgramStatusCode(activityPayRate.id.courseActivity.courseActivityId, "ALLOC")
-        .filter { profile -> profile.isPayRateApplicable(activityPayRate.payBand.code, activityPayRate.iepLevel.code) }
-        .map { offender -> offender.offenderBooking.offender.nomsId }
-        .toList()
-        .takeIf { nomsIds -> nomsIds.isNotEmpty() }
-        ?.run { throw BadDataException("Pay band ${activityPayRate.payBand.code} for incentive level ${activityPayRate.iepLevel.code} is allocated to offender(s) $this") }
-    }
+  private fun List<CourseActivityPayRate>.throwIfPayBandsInUse() = this.forEach { activityPayRate ->
+    offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndProgramStatusCode(activityPayRate.id.courseActivity.courseActivityId, "ALLOC")
+      .filter { profile -> profile.isPayRateApplicable(activityPayRate.payBand.code, activityPayRate.iepLevel.code) }
+      .map { offender -> offender.offenderBooking.offender.nomsId }
+      .toList()
+      .takeIf { nomsIds -> nomsIds.isNotEmpty() }
+      ?.run { throw BadDataException("Pay band ${activityPayRate.payBand.code} for incentive level ${activityPayRate.iepLevel.code} is allocated to offender(s) $this") }
+  }
 
   // Map the requested rate to a NOMIS pay rate
   private fun PayRateRequest.toCourseActivityPayRate(courseActivity: CourseActivity, startDate: LocalDate, endDate: LocalDate? = null): CourseActivityPayRate {
@@ -277,24 +267,20 @@ class PayRatesService(
   private fun findExpiredIds(
     savedRates: List<CourseActivityPayRate>,
     newRates: List<CourseActivityPayRate>,
-  ) =
-    savedRates
-      .filter { savedRate -> !savedRate.hasExpiryDate() }
-      .filter { activeSavedRate -> newRates.isNowExpired(activeSavedRate) }
-      .map { it.id }
+  ) = savedRates
+    .filter { savedRate -> !savedRate.hasExpiryDate() }
+    .filter { activeSavedRate -> newRates.isNowExpired(activeSavedRate) }
+    .map { it.id }
 
-  private fun List<CourseActivityPayRate>.isNowExpired(savedRate: CourseActivityPayRate) =
-    find { newRate -> newRate.id == savedRate.id && newRate.hasExpiryDate() } != null
+  private fun List<CourseActivityPayRate>.isNowExpired(savedRate: CourseActivityPayRate) = find { newRate -> newRate.id == savedRate.id && newRate.hasExpiryDate() } != null
 
   private fun findUpdatedIds(
     savedRates: List<CourseActivityPayRate>,
     newRates: List<CourseActivityPayRate>,
-  ) =
-    savedRates
-      .filter { it.hasFutureStartDate() }
-      .filter { savedRateNotYetActive -> newRates.rateHasChanged(savedRateNotYetActive) }
-      .map { it.id }
+  ) = savedRates
+    .filter { it.hasFutureStartDate() }
+    .filter { savedRateNotYetActive -> newRates.rateHasChanged(savedRateNotYetActive) }
+    .map { it.id }
 
-  private fun List<CourseActivityPayRate>.rateHasChanged(savedRate: CourseActivityPayRate) =
-    find { it.id == savedRate.id && it.halfDayRate.compareTo(savedRate.halfDayRate) != 0 } != null
+  private fun List<CourseActivityPayRate>.rateHasChanged(savedRate: CourseActivityPayRate) = find { it.id == savedRate.id && it.halfDayRate.compareTo(savedRate.halfDayRate) != 0 } != null
 }

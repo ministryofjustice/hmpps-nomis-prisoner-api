@@ -37,9 +37,8 @@ class SplashScreenBuilderRepository(
 ) {
   fun lookupBlockStatusCode(code: String) = accessBlockedRepository.findByIdOrNull(SplashAccessBlockedType.pk(code))!!
 
-  fun save(splashScreen: SplashScreen): SplashScreen =
-    splashScreenRepository.findByIdOrNull(splashScreen.id)
-      ?: splashScreenRepository.save(splashScreen)
+  fun save(splashScreen: SplashScreen): SplashScreen = splashScreenRepository.findByIdOrNull(splashScreen.id)
+    ?: splashScreenRepository.save(splashScreen)
 }
 
 class SplashScreenBuilder(

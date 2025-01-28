@@ -2159,8 +2159,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      private fun Repository.repairsFor(adjudicationNumber: Long): List<AdjudicationIncidentRepair> =
-        getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)?.repairs ?: emptyList()
+      private fun Repository.repairsFor(adjudicationNumber: Long): List<AdjudicationIncidentRepair> = getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber)?.repairs ?: emptyList()
 
       @Test
       fun `empty list will remove existing repairs`() {
@@ -2463,9 +2462,8 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      private fun Repository.evidenceFor(adjudicationNumber: Long): List<AdjudicationEvidence> =
-        adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.investigations?.flatMap { it.evidence }
-          ?: emptyList()
+      private fun Repository.evidenceFor(adjudicationNumber: Long): List<AdjudicationEvidence> = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.investigations?.flatMap { it.evidence }
+        ?: emptyList()
 
       @Test
       fun `empty list will remove existing evidence`() {

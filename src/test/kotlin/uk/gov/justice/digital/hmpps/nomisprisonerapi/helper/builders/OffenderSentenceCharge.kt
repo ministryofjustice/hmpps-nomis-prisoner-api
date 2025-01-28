@@ -14,13 +14,11 @@ annotation class OffenderSentenceChargeDslMarker
 interface OffenderSentenceChargeDsl
 
 @Component
-class OffenderSentenceChargeBuilderFactory() {
-  fun builder(): OffenderSentenceChargeBuilder {
-    return OffenderSentenceChargeBuilder()
-  }
+class OffenderSentenceChargeBuilderFactory {
+  fun builder(): OffenderSentenceChargeBuilder = OffenderSentenceChargeBuilder()
 }
 
-class OffenderSentenceChargeBuilder() : OffenderSentenceChargeDsl {
+class OffenderSentenceChargeBuilder : OffenderSentenceChargeDsl {
   private lateinit var offenderSentenceCharge: OffenderSentenceCharge
 
   fun build(

@@ -53,6 +53,5 @@ data class AgencyInternalLocationProfile(
 
   override fun hashCode(): Int = id.hashCode()
 
-  override fun toString(): String =
-    "AgencyInternalLocationProfile(locationId=${id.locationId}, profileType=${id.profileType}, profileCode=${id.profileCode})"
+  override fun toString(): String = "AgencyInternalLocationProfile(locationId=${id.locationId}, profileType=${id.profileType}, profileCode=${id.profileCode})"
 }

@@ -9,7 +9,8 @@ import java.time.LocalDate
 
 @Repository
 interface OffenderIndividualScheduleRepository :
-  CrudRepository<OffenderIndividualSchedule, Long>, JpaSpecificationExecutor<OffenderIndividualSchedule> {
+  CrudRepository<OffenderIndividualSchedule, Long>,
+  JpaSpecificationExecutor<OffenderIndividualSchedule> {
 
   @Query(
     "from OffenderIndividualSchedule ois where ois.offenderBooking.bookingId = :bookingId and ois.internalLocation.locationId = :locationId " +

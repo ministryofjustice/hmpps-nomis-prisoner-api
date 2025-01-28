@@ -45,21 +45,20 @@ class CSIPReviewBuilder(
     nextReviewDate: LocalDate?,
     closeDate: LocalDate?,
     recordedBy: String?,
-  ): CSIPReview =
-    CSIPReview(
-      csipReport = csipReport,
-      reviewSequence = reviewSequence,
-      remainOnCSIP = remainOnCSIP,
-      csipUpdated = csipUpdated,
-      caseNote = caseNote,
-      closeCSIP = closeCSIP,
-      peopleInformed = peopleInformed,
-      summary = summary,
-      nextReviewDate = nextReviewDate,
-      closeDate = closeDate,
-      recordedUser = recordedBy,
-    )
-      .also { csipReview = it }
+  ): CSIPReview = CSIPReview(
+    csipReport = csipReport,
+    reviewSequence = reviewSequence,
+    remainOnCSIP = remainOnCSIP,
+    csipUpdated = csipUpdated,
+    caseNote = caseNote,
+    closeCSIP = closeCSIP,
+    peopleInformed = peopleInformed,
+    summary = summary,
+    nextReviewDate = nextReviewDate,
+    closeDate = closeDate,
+    recordedUser = recordedBy,
+  )
+    .also { csipReview = it }
 
   override fun attendee(
     name: String?,
@@ -67,17 +66,16 @@ class CSIPReviewBuilder(
     attended: Boolean,
     contribution: String?,
     dsl: CSIPAttendeeDsl.() -> Unit,
-  ): CSIPAttendee =
-    attendeeBuilderFactory.builder()
-      .let { builder ->
-        builder.build(
-          csipReview = csipReview,
-          name = name,
-          role = role,
-          attended = attended,
-          contribution = contribution,
-        )
-          .also { csipReview.attendees += it }
-          .also { builder.apply(dsl) }
-      }
+  ): CSIPAttendee = attendeeBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        csipReview = csipReview,
+        name = name,
+        role = role,
+        attended = attended,
+        contribution = contribution,
+      )
+        .also { csipReview.attendees += it }
+        .also { builder.apply(dsl) }
+    }
 }

@@ -52,9 +52,7 @@ class AdjudicationIncidentBuilderFactory(
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
   private val adjudicationRepairBuilderFactory: AdjudicationRepairBuilderFactory,
 ) {
-  fun builder(): AdjudicationIncidentBuilder {
-    return AdjudicationIncidentBuilder(repository, adjudicationPartyBuilderFactory, adjudicationRepairBuilderFactory)
-  }
+  fun builder(): AdjudicationIncidentBuilder = AdjudicationIncidentBuilder(repository, adjudicationPartyBuilderFactory, adjudicationRepairBuilderFactory)
 }
 
 @Component
@@ -64,14 +62,11 @@ class AdjudicationIncidentBuilderRepository(
   private val adjudicationIncidentTypeRepository: ReferenceCodeRepository<AdjudicationIncidentType>,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
-  fun save(adjudicationIncident: AdjudicationIncident): AdjudicationIncident =
-    adjudicationIncidentRepository.save(adjudicationIncident)
+  fun save(adjudicationIncident: AdjudicationIncident): AdjudicationIncident = adjudicationIncidentRepository.save(adjudicationIncident)
 
-  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? =
-    agencyInternalLocationRepository.findByIdOrNull(locationId)
+  fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? = agencyInternalLocationRepository.findByIdOrNull(locationId)
 
-  fun lookupIncidentType(): AdjudicationIncidentType =
-    adjudicationIncidentTypeRepository.findByIdOrNull(AdjudicationIncidentType.pk(AdjudicationIncidentType.GOVERNORS_REPORT))!!
+  fun lookupIncidentType(): AdjudicationIncidentType = adjudicationIncidentTypeRepository.findByIdOrNull(AdjudicationIncidentType.pk(AdjudicationIncidentType.GOVERNORS_REPORT))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 }
@@ -115,18 +110,17 @@ class AdjudicationIncidentBuilder(
     comment: String?,
     repairCost: BigDecimal?,
     dsl: AdjudicationRepairDsl.() -> Unit,
-  ) =
-    adjudicationRepairBuilderFactory.builder().let { builder ->
-      builder.build(
-        repairType,
-        comment,
-        repairCost,
-        incident = adjudicationIncident,
-        repairSequence = adjudicationIncident.repairs.size + 1,
-      )
-        .also { adjudicationIncident.repairs += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationRepairBuilderFactory.builder().let { builder ->
+    builder.build(
+      repairType,
+      comment,
+      repairCost,
+      incident = adjudicationIncident,
+      repairSequence = adjudicationIncident.repairs.size + 1,
+    )
+      .also { adjudicationIncident.repairs += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun party(
     comment: String,
@@ -137,21 +131,20 @@ class AdjudicationIncidentBuilder(
     adjudicationNumber: Long?,
     actionDecision: String,
     dsl: AdjudicationPartyDsl.() -> Unit,
-  ) =
-    adjudicationPartyBuilderFactory.builder().let { builder ->
-      builder.build(
-        adjudicationNumber = adjudicationNumber,
-        comment = comment,
-        staff = staff,
-        incidentRole = role.code,
-        actionDecision = actionDecision,
-        partyAddedDate = partyAddedDate,
-        incident = adjudicationIncident,
-        offenderBooking = offenderBooking,
-        whenCreated = whenCreated,
-        index = adjudicationIncident.parties.size + 1,
-      )
-        .also { adjudicationIncident.parties += it }
-        .also { builder.apply(dsl) }
-    }
+  ) = adjudicationPartyBuilderFactory.builder().let { builder ->
+    builder.build(
+      adjudicationNumber = adjudicationNumber,
+      comment = comment,
+      staff = staff,
+      incidentRole = role.code,
+      actionDecision = actionDecision,
+      partyAddedDate = partyAddedDate,
+      incident = adjudicationIncident,
+      offenderBooking = offenderBooking,
+      whenCreated = whenCreated,
+      index = adjudicationIncident.parties.size + 1,
+    )
+      .also { adjudicationIncident.parties += it }
+      .also { builder.apply(dsl) }
+  }
 }

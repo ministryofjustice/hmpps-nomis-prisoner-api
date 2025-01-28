@@ -59,7 +59,5 @@ data class AgencyVisitSlot(
     return id == other.id
   }
 
-  override fun hashCode(): Int {
-    return Objects.hashCode(id)
-  }
+  override fun hashCode(): Int = Objects.hashCode(id)
 }
