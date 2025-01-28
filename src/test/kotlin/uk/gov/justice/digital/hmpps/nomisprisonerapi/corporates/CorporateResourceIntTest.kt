@@ -1295,6 +1295,90 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("DELETE /corporates/{corporateId}/address/{addressId}")
+  @Nested
+  inner class DeleteCorporateAddress {
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingAddress = address()
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 address exists but not exist on the corporate `() {
+        webTestClient.delete().uri("/corporates/9999/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when address does not exist`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a corporate address`() {
+        assertThat(corporateAddressRepository.existsById(existingAddress.addressId)).isTrue()
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(corporateAddressRepository.existsById(existingAddress.addressId)).isFalse()
+      }
+    }
+  }
 }
 
 private inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!
