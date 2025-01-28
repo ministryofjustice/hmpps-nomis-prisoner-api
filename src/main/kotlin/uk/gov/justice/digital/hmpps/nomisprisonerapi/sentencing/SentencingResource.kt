@@ -767,7 +767,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = OffenderChargeRequest::class),
+          schema = Schema(implementation = CourtAppearanceRequest::class),
         ),
       ],
     ),
