@@ -442,7 +442,7 @@ class ContactPersonService(
 
   fun deletePersonAddressPhone(personId: Long, addressId: Long, phoneId: Long) {
     addressPhoneRepository.findByIdOrNull(phoneId)?.also {
-      if (it.address.addressId != addressId) throw BadDataException("Phone of $phoneId does not exist on address $addressId but does on person ${it.address.addressId}")
+      if (it.address.addressId != addressId) throw BadDataException("Phone of $phoneId does not exist on address $addressId but does on address ${it.address.addressId}")
     }
     personAddressRepository.findByIdOrNull(addressId)?.also {
       if (it.person.id != personId) throw BadDataException("Address of $addressId does not exist on person $personId but does on person ${it.person.id}")
