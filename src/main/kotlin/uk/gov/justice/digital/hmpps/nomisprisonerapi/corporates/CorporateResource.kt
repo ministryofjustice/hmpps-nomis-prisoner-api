@@ -604,6 +604,58 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: UpdateCorporatePhoneRequest,
   ) = corporateService.updateCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate address phone",
+    description = "Deletes a corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate address phone deleted or does not exist",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request params contains address or corporate that are not related with the phone",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporateAddressPhone(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+    @PathVariable
+    phoneId: Long,
+  ) = corporateService.deleteCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
