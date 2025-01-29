@@ -14,12 +14,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporatePhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -30,6 +32,7 @@ class CorporateService(
   private val corporateRepository: CorporateRepository,
   private val caseloadRepository: CaseloadRepository,
   private val corporateAddressRepository: CorporateAddressRepository,
+  private val corporatePhoneRepository: CorporatePhoneRepository,
   private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
@@ -247,6 +250,15 @@ class CorporateService(
 
     addressPhoneRepository.deleteById(phoneId)
   }
+
+  fun createCorporatePhone(corporateId: Long, request: CreateCorporatePhoneRequest): CreateCorporatePhoneResponse = corporatePhoneRepository.saveAndFlush(
+    CorporatePhone(
+      corporate = corporateOf(corporateId),
+      phoneNo = request.number,
+      extNo = request.extension,
+      phoneType = phoneTypeOf(request.typeCode),
+    ),
+  ).let { CreateCorporatePhoneResponse(id = it.phoneId) }
 
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }

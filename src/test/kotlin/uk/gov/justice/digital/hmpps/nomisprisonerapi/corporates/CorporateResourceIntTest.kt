@@ -18,8 +18,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -34,6 +36,9 @@ class CorporateResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var corporateAddressRepository: CorporateAddressRepository
+
+  @Autowired
+  private lateinit var corporatePhoneRepository: CorporatePhoneRepository
 
   @Autowired
   private lateinit var addressPhoneRepository: AddressPhoneRepository
@@ -1142,7 +1147,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
     )
 
     private lateinit var existingCorporate: Corporate
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+    private lateinit var existingAddress: CorporateAddress
 
     @BeforeEach
     fun setUp() {
@@ -1305,7 +1310,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class DeleteCorporateAddress {
     private lateinit var existingCorporate: Corporate
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+    private lateinit var existingAddress: CorporateAddress
 
     @BeforeEach
     fun setUp() {
@@ -1395,7 +1400,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
 
     private lateinit var existingCorporate: Corporate
     private lateinit var anotherCorporate: Corporate
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+    private lateinit var existingAddress: CorporateAddress
 
     @BeforeEach
     fun setUp() {
@@ -1532,7 +1537,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
     )
 
     private lateinit var existingCorporate: Corporate
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+    private lateinit var existingAddress: CorporateAddress
     private lateinit var existingPhone: AddressPhone
 
     @BeforeEach
@@ -1654,7 +1659,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class DeleteCorporateAddressPhone {
     private lateinit var existingCorporate: Corporate
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+    private lateinit var existingAddress: CorporateAddress
     private lateinit var existingPhone: AddressPhone
 
     @BeforeEach
@@ -1740,6 +1745,113 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isNoContent
         assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isFalse()
+      }
+    }
+  }
+
+  @DisplayName("POST /corporates/{corporateId}/phone")
+  @Nested
+  inner class CreateCorporatePhone {
+    private val validPhoneRequest = CreateCorporatePhoneRequest(
+      number = "0114 555 555",
+      extension = "ext123",
+      typeCode = "BUS",
+    )
+
+    private lateinit var existingCorporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(corporateName = "Police")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.post().uri("/corporates/999/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an phone for the corporate`() {
+        val response: CreateCorporatePhoneResponse = webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .bodyValue(
+            validPhoneRequest.copy(
+              typeCode = "BUS",
+              extension = "ext 123",
+              number = "07973 55 55555",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(corporatePhoneRepository.findByIdOrNull(response.id)!!) {
+          assertThat(phoneId).isEqualTo(response.id)
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(phoneNo).isEqualTo("07973 55 55555")
+          assertThat(extNo).isEqualTo("ext 123")
+          assertThat(phoneType.description).isEqualTo("Business")
+        }
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.phones).anyMatch { it.phoneId == response.id }
+        }
       }
     }
   }

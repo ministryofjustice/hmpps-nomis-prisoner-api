@@ -656,6 +656,72 @@ class CorporateResource(private val corporateService: CorporateService) {
     @PathVariable
     phoneId: Long,
   ) = corporateService.deleteCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/corporates/{corporateId}/phone")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create a corporate phone",
+    description = "Creates a new corporate phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Corporate phone created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateCorporatePhoneResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporatePhone(
+    @PathVariable
+    corporateId: Long,
+    @RequestBody @Valid
+    request: CreateCorporatePhoneRequest,
+  ) = corporateService.createCorporatePhone(corporateId, request)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
