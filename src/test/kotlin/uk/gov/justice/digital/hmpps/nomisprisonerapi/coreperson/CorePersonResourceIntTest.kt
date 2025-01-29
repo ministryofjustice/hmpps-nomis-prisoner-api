@@ -1015,6 +1015,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       private lateinit var belief1: OffenderBelief
       private lateinit var belief2: OffenderBelief
       private lateinit var belief3: OffenderBelief
+      private lateinit var offender2: Offender
 
       @BeforeEach
       fun setUp() {
@@ -1046,6 +1047,25 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
                 verified = false,
               )
             }
+          }
+          offender2 = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BF",
+          ) {
+            booking(active = false, bookingSequence = 2) {
+              belief(
+                beliefCode = "JAIN",
+                changeReason = true,
+                comments = "No longer believes in Zoroastrianism",
+                verified = true,
+              )
+            }
+            alias(
+              firstName = "AJOHN",
+              lastName = "ABARK",
+              birthDate = LocalDate.parse("1965-07-19"),
+            ) { booking(bookingSequence = 1) { } }
           }
         }
       }
@@ -1087,6 +1107,24 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[2].audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("beliefs[2].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("beliefs[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+      }
+
+      @Test
+      fun `will return beliefs when current alias is different from root offender`() {
+        webTestClient.get().uri("/core-person/${offender2.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("beliefs.length()").isEqualTo(1)
+          .jsonPath("beliefs[0].belief.code").isEqualTo("JAIN")
+          .jsonPath("beliefs[0].belief.description").isEqualTo("Jain")
+          .jsonPath("beliefs[0].startDate").isEqualTo("2021-01-01")
+          .jsonPath("beliefs[0].endDate").doesNotExist()
+          .jsonPath("beliefs[0].changeReason").isEqualTo(true)
+          .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .jsonPath("beliefs[0].verified").isEqualTo(true)
       }
     }
   }
