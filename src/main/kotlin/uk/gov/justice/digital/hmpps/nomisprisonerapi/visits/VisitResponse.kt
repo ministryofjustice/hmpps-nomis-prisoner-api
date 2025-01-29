@@ -33,41 +33,18 @@ data class VisitResponse(
   @Schema(description = "the lead visitor")
   val leadVisitor: LeadVisitor?,
 
-  @Schema(description = "Visit type, whether social or official", allowableValues = ["SCON", "OFFI"], required = true)
+  @Schema(description = "Visit type, whether social or official", required = true)
   @NotEmpty
   val visitType: CodeDescription,
 
   @Schema(
     description = "The status of the visit",
-    allowableValues = [
-      "CANC",
-      "EXP",
-      "HMPOP",
-      "NORM",
-      "OFFEND",
-      "SCH",
-      "VISITOR",
-      "VDE",
-    ],
     required = true,
   )
   val visitStatus: CodeDescription,
 
   @Schema(
     description = "The outcome of the visit",
-    allowableValues = [
-      "ADMIN",
-      "HMP",
-      "NO_ID",
-      "NO_VO",
-      "NSHOW",
-      "OFFCANC",
-      "REFUSED",
-      "VISCANC",
-      "VO_CANCEL",
-      "BATCH_CANC",
-      "ADMIN_CANCEL",
-    ],
     required = true,
   )
   val visitOutcome: CodeDescription?,
