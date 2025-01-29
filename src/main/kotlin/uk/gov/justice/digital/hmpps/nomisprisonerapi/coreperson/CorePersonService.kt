@@ -173,7 +173,7 @@ class CorePersonService(
           email = address.internetAddress,
         )
       },
-      beliefs = offenderBeliefRepository.findByRootOffenderOrderByStartDateDesc(currentAlias).map { belief ->
+      beliefs = offenderBeliefRepository.findByRootOffenderOrderByStartDateDesc(rootOffender).map { belief ->
         OffenderBelief(
           beliefId = belief.beliefId,
           belief = belief.beliefCode.toCodeDescription(),
