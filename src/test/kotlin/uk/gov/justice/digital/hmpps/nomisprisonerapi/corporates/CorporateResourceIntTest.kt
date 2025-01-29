@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporatePhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePhoneRepository
@@ -1851,6 +1852,120 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.runInTransaction {
           val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
           assertThat(corporate?.phones).anyMatch { it.phoneId == response.id }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /corporates/{corporateId}/phone/{phoneId}")
+  @Nested
+  inner class UpdateCorporatePhone {
+    private val validPhoneRequest = UpdateCorporatePhoneRequest(
+      number = "0114 555 555",
+      typeCode = "MOB",
+    )
+
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingPhone: CorporatePhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingPhone = phone(phoneNo = "0113 444 4444", phoneType = "MOB")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.put().uri("/corporates/9999/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when phone does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/99999")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a phone`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .bodyValue(
+            validPhoneRequest.copy(
+              typeCode = "MOB",
+              number = "07973 555 555",
+              extension = "x12",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        with(corporatePhoneRepository.findByIdOrNull(existingPhone.phoneId)!!) {
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(phoneNo).isEqualTo("07973 555 555")
+          assertThat(extNo).isEqualTo("x12")
+          assertThat(phoneType.description).isEqualTo("Mobile")
         }
       }
     }

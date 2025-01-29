@@ -229,7 +229,6 @@ class CorporateService(
     ),
   ).let { CreateCorporatePhoneResponse(id = it.phoneId) }
 
-  @Suppress("unused")
   fun updateCorporateAddressPhone(corporateId: Long, addressId: Long, phoneId: Long, request: UpdateCorporatePhoneRequest) {
     phoneOf(corporateId = corporateId, addressId = addressId, phoneId = phoneId).run {
       request.also {
@@ -260,6 +259,16 @@ class CorporateService(
     ),
   ).let { CreateCorporatePhoneResponse(id = it.phoneId) }
 
+  fun updateCorporatePhone(corporateId: Long, phoneId: Long, request: UpdateCorporatePhoneRequest) {
+    phoneOf(corporateId = corporateId, phoneId = phoneId).run {
+      request.also {
+        phoneNo = it.number
+        extNo = it.extension
+        phoneType = phoneTypeOf(it.typeCode)
+      }
+    }
+  }
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
@@ -268,6 +277,7 @@ class CorporateService(
   fun corporateOf(corporateId: Long): Corporate = corporateRepository.findByIdOrNull(corporateId) ?: throw NotFoundException("Corporate with id=$corporateId does not exist")
   fun addressOf(corporateId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress = (corporateAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Address with id=$addressId on Corporate with id=$corporateId does not exist")
   fun phoneOf(corporateId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(corporateId = corporateId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Corporate with id=$corporateId does not exist")
+  fun phoneOf(corporateId: Long, phoneId: Long): CorporatePhone = (corporatePhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Phone with id=$phoneId on Corporate with id=$corporateId does not exist")
   fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
 }
 
