@@ -269,6 +269,13 @@ class CorporateService(
     }
   }
 
+  fun deleteCorporatePhone(corporateId: Long, phoneId: Long) {
+    corporatePhoneRepository.findByIdOrNull(phoneId)?.also {
+      if (it.corporate.id != corporateId) throw BadDataException("Phone of $phoneId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
+    }
+    corporatePhoneRepository.deleteById(phoneId)
+  }
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
