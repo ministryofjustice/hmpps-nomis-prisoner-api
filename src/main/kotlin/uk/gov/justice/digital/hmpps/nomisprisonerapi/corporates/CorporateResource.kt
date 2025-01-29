@@ -540,6 +540,70 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: CreateCorporatePhoneRequest,
   ) = corporateService.createCorporateAddressPhone(corporateId = corporateId, addressId = addressId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update a corporate address phone",
+    description = "Updates a corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate address phone updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate or address or phone does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporateAddressPhone(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+    @PathVariable
+    phoneId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporatePhoneRequest,
+  ) = corporateService.updateCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId, request = request)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
