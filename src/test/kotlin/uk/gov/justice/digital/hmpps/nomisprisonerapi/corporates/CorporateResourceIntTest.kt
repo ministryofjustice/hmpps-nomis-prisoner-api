@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporatePhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import java.time.LocalDate
@@ -43,6 +44,9 @@ class CorporateResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var addressPhoneRepository: AddressPhoneRepository
+
+  @Autowired
+  private lateinit var corporateInternetAddressRepository: CorporateInternetAddressRepository
 
   @DisplayName("GET /corporates/ids")
   @Nested
@@ -2051,6 +2055,284 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .isNoContent
 
         assertThat(corporatePhoneRepository.existsById(existingPhone.phoneId)).isFalse()
+      }
+    }
+  }
+
+  @DisplayName("POST /corporates/{corporateId}/email")
+  @Nested
+  inner class CreateCorporateEmail {
+    private val validEmailRequest = CreateCorporateEmailRequest(
+      email = "test1@test.com",
+    )
+
+    private lateinit var existingCorporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(corporateName = "Police")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/email")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/email")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/email")
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.post().uri("/corporates/999/email")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an email for the corporate`() {
+        val response: CreateCorporateEmailResponse = webTestClient.post().uri("/corporates/${existingCorporate.id}/email")
+          .bodyValue(
+            validEmailRequest.copy(
+              email = "test@justice.gov.uk",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(corporateInternetAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(internetAddressId).isEqualTo(response.id)
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(internetAddressClass).isEqualTo("EMAIL")
+          assertThat(internetAddress).isEqualTo("test@justice.gov.uk")
+        }
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.internetAddresses).anyMatch { it.internetAddressId == response.id }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /corporates/{corporateId}/email/{emailId}")
+  @Nested
+  inner class UpdateCorporateEmail {
+    private val validEmailRequest = UpdateCorporateEmailRequest(
+      email = "test@justice.gov.uk",
+    )
+
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingEmail: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingEmail = internetAddress(internetAddressClass = EMAIL, internetAddress = "biug@just.com")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.put().uri("/corporates/9999/email/${existingEmail.internetAddressId}")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when email does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/email/99999")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a email`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .bodyValue(
+            validEmailRequest.copy(
+              email = "newemail@justice.gov.uk",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        with(corporateInternetAddressRepository.findByIdOrNull(existingEmail.internetAddressId)!!) {
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(internetAddress).isEqualTo("newemail@justice.gov.uk")
+          assertThat(internetAddressClass).isEqualTo("EMAIL")
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /corporates/{corporateId}/email/{emailId}")
+  @Nested
+  inner class DeleteCorporateEmail {
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingEmail: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingEmail = internetAddress(internetAddressClass = EMAIL, internetAddress = "biug@just.com")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 email exists but not exist on the corporate `() {
+        webTestClient.delete().uri("/corporates/9999/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when email does not exist`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/email/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a corporate email`() {
+        assertThat(corporateInternetAddressRepository.existsById(existingEmail.internetAddressId)).isTrue()
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(corporateInternetAddressRepository.existsById(existingEmail.internetAddressId)).isFalse()
       }
     }
   }

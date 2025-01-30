@@ -834,6 +834,164 @@ class CorporateResource(private val corporateService: CorporateService) {
     @PathVariable
     phoneId: Long,
   ) = corporateService.deleteCorporatePhone(corporateId = corporateId, phoneId = phoneId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/corporates/{corporateId}/email")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create a corporate email",
+    description = "Creates a new corporate email record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Corporate email created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateCorporateEmailResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporateEmail(
+    @PathVariable
+    corporateId: Long,
+    @RequestBody @Valid
+    request: CreateCorporateEmailRequest,
+  ) = corporateService.createCorporateEmail(corporateId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}/email/{emailId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update a corporate email",
+    description = "Updates a corporate email record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate email updated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate or email does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporateEmail(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    emailId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporateEmailRequest,
+  ) = corporateService.updateCorporateEmail(corporateId = corporateId, emailAddressId = emailId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/email/{emailId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate email",
+    description = "Deletes a corporate email record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate email deleted",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The email exists but not for the supplied corporate",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporateEmail(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    emailId: Long,
+  ) = corporateService.deleteCorporateEmail(corporateId = corporateId, emailAddressId = emailId)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -1105,5 +1263,20 @@ data class UpdateCorporatePhoneRequest(
 
 data class CreateCorporatePhoneResponse(
   @Schema(description = "Unique NOMIS Id of phone")
+  val id: Long,
+)
+
+data class CreateCorporateEmailRequest(
+  @Schema(description = "Email address", example = "test@test.justice.gov.uk")
+  val email: String,
+)
+
+data class UpdateCorporateEmailRequest(
+  @Schema(description = "Email address", example = "test@test.justice.gov.uk")
+  val email: String,
+)
+
+data class CreateCorporateEmailResponse(
+  @Schema(description = "Unique NOMIS Id of email address")
   val id: Long,
 )
