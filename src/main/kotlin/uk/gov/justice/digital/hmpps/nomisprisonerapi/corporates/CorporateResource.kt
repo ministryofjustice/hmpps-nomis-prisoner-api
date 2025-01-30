@@ -992,6 +992,164 @@ class CorporateResource(private val corporateService: CorporateService) {
     @PathVariable
     emailId: Long,
   ) = corporateService.deleteCorporateEmail(corporateId = corporateId, emailAddressId = emailId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/corporates/{corporateId}/web-address")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create a corporate web address",
+    description = "Creates a new corporate web address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Corporate web address created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateCorporateWebAddressResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporateWebAddress(
+    @PathVariable
+    corporateId: Long,
+    @RequestBody @Valid
+    request: CreateCorporateWebAddressRequest,
+  ) = corporateService.createCorporateWebAddress(corporateId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}/web-address/{webAddressId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update a corporate web address",
+    description = "Updates a corporate web address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate web address updated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate or web address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporateWebAddress(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    webAddressId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporateWebAddressRequest,
+  ) = corporateService.updateCorporateWebAddress(corporateId = corporateId, webAddressId = webAddressId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/web-address/{webAddressId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate web address",
+    description = "Deletes a corporate web record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate web address deleted",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The web address exists but not for the supplied corporate",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporateWebAddress(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    webAddressId: Long,
+  ) = corporateService.deleteCorporateWebAddress(corporateId = corporateId, webAddressId = webAddressId)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -1278,5 +1436,20 @@ data class UpdateCorporateEmailRequest(
 
 data class CreateCorporateEmailResponse(
   @Schema(description = "Unique NOMIS Id of email address")
+  val id: Long,
+)
+
+data class CreateCorporateWebAddressRequest(
+  @Schema(description = "Web address", example = "test@test.justice.gov.uk")
+  val webAddress: String,
+)
+
+data class UpdateCorporateWebAddressRequest(
+  @Schema(description = "Web address", example = "test@test.justice.gov.uk")
+  val webAddress: String,
+)
+
+data class CreateCorporateWebAddressResponse(
+  @Schema(description = "Unique NOMIS Id of web address")
   val id: Long,
 )

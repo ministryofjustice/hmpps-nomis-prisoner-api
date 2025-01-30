@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress.Companion.EMAIL
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress.Companion.WEB
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporatePhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
@@ -302,6 +303,29 @@ class CorporateService(
     corporateInternetAddressRepository.deleteById(emailAddressId)
   }
 
+  fun createCorporateWebAddress(corporateId: Long, request: CreateCorporateWebAddressRequest): CreateCorporateWebAddressResponse = corporateInternetAddressRepository.saveAndFlush(
+    uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress(
+      corporate = corporateOf(corporateId),
+      internetAddress = request.webAddress,
+      internetAddressClass = WEB,
+    ),
+  ).let { CreateCorporateWebAddressResponse(id = it.internetAddressId) }
+
+  fun updateCorporateWebAddress(corporateId: Long, webAddressId: Long, request: UpdateCorporateWebAddressRequest) {
+    webAddressOf(corporateId = corporateId, webAddressId = webAddressId).run {
+      request.also {
+        internetAddress = it.webAddress
+      }
+    }
+  }
+
+  fun deleteCorporateWebAddress(corporateId: Long, webAddressId: Long) {
+    corporateInternetAddressRepository.findByIdOrNull(webAddressId)?.also {
+      if (it.corporate.id != corporateId) throw BadDataException("Internet Address of $webAddressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
+    }
+    corporateInternetAddressRepository.deleteById(webAddressId)
+  }
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
@@ -312,7 +336,8 @@ class CorporateService(
   fun phoneOf(corporateId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(corporateId = corporateId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Corporate with id=$corporateId does not exist")
   fun phoneOf(corporateId: Long, phoneId: Long): CorporatePhone = (corporatePhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Phone with id=$phoneId on Corporate with id=$corporateId does not exist")
   fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
-  fun emailOf(corporateId: Long, emailAddressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress = (corporateInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("EMail with id=$emailAddressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Email with id=$emailAddressId on Corporate with id=$corporateId does not exist")
+  fun emailOf(corporateId: Long, emailAddressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress = (corporateInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("Email with id=$emailAddressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Email with id=$emailAddressId on Corporate with id=$corporateId does not exist")
+  fun webAddressOf(corporateId: Long, webAddressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress = (corporateInternetAddressRepository.findByIdOrNull(webAddressId) ?: throw NotFoundException("Web address with id=$webAddressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Web address with id=$webAddressId on Corporate with id=$corporateId does not exist")
 }
 
 data class CorporateFilter(
