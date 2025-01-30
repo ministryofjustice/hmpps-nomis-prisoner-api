@@ -474,6 +474,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("courtEvents[0].outcomeReasonCode.dispositionCode").isEqualTo("P")
+          .jsonPath("courtEvents[0].outcomeReasonCode.conviction").isEqualTo("false")
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
