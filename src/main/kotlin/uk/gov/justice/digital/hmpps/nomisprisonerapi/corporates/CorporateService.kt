@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress.Companion.EMAIL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporatePhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -33,6 +35,7 @@ class CorporateService(
   private val caseloadRepository: CaseloadRepository,
   private val corporateAddressRepository: CorporateAddressRepository,
   private val corporatePhoneRepository: CorporatePhoneRepository,
+  private val corporateInternetAddressRepository: CorporateInternetAddressRepository,
   private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
@@ -276,6 +279,29 @@ class CorporateService(
     corporatePhoneRepository.deleteById(phoneId)
   }
 
+  fun createCorporateEmail(corporateId: Long, request: CreateCorporateEmailRequest): CreateCorporateEmailResponse = corporateInternetAddressRepository.saveAndFlush(
+    uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress(
+      corporate = corporateOf(corporateId),
+      internetAddress = request.email,
+      internetAddressClass = EMAIL,
+    ),
+  ).let { CreateCorporateEmailResponse(id = it.internetAddressId) }
+
+  fun updateCorporateEmail(corporateId: Long, emailAddressId: Long, request: UpdateCorporateEmailRequest) {
+    emailOf(corporateId = corporateId, emailAddressId = emailAddressId).run {
+      request.also {
+        internetAddress = it.email
+      }
+    }
+  }
+
+  fun deleteCorporateEmail(corporateId: Long, emailAddressId: Long) {
+    corporateInternetAddressRepository.findByIdOrNull(emailAddressId)?.also {
+      if (it.corporate.id != corporateId) throw BadDataException("Internet Address of $emailAddressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
+    }
+    corporateInternetAddressRepository.deleteById(emailAddressId)
+  }
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
@@ -286,6 +312,7 @@ class CorporateService(
   fun phoneOf(corporateId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(corporateId = corporateId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Corporate with id=$corporateId does not exist")
   fun phoneOf(corporateId: Long, phoneId: Long): CorporatePhone = (corporatePhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Phone with id=$phoneId on Corporate with id=$corporateId does not exist")
   fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
+  fun emailOf(corporateId: Long, emailAddressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress = (corporateInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("EMail with id=$emailAddressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Email with id=$emailAddressId on Corporate with id=$corporateId does not exist")
 }
 
 data class CorporateFilter(

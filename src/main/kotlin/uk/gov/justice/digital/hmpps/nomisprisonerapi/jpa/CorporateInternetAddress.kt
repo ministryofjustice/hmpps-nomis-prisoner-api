@@ -20,5 +20,7 @@ class CorporateInternetAddress(
 ) {
   companion object {
     const val TYPE = "CORP"
+    const val WEB = "WEB"
+    const val EMAIL = "EMAIL"
   }
 }
