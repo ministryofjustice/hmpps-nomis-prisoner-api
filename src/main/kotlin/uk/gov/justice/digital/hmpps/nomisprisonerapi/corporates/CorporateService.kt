@@ -9,14 +9,19 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporatePhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
@@ -27,10 +32,13 @@ class CorporateService(
   private val corporateRepository: CorporateRepository,
   private val caseloadRepository: CaseloadRepository,
   private val corporateAddressRepository: CorporateAddressRepository,
+  private val corporatePhoneRepository: CorporatePhoneRepository,
   private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
+  private val addressPhoneRepository: AddressPhoneRepository,
+  private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
 ) {
   fun findCorporateIdsByFilter(
     pageRequest: Pageable,
@@ -205,6 +213,69 @@ class CorporateService(
     }
   }
 
+  fun deleteCorporateAddress(corporateId: Long, addressId: Long) {
+    corporateAddressRepository.findByIdOrNull(addressId)?.also {
+      if (it.corporate.id != corporateId) throw BadDataException("Address of $addressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
+    }
+    corporateAddressRepository.deleteById(addressId)
+  }
+
+  fun createCorporateAddressPhone(corporateId: Long, addressId: Long, request: CreateCorporatePhoneRequest): CreateCorporatePhoneResponse = addressPhoneRepository.saveAndFlush(
+    AddressPhone(
+      address = addressOf(corporateId = corporateId, addressId = addressId),
+      phoneNo = request.number,
+      extNo = request.extension,
+      phoneType = phoneTypeOf(request.typeCode),
+    ),
+  ).let { CreateCorporatePhoneResponse(id = it.phoneId) }
+
+  fun updateCorporateAddressPhone(corporateId: Long, addressId: Long, phoneId: Long, request: UpdateCorporatePhoneRequest) {
+    phoneOf(corporateId = corporateId, addressId = addressId, phoneId = phoneId).run {
+      request.also {
+        phoneNo = it.number
+        extNo = it.extension
+        phoneType = phoneTypeOf(it.typeCode)
+      }
+    }
+  }
+
+  fun deleteCorporateAddressPhone(corporateId: Long, addressId: Long, phoneId: Long) {
+    addressPhoneRepository.findByIdOrNull(phoneId)?.also {
+      if (it.address.addressId != addressId) throw BadDataException("Phone of $phoneId does not exist on address $addressId but does on address ${it.address.addressId}")
+    }
+    corporateAddressRepository.findByIdOrNull(addressId)?.also {
+      if (it.corporate.id != corporateId) throw BadDataException("Address of $addressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
+    }
+
+    addressPhoneRepository.deleteById(phoneId)
+  }
+
+  fun createCorporatePhone(corporateId: Long, request: CreateCorporatePhoneRequest): CreateCorporatePhoneResponse = corporatePhoneRepository.saveAndFlush(
+    CorporatePhone(
+      corporate = corporateOf(corporateId),
+      phoneNo = request.number,
+      extNo = request.extension,
+      phoneType = phoneTypeOf(request.typeCode),
+    ),
+  ).let { CreateCorporatePhoneResponse(id = it.phoneId) }
+
+  fun updateCorporatePhone(corporateId: Long, phoneId: Long, request: UpdateCorporatePhoneRequest) {
+    phoneOf(corporateId = corporateId, phoneId = phoneId).run {
+      request.also {
+        phoneNo = it.number
+        extNo = it.extension
+        phoneType = phoneTypeOf(it.typeCode)
+      }
+    }
+  }
+
+  fun deleteCorporatePhone(corporateId: Long, phoneId: Long) {
+    corporatePhoneRepository.findByIdOrNull(phoneId)?.also {
+      if (it.corporate.id != corporateId) throw BadDataException("Phone of $phoneId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
+    }
+    corporatePhoneRepository.deleteById(phoneId)
+  }
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
@@ -212,6 +283,9 @@ class CorporateService(
   fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
   fun corporateOf(corporateId: Long): Corporate = corporateRepository.findByIdOrNull(corporateId) ?: throw NotFoundException("Corporate with id=$corporateId does not exist")
   fun addressOf(corporateId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress = (corporateAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Address with id=$addressId on Corporate with id=$corporateId does not exist")
+  fun phoneOf(corporateId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(corporateId = corporateId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Corporate with id=$corporateId does not exist")
+  fun phoneOf(corporateId: Long, phoneId: Long): CorporatePhone = (corporatePhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Phone with id=$phoneId on Corporate with id=$corporateId does not exist")
+  fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
 }
 
 data class CorporateFilter(

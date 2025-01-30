@@ -422,6 +422,418 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: UpdateCorporateAddressRequest,
   ) = corporateService.updateCorporateAddress(corporateId = corporateId, addressId = addressId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/address/{addressId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate address",
+    description = "Deletes a corporate address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate address deleted",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The address exists but not for the supplied corporate",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporateAddress(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+  ) = corporateService.deleteCorporateAddress(corporateId = corporateId, addressId = addressId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/corporates/{corporateId}/address/{addressId}/phone")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a corporate address phone",
+    description = "Creates a new corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Corporate address phone created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateCorporatePhoneResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate or address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporateAddressPhone(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+    @RequestBody @Valid
+    request: CreateCorporatePhoneRequest,
+  ) = corporateService.createCorporateAddressPhone(corporateId = corporateId, addressId = addressId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update a corporate address phone",
+    description = "Updates a corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate address phone updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate or address or phone does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporateAddressPhone(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+    @PathVariable
+    phoneId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporatePhoneRequest,
+  ) = corporateService.updateCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate address phone",
+    description = "Deletes a corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate address phone deleted or does not exist",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request params contains address or corporate that are not related with the phone",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporateAddressPhone(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    addressId: Long,
+    @PathVariable
+    phoneId: Long,
+  ) = corporateService.deleteCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/corporates/{corporateId}/phone")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create a corporate phone",
+    description = "Creates a new corporate phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Corporate phone created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateCorporatePhoneResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporatePhone(
+    @PathVariable
+    corporateId: Long,
+    @RequestBody @Valid
+    request: CreateCorporatePhoneRequest,
+  ) = corporateService.createCorporatePhone(corporateId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}/phone/{phoneId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update a corporate phone",
+    description = "Updates a corporate phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate phone updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data for example type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate or phone does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporatePhone(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    phoneId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporatePhoneRequest,
+  ) = corporateService.updateCorporatePhone(corporateId = corporateId, phoneId = phoneId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/phone/{phoneId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate phone",
+    description = "Deletes a corporate phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate phone deleted",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The phone exists but not for the supplied corporate",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteCorporatePhone(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    phoneId: Long,
+  ) = corporateService.deleteCorporatePhone(corporateId = corporateId, phoneId = phoneId)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -671,4 +1083,27 @@ data class UpdateCorporateAddressRequest(
   val businessHours: String? = null,
   @Schema(description = "Contact person")
   val contactPersonName: String? = null,
+)
+
+data class CreateCorporatePhoneRequest(
+  @Schema(description = "The number", example = "0114 555 555")
+  val number: String,
+  @Schema(description = "Extension", example = "x432")
+  val extension: String? = null,
+  @Schema(description = "Phone type code", example = "MOB")
+  val typeCode: String,
+)
+
+data class UpdateCorporatePhoneRequest(
+  @Schema(description = "The number", example = "0114 555 555")
+  val number: String,
+  @Schema(description = "Extension", example = "x432")
+  val extension: String? = null,
+  @Schema(description = "Phone type code", example = "MOB")
+  val typeCode: String,
+)
+
+data class CreateCorporatePhoneResponse(
+  @Schema(description = "Unique NOMIS Id of phone")
+  val id: Long,
 )

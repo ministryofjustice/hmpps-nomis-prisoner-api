@@ -16,8 +16,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateInternetAddressDsl.Companion.WEB
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporatePhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -32,6 +37,12 @@ class CorporateResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var corporateAddressRepository: CorporateAddressRepository
+
+  @Autowired
+  private lateinit var corporatePhoneRepository: CorporatePhoneRepository
+
+  @Autowired
+  private lateinit var addressPhoneRepository: AddressPhoneRepository
 
   @DisplayName("GET /corporates/ids")
   @Nested
@@ -589,12 +600,12 @@ class CorporateResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will delete the corporate`() {
-        assertThat(corporateRepository.findByIdOrNull(corporate.id)).isNotNull
+        assertThat(corporateRepository.existsById(corporate.id)).isTrue()
         webTestClient.delete().uri("/corporates/${corporate.id}")
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus().isNoContent
-        assertThat(corporateRepository.findByIdOrNull(corporate.id)).isNull()
+        assertThat(corporateRepository.existsById(corporate.id)).isFalse()
       }
     }
   }
@@ -1137,7 +1148,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
     )
 
     private lateinit var existingCorporate: Corporate
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
+    private lateinit var existingAddress: CorporateAddress
 
     @BeforeEach
     fun setUp() {
@@ -1292,6 +1303,754 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           assertThat(contactPersonName).isEqualTo("BOBBY")
           assertThat(businessHours).isEqualTo("10-12am")
         }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /corporates/{corporateId}/address/{addressId}")
+  @Nested
+  inner class DeleteCorporateAddress {
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingAddress: CorporateAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingAddress = address()
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 address exists but not exist on the corporate `() {
+        webTestClient.delete().uri("/corporates/9999/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when address does not exist`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a corporate address`() {
+        assertThat(corporateAddressRepository.existsById(existingAddress.addressId)).isTrue()
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(corporateAddressRepository.existsById(existingAddress.addressId)).isFalse()
+      }
+    }
+  }
+
+  @DisplayName("POST /corporates/{corporateId}/address/{addressId}/phone")
+  @Nested
+  inner class CreateCorporateAddressPhone {
+    private val validPhoneRequest = CreateCorporatePhoneRequest(
+      number = "0114 555 5555",
+      typeCode = "MOB",
+    )
+
+    private lateinit var existingCorporate: Corporate
+    private lateinit var anotherCorporate: Corporate
+    private lateinit var existingAddress: CorporateAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        anotherCorporate = corporate(
+          corporateName = "Another Police",
+        )
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingAddress = address { }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.post().uri("/corporates/999/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address/999/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist on corporate`() {
+        webTestClient.post().uri("/corporates/${anotherCorporate.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a phone`() {
+        val response: CreateCorporatePhoneResponse = webTestClient.post().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(
+            validPhoneRequest.copy(
+              number = "07973 555 5555",
+              typeCode = "MOB",
+              extension = "x555",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreateCorporatePhoneResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val phone = addressPhoneRepository.findByIdOrNull(response.id)!!
+
+        with(phone) {
+          assertThat(address.addressId).isEqualTo(existingAddress.addressId)
+          assertThat(phone.phoneNo).isEqualTo("07973 555 5555")
+          assertThat(phone.extNo).isEqualTo("x555")
+          assertThat(phone.phoneType.description).isEqualTo("Mobile")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          val address = corporate!!.addresses.find { it.addressId == existingAddress.addressId }
+          assertThat(address?.phones).anyMatch { it.phoneId == phone.phoneId }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
+  @Nested
+  inner class UpdateCorporateAddressPhone {
+    private val validPhoneRequest = CreateCorporatePhoneRequest(
+      number = "0114 555 5555",
+      typeCode = "MOB",
+    )
+
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingAddress: CorporateAddress
+    private lateinit var existingPhone: AddressPhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingAddress = address {
+            existingPhone = phone(phoneType = "HOME", phoneNo = "0113 4546 4646", extNo = "ext 567")
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.put().uri("/corporates/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/99999/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when phone does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/99999")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update the phone`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(
+            validPhoneRequest.copy(
+              number = "07973 555 5555",
+              typeCode = "MOB",
+              extension = "x555",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        with(addressPhoneRepository.findByIdOrNull(existingPhone.phoneId)!!) {
+          assertThat(phoneId).isEqualTo(existingPhone.phoneId)
+          assertThat(address.addressId).isEqualTo(existingAddress.addressId)
+          assertThat(phoneNo).isEqualTo("07973 555 5555")
+          assertThat(extNo).isEqualTo("x555")
+          assertThat(phoneType.description).isEqualTo("Mobile")
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
+  @Nested
+  inner class DeleteCorporateAddressPhone {
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingAddress: CorporateAddress
+    private lateinit var existingPhone: AddressPhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingAddress = address {
+            existingPhone = phone(phoneType = "HOME", phoneNo = "0113 4546 4646", extNo = "ext 567")
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when phone exists on address but address does not belong to corporate`() {
+        webTestClient.delete().uri("/corporates/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when phone exists but not on address`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/99999/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when phone does not exist`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the phone`() {
+        assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isFalse()
+      }
+    }
+  }
+
+  @DisplayName("POST /corporates/{corporateId}/phone")
+  @Nested
+  inner class CreateCorporatePhone {
+    private val validPhoneRequest = CreateCorporatePhoneRequest(
+      number = "0114 555 555",
+      extension = "ext123",
+      typeCode = "BUS",
+    )
+
+    private lateinit var existingCorporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(corporateName = "Police")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.post().uri("/corporates/999/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an phone for the corporate`() {
+        val response: CreateCorporatePhoneResponse = webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
+          .bodyValue(
+            validPhoneRequest.copy(
+              typeCode = "BUS",
+              extension = "ext 123",
+              number = "07973 55 55555",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(corporatePhoneRepository.findByIdOrNull(response.id)!!) {
+          assertThat(phoneId).isEqualTo(response.id)
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(phoneNo).isEqualTo("07973 55 55555")
+          assertThat(extNo).isEqualTo("ext 123")
+          assertThat(phoneType.description).isEqualTo("Business")
+        }
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.phones).anyMatch { it.phoneId == response.id }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /corporates/{corporateId}/phone/{phoneId}")
+  @Nested
+  inner class UpdateCorporatePhone {
+    private val validPhoneRequest = UpdateCorporatePhoneRequest(
+      number = "0114 555 555",
+      typeCode = "MOB",
+    )
+
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingPhone: CorporatePhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingPhone = phone(phoneNo = "0113 444 4444", phoneType = "MOB")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.put().uri("/corporates/9999/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when phone does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/99999")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a phone`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .bodyValue(
+            validPhoneRequest.copy(
+              typeCode = "MOB",
+              number = "07973 555 555",
+              extension = "x12",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        with(corporatePhoneRepository.findByIdOrNull(existingPhone.phoneId)!!) {
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(phoneNo).isEqualTo("07973 555 555")
+          assertThat(extNo).isEqualTo("x12")
+          assertThat(phoneType.description).isEqualTo("Mobile")
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /corporates/{corporateId}/phone/{phoneId}")
+  @Nested
+  inner class DeleteCorporatePhone {
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingPhone: CorporatePhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingPhone = phone(phoneNo = "0118 8383 883", phoneType = "BUS")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 phone exists but not exist on the corporate `() {
+        webTestClient.delete().uri("/corporates/9999/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when phone does not exist`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/phone/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a corporate phone`() {
+        assertThat(corporatePhoneRepository.existsById(existingPhone.phoneId)).isTrue()
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(corporatePhoneRepository.existsById(existingPhone.phoneId)).isFalse()
       }
     }
   }

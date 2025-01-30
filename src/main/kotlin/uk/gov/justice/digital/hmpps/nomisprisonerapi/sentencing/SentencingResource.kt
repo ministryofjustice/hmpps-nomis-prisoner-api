@@ -602,8 +602,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
     @RequestBody @Valid
     request: CreateCourtCaseRequest,
-  ): CreateCourtCaseResponse = request.courtAppearance?.let { sentencingService.createCourtCaseHierachy(offenderNo, request) }
-    ?: sentencingService.createCourtCase(offenderNo, request)
+  ): CreateCourtCaseResponse = sentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances")
@@ -697,7 +696,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateCourtCaseRequest::class),
+          schema = Schema(implementation = OffenderChargeRequest::class),
         ),
       ],
     ),
@@ -916,7 +915,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CourtAppearanceRequest::class),
+          schema = Schema(implementation = OffenderChargeRequest::class),
         ),
       ],
     ),
@@ -1602,9 +1601,7 @@ data class CourtAppearanceRequest(
   val outcomeReasonCode: String?,
   val nextEventDateTime: LocalDateTime?,
   // update requests will also determine the offences to remove from the appearance
-  val courtEventChargesToUpdate: List<ExistingOffenderChargeRequest>,
-  // TODO remove when all hierarchical endpoints removed.
-  val courtEventChargesToCreate: List<OffenderChargeRequest>,
+  val courtEventCharges: List<Long>,
   // nomis UI doesn't allow this during a create but DPS does
   val nextCourtId: String?,
 
@@ -1615,13 +1612,6 @@ data class CourtAppearanceRequest(
   val directionCode: CodeDescription?,
   val judgeName: String?,
    */
-)
-
-@Schema(description = "Court Event")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class CreateCourtAppearanceRequest(
-  val courtAppearance: CourtAppearanceRequest,
-  val existingOffenderChargeIds: List<Long>,
 )
 
 @Schema(description = "Court Charge")
