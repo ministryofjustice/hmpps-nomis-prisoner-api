@@ -988,6 +988,7 @@ private fun OffenceResultCode.toOffenceResultCodeResponse(): OffenceResultCodeRe
   description = this.description,
   chargeStatus = this.chargeStatus,
   dispositionCode = this.dispositionCode,
+  conviction = this.conviction,
 )
 
 private fun Offence.toOffence(): OffenceResponse = OffenceResponse(
