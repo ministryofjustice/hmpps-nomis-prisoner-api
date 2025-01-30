@@ -1399,6 +1399,7 @@ data class OffenceResultCodeResponse(
   val code: String,
   val description: String,
   val dispositionCode: String,
+  val conviction: Boolean,
 )
 
 @Schema(description = "Offence")
