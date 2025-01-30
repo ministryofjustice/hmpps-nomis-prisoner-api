@@ -173,9 +173,12 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           courseActivities.forEachIndexed { index, activity ->
             offender {
               booking {
-                // give half of the activities active allocations and the rest no allocations
+                // give half of the activities active allocations
                 if (index % 2 == 0) {
                   courseAllocation(courseActivity = activity, startDate = "$today")
+                } else {
+                  // and half of the activities inactive allocations
+                  courseAllocation(courseActivity = activity, startDate = "$yesterday", endDate = "$yesterday")
                 }
               }
             }
@@ -248,6 +251,55 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `should not include activities with no prisoners`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+          }
+        }
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `should not include if prisoner allocation has ended status`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today", programStatusCode = "END")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `should not include if prisoner allocation past end date`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$yesterday", endDate = "$yesterday")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
+
+      @Test
       fun `should include if prisoner allocation in future`() {
         nomisDataBuilder.build {
           programService {
@@ -255,7 +307,62 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           }
           offender {
             booking {
-              courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow", programStatusCode = "WAIT")
+              courseAllocation(courseActivity = courseActivity, startDate = "$tomorrow")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+      }
+
+      @Test
+      fun `should not include if prisoner active in different prison`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+          }
+          offender {
+            booking(agencyLocationId = "LEI") {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `should not include if prisoner is inactive`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+          }
+          offender {
+            booking(active = false) {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
+            }
+          }
+        }
+
+        webTestClient.getActiveActivities()
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `should include if prisoner is ACTIVE OUT`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+          }
+          offender {
+            booking(active = true, inOutStatus = "OUT") {
+              courseAllocation(courseActivity = courseActivity, startDate = "$today")
             }
           }
         }
@@ -347,89 +454,22 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `should ignore the course activity requested if it doesn't respect other filters`() {
+        lateinit var otherCourseActivity: CourseActivity
         nomisDataBuilder.build {
           programService {
-            courseActivity = courseActivity(endDate = "$yesterday", createdByDps = false)
+            courseActivity = courseActivity(startDate = "$today", createdByDps = false)
+            otherCourseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
-            booking {
+            booking(agencyLocationId = "LEI") {
+              // wrong prison
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              courseAllocation(courseActivity = otherCourseActivity, startDate = "$today")
             }
           }
         }
 
-        webTestClient.getActiveActivities(courseActivityId = courseActivity.courseActivityId)
-          .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
-      }
-
-      @Test
-      fun `should include if prisoner allocated in the last 6 months`() {
-        val sixMonthsAgo = LocalDate.now().minusMonths(6)
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity(createdByDps = false)
-          }
-          offender {
-            booking {
-              courseAllocation(
-                courseActivity = courseActivity,
-                startDate = "${sixMonthsAgo.minusMonths(1)}",
-                endDate = "$sixMonthsAgo",
-                programStatusCode = "END",
-              )
-            }
-          }
-        }
-
-        webTestClient.getActiveActivities()
-          .expectBody()
-          .jsonPath("content.size()").isEqualTo(1)
-          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-      }
-
-      @Test
-      fun `should not include if prisoner allocated more than 6 months ago`() {
-        val sixMonthsAgo = LocalDate.now().minusMonths(6)
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity(startDate = "$tomorrow", createdByDps = false)
-          }
-          offender {
-            booking {
-              courseAllocation(
-                courseActivity = courseActivity,
-                startDate = "${sixMonthsAgo.minusMonths(1)}",
-                endDate = "${sixMonthsAgo.minusDays(1)}",
-                programStatusCode = "END",
-              )
-            }
-          }
-        }
-
-        webTestClient.getActiveActivities()
-          .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
-      }
-
-      @Test
-      fun `should not include if prisoner waiting but never started`() {
-        nomisDataBuilder.build {
-          programService {
-            courseActivity = courseActivity(createdByDps = false)
-          }
-          offender {
-            booking {
-              courseAllocation(
-                courseActivity = courseActivity,
-                startDate = null,
-                programStatusCode = "WAIT",
-              )
-            }
-          }
-        }
-
-        webTestClient.getActiveActivities()
+        webTestClient.getActiveActivities(courseActivityId = otherCourseActivity.courseActivityId)
           .expectBody()
           .jsonPath("content.size()").isEqualTo(0)
       }
@@ -521,56 +561,6 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         offender {
           booking {
             courseAllocation(courseActivity = courseActivity)
-          }
-        }
-      }
-
-      webTestClient.getPayRatesWithUnknownIncentives()
-        .expectBody()
-        .jsonPath("$.size()").isEqualTo(0)
-    }
-
-    @Test
-    fun `should INCLUDE activities where an allocation ended LESS THAN 6 months ago`() {
-      val sixMonthsAgo = LocalDate.now().minusMonths(6)
-      nomisDataBuilder.build {
-        programService {
-          courseActivity = courseActivity(createdByDps = false) {
-            courseSchedule()
-            courseScheduleRule()
-            payRate(iepLevelCode = "ENT", payBandCode = "5") // incentive level not active
-          }
-        }
-        offender {
-          booking {
-            courseAllocation(courseActivity = courseActivity, startDate = "${sixMonthsAgo.minusMonths(1)}", endDate = "$sixMonthsAgo")
-          }
-        }
-      }
-
-      webTestClient.getPayRatesWithUnknownIncentives()
-        .expectBody()
-        .jsonPath("$.size()").isEqualTo(1)
-        .jsonPath("$[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
-        .jsonPath("$[0].courseActivityDescription").isEqualTo(courseActivity.description!!)
-        .jsonPath("$[0].payBandCode").isEqualTo("5")
-        .jsonPath("$[0].incentiveLevelCode").isEqualTo("ENT")
-    }
-
-    @Test
-    fun `should IGNORE activities an allocation ended MORE THAN 6 months ago`() {
-      val sixMonthsAgo = LocalDate.now().minusMonths(6)
-      nomisDataBuilder.build {
-        programService {
-          courseActivity = courseActivity(createdByDps = false) {
-            courseSchedule()
-            courseScheduleRule()
-            payRate(iepLevelCode = "ENT", payBandCode = "5") // incentive level not active
-          }
-        }
-        offender {
-          booking {
-            courseAllocation(courseActivity = courseActivity, startDate = "${sixMonthsAgo.minusMonths(1)}", endDate = "${sixMonthsAgo.minusDays(1)}")
           }
         }
       }
@@ -745,48 +735,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         programService {
           courseActivity(createdByDps = false) {
             courseSchedule()
-          }
-        }
-      }
-
-      webTestClient.getActivitiesWithoutScheduleRules()
-        .expectBody()
-        .jsonPath("$.size()").isEqualTo(0)
-    }
-
-    @Test
-    fun `should INCLUDE activities with ended allocations LESS THAN 6 months old`() {
-      val sixMonthsAgo = LocalDate.now().minusMonths(6)
-      nomisDataBuilder.build {
-        programService {
-          courseActivity = courseActivity(createdByDps = false) {
-            courseSchedule()
-          }
-        }
-        offender {
-          booking {
-            courseAllocation(courseActivity = courseActivity, startDate = "${sixMonthsAgo.minusMonths(1)}", endDate = "$sixMonthsAgo")
-          }
-        }
-      }
-
-      webTestClient.getActivitiesWithoutScheduleRules()
-        .expectBody()
-        .jsonPath("$.size()").isEqualTo(1)
-    }
-
-    @Test
-    fun `should IGNORE activities with ended allocations MORE THAN 6 months old`() {
-      val sixMonthsAgo = LocalDate.now().minusMonths(6)
-      nomisDataBuilder.build {
-        programService {
-          courseActivity = courseActivity(createdByDps = false) {
-            courseSchedule()
-          }
-        }
-        offender {
-          booking {
-            courseAllocation(courseActivity = courseActivity, startDate = "${sixMonthsAgo.minusMonths(1)}", endDate = "${sixMonthsAgo.minusDays(1)}")
+            courseScheduleRule()
           }
         }
       }

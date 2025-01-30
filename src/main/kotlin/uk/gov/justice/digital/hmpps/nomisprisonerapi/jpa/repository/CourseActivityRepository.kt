@@ -26,13 +26,16 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       (
        select distinct(opp.courseActivity.courseActivityId) 
        from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
        where opp.prison.id = :prisonId 
-       and opp.startDate is not null
-       and (opp.endDate is null or opp.endDate >= :oldestAllocation)
+       and opp.programStatus.code = 'ALLOC'
+       and (opp.endDate is null or opp.endDate > current_date)
+       and ob.active = true
+       and ob.location.id = :prisonId
       )   
   """,
   )
-  fun findActiveActivities(prisonId: String, courseActivityId: Long?, pageRequest: Pageable, oldestAllocation: LocalDate = LocalDate.now().minusMonths(6)): Page<Long>
+  fun findActiveActivities(prisonId: String, courseActivityId: Long?, pageRequest: Pageable): Page<Long>
 
   @Query(
     value = """
@@ -56,15 +59,18 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       (
        select distinct(opp.courseActivity.courseActivityId) 
        from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
        where opp.prison.id = :prisonId 
-       and opp.startDate is not null
-       and (opp.endDate is null or opp.endDate >= :oldestAllocation)
+       and opp.programStatus.code = 'ALLOC'
+       and (opp.endDate is null or opp.endDate > current_date)
+       and ob.active = true
+       and ob.location.id = :prisonId
       )   
     and (capr.endDate is null or capr.endDate > current_date)
     and pil.iepLevelCode is null
   """,
   )
-  fun findPayRatesWithUnknownIncentive(prisonId: String, courseActivityId: Long?, oldestAllocation: LocalDate = LocalDate.now().minusMonths(6)): List<PayRateWithUnknownIncentive>
+  fun findPayRatesWithUnknownIncentive(prisonId: String, courseActivityId: Long?): List<PayRateWithUnknownIncentive>
 
   @Query(
     value = """
@@ -83,13 +89,16 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
       (
        select distinct(opp.courseActivity.courseActivityId) 
        from OffenderProgramProfile opp
+       join OffenderBooking ob on opp.offenderBooking = ob
        where opp.prison.id = :prisonId 
-       and opp.startDate is not null
-       and (opp.endDate is null or opp.endDate >= :oldestAllocation)
+       and opp.programStatus.code = 'ALLOC'
+       and (opp.endDate is null or opp.endDate > current_date)
+       and ob.active = true
+       and ob.location.id = :prisonId
       )   
   """,
   )
-  fun findActivitiesWithoutScheduleRules(prisonId: String, courseActivityId: Long?, oldestAllocation: LocalDate = LocalDate.now().minusMonths(6)): List<ActivityWithoutScheduleRule>
+  fun findActivitiesWithoutScheduleRules(prisonId: String, courseActivityId: Long?): List<ActivityWithoutScheduleRule>
 
   @Modifying
   @Query(
