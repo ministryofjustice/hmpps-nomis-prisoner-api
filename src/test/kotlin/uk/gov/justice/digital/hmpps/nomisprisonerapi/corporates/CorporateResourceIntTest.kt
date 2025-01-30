@@ -2336,6 +2336,284 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("POST /corporates/{corporateId}/web-address")
+  @Nested
+  inner class CreateCorporateWebAddress {
+    private val validWebAddressRequest = CreateCorporateWebAddressRequest(
+      webAddress = "www.test.com",
+    )
+
+    private lateinit var existingCorporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(corporateName = "Police")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/web-address")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validWebAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/web-address")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validWebAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/web-address")
+          .bodyValue(validWebAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.post().uri("/corporates/999/web-address")
+          .bodyValue(validWebAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an web address for the corporate`() {
+        val response: CreateCorporateWebAddressResponse = webTestClient.post().uri("/corporates/${existingCorporate.id}/web-address")
+          .bodyValue(
+            validWebAddressRequest.copy(
+              webAddress = "www.justice.gov.uk",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(corporateInternetAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(internetAddressId).isEqualTo(response.id)
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(internetAddressClass).isEqualTo("WEB")
+          assertThat(internetAddress).isEqualTo("www.justice.gov.uk")
+        }
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.internetAddresses).anyMatch { it.internetAddressId == response.id }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /corporates/{corporateId}/web-address/{webId}")
+  @Nested
+  inner class UpdateCorporateWeb {
+    private val validWebAddressRequest = UpdateCorporateWebAddressRequest(
+      webAddress = "www.justice.gov.uk",
+    )
+
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingWebAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingWebAddress = internetAddress(internetAddressClass = WEB, internetAddress = "biug.just.com")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validWebAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validWebAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .bodyValue(validWebAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.put().uri("/corporates/9999/web-address/${existingWebAddress.internetAddressId}")
+          .bodyValue(validWebAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when web address does not exist`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/web-address/99999")
+          .bodyValue(validWebAddressRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a web address`() {
+        webTestClient.put().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .bodyValue(
+            validWebAddressRequest.copy(
+              webAddress = "www.newweb.justice.gov.uk",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        with(corporateInternetAddressRepository.findByIdOrNull(existingWebAddress.internetAddressId)!!) {
+          assertThat(corporate.id).isEqualTo(existingCorporate.id)
+          assertThat(internetAddress).isEqualTo("www.newweb.justice.gov.uk")
+          assertThat(internetAddressClass).isEqualTo("WEB")
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /corporates/{corporateId}/web-address/{webId}")
+  @Nested
+  inner class DeleteCorporateWebAddress {
+    private lateinit var existingCorporate: Corporate
+    private lateinit var existingWebAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          existingWebAddress = internetAddress(internetAddressClass = WEB, internetAddress = "www.biug.just.com")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 web address exists but not exist on the corporate `() {
+        webTestClient.delete().uri("/corporates/9999/web-address/${existingWebAddress.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when web does not exist`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/web-address/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a corporate web address`() {
+        assertThat(corporateInternetAddressRepository.existsById(existingWebAddress.internetAddressId)).isTrue()
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(corporateInternetAddressRepository.existsById(existingWebAddress.internetAddressId)).isFalse()
+      }
+    }
+  }
 }
 
 private inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!
