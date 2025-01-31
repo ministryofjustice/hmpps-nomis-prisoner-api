@@ -1244,7 +1244,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
     ],
   )
-  fun createCorporateType(
+  fun deleteCorporateType(
     @PathVariable
     corporateId: Long,
     @PathVariable
