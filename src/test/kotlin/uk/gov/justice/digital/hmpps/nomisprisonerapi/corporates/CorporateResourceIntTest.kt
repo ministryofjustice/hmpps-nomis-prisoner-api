@@ -2614,6 +2614,122 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("POST /corporates/{corporateId}/type")
+  @Nested
+  inner class CreateCorporateType {
+    private val validTypeRequest = CreateCorporateTypeRequest(
+      typeCode = "TEA",
+    )
+
+    private lateinit var existingCorporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(corporateName = "Police") {
+          type(typeCode = "YOTWORKER")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/type")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validTypeRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/type")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validTypeRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/type")
+          .bodyValue(validTypeRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when corporate does not exist`() {
+        webTestClient.post().uri("/corporates/999/type")
+          .bodyValue(validTypeRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will allow attempt to add existing type for the corporate without raising an error`() {
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.types).hasSize(1)
+          assertThat(corporate?.types).anyMatch { it.type.code == "YOTWORKER" }
+        }
+
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/type")
+          .bodyValue(
+            validTypeRequest.copy(
+              typeCode = "YOTWORKER",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.types).hasSize(1)
+          assertThat(corporate?.types).anyMatch { it.type.code == "YOTWORKER" }
+        }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will add a type for the corporate and keep existing type`() {
+        webTestClient.post().uri("/corporates/${existingCorporate.id}/type")
+          .bodyValue(
+            validTypeRequest.copy(
+              typeCode = "TEA",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.types).hasSize(2)
+          assertThat(corporate?.types).anyMatch { it.type.code == "TEA" && it.type.description == "Teacher" }
+          assertThat(corporate?.types).anyMatch { it.type.code == "YOTWORKER" }
+        }
+      }
+    }
+  }
 }
 
 private inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!

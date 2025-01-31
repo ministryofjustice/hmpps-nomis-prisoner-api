@@ -1150,6 +1150,56 @@ class CorporateResource(private val corporateService: CorporateService) {
     @PathVariable
     webAddressId: Long,
   ) = corporateService.deleteCorporateWebAddress(corporateId = corporateId, webAddressId = webAddressId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/corporates/{corporateId}/type")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create a corporate type",
+    description = "Creates a new corporate type record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Corporate type created (or already exists)",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporateType(
+    @PathVariable
+    corporateId: Long,
+    @RequestBody @Valid
+    request: CreateCorporateTypeRequest,
+  ) = corporateService.createCorporateType(corporateId, request)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
@@ -1452,4 +1502,9 @@ data class UpdateCorporateWebAddressRequest(
 data class CreateCorporateWebAddressResponse(
   @Schema(description = "Unique NOMIS Id of web address")
   val id: Long,
+)
+
+data class CreateCorporateTypeRequest(
+  @Schema(description = "type", example = "TEA")
+  val typeCode: String,
 )
