@@ -341,6 +341,8 @@ class CorporateService(
     )
   }
 
+  fun deleteCorporateType(corporateId: Long, typeCode: String) = corporateTypeRepository.deleteById(CorporateOrganisationTypePK(corporateOf(corporateId), typeCode = typeCode))
+
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }

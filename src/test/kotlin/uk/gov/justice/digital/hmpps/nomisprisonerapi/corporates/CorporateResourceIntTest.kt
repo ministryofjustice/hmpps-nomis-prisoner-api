@@ -2730,6 +2730,92 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("DELETE /corporates/{corporateId}/type/{typeCode}")
+  @Nested
+  inner class DeleteCorporateType {
+    private lateinit var existingCorporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingCorporate = corporate(
+          corporateName = "Police",
+        ) {
+          type(typeCode = "TEA")
+          type(typeCode = "YOTWORKER")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      corporateRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/type/TEA")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/type/TEA")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/type/TEA")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 204 when type does not exist`() {
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/type/ZZZZ")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a corporate type`() {
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.types).hasSize(2)
+          assertThat(corporate?.types).anyMatch { it.type.code == "TEA" }
+          assertThat(corporate?.types).anyMatch { it.type.code == "YOTWORKER" }
+        }
+
+        webTestClient.delete().uri("/corporates/${existingCorporate.id}/type/TEA")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        nomisDataBuilder.runInTransaction {
+          val corporate = corporateRepository.findByIdOrNull(existingCorporate.id)
+          assertThat(corporate?.types).hasSize(1)
+          assertThat(corporate?.types).anyMatch { it.type.code == "YOTWORKER" }
+        }
+      }
+    }
+  }
 }
 
 private inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!
