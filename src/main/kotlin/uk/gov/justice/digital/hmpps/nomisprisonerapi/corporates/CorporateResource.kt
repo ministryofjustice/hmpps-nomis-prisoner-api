@@ -1200,6 +1200,56 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: CreateCorporateTypeRequest,
   ) = corporateService.createCorporateType(corporateId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/corporates/{corporateId}/type/{typeCode}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a corporate type",
+    description = "Deletes a new corporate type record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate type deleted (or did not exist)",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createCorporateType(
+    @PathVariable
+    corporateId: Long,
+    @PathVariable
+    typeCode: String,
+  ) = corporateService.deleteCorporateType(corporateId, typeCode)
 }
 
 @Schema(description = "The data held in NOMIS about a corporate entity")
