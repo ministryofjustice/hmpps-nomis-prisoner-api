@@ -341,6 +341,22 @@ class CorporateService(
     )
   }
 
+  fun updateCorporateTypes(corporateId: Long, typeCodes: Set<String>) {
+    val corporate = corporateOf(corporateId)
+    val currentTypeCodes = corporate.types.map { it.type.code }.toSet()
+    val typeCodesToAdd = typeCodes subtract currentTypeCodes
+    val typeCodesToRemove = currentTypeCodes subtract typeCodes
+
+    corporate.types.removeIf { typeCodesToRemove.contains(it.type.code) }
+    typeCodesToAdd.forEach {
+      corporate.types.add(
+        uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateType(
+          id = CorporateOrganisationTypePK(corporate, typeCode = corporateOrganisationTypeOf(it).code),
+          type = corporateOrganisationTypeOf(it),
+        ),
+      )
+    }
+  }
   fun deleteCorporateType(corporateId: Long, typeCode: String) = corporateTypeRepository.deleteById(CorporateOrganisationTypePK(corporateOf(corporateId), typeCode = typeCode))
 
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
