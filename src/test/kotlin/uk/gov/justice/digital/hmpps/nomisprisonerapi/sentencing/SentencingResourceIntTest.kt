@@ -3819,7 +3819,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createSentence(
                 caseId = courtCase.id,
-                offenderChargeIds = mutableListOf(offenderCharge1.id),
+                offenderChargeIds = mutableListOf(offenderCharge2.id),
               ),
             ),
           )
@@ -3835,7 +3835,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("bookingId").isEqualTo(latestBookingId)
           .jsonPath("sentenceSeq").isEqualTo(sentenceSeq)
           .jsonPath("courtOrder").doesNotExist()
-          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
+          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge2.id)
       }
 
       @Test
