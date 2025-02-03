@@ -104,7 +104,7 @@ class CaseNotesService(
     offenderCaseNoteRepository.deleteById(caseNoteId)
   }
 
-  private fun OffenderCaseNote.toCaseNoteResponse() = CaseNoteResponse(
+  private fun OffenderCaseNote.toCaseNoteResponse(splitText: Boolean = true) = CaseNoteResponse(
     caseNoteId = id,
     bookingId = offenderBooking.bookingId,
     caseNoteType = caseNoteType.toCodeDescription(),
@@ -119,8 +119,8 @@ class CaseNotesService(
     authorLastName = author.lastName,
     authorUsernames = author.accounts.map { it.username }.distinct(),
     prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
-    caseNoteText = parseMainText(caseNoteText),
-    amendments = parseAmendments(this),
+    caseNoteText = if (splitText) parseMainText(caseNoteText) else caseNoteText,
+    amendments = if (splitText) parseAmendments(this) else emptyList(),
     noteSourceCode = noteSourceCode,
     createdDatetime = createdDatetime,
     createdUsername = createdUserId,
@@ -171,7 +171,7 @@ class CaseNotesService(
   }
 
   /**
-   * For reconciliation or migration
+   * For migration or merge
    */
   fun getCaseNotes(offenderNo: String): PrisonerCaseNotesResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -184,6 +184,16 @@ class CaseNotesService(
         { it.toCaseNoteResponse() },
     )
   }
+
+  fun getCaseNotesForReconciliation(offenderNo: String): PrisonerCaseNotesResponse = PrisonerCaseNotesResponse(
+    offenderCaseNoteRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo).map {
+      it.toCaseNoteResponse(splitText = false)
+    }.apply {
+      if (this.isEmpty() && !offenderRepository.existsByNomsId(offenderNo)) {
+        throw NotFoundException("offender $offenderNo not found")
+      }
+    },
+  )
 
   private fun validateTypes(type: TaskType, subType: TaskSubType) {
     workRepository.findByWorkflowTypeAndWorkTypeAndWorkSubType("CNOTE", type.code, subType.code)

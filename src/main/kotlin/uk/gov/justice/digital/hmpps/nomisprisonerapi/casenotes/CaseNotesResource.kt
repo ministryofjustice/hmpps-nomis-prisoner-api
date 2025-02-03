@@ -186,7 +186,7 @@ class CaseNotesResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets all case notes for a prisoner",
-    description = "Retrieves all case notes for a specific prisoner, for migration or reconciliation. Requires ROLE_NOMIS_CASENOTES",
+    description = "Retrieves all case notes for a specific prisoner, for migration or merge. Requires ROLE_NOMIS_CASENOTES",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -217,6 +217,47 @@ class CaseNotesResource(
     @PathVariable
     offenderNo: String,
   ): PrisonerCaseNotesResponse = caseNotesService.getCaseNotes(offenderNo)
+
+  @GetMapping("/prisoners/{offenderNo}/casenotes/reconciliation")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets all case notes for a prisoner for reconciliation.",
+    description = """Retrieves all case notes for a specific prisoner, for reconciliation. 
+    This endpoint doesn't try to split out a case note into the amendments, simply just returns the text as stored in
+    NOMIS. This is because the notes are truncated at 4,000 characters so we can end up with more amendments in DPS
+    than there are in NOMIS. We therefore just return the text as stored in NOMIS and then transform the DPS text to
+    match.
+    Requires ROLE_NOMIS_CASENOTES""",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Case notes Returned",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = PrisonerCaseNotesResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getCaseNotesForPrisonerForReconciliation(
+    @Schema(description = "Offender No AKA prisoner number", example = "A3745XD")
+    @PathVariable
+    offenderNo: String,
+  ): PrisonerCaseNotesResponse = caseNotesService.getCaseNotesForReconciliation(offenderNo)
 }
 
 @Schema(description = "The list of case notes held against a booking")

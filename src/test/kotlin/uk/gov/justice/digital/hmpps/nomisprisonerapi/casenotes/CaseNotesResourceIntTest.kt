@@ -558,7 +558,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
               caseNoteType = "ACP",
               caseNoteSubType = "POPEM",
               author = staff1,
-              caseNoteText = "Note 2",
+              caseNoteText = "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change",
             ).id
             id3 = caseNote(
               caseNoteType = "ACP",
@@ -664,6 +664,182 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus()
           .isOk
+          .expectBody().consumeWith(System.out::println)
+          .jsonPath("caseNotes.size()").isEqualTo(5)
+          .jsonPath("caseNotes[0].caseNoteId").isEqualTo(id1)
+          .jsonPath("caseNotes[0].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("caseNotes[0].caseNoteType.code").isEqualTo("ACP")
+          .jsonPath("caseNotes[0].caseNoteSubType.code").isEqualTo("POPEM")
+          .jsonPath("caseNotes[0].authorUsername").isEqualTo("JANE.NARK")
+          .jsonPath("caseNotes[0].authorUsernames.size()").isEqualTo(2)
+          .jsonPath("caseNotes[0].authorUsernames[0]").isEqualTo("JANE.NARK")
+          .jsonPath("caseNotes[0].authorUsernames[1]").isEqualTo("JANE.NARK_ADM")
+          .jsonPath("caseNotes[0].caseNoteText").isEqualTo("Note 1")
+          .jsonPath("caseNotes[0].amendments.length()").isEqualTo(0)
+          .jsonPath("caseNotes[1].caseNoteId").isEqualTo(id2)
+          .jsonPath("caseNotes[1].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("caseNotes[1].caseNoteText").isEqualTo("basic text")
+          .jsonPath("caseNotes[1].amendments[0].text").isEqualTo("made a change")
+          .jsonPath("caseNotes[1].amendments[0].authorUsername").isEqualTo("JMORROW_GEN")
+          .jsonPath("caseNotes[1].amendments[0].createdDateTime").isEqualTo("2023-03-02T17:11:41")
+          .jsonPath("caseNotes[1].amendments[0].sourceSystem").isEqualTo("NOMIS")
+          .jsonPath("caseNotes[1].amendments.length()").isEqualTo(1)
+          .jsonPath("caseNotes[2].caseNoteId").isEqualTo(id3)
+          .jsonPath("caseNotes[2].bookingId").isEqualTo(latestBookingIdA1234AB)
+          .jsonPath("caseNotes[2].caseNoteText").isEqualTo("Note 3")
+          .jsonPath("caseNotes[3].caseNoteId").isEqualTo(id4)
+          .jsonPath("caseNotes[3].bookingId").isEqualTo(firstBookingIdA1234AB)
+          .jsonPath("caseNotes[3].caseNoteText").isEqualTo("Note 4")
+          .jsonPath("caseNotes[4].caseNoteId").isEqualTo(id5)
+          .jsonPath("caseNotes[4].bookingId").isEqualTo(firstBookingIdA1234AB)
+          .jsonPath("caseNotes[4].caseNoteText").isEqualTo("Note 5")
+      }
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/casenotes/reconciliation")
+  @Nested
+  inner class GetCaseNotesForPrisonerForReconciliation {
+    private var latestBookingIdA1234AB = 0L
+    private var firstBookingIdA1234AB = 0L
+    private lateinit var prisoner: Offender
+    private lateinit var prisonerNoCaseNotes: Offender
+    private lateinit var prisonerNoBookings: Offender
+    private var id1 = 0L
+    private var id2 = 0L
+    private var id3 = 0L
+    private var id4 = 0L
+    private var id5 = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff1 = staff(firstName = "JANE", lastName = "NARK") {
+          account(username = "JANE.NARK")
+          account(username = "JANE.NARK_ADM", type = "ADMIN")
+        }
+        staff(firstName = "TREVOR", lastName = "NACK") {
+          account(username = "TREV.NACK")
+        }
+
+        prisoner = offender(nomsId = "A1234AB") {
+          latestBookingIdA1234AB = booking(bookingBeginDate = LocalDateTime.parse("2020-01-31T10:00")) {
+            id1 = caseNote(
+              caseNoteType = "ACP",
+              caseNoteSubType = "POPEM",
+              author = staff1,
+              caseNoteText = "Note 1",
+            ).id
+            id2 = caseNote(
+              caseNoteType = "ACP",
+              caseNoteSubType = "POPEM",
+              author = staff1,
+              caseNoteText = "basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change",
+            ).id
+            id3 = caseNote(
+              caseNoteType = "ACP",
+              caseNoteSubType = "POPEM",
+              author = staff1,
+              caseNoteText = "Note 3",
+            ).id
+          }.bookingId
+          firstBookingIdA1234AB = booking(bookingBeginDate = LocalDateTime.parse("2016-12-31T10:00")) {
+            release(date = LocalDateTime.parse("2017-12-31T10:00"))
+            id4 = caseNote(
+              caseNoteType = "ACP",
+              caseNoteSubType = "POPEM",
+              author = staff1,
+              caseNoteText = "Note 4",
+            ).id
+            id5 = caseNote(
+              caseNoteType = "ACP",
+              caseNoteSubType = "POPEM",
+              author = staff1,
+              caseNoteText = "Note 5",
+            ).id
+          }.bookingId
+        }
+        prisonerNoCaseNotes = offender(nomsId = "B1234AB") {
+          booking()
+        }
+        prisonerNoBookings = offender(nomsId = "D1234AB")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteCaseNotes()
+      repository.delete(prisoner)
+      repository.delete(prisonerNoCaseNotes)
+      repository.delete(prisonerNoBookings)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AB/casenotes/reconciliation")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AB/casenotes/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A1234AB/casenotes/reconciliation")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when prisoner not found`() {
+        webTestClient.get().uri("/prisoners/A9999ZZ/casenotes/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 200 when prisoner with no bookings found`() {
+        webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/casenotes/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("caseNotes.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `return 200 when prisoner found with no casenotes`() {
+        webTestClient.get().uri("/prisoners/${prisonerNoCaseNotes.nomsId}/casenotes/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("caseNotes.size()").isEqualTo(0)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `returns all casenotes for current booking`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/casenotes/reconciliation")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .exchange()
+          .expectStatus()
+          .isOk
           .expectBody()
           .jsonPath("caseNotes.size()").isEqualTo(5)
           .jsonPath("caseNotes[0].caseNoteId").isEqualTo(id1)
@@ -677,7 +853,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseNotes[0].caseNoteText").isEqualTo("Note 1")
           .jsonPath("caseNotes[1].caseNoteId").isEqualTo(id2)
           .jsonPath("caseNotes[1].bookingId").isEqualTo(latestBookingIdA1234AB)
-          .jsonPath("caseNotes[1].caseNoteText").isEqualTo("Note 2")
+          .jsonPath("caseNotes[1].caseNoteText").isEqualTo("basic text ...[JMORROW_GEN updated the case notes on 2023/03/02 17:11:41] made a change")
           .jsonPath("caseNotes[2].caseNoteId").isEqualTo(id3)
           .jsonPath("caseNotes[2].bookingId").isEqualTo(latestBookingIdA1234AB)
           .jsonPath("caseNotes[2].caseNoteText").isEqualTo("Note 3")
