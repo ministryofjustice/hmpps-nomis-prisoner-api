@@ -679,6 +679,7 @@ class SentencingService(
   ) {
     if (courtEvent.courtEventCharges.any { charge -> charge.resultCode1?.resultRequiresACourtOrder() == true }) {
       existingCourtOrder(courtEvent.offenderBooking, courtEvent)?.let { order ->
+        // only amending orders without a sentence
         if (!courtEvent.courtEventCharges.map { it.id.offenderCharge }
             .any { it.offenderSentenceCharges.isNotEmpty() }
         ) {

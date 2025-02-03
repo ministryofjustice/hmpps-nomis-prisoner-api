@@ -3572,7 +3572,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateDate = LocalDate.parse(aDateString),
                 statusUpdateStaff = staff,
               ) {
-                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G", resultCode1 = "1004")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
                 courtAppearance = courtEvent {
                   // overrides from the parent offender charge fields
@@ -3785,25 +3785,26 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].cjitCode1").isEqualTo("cj6")
           .jsonPath("offenderCharges[0].cjitCode2").isEqualTo("cj7")
           .jsonPath("offenderCharges[0].cjitCode3").isEqualTo("cj8")
-          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Restriction Order")
           .jsonPath("offenderCharges[0].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
-          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
       }
 
       @Test
       fun `can create a sentence without a court order`() {
-        // update charge (inactive charge) on the court case to remove court order
+        // update appearance to have one inactive charge (removing the court order)
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${courtAppearance.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
+              // this will leave just one inactive charge
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  offenderCharge1.id,
+                  offenderCharge2.id,
                 ),
               ),
             ),
@@ -3860,6 +3861,46 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           },
           isNull(),
         )
+      }
+
+      @Test
+      fun `court order will date not updated when sentence exists`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                caseId = courtCase.id,
+                offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+          .returnResult().responseBody!!.sentenceSeq
+
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${courtAppearance.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                // a different date to the court order
+                eventDateTime = LocalDateTime.of(2023, 6, 6, 9, 0),
+                courtEventCharges = mutableListOf(
+                  offenderCharge1.id,
+                  offenderCharge2.id,
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        // don't update if sentence exists
+        verify(telemetryClient, never()).trackEvent(eq("court-order-updated"), any(), isNull())
       }
     }
 
