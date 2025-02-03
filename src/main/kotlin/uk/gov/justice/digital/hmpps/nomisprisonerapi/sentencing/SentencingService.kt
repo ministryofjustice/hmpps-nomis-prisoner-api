@@ -678,7 +678,29 @@ class SentencingService(
     offenderNo: String,
   ) {
     if (courtEvent.courtEventCharges.any { charge -> charge.resultCode1?.resultRequiresACourtOrder() == true }) {
-      existingCourtOrder(courtEvent.offenderBooking, courtEvent) ?: let {
+      existingCourtOrder(courtEvent.offenderBooking, courtEvent)?.let { order ->
+        // only amending orders without a sentence
+        if (!courtEvent.courtEventCharges.map { it.id.offenderCharge }
+            .any { it.offenderSentenceCharges.isNotEmpty() }
+        ) {
+          if (order.courtDate != courtEvent.eventDate) {
+            order.courtDate = courtEvent.eventDate
+            telemetryClient.trackEvent(
+              "court-order-updated",
+              mapOf(
+                "courtCaseId" to courtEvent.courtCase!!.id.toString(),
+                "bookingId" to courtEvent.offenderBooking.bookingId.toString(),
+                "offenderNo" to offenderNo,
+                "court" to courtEvent.court.id,
+                "courtEventId" to courtEvent.id.toString(),
+                "orderId" to order.id.toString(),
+                "orderDate" to courtEvent.eventDate.toString(),
+              ),
+              null,
+            )
+          }
+        }
+      } ?: let {
         courtOrderRepository.save(
           CourtOrder(
             offenderBooking = courtEvent.offenderBooking,
@@ -817,7 +839,10 @@ class SentencingService(
   fun getCourtEventCharge(chargeId: Long, eventId: Long, offenderNo: String): CourtEventChargeResponse {
     val charge = getOffenderCharge(chargeId)
     val appearance = findCourtAppearance(offenderNo = offenderNo, id = eventId)
-    return findCourtEventCharge(CourtEventChargeId(offenderCharge = charge, courtEvent = appearance), offenderNo = offenderNo).toCourtEventCharge()
+    return findCourtEventCharge(
+      CourtEventChargeId(offenderCharge = charge, courtEvent = appearance),
+      offenderNo = offenderNo,
+    ).toCourtEventCharge()
   }
 
   fun refreshCaseIdentifiers(offenderNo: String, caseId: Long, request: CaseIdentifierRequest) {
