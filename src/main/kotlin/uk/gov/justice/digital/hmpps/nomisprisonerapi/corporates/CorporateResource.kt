@@ -1163,6 +1163,16 @@ class CorporateResource(private val corporateService: CorporateService) {
         description = "Corporate type created (or already exists)",
       ),
       ApiResponse(
+        responseCode = "400",
+        description = "Type code is not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
         content = [
@@ -1200,6 +1210,66 @@ class CorporateResource(private val corporateService: CorporateService) {
     @RequestBody @Valid
     request: CreateCorporateTypeRequest,
   ) = corporateService.createCorporateType(corporateId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/corporates/{corporateId}/type")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update the corporate types",
+    description = "Updates the set of corporate types. This might result in some types being added and others being deleted. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Corporate types updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more of the type codes are not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Corporate does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCorporateTypes(
+    @PathVariable
+    corporateId: Long,
+    @RequestBody @Valid
+    request: UpdateCorporateTypesRequest,
+  ) = corporateService.updateCorporateTypes(corporateId, request.typeCodes)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @DeleteMapping("/corporates/{corporateId}/type/{typeCode}")
@@ -1557,4 +1627,9 @@ data class CreateCorporateWebAddressResponse(
 data class CreateCorporateTypeRequest(
   @Schema(description = "type", example = "TEA")
   val typeCode: String,
+)
+
+data class UpdateCorporateTypesRequest(
+  @Schema(description = "list of type codes that should be set on the corporate")
+  val typeCodes: Set<String> = setOf(),
 )
