@@ -50,7 +50,7 @@ class CourtOrder(
   @JoinColumn(name = "EVENT_ID", nullable = false)
   var courtEvent: CourtEvent,
 
-  val courtDate: LocalDate,
+  var courtDate: LocalDate,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ISSUING_AGY_LOC_ID", nullable = false)
