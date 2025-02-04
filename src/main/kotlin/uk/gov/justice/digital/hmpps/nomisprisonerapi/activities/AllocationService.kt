@@ -99,7 +99,7 @@ class AllocationService(
         courseActivityId = it.courseActivity.courseActivityId,
         nomisId = it.offenderBooking.offender.nomsId,
         bookingId = it.offenderBooking.bookingId,
-        startDate = it.startDate,
+        startDate = it.startDate!!,
         endDate = it.endDate,
         endComment = it.endComment,
         endReasonCode = it.endReason?.code,
@@ -146,7 +146,7 @@ class AllocationService(
       ?: newAllocation(request, offenderBooking, courseActivity, requestedPayBand)
 
     return allocation.apply {
-      startDate = if (allocation.startDate > LocalDate.now()) request.startDate else allocation.startDate
+      startDate = if (allocation.startDate!! > LocalDate.now()) request.startDate else allocation.startDate
       endDate = request.endDate
       endReason = requestedEndReason
       suspended = request.suspended ?: false

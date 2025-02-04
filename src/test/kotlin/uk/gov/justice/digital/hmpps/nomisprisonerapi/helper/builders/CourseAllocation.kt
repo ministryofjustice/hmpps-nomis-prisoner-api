@@ -91,7 +91,7 @@ class CourseAllocationBuilder(
   ) = OffenderProgramProfile(
     offenderBooking = offenderBooking,
     program = courseActivity.program,
-    startDate = LocalDate.parse(startDate),
+    startDate = startDate?.let { LocalDate.parse(startDate) },
     programStatus = programStatus(programStatusCode),
     courseActivity = courseActivity,
     prison = courseActivity.prison,
