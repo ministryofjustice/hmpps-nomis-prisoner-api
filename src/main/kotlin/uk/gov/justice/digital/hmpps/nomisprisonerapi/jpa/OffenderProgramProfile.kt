@@ -39,7 +39,7 @@ data class OffenderProgramProfile(
   var program: ProgramService,
 
   @Column(name = "OFFENDER_START_DATE")
-  var startDate: LocalDate,
+  var startDate: LocalDate?,
 
   @ManyToOne(optional = false)
   @NotFound(action = NotFoundAction.IGNORE)
@@ -113,8 +113,4 @@ data class OffenderProgramProfile(
       .filter { profilePayBands -> profilePayBands.endDate == null }
       .any { profilePayBands -> profilePayBands.payBand.code == payBandCode }
   }
-
-  fun isActive() = programStatus.code == "ALLOC" &&
-    startDate <= LocalDate.now() &&
-    (endDate == null || endDate!! >= LocalDate.now())
 }
