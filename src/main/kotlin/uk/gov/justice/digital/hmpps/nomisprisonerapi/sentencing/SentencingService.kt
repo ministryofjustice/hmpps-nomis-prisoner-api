@@ -50,7 +50,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtOrderRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceTermRepository
@@ -87,7 +86,6 @@ class SentencingService(
   private val courtOrderRepository: CourtOrderRepository,
   private val storedProcedureRepository: StoredProcedureRepository,
   private val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
-  private val caseIdentifierRepository: OffenderCaseIdentifierRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -508,30 +506,31 @@ class SentencingService(
   }
 
   @Audit
-  fun createSentence(offenderNo: String, request: CreateSentenceRequest) = findLatestBooking(offenderNo).let { booking ->
+  fun createSentence(offenderNo: String, request: CreateSentenceRequest) = findCourtCase(id = request.caseId, offenderNo = offenderNo).let { case ->
 
+    val offenderBooking = case.offenderBooking
     val sentence = OffenderSentence(
-      id = SentenceId(booking, sequence = offenderSentenceRepository.getNextSequence(booking)),
+      id = SentenceId(offenderBooking, sequence = offenderSentenceRepository.getNextSequence(offenderBooking)),
       category = lookupSentenceCategory(request.sentenceCategory),
       calculationType = lookupSentenceCalculationType(
         categoryCode = request.sentenceCategory,
         calcType = request.sentenceCalcType,
       ),
-      courtCase = request.caseId?.let { findCourtCase(id = it, offenderNo = offenderNo) },
+      courtCase = case,
       startDate = request.startDate,
       endDate = request.endDate,
       status = request.status,
       fineAmount = request.fine,
       sentenceLevel = request.sentenceLevel,
-      courtOrder = request.caseId?.let { existingCourtOrderByCaseId(it) },
+      courtOrder = existingCourtOrderByCaseId(case.id),
     )
     sentence.offenderSentenceTerms.add(
       OffenderSentenceTerm(
         id = OffenderSentenceTermId(
-          offenderBooking = booking,
+          offenderBooking = offenderBooking,
           sentenceSequence = sentence.id.sequence,
           termSequence = offenderSentenceTermRepository.getNextTermSequence(
-            offenderBookId = booking.bookingId,
+            offenderBookId = offenderBooking.bookingId,
             sentenceSeq = sentence.id.sequence,
           ),
         ),
@@ -552,7 +551,7 @@ class SentencingService(
       request.offenderChargeIds.map { chargeId ->
         OffenderSentenceCharge(
           id = OffenderSentenceChargeId(
-            offenderBooking = booking,
+            offenderBooking = offenderBooking,
             sequence = sentence.id.sequence,
             offenderChargeId = chargeId,
           ),
@@ -564,7 +563,7 @@ class SentencingService(
 
     offenderSentenceRepository.saveAndFlush(sentence).also {
       storedProcedureRepository.imprisonmentStatusUpdate(
-        bookingId = booking.bookingId,
+        bookingId = offenderBooking.bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
@@ -572,13 +571,14 @@ class SentencingService(
     CreateSentenceResponse(
       sentenceSeq = sentence.id.sequence,
       termSeq = sentence.offenderSentenceTerms[0].id.termSequence,
+      bookingId = offenderBooking.bookingId,
     ).also { response ->
       telemetryClient.trackEvent(
         "sentence-created",
         mapOf(
           "sentenceSeq" to response.sentenceSeq.toString(),
           "termSeq" to response.termSeq.toString(),
-          "bookingId" to booking.bookingId.toString(),
+          "bookingId" to offenderBooking.bookingId.toString(),
           "offenderNo" to offenderNo,
         ),
         null,
@@ -629,7 +629,7 @@ class SentencingService(
           calcType = request.sentenceCalcType,
         )
         sentence.courtCase =
-          request.caseId?.let { findCourtCase(id = it, offenderNo = offenderBooking.offender.nomsId) }
+          findCourtCase(id = request.caseId, offenderNo = offenderBooking.offender.nomsId)
         sentence.startDate = request.startDate
         sentence.endDate = request.endDate
         sentence.status = request.status
