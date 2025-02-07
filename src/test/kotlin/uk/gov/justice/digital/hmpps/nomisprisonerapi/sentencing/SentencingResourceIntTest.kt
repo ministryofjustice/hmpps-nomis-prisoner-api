@@ -3640,19 +3640,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Validation {
       @Test
-      internal fun `404 when offender does not exist`() {
-        webTestClient.post().uri("/prisoners/AB765/sentencing")
+      internal fun `404 when case does not exist`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(caseId = courtCase.id),
+              createSentence(caseId = 12345678),
             ),
           )
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Court case 12345678 for ${prisonerAtMoorland.nomsId} not found")
       }
 
       @Test
@@ -3864,7 +3864,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `court order will date not updated when sentence exists`() {
+      fun `court order date not updated when sentence exists`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)

@@ -347,7 +347,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Sentence",
-    description = "Required role NOMIS_SENTENCING Creates a new Sentence for the offender and latest booking",
+    description = "Required role NOMIS_SENTENCING Creates a new Sentence for the offender booking associated with the court case",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1571,6 +1571,7 @@ data class CourtCaseIdResponse(
 data class CreateSentenceResponse(
   val sentenceSeq: Long,
   val termSeq: Long,
+  val bookingId: Long,
 )
 
 @Schema(description = "Create adjustment response")
@@ -1666,8 +1667,7 @@ data class CreateSentenceRequest(
   val fine: BigDecimal? = null,
   // the prototype implies only 1 appearance can be associated with the case on creation
   val sentenceTerm: SentenceTermRequest,
-  // TODO will we always have an associated court case? nullable for now
-  val caseId: Long? = null,
+  val caseId: Long,
   val offenderChargeIds: List<Long>,
 )
 
