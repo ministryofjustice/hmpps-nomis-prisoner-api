@@ -48,7 +48,7 @@ data class Visit(
   @Column(name = "END_TIME", nullable = false)
   var endDateTime: LocalDateTime,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -62,7 +62,7 @@ data class Visit(
   )
   val visitType: VisitType,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -82,7 +82,7 @@ data class Visit(
   )
   var visitStatus: VisitStatus,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [

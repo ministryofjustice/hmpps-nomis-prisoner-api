@@ -50,7 +50,7 @@ data class VisitVisitor(
   @Column
   val commentText: String? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -67,7 +67,7 @@ data class VisitVisitor(
   @Column
   val eventId: Long? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -93,7 +93,7 @@ data class VisitVisitor(
   var outcomeReasonCode: String? = null,
 
   /* DB constraint exists: EVENT_OUTCOME IN ('ATT', 'ABS', 'CANC') */
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [

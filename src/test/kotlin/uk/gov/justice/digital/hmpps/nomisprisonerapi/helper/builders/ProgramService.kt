@@ -57,12 +57,10 @@ class ProgramServiceBuilder(
 
   fun build(
     programCode: String,
-    programId: Long,
     description: String,
     active: Boolean,
   ): ProgramService = ProgramService(
     programCode = programCode,
-    programId = programId,
     description = description,
     active = active,
   )
