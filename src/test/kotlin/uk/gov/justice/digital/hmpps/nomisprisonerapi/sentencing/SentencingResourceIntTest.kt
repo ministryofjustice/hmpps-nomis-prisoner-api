@@ -3547,7 +3547,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("POST /prisoners/{offenderNo}/sentencing")
+  @DisplayName("POST /prisoners/{offenderNo}/sentences")
   inner class CreateSentence {
     private lateinit var staff: Staff
     private lateinit var prisonerAtMoorland: Offender
@@ -3597,7 +3597,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3611,7 +3611,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3625,7 +3625,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3641,7 +3641,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       internal fun `404 when case does not exist`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3657,7 +3657,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `400 when category not valid`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3673,7 +3673,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `400 when calc type not valid`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3690,7 +3690,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `400 when category code and calc type are individually valid but not a valid combination`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3707,7 +3707,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `404 when offender charge id does not exist`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3726,7 +3726,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class CreateSentenceSuccess {
       @Test
       fun `can create a sentence with data`() {
-        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3812,7 +3812,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3840,7 +3840,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will track telemetry for the create`() {
-        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -3865,7 +3865,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `court order date not updated when sentence exists`() {
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing")
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -4340,16 +4340,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     sentenceLevel = sentenceLevel,
     fine = fine,
     caseId = caseId,
-    sentenceTerm = SentenceTermRequest(
-      startDate = startDate,
-      endDate = endDate,
-      sentenceTermType = "IMP",
-      lifeSentenceFlag = true,
-      years = 7,
-      months = 2,
-      weeks = 3,
-      days = 4,
-      hours = 5,
+    sentenceTerm = listOf(
+      SentenceTermRequest(
+        startDate = startDate,
+        endDate = endDate,
+        sentenceTermType = "IMP",
+        lifeSentenceFlag = true,
+        years = 7,
+        months = 2,
+        weeks = 3,
+        days = 4,
+        hours = 5,
+      ),
     ),
     offenderChargeIds = offenderChargeIds,
   )
