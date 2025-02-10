@@ -343,7 +343,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): SentenceResponse = sentencingService.getOffenderSentence(sequence, bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PostMapping("/prisoners/{offenderNo}/sentencing")
+  @PostMapping("/prisoners/{offenderNo}/sentences")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Sentence",
@@ -1665,8 +1665,8 @@ data class CreateSentenceRequest(
   // 'IND' or 'AGG'
   val sentenceLevel: String,
   val fine: BigDecimal? = null,
-  // the prototype implies only 1 appearance can be associated with the case on creation
-  val sentenceTerm: SentenceTermRequest,
+  // can receive multiple terms from DPS with a maximum of 1 custodial per sentence
+  val sentenceTerm: List<SentenceTermRequest>,
   val caseId: Long,
   val offenderChargeIds: List<Long>,
 )
