@@ -155,6 +155,13 @@ class AppointmentService(
     val eventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
       ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
 
+    val subTypeDescription = eventSubType.description.trim()
+    val comment = when {
+      dto.comment == null -> subTypeDescription
+      dto.comment.startsWith(subTypeDescription) -> dto.comment
+      else -> "$subTypeDescription - ${dto.comment}".take(4000)
+    }
+
     return OffenderIndividualSchedule(
       offenderBooking = offenderBooking,
       eventDate = dto.eventDate,
@@ -164,7 +171,7 @@ class AppointmentService(
       eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow(),
       internalLocation = location,
       eventSubType = eventSubType,
-      comment = dto.comment,
+      comment = comment,
     )
   }
 
