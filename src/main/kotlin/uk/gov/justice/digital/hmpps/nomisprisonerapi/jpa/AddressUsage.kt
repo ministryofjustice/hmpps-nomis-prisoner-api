@@ -38,7 +38,7 @@ class AddressUsage(
   @Convert(converter = YesNoConverter::class)
   val active: Boolean,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [

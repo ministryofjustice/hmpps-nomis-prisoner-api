@@ -62,7 +62,7 @@ class OffenderIndividualSchedule(
   @Column(nullable = false)
   val eventType: String = "APP",
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -76,7 +76,7 @@ class OffenderIndividualSchedule(
   )
   var eventSubType: EventSubType,
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [

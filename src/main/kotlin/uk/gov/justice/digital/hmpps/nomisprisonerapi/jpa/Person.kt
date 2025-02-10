@@ -5,7 +5,6 @@ import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType.LAZY
-import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -24,7 +23,6 @@ import java.time.LocalDate
 data class Person(
   @Id
   @Column(name = "PERSON_ID")
-  @GeneratedValue(generator = "PERSON_ID")
   @SequenceOrUseId(name = "PERSON_ID")
   var id: Long = 0,
 
