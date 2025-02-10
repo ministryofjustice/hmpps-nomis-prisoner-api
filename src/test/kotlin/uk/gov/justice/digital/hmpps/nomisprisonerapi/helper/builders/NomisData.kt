@@ -144,7 +144,7 @@ class NomisData(
     dsl: ProgramServiceDsl.() -> Unit,
   ): ProgramService = programServiceBuilderFactory!!.builder()
     .let { builder ->
-      builder.build(programCode, programId, description, active)
+      builder.build(programCode, description, active)
         .also {
           builder.apply(dsl)
         }
