@@ -63,7 +63,7 @@ class OffenderCaseNote(
   // Actually nullable but never null in prod data
   // date part always the same as CONTACT_DATE
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -78,7 +78,7 @@ class OffenderCaseNote(
   )
   var caseNoteType: TaskType,
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [

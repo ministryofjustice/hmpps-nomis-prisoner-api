@@ -41,7 +41,7 @@ data class OffenderProgramProfile(
   @Column(name = "OFFENDER_START_DATE")
   var startDate: LocalDate?,
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -69,7 +69,7 @@ data class OffenderProgramProfile(
   @OneToMany(mappedBy = "id.offenderProgramProfile", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val payBands: MutableList<OffenderProgramProfilePayBand> = mutableListOf(),
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
