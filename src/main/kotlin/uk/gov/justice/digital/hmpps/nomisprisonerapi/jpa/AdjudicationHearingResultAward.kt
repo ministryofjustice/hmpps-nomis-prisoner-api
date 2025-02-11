@@ -95,7 +95,7 @@ class AdjudicationHearingResultAward(
   @Column(name = "COMPENSATION_AMOUNT")
   var compensationAmount: BigDecimal? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE) // one code of "LOR" not on reference table
   @JoinColumnsOrFormulas(
     value = [

@@ -34,4 +34,6 @@ class SequenceGeneratorOrUseId(private val config: SequenceOrUseId) : SequenceSt
     val id = session.getEntityPersister(null, entity).getIdentifier(entity, session)
     return id.takeIf { id != 0L } ?: super.generate(session, entity)
   }
+
+  override fun allowAssignedIdentifiers(): Boolean = true
 }

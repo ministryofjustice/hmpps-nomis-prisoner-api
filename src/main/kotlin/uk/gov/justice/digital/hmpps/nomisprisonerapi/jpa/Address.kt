@@ -5,7 +5,6 @@ import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.DiscriminatorColumn
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
@@ -55,11 +54,11 @@ abstract class Address(
   @Convert(converter = YesNoConverter::class)
   open var primaryAddress: Boolean = false,
 
-  @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+  @OneToMany(mappedBy = "address", cascade = [CascadeType.ALL], fetch = LAZY, orphanRemoval = true)
   @SQLRestriction("OWNER_CLASS = '${AddressPhone.PHONE_TYPE}'")
   open val phones: MutableList<AddressPhone> = ArrayList(),
 
-  @ManyToOne
+  @ManyToOne(fetch = LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -79,7 +78,7 @@ abstract class Address(
   @Column(name = "POSTAL_CODE")
   open var postalCode: String? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = LAZY)
   // COUNTY_CODE not always found for records created 2006-01-13 08:58:25.
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(

@@ -524,28 +524,31 @@ class SentencingService(
       sentenceLevel = request.sentenceLevel,
       courtOrder = existingCourtOrderByCaseId(case.id),
     )
-    sentence.offenderSentenceTerms.add(
-      OffenderSentenceTerm(
-        id = OffenderSentenceTermId(
-          offenderBooking = offenderBooking,
-          sentenceSequence = sentence.id.sequence,
-          termSequence = offenderSentenceTermRepository.getNextTermSequence(
-            offenderBookId = offenderBooking.bookingId,
-            sentenceSeq = sentence.id.sequence,
+
+    request.sentenceTerm.map { termRequest ->
+      sentence.offenderSentenceTerms.add(
+        OffenderSentenceTerm(
+          id = OffenderSentenceTermId(
+            offenderBooking = offenderBooking,
+            sentenceSequence = sentence.id.sequence,
+            termSequence = offenderSentenceTermRepository.getNextTermSequence(
+              offenderBookId = offenderBooking.bookingId,
+              sentenceSeq = sentence.id.sequence,
+            ),
           ),
+          years = termRequest.years,
+          months = termRequest.months,
+          weeks = termRequest.weeks,
+          days = termRequest.days,
+          hours = termRequest.hours,
+          lifeSentenceFlag = termRequest.lifeSentenceFlag,
+          offenderSentence = sentence,
+          startDate = termRequest.startDate,
+          endDate = termRequest.endDate,
+          sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
         ),
-        years = request.sentenceTerm.years,
-        months = request.sentenceTerm.months,
-        weeks = request.sentenceTerm.weeks,
-        days = request.sentenceTerm.days,
-        hours = request.sentenceTerm.hours,
-        lifeSentenceFlag = request.sentenceTerm.lifeSentenceFlag,
-        offenderSentence = sentence,
-        startDate = request.sentenceTerm.startDate,
-        endDate = request.sentenceTerm.endDate,
-        sentenceTermType = lookupSentenceTermType(request.sentenceTerm.sentenceTermType),
-      ),
-    )
+      )
+    }
 
     sentence.offenderSentenceCharges.addAll(
       request.offenderChargeIds.map { chargeId ->

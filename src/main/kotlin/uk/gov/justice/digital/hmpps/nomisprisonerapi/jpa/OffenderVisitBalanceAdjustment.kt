@@ -47,7 +47,7 @@ data class OffenderVisitBalanceAdjustment(
   @Column(name = "PREVIOUS_REMAINING_PVO")
   val previousRemainingPrivilegedVisitOrders: Int? = null,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [

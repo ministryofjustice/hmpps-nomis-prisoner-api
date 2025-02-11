@@ -33,11 +33,11 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
 
-  private fun callCreateEndpoint(hasEndTime: Boolean, inCell: Boolean = false): Long {
+  private fun callCreateEndpoint(body: String = validCreateJsonRequest()): Long {
     val response = webTestClient.post().uri("/appointments")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
       .contentType(MediaType.APPLICATION_JSON)
-      .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime, inCell)))
+      .body(BodyInserters.fromValue(body))
       .exchange()
       .expectStatus().isCreated
       .expectBody(CreateAppointmentResponse::class.java)
@@ -46,13 +46,13 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
     return response!!.eventId
   }
 
-  private fun validCreateJsonRequest(hasEndTime: Boolean, inCell: Boolean) = """{
+  private fun validCreateJsonRequest(hasEndTime: Boolean = false, inCell: Boolean = false, eventSubType: String = "ACTI") = """{
             "bookingId"          : ${offenderAtMoorlands.latestBooking().bookingId},
             "eventDate"          : "2023-02-27",
             "startTime"          : "10:40",
 ${if (hasEndTime) """ "endTime"   : "12:10",""" else ""}
 ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
-            "eventSubType"       : "ACTI"
+            "eventSubType"       : "$eventSubType"
           }
   """.trimIndent()
 
@@ -250,7 +250,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will create appointment with correct details`() {
-      val id = callCreateEndpoint(true, false)
+      val id = callCreateEndpoint(validCreateJsonRequest(hasEndTime = true))
 
       // Check the database
       val offenderIndividualSchedule = repository.getAppointment(id)!!
@@ -270,7 +270,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will create appointment with correct details - no end time`() {
-      val id = callCreateEndpoint(false, false)
+      val id = callCreateEndpoint()
 
       val offenderIndividualSchedule = repository.getAppointment(id)!!
 
@@ -281,12 +281,42 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will create appointment with correct details - in cell`() {
-      val id = callCreateEndpoint(false, true)
+      val id = callCreateEndpoint(validCreateJsonRequest(inCell = true))
 
       val offenderIndividualSchedule = repository.getAppointment(id)!!
 
       assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
       assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009) // cell
+    }
+
+    @Test
+    fun `will add event sub type to comments`() {
+      val request = validCreateJsonRequest(eventSubType = "CHAP").replace("}", """, "comment": "Prayers"}""")
+      val eventId = callCreateEndpoint(request)
+
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(comment).isEqualTo("Chaplaincy - Prayers")
+      }
+    }
+
+    @Test
+    fun `will not duplicate event sub type`() {
+      val request = validCreateJsonRequest(eventSubType = "CHAP").replace("}", """, "comment": "Chaplaincy - Prayers"}""")
+      val eventId = callCreateEndpoint(request)
+
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(comment).isEqualTo("Chaplaincy - Prayers")
+      }
+    }
+
+    @Test
+    fun `will handle max comment plus event sub type`() {
+      val request = validCreateJsonRequest(eventSubType = "CHAP").replace("}", """, "comment": "${"x".repeat(4000)}"}""")
+      val eventId = callCreateEndpoint(request)
+
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(comment).startsWith("Chaplaincy - xxxxxxxxxxxx")
+      }
     }
   }
 
@@ -340,7 +370,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `access with room not found`() {
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(internalLocationId = 999998)))
@@ -353,7 +383,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `EventSubType does not exist`() {
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(eventSubType = "INVALID")))
@@ -366,7 +396,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `end time before start`() {
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(endTime = LocalTime.of(7, 0))))
@@ -381,7 +411,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     fun `invalid start time should return bad request`() {
       val invalidSchedule =
         validUpdateJsonRequest(false).replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -395,8 +425,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `invalid end time should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest(true).replace(""""endTime"   : "12:20"""", """"endTime": "12:65"""")
-      val eventId = callCreateEndpoint(false)
+      val invalidSchedule = validUpdateJsonRequest(hasEndTime = true).replace(""""endTime"   : "12:20"""", """"endTime": "12:65"""")
+      val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
@@ -414,7 +444,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
         """"eventDate"          : "2023-02-28"""",
         """"eventDate": "2022-13-31",""",
       )
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -428,7 +458,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will update appointment with correct details`() {
-      val eventId = callCreateEndpoint(true)
+      val eventId = callCreateEndpoint(validCreateJsonRequest(hasEndTime = true))
       callUpdateEndpoint(eventId, true)
 
       // Check the database
@@ -449,7 +479,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will update appointment with correct details - no end time`() {
-      val eventId = callCreateEndpoint(true)
+      val eventId = callCreateEndpoint(validCreateJsonRequest(hasEndTime = true))
       callUpdateEndpoint(eventId, false)
 
       // Check the database
@@ -463,7 +493,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will update appointment with correct details - in cell`() {
-      val eventId = callCreateEndpoint(true, false)
+      val eventId = callCreateEndpoint(validCreateJsonRequest(hasEndTime = true))
       callUpdateEndpoint(eventId, false, true)
 
       // Check the database
@@ -529,7 +559,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
 
     @Test
     fun `will cancel appointment correctly`() {
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       callCancelEndpoint(eventId)
 
       // Check the database
@@ -576,7 +606,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
 
     @Test
     fun `will uncancel appointment correctly`() {
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       callCancelEndpoint(eventId)
       callUncancelEndpoint(eventId)
 
@@ -624,7 +654,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
 
     @Test
     fun `will delete appointment correctly`() {
-      val eventId = callCreateEndpoint(false)
+      val eventId = callCreateEndpoint()
       callDeleteEndpoint(eventId)
 
       // Check the database
