@@ -1153,6 +1153,43 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `can create an DPS only adjustment`() {
+        val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+              {
+              "adjustmentDays": 10,
+              "adjustmentTypeCode": "TCA"
+              }
+              """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("sentenceSequence").isEqualTo(1)
+          .jsonPath("adjustmentType.code").isEqualTo("TCA")
+          .jsonPath("adjustmentType.description").isEqualTo("Time Spent in Custody Abroad")
+          .jsonPath("adjustmentDays").isEqualTo(10)
+          .jsonPath("adjustmentDate").doesNotExist()
+          .jsonPath("adjustmentFromDate").doesNotExist()
+          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("comment").doesNotExist()
+          .jsonPath("active").isEqualTo(true)
+      }
+
+      @Test
       fun `can create an adjustment with all data`() {
         val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))

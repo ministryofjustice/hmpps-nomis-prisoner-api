@@ -16,6 +16,6 @@ data class SentenceAdjustment(
   @Column(name = "USAGE_CODE", nullable = false)
   val usage: String?,
 ) {
-  fun isSentenceRelated() = usage == "SENT"
-  fun isBookingRelated() = usage == "BKG"
+  fun isSentenceRelated() = usage in listOf("SENT", "DPS_ONLY")
+  fun isBookingRelated() = usage in listOf("BKG", "DPS_ONLY")
 }
