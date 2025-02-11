@@ -410,7 +410,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `invalid start time should return bad request`() {
       val invalidSchedule =
-        validUpdateJsonRequest().replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
+        validUpdateJsonRequest(false).replace(""""startTime"          : "10:50"""", """"startTime": "11:65",""")
       val eventId = callCreateEndpoint()
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
@@ -440,7 +440,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validUpdateJsonRequest().replace(
+      val invalidSchedule = validUpdateJsonRequest(false).replace(
         """"eventDate"          : "2023-02-28"""",
         """"eventDate": "2022-13-31",""",
       )
@@ -459,7 +459,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `will update appointment with correct details`() {
       val eventId = callCreateEndpoint(validCreateJsonRequest(hasEndTime = true))
-      callUpdateEndpoint(eventId, validUpdateJsonRequest(hasEndTime = true))
+      callUpdateEndpoint(eventId, true)
 
       // Check the database
       val offenderIndividualSchedule = repository.getAppointment(eventId)!!
@@ -471,7 +471,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       assertThat(offenderIndividualSchedule.endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
       assertThat(offenderIndividualSchedule.eventSubType.code).isEqualTo("CABA")
       assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
-      assertThat(offenderIndividualSchedule.comment).isEqualTo("Case - Bail Apps - Some comment")
+      assertThat(offenderIndividualSchedule.comment).isEqualTo("Some comment")
       assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
       assertThat(offenderIndividualSchedule.modifiedBy).isEqualTo("SA")
       assertThat(offenderIndividualSchedule.modifiedBy).isNotBlank()
@@ -480,7 +480,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `will update appointment with correct details - no end time`() {
       val eventId = callCreateEndpoint(validCreateJsonRequest(hasEndTime = true))
-      callUpdateEndpoint(eventId, validUpdateJsonRequest())
+      callUpdateEndpoint(eventId, false)
 
       // Check the database
       val offenderIndividualSchedule = repository.getAppointment(eventId)!!
@@ -494,7 +494,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `will update appointment with correct details - in cell`() {
       val eventId = callCreateEndpoint(validCreateJsonRequest(hasEndTime = true))
-      callUpdateEndpoint(eventId, validUpdateJsonRequest(inCell = true))
+      callUpdateEndpoint(eventId, false, true)
 
       // Check the database
       val offenderIndividualSchedule = repository.getAppointment(eventId)!!
@@ -503,52 +503,22 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009)
     }
 
-    @Test
-    fun `will add event sub type to comments`() {
-      val eventId = callCreateEndpoint(validCreateJsonRequest())
-      callUpdateEndpoint(eventId, validUpdateJsonRequest(eventSubType = "CHAP").replace("}", """, "comment": "Prayers"}"""))
-
-      with(repository.getAppointment(eventId)!!) {
-        assertThat(comment).isEqualTo("Chaplaincy - Prayers")
-      }
-    }
-
-    @Test
-    fun `will not duplicate event sub type`() {
-      val eventId = callCreateEndpoint(validCreateJsonRequest())
-      callUpdateEndpoint(eventId, validUpdateJsonRequest(eventSubType = "CHAP").replace("}", """, "comment": "Chaplaincy - Prayers"}"""))
-
-      with(repository.getAppointment(eventId)!!) {
-        assertThat(comment).isEqualTo("Chaplaincy - Prayers")
-      }
-    }
-
-    @Test
-    fun `will handle max comment plus event sub type`() {
-      val eventId = callCreateEndpoint(validCreateJsonRequest())
-      callUpdateEndpoint(eventId, validUpdateJsonRequest(eventSubType = "CHAP").replace("}", """, "comment": "${"x".repeat(4000)}"}"""))
-
-      with(repository.getAppointment(eventId)!!) {
-        assertThat(comment).startsWith("Chaplaincy - xxxxxxxxxxxx")
-      }
-    }
-
-    private fun callUpdateEndpoint(eventId: Long, body: String) {
+    private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean, inCell: Boolean = false) {
       webTestClient.put().uri("/appointments/$eventId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(body))
+        .body(BodyInserters.fromValue(validUpdateJsonRequest(hasEndTime, inCell)))
         .exchange()
         .expectStatus().isOk
     }
 
-    private fun validUpdateJsonRequest(hasEndTime: Boolean = false, inCell: Boolean = false, eventSubType: String = "CABA") = """{
+    private fun validUpdateJsonRequest(hasEndTime: Boolean, inCell: Boolean = false) = """{
             "eventDate"          : "2023-02-28",
             "startTime"          : "10:50",
 ${if (hasEndTime) """"endTime"   : "12:20",""" else ""}
 ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
             "comment"            : "Some comment",
-            "eventSubType"       : "$eventSubType"
+            "eventSubType"       : "CABA"
           }
     """.trimIndent()
   }
