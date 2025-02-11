@@ -65,7 +65,7 @@ class AppointmentService(
         endTime = dto.endTime?.let { LocalDateTime.of(dto.eventDate, it) }
         eventDate = dto.eventDate
         eventSubType = subType
-        comment = formatComment(eventSubType, dto.comment)
+        comment = dto.comment
 
         telemetryClient.trackEvent(
           "appointment-updated",
@@ -164,7 +164,7 @@ class AppointmentService(
       eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow(),
       internalLocation = location,
       eventSubType = eventSubType,
-      comment = formatComment(eventSubType, dto.comment),
+      comment = dto.comment,
     )
   }
 
@@ -217,15 +217,6 @@ class AppointmentService(
         count = it.getAppointmentCount(),
       )
     }
-}
-
-private fun formatComment(eventSubType: EventSubType, comment: String?): String {
-  val subTypeDescription = eventSubType.description.trim()
-  return when {
-    comment == null -> subTypeDescription
-    comment.startsWith(subTypeDescription) -> comment
-    else -> "$subTypeDescription - $comment".take(4000)
-  }
 }
 
 private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse = AppointmentResponse(
