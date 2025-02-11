@@ -65,7 +65,7 @@ class AppointmentService(
         endTime = dto.endTime?.let { LocalDateTime.of(dto.eventDate, it) }
         eventDate = dto.eventDate
         eventSubType = subType
-        comment = dto.comment
+        comment = formatComment(eventSubType, dto.comment)
 
         telemetryClient.trackEvent(
           "appointment-updated",
@@ -155,13 +155,6 @@ class AppointmentService(
     val eventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
       ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
 
-    val subTypeDescription = eventSubType.description.trim()
-    val comment = when {
-      dto.comment == null -> subTypeDescription
-      dto.comment.startsWith(subTypeDescription) -> dto.comment
-      else -> "$subTypeDescription - ${dto.comment}".take(4000)
-    }
-
     return OffenderIndividualSchedule(
       offenderBooking = offenderBooking,
       eventDate = dto.eventDate,
@@ -171,7 +164,7 @@ class AppointmentService(
       eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow(),
       internalLocation = location,
       eventSubType = eventSubType,
-      comment = comment,
+      comment = formatComment(eventSubType, dto.comment),
     )
   }
 
@@ -224,6 +217,15 @@ class AppointmentService(
         count = it.getAppointmentCount(),
       )
     }
+}
+
+private fun formatComment(eventSubType: EventSubType, comment: String?): String {
+  val subTypeDescription = eventSubType.description.trim()
+  return when {
+    comment == null -> subTypeDescription
+    comment.startsWith(subTypeDescription) -> comment
+    else -> "$subTypeDescription - $comment".take(4000)
+  }
 }
 
 private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse = AppointmentResponse(
