@@ -506,7 +506,7 @@ class SentencingService(
   }
 
   @Audit
-  fun createSentence(offenderNo: String, request: CreateSentenceRequest) = findCourtCase(id = request.caseId, offenderNo = offenderNo).let { case ->
+  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
 
     val offenderBooking = case.offenderBooking
     val sentence = OffenderSentence(
@@ -525,7 +525,7 @@ class SentencingService(
       courtOrder = existingCourtOrderByCaseId(case.id),
     )
 
-    request.sentenceTerm.map { termRequest ->
+    request.sentenceTerms.map { termRequest ->
       sentence.offenderSentenceTerms.add(
         OffenderSentenceTerm(
           id = OffenderSentenceTermId(
@@ -620,28 +620,81 @@ class SentencingService(
 
   @Audit
   fun updateSentence(
-    bookingId: Long,
+    caseId: Long,
     sentenceSequence: Long,
     request: CreateSentenceRequest,
+    offenderNo: String,
   ) {
-    findOffenderBooking(bookingId).let { offenderBooking ->
-      findSentence(booking = offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
+    findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
+      findSentence(booking = case.offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
         sentence.category = lookupSentenceCategory(request.sentenceCategory)
         sentence.calculationType = lookupSentenceCalculationType(
           categoryCode = request.sentenceCategory,
           calcType = request.sentenceCalcType,
         )
         sentence.courtCase =
-          findCourtCase(id = request.caseId, offenderNo = offenderBooking.offender.nomsId)
+          findCourtCase(id = caseId, offenderNo = case.offenderBooking.offender.nomsId)
         sentence.startDate = request.startDate
         sentence.endDate = request.endDate
         sentence.status = request.status
         sentence.fineAmount = request.fine
         sentence.sentenceLevel = request.sentenceLevel
 
+        val requestTermTypes = request.sentenceTerms.map { it.sentenceTermType }
+        // terms maximum of 2, no duplicate term codes and DPS provide terms in the correct order
+        log.info(
+          "\nUpdating sentence terms for sentence $sentenceSequence, booking ${case.offenderBooking.bookingId} and offender $offenderNo " +
+            "\nwith terms: $requestTermTypes " +
+            "\noriginal terms: ${sentence.offenderSentenceTerms.map { it.sentenceTermType.code }}",
+        )
+        request.sentenceTerms.forEachIndexed { index, termRequest ->
+          sentence.offenderSentenceTerms.getOrNull(index)
+            ?.let { term ->
+              term.years = termRequest.years
+              term.months = termRequest.months
+              term.weeks = termRequest.weeks
+              term.days = termRequest.days
+              term.hours = termRequest.hours
+              term.lifeSentenceFlag = termRequest.lifeSentenceFlag
+              term.startDate = termRequest.startDate
+              term.endDate = termRequest.endDate
+              term.sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType)
+            } ?: let {
+            sentence.offenderSentenceTerms.add(
+              OffenderSentenceTerm(
+                id = OffenderSentenceTermId(
+                  offenderBooking = case.offenderBooking,
+                  sentenceSequence = sentence.id.sequence,
+                  termSequence = offenderSentenceTermRepository.getNextTermSequence(
+                    offenderBookId = case.offenderBooking.bookingId,
+                    sentenceSeq = sentence.id.sequence,
+                  ),
+                ),
+                years = termRequest.years,
+                months = termRequest.months,
+                weeks = termRequest.weeks,
+                days = termRequest.days,
+                hours = termRequest.hours,
+                lifeSentenceFlag = termRequest.lifeSentenceFlag,
+                offenderSentence = sentence,
+                startDate = termRequest.startDate,
+                endDate = termRequest.endDate,
+                sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
+              ),
+            )
+          }
+        }.also {
+          // remove any additional terms
+          if (sentence.offenderSentenceTerms.size > request.sentenceTerms.size) {
+            val newList = sentence.offenderSentenceTerms.take(request.sentenceTerms.size).toMutableList()
+            sentence.offenderSentenceTerms.clear()
+            sentence.offenderSentenceTerms.addAll(newList)
+          }
+        }
+
         offenderSentenceRepository.saveAndFlush(sentence).also {
           storedProcedureRepository.imprisonmentStatusUpdate(
-            bookingId = offenderBooking.bookingId,
+            bookingId = case.offenderBooking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
           )
         }
@@ -649,8 +702,10 @@ class SentencingService(
         telemetryClient.trackEvent(
           "sentence-updated",
           mapOf(
-            "bookingId" to bookingId.toString(),
+            "bookingId" to case.offenderBooking.bookingId.toString(),
             "sentenceSequence" to sentenceSequence.toString(),
+            "caseId" to caseId.toString(),
+            "terms" to requestTermTypes.toString(),
           ),
           null,
         )

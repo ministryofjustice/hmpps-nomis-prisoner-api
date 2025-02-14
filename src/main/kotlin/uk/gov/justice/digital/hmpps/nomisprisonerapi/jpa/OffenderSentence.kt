@@ -201,7 +201,7 @@ data class OffenderSentence(
   val offenderSentenceCharges: MutableList<OffenderSentenceCharge> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderSentence", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val offenderSentenceTerms: MutableList<OffenderSentenceTerm> = mutableListOf(),
+  var offenderSentenceTerms: MutableList<OffenderSentenceTerm> = mutableListOf(),
 
   /* COLUMNS NOT MAPPED
     TERMINATION_REASON - not used
@@ -233,4 +233,5 @@ data class OffenderSentence(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+  override fun toString(): String = "OffenderSentence(id=$id, status='$status', calculationType=$calculationType, startDate=$startDate, courtOrder=$courtOrder, endDate=$endDate, sentenceLevel='$sentenceLevel', offenderSentenceCharges=$offenderSentenceCharges, offenderSentenceTerms=$offenderSentenceTerms)"
 }
